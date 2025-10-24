@@ -24,23 +24,25 @@
                         </a>
                     </h6>
 
-                    <!-- Atributos del producto -->
-                    <t t-if="item.attributes">
-                        <ul class="list-unstyled small text-muted text-start text-wrap my-2">
-                            <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
-                                <t t-if="attr.id">
-                                    <li class="d-flex align-items-center mb-1 text-truncate">
-                                        <t t-if="val.dr_image">
-                                            <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % val.id"
-                                            t-att-alt="val.name"
-                                            class="attr-icon me-2"/>
-                                        </t>
-                                        <span><t t-esc="attr.name"/></span>
-                                    </li>
-                                </t>
+                <!-- Atributos del producto -->
+                <t t-if="item.attributes">
+                    <ul class="list-unstyled small text-muted text-start text-wrap my-2">
+                        <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
+                            <t t-if="attr.id">
+                                <li class="d-flex align-items-center mb-1 text-truncate">
+                                    <t t-if="attr.image">
+                                        <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % attr.id"
+                                            t-att-alt="attr.name"
+                                            class="attr-icon me-2"
+                                            style="max-height:40px; max-width:100%; height:auto; width:auto; background:white;"/>
+                                    </t>
+                                    <span><t t-esc="attr.name"/></span>
+                                </li>
                             </t>
-                        </ul>
-                    </t>
+                        </t>
+                    </ul>
+                </t>
+
 
                     <t t-call="tp-snippet-product-price"/>
                     <span t-if="widget._isActionEnabled('rating')" class=" w-auto px-0 small mt-n1 d-block">
