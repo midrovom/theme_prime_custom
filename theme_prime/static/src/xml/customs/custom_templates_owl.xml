@@ -4,7 +4,29 @@
 
     <!-- templates OWL advance -->
 
+<!--Estilos para Snippet Product Card-->
 
+    <t t-name="s_card_style_9">
+        <div class="col-8 text-center">
+            <t t-call="tp_category_info"/>
+                <hr class="my-2"/>
+                    <h6 class="card-title mb-1 fw-light text-truncate d-product-name">
+                        <a t-att-href="item.website_url">
+                            <t t-out="item.name"/>
+                        </a>
+                    </h6>
+                <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+            <img t-if="item.dr_image" t-att-src="item.dr_image" alt="Attribute Image" class="img-fluid" style="height:24px; width:auto;"/>
+                <span t-if="item.attribute_value_name" class="small text-muted">
+                    <t t-out="item.attribute_value_name"/>
+                </span>
+            </div>
+        <t t-call="tp-snippet-product-price"/>
+            <span t-if="widget._isActionEnabled('rating')" class="w-auto px-0 small mt-n1 d-block">
+                <t t-raw="item.rating"/>
+            </span>
+        </div>
+    </t>
 
 
 
