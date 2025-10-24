@@ -114,8 +114,8 @@
             'theme_prime/static/src/xml/cards.xml',
 
             # Templates OWL Conedera Advance
-            'theme_prime/static/src/xml/custom_templates_owl.xml',
-            
+            'theme_prime/static/src/xml/customs/custom_templates_owl.xml',
+
             'theme_prime/static/src/xml/listing_cards.xml',
             'theme_prime/static/src/xml/frontend/utils.xml',
             'theme_prime/static/src/xml/frontend/category_filters.xml',
