@@ -112,10 +112,6 @@
             'theme_prime/static/src/js/frontend/dynamic_snippets.js',
             'theme_prime/static/src/xml/frontend/dynamic_snippets.xml',
             'theme_prime/static/src/xml/cards.xml',
-
-            # Templates OWL Conedera Advance
-            'theme_prime/static/src/xml/customs/custom_templates_owl.xml',
-
             'theme_prime/static/src/xml/listing_cards.xml',
             'theme_prime/static/src/xml/frontend/utils.xml',
             'theme_prime/static/src/xml/frontend/category_filters.xml',
@@ -128,7 +124,8 @@
             'theme_prime/static/src/xml/frontend/image_hotspot.xml',   # TODO: kishan
             'theme_prime/static/src/xml/website_sale.xml',
 
-
+            # Templates OWL Conedera Advance
+            'theme_prime/static/src/xml/customs/custom_templates_owl.xml',
         ],
         'web._assets_primary_variables': [
             'theme_prime/static/src/scss/primary_variables.scss',
