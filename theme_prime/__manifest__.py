@@ -123,6 +123,10 @@
             'theme_prime/static/src/xml/frontend/brands.xml',
             'theme_prime/static/src/xml/frontend/image_hotspot.xml',   # TODO: kishan
             'theme_prime/static/src/xml/website_sale.xml',
+
+
+            # Templates OWL Conedera Advance
+            'theme_prime/static/src/xml/customs/conedera_advance_template.xml',
         ],
         'web._assets_primary_variables': [
             'theme_prime/static/src/scss/primary_variables.scss',
