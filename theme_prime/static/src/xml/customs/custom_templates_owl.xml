@@ -30,11 +30,10 @@
                             <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
                                 <li class="d-flex align-items-center mb-1 text-truncate">
                                     <t t-if="attr.image">
-                                        <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % val.id"
-                                                t-att-alt="attr.name"
-                                                class="attr-icon me-2"
-                                                style="max-height:20px; max-width:100%; height:auto; width:auto;"/>
-
+                                        <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % attr.id"
+                                             t-att-alt="attr.name"
+                                             class="attr-icon me-2"
+                                             style="height:20px; width:auto;"/>
                                     </t>
                                     <span><t t-esc="attr.name"/></span>
                                 </li>
