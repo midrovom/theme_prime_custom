@@ -29,9 +29,9 @@
 
                     <!-- Atributos del producto -->
                     <ul class="list-unstyled small text-muted text-center text-wrap my-2">
-                        <t t-foreach="item.attribute_line_ids" t-as="attr">
+                        <t t-foreach="item.attribute_line_ids" t-as="attr" t-key="attr.id">
                             <t t-if="attr.attribute_id.name != 'Marca'">
-                                <t t-foreach="attr.value_ids" t-as="val">
+                                <t t-foreach="attr.value_ids" t-as="val" t-key="val.id">
                                     <li class="d-flex justify-content-center align-items-center mb-1 text-truncate">
                                         <t t-if="val.dr_image">
                                             <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % val.id"
@@ -60,6 +60,7 @@
         </div>
     </div>
 </t>
+
 
 
 
