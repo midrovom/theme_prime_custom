@@ -97,23 +97,25 @@
 
 <!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_category_style_6">
-    <t t-set="card_width" t-value="'200px'"/>
-    
     <style>
-        .tp-horizontal-scroll-wrapper {
+        .tp-horizontal-slider {
             display: flex;
             flex-direction: row;
             overflow-x: auto;
             gap: 1rem;
             padding-bottom: 1rem;
+            scroll-behavior: smooth;
         }
-        .tp-horizontal-scroll-wrapper .card {
-            min-width: t-esc="card_width";
+        .tp-horizontal-slider::-webkit-scrollbar {
+            display: none;
+        }
+        .tp-horizontal-slider .card {
+            min-width: 200px;
             flex: 0 0 auto;
         }
     </style>
 
-    <div class="tp-horizontal-scroll-wrapper">
+    <div class="tp-horizontal-slider">
         <div class="card border tp-hover-color-primary tp-rounded-border shadow-sm">
             <a class="px-2 text-center stretched-link py-3" t-att-href="category.website_url">
                 <img loading="lazy" class="tp-image-128-max" t-att-src="category.image_url"/>
