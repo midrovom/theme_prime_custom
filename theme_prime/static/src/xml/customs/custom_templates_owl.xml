@@ -6,7 +6,7 @@
 
 <!--Estilos para Snippet Product Card-->
 <t t-name="s_card_style_9">
-    <div t-attf-class="card h-100 tp-rounded-border border s_card_style_8 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
+    <div t-attf-class="card h-100 tp-rounded-border border s_card_style_9 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
         <div class="d_product_box position-relative h-100">
             <t t-call="tp_product_snippet_action_drawer"/>
             <div class="overflow-hidden d_img_block position-relative border-bottom d-flex justify-content-center">
@@ -24,11 +24,13 @@
                         </a>
                     </h6>
 
-                    <!-- Atributos del producto (ajustados) -->
+                    <!-- Atributos del producto (ajustados y filtrados) -->
+                    <t t-set="seen_attr_ids" t-value="[]"/>
                     <t t-if="item.attributes">
                         <ul class="list-unstyled text-muted text-start text-wrap my-1" style="font-size:0.75rem; line-height:1.2;">
                             <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
-                                <t t-if="attr.id">
+                                <t t-if="attr.id and attr.id not in seen_attr_ids">
+                                    <t t-set="seen_attr_ids" t-value="seen_attr_ids + [attr.id]"/>
                                     <li class="d-flex align-items-center mb-1 text-truncate">
                                         <t t-if="attr.image">
                                             <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % attr.id"
