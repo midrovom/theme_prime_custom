@@ -13,7 +13,7 @@
                 <a t-att-href="item.website_url" t-att-class="hasTimer and 'h-100'">
                     <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="img img-fluid d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
                 </a>
-                <t t-call="dr_s_lable_tmpl"></t>
+                <t t-call="dr_s_lable_tmpl"/>
             </div>
             <div class="row px-3 g-1 pb-2 pt-3">
                 <div class="col-8 text-start">
@@ -24,28 +24,29 @@
                         </a>
                     </h6>
 
-                <!-- Atributos del producto -->
-                <t t-if="item.attributes">
-                    <ul class="list-unstyled small text-muted text-start text-wrap my-2">
-                        <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
-                            <t t-if="attr.id">
-                                <li class="d-flex align-items-center mb-1 text-truncate">
-                                    <t t-if="attr.image">
-                                        <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % attr.id"
-                                            t-att-alt="attr.name"
-                                            class="attr-icon me-2"
-                                            style="max-height:40px; max-width:100%; height:auto; width:auto; background:white;"/>
-                                    </t>
-                                    <span><t t-esc="attr.name"/></span>
-                                </li>
+                    <!-- Atributos del producto sin <span> -->
+                    <t t-set="seen_attr_ids" t-value="{}"/>
+                    <t t-if="item.attributes">
+                        <ul class="list-unstyled small text-muted text-start text-wrap my-2">
+                            <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
+                                <t t-if="attr.id and not seen_attr_ids.get(attr.id)">
+                                    <t t-set="dummy" t-value="seen_attr_ids.update({attr.id: True})"/>
+                                    <li class="d-flex align-items-center mb-1 text-truncate">
+                                        <t t-if="attr.image">
+                                            <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % attr.id"
+                                                 t-att-alt="attr.name"
+                                                 class="attr-icon me-2"
+                                                 style="max-height:40px; max-width:100%; height:auto; width:auto; background:white;"/>
+                                        </t>
+                                        <t t-esc="attr.name"/>
+                                    </li>
+                                </t>
                             </t>
-                        </t>
-                    </ul>
-                </t>
-
+                        </ul>
+                    </t>
 
                     <t t-call="tp-snippet-product-price"/>
-                    <span t-if="widget._isActionEnabled('rating')" class=" w-auto px-0 small mt-n1 d-block">
+                    <span t-if="widget._isActionEnabled('rating')" class="w-auto px-0 small mt-n1 d-block">
                         <t t-raw="item.rating"/>
                     </span>
                 </div>
@@ -58,6 +59,7 @@
         </div>
     </div>
 </t>
+
 
 <!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
