@@ -61,67 +61,10 @@
 
 <!--Estilos para Snippet Categoies Listing-->
 <t t-name="s_tp_hierarchical_category_style_12">
-    <t t-set="style">
-        <![CDATA[
-        <style>
-        .s_tp_hierarchical_category_style_12 .tp-slider-container {
-            display: flex;
-            flex-direction: row;
-            gap: 1rem;
-            padding: 1rem 0;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-        }
-
-        .s_tp_hierarchical_category_style_12 .tp-slider-item {
-            flex: 0 0 12.5%; /* 8 tarjetas visibles */
-            scroll-snap-align: start;
-            padding: 0.5rem;
-        }
-
-        .s_tp_hierarchical_category_style_12 .card {
-            border-radius: 12px;
-            padding: 1rem;
-            background-color: #fff;
-            transition: transform 0.3s ease;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .s_tp_hierarchical_category_style_12 .card:hover {
-            transform: scale(1.03);
-        }
-
-        .s_tp_hierarchical_category_style_12 .card img {
-            border-radius: 8px;
-        }
-
-        .s_tp_hierarchical_category_style_12 .category-title {
-            position: relative;
-            padding-top: 1rem;
-            margin-top: 1rem;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .s_tp_hierarchical_category_style_12 .category-title::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 40px;
-            height: 3px;
-            background-color: var(--tp-category-line-color, #007bff); /* Personalizable */
-            border-radius: 2px;
-        }
-        </style>
-        ]]>
-    </t>
-
     <div class="s_tp_hierarchical_category_style_12 tp-slider" data-mode="slider">
-        <div class="tp-slider-container">
+        <div class="tp-slider-container d-flex flex-row">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                 class="tp-slider-item text-center">
+                 class="tp-slider-item p-3 text-center">
                 <div class="tp-animation-scale card h-100 border-0 rounded shadow-sm">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy"
@@ -137,7 +80,6 @@
         </div>
     </div>
 </t>
-
 
 
 
