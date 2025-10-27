@@ -60,7 +60,7 @@
 </t>
 
 <!--Estilos para Snippet Categoies Listing-->
-<t t-name="s_tp_hierarchical_category_style_1">
+<t t-name="s_tp_hierarchical_category_style_12">
     <div class="s_tp_hierarchical_category_style_1" data-mode="slider">
         <div class="owl-carousel d-owl-ppr-2 text-center">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
