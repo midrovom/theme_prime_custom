@@ -42,6 +42,9 @@
                         </ul>
                     </t>
 
+                    <!-- Botón del carrito y acciones rápidas -->
+                    <t t-call="tp_product_snippet_quick_actions"/>
+
                     <t t-call="tp-snippet-product-price"/>
                     <span t-if="widget._isActionEnabled('rating')" class="w-auto px-0 small mt-1 d-block">
                         <t t-raw="item.rating"/>
