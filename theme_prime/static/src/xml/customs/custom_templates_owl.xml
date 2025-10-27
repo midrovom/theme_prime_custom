@@ -96,28 +96,15 @@
 
 
 <!--Estilos para Snippet Categoies-->
-<t t-name="s_tp_hierarchical_category_style_12">
-    <div class="owl-carousel container droggol_product_slider">
-        <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-            <div class="item px-2">
-                <div t-attf-class="s_tp_hierarchical_category_style_12 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
-                    <div class="tp-animation-scale">
-                        <a t-att-href="category_data.category.website_url">
-                            <img loading="lazy" t-att-alt="category_data.category.name"
-                                 class="img my-2 tp_image_120_contain img-fluid"
-                                 t-att-src="category_data.category.image_url" />
-                        </a>
-                    </div>
-                    <t t-call="tp_category_list_template_1">
-                        <t t-set="ui_class" t-value="'mt-2'"/>
-                        <t t-set="hasArrow" t-value="true"/>
-                        <t t-set="titleClass" t-value="'text-truncate'"/>
-                    </t>
-                </div>
-            </div>
-        </t>
-    </div>
-</t>
+    <t t-name="s_tp_category_style_6">
+        <div class="card border tp-hover-color-primary tp-rounded-border shadow-sm">
+            <a class="px-2 text-center stretched-link py-3" t-att-href="category.website_url">
+                <img loading="lazy" class="tp-image-128-max" t-att-src="category.image_url"/>
+                <h6 t-esc="category.name" class="my-0 text-truncate"/>
+                <small class="text-muted"><span t-esc="category.count"/> products</small>
+            </a>
+        </div>
+    </t>
 
 
 
