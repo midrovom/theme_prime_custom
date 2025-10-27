@@ -24,6 +24,7 @@
                         </a>
                     </h6>
 
+
                 <t t-if="item.attributes">
                     <ul class="list-unstyled small text-muted text-start text-wrap my-2">
                         <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
@@ -58,7 +59,6 @@
     </div>
 </t> -->
 
-<!--Estilos para Snippet Product Card-->
 <t t-name="s_card_style_9">
     <div t-attf-class="card h-100 tp-rounded-border border s_card_style_9 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
         <div class="d_product_box position-relative h-100">
@@ -80,7 +80,7 @@
 
                     <!-- Atributos del producto -->
                     <t t-if="item.attributes">
-                        <ul class="list-unstyled text-muted text-start text-wrap my-2">
+                        <ul class="list-unstyled product-attributes text-muted text-start text-wrap my-2">
                             <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
                                 <t t-if="attr.id">
                                     <li class="d-flex align-items-center text-truncate">
@@ -112,27 +112,28 @@
 
     <style type="text/scss" scoped="true">
         .s_card_style_9 {
-            ul {
-                font-size: 0.75rem;
-                line-height: 1.2;
+            .product-attributes {
+                font-size: 0.7rem;
+                line-height: 1.1;
+                margin-top: 0.25rem;
                 margin-bottom: 0.5rem;
 
                 li {
+                    margin-bottom: 0.2rem;
                     display: flex;
                     align-items: center;
-                    margin-bottom: 0.25rem;
 
                     .attr-icon {
-                        max-height: 32px;
-                        max-width: 32px;
-                        margin-right: 0.5rem;
+                        max-height: 28px;
+                        max-width: 28px;
+                        margin-right: 0.4rem;
                         border-radius: 4px;
                         background-color: #fff;
                         object-fit: contain;
                     }
 
                     span {
-                        font-size: 0.75rem;
+                        font-size: 0.7rem;
                         color: #555;
                         font-weight: 400;
                     }
@@ -141,6 +142,8 @@
         }
     </style>
 </t>
+
+
 
 
 <!--Estilos para Snippet Categoies-->
