@@ -36,7 +36,6 @@
                                             class="attr-icon me-2"
                                             style="max-height:40px; max-width:100%; height:auto; width:auto; background:white;"/>
                                     </t>
-                                    <span><t t-esc="attr.name"/></span>
                                 </li>
                             </t>
                         </t>
