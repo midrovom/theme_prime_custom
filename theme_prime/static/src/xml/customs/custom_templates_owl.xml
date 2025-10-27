@@ -31,7 +31,7 @@
                                 <t t-if="attr.id">
                                     <li class="d-flex align-items-center mb-1 text-truncate" style="gap:0.3rem;">
                                         <t t-if="attr.image">
-                                            <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % attr.id"
+                                            <img t-att-src="attr.image"
                                                  class="attr-icon"
                                                  style="max-height:24px; max-width:100%; height:auto; width:auto; background:white; border-radius:4px;"/>
                                         </t>
@@ -51,6 +51,7 @@
         </div>
     </div>
 </t>
+
 
 
 
