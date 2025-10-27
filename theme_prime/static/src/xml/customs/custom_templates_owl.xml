@@ -31,7 +31,7 @@
                                 <t t-if="attr.id">
                                     <li class="d-flex align-items-center mb-1 text-truncate" style="gap:0.3rem;">
                                         <t t-if="attr.image">
-                                            <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % attr.id"
+                                            <img t-att-src="attr.image"
                                                  class="attr-icon"
                                                  style="max-height:24px; max-width:100%; height:auto; width:auto; background:white; border-radius:4px;"/>
                                         </t>
@@ -42,18 +42,7 @@
                         </ul>
                     </t>
 
-                    <!-- Precio + Carrito alineados pero separados -->
-                    <div class="row align-items-center mt-2">
-                        <div class="col-8">
-                            <t t-call="tp-snippet-product-price"/>
-                        </div>
-                        <div class="col-4 d-flex justify-content-end">
-                            <button style="transform:scale(1);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-sm tp-rounded-border btn-primary tp-icon-center-2 d_action_btn d_add_to_cart_btn" title="Add to Cart">
-                                <i style="font-size:14px;" class="d_action_btn_icon dri dri-cart"></i>
-                            </button>
-                        </div>
-                    </div>
-
+                    <t t-call="tp-snippet-product-price"/>
                     <span t-if="widget._isActionEnabled('rating')" class="w-auto px-0 small mt-1 d-block">
                         <t t-raw="item.rating"/>
                     </span>
@@ -62,6 +51,7 @@
         </div>
     </div>
 </t>
+
 
 
 
