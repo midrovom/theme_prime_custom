@@ -59,7 +59,7 @@
     </div>
 </t>
 
-<!--Estilos para Snippet Categoies Listing-->
+<!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="d-flex flex-row flex-wrap justify-content-start">
         <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
