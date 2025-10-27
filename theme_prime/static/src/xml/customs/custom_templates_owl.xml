@@ -60,20 +60,25 @@
 </t>
 
 <!--Estilos para Snippet Categoies-->
-    <t t-name="s_tp_hierarchical_category_style_12">
-        <div t-foreach="data" t-as="category_data" t-key="category_data_index+1" t-attf-class="col-6 py-3 col-lg-3 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
-            <div class="tp-animation-scale">
-                <a t-att-href="category_data.category.website_url">
-                    <img loading="lazy" t-att-alt="category_data.category.name" class="img my-2 tp_image_120_contain img-fluid" t-att-src="category_data.category.image_url" />
-                </a>
-            </div>
-            <t t-call="tp_category_list_template_1">
-                <t t-set="ui_class" t-value="'mt-2'"/>
-                <t t-set="hasArrow" t-value="true"/>
-                <t t-set="titleClass" t-value="'text-truncate'"/>
-            </t>
-        </div>
+<t t-name="s_tp_hierarchical_category_style_12">
+  <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
+       t-attf-class="col-6 py-3 col-lg-3 s_tp_hierarchical_category_style_12 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+    <div class="tp-animation-scale">
+      <a t-att-href="category_data.category.website_url">
+        <img loading="lazy"
+             t-att-alt="category_data.category.name"
+             class="img my-2 tp_image_120_contain img-fluid"
+             t-att-src="category_data.category.image_url" />
+      </a>
+    </div>
+    <t t-call="tp_category_list_template_1">
+      <t t-set="ui_class" t-value="'mt-2'"/>
+      <t t-set="hasArrow" t-value="true"/>
+      <t t-set="titleClass" t-value="'text-truncate'"/>
     </t>
+  </div>
+</t>
+
 
 
 
