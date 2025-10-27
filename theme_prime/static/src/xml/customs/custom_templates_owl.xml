@@ -62,6 +62,17 @@
 <!--Estilos para Snippet Categoies Listing-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="s_tp_hierarchical_category_style_12 tp-slider" data-mode="slider">
+        <!-- Flechas de navegación -->
+        <div class="tp-slider-nav">
+            <button class="tp-slider-prev btn btn-light rounded-circle shadow-sm me-2" type="button">
+                <i class="fa fa-chevron-left"></i>
+            </button>
+            <button class="tp-slider-next btn btn-light rounded-circle shadow-sm" type="button">
+                <i class="fa fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- Contenedor del slider -->
         <div class="tp-slider-container d-flex flex-row">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
                  class="tp-slider-item p-3 text-center">
@@ -80,6 +91,7 @@
         </div>
     </div>
 </t>
+
 
 
 
