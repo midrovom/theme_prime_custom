@@ -73,6 +73,7 @@
                              t-att-src="category_data.category.image_url" />
                     </a>
                     <div class="category-title mt-2 text-truncate">
+                        <span class="tp-category-line d-block mx-auto mb-2">━</span>
                         <t t-esc="category_data.category.name"/>
                     </div>
                 </div>
@@ -80,6 +81,7 @@
         </div>
     </div>
 </t>
+
 
 
 
