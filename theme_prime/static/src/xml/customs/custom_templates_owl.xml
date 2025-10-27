@@ -59,7 +59,7 @@
     </div>
 </t>
 
-<!--Estilos para Snippet Categoies-->
+<!--Estilos para Snippet Categories-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="s_tp_hierarchical_category_style_12 tp-slider" data-mode="slider">
         <div class="tp-slider-container d-flex flex-row">
@@ -73,7 +73,6 @@
                              t-att-src="category_data.category.image_url" />
                     </a>
                     <div class="category-title mt-2 text-truncate">
-                        <span class="tp-category-line d-block mx-auto mb-2">━</span>
                         <t t-esc="category_data.category.name"/>
                     </div>
                 </div>
@@ -81,6 +80,8 @@
         </div>
     </div>
 </t>
+
+
 
 
 
