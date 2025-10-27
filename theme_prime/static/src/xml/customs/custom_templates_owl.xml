@@ -5,7 +5,7 @@
     <!-- templates OWL advance -->
 
 <!--Estilos para Snippet Product Card-->
-<t t-name="s_card_style_9">
+<!-- <t t-name="s_card_style_9">
     <div t-attf-class="card h-100 tp-rounded-border border s_card_style_8 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
         <div class="d_product_box position-relative h-100">
             <t t-call="tp_product_snippet_action_drawer"/>
@@ -24,7 +24,6 @@
                         </a>
                     </h6>
 
-                <!-- Atributos del producto -->
                 <t t-if="item.attributes">
                     <ul class="list-unstyled small text-muted text-start text-wrap my-2">
                         <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
@@ -57,7 +56,92 @@
             </div>
         </div>
     </div>
+</t> -->
+
+<!--Estilos para Snippet Product Card-->
+<t t-name="s_card_style_9">
+    <div t-attf-class="card h-100 tp-rounded-border border s_card_style_9 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
+        <div class="d_product_box position-relative h-100">
+            <t t-call="tp_product_snippet_action_drawer"/>
+            <div class="overflow-hidden d_img_block position-relative border-bottom d-flex justify-content-center">
+                <a t-att-href="item.website_url" t-att-class="hasTimer and 'h-100'">
+                    <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="img img-fluid d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
+                </a>
+                <t t-call="dr_s_lable_tmpl"/>
+            </div>
+            <div class="row px-3 g-1 pb-2 pt-3">
+                <div class="col-8 text-start">
+                    <t t-call="tp_category_info"/>
+                    <h6 class="card-title mb-1 fw-light text-truncate d-product-name">
+                        <a t-att-href="item.website_url">
+                            <t t-out="item.name"/>
+                        </a>
+                    </h6>
+
+                    <!-- Atributos del producto -->
+                    <t t-if="item.attributes">
+                        <ul class="list-unstyled text-muted text-start text-wrap my-2">
+                            <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
+                                <t t-if="attr.id">
+                                    <li class="d-flex align-items-center text-truncate">
+                                        <t t-if="attr.image">
+                                            <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % attr.id"
+                                                 t-att-alt="attr.name"
+                                                 class="attr-icon me-2"/>
+                                        </t>
+                                        <span><t t-esc="attr.name"/></span>
+                                    </li>
+                                </t>
+                            </t>
+                        </ul>
+                    </t>
+
+                    <t t-call="tp-snippet-product-price"/>
+                    <span t-if="widget._isActionEnabled('rating')" class="w-auto px-0 small mt-n1 d-block">
+                        <t t-raw="item.rating"/>
+                    </span>
+                </div>
+                <div class="col-4 d-flex justify-content-end align-items-center">
+                    <button style="transform:scale(1.1);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-lg tp-rounded-border btn-primary tp-icon-center-2 d_action_btn d_add_to_cart_btn" title="Add to Cart">
+                        <i style="font-size:16px;" class="d_action_btn_icon dri dri-cart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style type="text/scss" scoped="true">
+        .s_card_style_9 {
+            ul {
+                font-size: 0.75rem;
+                line-height: 1.2;
+                margin-bottom: 0.5rem;
+
+                li {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 0.25rem;
+
+                    .attr-icon {
+                        max-height: 32px;
+                        max-width: 32px;
+                        margin-right: 0.5rem;
+                        border-radius: 4px;
+                        background-color: #fff;
+                        object-fit: contain;
+                    }
+
+                    span {
+                        font-size: 0.75rem;
+                        color: #555;
+                        font-weight: 400;
+                    }
+                }
+            }
+        }
+    </style>
 </t>
+
 
 <!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
