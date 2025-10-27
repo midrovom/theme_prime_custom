@@ -99,9 +99,9 @@
 <t t-name="s_tp_category_style_6">
     <div class="owl-carousel droggol_product_slider">
         <t t-foreach="categories" t-as="category" t-key="category.id">
-            <div class="item px-2">
+            <div class="item">
                 <div class="card border tp-hover-color-primary tp-rounded-border shadow-sm h-100">
-                    <a class="px-2 text-center stretched-link py-3 d-block" t-att-href="category.website_url">
+                    <a t-att-href="category.website_url" class="d-flex flex-column align-items-center p-3">
                         <img loading="lazy" class="tp-image-128-max mb-2" t-att-src="category.image_url"/>
                         <h6 t-esc="category.name" class="my-0 text-truncate"/>
                         <small class="text-muted"><span t-esc="category.count"/> products</small>
@@ -111,6 +111,7 @@
         </t>
     </div>
 </t>
+
 
 
 
