@@ -60,7 +60,7 @@
 </t>
 
 <!--Estilos para Snippet Categoies-->
-<!-- <t t-name="s_tp_hierarchical_category_style_12">
+<t t-name="s_tp_hierarchical_category_style_12">
     <div class="d-flex flex-row flex-wrap justify-content-start">
         <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
              t-attf-class="p-3 s_tp_hierarchical_category_style_12 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
@@ -77,25 +77,6 @@
             </div>
         </div>
     </div>
-</t> -->
-
-<t t-name="s_tp_hierarchical_category_style_12">
-  <div class="s_tp_hierarchical_category_style_12__slider">
-    <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-         class="s_tp_hierarchical_category_style_12__item">
-      <div class="tp-animation-scale text-center">
-        <a t-att-href="category_data.category.website_url">
-          <img loading="lazy"
-               t-att-alt="category_data.category.name"
-               class="img my-2 tp_image_120_contain img-fluid"
-               t-att-src="category_data.category.image_url" />
-        </a>
-        <div class="mt-2 text-truncate">
-          <t t-esc="category_data.category.name"/>
-        </div>
-      </div>
-    </div>
-  </div>
 </t>
 
 
