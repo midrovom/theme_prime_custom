@@ -61,21 +61,14 @@
 
 <!--Estilos para Snippet Categoies Listing-->
 <t t-name="s_tp_hierarchical_category_style_12">
-    <div class="s_tp_hierarchical_category_style_12 tp-slider" data-mode="slider">
-        <!-- Flechas de navegación -->
-        <div class="tp-slider-nav">
-            <button class="tp-slider-prev btn btn-light rounded-circle shadow-sm me-2" type="button">
-                <i class="fa fa-chevron-left"></i>
-            </button>
-            <button class="tp-slider-next btn btn-light rounded-circle shadow-sm" type="button">
-                <i class="fa fa-chevron-right"></i>
-            </button>
-        </div>
-
+    <div class="s_tp_hierarchical_category_style_12 tp-slider position-relative" data-mode="slider">
+        <button class="tp-slider-prev btn btn-light rounded-circle shadow-sm position-absolute start-0 top-50 translate-middle-y z-index-1" type="button">
+            <i class="fa fa-chevron-left"></i>
+        </button>
         <!-- Contenedor del slider -->
-        <div class="tp-slider-container d-flex flex-row">
+        <div class="tp-slider-container d-flex flex-row overflow-hidden">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                 class="tp-slider-item p-3 text-center">
+                 class="tp-slider-item p-3 text-center flex-shrink-0" style="width: 12.5%;">
                 <div class="tp-animation-scale card h-100 border-0 rounded shadow-sm">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy"
@@ -89,8 +82,12 @@
                 </div>
             </div>
         </div>
+        <button class="tp-slider-next btn btn-light rounded-circle shadow-sm position-absolute end-0 top-50 translate-middle-y z-index-1" type="button">
+            <i class="fa fa-chevron-right"></i>
+        </button>
     </div>
 </t>
+
 
 
 
