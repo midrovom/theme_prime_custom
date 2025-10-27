@@ -13,10 +13,10 @@
                 <a t-att-href="item.website_url" t-att-class="hasTimer and 'h-100'">
                     <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="img img-fluid d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
                 </a>
-                <t t-call="dr_s_lable_tmpl"></t>
+                <t t-call="dr_s_lable_tmpl"/>
             </div>
             <div class="row px-3 g-1 pb-2 pt-3">
-                <div class="col-8 text-start">
+                <div class="col-12 text-start">
                     <t t-call="tp_category_info"/>
                     <h6 class="card-title mb-1 fw-light text-truncate d-product-name">
                         <a t-att-href="item.website_url">
@@ -24,40 +24,46 @@
                         </a>
                     </h6>
 
-                <!-- Atributos del producto -->
-                <t t-if="item.attributes">
-                    <ul class="list-unstyled small text-muted text-start text-wrap my-2">
-                        <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
-                            <t t-if="attr.id">
-                                <li class="d-flex align-items-center mb-1 text-truncate">
-                                    <t t-if="attr.image">
-                                        <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % attr.id"
-                                            t-att-alt="attr.name"
-                                            class="attr-icon me-2"
-                                            style="max-height:40px; max-width:100%; height:auto; width:auto; background:white;"/>
-                                    </t>
-                                    <span><t t-esc="attr.name"/></span>
-                                </li>
+                    <!-- Atributos del producto (ajustados) -->
+                    <t t-if="item.attributes">
+                        <ul class="list-unstyled text-muted text-start text-wrap my-1" style="font-size:0.75rem; line-height:1.2;">
+                            <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
+                                <t t-if="attr.id">
+                                    <li class="d-flex align-items-center mb-1 text-truncate">
+                                        <t t-if="attr.image">
+                                            <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % attr.id"
+                                                 t-att-alt="attr.name"
+                                                 class="attr-icon me-1"
+                                                 style="max-height:30px; max-width:100%; height:auto; width:auto; background:white;"/>
+                                        </t>
+                                        <span><t t-esc="attr.name"/></span>
+                                    </li>
+                                </t>
                             </t>
-                        </t>
-                    </ul>
-                </t>
+                        </ul>
+                    </t>
 
+                    <!-- Precio + Carrito juntos -->
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div>
+                            <t t-call="tp-snippet-product-price"/>
+                        </div>
+                        <div>
+                            <button style="transform:scale(1);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-sm tp-rounded-border btn-primary tp-icon-center-2 d_action_btn d_add_to_cart_btn" title="Add to Cart">
+                                <i style="font-size:14px;" class="d_action_btn_icon dri dri-cart"></i>
+                            </button>
+                        </div>
+                    </div>
 
-                    <t t-call="tp-snippet-product-price"/>
-                    <span t-if="widget._isActionEnabled('rating')" class=" w-auto px-0 small mt-n1 d-block">
+                    <span t-if="widget._isActionEnabled('rating')" class="w-auto px-0 small mt-1 d-block">
                         <t t-raw="item.rating"/>
                     </span>
-                </div>
-                <div class="col-4 d-flex justify-content-end align-items-center">
-                    <button style="transform:scale(1.1);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-lg tp-rounded-border btn-primary tp-icon-center-2 d_action_btn d_add_to_cart_btn" title="Add to Cart">
-                        <i style="font-size:16px;" class="d_action_btn_icon dri dri-cart"></i>
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 </t>
+
 
 <!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
