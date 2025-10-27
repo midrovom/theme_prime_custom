@@ -6,7 +6,7 @@
 
 <!--Estilos para Snippet Product Card-->
 <t t-name="s_card_style_9">
-    <div t-attf-class="card h-100 tp-rounded-border border s_card_style_8 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
+    <div t-attf-class="card h-100 tp-rounded-border border s_card_style_9 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
         <div class="d_product_box position-relative h-100">
             <t t-call="tp_product_snippet_action_drawer"/>
             <div class="overflow-hidden d_img_block position-relative border-bottom d-flex justify-content-center">
