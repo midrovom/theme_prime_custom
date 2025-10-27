@@ -96,15 +96,18 @@
 
 
 <!--Estilos para Snippet Categoies-->
-    <t t-name="s_tp_category_style_6">
-        <div class="card border tp-hover-color-primary tp-rounded-border shadow-sm">
+<t t-name="s_tp_category_style_6">
+    <div class="d-flex flex-row flex-nowrap gap-3 overflow-auto">
+        <div class="card border tp-hover-color-primary tp-rounded-border shadow-sm" style="min-width: 200px;">
             <a class="px-2 text-center stretched-link py-3" t-att-href="category.website_url">
                 <img loading="lazy" class="tp-image-128-max" t-att-src="category.image_url"/>
                 <h6 t-esc="category.name" class="my-0 text-truncate"/>
                 <small class="text-muted"><span t-esc="category.count"/> products</small>
             </a>
         </div>
-    </t>
+    </div>
+</t>
+
 
 
 
