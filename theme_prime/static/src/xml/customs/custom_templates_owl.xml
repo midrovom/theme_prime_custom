@@ -107,7 +107,7 @@
   </t>
 
   <div class="s_tp_hierarchical_category_style_12 tp-slider" data-mode="slider">
-    <div class="owl-carousel d-owl-ppr-2 text-center">
+    <div class="owl-carousel text-center">
       <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
            class="item px-3">
         <div class="tp-animation-scale card h-100 border-0 rounded shadow-sm">
@@ -124,6 +124,37 @@
       </div>
     </div>
   </div>
+
+  <!-- Script para inicializar Owl Carousel -->
+  <t t-set="inline_script">
+    <script type="text/javascript">
+      odoo.define('theme_yourtheme.slider_style_12_init', function (require) {
+        var publicWidget = require('web.public.widget');
+
+        publicWidget.registry.SliderStyle12 = publicWidget.Widget.extend({
+          selector: '.s_tp_hierarchical_category_style_12 .owl-carousel',
+          start: function () {
+            if (!this.$el.hasClass('owl-loaded')) {
+              this.$el.owlCarousel({
+                items: 8,
+                nav: true,
+                dots: false,
+                margin: 20,
+                responsive: {
+                  0: { items: 2 },
+                  768: { items: 4 },
+                  992: { items: 6 },
+                  1200: { items: 8 }
+                }
+              });
+            }
+          }
+        });
+
+        return publicWidget.registry.SliderStyle12;
+      });
+    </script>
+  </t>
 </t>
 
 
