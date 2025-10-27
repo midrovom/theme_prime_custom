@@ -96,77 +96,15 @@
 
 
 <!--Estilos para Snippet Categoies-->
-
-<!-- XML: Snippet s_tp_category_style_6 como slider personalizado -->
-<t t-name="s_tp_category_style_6">
-    <style type="text/scss">
-        .custom-category-slider {
-            .category-slide {
-                padding: 0.5rem;
-            }
-
-            .category-card {
-                border: 1px solid #e0e0e0;
-                border-radius: 0.75rem;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-                transition: transform 0.3s ease;
-                background: #fff;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-
-                &:hover {
-                    transform: translateY(-4px);
-                }
-            }
-
-            .category-link {
-                text-decoration: none;
-                padding: 1rem;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .category-image {
-                max-height: 128px;
-                object-fit: contain;
-                margin-bottom: 0.5rem;
-            }
-
-            .category-title {
-                font-size: 0.9rem;
-                font-weight: 600;
-                margin-bottom: 0.25rem;
-                text-align: center;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .category-count {
-                font-size: 0.75rem;
-                text-align: center;
-            }
-        }
-    </style>
-
-    <div class="owl-carousel custom-category-slider">
-        <t t-foreach="categories" t-as="category" t-key="category.id">
-            <div class="item category-slide">
-                <div class="category-card">
-                    <a t-att-href="category.website_url" class="category-link">
-                        <img loading="lazy" class="category-image" t-att-src="category.image_url"/>
-                        <h6 class="category-title" t-esc="category.name"/>
-                        <small class="category-count text-muted"><span t-esc="category.count"/> products</small>
-                    </a>
-                </div>
-            </div>
-        </t>
-    </div>
-</t>
-
+    <t t-name="s_tp_category_style_6">
+        <div class="card border tp-hover-color-primary tp-rounded-border shadow-sm">
+            <a class="px-2 text-center stretched-link py-3" t-att-href="category.website_url">
+                <img loading="lazy" class="tp-image-128-max" t-att-src="category.image_url"/>
+                <h6 t-esc="category.name" class="my-0 text-truncate"/>
+                <small class="text-muted"><span t-esc="category.count"/> products</small>
+            </a>
+        </div>
+    </t>
 
 
 
