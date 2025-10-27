@@ -98,8 +98,7 @@
 <!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="position-relative px-3 py-2">
-        <!-- Botón izquierdo con clase -->
-        <button class="btn btn-light tp-slider-left position-absolute top-50 start-0 translate-middle-y z-index-1" style="width: 50px; height: 50px; font-size: 24px;">
+        <button class="btn btn-light position-absolute top-50 start-0 translate-middle-y z-index-1" onclick="scrollSlider(-1)" style="width: 50px; height: 50px; font-size: 24px;">
             <i class="fa fa-chevron-left"></i>
         </button>
 
@@ -119,13 +118,11 @@
             </t>
         </div>
 
-        <!-- Botón derecho con clase -->
-        <button class="btn btn-light tp-slider-right position-absolute top-50 end-0 translate-middle-y z-index-1" style="width: 50px; height: 50px; font-size: 24px;">
+        <button class="btn btn-light position-absolute top-50 end-0 translate-middle-y z-index-1" onclick="scrollSlider(1)" style="width: 50px; height: 50px; font-size: 24px;">
             <i class="fa fa-chevron-right"></i>
         </button>
     </div>
 </t>
-
 
 
 
