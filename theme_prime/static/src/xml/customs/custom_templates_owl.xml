@@ -61,28 +61,25 @@
 
 <!--Estilos para Snippet Categoies Listing-->
 <t t-name="s_tp_hierarchical_category_style_12">
-  <div id="carouselCategorySlider" class="carousel slide s_tp_hierarchical_category_style_12" data-ride="carousel">
-    <div class="carousel-inner">
-      <div t-foreach="data" t-as="group" t-key="group_index" class="carousel-item" t-att-class="group_index == 0 and 'carousel-item active' or 'carousel-item'">
-        <div class="row">
-          <div t-foreach="group" t-as="category_data" t-key="category_data_index" class="col-6 col-md-3 p-3 text-center">
-            <div class="tp-animation-scale card h-100 border-0 rounded shadow-sm">
-              <a t-att-href="category_data.category.website_url">
-                <img loading="lazy"
-                     t-att-alt="category_data.category.name"
-                     class="img my-2 tp_image_120_contain img-fluid rounded mx-auto"
-                     t-att-src="category_data.category.image_url" />
-              </a>
-              <div class="category-title mt-2 text-truncate">
-                <t t-esc="category_data.category.name"/>
-              </div>
-            </div>
+  <div id="carouselCategorySlider" class="carousel slide s_tp_hierarchical_category_style_12 tp-slider" data-ride="carousel">
+    <div class="tp-slider-container carousel-inner d-flex flex-row">
+      <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
+           class="tp-slider-item p-3 text-center carousel-item active">
+        <div class="tp-animation-scale card h-100 border-0 rounded shadow-sm">
+          <a t-att-href="category_data.category.website_url">
+            <img loading="lazy"
+                 t-att-alt="category_data.category.name"
+                 class="img my-2 tp_image_120_contain img-fluid rounded"
+                 t-att-src="category_data.category.image_url" />
+          </a>
+          <div class="category-title mt-2 text-truncate">
+            <t t-esc="category_data.category.name"/>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Flechas sin texto -->
+    <!-- Controles Bootstrap sin texto -->
     <a class="carousel-control-prev" href="#carouselCategorySlider" role="button" data-slide="prev">
       <span class="carousel-control-prev-icon" aria-hidden="true"></span>
     </a>
