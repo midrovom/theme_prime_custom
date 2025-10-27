@@ -97,10 +97,16 @@
 
 <!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
-    <div class="tp-category-slider-wrapper px-3 py-2" style="overflow-x: auto; white-space: nowrap;">
-        <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-            <div class="d-inline-block me-3 text-center" style="width: 200px;">
-                <div class="tp-animation-scale">
+    <div class="position-relative px-3 py-2">
+        <!-- Botón izquierdo -->
+        <button class="btn btn-light position-absolute top-50 start-0 translate-middle-y z-index-1" onclick="scrollSlider(-1)">
+            ‹
+        </button>
+
+        <!-- Contenedor del slider -->
+        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3">
+            <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
+                <div class="flex-shrink-0 text-center" style="width: 200px;">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy" t-att-alt="category_data.category.name" class="img my-2 tp_image_120_contain img-fluid" t-att-src="category_data.category.image_url" />
                     </a>
@@ -110,10 +116,28 @@
                         </a>
                     </h6>
                 </div>
-            </div>
-        </t>
+            </t>
+        </div>
+
+        <!-- Botón derecho -->
+        <button class="btn btn-light position-absolute top-50 end-0 translate-middle-y z-index-1" onclick="scrollSlider(1)">
+            ›
+        </button>
+
+        <!-- Script embebido -->
+        <script>
+            function scrollSlider(direction) {
+                const slider = document.getElementById('tpCategorySlider');
+                const scrollAmount = 220;
+                slider.scrollBy({
+                    left: direction * scrollAmount,
+                    behavior: 'smooth'
+                });
+            }
+        </script>
     </div>
 </t>
+
 
 
 
