@@ -61,53 +61,8 @@
 
 <!--Estilos para Snippet Categories-->
 <t t-name="s_tp_hierarchical_category_style_12">
-  <t t-set="style">
-    <![CDATA[
-    <style>
-    .s_tp_hierarchical_category_style_12 {
-      position: relative;
-    }
-
-    .s_tp_hierarchical_category_style_12 .owl-nav {
-      display: flex !important;
-      justify-content: space-between;
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      transform: translateY(-50%);
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    .s_tp_hierarchical_category_style_12 .owl-nav button {
-      background: rgba(0, 0, 0, 0.1);
-      border: none;
-      font-size: 2rem;
-      color: #333;
-      pointer-events: all;
-      padding: 0.5rem 1rem;
-      border-radius: 50%;
-      transition: background 0.3s ease;
-    }
-
-    .s_tp_hierarchical_category_style_12 .owl-nav button:hover {
-      background: rgba(0, 0, 0, 0.2);
-    }
-
-    .s_tp_hierarchical_category_style_12 .owl-nav .owl-prev::before {
-      content: "‹";
-    }
-
-    .s_tp_hierarchical_category_style_12 .owl-nav .owl-next::before {
-      content: "›";
-    }
-    </style>
-    ]]>
-  </t>
-
   <div class="s_tp_hierarchical_category_style_12 tp-slider" data-mode="slider">
-    <div class="owl-carousel d-owl-ppr-2 text-center">
+    <div class="owl-carousel d-owl-ppr-8 text-center">
       <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
            class="item px-3">
         <div class="tp-animation-scale card h-100 border-0 rounded shadow-sm">
