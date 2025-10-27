@@ -62,14 +62,14 @@
 <!--Estilos para Snippet Categoies Listing-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="s_tp_hierarchical_category_style_12">
-        <div class="owl-carousel droggol_product_slider d-owl-ppr-2 owl-loaded owl-drag">
+        <div class="owl-carousel droggol_product_slider d-owl-ppr-2 owl-loaded owl-drag text-center">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                 class="item p-3 text-center">
+                 class="item px-3">
                 <div class="tp-animation-scale card h-100 border-0 rounded shadow-sm">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy"
                              t-att-alt="category_data.category.name"
-                             class="img my-2 tp_image_120_contain img-fluid rounded"
+                             class="img my-2 tp_image_120_contain img-fluid rounded mx-auto"
                              t-att-src="category_data.category.image_url" />
                     </a>
                     <div class="category-title mt-2 text-truncate">
@@ -80,6 +80,9 @@
         </div>
     </div>
 </t>
+
+
+
 
 
 
