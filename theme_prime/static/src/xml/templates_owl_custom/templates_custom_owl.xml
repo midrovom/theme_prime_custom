@@ -64,7 +64,7 @@
 </t>
 <!--Estilos para Snippet Product Card Version movil-->
 
-    <t t-name="s_mobile_card_style_3">
+    <!-- <t t-name="s_mobile_card_style_3">
         <div class="card border text-start tp-rounded-border position-relative mb-2 s_mobile_card_style_1">
             <i style="transform: scale(1.2)" t-if="widget._isActionEnabled('wishlist')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="dri dri-wishlist tp-action-icon tp-cursor-pointer mt-2 text-center border rounded-circle d_add_to_wishlist_btn tp-icon-center-1 position-absolute top-0 end-0 me-2 text-body" title="Add to Wishlist"/>
             <a class="d_product_box d-flex align-items-center" t-att-href="item.website_url">
@@ -92,11 +92,11 @@
                 </div>
             </div>
         </div>
-    </t>
+    </t> -->
 
 
 <!--Estilos para Snippet Categories-->
-<t t-name="s_tp_hierarchical_category_style_12">
+<!-- <t t-name="s_tp_hierarchical_category_style_12">
     <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
         <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
              class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
@@ -130,5 +130,5 @@
             });
         });
     </script>
-</t>
+</t> -->
 
