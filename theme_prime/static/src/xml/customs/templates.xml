@@ -2,7 +2,7 @@
     <!-- Espacio de trabajo para crear templates OWL customizados para que se registren en el bundle de theme_prime
     y asi utilizarlos en modulos themes externos -->
 
-    <!-- templates OWL advance -->
+<!-- templates OWL advance -->
 
 <!--Estilos para Snippet Product Card-->
 <t t-name="s_card_style_9">
@@ -140,35 +140,3 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <!-- templates OWL conedera -->
-
-
-
-
-</templates>
