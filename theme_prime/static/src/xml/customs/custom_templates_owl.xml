@@ -96,7 +96,6 @@
 
 
 <!--Estilos para Snippet Categories-->
-<!--Estilos para Snippet Categories-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
         <div t-foreach="data" t-as="category_data" t-key="category_data_index+1" class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
@@ -110,27 +109,7 @@
             </div>
         </div>
     </div>
-
-    <!-- Owl Carousel Initialization Script -->
-    <script>
-        $(document).ready(function(){
-            $(".owl-carousel.droggol_product_slider").owlCarousel({
-                items: 8,
-                margin: 10,
-                loop: true,
-                nav: true,
-                dots: false,
-                responsive: {
-                    0: { items: 4 },      // móviles pequeños
-                    576: { items: 4 },    // móviles grandes
-                    768: { items: 6 },    // tablets
-                    992: { items: 8 }     // escritorio
-                }
-            });
-        });
-    </script>
 </t>
-
 
 
 
