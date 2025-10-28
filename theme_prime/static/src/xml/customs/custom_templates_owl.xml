@@ -96,7 +96,7 @@
 
 
 <!--Estilos para Snippet Categories-->
-<t t-name="s_tp_hierarchical_category_style_1">
+<t t-name="s_tp_hierarchical_category_style_12">
     <div id="tpCategoryCarousel" class="carousel slide" data-bs-ride="carousel">
         
         <!-- Botones de navegación -->
