@@ -98,8 +98,10 @@
 <!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="position-relative px-3 py-2">
-        <!-- Botón izquierdo con ancho reducido -->
-        <button class="btn btn-light position-absolute top-50 start-0 translate-middle-y z-index-1" style="width: 30px;" onclick="scrollSlider(-1)">
+        <!-- Botón izquierdo invisible (solo ícono visible y clickeable) -->
+        <button class="position-absolute top-50 start-0 translate-middle-y z-index-1"
+                style="width: 30px; background: transparent; border: none; padding: 0;"
+                onclick="scrollSlider(-1)">
             <i class="fa fa-chevron-left fa-lg"></i>
         </button>
 
@@ -119,8 +121,10 @@
             </t>
         </div>
 
-        <!-- Botón derecho con mismo ancho e ícono que el izquierdo -->
-        <button class="btn btn-light position-absolute top-50 end-0 translate-middle-y z-index-1" style="width: 30px;" onclick="scrollSlider(1)">
+        <!-- Botón derecho invisible (solo ícono visible y clickeable) -->
+        <button class="position-absolute top-50 end-0 translate-middle-y z-index-1"
+                style="width: 30px; background: transparent; border: none; padding: 0;"
+                onclick="scrollSlider(1)">
             <i class="fa fa-chevron-right fa-lg"></i>
         </button>
 
@@ -137,6 +141,7 @@
         </script>
     </div>
 </t>
+
 
 
 
