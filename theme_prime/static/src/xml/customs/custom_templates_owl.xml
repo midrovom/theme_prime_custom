@@ -114,7 +114,7 @@
     <script>
         $(document).ready(function(){
             $(".owl-carousel.droggol_product_slider").owlCarousel({
-                items: 8, // valor por defecto si no hay breakpoint
+                items: 8,
                 margin: 10,
                 loop: true,
                 nav: true,
@@ -122,14 +122,12 @@
                 responsive: {
                     0: { items: 2 },
                     576: { items: 3 },
-                    768: { items: 4 },
-                    992: { items: 6 },
-                    1200: { items: 8 } // se muestran 8 en pantallas grandes
+                    768: { items: 6 },
+                    992: { items: 8 }
                 }
             });
         });
     </script>
-
 </t>
 
 
