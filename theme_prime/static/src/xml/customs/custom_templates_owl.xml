@@ -103,10 +103,10 @@
             <i class="fa fa-chevron-left fa-2x"></i>
         </button>
 
-        <!-- Contenedor del slider -->
-        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3">
+        <!-- Contenedor del slider con espacio para 7 tarjetas -->
+        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3" style="max-width: 1496px; scroll-snap-type: x mandatory;">
             <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 200px; border-radius: 5px;">
+                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 200px; border-radius: 5px; scroll-snap-align: start;">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy" t-att-alt="category_data.category.name" class="img my-2 tp_image_120_contain img-fluid" t-att-src="category_data.category.image_url" />
                     </a>
@@ -124,19 +124,23 @@
             <i class="fa fa-chevron-right fa-2x"></i>
         </button>
 
-        <!-- Script embebido -->
+        <!-- Script embebido con lógica condicional -->
         <script>
             function scrollSlider(direction) {
                 const slider = document.getElementById('tpCategorySlider');
-                const scrollAmount = 220;
-                slider.scrollBy({
-                    left: direction * scrollAmount,
-                    behavior: 'smooth'
-                });
+                const cards = slider.querySelectorAll('div.flex-shrink-0');
+                if (cards.length > 7) {
+                    const scrollAmount = 216; // 200px card + ~16px gap
+                    slider.scrollBy({
+                        left: direction * scrollAmount,
+                        behavior: 'smooth'
+                    });
+                }
             }
         </script>
     </div>
 </t>
+
 
 
 
