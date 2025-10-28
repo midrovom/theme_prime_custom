@@ -135,15 +135,21 @@
         <script>
             function scrollSlider(direction) {
                 const slider = document.getElementById('tpCategorySlider');
-                const scrollAmount = 135;
-                slider.scrollBy({
-                    left: direction * scrollAmount,
-                    behavior: 'smooth'
-                });
+                const cards = slider.querySelectorAll('div.flex-shrink-0');
+                const visibleLimit = 8;
+
+                if (cards.length > visibleLimit) {
+                    const scrollAmount = 135;
+                    slider.scrollBy({
+                        left: direction * scrollAmount,
+                        behavior: 'smooth'
+                    });
+                }
             }
         </script>
     </div>
 </t>
+
 
 
 
