@@ -97,53 +97,45 @@
 
 <!--Estilos para Snippet Categories-->
 <t t-name="s_tp_hierarchical_category_style_12">
-    <div class="position-relative px-3 py-2">
-        <!-- Botón izquierdo invisible (solo ícono visible y clickeable) -->
-        <button class="position-absolute top-50 start-0 translate-middle-y z-index-1"
-                style="width: 30px; background: transparent; border: none; padding: 0;"
-                onclick="scrollSlider(-1)">
-            <i class="fa fa-chevron-left fa-2x" style="color: gray;"></i>
+    <div id="tpCategoryCarousel" class="carousel slide" data-bs-ride="carousel">
+        
+        <!-- Botones de navegación -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#tpCategoryCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#tpCategoryCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
         </button>
 
-        <!-- Contenedor del slider con espacio lateral equilibrado -->
-        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3" style="padding-left: 30px; padding-right: 40px;">
-            <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 115px; border-radius: 5px;">
-                    <a t-att-href="category_data.category.website_url">
-                        <img loading="lazy" t-att-alt="category_data.category.name"
-                             class="img my-2 tp_image_120_contain img-fluid"
-                             t-att-src="category_data.category.image_url" />
-                    </a>
-                    <h6 class="text-truncate mt-2">
-                        <a t-att-href="category_data.category.website_url"
-                           class="text-decoration-none text-dark">
-                            <t t-esc="category_data.category.name"/>
-                        </a>
-                    </h6>
+        <!-- Carrusel interno -->
+        <div class="carousel-inner">
+            <t t-set="chunks" t-value="data|chunk(4)"/> <!-- 4 categorías por slide -->
+            <t t-foreach="chunks" t-as="chunk" t-key="chunk_index">
+                <div class="carousel-item" t-att-class="'active' if chunk_index == 0 else ''">
+                    <div class="row">
+                        <t t-foreach="chunk" t-as="category_data" t-key="category_data_index+1">
+                            <div t-attf-class="col-6 col-lg-3 py-3 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+                                <div class="tp-animation-scale">
+                                    <a t-att-href="category_data.category.website_url">
+                                        <img loading="lazy" t-att-alt="category_data.category.name"
+                                             class="img my-2 tp_image_120_contain img-fluid"
+                                             t-att-src="category_data.category.image_url" />
+                                    </a>
+                                </div>
+                                <t t-call="tp_category_list_template_1">
+                                    <t t-set="ui_class" t-value="'mt-2'"/>
+                                    <t t-set="hasArrow" t-value="true"/>
+                                    <t t-set="titleClass" t-value="'text-truncate'"/>
+                                </t>
+                            </div>
+                        </t>
+                    </div>
                 </div>
             </t>
         </div>
-
-        <!-- Botón derecho invisible (solo ícono visible y clickeable) -->
-        <button class="position-absolute top-50 end-0 translate-middle-y z-index-1"
-                style="width: 30px; background: transparent; border: none; padding: 0;"
-                onclick="scrollSlider(1)">
-            <i class="fa fa-chevron-right fa-2x" style="color: gray;"></i>
-        </button>
-
-        <!-- Script embebido -->
-        <script>
-            function scrollSlider(direction) {
-                const slider = document.getElementById('tpCategorySlider');
-                const scrollAmount = 135;
-                slider.scrollBy({
-                    left: direction * scrollAmount,
-                    behavior: 'smooth'
-                });
-            }
-        </script>
     </div>
 </t>
+
 
 
 
