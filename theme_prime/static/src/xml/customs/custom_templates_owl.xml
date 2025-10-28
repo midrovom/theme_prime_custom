@@ -139,14 +139,15 @@
         .owl-carousel .owl-nav button.owl-next {
             background: transparent !important;
             border: none !important;
-            font-size: 2.5rem;
-            color: #333;
+            font-size: 3rem; /* tamaño grande del ícono */
+            color: #555 !important; /* gris oscuro */
             cursor: pointer;
             padding: 0.5rem;
         }
 
-        .owl-carousel .owl-nav button:hover {
-            color: #000;
+        .owl-carousel .owl-nav button.owl-prev:hover,
+        .owl-carousel .owl-nav button.owl-next:hover {
+            color: #000 !important; /* más oscuro al pasar el mouse */
         }
 
         .owl-carousel .owl-nav {
