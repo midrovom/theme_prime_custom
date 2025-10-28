@@ -106,7 +106,7 @@
         </button>
 
         <!-- Contenedor del slider con espacio lateral equilibrado -->
-        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3" style="padding-left: 30px; padding-right: 40px;">
+        <div id="tpCategorySlider" class="d-flex overflow-hidden" style="padding-left: 30px; padding-right: 40px;">
             <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
                 <div class="category-card flex-shrink-0 text-center shadow-sm bg-white p-2" style="border-radius: 5px;">
                     <a t-att-href="category_data.category.website_url">
@@ -139,11 +139,13 @@
 
             @media (max-width: 576px) {
                 .category-card {
-                    width: calc(50% - 10px);
+                    width: 50%;
                 }
 
                 #tpCategorySlider {
-                    gap: 10px;
+                    gap: 0;
+                    padding-left: 0;
+                    padding-right: 0;
                 }
             }
         </style>
@@ -152,7 +154,8 @@
         <script>
             function scrollSlider(direction) {
                 const slider = document.getElementById('tpCategorySlider');
-                const scrollAmount = 135;
+                const isMobile = window.innerWidth <= 576;
+                const scrollAmount = isMobile ? slider.offsetWidth / 2 : 135;
                 slider.scrollBy({
                     left: direction * scrollAmount,
                     behavior: 'smooth'
@@ -161,6 +164,7 @@
         </script>
     </div>
 </t>
+
 
 
 
