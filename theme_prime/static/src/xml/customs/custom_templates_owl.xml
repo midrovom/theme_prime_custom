@@ -95,7 +95,7 @@
     </t>
 
 
-<!--Estilos para Snippet Categoies-->
+<!--Estilos para Snippet Categories-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="position-relative px-3 py-2">
         <!-- Botón izquierdo invisible (solo ícono visible y clickeable) -->
@@ -106,9 +106,11 @@
         </button>
 
         <!-- Contenedor del slider con espacio lateral equilibrado -->
-        <div id="tpCategorySlider" class="d-flex overflow-hidden" style="padding-left: 80px;">
+        <div id="tpCategorySlider" class="d-flex overflow-hidden"
+             style="padding-left: 80px; width: 920px; white-space: nowrap;">
             <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 115px; border-radius: 5px;">
+                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2"
+                     style="width: 115px; border-radius: 5px;">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy" t-att-alt="category_data.category.name"
                              class="img my-2 tp_image_120_contain img-fluid"
@@ -133,17 +135,28 @@
 
         <!-- Script embebido -->
         <script>
+            let currentIndex = 0;
+            const cardWidth = 115;
+            const visibleCards = 8;
+
             function scrollSlider(direction) {
                 const slider = document.getElementById('tpCategorySlider');
-                const scrollAmount = 135;
-                slider.scrollBy({
-                    left: direction * scrollAmount,
+                const totalCards = slider.children.length;
+                const maxIndex = totalCards - visibleCards;
+
+                currentIndex += direction;
+                if (currentIndex < 0) currentIndex = 0;
+                if (currentIndex > maxIndex) currentIndex = maxIndex;
+
+                slider.scrollTo({
+                    left: currentIndex * cardWidth,
                     behavior: 'smooth'
                 });
             }
         </script>
     </div>
 </t>
+
 
 
 
