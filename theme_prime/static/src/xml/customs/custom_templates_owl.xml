@@ -104,9 +104,9 @@
         </button>
 
         <!-- Contenedor del slider -->
-        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3">
+        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3" style="scroll-snap-type: x mandatory;">
             <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 200px; border-radius: 5px;">
+                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 200px; border-radius: 5px; scroll-snap-align: start;">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy" t-att-alt="category_data.category.name" class="img my-2 tp_image_120_contain img-fluid" t-att-src="category_data.category.image_url" />
                     </a>
@@ -137,6 +137,7 @@
         </script>
     </div>
 </t>
+
 
 
 
