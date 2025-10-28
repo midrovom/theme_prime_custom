@@ -139,18 +139,18 @@
 
             @media (max-width: 576px) {
                 #tpCategorySlider {
-                    width: 230px; /* 2 tarjetas de 115px */
+                    width: 246px; /* 115 + 115 + 16px gap */
                     padding-left: 0;
                     padding-right: 0;
-                    gap: 0;
+                    gap: 16px; /* igual al gap-3 */
                 }
 
                 .category-card {
                     width: 115px;
                 }
             }
-
         </style>
+
 
         <!-- Script embebido -->
         <script>
