@@ -96,25 +96,27 @@
 
 
 <!--Estilos para Snippet Categories-->
-<t t-name="s_tp_hierarchical_category_style_12">
+<t t-name="s_tp_hierarchical_category_style_1">
     <div id="tpCategoryCarousel" class="carousel slide" data-bs-ride="carousel">
         
         <!-- Botones de navegación -->
         <button class="carousel-control-prev" type="button" data-bs-target="#tpCategoryCarousel" data-bs-slide="prev">
             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Anterior</span>
         </button>
         <button class="carousel-control-next" type="button" data-bs-target="#tpCategoryCarousel" data-bs-slide="next">
             <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Siguiente</span>
         </button>
 
         <!-- Carrusel interno -->
         <div class="carousel-inner">
             <t t-set="chunks" t-value="data|chunk(4)"/> <!-- 4 categorías por slide -->
             <t t-foreach="chunks" t-as="chunk" t-key="chunk_index">
-                <div class="carousel-item" t-att-class="'active' if chunk_index == 0 else ''">
-                    <div class="row">
+                <div t-attf-class="carousel-item #{'active' if chunk_index == 0 else ''}">
+                    <div class="d-flex justify-content-center gap-3 px-4 py-3">
                         <t t-foreach="chunk" t-as="category_data" t-key="category_data_index+1">
-                            <div t-attf-class="col-6 col-lg-3 py-3 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+                            <div t-attf-class="text-center s_tp_hierarchical_category_style_1" style="width: 115px;">
                                 <div class="tp-animation-scale">
                                     <a t-att-href="category_data.category.website_url">
                                         <img loading="lazy" t-att-alt="category_data.category.name"
