@@ -1,0 +1,134 @@
+<templates>
+    <!-- Espacio de trabajo para crear templates OWL customizados para que se registren en el bundle de theme_prime
+    y asi utilizarlos en modulos themes externos -->
+
+<!-- templates OWL advance -->
+
+<!--Estilos para Snippet Product Card-->
+<t t-name="s_card_style_9">
+    <div t-attf-class="card h-100 tp-rounded-border border s_card_style_8 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
+        <div class="d_product_box position-relative h-100">
+            <t t-call="tp_product_snippet_action_drawer"/>
+            <div class="overflow-hidden d_img_block position-relative border-bottom d-flex justify-content-center">
+                <a t-att-href="item.website_url" t-att-class="hasTimer and 'h-100'">
+                    <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="img img-fluid d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
+                </a>
+                <t t-call="dr_s_lable_tmpl"/>
+            </div>
+            <div class="row px-3 g-1 pb-2 pt-3">
+                <div class="col-12 text-start">
+                    <t t-call="tp_category_info"/>
+                    <h6 class="card-title mb-1 fw-light text-truncate d-product-name" style="font-size:0.75rem;">
+                        <a t-att-href="item.website_url">
+                            <t t-out="item.name"/>
+                        </a>
+                    </h6>
+
+                    <!-- Atributos del producto -->
+                    <t t-if="item.attributes">
+                        <ul class="list-unstyled text-muted text-start text-wrap my-2" style="font-size:0.65rem; line-height:1.1;">
+                            <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
+                                <t t-if="attr.id">
+                                    <li class="d-flex align-items-center mb-1 text-truncate" style="gap:0.3rem;">
+                                        <t t-if="attr.image">
+                                            <img t-att-src="attr.image"
+                                                 class="attr-icon"
+                                                 style="max-height:24px; max-width:100%; height:auto; width:auto; background:white; border-radius:4px;"/>
+                                        </t>
+                                        <t t-esc="attr.name"/>
+                                    </li>
+                                </t>
+                            </t>
+                        </ul>
+                    </t>
+
+                    <!-- Precio + Carrito -->
+                    <div class="row align-items-center mt-2">
+                        <div class="col-8">
+                            <t t-call="tp-snippet-product-price"/>
+                        </div>
+                        <div class="col-4 d-flex justify-content-end">
+                            <button style="transform:scale(1);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-sm tp-rounded-border btn-primary tp-icon-center-2 d_action_btn d_add_to_cart_btn" title="Add to Cart">
+                                <i style="font-size:14px;" class="d_action_btn_icon dri dri-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <span t-if="widget._isActionEnabled('rating')" class="w-auto px-0 small mt-1 d-block">
+                        <t t-raw="item.rating"/>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</t>
+<!--Estilos para Snippet Product Card Version movil-->
+
+    <t t-name="s_mobile_card_style_3">
+        <div class="card border text-start tp-rounded-border position-relative mb-2 s_mobile_card_style_1">
+            <i style="transform: scale(1.2)" t-if="widget._isActionEnabled('wishlist')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="dri dri-wishlist tp-action-icon tp-cursor-pointer mt-2 text-center border rounded-circle d_add_to_wishlist_btn tp-icon-center-1 position-absolute top-0 end-0 me-2 text-body" title="Add to Wishlist"/>
+            <a class="d_product_box d-flex align-items-center" t-att-href="item.website_url">
+                <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="card-img-top d-product-img"/>
+            </a>
+            <div class="p-2">
+                <t t-call="tp_category_info">
+                    <t t-set="_classes" t-value="'d-inline-block small'"/>
+                </t>
+                <t t-call="s_mobile_product_name"/>
+                <div class="row g-0">
+                    <div class="col-9 d-flex flex-column align-items-start justify-content-center">
+                        <div t-if="widget._isActionEnabled('rating')" class="small d_rating_top_right">
+                            <t t-out="item.rating"/>
+                        </div>
+                        <div class="d-product-price small">
+                            <span class="d-inline-block mb-0 text-muted" t-out="item.price"/>
+                        </div>
+                    </div>
+                    <div class="col-3 d-flex align-items-center justify-content-end">
+                        <button style="transform:scale(1.2);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-primary-soft d_action_btn d_add_to_cart_btn btn-sm rounded-circle p-0 tp-icon-center-1" title="Add to Cart">
+                            <i class="d_action_btn_icon dri dri-cart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+
+<!--Estilos para Snippet Categories-->
+<t t-name="s_tp_hierarchical_category_style_12">
+    <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
+        <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
+             class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+            <div class="tp-animation-scale rounded shadow-sm p-2 s_card" style="background-color: black;">
+                <a t-att-href="category_data.category.website_url">
+                    <img loading="lazy" t-att-alt="category_data.category.name"
+                         class="img my-2 tp_image_120_contain img-fluid rounded"
+                         t-att-src="category_data.category.image_url" />
+                </a>
+                <h6 class="mt-2 text-center text-truncate text-white">
+                    <t t-esc="category_data.category.name"/>
+                </h6>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $(".owl-carousel.droggol_product_slider").owlCarousel({
+                items: 8,
+                margin: 10,
+                loop: true,
+                nav: true,
+                dots: false,
+                responsive: {
+                    0: { items: 3 },
+                    576: { items: 6 },
+                    768: { items: 9 },
+                    992: { items: 12 }
+                }
+            });
+        });
+    </script>
+</t>
+
