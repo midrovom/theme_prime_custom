@@ -138,14 +138,18 @@
             }
 
             @media (max-width: 576px) {
-                .category-card {
-                    width: calc(50% - 10px);
+                #tpCategorySlider {
+                    width: 230px; /* 2 tarjetas de 115px */
+                    padding-left: 0;
+                    padding-right: 0;
+                    gap: 0;
                 }
 
-                #tpCategorySlider {
-                    gap: 10px;
+                .category-card {
+                    width: 115px;
                 }
             }
+
         </style>
 
         <!-- Script embebido -->
