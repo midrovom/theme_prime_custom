@@ -97,23 +97,24 @@
 
 <!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
-    <div class="tp-slider-wrapper">
-        <!-- Botón izquierdo -->
-        <button class="tp-slider-btn tp-slider-btn-left" onclick="scrollSlider(-1)">
-            <i class="tp-slider-icon fa fa-chevron-left fa-2x"></i>
+    <div class="position-relative px-3 py-2">
+        <!-- Botón izquierdo invisible (solo ícono visible y clickeable) -->
+        <button class="position-absolute top-50 start-0 translate-middle-y z-index-1"
+                style="width: 30px; background: transparent; border: none; padding: 0;"
+                onclick="scrollSlider(-1)">
+            <i class="fa fa-chevron-left fa-2x" style="color: gray;"></i>
         </button>
 
-        <!-- Contenedor del slider -->
-        <div id="tpCategorySlider" class="tp-slider-track">
+        <!-- Contenedor del slider con espacio lateral equilibrado -->
+        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3" style="padding-left: 30px; padding-right: 40px;">
             <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-                <div class="tp-slider-card">
+                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 115px; border-radius: 5px;">
                     <a t-att-href="category_data.category.website_url">
-                        <img loading="lazy"
-                             t-att-alt="category_data.category.name"
-                             class="tp-slider-image tp_image_120_contain img-fluid"
+                        <img loading="lazy" t-att-alt="category_data.category.name"
+                             class="img my-2 tp_image_120_contain img-fluid"
                              t-att-src="category_data.category.image_url" />
                     </a>
-                    <h6 class="tp-slider-title text-truncate mt-2">
+                    <h6 class="text-truncate mt-2">
                         <a t-att-href="category_data.category.website_url"
                            class="text-decoration-none text-dark">
                             <t t-esc="category_data.category.name"/>
@@ -123,9 +124,11 @@
             </t>
         </div>
 
-        <!-- Botón derecho -->
-        <button class="tp-slider-btn tp-slider-btn-right" onclick="scrollSlider(1)">
-            <i class="tp-slider-icon fa fa-chevron-right fa-2x"></i>
+        <!-- Botón derecho invisible (solo ícono visible y clickeable) -->
+        <button class="position-absolute top-50 end-0 translate-middle-y z-index-1"
+                style="width: 30px; background: transparent; border: none; padding: 0;"
+                onclick="scrollSlider(1)">
+            <i class="fa fa-chevron-right fa-2x" style="color: gray;"></i>
         </button>
 
         <!-- Script embebido -->
@@ -141,7 +144,6 @@
         </script>
     </div>
 </t>
-
 
 
 
