@@ -96,7 +96,7 @@
 
 
     <!--Estilos para Snippet Categories-->
-    <!-- <t t-name="s_tp_hierarchical_category_style_12">
+    <t t-name="s_tp_hierarchical_category_style_12">
         <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
                 class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
@@ -130,7 +130,7 @@
                 });
             });
         </script>
-    </t> -->
+    </t>
 
 
 </templates>
