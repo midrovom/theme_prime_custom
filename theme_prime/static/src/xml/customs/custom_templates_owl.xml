@@ -137,7 +137,7 @@
                 const slider = document.getElementById('tpCategorySlider');
                 const cardWidth = 115; // ancho de cada tarjeta
                 const gap = 24; // espacio entre tarjetas (gap-3 ≈ 24px)
-                const scrollAmount = cardWidth + gap; // desplazamiento de una tarjeta
+                const scrollAmount = cardWidth + gap;
 
                 slider.scrollBy({
                     left: direction * scrollAmount,
