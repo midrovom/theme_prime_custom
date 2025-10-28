@@ -98,7 +98,7 @@
 <!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="position-relative px-3 py-2">
-        <!-- Botón izquierdo visible pero funcional solo si hay 9+ tarjetas -->
+        <!-- Botón izquierdo invisible (solo ícono visible y clickeable) -->
         <button class="position-absolute top-50 start-0 translate-middle-y z-index-1"
                 style="width: 30px; background: transparent; border: none; padding: 0;"
                 onclick="scrollSlider(-1)">
@@ -124,31 +124,26 @@
             </t>
         </div>
 
-        <!-- Botón derecho visible pero funcional solo si hay 9+ tarjetas -->
+        <!-- Botón derecho invisible (solo ícono visible y clickeable) -->
         <button class="position-absolute top-50 end-0 translate-middle-y z-index-1"
                 style="width: 30px; background: transparent; border: none; padding: 0;"
                 onclick="scrollSlider(1)">
             <i class="fa fa-chevron-right fa-2x" style="color: gray;"></i>
         </button>
 
-        <!-- Script embebido con validación de cantidad de tarjetas -->
+        <!-- Script embebido -->
         <script>
             function scrollSlider(direction) {
                 const slider = document.getElementById('tpCategorySlider');
-                const cards = slider.querySelectorAll('div.flex-shrink-0');
                 const scrollAmount = 135;
-
-                if (cards.length >= 9) {
-                    slider.scrollBy({
-                        left: direction * scrollAmount,
-                        behavior: 'smooth'
-                    });
-                }
+                slider.scrollBy({
+                    left: direction * scrollAmount,
+                    behavior: 'smooth'
+                });
             }
         </script>
     </div>
 </t>
-
 
 
 
