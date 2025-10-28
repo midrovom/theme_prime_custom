@@ -5,7 +5,7 @@
 <!-- templates OWL advance -->
 
 <!--Estilos para Snippet Product Card-->
-<t t-name="s_card_style_9">
+<!-- <t t-name="s_card_style_9">
     <div t-attf-class="card h-100 tp-rounded-border border s_card_style_8 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
         <div class="d_product_box position-relative h-100">
             <t t-call="tp_product_snippet_action_drawer"/>
@@ -61,7 +61,7 @@
             </div>
         </div>
     </div>
-</t>
+</t> -->
 <!--Estilos para Snippet Product Card Version movil-->
 
     <!-- <t t-name="s_mobile_card_style_3">
