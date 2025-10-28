@@ -94,7 +94,8 @@
         </div>
     </t>
 
-<!-- Estilos para Snippet Categories -->
+
+<!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="tp-slider-wrapper">
         <!-- Botón izquierdo -->
@@ -140,7 +141,6 @@
         </script>
     </div>
 </t>
-
 
 
 
