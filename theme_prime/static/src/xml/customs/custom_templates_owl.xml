@@ -96,6 +96,7 @@
 
 
 <!--Estilos para Snippet Categoies-->
+<!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
     <div class="position-relative px-3 py-2">
         <!-- Botón izquierdo con ancho reducido -->
@@ -103,10 +104,10 @@
             <i class="fa fa-chevron-left fa-lg"></i>
         </button>
 
-        <!-- Contenedor del slider con espacio justo para 7 cards -->
-        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-2" style="padding: 0 30px;">
+        <!-- Contenedor del slider ajustado para 8 cards sin espacios grandes -->
+        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-2" style="padding: 0 20px;">
             <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 125px; border-radius: 5px;">
+                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 115px; border-radius: 5px;">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy" t-att-alt="category_data.category.name" class="img my-2 tp_image_120_contain img-fluid" t-att-src="category_data.category.image_url" />
                     </a>
@@ -120,7 +121,7 @@
         </div>
 
         <!-- Botón derecho con mismo ancho e ícono que el izquierdo -->
-        <button class="btn btn-light position-absolute top-50 end-0 translate-middle-y z-index-1" style="width: 30px;" onclick="scrollSlider(1)">
+        <button class="btn btn-light position-absolute top-50 end-0 translate-middle-y z-index-1" style="width: 30px; margin-right: 10px;" onclick="scrollSlider(1)">
             <i class="fa fa-chevron-right fa-lg"></i>
         </button>
 
@@ -128,7 +129,7 @@
         <script>
             function scrollSlider(direction) {
                 const slider = document.getElementById('tpCategorySlider');
-                const scrollAmount = 135;
+                const scrollAmount = 125;
                 slider.scrollBy({
                     left: direction * scrollAmount,
                     behavior: 'smooth'
