@@ -104,7 +104,7 @@
         </button>
 
         <!-- Contenedor del slider con espacio lateral equilibrado -->
-        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3" style="padding-left: 40px; padding-right: 40px;">
+        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3" style="padding-left: 30px; padding-right: 40px;">
             <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
                 <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 115px; border-radius: 5px;">
                     <a t-att-href="category_data.category.website_url">
@@ -137,6 +137,7 @@
         </script>
     </div>
 </t>
+
 
 
 
