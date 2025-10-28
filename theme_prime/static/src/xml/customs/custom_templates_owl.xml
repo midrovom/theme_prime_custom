@@ -97,53 +97,68 @@
 
 <!--Estilos para Snippet Categoies-->
 <t t-name="s_tp_hierarchical_category_style_12">
-    <div class="position-relative px-3 py-2">
-        <!-- Botón izquierdo invisible (solo ícono visible y clickeable) -->
-        <button class="position-absolute top-50 start-0 translate-middle-y z-index-1"
-                style="width: 30px; background: transparent; border: none; padding: 0;"
-                onclick="scrollSlider(-1)">
-            <i class="fa fa-chevron-left fa-2x" style="color: gray;"></i>
-        </button>
+  <div class="position-relative px-3 py-2">
+    <!-- Botón izquierdo -->
+    <button class="position-absolute top-50 start-0 translate-middle-y z-index-1 border-0 bg-transparent p-0"
+            onclick="scrollSlider(-1)">
+      <i class="fa fa-chevron-left fa-2x text-secondary"></i>
+    </button>
 
-        <!-- Contenedor del slider con espacio lateral equilibrado -->
-        <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3" style="padding-left: 30px; padding-right: 40px;">
-            <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-                <div class="flex-shrink-0 text-center shadow-sm bg-white p-2" style="width: 115px; border-radius: 5px;">
-                    <a t-att-href="category_data.category.website_url">
-                        <img loading="lazy" t-att-alt="category_data.category.name"
-                             class="img my-2 tp_image_120_contain img-fluid"
-                             t-att-src="category_data.category.image_url" />
-                    </a>
-                    <h6 class="text-truncate mt-2">
-                        <a t-att-href="category_data.category.website_url"
-                           class="text-decoration-none text-dark">
-                            <t t-esc="category_data.category.name"/>
-                        </a>
-                    </h6>
-                </div>
-            </t>
+    <!-- Contenedor del slider -->
+    <div id="tpCategorySlider" class="d-flex overflow-hidden gap-3 px-3">
+      <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
+        <div class="tp-category-card flex-shrink-0 text-center shadow-sm bg-white p-2 rounded">
+          <a t-att-href="category_data.category.website_url">
+            <img loading="lazy" t-att-alt="category_data.category.name"
+                 class="img-fluid my-2 tp_image_120_contain"
+                 t-att-src="category_data.category.image_url" />
+          </a>
+          <h6 class="text-truncate mt-2">
+            <a t-att-href="category_data.category.website_url"
+               class="text-decoration-none text-dark">
+              <t t-esc="category_data.category.name"/>
+            </a>
+          </h6>
         </div>
-
-        <!-- Botón derecho invisible (solo ícono visible y clickeable) -->
-        <button class="position-absolute top-50 end-0 translate-middle-y z-index-1"
-                style="width: 30px; background: transparent; border: none; padding: 0;"
-                onclick="scrollSlider(1)">
-            <i class="fa fa-chevron-right fa-2x" style="color: gray;"></i>
-        </button>
-
-        <!-- Script embebido -->
-        <script>
-            function scrollSlider(direction) {
-                const slider = document.getElementById('tpCategorySlider');
-                const scrollAmount = 135;
-                slider.scrollBy({
-                    left: direction * scrollAmount,
-                    behavior: 'smooth'
-                });
-            }
-        </script>
+      </t>
     </div>
+
+    <!-- Botón derecho -->
+    <button class="position-absolute top-50 end-0 translate-middle-y z-index-1 border-0 bg-transparent p-0"
+            onclick="scrollSlider(1)">
+      <i class="fa fa-chevron-right fa-2x text-secondary"></i>
+    </button>
+
+    <!-- Estilos responsivos -->
+    <style>
+      .tp-category-card {
+        width: 115px;
+      }
+
+      @media (max-width: 768px) {
+        .tp-category-card {
+          width: calc((100% - 60px - 1.5rem) / 2); /* 2 tarjetas completas en móvil */
+        }
+      }
+    </style>
+
+    <!-- Script de desplazamiento -->
+    <script>
+      function scrollSlider(direction) {
+        const slider = document.getElementById('tpCategorySlider');
+        const scrollAmount = window.innerWidth <= 768
+          ? slider.offsetWidth / 2
+          : 135;
+
+        slider.scrollBy({
+          left: direction * scrollAmount,
+          behavior: 'smooth'
+        });
+      }
+    </script>
+  </div>
 </t>
+
 
 
 
