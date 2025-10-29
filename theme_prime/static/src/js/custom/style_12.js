@@ -1,8 +1,8 @@
-odoo.define('theme_prime.owl_carousel_init', function (require) {
+odoo.define('theme_prime.owl_carousel_style_12', function (require) {
     var publicWidget = require('web.public.widget');
 
-    publicWidget.registry.OwlCarouselInit = publicWidget.Widget.extend({
-        selector: '.owl-carousel.droggol_product_slider',
+    publicWidget.registry.OwlCarouselStyle12 = publicWidget.Widget.extend({
+        selector: '.s_tp_hierarchical_category_style_12 .owl-carousel.droggol_product_slider',
         start: function () {
             if (this.$el && this.$el.owlCarousel) {
                 this.$el.owlCarousel({
