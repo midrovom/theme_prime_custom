@@ -95,42 +95,53 @@
         </t> -->
 
 
-        <!--Estilos para Snippet Categories-->
-        <t t-name="s_tp_hierarchical_category_style_12">
-            <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
-                <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                    class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
-                    <div class="tp-animation-scale shadow-sm p-2 s_card s_block rounded">
-                        <a t-att-href="category_data.category.website_url">
-                            <img loading="lazy" t-att-alt="category_data.category.name"
-                                class="img my-2 tp_image_120_contain img-fluid rounded"
-                                t-att-src="category_data.category.image_url" />
-                        </a>
-                        <h6 class="mt-2 text-center text-truncate">
-                            <t t-esc="category_data.category.name"/>
-                        </h6>
-                    </div>
+<!--Estilos para Snippet Categories-->
+<t t-name="s_tp_hierarchical_category_style_12" customizable="true">
+    <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
+        <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
+            class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+            
+            <!-- Fondo editable -->
+            <div class="s_block tp-animation-scale shadow-sm p-2 s_card rounded">
+                
+                <!-- Imagen no editable -->
+                <div class="o_not_editable">
+                    <a t-att-href="category_data.category.website_url">
+                        <img loading="lazy" t-att-alt="category_data.category.name"
+                            class="img my-2 tp_image_120_contain img-fluid rounded"
+                            t-att-src="category_data.category.image_url" />
+                    </a>
                 </div>
-            </div>
 
-            <script>
-                $(document).ready(function(){
-                    $(".owl-carousel.droggol_product_slider").owlCarousel({
-                        items: 8,
-                        margin: 10,
-                        loop: true,
-                        nav: true,
-                        dots: false,
-                        responsive: {
-                            0: { items: 2 },
-                            576: { items: 4 },
-                            768: { items: 6 },
-                            992: { items: 8 }
-                        }
-                    });
-                });
-            </script>
-        </t>
+                <!-- Texto no editable -->
+                <div class="o_not_editable">
+                    <h6 class="mt-2 text-center text-truncate">
+                        <t t-esc="category_data.category.name"/>
+                    </h6>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $(".owl-carousel.droggol_product_slider").owlCarousel({
+                items: 8,
+                margin: 10,
+                loop: true,
+                nav: true,
+                dots: false,
+                responsive: {
+                    0: { items: 2 },
+                    576: { items: 4 },
+                    768: { items: 6 },
+                    992: { items: 8 }
+                }
+            });
+        });
+    </script>
+</t>
 
 
 
