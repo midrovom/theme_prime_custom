@@ -139,17 +139,17 @@
 
     <t t-name="s_tp_hierarchical_category_style_12">
         <div class="d_carousel d_carousel_categories"
-            data-items="4"  
-            data-items-tablet="2"
-            data-items-mobile="1"
-            data-nav="true"
-            data-dots="false"
-            data-loop="true"
-            data-autoplay="true">
+            data-items="4"              
+            data-items-tablet="2"       
+            data-items-mobile="1"      
+            data-nav="true"             
+            data-dots="false"           
+            data-loop="true"            
+            data-autoplay="true">       
 
-            <!-- Cada categoría es un slide -->
+            <!-- Cada categoría es un slide horizontal -->
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                class="d_carousel_item py-3 s_tp_hierarchical_category_style_1">
+                class="d_carousel_item s_tp_hierarchical_category_style_1 py-3">
 
                 <div class="tp-animation-scale">
                     <a t-att-href="category_data.category.website_url">
@@ -165,6 +165,7 @@
             </div>
         </div>
     </t>
+
 
 
 
