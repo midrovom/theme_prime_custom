@@ -135,44 +135,23 @@
         </script>
     </t>
         -->
-
-
     <t t-name="s_tp_hierarchical_category_style_12">
-        <div class="d_carousel d_carousel_categories"
-            data-items="4"              
-            data-items-tablet="2"       
-            data-items-mobile="1"      
-            data-nav="true"             
-            data-dots="false"           
-            data-loop="true"            
-            data-autoplay="true">       
-
-            <!-- Cada categoría es un slide horizontal -->
+        <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                class="d_carousel_item s_tp_hierarchical_category_style_1 py-3">
-
-                <div class="tp-animation-scale">
+                class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+                <div class="tp-animation-scale rounded shadow-sm p-2 s_card" style="background-color: black;">
                     <a t-att-href="category_data.category.website_url">
-                        <img loading="lazy"
-                            t-att-alt="category_data.category.name"
-                            class="img my-2 tp_image_120_contain img-fluid"
+                        <img loading="lazy" t-att-alt="category_data.category.name"
+                            class="img my-2 tp_image_120_contain img-fluid rounded"
                             t-att-src="category_data.category.image_url"/>
                     </a>
-                </div>
-                <div class="mt-2 text-truncate text-center">
-                    <span><t t-esc="category_data.category.name"/></span>
+                    <h6 class="mt-2 text-center text-truncate text-white">
+                        <t t-esc="category_data.category.name"/>
+                    </h6>
                 </div>
             </div>
         </div>
     </t>
-
-
-
-
-
-
-
-
 
 
 </templates>
