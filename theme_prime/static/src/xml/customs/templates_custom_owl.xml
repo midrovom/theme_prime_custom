@@ -96,7 +96,7 @@
 
 
     <!--Estilos para Snippet Categories-->
-    <t t-name="s_tp_hierarchical_category_style_12">
+    <!-- <t t-name="s_tp_hierarchical_category_style_12">
         <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
                 class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
@@ -133,8 +133,42 @@
                 }
             });
         </script>
-
     </t>
+        -->
+
+
+    <t t-name="s_tp_hierarchical_category_style_1">
+        <div class="d_carousel d_carousel_categories"
+            data-items="1"
+            data-nav="true"
+            data-dots="false">
+            
+            <!-- Un único slide -->
+            <div class="d_carousel_item">
+                <div class="row">
+                    <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
+                        class="col-6 col-lg-3 py-3 s_tp_hierarchical_category_style_1">
+                        
+                        <div class="tp-animation-scale">
+                            <a t-att-href="category_data.category.website_url">
+                                <img loading="lazy"
+                                    t-att-alt="category_data.category.name"
+                                    class="img my-2 tp_image_120_contain img-fluid"
+                                    t-att-src="category_data.category.image_url"/>
+                            </a>
+                        </div>
+                        <t t-call="tp_category_list_template_1">
+                            <t t-set="ui_class" t-value="'mt-2'"/>
+                            <t t-set="hasArrow" t-value="true"/>
+                            <t t-set="titleClass" t-value="'text-truncate'"/>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+
 
 
 
