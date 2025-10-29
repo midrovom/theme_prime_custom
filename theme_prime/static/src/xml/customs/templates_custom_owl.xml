@@ -151,26 +151,22 @@
 
         <script>
             $(document).ready(function(){
-                var totalItems = $(".droggol_product_slider .item").length;
-                var maxItems = 8;
-
                 $(".owl-carousel.droggol_product_slider").owlCarousel({
-                    items: Math.min(totalItems, maxItems),
+                    items: 8,
                     margin: 10,
-                    loop: totalItems > maxItems, // solo activa loop si hay más de maxItems
+                    loop: true,
                     nav: true,
                     dots: false,
                     responsive: {
-                        0: { items: Math.min(totalItems, 2) },
-                        576: { items: Math.min(totalItems, 4) },
-                        768: { items: Math.min(totalItems, 6) },
-                        992: { items: Math.min(totalItems, 8) }
+                        0: { items: 2 },
+                        576: { items: 4 },
+                        768: { items: 6 },
+                        992: { items: 8 }
                     }
                 });
             });
         </script>
     </t>
-
 
 
 </templates>
