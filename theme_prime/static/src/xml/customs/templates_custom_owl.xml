@@ -116,11 +116,12 @@
             <script type="text/javascript">
                 (function waitForOwl() {
                     if (typeof $.fn.owlCarousel === 'function') {
+                        var totalItems = $(".droggol_product_slider .item").length;
                         $(".owl-carousel.droggol_product_slider").owlCarousel({
                             items: 8,
                             margin: 10,
-                            loop: true,
-                            nav: true,
+                            loop: totalItems >= 8,
+                            nav: totalItems >= 8,
                             dots: false,
                             responsive: {
                                 0: { items: 2 },
@@ -135,6 +136,7 @@
                 })();
             </script>
         </t>
+
 
 
 
