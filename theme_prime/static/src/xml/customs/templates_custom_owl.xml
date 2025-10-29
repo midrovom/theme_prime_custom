@@ -132,18 +132,19 @@
         </script>
     </t> -->
 
-    <t t-name="s_tp_hierarchical_category_style_12">
-        <!-- Contenedor del carrusel Droggol -->
-        <div class="d-carousel d-carousel-style-1">
-            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                t-attf-class="d-carousel-item s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+<t t-name="s_tp_hierarchical_category_style_12">
+    <!-- Carrusel único -->
+    <div class="d-carousel d-carousel-style-1">
+        
+        <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
+            <div t-attf-class="d-carousel-item s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
                 
                 <div class="tp-animation-scale">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy"
-                            t-att-alt="category_data.category.name"
-                            class="img my-2 tp_image_120_contain img-fluid"
-                            t-att-src="category_data.category.image_url"/>
+                             t-att-alt="category_data.category.name"
+                             class="img my-2 tp_image_120_contain img-fluid"
+                             t-att-src="category_data.category.image_url"/>
                     </a>
                 </div>
 
@@ -153,8 +154,11 @@
                     <t t-set="titleClass" t-value="'text-truncate'"/>
                 </t>
             </div>
-        </div>
-    </t>
+        </t>
+
+    </div>
+</t>
+
 
 
 
