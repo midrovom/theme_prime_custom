@@ -137,7 +137,7 @@
     <t t-name="s_tp_hierarchical_category_style_12">
         <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+                class="item px-2 s_tp_hierarchical_category_style_12 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
                 <div class="tp-animation-scale rounded-lg shadow-sm p-2 s_card"
                     style="background-color: black; border-radius: 15px;">
                     <a t-att-href="category_data.category.website_url">
