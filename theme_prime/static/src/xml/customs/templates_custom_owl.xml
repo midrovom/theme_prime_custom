@@ -106,7 +106,7 @@
                             class="img my-2 tp_image_120_contain img-fluid rounded"
                             t-att-src="category_data.category.image_url" />
                     </a>
-                    <h6 class="mt-2 text-center text-truncate text-white">
+                    <h6 class="mt-2 text-center text-truncate text-white" style="margin-bottom: 12px;">
                         <t t-esc="category_data.category.name"/>
                     </h6>
                 </div>
@@ -131,6 +131,7 @@
             });
         </script>
     </t>
+
 
 
 
