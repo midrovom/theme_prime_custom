@@ -6,10 +6,15 @@ odoo.define('theme_prime.category_carousel', function (require) {
     publicWidget.registry.CategoryCarousel = publicWidget.Widget.extend({
         selector: '.owl-carousel.droggol_product_slider',
         start: function () {
+            if (this.$el.find('.item').length === 0) {
+                return;
+            }
+
             if (this.$el.data('owl.carousel')) {
                 this.$el.trigger('destroy.owl.carousel');
                 this.$el.find('.owl-stage-outer').children().unwrap();
             }
+
             this.$el.owlCarousel({
                 items: 8,
                 margin: 10,
