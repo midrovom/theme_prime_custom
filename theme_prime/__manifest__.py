@@ -146,6 +146,7 @@
 
             'theme_prime/static/src/js/editor/snippets/snippets.options.js',
             'theme_prime/static/src/xml/frontend/documents.xml',
+            'theme_prime/static/src/xml/customs/templates_custom_owl.xml',#custom
             'theme_prime/static/src/components/*'
         ],
         'web_editor.wysiwyg_iframe_editor_assets': [
