@@ -132,7 +132,7 @@
         </script>
     </t> -->
 
-    <t t-name="s_tp_hierarchical_category_style_1">
+    <t t-name="s_tp_hierarchical_category_style_12">
         <!-- Contenedor del carrusel Droggol -->
         <div class="d-carousel d-carousel-style-1">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
