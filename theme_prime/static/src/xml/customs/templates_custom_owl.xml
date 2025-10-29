@@ -138,7 +138,7 @@
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
                 class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
                 
-                <!-- Card contenedora -->
+                <!-- Card contenedora editable -->
                 <div class="s_card tp-animation-scale o_editable">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy" t-att-alt="category_data.category.name"
@@ -153,24 +153,6 @@
                 </div>
             </div>
         </div>
-
-        <script>
-            $(document).ready(function(){
-                $(".owl-carousel.droggol_product_slider").owlCarousel({
-                    items: 8,
-                    margin: 10,
-                    loop: true,
-                    nav: true,
-                    dots: false,
-                    responsive: {
-                        0: { items: 2 },
-                        576: { items: 4 },
-                        768: { items: 6 },
-                        992: { items: 8 }
-                    }
-                });
-            });
-        </script>
     </t>
 
 
