@@ -132,14 +132,13 @@
         </script>
     </t> -->
 
-
     <t t-name="s_tp_hierarchical_category_style_12">
         <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+                class="item s_tp_hierarchical_category_style_1">
                 
-                <!-- Card contenedora editable -->
-                <div class="s_card tp-animation-scale o_editable">
+                <!-- Tarjeta con estilo de columna -->
+                <div class="s_card tp-animation-scale o_editable" style="width: 100%;">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy" t-att-alt="category_data.category.name"
                             class="tp_image_120_contain img-fluid o_editable"
@@ -153,7 +152,32 @@
                 </div>
             </div>
         </div>
+
+        <!-- Activación directa del carrusel -->
+        <t t-set="js_code">
+            <script type="text/javascript">
+                (function () {
+                    var $el = $('.owl-carousel.droggol_product_slider');
+                    if ($el.length && $.fn.owlCarousel) {
+                        $el.owlCarousel({
+                            items: 8, // Número de columnas visibles
+                            margin: 20,
+                            loop: true,
+                            nav: true,
+                            dots: false,
+                            responsive: {
+                                0: { items: 1 },
+                                576: { items: 2 },
+                                768: { items: 3 },
+                                992: { items: 4 }
+                            }
+                        });
+                    }
+                })();
+            </script>
+        </t>
     </t>
+
 
 
 
