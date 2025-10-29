@@ -100,7 +100,7 @@
         <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
                 class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
-                <div class="tp-animation-scale rounded shadow-sm p-2 s_card" style="background-color: black;">
+                <div class="tp-animation-scale shadow-sm p-2 s_card" style="background-color: black; border-radius: 6px;">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy" t-att-alt="category_data.category.name"
                             class="img my-2 tp_image_120_contain img-fluid rounded"
@@ -113,24 +113,48 @@
             </div>
         </div>
 
-        <script>
-            $(document).ready(function(){
-                $(".owl-carousel.droggol_product_slider").owlCarousel({
-                    items: 8,
-                    margin: 10,
-                    loop: true,
-                    nav: true,
-                    dots: false,
-                    responsive: {
-                        0: { items: 2 },
-                        576: { items: 4 },
-                        768: { items: 6 },
-                        992: { items: 8 }
+        <script type="text/javascript">
+            (function initCategorySlider() {
+                function activateCarousel() {
+                    var $carousel = $(".owl-carousel.droggol_product_slider");
+                    var totalItems = $carousel.find(".item").length;
+
+                    if ($carousel.hasClass("owl-loaded")) return;
+
+                    if (typeof $.fn.owlCarousel === "function") {
+                        if (totalItems >= 9) {
+                            $carousel.owlCarousel({
+                                items: 8,
+                                margin: 10,
+                                loop: true,
+                                nav: true,
+                                dots: false,
+                                responsive: {
+                                    0: { items: 2 },
+                                    576: { items: 4 },
+                                    768: { items: 6 },
+                                    992: { items: 8 }
+                                }
+                            });
+                        } else {
+                            // Distribuir las categorías sin carrusel
+                            $carousel.addClass("d-flex flex-wrap justify-content-center gap-2").removeClass("owl-carousel");
+                            $carousel.find(".item").addClass("flex-fill").css("max-width", "calc(100% / " + totalItems + ")");
+                        }
+                    } else {
+                        setTimeout(activateCarousel, 100);
                     }
-                });
-            });
+                }
+
+                $(document).ready(activateCarousel);
+
+                if ($("body").hasClass("editor_enable")) {
+                    setInterval(activateCarousel, 1000);
+                }
+            })();
         </script>
     </t>
+
 
 
 </templates>
