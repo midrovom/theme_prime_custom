@@ -151,8 +151,13 @@
         </div>
 
         <script>
-            $(document).ready(function(){
-                $(".owl-carousel.droggol_product_slider").owlCarousel({
+            function initCategoryCarousel() {
+                var $carousel = $(".owl-carousel.droggol_product_slider");
+                if ($carousel.data('owl.carousel')) {
+                    $carousel.trigger('destroy.owl.carousel'); // destruye si ya existe
+                    $carousel.find('.owl-stage-outer').children().unwrap();
+                }
+                $carousel.owlCarousel({
                     items: 8,
                     margin: 10,
                     loop: true,
@@ -165,9 +170,20 @@
                         992: { items: 8 }
                     }
                 });
+            }
+
+            // Inicializa al cargar la página
+            $(document).ready(function(){
+                initCategoryCarousel();
+            });
+
+            // Re-inicializa cuando el editor de Odoo refresca el snippet
+            $(document).on('snippet_added snippet_removed snippet_edition', function () {
+                initCategoryCarousel();
             });
         </script>
     </t>
+
 
 
 </templates>
