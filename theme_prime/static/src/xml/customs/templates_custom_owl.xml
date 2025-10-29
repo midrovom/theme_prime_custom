@@ -115,9 +115,9 @@
 
         <script>
             $(document).ready(function(){
-                // Verificar si NO estamos en modo edición
-                if (!$("body").hasClass("o_editable")) {
-                    $(".owl-carousel.droggol_product_slider").owlCarousel({
+                var $carousel = $(".s_tp_hierarchical_category_style_12 .owl-carousel.droggol_product_slider");
+                if ($carousel.length && !$carousel.hasClass("owl-loaded")) {
+                    $carousel.owlCarousel({
                         items: 8,
                         margin: 10,
                         loop: true,
@@ -133,8 +133,8 @@
                 }
             });
         </script>
-
     </t>
+
 
 
 
