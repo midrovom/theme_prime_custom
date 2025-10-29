@@ -96,42 +96,7 @@
 
 
     <!--Estilos para Snippet Categories-->
-    <!-- <t t-name="s_tp_hierarchical_category_style_12">
-        <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
-            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
-                <div class="tp-animation-scale rounded shadow-sm p-2 s_card" style="background-color: black;">
-                    <a t-att-href="category_data.category.website_url">
-                        <img loading="lazy" t-att-alt="category_data.category.name"
-                            class="img my-2 tp_image_120_contain img-fluid rounded"
-                            t-att-src="category_data.category.image_url" />
-                    </a>
-                    <h6 class="mt-2 text-center text-truncate text-white">
-                        <t t-esc="category_data.category.name"/>
-                    </h6>
-                </div>
-            </div>
-        </div>
-
-        <script>
-            $(document).ready(function(){
-                $(".owl-carousel.droggol_product_slider").owlCarousel({
-                    items: 8,
-                    margin: 10,
-                    loop: true,
-                    nav: true,
-                    dots: false,
-                    responsive: {
-                        0: { items: 2 },
-                        576: { items: 4 },
-                        768: { items: 6 },
-                        992: { items: 8 }
-                    }
-                });
-            });
-        </script>
-    </t> -->
-
+<!-- 
     <t t-name="s_tp_hierarchical_category_style_12">
         <div class="owl-carousel droggol_product_slider d-owl-ppr-2 o_not_editable">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
@@ -167,6 +132,25 @@
                 });
             });
         </script>
+    </t> -->
+
+    <t t-name="s_tp_hierarchical_category_style_12">
+        <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
+            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
+                class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+                <div class="tp-animation-scale rounded-lg shadow-sm p-2 s_card"
+                    style="background-color: black; border-radius: 15px;">
+                    <a t-att-href="category_data.category.website_url">
+                        <img loading="lazy" t-att-alt="category_data.category.name"
+                            class="img my-2 tp_image_120_contain img-fluid rounded-lg"
+                            t-att-src="category_data.category.image_url" />
+                    </a>
+                    <h6 class="mt-2 text-center text-truncate text-white">
+                        <t t-esc="category_data.category.name"/>
+                    </h6>
+                </div>
+            </div>
+        </div>
     </t>
 
 
