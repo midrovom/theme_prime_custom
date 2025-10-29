@@ -112,11 +112,9 @@
                 </div>
             </div>
         </div>
-    </t>
 
-    <script>
-        $(document).ready(function(){
-            if (!$("body").hasClass("o_editable")) {
+        <script>
+            $(document).ready(function(){
                 $(".owl-carousel.droggol_product_slider").owlCarousel({
                     items: 8,
                     margin: 10,
@@ -130,10 +128,9 @@
                         992: { items: 8 }
                     }
                 });
-            }
-        });
-    </script>
-
+            });
+        </script>
+    </t>
 
 
 </templates>
