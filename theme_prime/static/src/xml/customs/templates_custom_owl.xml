@@ -173,7 +173,7 @@
     </t>  -->
 
     <t t-name="s_tp_hierarchical_category_style_12">
-        <t t-if="data.length">
+        <t t-if="data">
             <!-- Contenedor del carrusel -->
             <div class="owl-carousel droggol_category_slider">
                 <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
