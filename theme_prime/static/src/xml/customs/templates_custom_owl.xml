@@ -135,14 +135,18 @@
     </t> -->
 
     <t t-name="s_tp_hierarchical_category_style_12">
-        <div class="s_tp_hierarchical_category_style_12 tp-snippet-slick" data-slick='{"slidesToShow":4,"slidesToScroll":1,"autoplay":true,"arrows":true,"dots":false}'>
+        <!-- Contenedor del slider -->
+        <div class="s_tp_hierarchical_category_style_12 tp-snippet-slick"
+            data-slick='{"slidesToShow":4,"slidesToScroll":1,"autoplay":true,"arrows":true,"dots":false}'>
+            
+            <!-- Cada categoría es un slide -->
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1" class="tp-item-slide px-2">
                 <div class="tp-animation-scale">
                     <a t-att-href="category_data.category.website_url">
-                        <img loading="lazy" 
-                            t-att-alt="category_data.category.name" 
-                            class="img my-2 tp_image_120_contain img-fluid" 
-                            t-att-src="category_data.category.image_url" />
+                        <img loading="lazy"
+                            t-att-alt="category_data.category.name"
+                            class="img my-2 tp_image_120_contain img-fluid"
+                            t-att-src="category_data.category.image_url"/>
                     </a>
                 </div>
             </div>
