@@ -173,24 +173,30 @@
     </t> -->
 
 
-        <t t-name="s_tp_hierarchical_category_style_12">
-            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                        class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
-                <div class="owl-carousel droggol_product_slider d-owl-ppr-2 o_not_editable">
-                        <div class="tp-animation-scale rounded-lg shadow-sm p-2 s_card o_not_editable" 
-                            style="background-color: black; border-radius: 15px;">
-                            <a t-att-href="category_data.category.website_url">
-                                <img loading="lazy" t-att-alt="category_data.category.name"
-                                    class="img my-2 tp_image_120_contain img-fluid rounded-lg"
-                                    t-att-src="category_data.category.image_url" />
-                            </a>
-                            <h6 class="mt-2 text-center text-truncate text-white">
-                                <t t-esc="category_data.category.name"/>
-                            </h6>
-                        </div>
-                    </div>
+    <t t-name="s_tp_hierarchical_category_style_1">
+        <!-- Contenedor del carrusel -->
+        <div class="owl-carousel">
+            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1" 
+                class="s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+                
+                <div class="tp-animation-scale">
+                    <a t-att-href="category_data.category.website_url">
+                        <img loading="lazy"
+                            t-att-alt="category_data.category.name"
+                            class="img my-2 tp_image_120_contain img-fluid"
+                            t-att-src="category_data.category.image_url"/>
+                    </a>
                 </div>
-        </t>
+
+                <t t-call="tp_category_list_template_1">
+                    <t t-set="ui_class" t-value="'mt-2'"/>
+                    <t t-set="hasArrow" t-value="true"/>
+                    <t t-set="titleClass" t-value="'text-truncate'"/>
+                </t>
+            </div>
+        </div>
+    </t>
+
 
 
 
