@@ -174,7 +174,7 @@
 
     <t t-name="s_tp_hierarchical_category_style_12">
         <div class="owl-carousel js_style1_slider">
-            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1" t-attf-class=" s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1" t-attf-class="col-6 py-3 col-lg-3 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
                 <div class="tp-animation-scale">
                     <a t-att-href="category_data.category.website_url">
                         <img loading="lazy"
