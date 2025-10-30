@@ -174,7 +174,7 @@
 
     <t t-name="s_tp_hierarchical_category_style_12">
         <!-- Contenedor del carrusel -->
-        <div class="owl-carousel droggol_category_slider">
+        <div class="owl-carousel droggol_product_slider_top">
             <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
                 <!-- Cada slide -->
                 <div class="px-2">
