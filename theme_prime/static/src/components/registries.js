@@ -65,7 +65,7 @@ registry.category('theme_prime_snippet_registry')
     .add('s_category_snippet', { widgets: { ...CATEGORY_SELECTOR_DATA, TpUiComponent: { cardRegistry: 'theme_prime_category_card_registry', defaultVal: { style: 's_tp_category_style_1' } }, ...EXTRA_OPTIONS } })
     .add('s_product_listing_cards', { widgets: { TpUiComponent: { cardRegistry: 'theme_prime_product_list_cards', defaultVal: { header: 'tp_product_list_header_1', style: 'tp_product_list_cards_1', limit: 5, activeActions: ['rating'], bestseller: true, newArrived: true, discount: true } }, ...EXTRA_OPTIONS }, defaultValue: { noSelection: true, maxValue: 5, minValue: 2} })
     .add('s_image_product_listing_cards', { widgets: { TpUiComponent: { cardRegistry: 'theme_prime_product_list_cards', defaultVal: { header: 'tp_product_list_header_1', style: 'tp_product_list_cards_1', limit: 5, activeActions: ['rating'], bestseller: true, newArrived: true, discount: true } }, ...EXTRA_OPTIONS}, defaultValue: { noSelection: true, maxValue: 5, minValue: 2} })
-    .add('s_tp_mega_menu_category_snippet', { widgets: { ...CATEGORY_SELECTOR_DATA, TpUiComponent: { cardRegistry: 'theme_prime_mega_menu_cards', defaultVal: { style: 's_tp_hierarchical_category_style_1', mode: 'slider', childOrder: 'sequence', productListing: 'newArrived', limit: 5, activeActions: ['brand', 'label', 'count'] } }, ...EXTRA_OPTIONS }, defaultValue: { maxValue: 10, minValue: 2} })
+    .add('s_tp_mega_menu_category_snippet', { widgets: { ...CATEGORY_SELECTOR_DATA, TpUiComponent: { cardRegistry: 'theme_prime_mega_menu_cards', defaultVal: { style: 's_tp_hierarchical_category_style_1',childOrder: 'sequence', mode: 'slider', productListing: 'newArrived', limit: 5, activeActions: ['brand', 'label', 'count'] } }, ...EXTRA_OPTIONS }, defaultValue: { maxValue: 10, minValue: 2} })
     .add('s_mega_menu_category_tabs_snippet', { widgets: { ...CATEGORY_SELECTOR_DATA, TpUiComponent: { cardRegistry: 'theme_prime_mega_menu_tabs_styles', defaultVal: { style: 'tp_mega_menu_tab_style_1', childOrder: 'sequence', menuLabel: true, onlyDirectChild: false, categoryTabsConfig: { activeRecordID: false, records: [] } } }, ...EXTRA_OPTIONS }, defaultValue: { noSwicher: true, lazy: true} })
     .add('s_product_listing_tabs', { widgets: { ...CATEGORY_SELECTOR_DATA, TpUiComponent: { cardRegistry: 'theme_prime_card_registry', defaultVal: { mode: 'slider', ppr: 4, tabStyle: 'tp-droggol-18-builder-snippet-tab-1', style: 's_card_style_1', limit: 20, activeActions: PRODUCTS_ACTIONS, bestseller: true, newArrived: true, discount: true, mobileConfig: { style: 'default', mode: 'default' } } }, ...EXTRA_OPTIONS}, defaultValue: { forceVisible: true, recordsLimit: 1} });
 
@@ -104,7 +104,7 @@ registry.category('theme_prime_mega_menu_tabs_styles')
     .add('tp_mega_menu_tab_style_2', { supportedActions: [] })
 
 registry.category('theme_prime_mega_menu_cards')
-    .add('s_tp_hierarchical_category_style_1', {supportedActions: ['limit', 'brand', 'label', 'count', 'style', 'background']})
+    .add('s_tp_hierarchical_category_style_1', {supportedActions: ['mode','limit', 'brand', 'label', 'count', 'style', 'background']})
     .add('s_tp_hierarchical_category_style_2', {supportedActions: ['limit', 'brand', 'label', 'count', 'style', 'background']})
     .add('s_tp_hierarchical_category_style_3', {supportedActions: ['limit', 'brand', 'label', 'count', 'style', 'background']})
     .add('s_tp_hierarchical_category_style_4', {supportedActions: ['limit', 'brand', 'label', 'count', 'style', 'background']})
