@@ -173,7 +173,7 @@
     </t> -->
 
 
-    <t t-name="s_tp_hierarchical_category_style_1">
+    <t t-name="s_tp_hierarchical_category_style_12">
         <!-- Contenedor del carrusel -->
         <div class="owl-carousel">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1" 
