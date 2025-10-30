@@ -173,10 +173,11 @@
     </t> -->
 
     <t t-name="s_tp_hierarchical_category_style_12">
-        <t t-call="s_tp_hierarchical_category_style_1">
-            <t t-set="extra_class" t-value="'slider-mode'"/>
-        </t>
+        <div class="owl-carousel js_style12_slider">
+            <t t-call="s_tp_hierarchical_category_style_1"/>
+        </div>
     </t>
+
 
 
 
