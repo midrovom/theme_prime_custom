@@ -173,45 +173,47 @@
     </t>  -->
 
     <t t-name="s_tp_hierarchical_category_style_12">
-        <t t-if="data.length">
-            <div class="owl-carousel droggol_product_slider_top">
-                <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-                    <div class="col-lg-3 col-6 mt-2 px-2">
-                        <div class="card border p-1 mb-2" style="border-radius:4px;">
-                            <div class="row g-0">
-                                <!-- Columna de imagen -->
-                                <div class="col-md-4">
-                                    <div class="d-flex align-items-center h-100 w-100 justify-content-center">
-                                        <a class="w-100" t-att-href="category_data.category.website_url">
-                                            <img loading="lazy"
-                                                t-att-alt="category_data.category.name"
-                                                t-att-src="category_data.category.image_url"
-                                                class="card-img d_product_img"/>
-                                        </a>
-                                    </div>
-                                </div>
-                                <!-- Columna de texto -->
-                                <div class="col-md-8 ps-2">
-                                    <div class="card-body h-100 d-flex flex-column justify-content-center p-1">
-                                        <h6 class="card-title mt-1 mb-1 text-truncate fw-light d-product-name">
-                                            <a t-att-href="category_data.category.website_url">
-                                                <t t-esc="category_data.category.name"/>
-                                            </a>
-                                        </h6>
-                                        <!-- Aquí podrías añadir más info de la categoría si existiera -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        <div t-attf-class="card h-100 text-center rounded-0 s_card_style_1 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
+            <a class="d_product_box d-flex align-items-center position-relative overflow-hidden" t-att-href="item.website_url">
+                <t t-call="dr_s_lable_tmpl"></t>
+                <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="card-img-top d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
+                <span t-if="widget._isActionEnabled('rating')" class="d_rating_top_right position-absolute top-0 end-0 p-2">
+                    <t t-out="item.rating"/>
+                </span>
+            </a>
+            <div class="card-body p-0">
+                <div class="px-3 py-2">
+                    <t t-call="tp_category_info"/>
+                    <h5 class="card-title mt-1 mb-2 text-truncate fw-light d-product-name">
+                        <a t-att-href="item.website_url">
+                            <t t-out="item.name"/>
+                        </a>
+                    </h5>
+                    <t t-call="tp-snippet-product-price"/>
+                </div>
+                <div class="border-top" contenteditable="false">
+                    <div class="row g-0">
+                        <button t-if="widget._isActionEnabled('quick_view')" t-att-data-product-template-id="item.product_template_id" t-att-data-product-product-id="item.product_variant_id" class="btn py-3 btn-light d_action_btn position-relative border-end col d_product_quick_view" data-bs-toggle="tooltip" title="Quick View">
+                            <i class="d_action_btn_icon dri dri-eye"></i>
+                            <small class="w-100 d-block d_action_btn_lable position-absolute bottom-0 start-0"> View </small>
+                        </button>
+                        <button t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" class="btn py-3 btn-light d_action_btn position-relative border-end col d_add_to_cart_btn" data-bs-toggle="tooltip" title="Add to Cart">
+                            <i class="d_action_btn_icon dri dri-cart"></i>
+                            <small class="w-100 d-block d_action_btn_lable position-absolute bottom-0 start-0">To cart</small>
+                        </button>
+                        <button t-if="widget._isActionEnabled('comparison') &amp;&amp; !widget.isMobile" t-att-data-product-product-id="item.product_variant_id" class="btn py-3 btn-light d_action_btn position-relative border-end col d_product_comparison" data-bs-toggle="tooltip" title="Compare">
+                            <span class="d_action_btn_icon dri dri-compare"></span>
+                            <small class="w-100 d-block d_action_btn_lable position-absolute bottom-0 start-0"> Compare </small>
+                        </button>
+                        <button t-if="widget._isActionEnabled('wishlist')" t-att-data-product-product-id="item.product_variant_id" class="btn py-3 btn-light d_action_btn position-relative col d_add_to_wishlist_btn" data-bs-toggle="tooltip" title="Add to Wishlist">
+                            <i class="d_action_btn_icon dri dri-wishlist"></i>
+                            <small class="w-100 d-block d_action_btn_lable position-absolute bottom-0 start-0"> Wishlist </small>
+                        </button>
                     </div>
-                </t>
+                </div>
             </div>
-        </t>
-        <t t-elif="widget.noDataTemplate">
-            <t t-call="#{widget.noDataTemplate}"></t>
-        </t>
+        </div>
     </t>
-
 
 
 
