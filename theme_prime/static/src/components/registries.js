@@ -47,7 +47,7 @@ registry.category('theme_prime_snippet_registry')
         },
         defaultValue: { hasSwitcher: true, }
     })
-    .add('s_d_single_product_count_down', { widgets: { ...SELECTOR_DATA, ...EXTRA_OPTIONS, ...CATEGORY_SELECTOR_DATA }, defaultValue: { recordsLimit: 5} })
+    .add('s_d_single_product_count_down', { widgets: { ...SELECTOR_DATA, ...EXTRA_OPTIONS }, defaultValue: { recordsLimit: 5} })
     .add('s_two_column_cards', { widgets: { ...SELECTOR_DATA, TpUiComponent: { cardRegistry: 'theme_prime_two_column_card_registry', defaultVal: { style: 'tp_two_column_card_style_1', mode: 'slider', activeActions: PRODUCTS_ACTIONS_2 } }, ...EXTRA_OPTIONS } })
     .add('s_d_products_grid', { widgets: { ...SELECTOR_DATA, ...EXTRA_OPTIONS }, defaultValue: { recordsLimit: 9 } })
     .add('s_d_category_snippet', { widgets: { ...CATEGORY_SELECTOR_DATA, TpUiComponent: { cardRegistry: 'theme_prime_card_registry', defaultVal: { style: 's_card_style_1', sortBy: 'list_price asc', tabStyle: 'tp-droggol-18-builder-snippet-tab-1', mode: 'slider', limit: 8, ppr: 4, includesChild: true, activeActions: PRODUCTS_ACTIONS, mobileConfig: { style: 'default', mode: 'default' } } }, ...EXTRA_OPTIONS } })
