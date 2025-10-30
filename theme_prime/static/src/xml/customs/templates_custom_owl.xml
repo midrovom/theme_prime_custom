@@ -172,9 +172,11 @@
             </script>
     </t> -->
 
+
+
     <t t-name="s_tp_hierarchical_category_style_12">
         <div class="owl-carousel js_style_12">
-            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1" class="item">
+            <div t-foreach="props.data" t-as="category_data" t-key="category_data_index+1" class="item">
                 <a t-att-href="category_data.category.website_url">
                     <img t-att-src="category_data.category.image_url"
                         t-att-alt="category_data.category.name"
@@ -184,7 +186,6 @@
             </div>
         </div>
     </t>
-
 
 
 
