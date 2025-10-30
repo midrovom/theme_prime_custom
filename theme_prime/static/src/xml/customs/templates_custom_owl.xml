@@ -176,16 +176,20 @@
 
     <t t-name="s_tp_hierarchical_category_style_12">
         <div class="owl-carousel js_style_12">
-            <div t-foreach="props.data" t-as="category_data" t-key="category_data_index+1" class="item">
-                <a t-att-href="category_data.category.website_url">
-                    <img t-att-src="category_data.category.image_url"
-                        t-att-alt="category_data.category.name"
-                        class="img-fluid"/>
-                </a>
-                <h6><t t-esc="category_data.category.name"/></h6>
+            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
+                class="item s_tp_hierarchical_category_style_12 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
+                <div class="tp-animation-scale">
+                    <a t-att-href="category_data.category.website_url">
+                        <img loading="lazy"
+                            t-att-alt="category_data.category.name"
+                            class="img my-2 tp_image_120_contain img-fluid"
+                            t-att-src="category_data.category.image_url"/>
+                    </a>
+                </div>
             </div>
         </div>
     </t>
+
 
 
 
