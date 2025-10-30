@@ -134,7 +134,7 @@
         </script>
     </t> -->
 
-    <t t-name="s_tp_hierarchical_category_style_12">
+    <!-- <t t-name="s_tp_hierarchical_category_style_12">
             <div class="owl-carousel droggol_product_slider d-owl-ppr-2 o_not_editable">
                 <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
                     class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
@@ -170,8 +170,47 @@
                 });
             })();
             </script>
-    </t> 
+    </t>  -->
 
+    <t t-name="s_tp_hierarchical_category_style_12">
+        <t t-if="data.length">
+            <div class="owl-carousel droggol_product_slider_top">
+                <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
+                    <div class="col-lg-3 col-6 mt-2 px-2">
+                        <div class="card border p-1 mb-2" style="border-radius:4px;">
+                            <div class="row g-0">
+                                <!-- Columna de imagen -->
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center h-100 w-100 justify-content-center">
+                                        <a class="w-100" t-att-href="category_data.category.website_url">
+                                            <img loading="lazy"
+                                                t-att-alt="category_data.category.name"
+                                                t-att-src="category_data.category.image_url"
+                                                class="card-img d_product_img"/>
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- Columna de texto -->
+                                <div class="col-md-8 ps-2">
+                                    <div class="card-body h-100 d-flex flex-column justify-content-center p-1">
+                                        <h6 class="card-title mt-1 mb-1 text-truncate fw-light d-product-name">
+                                            <a t-att-href="category_data.category.website_url">
+                                                <t t-esc="category_data.category.name"/>
+                                            </a>
+                                        </h6>
+                                        <!-- Aquí podrías añadir más info de la categoría si existiera -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+        <t t-elif="widget.noDataTemplate">
+            <t t-call="#{widget.noDataTemplate}"></t>
+        </t>
+    </t>
 
 
 
