@@ -172,46 +172,56 @@
             </script>
     </t>  -->
 
-    <t t-name="s_tp_hierarchical_category_style_12">
-        <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-            class="col-6 py-3 col-lg-3">
-            <div class="card h-100 text-center rounded-0 s_card_style_1">
-                <!-- Imagen + enlace -->
-                <a class="d_product_box d-flex align-items-center position-relative overflow-hidden"
-                t-att-href="category_data.category.website_url">
-                    <img loading="lazy"
-                        t-att-alt="category_data.category.name"
-                        t-att-src="category_data.category.image_url"
-                        class="card-img-top d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
-                </a>
-
-                <!-- Cuerpo de la card -->
-                <div class="card-body p-0">
-                    <div class="px-3 py-2">
-                        <!-- Nombre de la categoría -->
-                        <h5 class="card-title mt-1 mb-2 text-truncate fw-light d-product-name">
-                            <a t-att-href="category_data.category.website_url">
-                                <t t-esc="category_data.category.name"/>
+    <t t-name="s_tp_hierarchical_category_style_1">
+        <t t-if="data.length">
+            <!-- Contenedor del carrusel -->
+            <div class="owl-carousel droggol_category_slider">
+                <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
+                    <div class="px-2">
+                        <div class="card h-100 text-center rounded-0 s_card_style_1">
+                            <!-- Imagen + enlace -->
+                            <a class="d_product_box d-flex align-items-center position-relative overflow-hidden"
+                            t-att-href="category_data.category.website_url">
+                                <img loading="lazy"
+                                    t-att-alt="category_data.category.name"
+                                    t-att-src="category_data.category.image_url"
+                                    class="card-img-top d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
                             </a>
-                        </h5>
 
-                        <!-- Subcategorías (si existen) -->
-                        <t t-if="category_data.child and category_data.child.length">
-                            <ul class="list-unstyled small">
-                                <t t-foreach="category_data.child" t-as="child" t-key="child.id">
-                                    <li class="text-truncate">
-                                        <a t-att-href="child.website_url">
-                                            <t t-esc="child.name"/>
+                            <!-- Cuerpo de la card -->
+                            <div class="card-body p-0">
+                                <div class="px-3 py-2">
+                                    <!-- Nombre de la categoría -->
+                                    <h5 class="card-title mt-1 mb-2 text-truncate fw-light d-product-name">
+                                        <a t-att-href="category_data.category.website_url">
+                                            <t t-esc="category_data.category.name"/>
                                         </a>
-                                    </li>
-                                </t>
-                            </ul>
-                        </t>
+                                    </h5>
+
+                                    <!-- Subcategorías (si existen) -->
+                                    <t t-if="category_data.child and category_data.child.length">
+                                        <ul class="list-unstyled small">
+                                            <t t-foreach="category_data.child" t-as="child" t-key="child.id">
+                                                <li class="text-truncate">
+                                                    <a t-att-href="child.website_url">
+                                                        <t t-esc="child.name"/>
+                                                    </a>
+                                                </li>
+                                            </t>
+                                        </ul>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </t>
             </div>
-        </div>
+        </t>
+        <t t-elif="widget.noDataTemplate">
+            <t t-call="#{widget.noDataTemplate}"></t>
+        </t>
     </t>
+
 
 
 
