@@ -153,20 +153,24 @@
             </div>
 
             <script type="text/javascript">
-                const $owlSlider = this.$('.owl-carousel');
+            (function () {
+                const $owlSlider = $(".owl-carousel.droggol_product_slider");
                 $owlSlider.owlCarousel({
-                    items: 8,
-                    margin: 10,
-                    loop: true,
-                    nav: true,
-                    dots: false,
-                    responsive: {
-                        0: { items: 2 },
-                        576: { items: 4 },
-                        768: { items: 6 },
-                        992: { items: 8 }
-                    }
+                items: 8,
+                margin: 10,
+                loop: true,
+                nav: true,
+                dots: false,
+                responsive: {
+                    0: { items: 2 },
+                    576: { items: 4 },
+                    768: { items: 6 },
+                    992: { items: 8 }
+                }
                 });
+            })();
+            </script>
+
                 <!-- $(document).ready(function(){
                     $(".owl-carousel.droggol_product_slider").owlCarousel({
                         items: 8,
@@ -182,7 +186,7 @@
                         }
                     });
                 }); -->
-            </script>
+
     </t>
 
 
