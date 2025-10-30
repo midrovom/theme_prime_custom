@@ -172,7 +172,7 @@
             </script>
     </t>  -->
 
-    <t t-name="s_tp_hierarchical_category_style_1">
+    <t t-name="s_tp_hierarchical_category_style_12">
         <t t-if="data.length">
             <!-- Contenedor del carrusel -->
             <div class="owl-carousel droggol_category_slider">
