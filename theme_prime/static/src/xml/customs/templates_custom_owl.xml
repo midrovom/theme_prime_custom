@@ -152,7 +152,7 @@
                 </div>
             </div>
 
-            <script>
+            <script type="text/javascript">
                 $(document).ready(function(){
                     $(".owl-carousel.droggol_product_slider").owlCarousel({
                         items: 8,
