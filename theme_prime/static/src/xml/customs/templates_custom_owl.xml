@@ -173,21 +173,11 @@
     </t> -->
 
     <t t-name="s_tp_hierarchical_category_style_12">
-        <!-- Si el modo es slider -->
-        <t t-if="userParams.mode === 'slider'">
-            <div t-if="data.length"
-                t-attf-class="owl-carousel js_style12_slider d-owl-ppr-#{12 / (userParams.ppr or 4)}">
-                <t t-foreach="data" t-as="category_data" t-key="category_data_index+1">
-                    <!-- Reutilizamos el estilo 1 para cada ítem -->
-                    <t t-call="s_tp_hierarchical_category_style_1"/>
-                </t>
-            </div>
-        </t>
-
-        <!-- Si no es slider, se muestra como grid normal -->
-        <t t-else="">
-            <t t-call="s_tp_hierarchical_category_style_1"/>
-        </t>
+        <div class="owl-carousel js_style12_slider">
+            <t t-call="s_tp_hierarchical_category_style_1">
+                <t t-set="extra_class" t-value="'item'"/>
+            </t>
+        </div>
     </t>
 
 
