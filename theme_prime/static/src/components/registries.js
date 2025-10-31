@@ -10,6 +10,9 @@ let SELECTOR_DATA = { TpRecordSelector: { ...PRODUCTS_DATA, defaultVal: { select
 let EXTRA_OPTIONS = { TpExtraOpts: { startDate: '', endDate: '', priceList: '*' } };
 let CATEGORY_SELECTOR_DATA = { TpRecordSelector: { ...CATEGORIES_DATA, defaultVal: { selectionType: 'manual', recordsIDs: [], model: 'product.public.category'}}};
 
+
+let CATEGORY_SELECTOR_DATA_CUSTOM = { TpRecordSelector: { ...CATEGORIES_DATA, defaultVal: { selectionType: 'manual', recordsIDs: [], model: 'product.public.category'}}};
+
 registry.category('theme_prime_card_registry')
     .add('s_card_style_1', {supportedActions: PRODUCTS_ACTIONS})
     .add('s_card_style_2', {supportedActions: PRODUCTS_ACTIONS})
@@ -41,7 +44,7 @@ registry.category('theme_prime_two_column_card_registry')
 registry.category('theme_prime_snippet_registry')
     .add('s_d_products_snippet', {
         widgets: {
-            ...SELECTOR_DATA,
+            ...CATEGORY_SELECTOR_DATA_CUSTOM,
             TpUiComponent: { cardRegistry: 'theme_prime_card_registry', defaultVal: { style: 's_card_style_1', mode: 'slider', ppr: 4, activeActions: PRODUCTS_ACTIONS, mobileConfig: { style: 'default', mode: 'default' } } },
             ...EXTRA_OPTIONS
         },
