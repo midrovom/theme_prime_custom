@@ -237,55 +237,46 @@
         <t t-if="data.length">
             <div class="owl-carousel droggol_category_slider_top">
                 
-                <!-- Recorre grupos -->
-                <t t-foreach="data" t-as="categories" t-key="categories_index">
-                    <div class="row g-0">
+                <!-- UNA sola iteración -->
+                <t t-foreach="data" t-as="cat" t-key="cat.category.id">
+                    <div class="col-lg-3 col-6 mt-2 px-2">
+                        <div class="card border p-1 mb-2" style="border-radius:4px;">
+                            <div class="row g-0">
 
-                        <!-- Recorre categorías dentro del grupo -->
-                        <t t-foreach="categories" t-as="cat" t-key="cat.category.id">
-                            <div class="col-lg-3 col-6 mt-2 px-2">
-                                <div class="card border p-1 mb-2" style="border-radius:4px;">
-                                    <div class="row g-0">
+                                <!-- Imagen -->
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center h-100 w-100 justify-content-center">
+                                        <a class="w-100" t-att-href="cat.category.website_url">
+                                            <img loading="lazy" t-att-src="cat.category.image_url" class="card-img d_product_img"/>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Nombre + Subcategorías -->
+                                <div class="col-md-8 ps-2">
+                                    <div class="card-body h-100 d-flex flex-column justify-content-center p-1">
                                         
-                                        <!-- Imagen -->
-                                        <div class="col-md-4">
-                                            <div class="d-flex align-items-center h-100 w-100 justify-content-center">
-                                                <a class="w-100" t-att-href="cat.category.website_url">
-                                                    <img loading="lazy" t-att-src="cat.category.image_url" class="card-img d_product_img"/>
-                                                </a>
-                                            </div>
-                                        </div>
+                                        <h6 class="card-title mt-1 mb-1 text-truncate fw-light">
+                                            <a t-att-href="cat.category.website_url">
+                                                <t t-esc="cat.category.name"/>
+                                            </a>
+                                        </h6>
 
-                                        <!-- Nombre + listado de subcategorías -->
-                                        <div class="col-md-8 ps-2">
-                                            <div class="card-body h-100 d-flex flex-column justify-content-center p-1">
-                                                
-                                                <!-- Nombre de categoría -->
-                                                <h6 class="card-title mt-1 mb-1 text-truncate fw-light">
-                                                    <a t-att-href="cat.category.website_url">
-                                                        <t t-esc="cat.category.name"/>
+                                        <ul class="list-unstyled mb-0 small">
+                                            <t t-foreach="cat.child" t-as="child" t-key="child.id">
+                                                <li class="text-truncate">
+                                                    <a t-att-href="child.website_url" class="text-muted">
+                                                        <t t-esc="child.name"/>
                                                     </a>
-                                                </h6>
-
-                                                <!-- Listado de subcategorías -->
-                                                <ul class="list-unstyled mb-0 small">
-                                                    <t t-foreach="cat.child" t-as="child" t-key="child.id">
-                                                        <li class="text-truncate">
-                                                            <a t-att-href="child.website_url" class="text-muted">
-                                                                <t t-esc="child.name"/>
-                                                            </a>
-                                                        </li>
-                                                    </t>
-                                                </ul>
-
-                                            </div>
-                                        </div>
+                                                </li>
+                                            </t>
+                                        </ul>
 
                                     </div>
                                 </div>
-                            </div>
-                        </t>
 
+                            </div>
+                        </div>
                     </div>
                 </t>
 
@@ -296,6 +287,7 @@
             <t t-call="#{widget.noDataTemplate}"/>
         </t>
     </t>
+
 
 
 
