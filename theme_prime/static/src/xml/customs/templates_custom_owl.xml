@@ -173,20 +173,22 @@
     </t>  -->
 
 
-    <t t-name="s_tp_hierarchical_category_style_12">
-        <div class="owl-carousel droggol_product_slider d-owl-ppr-2 o_not_editable">
-            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
-                <div class="tp-animation-scale rounded-lg shadow-sm p-2 s_card o_not_editable" 
-                    style="background-color: black; border-radius: 15px;">
-                    <a t-att-href="category_data.category.website_url">
-                        <img loading="lazy" t-att-alt="category_data.category.name"
-                            class="img my-2 tp_image_120_contain img-fluid rounded-lg"
-                            t-att-src="category_data.category.image_url" />
-                    </a>
-                    <h6 class="mt-2 text-center text-truncate text-white">
-                        <t t-esc="category_data.category.name"/>
-                    </h6>
+    <t t-name="s_card_style_10">
+        <div t-attf-class="card h-100 text-center rounded-0 s_card_category_style_1">
+            <a class="d_category_box d-flex align-items-center position-relative overflow-hidden"
+            t-att-href="category.website_url">
+                <img loading="lazy"
+                    t-att-alt="category.name"
+                    t-att-src="category.image_url"
+                    class="card-img-top d-category-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
+            </a>
+            <div class="card-body p-0">
+                <div class="px-3 py-2">
+                    <h5 class="card-title mt-1 mb-2 text-truncate fw-light d-category-name">
+                        <a t-att-href="category.website_url">
+                            <t t-esc="category.name"/>
+                        </a>
+                    </h5>
                 </div>
             </div>
         </div>
