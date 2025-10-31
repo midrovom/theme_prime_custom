@@ -977,6 +977,25 @@ publicWidget.registry.s_category_ui_snippet = ProductRootWidget.extend(ProductsB
         });
         return categories.filter((x) => !!x);
     },
+    _modifyElementsAfterAppend: function () {
+        this._super.apply(this, arguments);
+        this.$('.s_categories_carousel').owlCarousel({
+            dots: false,
+            nav: true,
+            margin: 10,
+            stagePadding: 5,
+            rewind: true,
+            rtl: localization.direction === 'rtl',
+            navText: ['<i class="dri dri-chevron-left-l"></i>', '<i class="dri dri-chevron-right-l"></i>'],
+            responsive: {
+                0: { items: 2 },
+                576: { items: 3 },
+                768: { items: 4 },
+                992: { items: 5 },
+                1200: { items: 6 }
+            }
+        });
+    },
 });
 
 publicWidget.registry.s_d_brand_snippet = RootWidget.extend({
