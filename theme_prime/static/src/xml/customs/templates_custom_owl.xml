@@ -172,7 +172,7 @@
             </script>
     </t>  -->
 
-    <t t-name="s_tp_category_style_5_slider">
+    <t t-name="s_tp_category_style_6">
         <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
             <div t-foreach="categories" t-as="category" t-key="category.id" class="item px-2">
                 <div class="card border tp-hover-color-primary tp-rounded-border shadow-sm">
