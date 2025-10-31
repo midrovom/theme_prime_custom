@@ -1,4 +1,4 @@
-odoo.define('theme_prime.category_style_6', function (require) {
+odoo.define('theme_prime_custom.category_style_6', function (require) {
     'use strict';
 
     var publicWidget = require('web.public.widget');
