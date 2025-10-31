@@ -960,6 +960,11 @@ publicWidget.registry.s_category_ui_snippet = ProductRootWidget.extend(ProductsB
     bodyTemplate: 's_tp_category_wrapper_template',
     controllerRoute: '/theme_prime/get_categories_info',
     fieldstoFetch: ['dr_category_label_id'],
+
+    extraLibs: (ProductRootWidget.prototype.extraLibs || []).concat([
+        '/theme_prime/static/lib/OwlCarousel2-2.3.4/owl.carousel.js'
+    ]),
+
     _setCamelizeAttrs: function () {
         this._super.apply(this, arguments);
         if (this.selectionInfo) {
