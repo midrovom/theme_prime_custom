@@ -94,8 +94,8 @@
 
     <!--Estilos para Snippet Categories-->
 
-    <!-- Product snippet  -->
-    <!-- <template id="s_d_products_snippet_custom" name="Products Cards">
+    <!-- Product snippet -->
+    <template id="s_d_products_snippet_custom" name="Products Cards">
         <section contenteditable="false" class="tp-droggol-18-builder-snippet dr_not_editable s_d_products_snippet_wrapper text-center" data-tp-snippet-id="s_d_products_snippet">
             <div class="s_d_products_snippet container o_not_editable"/>
             <div class="s_dialog_preview">
