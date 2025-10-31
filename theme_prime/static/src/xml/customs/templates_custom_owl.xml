@@ -173,7 +173,9 @@
     </t>  -->
 
     <t t-name="s_tp_hierarchical_category_style_12">
-        <div class="owl-carousel tp-category-slider-12 d-owl-ppr-2 o_not_editable">
+        <div class="owl-carousel tp-category-slider-12 d-owl-ppr-2 o_not_editable"
+            data-oe-type="snippet"
+            data-oe-widget="TpCategorySlider12">
             <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
                 class="item px-2 s_tp_hierarchical_category_style_1">
                 <div class="tp-animation-scale rounded-lg shadow-sm p-2 s_card o_not_editable"
@@ -190,6 +192,7 @@
             </div>
         </div>
     </t>
+
 
 
     <t t-name="s_tp_hierarchical_category_style_13">
