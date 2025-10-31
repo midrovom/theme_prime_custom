@@ -172,24 +172,24 @@
             </script>
     </t>  -->
 
-    <t t-name="s_tp_hierarchical_category_style_12">
-        <div class="owl-carousel tp-category-slider-12 d-owl-ppr-2 o_not_editable">
-            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                class="item px-2 s_tp_hierarchical_category_style_1">
-                <div class="tp-animation-scale rounded-lg shadow-sm p-2 s_card o_not_editable"
-                    style="background-color: black; border-radius: 15px;">
-                    <a t-att-href="category_data.category.website_url">
-                        <img loading="lazy" t-att-alt="category_data.category.name"
-                            class="img my-2 tp_image_120_contain img-fluid rounded-lg"
-                            t-att-src="category_data.category.image_url" />
+    <t t-name="s_tp_category_style_6">
+        <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
+            <div t-foreach="categories" t-as="category" t-key="category.id" class="item px-2">
+                <div class="card border tp-hover-color-primary tp-rounded-border shadow-sm">
+                    <a class="px-2 text-center stretched-link py-3" t-att-href="category.website_url">
+                        <img loading="lazy" class="tp-image-128-max" t-att-src="category.image_url"/>
+                        <h6 t-esc="category.name" class="my-0 text-truncate"/>
+                        <small class="text-muted">
+                            <span t-esc="category.count"/> products
+                        </small>
                     </a>
-                    <h6 class="mt-2 text-center text-truncate text-white">
-                        <t t-esc="category_data.category.name"/>
-                    </h6>
                 </div>
             </div>
         </div>
     </t>
+
+
+
 
 
     <t t-name="tp_category_list_template_13">
