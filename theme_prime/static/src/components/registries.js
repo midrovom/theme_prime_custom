@@ -10,6 +10,8 @@ let SELECTOR_DATA = { TpRecordSelector: { ...PRODUCTS_DATA, defaultVal: { select
 let EXTRA_OPTIONS = { TpExtraOpts: { startDate: '', endDate: '', priceList: '*' } };
 let CATEGORY_SELECTOR_DATA = { TpRecordSelector: { ...CATEGORIES_DATA, defaultVal: { selectionType: 'manual', recordsIDs: [], model: 'product.public.category'}}};
 
+let CATEGORY_SELECTOR_DATA_CUSTOM = { TpRecordSelector: { ...CATEGORIES_DATA, defaultVal: { selectionType: 'manual', recordsIDs: [], model: 'product.public.category'}}};
+
 registry.category('theme_prime_card_registry')
     .add('s_card_style_1', {supportedActions: PRODUCTS_ACTIONS})
     .add('s_card_style_2', {supportedActions: PRODUCTS_ACTIONS})
@@ -60,7 +62,7 @@ registry.category('theme_prime_snippet_registry')
     .add('s_d_single_product_cover_snippet', { widgets: { TpRecordSelector: { ...PRODUCTS_DATA, ...{ models: ['product.template'] }, defaultVal: { selectionType: 'manual', recordsIDs: [], model: 'product.template' } }, ...EXTRA_OPTIONS }, defaultValue: { recordsLimit: 1} })
     .add('s_d_product_count_down', { widgets: { ...SELECTOR_DATA, ...EXTRA_OPTIONS }, defaultValue: { noSnippet: true }})
     .add('s_d_product_small_block', { widgets: { ...SELECTOR_DATA, ...EXTRA_OPTIONS }, defaultValue: { noSnippet: true }})
-    .add('s_d_image_products_block', { widgets: { ...SELECTOR_DATA, ...EXTRA_OPTIONS }, defaultValue: { hasSwitcher: true, } })
+    .add('s_d_image_products_block', { widgets: { ...CATEGORY_SELECTOR_DATA_CUSTOM, ...EXTRA_OPTIONS }, defaultValue: { hasSwitcher: true, } })
     .add('s_d_top_categories', { widgets: { ...CATEGORY_SELECTOR_DATA, TpUiComponent: { cardRegistry: 'theme_prime_top_category_card_registry', defaultVal: { style: 'tp_category_category_card_style_1', sortBy: 'list_price asc', includesChild: true } }, ...EXTRA_OPTIONS }, defaultValue: { recordsLimit: 3} })
     .add('s_category_snippet', { widgets: { ...CATEGORY_SELECTOR_DATA, TpUiComponent: { cardRegistry: 'theme_prime_category_card_registry', defaultVal: { style: 's_tp_category_style_1' } }, ...EXTRA_OPTIONS } })
     .add('s_product_listing_cards', { widgets: { TpUiComponent: { cardRegistry: 'theme_prime_product_list_cards', defaultVal: { header: 'tp_product_list_header_1', style: 'tp_product_list_cards_1', limit: 5, activeActions: ['rating'], bestseller: true, newArrived: true, discount: true } }, ...EXTRA_OPTIONS }, defaultValue: { noSelection: true, maxValue: 5, minValue: 2} })

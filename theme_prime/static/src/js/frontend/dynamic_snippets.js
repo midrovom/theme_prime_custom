@@ -960,11 +960,6 @@ publicWidget.registry.s_category_ui_snippet = ProductRootWidget.extend(ProductsB
     bodyTemplate: 's_tp_category_wrapper_template',
     controllerRoute: '/theme_prime/get_categories_info',
     fieldstoFetch: ['dr_category_label_id'],
-
-    extraLibs: (ProductRootWidget.prototype.extraLibs || []).concat([
-        '/theme_prime/static/lib/OwlCarousel2-2.3.4/owl.carousel.js'
-    ]),
-
     _setCamelizeAttrs: function () {
         this._super.apply(this, arguments);
         if (this.selectionInfo) {
@@ -981,12 +976,6 @@ publicWidget.registry.s_category_ui_snippet = ProductRootWidget.extend(ProductsB
             return data.find(c => c.id === categoryID);
         });
         return categories.filter((x) => !!x);
-    },
-    
-    _modifyElementsAfterAppend: function () {
-        this._super.apply(this, arguments);
-        this.$('.droggol_product_slider').owlCarousel({ dots: false, margin: 10, stagePadding: 5, rewind: true, nav: true, rtl: localization.direction === 'rtl', navText: ['<i class="dri h4 dri-chevron-left-l"></i>', '<i class="dri h4 dri-chevron-right-l"></i>'], responsive: {0: {items: 1}, 576: {items: 1}, 768: {items: 1}, 992: {items: 1}, 1200: {items: 1}},
-        });
     },
 });
 
