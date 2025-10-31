@@ -41,8 +41,6 @@
                                 </t>
                             </ul>
                         </t>
-
-                        <!-- Precio + Carrito -->
                         <div class="row align-items-center mt-2">
                             <div class="col-8">
                                 <t t-call="tp-snippet-product-price"/>
@@ -53,7 +51,6 @@
                                 </button>
                             </div>
                         </div>
-
                         <span t-if="widget._isActionEnabled('rating')" class="w-auto px-0 small mt-1 d-block">
                             <t t-raw="item.rating"/>
                         </span>
@@ -96,6 +93,17 @@
 
 
     <!--Estilos para Snippet Categories-->
+
+    <!-- Product snippet -->
+    <template id="s_d_products_snippet_custom" name="Products Cards">
+        <section contenteditable="false" class="tp-droggol-18-builder-snippet dr_not_editable s_d_products_snippet_wrapper text-center" data-tp-snippet-id="s_d_products_snippet">
+            <div class="s_d_products_snippet container o_not_editable"/>
+            <div class="s_dialog_preview">
+                <img src="/theme_prime/static/src/img/dynamic_snippet/s_dynamic_snippets_preview.png" class="img-fluid mx-auto"/>
+            </div>
+        </section>
+    </template>
+
 <!-- 
     <t t-name="s_tp_hierarchical_category_style_12">
         <div class="owl-carousel droggol_product_slider d-owl-ppr-2 o_not_editable">
@@ -133,64 +141,6 @@
             });
         </script>
     </t> -->
-
-    <!-- <t t-name="s_tp_hierarchical_category_style_12">
-            <div class="owl-carousel droggol_product_slider d-owl-ppr-2 o_not_editable">
-                <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
-                    class="item px-2 s_tp_hierarchical_category_style_1 #{category_data.child and category_data.child.length == 0 and 'text-center' or ''}">
-                    <div class="tp-animation-scale rounded-lg shadow-sm p-2 s_card o_not_editable" 
-                        style="background-color: black; border-radius: 15px;">
-                        <a t-att-href="category_data.category.website_url">
-                            <img loading="lazy" t-att-alt="category_data.category.name"
-                                class="img my-2 tp_image_120_contain img-fluid rounded-lg"
-                                t-att-src="category_data.category.image_url" />
-                        </a>
-                        <h6 class="mt-2 text-center text-truncate text-white">
-                            <t t-esc="category_data.category.name"/>
-                        </h6>
-                    </div>
-                </div>
-            </div>
-
-            <script type="text/javascript">
-            (function () {
-                const $owlSlider = $(".owl-carousel.droggol_product_slider");
-                $owlSlider.owlCarousel({
-                items: 8,
-                margin: 10,
-                loop: true,
-                nav: true,
-                dots: false,
-                responsive: {
-                    0: { items: 2 },
-                    576: { items: 4 },
-                    768: { items: 6 },
-                    992: { items: 8 }
-                }
-                });
-            })();
-            </script>
-    </t>  -->
-
-    <t t-name="s_tp_category_style_6">
-        <div class="owl-carousel droggol_product_slider d-owl-ppr-2">
-            <div t-foreach="categories or []" t-as="category" t-key="category.id" class="item px-2">
-                <div class="card border tp-hover-color-primary tp-rounded-border shadow-sm">
-                    <a class="px-2 text-center stretched-link py-3" t-att-href="category.website_url">
-                        <img loading="lazy" class="tp-image-128-max" t-att-src="category.image_url"/>
-                        <h6 t-esc="category.name" class="my-0 text-truncate"/>
-                        <small class="text-muted">
-                            <span t-esc="category.count"/> products
-                        </small>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </t>
-
-
-
-
 
     <!-- <t t-name="tp_category_list_template_13">
         <ul t-attf-class="list-group #{ui_class}">
