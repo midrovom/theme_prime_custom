@@ -173,8 +173,9 @@
     </t>  -->
 
 
-    <t t-name="s_card_style_10">
-        <div t-attf-class="card h-100 text-center rounded-0 s_card_category_style_1">
+
+    <t t-name="s_tp_hierarchical_category_style_12">
+        <div class="card h-100 text-center rounded-0 s_card_style_1">
             <a class="d_category_box d-flex align-items-center position-relative overflow-hidden"
             t-att-href="category.website_url">
                 <img loading="lazy"
@@ -193,7 +194,6 @@
             </div>
         </div>
     </t>
-
 
 
 
