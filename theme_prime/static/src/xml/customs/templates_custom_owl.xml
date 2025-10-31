@@ -193,8 +193,8 @@
 
 
     <t t-name="s_tp_hierarchical_category_style_13">
-        <div class="owl-carousel tp-category-slider-12 d-owl-ppr-2 o_not_editable">
-            <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
+        <div class="owl-carousel tp-category-slider-13 d-owl-ppr-2 o_not_editable">
+            <!-- <div t-foreach="data" t-as="category_data" t-key="category_data_index+1"
                 class="item px-2 s_tp_hierarchical_category_style_1">
                 <div class="tp-animation-scale rounded-lg shadow-sm p-2 s_card o_not_editable"
                     style="background-color: black; border-radius: 15px;">
@@ -206,6 +206,93 @@
                     <h6 class="mt-2 text-center text-truncate text-white">
                         <t t-esc="category_data.category.name"/>
                     </h6>
+                </div>
+            </div> -->
+
+            <div class="container mt-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        Título de la Tarjeta
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Este es el título interno</h5>
+                        <p class="card-text">
+                            Aquí puedes colocar cualquier contenido dentro del cuerpo del card.
+                        </p>
+                        <a href="#" class="btn btn-primary">Acción</a>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        Título de la Tarjeta
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Este es el título interno</h5>
+                        <p class="card-text">
+                            Aquí puedes colocar cualquier contenido dentro del cuerpo del card.
+                        </p>
+                        <a href="#" class="btn btn-primary">Acción</a>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        Título de la Tarjeta
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Este es el título interno</h5>
+                        <p class="card-text">
+                            Aquí puedes colocar cualquier contenido dentro del cuerpo del card.
+                        </p>
+                        <a href="#" class="btn btn-primary">Acción</a>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        Título de la Tarjeta
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Este es el título interno</h5>
+                        <p class="card-text">
+                            Aquí puedes colocar cualquier contenido dentro del cuerpo del card.
+                        </p>
+                        <a href="#" class="btn btn-primary">Acción</a>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        Título de la Tarjeta
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Este es el título interno</h5>
+                        <p class="card-text">
+                            Aquí puedes colocar cualquier contenido dentro del cuerpo del card.
+                        </p>
+                        <a href="#" class="btn btn-primary">Acción</a>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        Título de la Tarjeta
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Este es el título interno</h5>
+                        <p class="card-text">
+                            Aquí puedes colocar cualquier contenido dentro del cuerpo del card.
+                        </p>
+                        <a href="#" class="btn btn-primary">Acción</a>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        Título de la Tarjeta
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Este es el título interno</h5>
+                        <p class="card-text">
+                            Aquí puedes colocar cualquier contenido dentro del cuerpo del card.
+                        </p>
+                        <a href="#" class="btn btn-primary">Acción</a>
+                    </div>
                 </div>
             </div>
         </div>
