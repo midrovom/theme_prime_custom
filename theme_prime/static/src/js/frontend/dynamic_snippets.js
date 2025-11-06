@@ -958,7 +958,7 @@ publicWidget.registry.s_tp_mega_menu_category_snippet = RootWidget.extend({
     _getUIConfigData: function () {
         let config = {};
         config[this.uiConfigInfo.productListing] = true;
-        return this.JaysonStringify(Object.assign({}, config, { 'limit': 3, 'style': 'tp_product_list_slider', 'header': 'tp_product_list_header_1', 'activeActions': ['rating', 'add_to_cart', 'wishlist', 'quick_view'], 'model': 'product.template' }));
+        return this.JaysonStringify(Object.assign({}, config, { 'limit': 3, 'style': 'tp_product_list_cards_4', 'header': 'tp_product_list_header_1', 'activeActions': ['rating', 'add_to_cart', 'wishlist', 'quick_view'], 'model': 'product.template' }));
     },
     _processData: function (data) {
         let result = this.uiConfigInfo ? [] : false;
