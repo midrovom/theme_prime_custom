@@ -386,6 +386,14 @@ div[class*=' s_card_style_'] {
 
 @include product-image-card-mixin('.s_card_style_8', '.d_img_block', '.d-product-img');
 
+//custom style 9
+.s_card_style_8 {
+    @include tp-products-actions-mixin();
+}
+
+@include product-image-card-mixin('.s_card_style_8', '.d_img_block', '.d-product-img');
+
+
 .s_two_column_card_wrapper {
     .tp-product-image {
         max-height: 365px;
