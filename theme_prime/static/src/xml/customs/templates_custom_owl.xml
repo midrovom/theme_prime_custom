@@ -61,88 +61,57 @@
     </t>
     <!--Estilos para Snippet Product Card Version movil-->
 
-        <!-- <t t-name="s_mobile_card_style_3">
-            <div class="card border text-start tp-rounded-border position-relative mb-2 s_mobile_card_style_1">
-                <i style="transform: scale(1.2)" t-if="widget._isActionEnabled('wishlist')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="dri dri-wishlist tp-action-icon tp-cursor-pointer mt-2 text-center border rounded-circle d_add_to_wishlist_btn tp-icon-center-1 position-absolute top-0 end-0 me-2 text-body" title="Add to Wishlist"/>
-                <a class="d_product_box d-flex align-items-center" t-att-href="item.website_url">
-                    <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="card-img-top d-product-img"/>
-                </a>
-                <div class="p-2">
-                    <t t-call="tp_category_info">
-                        <t t-set="_classes" t-value="'d-inline-block small'"/>
+    <t t-name="s_mobile_card_style_3">
+    <div class="card border bg-white text-start tp-rounded-border position-relative mb-2 s_mobile_card_style_1">
+        <i style="transform: scale(1.2)" t-if="widget._isActionEnabled('wishlist')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="dri dri-wishlist tp-action-icon tp-cursor-pointer mt-2 text-center border rounded-circle d_add_to_wishlist_btn tp-icon-center-1 position-absolute top-0 end-0 me-2 text-body" title="Add to Wishlist"/>
+        
+        <a class="d_product_box d-flex align-items-center" t-att-href="item.website_url">
+        <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="card-img-top d-product-img"/>
+        </a>
+        
+        <div class="p-2">
+        <t t-call="tp_category_info">
+            <t t-set="_classes" t-value="'d-inline-block small'"/>
+        </t>
+        
+        <t t-call="s_mobile_product_name"/>
+
+        <!-- Atributos del producto -->
+        <t t-if="item.attributes">
+            <ul class="list-unstyled text-muted text-start text-wrap my-2" style="font-size:0.65rem; line-height:1.1;">
+            <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
+                <t t-if="attr.id">
+                <li class="d-flex align-items-center mb-1 text-truncate" style="gap:0.3rem;">
+                    <t t-if="attr.image">
+                    <img t-att-src="attr.image"
+                        class="attr-icon"
+                        style="max-height:20px; max-width:100%; height:auto; width:auto; background:white; border-radius:4px;"/>
                     </t>
-                    <t t-call="s_mobile_product_name"/>
-                    <div class="row g-0">
-                        <div class="col-9 d-flex flex-column align-items-start justify-content-center">
-                            <div t-if="widget._isActionEnabled('rating')" class="small d_rating_top_right">
-                                <t t-out="item.rating"/>
-                            </div>
-                            <div class="d-product-price small">
-                                <span class="d-inline-block mb-0 text-muted" t-out="item.price"/>
-                            </div>
-                        </div>
-                        <div class="col-3 d-flex align-items-center justify-content-end">
-                            <button style="transform:scale(1.2);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-primary-soft d_action_btn d_add_to_cart_btn btn-sm rounded-circle p-0 tp-icon-center-1" title="Add to Cart">
-                                <i class="d_action_btn_icon dri dri-cart"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </t> -->
-
-    <!-- <t t-name="s_tp_hierarchical_category_style_13">
-        <t t-if="data.length">
-            <div class="owl-carousel droggol_category_slider_top">
-                
-                <t t-foreach="data" t-as="cat" t-key="cat.category.id">
-                    <div class="col-lg-3 col-6 mt-2 px-2">
-                        <div class="card border p-1 mb-2" style="border-radius:4px;">
-                            <div class="row g-0">
-
-
-                                <div class="col-md-4">
-                                    <div class="d-flex align-items-center h-100 w-100 justify-content-center">
-                                        <a class="w-100" t-att-href="cat.category.website_url">
-                                            <img loading="lazy" t-att-src="cat.category.image_url" class="card-img d_product_img"/>
-                                        </a>
-                                    </div>
-                                </div>
-
-
-                                <div class="col-md-8 ps-2">
-                                    <div class="card-body h-100 d-flex flex-column justify-content-center p-1">
-                                        
-                                        <h6 class="card-title mt-1 mb-1 text-truncate fw-light">
-                                            <a t-att-href="cat.category.website_url">
-                                                <t t-esc="cat.category.name"/>
-                                            </a>
-                                        </h6>
-
-                                        <ul class="list-unstyled mb-0 small">
-                                            <t t-foreach="cat.child" t-as="child" t-key="child.id">
-                                                <li class="text-truncate">
-                                                    <a t-att-href="child.website_url" class="text-muted">
-                                                        <t t-esc="child.name"/>
-                                                    </a>
-                                                </li>
-                                            </t>
-                                        </ul>
-
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
+                    <t t-esc="attr.name"/>
+                </li>
                 </t>
+            </t>
+            </ul>
+        </t>
 
+        <div class="row g-0">
+            <div class="col-9 d-flex flex-column align-items-start justify-content-center">
+            <div t-if="widget._isActionEnabled('rating')" class="small d_rating_top_right">
+                <t t-out="item.rating"/>
             </div>
-        </t>
+            <div class="d-product-price small">
+                <span class="d-inline-block mb-0 text-muted" t-out="item.price"/>
+            </div>
+            </div>
+            <div class="col-3 d-flex align-items-center justify-content-end">
+            <button style="transform:scale(1.2);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-primary-soft d_action_btn d_add_to_cart_btn btn-sm rounded-circle p-0 tp-icon-center-1" title="Add to Cart">
+                <i class="d_action_btn_icon dri dri-cart"></i>
+            </button>
+            </div>
+        </div>
+        </div>
+    </div>
+    </t>
 
-        <t t-elif="widget.noDataTemplate">
-            <t t-call="#{widget.noDataTemplate}"/>
-        </t>
-    </t> -->
 
 </templates>
