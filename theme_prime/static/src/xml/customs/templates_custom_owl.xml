@@ -91,17 +91,16 @@
             </div>
         </t> -->
 
-    <t t-name="s_tp_hierarchical_category_style_13">
+    <!-- <t t-name="s_tp_hierarchical_category_style_13">
         <t t-if="data.length">
             <div class="owl-carousel droggol_category_slider_top">
                 
-                <!-- UNA sola iteración -->
                 <t t-foreach="data" t-as="cat" t-key="cat.category.id">
                     <div class="col-lg-3 col-6 mt-2 px-2">
                         <div class="card border p-1 mb-2" style="border-radius:4px;">
                             <div class="row g-0">
 
-                                <!-- Imagen -->
+
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center h-100 w-100 justify-content-center">
                                         <a class="w-100" t-att-href="cat.category.website_url">
@@ -110,7 +109,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Nombre + Subcategorías -->
+
                                 <div class="col-md-8 ps-2">
                                     <div class="card-body h-100 d-flex flex-column justify-content-center p-1">
                                         
@@ -144,6 +143,6 @@
         <t t-elif="widget.noDataTemplate">
             <t t-call="#{widget.noDataTemplate}"/>
         </t>
-    </t>
+    </t> -->
 
 </templates>
