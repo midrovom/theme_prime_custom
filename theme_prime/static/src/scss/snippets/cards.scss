@@ -391,7 +391,7 @@ div[class*=' s_card_style_'] {
     @include tp-products-actions-mixin();
 }
 
-@include product-image-card-mixin('.s_card_style_8', '.d_img_block', '.d-product-img');
+@include product-image-card-mixin('.s_card_style_9', '.d_img_block', '.d-product-img');
 
 
 .s_two_column_card_wrapper {
