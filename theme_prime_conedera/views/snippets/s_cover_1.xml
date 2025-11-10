@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="s_cover_1" name="S Cover 1 Conedera" inherit_id="theme_prime.s_cover_1">
+        <xpath expr="//section" position="attributes">
+            <attribute name="class">s_cover_1 my-5</attribute>
+        </xpath>
+
+        <xpath expr="//div[@class='tp-custom-carousel s_carousel s_carousel_rounded carousel slide']" position="attributes">
+            <attribute name="data-bs-ride">carousel</attribute>
+        </xpath>
+
+        <xpath expr="//div[@class='carousel-inner']" position="replace">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <a href="/shop">
+                        <img class="img img-fluid w-100 rounded-4" src="/web/image/theme_prime.s_cover_1_1" alt="Cover Image 01"></img>
+                    </a>
+                </div>
+                <div class="carousel-item">
+                    <a href="/shop">
+                        <img class="img img-fluid w-100 rounded-4" src="/web/image/theme_prime.s_cover_1_2" alt="Cover Image 02"></img>
+                    </a>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+</odoo>

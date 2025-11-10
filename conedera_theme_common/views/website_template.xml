@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="option_header_brand_logo" name="Custom Header Brand Logo" inherit_id="website.option_header_brand_logo">
+        <xpath expr="//a" position="replace">
+            <a data-name="Navbar Logo" href="/" >
+                <span t-field="website.logo" t-options="{'widget': 'image', 'width': 200, 'height': 45}" role="img" t-att-aria-label="'Logo of %s' % website.name" t-att-title="website.name"/>
+            </a>
+        </xpath>
+    </template>
+
+</odoo>

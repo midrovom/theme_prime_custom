@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="snippets" inherit_id="website.snippets">
+        <t t-snippet="website.s_banner" position="before">
+            <t t-snippet="theme_prime_conedera.s_d_2_column_snippet_conedera" string="2 Col Deal Conedera" group="theme_prime_dynamic">
+                <keywords>products, dynamic</keywords>
+            </t>
+        </t>
+    </template>
+
+</odoo>
