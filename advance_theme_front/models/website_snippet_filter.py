@@ -30,6 +30,6 @@ class WebsiteSnippetFilter(models.Model):
     
 
     def _prepare_values(self, limit=None, search_domain=None):
-        result = super()._prepare_values(limit, search_domain)
+        result = super()._prepare_values(limit=limit)
 
         _logger.info(f"MOSTRANDO PREPARE VALUES >>>>>>>>>>>>>>>>>>>>>>>>> { result }")
