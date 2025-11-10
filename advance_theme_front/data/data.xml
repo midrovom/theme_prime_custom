@@ -5,7 +5,6 @@
         <record id="dynamic_snippet_all_categories_filter" model="ir.filters">
             <field name="name">Todas las categorias</field>
             <field name="model_id">product.public.category</field>
-            <field name="key">all_categories</field>
             <field name="user_id" eval="False" />
             <field name="domain">[]</field>
             <field name="context">{}</field>
