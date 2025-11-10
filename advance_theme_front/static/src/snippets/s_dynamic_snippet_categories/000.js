@@ -5,15 +5,13 @@ import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel
 const DynamicSnippetCategories = DynamicSnippetCarousel.extend({
     selector: ".s_dynamic_snippet_categories",
 
-    _getSearchDomain() {
-        const searchDomain = [];
-        // Siempre traemos solo categorías públicas
-        searchDomain.push(['website_published', '=', true]);
-        return searchDomain;
+    init() {
+        this._super.apply(this, arguments);
+        this.isAlternativeProductSnippet = false; // asegura que filter_opt se muestre
     },
-
-    _getRpcParameters() {
-        return this._super(...arguments);
+    _getCategorySearchDomain() {
+        // aquí defines cómo tu snippet de categorías filtra registros
+        return [];
     }
 
 
