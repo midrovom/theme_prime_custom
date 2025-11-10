@@ -13,6 +13,9 @@
                 <t t-set="snippet_name" t-value="'dynamic_snippet_categories'"/>
                 <t t-set="snippet_selector" t-value="'.s_dynamic_snippet_categories'"/>
             </t>
+            <div t-if="snippet_name=='s_dynamic_snippet_categories'">
+                <we-select string="Filter" data-name="filter_opt"/>
+            </div>
         </xpath>
     </template>
 
