@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="s_dynamic_snippet_categories" name="Products">
+    <template id="s_dynamic_snippet_categories" name="Categorias">
         <t t-call="website.s_dynamic_snippet_template">
             <t t-set="snippet_name" t-value="'s_dynamic_snippet_categories'"/>
             <t t-call="advance_theme_custom.s_dynamic_snippet_categories_preview_data"/>

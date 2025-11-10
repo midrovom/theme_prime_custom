@@ -8,6 +8,7 @@
     'license': 'LGPL-3',
     'category': 'Website/Website',
     'depends': [
+        'website',
         'website_sale',
     ],
     'data': [
