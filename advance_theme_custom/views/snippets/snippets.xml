@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
     <template id="snippets" inherit_id="website.snippets" name="e-commerce snippets">
         <xpath expr="//t[@id='installed_snippets_hook']" position="after">
             <t snippet-group="categories" t-snippet="website.s_snippet_group" string="Categrias"
@@ -15,5 +14,4 @@
             <t t-snippet="advance_theme_custom.s_dynamic_snippet_categories" string="Products" group="products"/>
         </xpath>
     </template>
-
 </odoo>
