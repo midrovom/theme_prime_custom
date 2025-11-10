@@ -21,8 +21,6 @@
     'auto_install': False,
     'application': False,
     'assets': {
-        'website.assets_wysiwyg': [
-            'advance_theme_front/static/src/snippets/s_dynamic_snippet_categories/options.js',
-        ],
+        
     }
 }
