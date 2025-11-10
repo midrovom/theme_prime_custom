@@ -3,7 +3,7 @@
     <template id="s_dynamic_snippet_categories" name="Categorias">
         <t t-call="website.s_dynamic_snippet_template">
             <t t-set="snippet_name" t-value="'s_dynamic_snippet_categories'"/>
-            <t t-call="advance_theme_front.s_dynamic_snippet_categories_preview_data"/>
+            <t t-call="advance_theme_front.dynamic_filter_template_category"/>
         </t>
     </template>
 
