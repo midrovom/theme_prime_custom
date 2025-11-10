@@ -9,6 +9,8 @@ class WebsiteSnippetFilter(models.Model):
     def _filter_records_to_values(self, records, is_sample=False):
         res = super()._filter_records_to_values(records, is_sample)
 
+        _logger.info("INGRESA EN FILTER RECORDS ******************************")
+
         # Aplicar solo cuando el snippet está configurado para categorías
         if self.model_name == 'product.public.category':
             for data in res:
