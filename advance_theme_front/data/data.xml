@@ -21,7 +21,7 @@
             <field name="filter_id" ref="advance_theme_front.dynamic_snippet_all_categories_filter"/>
             <field name="field_names">display_name,image_512</field>
             <field name="limit" eval="16"/>
-            <field name="name">Newest Products</field>
+            <field name="name">Todas las categorias</field>
         </record>
     
     </data>
