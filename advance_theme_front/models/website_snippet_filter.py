@@ -28,3 +28,8 @@ class WebsiteSnippetFilter(models.Model):
 
         return res
     
+
+    def _prepare_values(self, limit=None, search_domain=None):
+        result = super()._prepare_values(limit, search_domain)
+
+        _logger.info(f"MOSTRANDO PREPARE VALUES >>>>>>>>>>>>>>>>>>>>>>>>> { result }")
