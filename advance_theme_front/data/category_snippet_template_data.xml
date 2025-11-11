@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <template id="dynamic_filter_template_category" name="Image + Name Category">
-            <t t-foreach="records" t-as="data" data-thumb="/website_sale/static/src/img/snippets_options/product_image_with_name.svg">
+        <template id="dynamic_filter_template_product_public_category" name="Image + Name Category">
+            <t t-foreach="records" t-as="data">
                 <t t-set="record" t-value="data['_record']"/>
-                <div class="card h-100 border-0 w-100 rounded-0 bg-transparent o_dynamic_product_hovered" t-att-data-url="record.website_url">
+                <div class="card h-100 border-0 w-100 rounded-0 bg-transparent o_dynamic_category_hovered">
                     <div t-if="is_sample" class="h5 o_ribbon_right bg-primary text-uppercase">Sample</div>
 
-                    <a class="o_carousel_product_img_link overflow-hidden" t-att-href="record.website_url">
-                        <img class="card-img-top h-auto o_img_product_square o_img_product_cover rounded"
+                    <a class="o_carousel_category_img_link overflow-hidden" href="#">
+                        <img class="card-img-top h-auto o_img_category_square o_img_category_cover rounded"
                             loading="lazy"
                             t-att-src="data['image_512']"
                             t-att-alt="record.name"/>
@@ -23,6 +23,6 @@
                     </div>
                 </div>
             </t>
-        </template>  
+        </template>   
     </data>  
 </odoo>
