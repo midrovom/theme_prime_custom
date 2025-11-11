@@ -1,4 +1,4 @@
-from odoo.addons.website.controllers.main import Website
+from addons.website.controllers.main import Website
 from odoo import http, models, fields, _
 
 import logging
