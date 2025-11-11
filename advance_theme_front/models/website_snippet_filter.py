@@ -45,5 +45,3 @@ class WebsiteSnippetFilter(models.Model):
 
         return dynamic_filter.with_context()._filter_records_to_values(categories, is_sample=False)
 
-        # Similar a _filter_records_to_values pero para categorías
-        # return self._filter_records_to_values(categories, is_sample=False)
