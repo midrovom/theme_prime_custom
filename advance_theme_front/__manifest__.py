@@ -13,7 +13,7 @@
     ],
     'data': [
         'data/data.xml',
-        # 'data/category_snippet_template_data.xml',
+        'data/category_snippet_template_data.xml',
         'views/snippets/s_dynamic_snippet_categories_preview_data.xml',
         'views/snippets/s_dynamic_snippet_category.xml',
         'views/snippets/snippets.xml',
