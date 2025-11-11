@@ -7,15 +7,12 @@
             <field name="user_id" eval="False" />
             <field name="domain">[]</field>
             <field name="context">{}</field>
-            <field name="sort">["create_date desc"]</field>
-            <field name="action_id" ref="website.action_website"/>
+            <field name="sort">["id desc"]</field>
         </record>
-    </data>
-    
-    <data>
+
         <record id="dynamic_filter_all_categories" model="website.snippet.filter">
             <field name="filter_id" ref="advance_theme_front.dynamic_snippet_all_categories_filter"/>
-            <field name="field_names">display_name,image_512</field>
+            <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Todas las categorias</field>
         </record>
