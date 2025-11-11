@@ -9,4 +9,5 @@ class ProductPublicCategory(models.Model):
 
     @api.model
     def _dynamic_filter_all_categories(self):
-        return self.env.ref('advance_theme_front.dynamic_filter_all_categories').id
+        return self.search([])
+        # return self.env.ref('advance_theme_front.dynamic_filter_all_categories').id
