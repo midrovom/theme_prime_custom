@@ -1,5 +1,5 @@
 from odoo import _, api, fields, models
-from odoo.addons.http_routing.models.ir_http import slug
+from odoo.http import slug
 import logging
 
 _logger = logging.getLogger(__name__)
