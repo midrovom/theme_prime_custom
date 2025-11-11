@@ -5,7 +5,7 @@
         <section data-snippet="dynamic_snippet_categories"
                 class="s_dynamic_snippet_categories o_dynamic_snippet_categories pt32 pb32"
                 data-name="Categorias"
-                t-att-data-filter-id="advance_theme_front.dynamic_filter_all_categories"
+                t-att-data-filter-id="advance_theme_front._dynamic_filter_all_categories()"
                 data-template-key="advance_theme_front.dynamic_filter_template_category"
                 data-number-of-elements="4"
                 data-number-of-elements-small-devices="1"
