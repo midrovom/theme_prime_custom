@@ -5,18 +5,6 @@ import { rpc } from "@web/core/network/rpc";
 
 dynamicSnippetOptions.include({
 
-    // async _fetchDynamicFilters() {
-
-    //     console.log("INGRESA A FETCH DYNAMIC FILTERS");
-    //     console.log(this.modelNameFilter);
-    //     console.log(this.contextualFilterDomain);
-
-    //     const res = await this._super(...arguments);
-
-    //     console.log("MOSTRANDO RES");
-    //     console.log(res)
-    // },
-
     async _fetchDynamicFilterTemplates() {
         const filter = this.dynamicFilters[this.$target.get(0).dataset['filterId']] || this.dynamicFilters[this._defaultFilterId];
         
