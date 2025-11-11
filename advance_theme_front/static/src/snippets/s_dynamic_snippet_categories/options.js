@@ -12,10 +12,10 @@ const dynamicSnippetCategoryOptions = s_dynamic_snippet_carousel_options.extend(
         this.modelNameFilter = 'product.public.category';
     },
 
-    _setOptionsDefaultValues() {
-        this._setOptionValue('numberOfRecords', 3);
-        this._super.apply(this, arguments);
-    },
+    // _setOptionsDefaultValues() {
+    //     this._setOptionValue('numberOfRecords', 3);
+    //     this._super.apply(this, arguments);
+    // },
 
 });
 
