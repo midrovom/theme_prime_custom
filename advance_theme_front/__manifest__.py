@@ -17,7 +17,6 @@
         'views/snippets/s_dynamic_snippet_categories_preview_data.xml',
         'views/snippets/s_dynamic_snippet_category.xml',
         'views/snippets/snippets.xml',
-        # 'views/templates.xml',
     ],
     'installable': True,
     'auto_install': False,

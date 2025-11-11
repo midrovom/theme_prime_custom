@@ -7,7 +7,7 @@
                 <div class="card h-100 border-0 w-100 rounded-0 bg-transparent o_dynamic_category_hovered">
                     <div t-if="is_sample" class="h5 o_ribbon_right bg-primary text-uppercase">Sample</div>
 
-                    <a class="o_carousel_category_img_link overflow-hidden" href="#">
+                    <a class="o_carousel_category_img_link overflow-hidden" t-att-href="data['url']">
                         <img class="card-img-top h-auto o_img_category_square o_img_category_cover rounded"
                             loading="lazy"
                             t-att-src="data['image_512']"
