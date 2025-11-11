@@ -13,7 +13,6 @@
         <record id="dynamic_filter_all_categories" model="website.snippet.filter">
             <field name="filter_id" ref="advance_theme_front.dynamic_snippet_all_categories_filter"/>
             <field name="field_names">name,image_512</field>
-            <field name="template_id" ref="advance_theme_front.dynamic_filter_template_category"/>
             <field name="limit" eval="16"/>
             <field name="name">Todas las categorias</field>
         </record>
