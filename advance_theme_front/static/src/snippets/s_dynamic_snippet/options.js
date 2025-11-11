@@ -8,7 +8,7 @@ dynamicSnippetOptions.include({
 
         console.log("INGRESA A FETCH DYNAMIC FILTERS");
 
-        this._super(...arguments);
+        await this._super(...arguments);
     },
     
 });
