@@ -7,8 +7,13 @@ dynamicSnippetOptions.include({
     async _fetchDynamicFilters() {
 
         console.log("INGRESA A FETCH DYNAMIC FILTERS");
+        console.log(this.modelNameFilter);
+        console.log(this.contextualFilterDomain);
 
-        await this._super(...arguments);
+        const res = await this._super(...arguments);
+
+        console.log("MOSTRANDO RES");
+        console.log(res)
     },
     
 });
