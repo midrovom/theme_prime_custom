@@ -2,7 +2,7 @@
 <odoo>
     <template id="snippets" inherit_id="website.snippets" name="e-commerce snippets">
         <xpath expr="//t[@id='installed_snippets_hook']" position="after">
-            <t snippet-group="categories" t-snippet="website.s_snippet_group" string="Categrias"
+            <t snippet-group="categories" t-snippet="website.s_snippet_group" string="Categorias"
                 t-thumbnail="/website/static/src/img/snippets_thumbs/s_dynamic_products.svg"/>
         </xpath>
 
