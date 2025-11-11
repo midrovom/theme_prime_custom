@@ -9,15 +9,6 @@ const DynamicSnippetCategories = DynamicSnippetCarousel.extend({
      * @override
      * @private
      */
-    _getSearchDomain: function () {
-        console.log("INGRESA A GET SEARCH DOMAIN");
-        return null;
-    },
-
-    /**
-     * @override
-     * @private
-     */
     _getMainPageUrl() {
         return "/shop";
     },
