@@ -1,6 +1,7 @@
 /** @odoo-module **/
 
 import dynamicSnippetOptions from "@website/snippets/s_dynamic_snippet/options";
+import { rpc } from "@web/core/network/rpc";
 
 dynamicSnippetOptions.include({
 
