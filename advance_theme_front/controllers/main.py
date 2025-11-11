@@ -21,6 +21,7 @@ class WebsiteCustom(Website):
     @http.route('/website/snippet/filter_templates', type='json', auth='public', website=True, readonly=True)
     def get_dynamic_snippet_templates(self, filter_name=False):
         _logger.info("ENTRA EN GET DYNAMIC SNIPPET TEMPLATES ******************************")
+        _logger.info(f"FILTER NAME ******************************   { filter_name }")
         
         res = super().get_dynamic_snippet_templates(filter_name=filter_name)
 
