@@ -31,6 +31,7 @@ class WebsiteSnippetFilter(models.Model):
 
     @api.model
     def _get_public_categories(self, mode=None, **kwargs):
+        dynamic_filter = self.env.context.get('dynamic_filter') 
         website = self.env['website'].get_current_website()
 
         # Dominio base
@@ -42,5 +43,7 @@ class WebsiteSnippetFilter(models.Model):
         # Traer categorías ordenadas como en la web
         categories = self.env['product.public.category'].search(domain, order="sequence ASC, name ASC")
 
+        return dynamic_filter.with_context()._filter_records_to_values(categories, is_sample=False)
+
         # Similar a _filter_records_to_values pero para categorías
-        return self._filter_records_to_values(categories, is_sample=False)
+        # return self._filter_records_to_values(categories, is_sample=False)
