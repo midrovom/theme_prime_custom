@@ -7,6 +7,9 @@ const dynamicSnippetCategoryOptions = s_dynamic_snippet_carousel_options.extend(
     /**
      * @override
      */
+
+    // Metodo override que permite definir el filtro del modelo especifico que se crea en ir.filters model_id
+
     init() {
         this._super.apply(this, arguments);
         this.modelNameFilter = 'product.public.category';
