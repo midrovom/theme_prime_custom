@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <template id="s_dynamic_snippet_categories" name="Categorias">
+    <template id="s_dynamic_snippet_categories_template" name="Categorias">
         <section data-snippet="dynamic_snippet_categories"
                 class="s_dynamic_snippet_categories o_dynamic_snippet_categories pt32 pb32"
                 data-name="Categorias"
