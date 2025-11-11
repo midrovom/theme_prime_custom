@@ -1,4 +1,5 @@
 from odoo import _, api, fields, models
+from odoo.addons.http_routing.models.ir_http import slug
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class WebsiteSnippetFilter(models.Model):
                 category = data['_record']
 
                 # Asegurar que tenga URL
-                data['url'] = category.website_url
+                data['url'] = f"/shop/category/{slug(category)}"
 
                 # Si deseas incluir cantidad de productos dentro de categoría
                 data['product_count'] = len(category.product_tmpl_ids)
