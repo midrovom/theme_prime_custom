@@ -27,3 +27,20 @@ class WebsiteSnippetFilter(models.Model):
                     data['image_512'] = "/web/static/img/placeholder.png"
 
         return res
+    
+
+    @api.model
+    def _get_public_categories(self, mode=None, **kwargs):
+        website = self.env['website'].get_current_website()
+
+        # Dominio base
+        domain = [
+            ('is_show', '=', True),  # ← tu campo para mostrar/ocultar
+            ('website_id', 'in', [False, website.id]),  # Soporte multi-website
+        ]
+
+        # Traer categorías ordenadas como en la web
+        categories = self.env['product.public.category'].search(domain, order="sequence ASC, name ASC")
+
+        # Similar a _filter_records_to_values pero para categorías
+        return self._filter_records_to_values(categories, is_sample=False)
