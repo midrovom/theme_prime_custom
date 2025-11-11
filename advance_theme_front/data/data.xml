@@ -3,7 +3,7 @@
     <data>
         <record id="dynamic_snippet_is_show_categories_action" model="ir.actions.server">
             <field name="name">Categorias Seleccionadas</field>
-            <field name="model_id" ref="model_product_product"/>
+            <field name="model_id" ref="website_sale.model_product_public_category"/>
             <field name="state">code</field>
             <field name="code">
 DynamicFilter = model.env['website.snippet.filter']
