@@ -82,13 +82,13 @@
                             <t t-raw="item.rating"/>
                         </span>
                     </div>
-                    <div class="col-4 d-flex align-items-center">
+                    <div class="col-4 d-flex justify-content-end align-items-end">
                         <button
                             t-if="widget._isActionEnabled('add_to_cart')"
                             t-att-data-product-product-id="item.product_variant_id"
                             data-bs-toggle="tooltip"
                             data-placement="bottom"
-                            t-attf-class="btn btn-md tp-rounded-border d_action_btn d_add_to_cart_btn #{widget.buyButtonColor or 'btn-primary'} ms-auto"
+                            t-attf-class="btn btn-sm tp-rounded-border d_action_btn d_add_to_cart_btn #{widget.buyButtonColor or 'btn-primary'} w-auto flex-shrink-0"
                             title="Comprar"
                         >
                             <t t-out="widget.buyButtonText or 'Comprar'"/>
@@ -98,6 +98,7 @@
             </div>
         </div>
     </t>
+
 
 
 
