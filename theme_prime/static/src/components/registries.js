@@ -24,7 +24,7 @@ registry.category('theme_prime_card_registry')
 registry.category('theme_prime_mobile_card_registry')
     .add('s_mobile_card_style_1', {supportedActions: []})
     .add('s_mobile_card_style_2', {supportedActions: []})
-    .add('s_mobile_card_style_3', {supportedActions: []})//se agrego este nuevo registro
+    .add('s_card_style_9', {supportedActions: []})//se agrego este nuevo registro
 
 registry.category('theme_prime_small_card_registry')
     .add('tp_category_product_card_style_1', { supportedActions: ['add_to_cart', 'rating', 'category_info']})
