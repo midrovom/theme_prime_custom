@@ -173,7 +173,8 @@
                             t-att-data-product-product-id="item.product_variant_id"
                             data-bs-toggle="tooltip"
                             data-placement="bottom"
-                            t-attf-class="btn btn-sm tp-rounded-border d_action_btn d_add_to_cart_btn #{widget.buyButtonColor or 'btn-primary'} w-auto flex-shrink-0 py-1 px-2"
+                            t-attf-class="btn tp-rounded-border d_action_btn d_add_to_cart_btn #{widget.buyButtonColor or 'btn-primary'} w-auto flex-shrink-0 ms-auto"
+                            style="font-size: 0.65rem; padding: 2px 6px;"
                             title="Comprar"
                         >
                             <t t-out="widget.buyButtonText or 'Comprar'"/>
@@ -183,6 +184,7 @@
             </div>
         </div>
     </t>
+
 
 
 </templates>
