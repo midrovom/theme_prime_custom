@@ -113,18 +113,4 @@
     </div>
     </t>
 
-
-
-    <t t-name="d_s_cards_wrapper_categories">
-        <div>
-            <h1>TEMPLATE PARA CATEGORIES</h1>
-        </div>
-    </t>
-
-
-
-
-
-
-
 </templates>
