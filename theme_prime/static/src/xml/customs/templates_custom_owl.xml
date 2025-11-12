@@ -46,7 +46,11 @@
                                 <t t-call="tp-snippet-product-price"/>
                             </div>
                             <div class="col-4 d-flex justify-content-end">
-                                <button style="transform:scale(1);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-sm tp-rounded-border btn-primary tp-icon-center-2 d_action_btn d_add_to_cart_btn" title="Add to Cart">
+                                <button
+                                    t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip"
+                                    data-placement="bottom" title="Add to Cart" class="btn btn-sm tp-rounded-border btn-primary tp-icon-center-2 d_action_btn d_add_to_cart_btn"
+                                    style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;"
+                                >
                                     <i style="font-size:14px;" class="d_action_btn_icon dri dri-cart"></i>
                                 </button>
                             </div>
@@ -59,6 +63,7 @@
             </div>
         </div>
     </t>
+
     <!--Estilos para Snippet Product Card Version movil-->
 
     <t t-name="s_mobile_card_style_3">
