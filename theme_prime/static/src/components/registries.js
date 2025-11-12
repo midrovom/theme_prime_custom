@@ -19,6 +19,7 @@ registry.category('theme_prime_card_registry')
     .add('s_card_style_6', { supportedActions: [...new Set([...PRODUCTS_ACTIONS, ...['show_similar', 'colors']])]})
     .add('s_card_style_7', { supportedActions: [...new Set([...PRODUCTS_ACTIONS, ...['show_similar', 'colors']])]})
     .add('s_card_style_8', { supportedActions: [...new Set([...PRODUCTS_ACTIONS, ...['show_similar']])]})
+    .add('s_card_style_9', { supportedActions: [...new Set([...PRODUCTS_ACTIONS, ...['show_similar']])]});//nuevo registro
 
 registry.category('theme_prime_mobile_card_registry')
     .add('s_mobile_card_style_1', {supportedActions: []})
