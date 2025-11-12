@@ -85,8 +85,8 @@
                                         <a t-att-href="item.website_url">
                                             <t t-out="item.name"/>
                                                 </a>
-                                                    <t t-call="tp_category_info"/>
-                                                </h5>
+                                                    </h5>
+                                                <t t-call="tp_category_info"/>
                                             <div class="row g-0">
                                         <div class="col-6 text-start">
                                     <t t-call="tp-snippet-product-price"/>
