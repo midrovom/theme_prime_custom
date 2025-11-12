@@ -14,27 +14,6 @@ import { renderToElement } from "@web/core/utils/render";
 import { localization } from "@web/core/l10n/localization";
 import { _t } from "@web/core/l10n/translation";
 
-publicWidget.registry.s_d_categories_snippet = ProductRootWidget.extend(OwlMixin, ProductsBlockMixins, {
-    selector: '.s_d_categories_snippet_wrapper',
-
-    bodyTemplate: 'd_s_cards_wrapper',
-    bodySelector: '.s_d_products_snippet',
-    controllerRoute: '/theme_prime/get_categories_info',
-    fieldstoFetch: ['dr_category_label_id'],
-    snippetNodeAttrs: (ProductRootWidget.prototype.snippetNodeAttrs || []).concat(['data-selection-info']),
-
-    /**
-     * initialize owlCarousel.
-     * @private
-     */
-    _modifyElementsAfterAppend: function () {
-        this._super.apply(this, arguments);
-        if (this.uiConfigInfo.mode === 'slider') {
-            this.initializeOwlSlider(this.uiConfigInfo.ppr);
-        }
-    },
-});
-
 // Hack ODOO is handling hover by self so manually trigger event remove when new bootstrap is merged in ODOO :)
 
 publicWidget.registry.hoverableDropdown.include({
