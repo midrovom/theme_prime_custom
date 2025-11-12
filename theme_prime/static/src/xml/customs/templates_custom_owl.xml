@@ -59,7 +59,7 @@
         </div>
     </t>
 
-    <t t-name="s_card_style_10">
+    <t t-name="s_card_style_8_buy_button_custom">
         <div t-attf-class="card h-100 tp-rounded-border border s_card_style_8 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
             <div class="d_product_box position-relative h-100">
                 <t t-call="tp_product_snippet_action_drawer"/>
@@ -88,7 +88,7 @@
                             t-att-data-product-product-id="item.product_variant_id"
                             data-bs-toggle="tooltip"
                             data-placement="bottom"
-                            t-attf-class="btn btn-lg tp-rounded-border d_action_btn d_add_to_cart_btn #{widget.buyButtonColor or 'btn-primary'}"
+                            t-attf-class="btn btn-sm tp-rounded-border d_action_btn d_add_to_cart_btn #{widget.buyButtonColor or 'btn-primary'}"
                             title="Comprar"
                         >
                             <t t-out="widget.buyButtonText or 'Comprar'"/>
@@ -98,6 +98,7 @@
             </div>
         </div>
     </t>
+
 
 
     <!--Estilos para Snippet Product Card Version movil-->
