@@ -89,13 +89,22 @@
                 </h5>
                 <t t-call="tp_category_info"/>
 
-                <!-- Mostrar nombres de atributos no personalizados -->
+                <!-- Atributos del producto (otros atributos) -->
                 <t t-if="item.other_attributes">
-                    <p class="text-muted small mb-1">
+                    <ul class="list-unstyled text-muted text-start text-wrap my-2" style="font-size:0.65rem; line-height:1.1;">
                         <t t-foreach="item.other_attributes" t-as="attr" t-key="attr.id">
-                            <t t-out="attr.name"/> 
+                            <t t-if="attr.id">
+                                <li class="d-flex align-items-center mb-1 text-truncate" style="gap:0.3rem;">
+                                    <t t-if="attr.image">
+                                        <img t-att-src="attr.image"
+                                            class="attr-icon"
+                                            style="max-height:24px; max-width:100%; height:auto; width:auto; background:white; border-radius:4px;"/>
+                                    </t>
+                                    <t t-esc="attr.name"/>
+                                </li>
+                            </t>
                         </t>
-                    </p>
+                    </ul>
                 </t>
 
                 <div class="row g-0">
