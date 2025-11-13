@@ -58,6 +58,7 @@
             </div>
         </div>
     </t>
+
     <t t-name="s_card_style_10">
         <div t-attf-class="card h-100 s_card_style_2 shadow-sm border-0 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
             <div class="d_product_box position-relative d-flex align-items-center overflow-hidden">
@@ -87,11 +88,11 @@
                 </h5>
                 <t t-call="tp_category_info"/>
 
-                <!-- Atributos -->
+                <!-- Atributos en una sola línea separados por coma -->
                 <t t-if="item.other_attributes">
                     <p class="text-muted small mb-1">
                         <t t-set="last_index" t-value="len(item.other_attributes) - 1"/>
-                        <t t-foreach="item.other_attributes" t-as="attr" t-index="i">
+                        <t t-foreach="item.other_attributes" t-as="attr" t-index="i" t-key="attr.id">
                             <t t-out="attr.name"/>
                             <t t-if="i != last_index">, </t>
                         </t>
