@@ -84,32 +84,32 @@
                 <h5 class="card-title text-truncate fw-light d-product-name text-start mb-1">
                     <a t-att-href="item.website_url">
                         <t t-out="item.name"/>
-                </a>
-            </h5>
-            <t t-call="tp_category_info"/>
+                    </a>
+                </h5>
+                <t t-call="tp_category_info"/>
 
-            <!-- Atributos en una sola línea separados por coma -->
-            <t t-if="item.other_attributes">
-                <p class="text-muted small mb-1">
-                    <t t-set="last_index" t-value="len(item.other_attributes) - 1"/>
-                    <t t-foreach="item.other_attributes" t-as="attr" t-index="i" t-key="attr.id">
-                        <t t-out="attr.name"/>
-                        <t t-if="i != last_index">, </t>
-                    </t>
-                </p>
-            </t>
+                <!-- Atributos en una sola línea separados por coma -->
+                <t t-if="item.other_attributes">
+                    <p class="text-muted small mb-1">
+                        <t t-set="last_index" t-value="item.other_attributes.length - 1"/>
+                        <t t-foreach="item.other_attributes" t-as="attr" t-index="i" t-key="attr.id">
+                            <t t-out="attr.name"/>
+                            <t t-if="i != last_index">, </t>
+                        </t>
+                    </p>
+                </t>
 
-            <div class="row g-0">
-                <div class="col-6 text-start">
-                    <t t-call="tp-snippet-product-price"/>
-                </div>
-                <div t-if="widget._isActionEnabled('rating')" class="col-6 small text-end">
-                    <t t-out="item.rating"/>
+                <div class="row g-0">
+                    <div class="col-6 text-start">
+                        <t t-call="tp-snippet-product-price"/>
+                    </div>
+                    <div t-if="widget._isActionEnabled('rating')" class="col-6 small text-end">
+                        <t t-out="item.rating"/>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</t>
+    </t>
 
 
 
