@@ -169,7 +169,7 @@
 
                 <!-- Atributos en una sola línea separados por coma -->
                 <t t-if="item.other_attributes">
-                    <p class="text-muted mb-1" style="font-size:0.6rem !important;">
+                    <p class="text-muted small mb-1">
                         <t t-set="last_index" t-value="item.other_attributes.length - 1"/>
                         <t t-foreach="item.other_attributes" t-as="attr" t-index="i" t-key="attr.id">
                             <t t-out="attr.name"/>
@@ -196,5 +196,6 @@
             </div>
         </div>
     </t>
+
 
 </templates>
