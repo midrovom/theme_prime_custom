@@ -128,7 +128,7 @@
                             </a>
                         </h6>
 
-                        <!-- Precio anterior tachado -->
+                        <!-- Precio anterior tachado solo si hay descuento -->
                         <t t-if="item.list_price and item.list_price > item.price">
                             <span class="text-muted small d-block" style="text-decoration: line-through; color:#a0a0a0;">
                                 <t t-out="item.list_price"/>
@@ -152,6 +152,7 @@
             </div>
         </div>
     </t>
+
 
 
     <!--Estilos para Snippet Product Card Version movil-->
