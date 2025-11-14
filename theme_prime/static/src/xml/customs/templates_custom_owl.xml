@@ -239,5 +239,51 @@
         </div>
     </t>
 
+    <t t-name="s_mobile_card_style_5">
+        <div class="card border text-start tp-rounded-border position-relative mb-2 s_mobile_card_style_1">
+            <i style="transform: scale(1.2)" t-if="widget._isActionEnabled('wishlist')" 
+            t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" 
+            class="dri dri-wishlist tp-action-icon tp-cursor-pointer mt-2 text-center border rounded-circle d_add_to_wishlist_btn tp-icon-center-1 position-absolute top-0 end-0 me-2 text-body" 
+            title="Add to Wishlist"/>
+            <a class="d_product_box d-flex align-items-center" t-att-href="item.website_url">
+                <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="card-img-top d-product-img"/>
+            </a>
+            <div class="p-2">
+                <t t-call="tp_category_info">
+                    <t t-set="_classes" t-value="'d-inline-block small'"/>
+                </t>
+                <t t-call="s_mobile_product_name"/>
+                <div class="row g-0">
+                    <div class="col-9 d-flex flex-column align-items-start justify-content-center">
+                        <div t-if="widget._isActionEnabled('rating')" class="small d_rating_top_right">
+                            <t t-out="item.rating"/>
+                        </div>
+
+                        <!-- Precio base tachado arriba del precio actual -->
+                        <div class="d-product-price small">
+                            <span t-if="item.list_price_base and item.list_price_base != ' '" 
+                                class="text-muted d-block" 
+                                style="text-decoration: line-through; font-size: 0.75rem;">
+                                <t t-out="item.list_price_base"/>
+                            </span>
+                            <!-- Precio actual -->
+                            <span class="d-inline-block mb-0 text-muted">
+                                <t t-out="item.price"/>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-3 d-flex align-items-center justify-content-end">
+                        <button style="transform:scale(1.2);" t-if="widget._isActionEnabled('add_to_cart')" 
+                                t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" 
+                                class="btn btn-primary-soft d_action_btn d_add_to_cart_btn btn-sm rounded-circle p-0 tp-icon-center-1" 
+                                title="Add to Cart">
+                            <i class="d_action_btn_icon dri dri-cart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
 
 </templates>
