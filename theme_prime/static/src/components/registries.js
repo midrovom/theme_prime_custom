@@ -21,6 +21,7 @@ registry.category('theme_prime_card_registry')
     .add('s_card_style_8', { supportedActions: [...new Set([...PRODUCTS_ACTIONS, ...['show_similar']])]})
     .add('s_card_style_9', { supportedActions: [...new Set([...PRODUCTS_ACTIONS, ...['show_similar']])]})//nuevo registro
     .add('s_card_style_10', { supportedActions: [...new Set([...PRODUCTS_ACTIONS, ...['show_similar']])]})//nuevo registro
+    .add('s_card_style_11', { supportedActions: [...new Set([...PRODUCTS_ACTIONS, ...['show_similar']])]})//nuevo registro
 
 registry.category('theme_prime_mobile_card_registry')
     .add('s_mobile_card_style_1', {supportedActions: []})
