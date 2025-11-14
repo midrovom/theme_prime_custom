@@ -109,44 +109,6 @@
         </div>
     </t>
 
-    <t t-name="s_card_style_11">
-        <div t-attf-class="card h-100 tp-rounded-border border s_card_style_8 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
-            <div class="d_product_box position-relative h-100">
-                <t t-call="tp_product_snippet_action_drawer"/>
-                <div class="overflow-hidden d_img_block position-relative border-bottom d-flex justify-content-center">
-                    <a t-att-href="item.website_url" t-att-class="hasTimer and 'h-100'">
-                        <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="img img-fluid d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
-                    </a>
-                    <t t-call="dr_s_lable_tmpl"></t>
-                </div>
-                <div class="row px-3 g-1 pb-2 pt-3">
-                    <div class="col-8 text-start">
-                        <t t-call="tp_category_info"/>
-                        <h6 class="card-title mb-1 fw-light text-truncate d-product-name">
-                            <a t-att-href="item.website_url">
-                                <t t-out="item.name"/>
-                            </a>
-                        </h6>
-
-                        <t t-out="item.list_price_base"/>
-
-                        <t t-call="tp-snippet-product-price"/>
-                        <span t-if="widget._isActionEnabled('rating')" class=" w-auto px-0 small mt-n1 d-block">
-                            <t t-raw="item.rating"/>
-                        </span>
-                    </div>
-                    <div class="col-4 d-flex justify-content-end align-items-center">
-                        <button style="transform:scale(1.1);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-lg tp-rounded-border btn-primary tp-icon-center-2 d_action_btn d_add_to_cart_btn" title="Add to Cart">
-                            <i style="font-size:16px;" class="d_action_btn_icon dri dri-cart"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </t>
-
-
-
     <!--Estilos para Snippet Product Card Version movil-->
 
     <t t-name="s_mobile_card_style_3">
