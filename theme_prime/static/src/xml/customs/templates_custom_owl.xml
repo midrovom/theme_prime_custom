@@ -127,19 +127,11 @@
                                 <t t-out="item.name"/>
                             </a>
                         </h6>
-
-                        <!-- Mostrar SIEMPRE el precio anterior -->
-                        <span class="text-muted small d-block" style="text-decoration: line-through; color:#a0a0a0;">
-                            <t t-out="list_price"/>
-                        </span>
-
-                        <!-- Precio actual -->
                         <t t-call="tp-snippet-product-price"/>
-
-                        <!-- Rating -->
-                        <span t-if="widget._isActionEnabled('rating')" class="w-auto px-0 small mt-n1 d-block">
+                        <span t-if="widget._isActionEnabled('rating')" class=" w-auto px-0 small mt-n1 d-block">
                             <t t-raw="item.rating"/>
                         </span>
+                        <t t-call="tp-snippet-product-price"/>
                     </div>
                     <div class="col-4 d-flex justify-content-end align-items-center">
                         <button style="transform:scale(1.1);" t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" class="btn btn-lg tp-rounded-border btn-primary tp-icon-center-2 d_action_btn d_add_to_cart_btn" title="Add to Cart">
@@ -150,8 +142,6 @@
             </div>
         </div>
     </t>
-
-
 
 
 
