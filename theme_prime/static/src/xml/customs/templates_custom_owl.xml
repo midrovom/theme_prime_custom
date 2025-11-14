@@ -128,7 +128,7 @@
                             </a>
                         </h6>
 
-                        <t t-out="item.list_price"/>
+                        <t t-out="item.list_price_base"/>
 
                         <t t-call="tp-snippet-product-price"/>
                         <span t-if="widget._isActionEnabled('rating')" class=" w-auto px-0 small mt-n1 d-block">
