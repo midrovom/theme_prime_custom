@@ -16,19 +16,21 @@
         </div>
     </t>
 
-    <t t-name="d_product_snippet_inner_content">
+    <!-- <t t-name="d_product_snippet_inner_content">
         <t t-set="userParams" t-value="widget.uiConfigInfo"/>
         <t t-if="userParams.mode === 'slider'">
             <div t-if="data.length" t-attf-class="owl-carousel droggol_product_slider d-owl-ppr-#{12 / userParams.ppr}">
                 <t t-foreach="data" t-as="item" t-key="item.id">
                     <t t-call="#{userParams.style}"/>
-                </t>
-                <!-- TESTING PURPOSE -->
+                </t> -->
+
+                <!-- TESTING PURPOSE (no descomentar)-->
                 <!-- <t t-foreach="['s_card_style_1', 's_card_style_2', 's_card_style_3', 's_card_style_4', 's_card_style_5', 's_card_style_6', 's_card_style_7']" t-as="style" t-key="style">
                     <t t-set="item" t-value="data[0]"/>
                     <t t-call="#{style}"/>
                 </t> -->
-            </div>
+
+            <!-- </div>
             <t t-elif="widget.noDataTemplate">
                 <t t-call="#{widget.noDataTemplate}"></t>
             </t>
@@ -47,7 +49,7 @@
                 </t>
             </div>
         </t>
-    </t>
+    </t> -->
 
     <t t-name="d_s_category_cards_wrapper">
         <div class="o_not_editable mt-4">
