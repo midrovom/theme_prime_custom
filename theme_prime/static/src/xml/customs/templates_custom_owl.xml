@@ -281,5 +281,27 @@
         </div>
     </t>
 
+    <!--Brands-->
+    <t t-name="tp_brand_card_style_5">
+        <!-- Encabezado con líneas completas -->
+        <div class="col-12 mb-3">
+            <hr class="w-100"/>
+            <h3 class="text-center">----- Marcas destacadas -----</h3>
+            <hr class="w-100"/>
+        </div>
+
+        <!-- Tarjeta de marca -->
+        <div class="col-md-2 col-6">
+            <div class="tp-animation-scale p-3 tp_brand_card_style_4 w-100">
+                <a t-attf-href="/shop?attribute_value=#{brand.attribute_id[0]}-#{brand.id}">
+                    <img t-attf-src="/web/image/product.attribute.value/#{brand.id}/dr_image"
+                        class="img tp-image-128-max img-fluid mx-auto tp-cursor-pointer"
+                        loading="lazy"/>
+                </a>
+            </div>
+        </div>
+    </t>
+
+
 
 </templates>

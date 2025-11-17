@@ -92,6 +92,7 @@ registry.category('theme_prime_brand_card_registry')
     .add('tp_brand_card_style_3', { supportedActions: [] })
     .add('tp_brand_card_style_4', { supportedActions: [] })
     .add('tp_brand_card_style_5', { supportedActions: [] })
+    .add('tp_brand_card_style_6', { supportedActions: [] })//Nuevo registro
 
 registry.category('theme_prime_product_list_cards')
     .add('tp_product_list_cards_1', {supportedActions: ['rating']})
