@@ -256,7 +256,7 @@
                             <t t-out="item.rating"/>
                         </div>
 
-                        <!-- Precio base tachado arriba del precio actual -->
+                        <!-- Precio base tachado -->
                         <div class="d-product-price small">
                             <span t-if="item.list_price_base and item.list_price_base != ' '" 
                                 class="text-muted d-block" 
