@@ -67,10 +67,21 @@ publicWidget.registry.s_d_products_snippet = ProductRootWidget.extend(OwlMixin, 
      * initialize owlCarousel.
      * @private
      */
-    _modifyElementsAfterAppend: function () {
+    // _modifyElementsAfterAppend: function () {
+    //     this._super.apply(this, arguments);
+    //     if (this.uiConfigInfo.mode === 'slider') {
+    //         this.initializeOwlSlider(this.uiConfigInfo.ppr);
+    //     }
+    // },
+        _modifyElementsAfterAppend: function () {
         this._super.apply(this, arguments);
-        if (this.uiConfigInfo.mode === 'slider') {
-            this.initializeOwlSlider(this.uiConfigInfo.ppr);
+
+        const isMobile = window.innerWidth < 768; // o usa tu breakpoint preferido
+        const mode = isMobile ? this.uiConfigInfo.mobileConfig?.mode : this.uiConfigInfo.mode;
+        const ppr = isMobile ? this.uiConfigInfo.mobileConfig?.ppr || 2 : this.uiConfigInfo.ppr;
+
+        if (mode === 'slider') {
+            this.initializeOwlSlider(ppr);
         }
     },
 });
