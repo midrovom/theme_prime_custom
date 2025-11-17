@@ -282,7 +282,7 @@
     </t>
 
     <!--Brands-->
-    <t t-name="tp_brand_card_style_5">
+    <t t-name="tp_brand_card_style_6">
         <!-- Encabezado con líneas completas -->
         <div class="col-12 mb-3">
             <hr class="w-100"/>
