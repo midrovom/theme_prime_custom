@@ -1,6 +1,30 @@
+/* Botón del collapse sin cambiar colores del tema */
+.tp-footer-collapse-btn {
+    background: none !important;
+    border: none !important;
+    padding: 10px 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-align: left;
+    color: inherit !important; /* Mantiene el color normal del sitio */
+}
+
+/* Alineación izquierda solo móvil */
 @media (max-width: 767px) {
-    .tp-mobile-left,
     .tp-mobile-left-text {
         text-align: left !important;
     }
+}
+
+/* Icono "v" */
+.tp-collapse-icon {
+    float: right;
+    transition: transform 0.3s ease;
+    display: inline-block;
+    font-weight: bold;
+}
+
+/* Rotación cuando está abierto */
+button[aria-expanded="true"] .tp-collapse-icon {
+    transform: rotate(180deg);
 }
