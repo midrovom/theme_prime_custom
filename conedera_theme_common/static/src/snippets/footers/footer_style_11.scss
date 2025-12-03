@@ -1,15 +1,8 @@
-.input-group {
-  flex-direction: column; // cambia de fila a columna
-  align-items: stretch;   // que ocupen todo el ancho
-}
-
-.input-group .form-control {
-  margin-bottom: 0.5rem; // espacio entre input y botón
-}
-
-.input-group .btn {
-  width: 100%;           // botón ancho completo
-  text-align: center;    // texto centrado
+.btn-newsletter {
+  display: block;       // hace que se muestre como bloque
+  width: 100%;          // ocupa todo el ancho
+  margin-top: 0.5rem;   // separación respecto al input
+  text-align: center;   // centra el texto
 }
 
 
