@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_footer_style_1_logo_left" inherit_id="theme_prime.template_footer_style_1" name="Footer Style - 1 Logo Left">
-        <xpath expr="//div[@id='footer']//div[@class='col-12 text-center mb-5']" position="attributes">
+    <template id="template_footer_style_1_logo_left" inherit_id="template_footer_style_1">
+        <xpath expr="//div[@id='footer']//div[hasclass('o_footer_logo')]" position="attributes">
             <attribute name="class">col-12 text-start mb-5</attribute>
         </xpath>
     </template>
