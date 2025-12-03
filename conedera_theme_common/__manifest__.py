@@ -16,6 +16,8 @@
     ],
     'data': [
         'views/website_template.xml'
+        'views/snippets.xml',
+        'views/snippets/s_key_images_custom.xml',
     ],
     'auto_install': False,
     'application': False,
