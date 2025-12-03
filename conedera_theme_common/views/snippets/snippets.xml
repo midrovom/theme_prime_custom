@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="add_my_snippet_to_intro" inherit_id="web_editor.snippets">
+    <template id="add_my_snippet_to_intro" inherit_id="website.snippets">
         <xpath expr="//snippets[@id='snippet_structure']" position="inside">
             <t t-snippet="conedera_theme_common.s_key_images_custom" string="Key Images" group="columns">
                 <keywords>columns, gallery, pictures, photos, media, text, content, album, showcase, visuals, portfolio, arrangement, collection, visual-grid, split, alignment, added value</keywords>
