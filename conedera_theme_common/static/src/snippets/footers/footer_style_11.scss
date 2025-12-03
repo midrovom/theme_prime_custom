@@ -32,4 +32,8 @@
     .tp-mobile-left-text {
         text-align: left !important;
     }
+    /* Ocultar logo solo en móvil */
+    .o_footer_logo {
+        display: none !important;
+    }
 }
