@@ -128,7 +128,6 @@
             <div id="footer" class="oe_structure oe_structure_solo" t-ignore="true" t-if="not no_footer">
                     <section class="s_text_block pt64 pb32" data-snippet="s_text_block" data-name="Text">
                         <div class="container">
-                            <!-- Logo -->
                             <div class="row">
                                 <div class="col-12 text-center mb-5">
                                     <a href="/" class="o_footer_logo logo">
@@ -141,10 +140,7 @@
                                 </div>
                             </div>
 
-                            <!-- Sección alineada en una sola fila -->
                             <div class="row tp-mobile-left">
-
-                                <!-- ESCRÍBENOS -->
                                 <div class="col-lg-3 col-md-6 mb-4 order-1">
                                     <h5 class="tp-mobile-left-text">ESCRÍBENOS</h5>
                                     <div class="s_social_media o_not_editable no_icon_color tp-followus-icons">
@@ -157,7 +153,6 @@
                                     </div>
                                 </div>
 
-                                <!-- INFORMACIÓN (collapsible en móvil) -->
                                 <div class="col-lg-3 col-md-6 mb-4 order-2">
                                     <button class="btn w-100 d-lg-none tp-footer-collapse-btn tp-mobile-left-text"
                                             data-bs-toggle="collapse"
@@ -174,8 +169,6 @@
                                         </ul>
                                     </div>
                                 </div>
-
-                                <!-- NOSOTROS (collapsible en móvil) -->
                                 <div class="col-lg-3 col-md-6 mb-4 order-3">
                                     <button class="btn w-100 d-lg-none tp-footer-collapse-btn tp-mobile-left-text"
                                             data-bs-toggle="collapse"
@@ -193,8 +186,6 @@
                                         </ul>
                                     </div>
                                 </div>
-
-                                <!-- REGÍSTRATE (sin desplegable) -->
                                 <div class="col-lg-3 col-md-6 mb-4 order-4 tp-mobile-left-text">
                                     <h5 class="tp-mobile-left-text">REGÍSTRATE A NUESTRAS OFERTAS</h5>
 
