@@ -1,23 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_footer_style_11" inherit_id="website.layout" name="Footer Style - 11" active="False">
+    <template id="template_footer_style_11_custom" inherit_id="website.layout" name="Footer Style - 11" active="False">
         <xpath expr="//div[@id='footer']" position="replace">
             <div id="footer" class="oe_structure oe_structure_solo" t-ignore="true" t-if="not no_footer">
                     <section class="s_text_block pt64 pb32" data-snippet="s_text_block" data-name="Text">
                         <div class="container">
                             <!-- Logo -->
+                            <div class="row">
+                                <div class="col-12 text-center mb-5">
+                                    <a href="/" class="o_footer_logo logo">
+                                        <img src="/website/static/src/img/website_logo.svg"
+                                             class="img-fluid"
+                                             aria-label="Logo of MyCompany"
+                                             title="MyCompany"
+                                             role="img"/>
+                                    </a>
+                                </div>
+                            </div>
 
                             <!-- Sección alineada en una sola fila -->
                             <div class="row tp-mobile-left">
-                                <div class="col-12 text-center mb-5">
-                                        <a href="/" class="o_footer_logo logo">
-                                            <img src="/website/static/src/img/website_logo.svg"
-                                                class="img-fluid"
-                                                aria-label="Logo of MyCompany"
-                                                title="MyCompany"
-                                                role="img"/>
-                                        </a>
-                                    </div>
+
                                 <!-- ESCRÍBENOS -->
                                 <div class="col-lg-3 col-md-6 mb-4 order-1">
                                     <h5 class="tp-mobile-left-text">ESCRÍBENOS</h5>
