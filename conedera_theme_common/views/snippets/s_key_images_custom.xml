@@ -5,28 +5,26 @@
             <div class="container">
                 <div class="row s_nb_column_fixed">
                     <div class="col-6 col-lg-3">
-                        <!-- Eliminado el número -->
+                        <!-- Imagen -->
                         <p><img src="/web/image/website.s_key_images_default_image_1"
                                 class="img img-fluid rounded" alt=""/></p>
-                        <p>This is a small title related to the current image</p>
+                        <!-- Enlace en lugar de texto -->
+                        <a href="/page/example1" class="d-block mt-2">This is a small title related to the current image</a>
                     </div>
                     <div class="col-6 col-lg-3">
-                        <!-- Eliminado el número -->
                         <p><img src="/web/image/website.s_key_images_default_image_2"
                                 class="img img-fluid rounded" alt=""/></p>
-                        <p>This is a small title related to the current image</p>
+                        <a href="/page/example2" class="d-block mt-2">This is a small title related to the current image</a>
                     </div>
                     <div class="col-6 col-lg-3">
-                        <!-- Eliminado el número -->
                         <p><img src="/web/image/website.s_key_images_default_image_3"
                                 class="img img-fluid rounded" alt=""/></p>
-                        <p>This is a small title related to the current image</p>
+                        <a href="/page/example3" class="d-block mt-2">This is a small title related to the current image</a>
                     </div>
                     <div class="col-6 col-lg-3">
-                        <!-- Eliminado el número -->
                         <p><img src="/web/image/website.s_key_images_default_image_4"
                                 class="img img-fluid rounded" alt=""/></p>
-                        <p>This is a small title related to the current image</p>
+                        <a href="/page/example4" class="d-block mt-2">This is a small title related to the current image</a>
                     </div>
                 </div>
             </div>
