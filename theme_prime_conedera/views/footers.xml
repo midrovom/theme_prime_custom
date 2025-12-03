@@ -19,15 +19,12 @@
                             </div>
 
                             <!-- Sección alineada en una sola fila -->
-                            <div class="row">
+                            <div class="row tp-mobile-left">
 
                                 <!-- ESCRÍBENOS -->
                                 <div class="col-lg-3 col-md-6 mb-4 order-1">
-                                    <h5>ESCRÍBENOS</h5>
-                                    <div class="s_social_media o_not_editable no_icon_color tp-followus-icons"
-                                        data-snippet="s_social_media"
-                                        data-name="Social Media"
-                                        contenteditable="false">
+                                    <h5 class="tp-mobile-left-text">ESCRÍBENOS</h5>
+                                    <div class="s_social_media o_not_editable no_icon_color tp-followus-icons">
                                         <a href="/website/social/facebook" class="s_social_media_facebook" target="_blank"><i class="fa fa-facebook o_editable_media"/></a>
                                         <a href="/website/social/twitter" class="s_social_media_twitter" target="_blank"><i class="fa fa-twitter o_editable_media"/></a>
                                         <a href="/website/social/linkedin" class="s_social_media_linkedin" target="_blank"><i class="fa fa-linkedin o_editable_media"/></a>
@@ -39,18 +36,15 @@
 
                                 <!-- INFORMACIÓN (collapsible en móvil) -->
                                 <div class="col-lg-3 col-md-6 mb-4 order-2">
-
-                                    <!-- SOLO EN MÓVIL: botón desplegable -->
-                                    <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
+                                    <button class="btn w-100 d-lg-none tp-footer-collapse-btn tp-mobile-left-text"
                                             data-bs-toggle="collapse"
                                             data-bs-target="#info_collapse">
                                         INFORMACIÓN
                                     </button>
 
-                                    <!-- Contenedor -->
                                     <div id="info_collapse" class="collapse d-lg-block">
-                                        <h5 class="d-none d-lg-block">INFORMACIÓN</h5>
-                                        <ul class="list-unstyled">
+                                        <h5 class="d-none d-lg-block tp-mobile-left-text">INFORMACIÓN</h5>
+                                        <ul class="list-unstyled tp-mobile-left-text">
                                             <li class="py-1"><i class="fa fa-phone me-1"/><a href="tel:+1 555-555-5556">+1 555-555-5556</a></li>
                                             <li class="py-1"><i class="fa fa-envelope me-1"/><a href="mailto:info@yourcompany.com">info@yourcompany.com</a></li>
                                             <li class="py-1"><i class="fa fa-map-marker me-1"/><a href="https://www.google.com/maps?q=Guayaquil+Av.+Bejamín+Carrión+Solar+10-11" target="_blank">Guayaquil Av. Bejamín Carrión Solar #10-11</a></li>
@@ -60,15 +54,15 @@
 
                                 <!-- NOSOTROS (collapsible en móvil) -->
                                 <div class="col-lg-3 col-md-6 mb-4 order-3">
-                                    <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
+                                    <button class="btn w-100 d-lg-none tp-footer-collapse-btn tp-mobile-left-text"
                                             data-bs-toggle="collapse"
                                             data-bs-target="#nosotros_collapse">
                                         NOSOTROS
                                     </button>
 
                                     <div id="nosotros_collapse" class="collapse d-lg-block">
-                                        <h5 class="d-none d-lg-block">NOSOTROS</h5>
-                                        <ul class="list-unstyled">
+                                        <h5 class="d-none d-lg-block tp-mobile-left-text">NOSOTROS</h5>
+                                        <ul class="list-unstyled tp-mobile-left-text">
                                             <li class="my-2"><a href="#">¿Quienes somos?</a></li>
                                             <li class="my-2"><a href="#">Visión y Misión</a></li>
                                             <li class="my-2"><a href="#">Políticas y Garantías</a></li>
@@ -77,22 +71,15 @@
                                     </div>
                                 </div>
 
-                                <!-- REGÍSTRATE (collapsible en móvil) -->
-                                <div class="col-lg-3 col-md-6 mb-4 order-4">
-                                    <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
-                                            data-bs-toggle="collapse"
-                                            data-bs-target="#newsletter_collapse">
-                                        REGÍSTRATE A NUESTRAS OFERTAS
-                                    </button>
+                                <!-- REGÍSTRATE (sin desplegable) -->
+                                <div class="col-lg-3 col-md-6 mb-4 order-4 tp-mobile-left-text">
+                                    <h5 class="tp-mobile-left-text">REGÍSTRATE A NUESTRAS OFERTAS</h5>
 
-                                    <div id="newsletter_collapse" class="collapse d-lg-block">
-                                        <h5 class="d-none d-lg-block">REGÍSTRATE A NUESTRAS OFERTAS</h5>
-                                        <div class="s_newsletter_list js_subscribe">
-                                            <div class="js_subscribe_wrap">
-                                                <div class="newsletter-wrapper d-flex flex-column">
-                                                    <input type="email" name="email" class="js_subscribe_value form-control mb-2" placeholder="johnsmith@example.com"/>
-                                                    <a role="button" href="#" class="btn btn-primary js_subscribe_btn o_submit btn-newsletter align-self-start">Recibir ofertas</a>
-                                                </div>
+                                    <div class="s_newsletter_list js_subscribe">
+                                        <div class="js_subscribe_wrap">
+                                            <div class="newsletter-wrapper d-flex flex-column tp-mobile-left-text">
+                                                <input type="email" name="email" class="js_subscribe_value form-control mb-2" placeholder="johnsmith@example.com"/>
+                                                <a role="button" href="#" class="btn btn-primary js_subscribe_btn o_submit btn-newsletter align-self-start">Recibir ofertas</a>
                                             </div>
                                         </div>
                                     </div>
