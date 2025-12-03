@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!-- <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="template_footer_style_11" inherit_id="website.layout" name="Footer Style - 11" active="False">
         <xpath expr="//div[@id='footer']" position="replace">
@@ -6,23 +6,17 @@
                 <section class="s_text_block pt64 pb32" data-snippet="s_text_block" data-name="Text">
                     <div class="container">
                         <div class="row">
-                            <div class="col-lg-3 col-md-6 mb-4 text-start footer-logo-container">
+                            <div class="col-12 text-center mb-5">
                                 <a href="/" class="o_footer_logo logo">
-                                    <img src="/website/static/src/img/website_logo.svg"
-                                         class="img-fluid footer-logo-img"
-                                         style="max-width:80px;"
-                                         aria-label="Logo"
-                                         title="MyCompany"
-                                         role="img"/>
+                                    <img src="/website/static/src/img/website_logo.svg" class="img-fluid" aria-label="Logo of MyCompany" title="MyCompany" role="img"/>
                                 </a>
                             </div>
-                            <!-- ESCRÍBENOS -->
-                            <div class="col-lg-3 col-md-6 mb-4">
-                                <h5>ESCRÍBENOS</h5>
-                                <div class="s_social_media o_not_editable no_icon_color tp-followus-icons"
-                                     data-snippet="s_social_media"
-                                     data-name="Social Media"
-                                     contenteditable="false">
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6 col-xl-3 mb-4">
+                                <h5>Follow Us On</h5>
+                                <div class="s_social_media o_not_editable no_icon_color tp-followus-icons" data-snippet="s_social_media" data-name="Social Media" contenteditable="false">
+                                    <h5 class="s_social_media_title d-none" contenteditable="true">Follow Us On</h5>
                                     <a href="/website/social/facebook" class="s_social_media_facebook" target="_blank" aria-label="Facebook">
                                         <i class="fa fa-facebook o_editable_media"/>
                                     </a>
@@ -43,32 +37,37 @@
                                     </a>
                                 </div>
                             </div>
-
-                            <!-- Información -->
-                            <div class="col-lg-3 col-md-6 mb-4">
-                                <h5>INFORMACIÓN</h5>
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                                <h5> INFORMACIÓN</h5>
+        
                                 <ul class="list-unstyled">
                                     <li class="py-1"><i class="fa fa-1x fa-fw fa-phone me-1"/><span class="o_force_ltr"><a href="tel:+1 555-555-5556">+1 555-555-5556</a></span></li>
                                     <li class="py-1"><i class="fa fa-1x fa-fw fa-envelope me-1"/><a href="mailto:info@yourcompany.com">info@yourcompany.com</a></li>
                                     <li class="py-1"><i class="fa fa-1x fa-fw fa-map-marker me-1"/><a href="https://www.google.com/maps?q=Guayaquil+Av.+Bejamín+Carrión+Solar+10-11" target="_blank">Guayaquil Av. Bejamín Carrión Solar #10-11</a></li>
                                 </ul>
                             </div>
-
-                            <!-- Nosotros -->
-                            <div class="col-lg-3 col-md-6 mb-4">
-                                <h5>NOSOTROS</h5>
-                                <ul class="list-unstyled">
-                                    <li class="my-2"><a href="#">¿Quienes somos?</a></li>
-                                    <li class="my-2"><a href="#">Visión y Misión</a></li>
-                                    <li class="my-2"><a href="#">Políticas y Garantías</a></li>
-                                    <li class="my-2"><a href="#">Trabaja con nosotros</a></li>
-                                </ul>
+                            <div class="col-lg-6 col-xl-3 mb-4">
+                                <h5>Brands</h5>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <ul class="list-unstyled">
+                                            <li class="my-2"><a href="#">¿Quienes somos?</a></li>
+                                            <li class="my-2"><a href="#">Vision y Misión</a></li>
+                                            <li class="my-2"><a href="#">Políticas y Garantías</a></li>
+                                            <li class="my-2"><a href="#">Trabaja con nosotros</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
-
-                            <!-- Newsletter -->
-                            <div class="col-lg-3 col-md-6 mb-4">
+                            <div class="col-lg-6 col-xl-3 mb-4">
                                 <h5>REGÍSTRATE A NUESTRAS OFERTAS</h5>
                                 <div class="s_newsletter_list js_subscribe" data-vxml="001" data-list-id="0" data-name="Newsletter Form">
+                                    <div class="js_subscribed_wrap d-none">
+                                        <div class="input-group">
+                                            <input type="email" name="email" class="js_subscribe_value form-control disabled" disabled="disabled" placeholder="johnsmith@example.com"/>
+                                            <a role="button" href="#" class="btn btn-primary disabled" disabled="disabled">Thanks!</a>
+                                        </div>
+                                    </div>
                                     <div class="js_subscribe_wrap">
                                         <div class="input-group">
                                             <input type="email" name="email" class="js_subscribe_value form-control" placeholder="johnsmith@example.com"/>
@@ -105,4 +104,4 @@
             </div>
         </xpath>
     </template>
-</odoo>
+</odoo> -->
