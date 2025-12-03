@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <template id="s_key_images_custom" name="Key Images">
+    <template id="s_key_images_2" name="Key Images">
         <section class="s_key_images_custom pt72 pb72">
             <div class="container">
                 <div class="row s_nb_column_fixed">
