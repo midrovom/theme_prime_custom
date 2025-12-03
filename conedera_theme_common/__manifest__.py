@@ -25,7 +25,7 @@
             'conedera_theme_common/static/src/scss/website.scss',
             'conedera_theme_common/static/src/snippets/s_banner_2/000.scss',
             'conedera_theme_common/static/src/css/style.css',
-            'conedera_theme_common/static/src/snippets/footers/footer_style_11.scss',
+            #'conedera_theme_common/static/src/snippets/footers/footer_style_11.scss',
         ],
     }
 }
