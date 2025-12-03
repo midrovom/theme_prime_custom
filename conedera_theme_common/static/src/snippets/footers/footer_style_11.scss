@@ -1,0 +1,14 @@
+/* Forzar tamaño del logo en el footer */
+#footer .footer-logo-img {
+    max-width: 80px !important;
+}
+
+/* Alinear logo a la izquierda */
+#footer .footer-logo-container {
+    text-align: left !important;
+}
+
+/* Asegurar que el anchor no empuje o centre */
+#footer .logo {
+    display: inline-block !important;
+}
