@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+
 <odoo>
     <template id="add_custom_snippet_to_intro" inherit_id="website.snippets" primary="False">
         <xpath expr="//snippets[@id='snippet_structure']" position="inside">
