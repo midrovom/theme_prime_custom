@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-
 <odoo>
     <template id="add_custom_snippet_to_intro" inherit_id="website.snippets" primary="False">
         <xpath expr="//div[@id='snippet_structure']" position="inside">
-            <t t-snippet="conedera_theme_custom.s_key_images_custom" string="Key Images" group="columns">
-                <keywords>columns, gallery, pictures, photos, media, text, content, album, showcase, visuals, portfolio, arrangement, collection, visual-grid, split, alignment, added value</keywords>
+            <t t-snippet="conedera_theme_custom.s_key_images_custom"
+               string="Key Images"
+               group="columns">
+                <keywords>
+                    columns, gallery, pictures, photos, media, text, content, album,
+                    showcase, visuals, portfolio, arrangement, collection, visual-grid,
+                    split, alignment, added value
+                </keywords>
             </t>
         </xpath>
     </template>
