@@ -20,74 +20,84 @@
 
                             <!-- Sección alineada en una sola fila -->
                             <div class="row">
-                                <div class="col-lg-3 col-md-6 mb-4">
+
+                                <!-- ESCRÍBENOS -->
+                                <div class="col-lg-3 col-md-6 mb-4 order-1">
                                     <h5>ESCRÍBENOS</h5>
                                     <div class="s_social_media o_not_editable no_icon_color tp-followus-icons"
-                                         data-snippet="s_social_media"
-                                         data-name="Social Media"
-                                         contenteditable="false">
-                                        <a href="/website/social/facebook" class="s_social_media_facebook" target="_blank" aria-label="Facebook">
-                                            <i class="fa fa-facebook o_editable_media"/>
-                                        </a>
-                                        <a href="/website/social/twitter" class="s_social_media_twitter" target="_blank" aria-label="X">
-                                            <i class="fa fa-twitter o_editable_media"/>
-                                        </a>
-                                        <a href="/website/social/linkedin" class="s_social_media_linkedin" target="_blank" aria-label="LinkedIn">
-                                            <i class="fa fa-linkedin o_editable_media"/>
-                                        </a>
-                                        <a href="/website/social/instagram" class="s_social_media_instagram" target="_blank" aria-label="Instagram">
-                                            <i class="fa fa-instagram o_editable_media"/>
-                                        </a>
-                                        <a href="/website/social/youtube" class="s_social_media_youtube" target="_blank" aria-label="YouTube">
-                                            <i class="fa fa-youtube o_editable_media"/>
-                                        </a>
-                                        <a href="/website/social/github" class="s_social_media_github" target="_blank" aria-label="GitHub">
-                                            <i class="fa fa-github o_editable_media"/>
-                                        </a>
+                                        data-snippet="s_social_media"
+                                        data-name="Social Media"
+                                        contenteditable="false">
+                                        <a href="/website/social/facebook" class="s_social_media_facebook" target="_blank"><i class="fa fa-facebook o_editable_media"/></a>
+                                        <a href="/website/social/twitter" class="s_social_media_twitter" target="_blank"><i class="fa fa-twitter o_editable_media"/></a>
+                                        <a href="/website/social/linkedin" class="s_social_media_linkedin" target="_blank"><i class="fa fa-linkedin o_editable_media"/></a>
+                                        <a href="/website/social/instagram" class="s_social_media_instagram" target="_blank"><i class="fa fa-instagram o_editable_media"/></a>
+                                        <a href="/website/social/youtube" class="s_social_media_youtube" target="_blank"><i class="fa fa-youtube o_editable_media"/></a>
+                                        <a href="/website/social/github" class="s_social_media_github" target="_blank"><i class="fa fa-github o_editable_media"/></a>
                                     </div>
                                 </div>
 
-                                <!-- Información -->
-                                <div class="col-lg-3 col-md-6 mb-4">
-                                    <h5>INFORMACIÓN</h5>
-                                    <ul class="list-unstyled">
-                                        <li class="py-1"><i class="fa fa-1x fa-fw fa-phone me-1"/><span class="o_force_ltr"><a href="tel:+1 555-555-5556">+1 555-555-5556</a></span></li>
-                                        <li class="py-1"><i class="fa fa-1x fa-fw fa-envelope me-1"/><a href="mailto:info@yourcompany.com">info@yourcompany.com</a></li>
-                                        <li class="py-1"><i class="fa fa-1x fa-fw fa-map-marker me-1"/><a href="https://www.google.com/maps?q=Guayaquil+Av.+Bejamín+Carrión+Solar+10-11" target="_blank">Guayaquil Av. Bejamín Carrión Solar #10-11</a></li>
-                                    </ul>
+                                <!-- INFORMACIÓN (collapsible en móvil) -->
+                                <div class="col-lg-3 col-md-6 mb-4 order-2">
+
+                                    <!-- SOLO EN MÓVIL: botón desplegable -->
+                                    <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#info_collapse">
+                                        INFORMACIÓN
+                                    </button>
+
+                                    <!-- Contenedor -->
+                                    <div id="info_collapse" class="collapse d-lg-block">
+                                        <h5 class="d-none d-lg-block">INFORMACIÓN</h5>
+                                        <ul class="list-unstyled">
+                                            <li class="py-1"><i class="fa fa-phone me-1"/><a href="tel:+1 555-555-5556">+1 555-555-5556</a></li>
+                                            <li class="py-1"><i class="fa fa-envelope me-1"/><a href="mailto:info@yourcompany.com">info@yourcompany.com</a></li>
+                                            <li class="py-1"><i class="fa fa-map-marker me-1"/><a href="https://www.google.com/maps?q=Guayaquil+Av.+Bejamín+Carrión+Solar+10-11" target="_blank">Guayaquil Av. Bejamín Carrión Solar #10-11</a></li>
+                                        </ul>
+                                    </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-4">
-                                    <h5>NOSOTROS</h5>
-                                    <ul class="list-unstyled">
-                                        <li class="my-2"><a href="#">¿Quienes somos?</a></li>
-                                        <li class="my-2"><a href="#">Visión y Misión</a></li>
-                                        <li class="my-2"><a href="#">Políticas y Garantías</a></li>
-                                        <li class="my-2"><a href="#">Trabaja con nosotros</a></li>
-                                    </ul>
+                                <!-- NOSOTROS (collapsible en móvil) -->
+                                <div class="col-lg-3 col-md-6 mb-4 order-3">
+                                    <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#nosotros_collapse">
+                                        NOSOTROS
+                                    </button>
+
+                                    <div id="nosotros_collapse" class="collapse d-lg-block">
+                                        <h5 class="d-none d-lg-block">NOSOTROS</h5>
+                                        <ul class="list-unstyled">
+                                            <li class="my-2"><a href="#">¿Quienes somos?</a></li>
+                                            <li class="my-2"><a href="#">Visión y Misión</a></li>
+                                            <li class="my-2"><a href="#">Políticas y Garantías</a></li>
+                                            <li class="my-2"><a href="#">Trabaja con nosotros</a></li>
+                                        </ul>
+                                    </div>
                                 </div>
-                                <div class="col-lg-3 col-md-6 mb-4">
-                                    <h5>REGÍSTRATE A NUESTRAS OFERTAS</h5>
-                                    <div class="s_newsletter_list js_subscribe" data-vxml="001" data-list-id="0" data-name="Newsletter Form">
-                                        <div class="js_subscribe_wrap">
-                                            <div class="newsletter-wrapper d-flex flex-column">
-                                                <input type="email" name="email" class="js_subscribe_value form-control mb-2" placeholder="johnsmith@example.com"/>
-                                                <a role="button" href="#" class="btn btn-primary js_subscribe_btn o_submit btn-newsletter align-self-start">Recibir ofertas</a>
+
+                                <!-- REGÍSTRATE (collapsible en móvil) -->
+                                <div class="col-lg-3 col-md-6 mb-4 order-4">
+                                    <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#newsletter_collapse">
+                                        REGÍSTRATE A NUESTRAS OFERTAS
+                                    </button>
+
+                                    <div id="newsletter_collapse" class="collapse d-lg-block">
+                                        <h5 class="d-none d-lg-block">REGÍSTRATE A NUESTRAS OFERTAS</h5>
+                                        <div class="s_newsletter_list js_subscribe">
+                                            <div class="js_subscribe_wrap">
+                                                <div class="newsletter-wrapper d-flex flex-column">
+                                                    <input type="email" name="email" class="js_subscribe_value form-control mb-2" placeholder="johnsmith@example.com"/>
+                                                    <a role="button" href="#" class="btn btn-primary js_subscribe_btn o_submit btn-newsletter align-self-start">Recibir ofertas</a>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <!-- <div class="col-lg-3 col-md-6 mb-4">
-                                    <h5>REGÍSTRATE A NUESTRAS OFERTAS</h5>
-                                    <div class="s_newsletter_list js_subscribe" data-vxml="001" data-list-id="0" data-name="Newsletter Form">
-                                        <div class="js_subscribe_wrap">
-                                            <div class="input-group">
-                                                <input type="email" name="email" class="js_subscribe_value form-control" placeholder="johnsmith@example.com"/>
-                                                <a role="button" href="#" class="btn btn-primary js_subscribe_btn o_submit btn-newsletter"><i class="fa fa-send-o"/></a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div> -->
+
                             </div>
                         </div>
                     </section>
@@ -117,3 +127,108 @@
         </xpath>
     </template>
 </odoo>
+
+
+<!-- <?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="template_footer_style_11" inherit_id="website.layout" name="Footer Style - 11" active="False">
+        <xpath expr="//div[@id='footer']" position="replace">
+            <div id="footer" class="oe_structure oe_structure_solo" t-ignore="true" t-if="not no_footer">
+                    <section class="s_text_block pt64 pb32" data-snippet="s_text_block" data-name="Text">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-12 text-center mb-5">
+                                    <a href="/" class="o_footer_logo logo">
+                                        <img src="/website/static/src/img/website_logo.svg"
+                                             class="img-fluid"
+                                             aria-label="Logo of MyCompany"
+                                             title="MyCompany"
+                                             role="img"/>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-3 col-md-6 mb-4">
+                                    <h5>ESCRÍBENOS</h5>
+                                    <div class="s_social_media o_not_editable no_icon_color tp-followus-icons"
+                                         data-snippet="s_social_media"
+                                         data-name="Social Media"
+                                         contenteditable="false">
+                                        <a href="/website/social/facebook" class="s_social_media_facebook" target="_blank" aria-label="Facebook">
+                                            <i class="fa fa-facebook o_editable_media"/>
+                                        </a>
+                                        <a href="/website/social/twitter" class="s_social_media_twitter" target="_blank" aria-label="X">
+                                            <i class="fa fa-twitter o_editable_media"/>
+                                        </a>
+                                        <a href="/website/social/linkedin" class="s_social_media_linkedin" target="_blank" aria-label="LinkedIn">
+                                            <i class="fa fa-linkedin o_editable_media"/>
+                                        </a>
+                                        <a href="/website/social/instagram" class="s_social_media_instagram" target="_blank" aria-label="Instagram">
+                                            <i class="fa fa-instagram o_editable_media"/>
+                                        </a>
+                                        <a href="/website/social/youtube" class="s_social_media_youtube" target="_blank" aria-label="YouTube">
+                                            <i class="fa fa-youtube o_editable_media"/>
+                                        </a>
+                                        <a href="/website/social/github" class="s_social_media_github" target="_blank" aria-label="GitHub">
+                                            <i class="fa fa-github o_editable_media"/>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-4">
+                                    <h5>INFORMACIÓN</h5>
+                                    <ul class="list-unstyled">
+                                        <li class="py-1"><i class="fa fa-1x fa-fw fa-phone me-1"/><span class="o_force_ltr"><a href="tel:+1 555-555-5556">+1 555-555-5556</a></span></li>
+                                        <li class="py-1"><i class="fa fa-1x fa-fw fa-envelope me-1"/><a href="mailto:info@yourcompany.com">info@yourcompany.com</a></li>
+                                        <li class="py-1"><i class="fa fa-1x fa-fw fa-map-marker me-1"/><a href="https://www.google.com/maps?q=Guayaquil+Av.+Bejamín+Carrión+Solar+10-11" target="_blank">Guayaquil Av. Bejamín Carrión Solar #10-11</a></li>
+                                    </ul>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 mb-4">
+                                    <h5>NOSOTROS</h5>
+                                    <ul class="list-unstyled">
+                                        <li class="my-2"><a href="#">¿Quienes somos?</a></li>
+                                        <li class="my-2"><a href="#">Visión y Misión</a></li>
+                                        <li class="my-2"><a href="#">Políticas y Garantías</a></li>
+                                        <li class="my-2"><a href="#">Trabaja con nosotros</a></li>
+                                    </ul>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-4">
+                                    <h5>REGÍSTRATE A NUESTRAS OFERTAS</h5>
+                                    <div class="s_newsletter_list js_subscribe" data-vxml="001" data-list-id="0" data-name="Newsletter Form">
+                                        <div class="js_subscribe_wrap">
+                                            <div class="newsletter-wrapper d-flex flex-column">
+                                                <input type="email" name="email" class="js_subscribe_value form-control mb-2" placeholder="johnsmith@example.com"/>
+                                                <a role="button" href="#" class="btn btn-primary js_subscribe_btn o_submit btn-newsletter align-self-start">Recibir ofertas</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+        </xpath>
+        <xpath expr="//div[hasclass('o_footer_copyright')]" position="attributes">
+            <attribute name="class" add="tp-custom-copyright" separator=" "/>
+        </xpath>
+        <xpath expr="//div[hasclass('o_footer_copyright')]/div[hasclass('container')]" position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('o_footer_copyright')]/div[hasclass('container')]" position="after">
+            <div class="container">
+                <div class="row justify-content-between">
+                    <div class="col-12 col-lg-auto">
+                        <div class="my-2">
+                            Copyright &amp;copy; MyCompany
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-auto text-lg-end" t-if="(len(frontend_languages) &gt; 1 or (website and (editable or translatable))) or (website.get_pricelist_available(show_visible=True) and len(website.get_pricelist_available(show_visible=True))&gt;1)">
+                        <ul class="list-inline my-2">
+                            <t t-call="theme_prime.component_language_pricelist_selector"/>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo> -->
