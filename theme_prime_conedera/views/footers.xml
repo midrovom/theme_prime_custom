@@ -1,28 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="footer_prime_custom" inherit_id="theme_prime.template_footer_style_1">
-        <xpath expr="//a[@class='o_footer_logo logo']/ancestor::div[contains(@class,'col-12')]" position="attributes">
-            <attribute name="class">col-12 col-lg-4 col-xl-3 mb-4</attribute>
+    <template id="template_footer_style_1_logo_left" inherit_id="template_footer_style_1" name="Footer Style - 1 Logo Left">
+        <xpath expr="//div[@id='footer']//div[@class='col-12 text-center mb-5']" position="attributes">
+            <attribute name="class">col-12 text-start mb-5</attribute>
         </xpath>
-        <xpath expr="//h5[text()='Follow Us On']/ancestor::div[contains(@class,'col-lg')]"
-               position="replace">
-            <div class="mt-4">
-                <h5>Follow Us On</h5>
-                <xpath expr="//h5[text()='Follow Us On']/following-sibling::*" position="move"/>
-            </div>
-        </xpath>
-        <xpath expr="//h5[text()='Brands']/ancestor::div[contains(@class,'col-lg')]" position="replace">
-        </xpath>
-        <xpath expr="//h5[text()='We Accept']/ancestor::div[contains(@class,'col-lg')]" position="replace">
-        </xpath>
-        <xpath expr="//h5[text()='Products']/ancestor::div[contains(@class,'col-lg')]" position="attributes">
-            <attribute name="class">col-lg-4 col-xl-3 mb-4</attribute>
-        </xpath>
-        <xpath expr="//h5[text()='MyCompany']/ancestor::div[contains(@class,'col-lg')]" position="attributes">
-            <attribute name="class">col-lg-4 col-xl-3 mb-4</attribute>
-        </xpath>
-        <xpath expr="//h5[text()='Subscribe']/ancestor::div[contains(@class,'col-lg')]" position="attributes">
-            <attribute name="class">col-lg-4 col-xl-3 mb-4</attribute>
-        </xpath>
-
     </template>
 </odoo>
