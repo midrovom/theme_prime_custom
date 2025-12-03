@@ -1,7 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-        <template id="template_footer_style_11" inherit_id="website.layout" name="Footer Style - 11" active="False">
-            <xpath expr="//div[@id='footer']" position="replace">
-                <div id="footer" class="oe_structure oe_structure_solo" t-ignore="true" t-if="not no_footer">
+    <template id="template_footer_style_11" inherit_id="website.layout" name="Footer Style - 11" active="False">
+        <xpath expr="//div[@id='footer']" position="replace">
+            <div id="footer" class="oe_structure oe_structure_solo" t-ignore="true" t-if="not no_footer">
                     <section class="s_text_block pt64 pb32" data-snippet="s_text_block" data-name="Text">
                         <div class="container">
                             <!-- Logo -->
@@ -81,9 +82,31 @@
                             </div>
                         </div>
                     </section>
+            </div>
+        </xpath>
+        <xpath expr="//div[hasclass('o_footer_copyright')]" position="attributes">
+            <attribute name="class" add="tp-custom-copyright" separator=" "/>
+        </xpath>
+        <xpath expr="//div[hasclass('o_footer_copyright')]/div[hasclass('container')]" position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('o_footer_copyright')]/div[hasclass('container')]" position="after">
+            <div class="container">
+                <div class="row justify-content-between">
+                    <div class="col-12 col-lg-auto">
+                        <div class="my-2">
+                            Copyright &amp;copy; MyCompany
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-auto text-lg-end" t-if="(len(frontend_languages) &gt; 1 or (website and (editable or translatable))) or (website.get_pricelist_available(show_visible=True) and len(website.get_pricelist_available(show_visible=True))&gt;1)">
+                        <ul class="list-inline my-2">
+                            <t t-call="theme_prime.component_language_pricelist_selector"/>
+                        </ul>
+                    </div>
                 </div>
-            </xpath>
-        </template>
+            </div>
+        </xpath>
+    </template>
 </odoo>
 
 <!-- <?xml version="1.0" encoding="utf-8"?>
