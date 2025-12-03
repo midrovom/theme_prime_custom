@@ -1,16 +1,15 @@
-/* Reducir tamaño del logo sin afectar su visibilidad */
-#footer .footer-logo-img {
-    width: 80px !important;
-    height: auto !important;
+.input-group {
+  flex-direction: column; // cambia de fila a columna
+  align-items: stretch;   // que ocupen todo el ancho
 }
 
-/* Alinear contenedor a la izquierda */
-#footer .footer-logo-container {
-    text-align: left !important;
+.input-group .form-control {
+  margin-bottom: 0.5rem; // espacio entre input y botón
 }
 
-/* Evitar cambios en display que pueden ocultar el logo */
-#footer .footer-logo-container .logo {
-    display: block !important;
+.input-group .btn {
+  width: 100%;           // botón ancho completo
+  text-align: center;    // texto centrado
 }
+
 
