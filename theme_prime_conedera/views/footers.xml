@@ -7,7 +7,7 @@
                         <div class="container">
                             <!-- Logo -->
                             <div class="row">
-                                <div class="col-12 text-center mb-5">
+                                <div class="col-12 text-center mb-5 footer-logo-container">
                                     <a href="/" class="o_footer_logo logo">
                                         <img src="/website/static/src/img/website_logo.svg"
                                              class="img-fluid"
