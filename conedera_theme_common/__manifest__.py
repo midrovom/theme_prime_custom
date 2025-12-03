@@ -16,7 +16,8 @@
     ],
     'data': [
         'views/website_template.xml',
-        'views/snippets.xml',
+
+        'views/snippets/snippets.xml',
         'views/snippets/s_key_images_custom.xml',
         
     ],
