@@ -72,14 +72,18 @@
                                     <h5>REGÍSTRATE A NUESTRAS OFERTAS</h5>
                                     <div class="s_newsletter_list js_subscribe" data-vxml="001" data-list-id="0" data-name="Newsletter Form">
                                         <div class="js_subscribe_wrap">
-                                            <div class="input-group">
-                                                <input type="email" name="email" class="js_subscribe_value form-control" placeholder="johnsmith@example.com"/>
-                                                <a role="button" href="#" class="btn btn-primary js_subscribe_btn o_submit">Recibir ofertas</a>
-                                                <!-- <a role="button" href="#" class="btn btn-primary js_subscribe_btn o_submit"><i class="fa fa-send-o"/></a> -->
+                                            <div class="form-group">
+                                                <!-- Caja de texto -->
+                                                <input type="email" name="email" class="js_subscribe_value form-control mb-2" placeholder="johnsmith@example.com"/>
+                                                <!-- Botón debajo -->
+                                                <button type="submit" class="btn btn-primary js_subscribe_btn o_submit w-100">
+                                                    Recibir ofertas
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
 
                                 <!-- <div class="col-lg-3 col-md-6 mb-4">
                                     <h5>REGÍSTRATE A NUESTRAS OFERTAS</h5>
