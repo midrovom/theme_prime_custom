@@ -1,8 +1,6 @@
-.btn-newsletter {
-  display: block;       // hace que se muestre como bloque
-  width: 100%;          // ocupa todo el ancho
-  margin-top: 0.5rem;   // separación respecto al input
-  text-align: center;   // centra el texto
+@media (max-width: 767px) {
+    .tp-mobile-left,
+    .tp-mobile-left-text {
+        text-align: left !important;
+    }
 }
-
-
