@@ -127,7 +127,7 @@
                             </div>
                             <div class="col-lg-6 col-xl-4 mb-4">
                                 <h5> INFORMACIÓN</h5>
-                                <!-- <div>250 Executive Park Blvd, Suite 3400 <br/> San Francisco CA 94134 <br/>United States</div> -->
+        
                                 <ul class="list-unstyled">
                                     <li class="py-1"><i class="fa fa-1x fa-fw fa-phone me-1"/><span class="o_force_ltr"><a href="tel:+1 555-555-5556">+1 555-555-5556</a></span></li>
                                     <li class="py-1"><i class="fa fa-1x fa-fw fa-envelope me-1"/><a href="mailto:info@yourcompany.com">info@yourcompany.com</a></li>
