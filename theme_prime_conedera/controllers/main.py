@@ -1,5 +1,6 @@
 
 from odoo.addons.theme_prime.controllers.main import ThemePrimeMainClass
+import random
 
 class ThemePrimeMainClassExtended(ThemePrimeMainClass):
 
@@ -7,23 +8,25 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
         fields = list(set(fields or []))
         fields += ['attribute_line_ids']
         result = super()._prepare_product_data(products, fields, pricelist, options)
+        colors = [
+            "#FF5733", "#33C1FF", "#75FF33", "#FF33A8",
+            "#FFC300", "#8E44AD", "#16A085", "#E74C3C"
+        ]
 
         for res_product, product in zip(result, products):
-            # Inicializamos la lista de marcas
             res_product['brands'] = []
 
             for line in product.attribute_line_ids:
-                # Solo tomamos los atributos que tengan el check dr_is_brand
                 if line.attribute_id.dr_is_brand:
                     for val in line.value_ids:
-                        # Guardamos nombre y clase CSS para el color
                         res_product['brands'].append({
                             'id': val.id,
                             'name': val.name,
-                            'css_class': getattr(val, 'html_class', False) or 'o_tag o_tag_color_9',
+                            'color': random.choice(colors),
                         })
 
         return result
+
 
 
 # class ThemePrimeMainClassExtended(ThemePrimeMainClass):
