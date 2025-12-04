@@ -3,7 +3,7 @@
     <template id="s_dynamic_snippet_categories" name="Categorias">
         <t t-call="website.s_dynamic_snippet_template">
             <t t-set="snippet_name" t-value="'s_dynamic_snippet_categories'"/>
-            <t t-call="advance_theme_custom.s_dynamic_snippet_categories_preview_data"/>
+            <t t-call="conedera_theme_common.s_dynamic_snippet_categories_preview_data"/>
         </t>
     </template>
 
@@ -16,9 +16,9 @@
         </xpath>
     </template>
 
-    <record id="advance_theme_custom.s_dynamic_snippet_categories_js" model="ir.asset">
-        <field name="name">Dynamic snippet categories 000 JS</field>
+    <record id="conedera_theme_common.s_dynamic_snippet_brands_js" model="ir.asset">
+        <field name="name">Dynamic snippet brands 000 JS</field>
         <field name="bundle">web.assets_frontend</field>
-        <field name="path">advance_theme_custom/static/src/snippets/s_dynamic_snippet_categories/000.js</field>
+        <field name="path">conedera_theme_common/static/src/snippets/s_dynamic_snippet_brands/000.js</field>
     </record>
 </odoo>
