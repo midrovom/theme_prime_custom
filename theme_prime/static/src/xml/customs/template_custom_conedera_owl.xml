@@ -1,6 +1,6 @@
 <template>
 
-    <t t-name="s_card_style_10">
+    <t t-name="s_card_style_12">
         <div t-attf-class="card h-100 s_card_style_2 shadow-sm border-0 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
             <div class="d_product_box position-relative d-flex align-items-center overflow-hidden">
                 <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" 
