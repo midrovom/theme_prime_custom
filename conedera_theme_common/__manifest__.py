@@ -15,8 +15,14 @@
         'droggol_theme_common',
     ],
     'data': [
+
+        'data/data.xml',
+        'data/brands_snippet_template_data.xml',
+
         'views/website_template.xml',
 
+        'views/snippets/s_dynamic_snippet_brands_preview_data.xml',
+        'views/snippets/s_dynamic_snippet_category.xml',
         'views/snippets/snippets.xml',
         'views/snippets/s_key_images_custom.xml',
         
