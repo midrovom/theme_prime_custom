@@ -126,6 +126,7 @@
 
             # Templates OWL Conedera Advance
             'theme_prime/static/src/xml/customs/templates_custom_owl.xml',
+            'theme_prime/static/src/xml/customs/template_custom_conedera_owl.xml',
             
         ],
         'web._assets_primary_variables': [
