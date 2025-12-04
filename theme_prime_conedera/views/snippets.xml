@@ -7,6 +7,11 @@
                 <keywords>products, dynamic</keywords>
             </t>
         </t>
+        <t t-snippet="website.s_banner_15" position="before">
+            <t t-snippet="theme_prime_conedera.s_banner_16" string="Banner Conedera" group="theme_prime_banner">
+                <keywords>products, dynamic</keywords>
+            </t>
+        </t>
     </template>
 
     <template id="snippet_options_inherit" inherit_id="website.snippet_options">
