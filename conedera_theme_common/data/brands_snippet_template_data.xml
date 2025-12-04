@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <template id="dynamic_filter_template_product_public_brands_style_2" name="Image + Brand">
+        <template id="dynamic_filter_template_product_public_brand_style_1" name="Image + Brand">
             <t t-foreach="records" t-as="data">
                 <t t-set="record" t-value="data['_record']"/>
 

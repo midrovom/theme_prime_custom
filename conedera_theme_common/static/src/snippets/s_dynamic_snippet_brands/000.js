@@ -4,7 +4,7 @@ import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel
 import { utils as uiUtils } from "@web/core/ui/ui_service";
 
 const DynamicSnippetBrands = DynamicSnippetCarousel.extend({
-    selector: ".s_dynamic_snippet_brands",
+    selector: ".s_dynamic_snippet_brand",
 
     /**
      * @override
