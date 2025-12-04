@@ -39,7 +39,7 @@
                 </div>
                 <t t-call="dr_s_lable_tmpl"/>
             </div>
-            <div class="card-body text-start">
+            <div class="card-body text-start rounded-4">
                 <t t-if="item.brands">
                     <p class="text-muted small mb-1">
                         <t t-foreach="item.brands" t-as="brand" t-key="brand">
