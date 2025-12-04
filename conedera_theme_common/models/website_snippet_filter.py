@@ -1,26 +1,20 @@
 from odoo import _, api, fields, models
-from odoo.http import request
+from odoo.osv import expression
 
-class WebsiteSnippetFilter(models.Model):
+class WebsiteProductSnippet(models.Model):
     _inherit = 'website.snippet.filter'
-    
-    def _filter_records_to_values(self, records, is_sample=False):
-        res = super()._filter_records_to_values(records, is_sample)
 
-        # Aplicar solo cuando el snippet está configurado para categorías
-        if self.model_name == 'product.public.category':
-            for data in res:
-                category = data['_record']
+    @api.model
+    def _get_products_custom(self, limit=20, **kwargs):
+        website = self.env['website'].get_current_website()
 
-                # Asegurar que tenga URL
-                data['url'] = "/shop/category/%s" % request.env['ir.http']._slug(category)
+        # Dominio: solo productos publicados en el sitio web actual
+        domain = expression.AND([
+            [('website_published', '=', True)],
+            website.website_domain(),
+            [('company_id', 'in', [False, website.company_id.id])],
+        ])
 
-                # Si deseas incluir cantidad de productos dentro de categoría
-                data['product_count'] = len(category.product_tmpl_ids)
-                
-                # Si deseas una imagen por defecto si no tiene
-                if not data.get('image_512'):
-                    data['image_512'] = "/web/static/img/placeholder.png"
-
-        return res
-    
+        # Buscar productos
+        products = self.env['product.product'].search(domain, limit=limit)
+        return self._filter_records_to_values(products, is_sample=False)
