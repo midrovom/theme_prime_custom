@@ -1,5 +1,7 @@
-.card-border {
-    border: 2px solid orange;   /* Solo borde naranja */
-    padding: 15px;              /* Espaciado interno */
-    /* No defino border-radius aquí, lo controlas desde el builder */
+.key-images-wrapper {
+    background: #ffffff;
+    border: 3px solid #ff8c00; /* naranja fuerte */
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
 }
