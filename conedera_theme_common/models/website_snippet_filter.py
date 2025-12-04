@@ -1,24 +1,37 @@
-from odoo import models
+from odoo import _, api, fields, models
+from odoo.http import request
 
 class WebsiteSnippetFilter(models.Model):
-    _inherit = "website.snippet.filter"
+    _inherit = 'website.snippet.filter'
 
-    def _get_brands(self, mode=False):
-        Product = self.env['product.template']
+    def _filter_records_to_values(self, records, is_sample=False):
+        res = super()._filter_records_to_values(records, is_sample)
 
-        # obtener marcas reales por productos publicados
-        brands = Product.search([('website_published', '=', True)]).mapped('brand_id')
+        if self.model_name == 'product.brand':
+            for data in res:
+                brand = data['_record']
 
-        # serializar data para el snippet dynamic
-        data = []
-        for brand in brands:
-            data.append({
-                "id": brand.id,
-                "name": brand.name,
-                "image_512": brand.image_512,
-            })
+                data['url'] = "/shop?brand_id=%s" % brand.id
 
-        return {
-            "count": len(data),
-            "results": data,
-        }
+                data['product_count'] = request.env['product.template'].sudo().search_count([
+                    ('brand_id', '=', brand.id),
+                    ('website_published', '=', True),
+                ])
+
+                if not data.get('image_512'):
+                    data['image_512'] = "/web/static/img/placeholder.png"
+
+        return res
+
+    @api.model
+    def _get_public_brands(self, mode=None, **kwargs):
+        website = self.env['website'].get_current_website()
+
+        domain = [
+            ('website_id', 'in', [False, website.id]),
+            ('active', '=', True),
+        ]
+
+        brands = self.env['product.brand'].search(domain, order="sequence ASC, name ASC")
+
+        return self._filter_records_to_values(brands)
