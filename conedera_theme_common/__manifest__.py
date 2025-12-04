@@ -16,8 +16,8 @@
     ],
     'data': [
 
-        'data/data.xml',
-        'data/brands_snippet_template_data.xml',
+        #'data/data.xml',
+        #'data/brands_snippet_template_data.xml',
 
         'views/website_template.xml',
 
