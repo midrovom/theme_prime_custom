@@ -34,4 +34,4 @@ response = DynamicFilter._get_public_brands('is_show')
             <field name="name">Categorias Seleccionadas</field>
         </record> -->
     </data>
-</odoo
+</odoo>
