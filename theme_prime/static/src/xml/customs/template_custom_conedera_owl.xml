@@ -39,14 +39,21 @@
 
             <div class="card-body text-start">
                 <t t-set="brand" t-value="''"/>
-                <t t-foreach="item.product_template_attribute_line_ids" t-as="line">
-                    <t t-foreach="line.value_ids" t-as="val">
+
+                <t t-foreach="item.product_template_attribute_line_ids"
+                t-as="line"
+                t-key="line.id">
+
+                    <t t-foreach="line.value_ids"
+                    t-as="val"
+                    t-key="val.id">
+
                         <t t-if="val.attribute_id.dr_is_brand">
                             <t t-set="brand" t-value="val.name"/>
                         </t>
+
                     </t>
                 </t>
-
                 <div t-if="brand" class="text-muted small mb-1">
                     <t t-out="brand"/>
                 </div>
