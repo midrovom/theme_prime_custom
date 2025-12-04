@@ -2,7 +2,7 @@
 <odoo>
     <template id="add_my_snippet_to_columns" inherit_id="website.snippets">
         <xpath expr="//t[@t-snippet='website.s_cards_soft']" position="after">
-            <t t-snippet="conedera_theme_common.s_key_images_2" string="Key Images Custom" group="columns">
+            <t t-snippet="conedera_theme_common.s_key_images_custom" string="Key Images Custom" group="columns">
                 <keywords>columns, gallery, pictures, photos, media, showcase, portfolio, custom</keywords>
             </t>
         </xpath>
