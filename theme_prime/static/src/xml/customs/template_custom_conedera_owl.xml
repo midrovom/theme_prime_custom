@@ -40,11 +40,6 @@
                 <t t-call="dr_s_lable_tmpl"/>
             </div>
             <div class="card-body text-start">
-                <h5 class="card-title text-truncate fw-light d-product-name text-start mb-1">
-                    <a t-att-href="item.website_url">
-                        <t t-out="item.name"/>
-                    </a>
-                </h5>
                 <t t-if="item.brands">
                     <p class="text-muted small mb-1">
                         <t t-foreach="item.brands" t-as="brand" t-key="brand">
@@ -52,6 +47,11 @@
                         </t>
                     </p>
                 </t>
+                <h5 class="card-title text-truncate fw-light d-product-name text-start mb-1">
+                    <a t-att-href="item.website_url">
+                        <t t-out="item.name"/>
+                    </a>
+                </h5>
 
                 <div class="row g-0">
                     <div t-if="widget._isActionEnabled('rating')" class="col-12 small text-end">
@@ -61,6 +61,7 @@
             </div>
         </div>
     </t>
+
 
 
 
