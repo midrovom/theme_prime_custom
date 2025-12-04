@@ -9,7 +9,6 @@
     </template>
 
     <!-- Template de product Dynamic -->
-<?xml version="1.0" encoding="utf-8"?>
     <template id="snippets" inherit_id="website.snippets" name="e-commerce snippets">
         <xpath expr="//t[@id='installed_snippets_hook']" position="after">
             <t snippet-group="brands" t-snippet="website.s_snippet_group" string="Marcas"
