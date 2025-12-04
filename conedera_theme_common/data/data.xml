@@ -1,21 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="dynamic_snippet_latest_sold_products_action" model="ir.actions.server">
-            <field name="name">Recently Sold Products</field>
-            <field name="model_id" ref="website.model_product_product"/>
+        <record id="dynamic_snippet_brands_action" model="ir.actions.server">
+            <field name="name">Marcas dinámicas</field>
+            <field name="model_id" ref="product.model_product_template"/>
             <field name="state">code</field>
             <field name="code">
 DynamicFilter = model.env['website.snippet.filter']
-response = DynamicFilter._get_products('latest_sold')
+response = DynamicFilter._get_brands()
             </field>
         </record>
 
-        <record id="dynamic_filter_latest_sold_products" model="website.snippet.filter">
-            <field name="action_server_id" ref="website_sale.dynamic_snippet_latest_sold_products_action"/>
-            <field name="field_names">display_name,description_sale,image_512</field>
-            <field name="limit" eval="16"/>
-            <field name="name">Recently Sold Products</field>
+        <record id="dynamic_snippet_all_brands_filter" model="ir.filters">
+            <field name="name">Todas las marcas</field>
+            <field name="model_id">product.brand</field>
+            <field name="user_id" eval="False"/>
+            <field name="domain">[]</field>
+            <field name="context">{}</field>
+            <field name="sort">["id desc"]</field>
         </record>
+
+        <record id="dynamic_filter_all_brands" model="website.snippet.filter">
+            <field name="filter_id" ref="conedera_theme_common.dynamic_snippet_all_brands_filter"/>
+            <field name="field_names">name,image_512</field>
+            <field name="limit" eval="16"/>
+            <field name="name">Todas las marcas</field>
+        </record>
+
     </data>
 </odoo>

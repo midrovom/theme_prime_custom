@@ -1,26 +1,24 @@
-from odoo import models, fields, api
-from odoo.osv import expression
+from odoo import models
 
 class WebsiteSnippetFilter(models.Model):
-    _inherit = 'website.snippet.filter'
+    _inherit = "website.snippet.filter"
 
-    def _get_products_by_brand(self, website, limit, domain, brand_id, **kwargs):
-        """
-        Devuelve productos de una marca específica para usar en snippets dinámicos.
-        """
-        products = self.env['product.product']
+    def _get_brands(self, mode=False):
+        Product = self.env['product.template']
 
-        if brand_id:
-            # Ajustamos el dominio para incluir la marca seleccionada
-            domain = expression.AND([
-                domain,
-                [('product_tmpl_id.brand_id', '=', brand_id)],
-                [('website_published', '=', True)],  
-                [('sale_ok', '=', True)],           
-            ])
+        # obtener marcas reales por productos publicados
+        brands = Product.search([('website_published', '=', True)]).mapped('brand_id')
 
-            products = self.env['product.product'].with_context(
-                display_default_code=False,
-            ).search(domain, limit=limit)
+        # serializar data para el snippet dynamic
+        data = []
+        for brand in brands:
+            data.append({
+                "id": brand.id,
+                "name": brand.name,
+                "image_512": brand.image_512,
+            })
 
-        return products
+        return {
+            "count": len(data),
+            "results": data,
+        }
