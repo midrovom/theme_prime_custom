@@ -4,7 +4,7 @@
 
         <record id="dynamic_snippet_is_show_brands_action" model="ir.actions.server">
             <field name="name">Marcas Publicadas</field>
-            <field name="model_id" ref="website_sale.product_template"/>
+            <field name="model_id" ref="website_sale.model_product_template"/>
             <field name="state">code</field>
             <field name="code">
 DynamicFilter = model.env['website.snippet.filter']
