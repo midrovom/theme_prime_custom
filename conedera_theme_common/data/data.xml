@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="dynamic_snippet_is_show_categories_action" model="ir.actions.server">
-            <field name="name">Categorias Seleccionadas</field>
-            <field name="model_id" ref="website_sale.model_product_public_category"/>
+        <record id="dynamic_snippet_is_show_brands_action" model="ir.actions.server">
+            <field name="name">Marcas Seleccionadas</field>
+            <field name="model_id" ref="website_sale.model_product_template"/>
             <field name="state">code</field>
             <field name="code">
 DynamicFilter = model.env['website.snippet.filter']
-response = DynamicFilter._get_public_categories('is_show')
+response = DynamicFilter._get_public_brands('is_show')
             </field>
         </record>
 
-        <record id="dynamic_snippet_all_categories_filter" model="ir.filters">
-            <field name="name">Todas las categorias</field>
-            <field name="model_id">product.public.category</field>
+        <record id="dynamic_snippet_all_brands_filter" model="ir.filters">
+            <field name="name">Todas las marcas</field>
+            <field name="model_id">product.template</field>
             <field name="user_id" eval="False" />
             <field name="domain">[]</field>
             <field name="context">{}</field>
             <field name="sort">["id desc"]</field>
         </record>
 
-        <record id="dynamic_filter_all_categories" model="website.snippet.filter">
+        <!-- <record id="dynamic_filter_all_categories" model="website.snippet.filter">
             <field name="filter_id" ref="advance_theme_custom.dynamic_snippet_all_categories_filter"/>
             <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
@@ -32,6 +32,6 @@ response = DynamicFilter._get_public_categories('is_show')
             <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Categorias Seleccionadas</field>
-        </record>
+        </record> -->
     </data>
 </odoo
