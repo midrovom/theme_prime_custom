@@ -68,42 +68,27 @@
 
     <t t-name="s_mobile_card_style_6">
         <div class="card border-1 rounded-4 text-start position-relative mb-2 s_mobile_card_style_1">
-            
-            <i style="transform: scale(1.2)" 
-            t-if="widget._isActionEnabled('wishlist')" 
-            t-att-data-product-product-id="item.product_variant_id" 
-            data-bs-toggle="tooltip" data-placement="bottom" 
-            class="dri dri-wishlist tp-action-icon tp-cursor-pointer mt-2 text-center border rounded-circle d_add_to_wishlist_btn tp-icon-center-1 position-absolute top-0 end-0 me-2 text-body" 
-            title="Add to Wishlist"/>
-            
-            <!-- Imagen con borde redondeado superior -->
-            <a class="d_product_box d-flex align-items-center overflow-hidden rounded-top-4" t-att-href="item.website_url">
-                <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" 
-                    class="card-img-top d-product-img h-100 w-100"/>
-            </a>
-            
-            <!-- Cuerpo de la card -->
-            <div class="card-body p-2 text-start rounded-4">
-                
-                <!-- Apartado de marcas -->
-                <t t-if="item.brands">
+            <i style="transform: scale(1.2)" t-if="widget._isActionEnabled('wishlist')" t-att-data-product-product-id="item.product_variant_id" data-bs-toggle="tooltip" data-placement="bottom" 
+                class="dri dri-wishlist tp-action-icon tp-cursor-pointer mt-2 text-center border rounded-circle d_add_to_wishlist_btn tp-icon-center-1 position-absolute top-0 end-0 me-2 text-body" 
+                title="Add to Wishlist"/>
+                <a class="d_product_box d-flex align-items-center overflow-hidden rounded-top-4" t-att-href="item.website_url">
+                    <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" class="card-img-top d-product-img h-100 w-100"/>
+                        </a>
+                            <div class="card-body p-2 text-start rounded-4">
+                        <t t-if="item.brands">
                     <p class="text-muted small mb-1">
-                        <t t-foreach="item.brands" t-as="brand" t-key="brand">
-                            <t t-out="brand"/>
-                        </t>
-                    </p>
+                <t t-foreach="item.brands" t-as="brand" t-key="brand">
+            <t t-out="brand"/>
                 </t>
-                
-                <!-- Nombre del producto -->
-                <h5 class="card-title text-truncate fw-light d-product-name text-start mb-1">
-                    <a t-att-href="item.website_url">
-                        <t t-out="item.name"/>
-                    </a>
-                </h5>
-                
-                <!-- Rating -->
-                <div class="row g-0">
-                    <div t-if="widget._isActionEnabled('rating')" class="col-12 small text-end">
+                    </p>
+                        </t>
+                            <h5 class="card-title text-truncate fw-light d-product-name text-start mb-1">
+                                <a t-att-href="item.website_url">
+                                    <t t-out="item.name"/>
+                                        </a>
+                                    </h5>
+                                <div class="row g-0">
+                            <div t-if="widget._isActionEnabled('rating')" class="col-12 small text-end">
                         <t t-out="item.rating"/>
                     </div>
                 </div>
