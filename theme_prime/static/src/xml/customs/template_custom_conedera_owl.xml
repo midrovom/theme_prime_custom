@@ -7,6 +7,7 @@
                     class="card-img-top d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
                 <div t-if="userParams.anyActionEnabled" class="d_card_overlay text-center w-100 h-100 position-absolute top-0 start-0"/>
                 <div t-if="userParams.anyActionEnabled" class="d_actions w-100 text-center position-absolute top-50">
+                    <!-- botones de acciones -->
                 </div>
                 <t t-call="dr_s_lable_tmpl"/>
             </div>
@@ -14,12 +15,14 @@
                 <t t-if="item.brands">
                     <div class="d-flex flex-wrap mb-2">
                         <t t-foreach="item.brands" t-as="brand" t-key="brand.id">
-                            <div t-att-style="'background-color:%s; border-radius:12px; padding:4px 8px; margin:2px; color:#fff; font-size:0.85rem;' % brand['color']">
+                            <span t-att-class="'badge rounded-pill %s' % brand['css_class']">
                                 <t t-out="brand['name']"/>
-                            </div>
+                            </span>
                         </t>
                     </div>
                 </t>
+
+                <!-- Nombre del producto -->
                 <h5 class="card-title text-truncate fw-light d-product-name text-start mb-1">
                     <a t-att-href="item.website_url">
                         <t t-out="item.name"/>
@@ -34,6 +37,7 @@
             </div>
         </div>
     </t>
+
 
     <!-- <t t-name="s_card_style_12">
         <div t-attf-class="card h-100 s_card_style_2 shadow-sm border-0 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
