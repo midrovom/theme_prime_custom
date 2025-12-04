@@ -24,6 +24,7 @@
         'views/snippets/s_cover_1.xml',
         'views/snippets/dynamic_snippets.xml',
         'views/snippets.xml',
+        'views/snippets/s_text.xml',
     ],
     'auto_install': False,
     'application': False,
