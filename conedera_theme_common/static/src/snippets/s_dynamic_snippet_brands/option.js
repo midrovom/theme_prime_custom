@@ -3,7 +3,7 @@
 import options from "@web_editor/js/editor/snippets.options";
 import s_dynamic_snippet_carousel_options from "@website/snippets/s_dynamic_snippet_carousel/options";
 
-const dynamicSnippetCategoryOptions = s_dynamic_snippet_carousel_options.extend({
+const dynamicSnippetBrandsOptions = s_dynamic_snippet_carousel_options.extend({
     /**
      * @override
      */
@@ -17,6 +17,6 @@ const dynamicSnippetCategoryOptions = s_dynamic_snippet_carousel_options.extend(
 
 });
 
-options.registry.dynamic_snippet_categories = dynamicSnippetCategoryOptions;
+options.registry.dynamic_snippet_brands = dynamicSnippetBrandsOptions;
 
-export default dynamicSnippetCategoryOptions;
+export default dynamicSnippetBrandsOptions;

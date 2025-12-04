@@ -3,8 +3,8 @@ import publicWidget from "@web/legacy/js/public/public_widget";
 import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel/000";
 import { utils as uiUtils } from "@web/core/ui/ui_service";
 
-const DynamicSnippetCategories = DynamicSnippetCarousel.extend({
-    selector: ".s_dynamic_snippet_categories",
+const DynamicSnippetBrands = DynamicSnippetCarousel.extend({
+    selector: ".s_dynamic_snippet_brands",
 
     /**
      * @override
@@ -31,6 +31,6 @@ const DynamicSnippetCategories = DynamicSnippetCarousel.extend({
     },
 });
 
-publicWidget.registry.dynamic_snippet_categories = DynamicSnippetCategories;
+publicWidget.registry.dynamic_snippet_brands = DynamicSnippetBrands;
 
-export default DynamicSnippetCategories;
+export default DynamicSnippetBrands;
