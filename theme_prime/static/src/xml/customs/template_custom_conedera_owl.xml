@@ -66,7 +66,7 @@
 
 <!-- Template movil  -->
 
-    <t t-name="s_mobile_card_style_4">
+    <t t-name="s_mobile_card_style_6">
         <div class="card border-1 rounded-4 text-start position-relative mb-2 s_mobile_card_style_1">
             
             <i style="transform: scale(1.2)" 
