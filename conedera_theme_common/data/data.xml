@@ -2,16 +2,16 @@
 <odoo>
     <data>
         <record id="dynamic_snippet_is_show_categories_action" model="ir.actions.server">
-            <field name="name">Categorias Seleccionadas</field>
-            <field name="model_id" ref="website_sale.model_product_public_category"/>
+            <field name="name">Marcas Seleccionadas</field>
+            <field name="model_id" ref="website_sale.model_product_product"/>
             <field name="state">code</field>
             <field name="code">
 DynamicFilter = model.env['website.snippet.filter']
-response = DynamicFilter._get_public_categories('is_show')
+response = DynamicFilter._get_products('latest_sold')
             </field>
         </record>
 
-        <record id="dynamic_snippet_all_categories_filter" model="ir.filters">
+        <!-- <record id="dynamic_snippet_all_categories_filter" model="ir.filters">
             <field name="name">Todas las categorias</field>
             <field name="model_id">product.public.category</field>
             <field name="user_id" eval="False" />
@@ -32,6 +32,6 @@ response = DynamicFilter._get_public_categories('is_show')
             <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Categorias Seleccionadas</field>
-        </record>
+        </record> -->
     </data>
 </odoo>
