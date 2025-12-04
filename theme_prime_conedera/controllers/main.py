@@ -1,6 +1,3 @@
-# from odoo.addons.theme_prime.controllers.main import ThemePrimeMainClass
-# from odoo.http import request
-# from odoo.tools import formatLang
 
 from odoo.addons.theme_prime.controllers.main import ThemePrimeMainClass
 
@@ -12,15 +9,16 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
         result = super()._prepare_product_data(products, fields, pricelist, options)
 
         for res_product, product in zip(result, products):
-            # Inicializamos la lista de marcas
             res_product['brands'] = []
 
             for line in product.attribute_line_ids:
-                # Solo tomamos los atributos que tengan el check dr_is_brand
                 if line.attribute_id.dr_is_brand:
                     for val in line.value_ids:
-                        # Guardamos únicamente el campo name
-                        res_product['brands'].append(val.name)
+                        res_product['brands'].append({
+                            'id': val.id,
+                            'name': val.name,
+                            'color': getattr(val, 'html_color', False) or getattr(val, 'dr_color', False),
+                        })
 
         return result
 
@@ -32,23 +30,14 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
 #         result = super()._prepare_product_data(products, fields, pricelist, options)
 
 #         for res_product, product in zip(result, products):
-#             res_product['attributes'] = []
-#             res_product['other_attributes'] = []
+#             # Inicializamos la lista de marcas
+#             res_product['brands'] = []
 
 #             for line in product.attribute_line_ids:
+#                 # Solo tomamos los atributos que tengan el check dr_is_brand
 #                 if line.attribute_id.dr_is_brand:
-#                     continue
-
-#                 for val in line.value_ids:
-#                     attr_data = {
-#                         'id': val.id,
-#                         'name': val.name,
-#                         'image': val.dr_image and f'/web/image/product.attribute.value/{val.id}/dr_image' or False,
-#                         'attribute_name': line.attribute_id.name,
-#                     }
-#                     if line.attribute_id.attribute_custom:
-#                         res_product['attributes'].append(attr_data)
-#                     else:
-#                         res_product['other_attributes'].append(attr_data)
+#                     for val in line.value_ids:
+#                         # Guardamos únicamente el campo name
+#                         res_product['brands'].append(val.name)
 
 #         return result
