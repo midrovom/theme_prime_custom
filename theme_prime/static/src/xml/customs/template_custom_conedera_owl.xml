@@ -1,7 +1,7 @@
 <template>
 
     <t t-name="s_card_style_12">
-        <div t-attf-class="card h-100 s_card_style_2 shadow-sm border-0 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
+        <div t-attf-class="card h-100 s_card_style_2 shadow-sm border-0 rounded-3 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
             <div class="d_product_box position-relative d-flex align-items-center overflow-hidden">
                 <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" 
                     class="card-img-top d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0"/>
