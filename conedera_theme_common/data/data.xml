@@ -4,7 +4,7 @@
         <!-- Acción de servidor: Productos publicados -->
         <record id="dynamic_snippet_published_products_action" model="ir.actions.server">
             <field name="name">Productos Publicados</field>
-            <field name="model_id" ref="website_sale.model_product_template"/>
+            <field name="model_id" ref="product.model_product_template"/>
             <field name="state">code</field>
             <field name="code">
 DynamicFilter = model.env['website.snippet.filter']
