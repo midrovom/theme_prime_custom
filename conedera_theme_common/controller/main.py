@@ -1,6 +1,6 @@
 from odoo import http
 from odoo.http import request
-
+from odoo.addons.website.controllers.main import QueryURL
 class WebsiteSaleProducts(http.Controller):
 
     @http.route(['/website_sale/get_products'], type='json', auth='public', website=True)
@@ -64,3 +64,22 @@ class WebsiteSaleProductsFilter(http.Controller):
             return filters.id
 
         return False
+
+
+class WebsiteProductSnippet(http.Controller):
+
+    @http.route('/website/snippet/products', type='json', auth='public')
+    def products_handler(self, domain=None):
+        # Buscar productos publicados y vendibles
+        products = request.env['product.template'].sudo().search(
+            domain or [('website_published', '=', True), ('sale_ok', '=', True)],
+            limit=12
+        )
+
+        # Preparar datos para el snippet
+        return [{
+            "name": prod.name,
+            "url": prod.website_url,  # URL amigable del producto
+            "price": prod.list_price,  # Precio de venta
+            "image": f"/web/image/product.template/{prod.id}/image_1920" if prod.image_1920 else "/web/static/src/img/placeholder.png"
+        } for prod in products]
