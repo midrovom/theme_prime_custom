@@ -6,8 +6,8 @@
             <field name="model_id" ref="product.model_product_attribute_value"/>
             <field name="state">code</field>
             <field name="code">
-        DynamicFilter = model.env['website.snippet.filter']
-        response = DynamicFilter._get_products('all_brands')
+DynamicFilter = model.env['website.snippet.filter']
+response = DynamicFilter._get_products('all_brands')
             </field>
         </record>
 
@@ -16,9 +16,9 @@
             <field name="model_id" ref="product.model_product_product"/>
             <field name="state">code</field>
             <field name="code">
-        DynamicFilter = model.env['website.snippet.filter']
-        brand_id = request.params.get('brandId')
-        response = DynamicFilter._get_products('products_by_brand', brand_id=brand_id)
+DynamicFilter = model.env['website.snippet.filter']
+brand_id = request.params.get('brandId')
+response = DynamicFilter._get_products('products_by_brand', brand_id=brand_id)
             </field>
         </record>
 
@@ -38,5 +38,5 @@
             <field name="name">Products By Brand</field>
         </record>
     </data>
-    
+
 </odoo>
