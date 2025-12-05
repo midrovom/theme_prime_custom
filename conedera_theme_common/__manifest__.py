@@ -12,6 +12,7 @@
     'category': 'Website',
     'depends': [
         'website',
+        'product',
         'droggol_theme_common',
     ],
     'data': [
