@@ -20,7 +20,7 @@
 
         'views/website_template.xml',
 
-        #'views/snippets/s_dynamic_snippet_brands_preview_data.xml',
+        'views/snippets/s_dynamic_snippet_brands_preview_data.xml',
         'views/snippets/s_dynamic_snippet_brands.xml',
         'views/snippets/snippets.xml',
         'views/snippets/s_key_images_custom.xml',

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="s_dynamic_snippet_brand" name="Marcas">
+        <t t-call="website.s_dynamic_snippet_template">
+            <t t-set="snippet_name" t-value="'s_dynamic_snippet_brand'"/>
+            <t t-call="conedera_theme_common.s_dynamic_snippet_products_preview_data"/>
+        </t>
+    </template>
+
+    <template id="s_dynamic_snippet_categories_options" inherit_id="website.snippet_options">
+        <xpath expr="." position="inside">
+            <t t-call="website.dynamic_snippet_carousel_options_template">
+                <t t-set="snippet_name" t-value="'s_dynamic_snippet_brand'"/>
+                <t t-set="snippet_selector" t-value="'.s_dynamic_snippet_brand'"/>
+            </t>
+        </xpath>
+    </template>
+
+    <record id="conedera_theme_common.s_dynamic_snippet_brand_js" model="ir.asset">
+        <field name="name">Dynamic snippet brand 000 JS</field>
+        <field name="bundle">web.assets_frontend</field>
+        <field name="path">conedera_theme_common/static/src/snippets/s_dynamic_snippet_brand/000.js</field>
+    </record>
+</odoo>
