@@ -8,7 +8,7 @@
                     data-attribute-name="productBrandId"
                     data-no-preview="true"
                     data-model="product.attribute.value"
-                    data-domain="[('attribute_id.name','=','Brand')]"
+                    data-domain='[["attribute_id.name","=","Brand"]]'
                     placeholder="Select a brand"/>
             </t>
         </xpath>
