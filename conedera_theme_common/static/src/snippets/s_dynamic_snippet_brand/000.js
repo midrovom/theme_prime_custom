@@ -16,7 +16,7 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
 
         if (brandId && brandId !== "all") {
             domain.push([
-                "product_template_attribute_value_ids.product_attribute_value_id",
+                "product.product_attribute_value_id",
                 "=",
                 parseInt(brandId)
             ]);
