@@ -8,14 +8,8 @@ class WebsiteSnippetFilter(models.Model):
         if self.model_name == 'product.template':
             brand_id = self.snippet_data.get('productBrandId')
             if brand_id:
-                # Filtrar productos de esa marca
-                res = [r for r in res if brand_id in r['_record'].product_template_attribute_value_ids.ids]
-
-                # Añadir información de la marca (imagen + nombre)
-                brand = self.env['product.attribute.value'].browse(int(brand_id))
-                for r in res:
-                    r['brand_name'] = brand.name
-                    r['brand_image'] = brand.image_1920  # campo binario de imagen
+                # Filtrar productos que tengan ese valor de atributo (marca)
+                res = [r for r in res if int(brand_id) in r['_record'].product_template_attribute_value_ids.ids]
         return res
 
 
