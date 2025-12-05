@@ -17,6 +17,6 @@ const dynamicSnippetCategoryOptions = s_dynamic_snippet_carousel_options.extend(
 
 });
 
-options.registry.s_dynamic_snippet_brand = dynamicSnippetCategoryOptions;
+options.registry.dynamic_snippet_brand = dynamicSnippetCategoryOptions;
 
 export default dynamicSnippetCategoryOptions;
