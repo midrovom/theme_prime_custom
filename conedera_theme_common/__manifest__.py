@@ -17,8 +17,8 @@
         'droggol_theme_common',
     ],
     'data': [
-        'data/data.xml',
-        'data/brand_snippet_template_data.xml',
+        #'data/data.xml',
+        #'data/brand_snippet_template_data.xml',
 
         'views/website_template.xml',
 
@@ -41,7 +41,7 @@
             #'conedera_theme_common/static/src/snippets/prueba.js',
         ],
         'website.assets_wysiwyg': [
-            'conedera_theme_common/static/src/snippets/s_dynamic_snippet_brand/option.js',
+            #'conedera_theme_common/static/src/snippets/s_dynamic_snippet_brand/option.js',
         ],
     }
 }

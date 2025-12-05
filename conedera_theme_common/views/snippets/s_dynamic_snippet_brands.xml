@@ -29,9 +29,9 @@
         </xpath>
     </template> -->
 
-    <record id="conedera_theme_common.s_dynamic_snippet_brand_js" model="ir.asset">
+    <!-- <record id="conedera_theme_common.s_dynamic_snippet_brand_js" model="ir.asset">
         <field name="name">Dynamic snippet brand 000 JS</field>
         <field name="bundle">web.assets_frontend</field>
         <field name="path">conedera_theme_common/static/src/snippets/s_dynamic_snippet_brand/000.js</field>
-    </record>
+    </record> -->
 </odoo>
