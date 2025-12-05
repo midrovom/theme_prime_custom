@@ -1,33 +1,36 @@
 /** @odoo-module **/
-
+import publicWidget from "@web/legacy/js/public/public_widget";
 import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel/000";
+import { utils as uiUtils } from "@web/core/ui/ui_service";
 
-const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
-
-    selector: '.s_dynamic_snippet_brand',
+const DynamicSnippetCategories = DynamicSnippetCarousel.extend({
+    selector: ".s_dynamic_snippet_brand",
 
     /**
-     * Add domain to filter products by brand attribute value
+     * @override
+     * @private
      */
-    _getSearchDomain() {
-        const domain = this._super(...arguments);
-
-        const brandId = this.el.dataset.brandId;
-
-        if (brandId && brandId !== "all") {
-            domain.push([
-                "product.product_attribute_value_id",
-                "=",
-                parseInt(brandId)
-            ]);
-        }
-
-        return domain;
-    },
-
     _getMainPageUrl() {
         return "/shop";
     },
+
+    /**
+     * @override
+     * @private
+     */
+    _getQWebRenderOptions: function () {
+        const options = this._super.apply(this, arguments);
+
+        if (uiUtils.isSmall()) {
+            options.chunkSize = 2; //cantidad movil
+        }else {
+            options.chunkSize = 4; // cantidad de productos web/escritorio
+        }
+
+        return options;
+    },
 });
 
-export default DynamicSnippetBrand;
+publicWidget.registry.s_dynamic_snippet_brand = DynamicSnippetCategories;
+
+export default DynamicSnippetCategories;

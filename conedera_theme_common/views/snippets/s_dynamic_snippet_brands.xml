@@ -16,7 +16,7 @@
         </xpath>
     </template>
 
-    <template id="s_dynamic_snippet_brand_options" inherit_id="website.s_dynamic_snippet_options_template">
+    <!-- <template id="s_dynamic_snippet_brand_options" inherit_id="website.s_dynamic_snippet_options_template">
         <xpath expr="//we-select[@data-name='filter_opt']" position="after">
             <t t-if="snippet_name == 's_dynamic_snippet_brand'">
                 <we-select string="Brand"
@@ -27,7 +27,7 @@
                 </we-select>
             </t>
         </xpath>
-    </template>
+    </template> -->
 
     <record id="conedera_theme_common.s_dynamic_snippet_brand_js" model="ir.asset">
         <field name="name">Dynamic snippet brand 000 JS</field>
