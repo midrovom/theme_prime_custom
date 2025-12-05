@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="s_dynamic_snippet_brands" name="Categorias">
+    <template id="s_dynamic_snippet_brand" name="Categorias">
         <t t-call="website.s_dynamic_snippet_template">
-            <t t-set="snippet_name" t-value="'s_dynamic_snippet_brands'"/>
+            <t t-set="snippet_name" t-value="'s_dynamic_snippet_brand'"/>
             <t t-call="conedera_theme_common.s_dynamic_snippet_categories_preview_data"/>
         </t>
     </template>
 
-    <template id="s_dynamic_snippet_brands_options" inherit_id="website.snippet_options">
+    <template id="s_dynamic_snippet_brand_options" inherit_id="website.snippet_options">
         <xpath expr="." position="inside">
             <t t-call="website.dynamic_snippet_carousel_options_template">
-                <t t-set="snippet_name" t-value="'s_dynamic_snippet_brands'"/>
-                <t t-set="snippet_selector" t-value="'.s_dynamic_snippet_brands'"/>
+                <t t-set="snippet_name" t-value="'s_dynamic_snippet_brand'"/>
+                <t t-set="snippet_selector" t-value="'.s_dynamic_snippet_brand'"/>
             </t>
         </xpath>
     </template>
 
     <record id="conedera_theme_common.s_dynamic_snippet_brands_js" model="ir.asset">
-        <field name="name">Dynamic snippet brands 000 JS</field>
+        <field name="name">Dynamic snippet brand 000 JS</field>
         <field name="bundle">web.assets_frontend</field>
         <field name="path">conedera_theme_common/static/src/snippets/s_dynamic_snippet_brands/000.js</field>
     </record>
