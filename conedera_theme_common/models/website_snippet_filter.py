@@ -1,4 +1,4 @@
-from odoo import _, api, fields, models
+from odoo import api, models, fields
 from odoo.http import request
 
 class WebsiteSnippetFilter(models.Model):
@@ -7,45 +7,64 @@ class WebsiteSnippetFilter(models.Model):
     def _filter_records_to_values(self, records, is_sample=False):
         res = super()._filter_records_to_values(records, is_sample)
 
-        # SOLO aplicar si se trata de brands
-        if self.model_name == 'product.attribute.value':
-            for data in res:
-                brand = data['_record']
+        # Aplicar solo cuando el filtro es de MARCAS
+        is_brand_filter = (
+            self.filter_id
+            and self.filter_id.model_id
+            and self.filter_id.model_id.model == 'product.attribute.value'
+        )
 
-                # URL SEO de la marca
-                data['url'] = "/shop?brand_id=%s" % brand.id
+        if not is_brand_filter:
+            return res
 
-                # Buscar productos publicados para esta marca
-                products = request.env['product.template'].search([
-                    ('website_published', '=', True),
-                    ('product_template_attribute_value_ids', 'in', brand.id)
-                ])
+        Product = self.env['product.template']
 
-                # Cantidad de productos
-                data['product_count'] = len(products)
+        for data in res:
+            brand = data['_record']
 
-                # Imagen de la marca si existe
-                if brand.image:
-                    data['image_512'] = "/web/image/product.attribute.value/%s/image" % brand.id
-                else:
-                    data['image_512'] = "/web/static/img/placeholder.png"
+            # URL SEO hacia los productos filtrados por marca
+            data['url'] = "/shop?brand_id=%s" % brand.id
+
+            # Buscar productos publicados
+            product_domain = [
+                ('website_published', '=', True),
+                ('product_template_attribute_value_ids', 'in', brand.id)
+            ]
+
+            products = Product.search(product_domain)
+
+            data['product_count'] = len(products)
+
+            # Imagen del modelo (image_512 disponible en Odoo 18)
+            if brand.image_512:
+                data['image_512'] = "/web/image/product.attribute.value/%s/image_512" % brand.id
+            else:
+                data['image_512'] = "/web/static/src/img/placeholder.png"
 
         return res
 
     @api.model
     def _get_public_brands(self, mode=None, **kwargs):
-        dynamic_filter = self.env.context.get('dynamic_filter')
         website = self.env['website'].get_current_website()
 
-        # Dominio para obtener SOLO marcas usadas en productos y publicadas en web
+        # Dominio seguro para obtener solo MARCAS reales
         domain = [
             ('attribute_id.name', '=', 'Brand'),
-            ('is_used_on_products', '=', True),
             ('active', '=', True),
         ]
 
-        # Obtener las marcas
-        brands = self.env['product.attribute.value'].search(domain, order="sequence ASC, name ASC")
+        # Si tu instancia tiene el campo is_used_on_products, úsalo
+        if 'is_used_on_products' in self.env['product.attribute.value']._fields:
+            domain.append(('is_used_on_products', '=', True))
 
-        # Formatear datos para el snippet
-        return dynamic_filter.with_context()._filter_records_to_values(brands, is_sample=False)
+        # Obtener marcas (ordenadas)
+        brands = self.env['product.attribute.value'].sudo().search(
+            domain, order="sequence ASC, name ASC"
+        )
+
+        dynamic_filter = self.env.context.get('dynamic_filter', self)
+
+        # Formatear valores
+        return dynamic_filter.with_context()._filter_records_to_values(
+            brands, is_sample=False
+        )
