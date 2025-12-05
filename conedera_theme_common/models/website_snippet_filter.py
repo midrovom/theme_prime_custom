@@ -11,7 +11,8 @@ class WebsiteSnippetFilter(models.Model):
         is_brand_filter = (
             self.filter_id
             and self.filter_id.model_id
-            and self.filter_id.model_id.model == 'product.attribute.value'
+            and self.filter_id.model_id == 'product.attribute.value'
+
         )
 
         if not is_brand_filter:
