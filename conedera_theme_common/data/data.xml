@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Acción servidor para traer marcas seleccionadas -->
-        <record id="dynamic_snippet_is_show_brands_action" model="ir.actions.server">
-            <field name="name">Marcas Seleccionadas</field>
-            <field name="model_id" ref="website_sale.model_product_product"/>
+        <record id="dynamic_snippet_is_show_categories_action" model="ir.actions.server">
+            <field name="name">Categorias Seleccionadas</field>
+            <field name="model_id" ref="product.product_attribute_value"/>
             <field name="state">code</field>
             <field name="code">
 DynamicFilter = model.env['website.snippet.filter']
@@ -12,30 +11,27 @@ response = DynamicFilter._get_public_brands()
             </field>
         </record>
 
-        <!-- Filtro para todas las marcas -->
-        <record id="dynamic_snippet_all_brands_filter" model="ir.filters">
-            <field name="name">Todas las marcas</field>
-            <field name="model_id">product.product</field>
-            <field name="user_id" eval="False"/>
-            <field name="domain">[["dr_is_brand","=",True]]</field>
+        <record id="dynamic_snippet_all_categories_filter" model="ir.filters">
+            <field name="name">Todas las categorias</field>
+            <field name="model_id">product.attribute.value</field>
+            <field name="user_id" eval="False" />
+            <field name="domain">[]</field>
             <field name="context">{}</field>
             <field name="sort">["id desc"]</field>
         </record>
 
-        <!-- Snippet filter para todas las marcas -->
-        <record id="dynamic_filter_all_brands" model="website.snippet.filter">
-            <field name="filter_id" ref="conedera_theme_common.dynamic_snippet_all_brands_filter"/>
-            <field name="field_names">name,dr_image</field>
+        <record id="dynamic_filter_all_categories" model="website.snippet.filter">
+            <field name="filter_id" ref="advance_theme_custom.dynamic_snippet_all_categories_filter"/>
+            <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
-            <field name="name">Todas las marcas</field>
+            <field name="name">Todas las categorias</field>
         </record>
 
-        <!-- Snippet filter para marcas seleccionadas -->
-        <record id="dynamic_filter_is_show_brands" model="website.snippet.filter">
-            <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_is_show_brands_action"/>
-            <field name="field_names">name,dr_image</field>
+        <record id="dynamic_filter_is_show_categories" model="website.snippet.filter">
+            <field name="action_server_id" ref="advance_theme_custom.dynamic_snippet_is_show_categories_action"/>
+            <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
-            <field name="name">Marcas Seleccionadas</field>
+            <field name="name">Categorias Seleccionadas</field>
         </record>
     </data>
 </odoo>
