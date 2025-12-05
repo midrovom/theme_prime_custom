@@ -34,7 +34,6 @@ action = brands
             <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Todas las Marcas</field>
-            <field name="model_id">product.attribute.value</field>
         </record>
 
         <!-- Snippet Filter → Marcas manualmente seleccionadas -->
@@ -43,7 +42,6 @@ action = brands
             <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Marcas Seleccionadas</field>
-            <field name="model_id">product.attribute.value</field>
         </record>
 
     </data>
