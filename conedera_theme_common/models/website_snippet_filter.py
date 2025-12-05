@@ -19,19 +19,29 @@ class WebsiteSnippetFilter(models.Model):
                 # URL personalizada para la marca
                 data['url'] = "/shop/brand/%s" % brand.id
 
+                # Nombre de la marca
+                data['display_name'] = brand.name
+
+                # Imagen de la marca (tu campo dr_image)
+                data['image_512'] = brand.dr_image and f'/web/image/product.attribute.value/{brand.id}/dr_image' \
+                    or "/web/static/src/img/placeholder.png"
+
                 # Buscar productos publicados que tengan esa marca
                 products = request.env['product.template'].search([
                     ('website_published', '=', True),
-                    ('product_template_attribute_value_ids', 'in', brand.ids)
+                    ('dr_brand_value_id', '=', brand.id)
                 ])
 
                 # Cantidad de productos asociados
                 data['product_count'] = len(products)
 
-                # Imagen de la marca (si existe, sino placeholder)
-                if not data.get('image_512'):
-                    data['image_512'] = f"/web/image/product.attribute.value/{brand.id}/image_512" \
-                        if brand.image_512 else "/web/static/src/img/placeholder.png"
+                # Lista de productos con info básica
+                data['products'] = [{
+                    'id': p.id,
+                    'name': p.name,
+                    'price': p.list_price,
+                    'image': f'/web/image/product.template/{p.id}/image_512'
+                } for p in products]
 
         return res
     
@@ -41,9 +51,9 @@ class WebsiteSnippetFilter(models.Model):
         dynamic_filter = self.env.context.get('dynamic_filter') 
         website = self.env['website'].get_current_website()
 
-        # Dominio base: solo valores del atributo "Brand"
+        # Dominio base: traer solo valores que tengan el check dr_is_brand
         domain = [
-            ('attribute_id.name', '=', 'Brand'),
+            ('dr_is_brand', '=', True),
             ('active', '=', True),
         ]
 
