@@ -1,22 +1,19 @@
-/** @odoo-module **/
-
 import options from "@web_editor/js/editor/snippets.options";
 import s_dynamic_snippet_carousel_options from "@website/snippets/s_dynamic_snippet_carousel/options";
 
-const dynamicSnippetBrandsOptions = s_dynamic_snippet_carousel_options.extend({
+const dynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
     /**
      * @override
      */
 
-    // Metodo override que permite definir el filtro del modelo especifico que se crea en ir.filters model_id
-
+    // Override que define el filtro del modelo específico para marcas
     init() {
         this._super.apply(this, arguments);
-        this.modelNameFilter = 'product.attribute.value';
+        this.modelNameFilter = 'product.attribute.value';  
     },
-
 });
 
-options.registry.dynamic_snippet_brands = dynamicSnippetBrandsOptions;
+// Registrar en el editor como nuevo snippet de marcas
+options.registry.dynamic_snippet_brands = dynamicSnippetBrandOptions;
 
-export default dynamicSnippetBrandsOptions;
+export default dynamicSnippetBrandOptions;
