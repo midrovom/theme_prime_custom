@@ -13,6 +13,7 @@
     'depends': [
         'website',
         'product',
+        'website_sale',
         'droggol_theme_common',
     ],
     'data': [
