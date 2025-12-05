@@ -33,7 +33,7 @@ response = DynamicFilter._get_public_brands()
         <record id="dynamic_filter_brands" model="website.snippet.filter">
             <field name="action_server_id" ref="dynamic_snippet_brands_action"/>
             <field name="field_names">name,image_512</field>
-            <field name="limit" eval="32"/>
+            <field name="limit" eval="16"/>
             <field name="name">Selected Brands</field>
         </record>
 
