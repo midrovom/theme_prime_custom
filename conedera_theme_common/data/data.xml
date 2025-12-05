@@ -38,4 +38,4 @@ response = DynamicFilter._get_public_products()
             <field name="name">Productos Publicados</field>
         </record>
     </data>
-<odoo> 
+</odoo> 
