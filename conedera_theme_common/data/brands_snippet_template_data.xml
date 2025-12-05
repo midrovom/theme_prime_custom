@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <template id="dynamic_filter_template_product_public_category_style_2" name="Image + Name Category">
+        <template id="dynamic_filter_template_product_public_brands_style_1" name="Image + Name Category">
             <t t-foreach="records" t-as="data" data-thumb="/website_sale/static/src/img/snippets_options/product_image_with_name.svg">
                 <t t-set="record" t-value="data['_record']"/>
                 <div class="card o_dynamic_category_card text-white text-center border-0 mx-4">

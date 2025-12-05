@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="dynamic_snippet_is_show_brands_action" model="ir.actions.server">
-            <field name="name">Marca Seleccionadas</field>
-            <field name="model_id" ref="website_sale.model_product_product"/>
+        <record id="dynamic_snippet_is_show_categories_action" model="ir.actions.server">
+            <field name="name">Categorias Seleccionadas</field>
+            <field name="model_id" ref="website_sale.model_product_template"/>
             <field name="state">code</field>
             <field name="code">
 DynamicFilter = model.env['website.snippet.filter']
@@ -11,7 +11,7 @@ response = DynamicFilter._get_products_custom
             </field>
         </record>
 
-        <!-- <record id="dynamic_snippet_all_brands_filter" model="ir.filters">
+        <!-- <record id="dynamic_snippet_all_categories_filter" model="ir.filters">
             <field name="name">Todas las categorias</field>
             <field name="model_id">product.public.category</field>
             <field name="user_id" eval="False" />
@@ -21,14 +21,14 @@ response = DynamicFilter._get_products_custom
         </record>
 
         <record id="dynamic_filter_all_categories" model="website.snippet.filter">
-            <field name="filter_id" ref="conedera_theme_common.dynamic_snippet_all_brands_filter"/>
+            <field name="filter_id" ref="advance_theme_custom.dynamic_snippet_all_categories_filter"/>
             <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Todas las categorias</field>
         </record> -->
 
-        <record id="dynamic_filter_is_show_brands" model="website.snippet.filter">
-            <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_is_show_brands_action"/>
+        <record id="dynamic_filter_is_show_categories" model="website.snippet.filter">
+            <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_is_show_categories_action"/>
             <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Categorias Seleccionadas</field>
