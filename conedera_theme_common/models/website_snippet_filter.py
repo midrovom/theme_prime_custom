@@ -4,6 +4,12 @@ from odoo.http import request
 class WebsiteSnippetFilter(models.Model):
     _inherit = 'website.snippet.filter'
 
+from odoo import api, models
+from odoo.http import request
+
+class WebsiteSnippetFilter(models.Model):
+    _inherit = 'website.snippet.filter'
+
     def _filter_records_to_values(self, records, is_sample=False):
         res = super()._filter_records_to_values(records, is_sample)
 
@@ -12,17 +18,18 @@ class WebsiteSnippetFilter(models.Model):
             for data in res:
                 product = data['_record']
 
-                # URL del producto en la tienda
-                data['url'] = "/shop/product/%s" % request.env['ir.http']._slug(product)
+                # URL amigable del producto
+                data['url'] = product.website_url or "/shop/product/%s" % request.env['ir.http']._slug(product)
 
                 # Precio del producto
-                data['price'] = product.list_price
+                data['list_price'] = product.list_price
 
                 # Imagen por defecto si no tiene
                 if not data.get('image_512'):
-                    data['image_512'] = "/web/static/img/placeholder.png"
+                    data['image_512'] = "/web/static/src/img/placeholder.png"
 
         return res
+
 
     @api.model
     def _get_public_products(self, mode=None, **kwargs):

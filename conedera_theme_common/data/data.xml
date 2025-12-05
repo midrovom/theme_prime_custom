@@ -25,17 +25,18 @@ response = DynamicFilter._get_public_products()
         <!-- Snippet Filter: Todos los productos -->
         <record id="dynamic_filter_all_products" model="website.snippet.filter">
             <field name="filter_id" ref="conedera_theme_common.dynamic_snippet_all_products_filter"/>
-            <field name="field_names">name,image_512,list_price</field>
+            <field name="field_names">name,image_512,list_price,url</field>
             <field name="limit" eval="16"/>
             <field name="name">Todos los productos</field>
         </record>
 
-        <!-- Snippet Filter: Productos publicados -->
         <record id="dynamic_filter_published_products" model="website.snippet.filter">
             <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_published_products_action"/>
-            <field name="field_names">name,image_512,list_price</field>
+            <field name="field_names">name,image_512,list_price,url</field>
             <field name="limit" eval="16"/>
             <field name="name">Productos Publicados</field>
         </record>
+
     </data>
 </odoo> 
+
