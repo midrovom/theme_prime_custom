@@ -4,12 +4,6 @@ from odoo.http import request
 class WebsiteSnippetFilter(models.Model):
     _inherit = 'website.snippet.filter'
 
-from odoo import api, models
-from odoo.http import request
-
-class WebsiteSnippetFilter(models.Model):
-    _inherit = 'website.snippet.filter'
-
     def _filter_records_to_values(self, records, is_sample=False):
         res = super()._filter_records_to_values(records, is_sample)
 
