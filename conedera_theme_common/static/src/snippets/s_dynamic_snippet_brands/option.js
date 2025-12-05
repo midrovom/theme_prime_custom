@@ -12,7 +12,7 @@ const dynamicSnippetBrandsOptions = s_dynamic_snippet_carousel_options.extend({
 
     init() {
         this._super.apply(this, arguments);
-        this.modelNameFilter = 'product.product';
+        this.modelNameFilter = 'product.attribute.value';
     },
 
 });
