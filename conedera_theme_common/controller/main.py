@@ -31,11 +31,11 @@ class WebsiteSaleProducts(http.Controller):
         for product in products:
             data = {
                 '_record': product,
-                'display_name': product.display_name,
-                'price': product.list_price,
-                'image_512': product.image_512 and f'/web/image/product.template/{product.id}/image_512' or '/web/static/src/img/placeholder.png',
-                'image_1920': product.image_1920 and f'/web/image/product.template/{product.id}/image_1920' or '/web/static/src/img/placeholder.png',
-                'url': f'/shop/product/{product.id}',
+                'name': product.name,  # coincide con field_names
+                'list_price': product.list_price,  # coincide con field_names
+                'image_512': product.image_512 and f'/web/image/product.template/{product.id}/image_512'
+                            or '/web/static/src/img/placeholder.png',
+                'url': product.website_url or f'/shop/product/{product.id}',
             }
             product_data.append(data)
 
@@ -43,6 +43,7 @@ class WebsiteSaleProducts(http.Controller):
             'records': product_data,
             'is_sample': with_sample,
         }
+
 
 class WebsiteSaleProductsFilter(http.Controller):
     """Controller para filtros de productos"""
