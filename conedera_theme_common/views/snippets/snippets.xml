@@ -9,7 +9,7 @@
     </template>
 
     <!-- Template de product Dynamic -->
-    <template id="snippets" inherit_id="website.snippets" name="e-commerce snippets">
+    <!-- <template id="snippets" inherit_id="website.snippets" name="e-commerce snippets">
         <xpath expr="//t[@id='installed_snippets_hook']" position="after">
             <t snippet-group="brands" t-snippet="website.s_snippet_group" string="Marcas"
                 t-thumbnail="/website/static/src/img/snippets_thumbs/s_dynamic_products.svg"/>
@@ -19,9 +19,8 @@
             <t id="sale_brands_hook" />
         </xpath>
 
-        <!-- Muestra el snippet personalizado -->
         <xpath expr="//t[@id='sale_brands_hook']" position="replace">
             <t t-snippet="conedera_theme_common.s_dynamic_snippet_brands" string="Marcas" group="brands"/>
         </xpath>
-    </template>
+    </template> -->
 </odoo>
