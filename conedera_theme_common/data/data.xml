@@ -37,5 +37,6 @@
             <field name="limit">16</field>
             <field name="name">Products By Brand</field>
         </record>
-
+    </data>
+    
 </odoo>
