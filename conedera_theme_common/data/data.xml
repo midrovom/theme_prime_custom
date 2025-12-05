@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+
+        <!-- Acción para devolver BRANDS -->
         <record id="dynamic_snippet_brands_action" model="ir.actions.server">
-            <field name="name">Categorias Seleccionadas</field>
+            <field name="name">Brand Filter</field>
             <field name="model_id" ref="website_sale.model_product_attribute_value"/>
             <field name="state">code</field>
             <field name="code">
@@ -11,27 +12,30 @@ response = DynamicFilter._get_public_brands
             </field>
         </record>
 
+        <!-- Filtro All Brands -->
         <record id="dynamic_snippet_all_brands_filter" model="ir.filters">
-            <field name="name">Todas las categorias</field>
+            <field name="name">All Brands</field>
             <field name="model_id">product.attribute.value</field>
-            <field name="user_id" eval="False" />
             <field name="domain">[]</field>
             <field name="context">{}</field>
-            <field name="sort">["id desc"]</field>
+            <field name="sort">["name asc"]</field>
         </record>
 
+        <!-- Dynamic Filter -->
         <record id="dynamic_filter_all_brands" model="website.snippet.filter">
-            <field name="filter_id" ref="conedera_theme_common.dynamic_snippet_all_brands_filter"/>
+            <field name="filter_id" ref="dynamic_snippet_all_brands_filter"/>
             <field name="field_names">name,image_512</field>
-            <field name="limit" eval="16"/>
-            <field name="name">Todas las categorias</field>
+            <field name="limit" eval="32"/>
+            <field name="name">All Brands</field>
         </record>
 
+        <!-- Dynamic Filter using Action (Selected Brands) -->
         <record id="dynamic_filter_brands" model="website.snippet.filter">
-            <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_brands_action"/>
+            <field name="action_server_id" ref="dynamic_snippet_brands_action"/>
             <field name="field_names">name,image_512</field>
-            <field name="limit" eval="16"/>
-            <field name="name">Categorias Seleccionadas</field>
+            <field name="limit" eval="32"/>
+            <field name="name">Selected Brands</field>
         </record>
+
     </data>
 </odoo>
