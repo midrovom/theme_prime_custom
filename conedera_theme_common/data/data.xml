@@ -4,7 +4,7 @@
         <!-- Acción servidor para traer marcas seleccionadas -->
         <record id="dynamic_snippet_is_show_brands_action" model="ir.actions.server">
             <field name="name">Marcas Seleccionadas</field>
-            <field name="model_id" ref="product.model_product_attribute_value"/>
+            <field name="model_id" ref="website.model_product_attribute_value"/>
             <field name="state">code</field>
             <field name="code">
 DynamicFilter = model.env['website.snippet.filter']
