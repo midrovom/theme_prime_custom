@@ -1,63 +1,36 @@
-from odoo import _, api, fields, models
-from odoo.http import request
-
-import logging
-
-_logger = logging.getLogger(__name__)
+from odoo import models, api, fields
 
 class WebsiteSnippetFilter(models.Model):
-    _inherit = 'website.snippet.filter'
-    
-    def _filter_records_to_values(self, records, is_sample=False):
-        res = super()._filter_records_to_values(records, is_sample)
+    _inherit = "website.snippet.filter"
 
-        # Aplicar solo cuando el snippet está configurado para marcas
-        if self.model_name == 'product.attribute.value':
-            for data in res:
-                brand = data['_record']
+    def _get_products_by_brand(self, website, limit, domain, brand_id=None, **kwargs):
+        Product = self.env['product.product']
+        AttributeValue = self.env['product.attribute.value']
 
-                # URL personalizada para la marca
-                data['url'] = "/shop/brand/%s" % brand.id
+        brand = AttributeValue.browse(
+            brand_id and int(brand_id)
+        ).exists()
 
-                # Nombre de la marca
-                data['display_name'] = brand.name
+        if not brand:
+            return Product
 
-                # Imagen de la marca (tu campo dr_image)
-                data['image_512'] = brand.dr_image and f'/web/image/product.attribute.value/{brand.id}/dr_image' \
-                    or "/web/static/src/img/placeholder.png"
-
-                # Buscar productos publicados que tengan esa marca
-                products = request.env['product.template'].search([
-                    ('website_published', '=', True),
-                    ('dr_brand_value_id', '=', brand.id)
-                ])
-
-                # Cantidad de productos asociados
-                data['product_count'] = len(products)
-
-                # Lista de productos con info básica
-                data['products'] = [{
-                    'id': p.id,
-                    'name': p.name,
-                    'price': p.list_price,
-                    'image': f'/web/image/product.template/{p.id}/image_512'
-                } for p in products]
-
-        return res
-    
-
-    @api.model
-    def _get_public_brands(self, mode=None, **kwargs):
-        dynamic_filter = self.env.context.get('dynamic_filter') 
-        website = self.env['website'].get_current_website()
-
-        # Dominio base: traer solo valores que tengan el check dr_is_brand
+        # Productos donde la marca está en attribute_value_ids
         domain = [
-            ('dr_is_brand', '=', True),
-            ('active', '=', True),
+            ('website_published', '=', True),
+            ('attribute_value_ids', 'in', [brand.id])
         ]
 
-        # Traer marcas ordenadas por secuencia y nombre
-        brands = self.env['product.attribute.value'].search(domain, order="sequence ASC, name ASC")
+        products = Product.with_context(
+            display_default_code=False
+        ).search(domain, limit=limit)
 
-        return dynamic_filter.with_context()._filter_records_to_values(brands, is_sample=False)
+        return products
+
+    def _get_all_brands(self, website, limit, domain, **kwargs):
+        AttributeValue = self.env['product.attribute.value']
+
+        brands = AttributeValue.search([
+            ('attribute_id', '=', self.env.ref('website_sale.product_attribute_brand').id),
+        ])
+
+        return brands
