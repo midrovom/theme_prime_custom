@@ -15,12 +15,12 @@
         'droggol_theme_common',
     ],
     'data': [
-        'data/data.xml',
-        'data/brand_snippet_template_data.xml',
+        #'data/data.xml',
+        #'data/brand_snippet_template_data.xml',
 
         'views/website_template.xml',
 
-        'views/snippets/s_dynamic_snippet_brands_preview_data.xml',
+        #'views/snippets/s_dynamic_snippet_brands_preview_data.xml',
         'views/snippets/s_dynamic_snippet_brands.xml',
         'views/snippets/snippets.xml',
         'views/snippets/s_key_images_custom.xml',
@@ -36,6 +36,7 @@
             'conedera_theme_common/static/src/css/style.css',
             'conedera_theme_common/static/src/snippets/footers/footer_style_11.scss',
             'conedera_theme_common/static/src/snippets/Key_images/key_images_custom.scss',
+            'conedera_theme_common/static/src/snippets/prueba.js',
         ],
     }
 }
