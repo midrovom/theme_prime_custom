@@ -13,8 +13,8 @@ class WebsiteSaleBrands(http.Controller):
         if search_domain:
             domain += search_domain
 
-        # Solo valores del atributo "Brand"
-        domain += [('attribute_id.name', '=', 'Brand'), ('active', '=', True)]
+        # Solo valores de atributo que tengan marcado el check dr_is_brand
+        domain += [('dr_is_brand', '=', True), ('active', '=', True)]
 
         BrandValue = request.env['product.attribute.value']
 
@@ -31,8 +31,8 @@ class WebsiteSaleBrands(http.Controller):
             data = {
                 '_record': brand,
                 'display_name': brand.name,
-                'image_512': brand.image_512 and f'/web/image/product.attribute.value/{brand.id}/image_512' or '/web/static/src/img/placeholder.png',
-                'image_1920': brand.image_1920 and f'/web/image/product.attribute.value/{brand.id}/image_1920' or '/web/static/src/img/placeholder.png',
+                # Usar tu campo dr_image como logo de la marca
+                'image_512': brand.dr_image and f'/web/image/product.attribute.value/{brand.id}/dr_image' or '/web/static/src/img/placeholder.png',
                 'url': f'/shop/brand/{brand.id}',
             }
             brand_data.append(data)
@@ -41,6 +41,7 @@ class WebsiteSaleBrands(http.Controller):
             'records': brand_data,
             'is_sample': with_sample,
         }
+
 
 class WebsiteSaleBrandsFilter(http.Controller):
     """Controller for brand filters"""
