@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <template id="dynamic_filter_template_product_template_style_2" name="Borderless Product n°1">
+        <template id="dynamic_filter_template_product_template_style_custom" name="Borderless Product n°1">
             <t t-foreach="records" t-as="data" data-thumb="/website_sale/static/src/img/snippets_options/product_borderless_1.svg">
                 <t t-set="record" t-value="data['_record']"/>
                 <div class="o_carousel_product_card bg-transparent w-100 card border-0">
