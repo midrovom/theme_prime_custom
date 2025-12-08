@@ -15,11 +15,19 @@ const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
         let productBrandId = this.$el.get(0).dataset.productBrandId;
         if (productBrandId && productBrandId !== 'all') {
             if (productBrandId === 'current') {
-                // lógica para detectar la marca actual si estás en página de producto
+                productBrandId = undefined;
                 const productBrandField = $("#product_details").find(".product_brand_id");
                 if (productBrandField && productBrandField.length) {
                     productBrandId = parseInt(productBrandField[0].value);
                 }
+                // Si no encuentra nada, podrías usar trigger_up igual que con categoría
+                this.trigger_up('main_object_request', {
+                    callback: function (value) {
+                        if (value.model === "product.brand") {
+                            productBrandId = value.id;
+                        }
+                    },
+                });
             }
             if (productBrandId) {
                 searchDomain.push(['product_brand_id', '=', parseInt(productBrandId)]);
