@@ -57,7 +57,7 @@ const dynamicSnippetProductsOptions = s_dynamic_snippet_carousel_options.extend(
         }
         const brandAttributeId = brandAttribute[0].id;
 
-        // Trae los valores de ese atributo
+        // Trae los valores de ese atributo (Samsung, LG, etc.)
         return this.orm.searchRead(
             "product.attribute.value",
             [["attribute_id", "=", brandAttributeId]],
@@ -107,6 +107,7 @@ const dynamicSnippetProductsOptions = s_dynamic_snippet_carousel_options.extend(
 options.registry.dynamic_snippet_products = dynamicSnippetProductsOptions;
 
 export default dynamicSnippetProductsOptions;
+
 
 // /** @odoo-module **/
 

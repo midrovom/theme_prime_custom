@@ -37,6 +37,7 @@ publicWidget.registry.dynamic_snippet_products_brand = DynamicSnippetProductsBra
 
 export default DynamicSnippetProductsBrand;
 
+
 // /** @odoo-module **/
 
 // import publicWidget from "@web/legacy/js/public/public_widget";
