@@ -18,7 +18,9 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
             ["id"]
         );
 
-        if (!brandAttr.length) return [];
+        if (!brandAttr.length) {
+            return [];
+        }
 
         return this.orm.searchRead(
             "product.attribute.value",
@@ -42,10 +44,7 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
         const brandSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
         if (!brandSelectorEl) return;
 
-        return this._renderSelectUserValueWidgetButtons(
-            brandSelectorEl,
-            this.productBrands
-        );
+        return this._renderSelectUserValueWidgetButtons(brandSelectorEl, this.productBrands);
     },
 
     _setOptionsDefaultValues() {
@@ -53,24 +52,19 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
         this._super(...arguments);
     },
 
-    // ✔ CORRECCIÓN: propagar el valor al snippet y refrescar
+    // 🔹 CORRECCIÓN: propagar el valor al dataset del snippet
     _setOptionValue(optionName, value) {
         this._super(...arguments);
-
         if (optionName === "productBrandId") {
             this.$target[0].dataset.productBrandId = value;
-
-            this.trigger_up("snippet_option_update", {
-                optionName,
-                value,
-                onSuccess: () => {},
-                onFailure: () => {},
-            });
+            // Forzar recarga del snippet
+            this.trigger_up("snippet_option_update", { optionName, value });
         }
     },
 });
 
 options.registry.dynamic_snippet_brand = DynamicSnippetBrandOptions;
+
 export default DynamicSnippetBrandOptions;
 
 

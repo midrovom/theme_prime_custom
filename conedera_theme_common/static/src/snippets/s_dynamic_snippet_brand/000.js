@@ -9,11 +9,21 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
     _getRPCParams() {
         const params = this._super(...arguments);
 
+        // Contexto dinámico
         params.context = params.context || {};
         params.context.productBrandId = this.el.dataset.productBrandId || "all";
+        params.context.dynamic_filter_id = this.el.dataset.dynamicFilterId;
 
         return params;
     },
+
+    start() {
+        const res = this._super(...arguments);
+        this.el.dataset.dynamicFilterId = "conedera_theme_common.dynamic_filter_products_by_brand";
+
+        return res;
+    },
+
 });
 
 publicWidget.registry.dynamic_snippet_brand = DynamicSnippetBrand;
