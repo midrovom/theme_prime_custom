@@ -6,13 +6,29 @@ import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel
 const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
     selector: ".s_dynamic_snippet_brand",
 
-    _getRPCParams() {
-        const params = this._super(...arguments);
+    // Sobrescribimos para llamar al controlador en vez de server action
+    async _fetchData() {
+        const brandId = this.el.dataset.productBrandId || "all";
 
-        params.context = params.context || {};
-        params.context.productBrandId = this.el.dataset.productBrandId || "all";
+        const products = await this._rpc({
+            route: "/snippet/products_by_brand",
+            params: {
+                brand_id: brandId,
+                limit: 16,
+            },
+        });
 
-        return params;
+        return products;
+    },
+
+    // Renderizamos los productos recibidos
+    async start() {
+        await this._super(...arguments);
+        const products = await this._fetchData();
+
+        // Aquí puedes usar tu propio método de renderizado
+        // o dejar que el DynamicSnippetCarousel maneje los records
+        this._renderProducts(products);
     },
 });
 

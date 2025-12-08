@@ -18,7 +18,9 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
             ["id"]
         );
 
-        if (!brandAttr.length) return [];
+        if (!brandAttr.length) {
+            return [];
+        }
 
         return this.orm.searchRead(
             "product.attribute.value",
@@ -53,26 +55,28 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
         this._super(...arguments);
     },
 
-    // ✔ CORRECCIÓN: propagar el valor al snippet y refrescar
+    // 🔹 CORRECCIÓN: propagar el valor al dataset del snippet y añadir callbacks
     _setOptionValue(optionName, value) {
         this._super(...arguments);
 
         if (optionName === "productBrandId") {
+            // Guardar el valor en el dataset del snippet
             this.$target[0].dataset.productBrandId = value;
 
+            // Forzar recarga del snippet con callbacks válidos
             this.trigger_up("snippet_option_update", {
                 optionName,
                 value,
-                onSuccess: () => {},
-                onFailure: () => {},
+                onSuccess: () => {},   // callback vacío para evitar error
+                onFailure: () => {},   // opcional
             });
         }
     },
 });
 
 options.registry.dynamic_snippet_brand = DynamicSnippetBrandOptions;
-export default DynamicSnippetBrandOptions;
 
+export default DynamicSnippetBrandOptions;
 
 // /** @odoo-module **/
 
