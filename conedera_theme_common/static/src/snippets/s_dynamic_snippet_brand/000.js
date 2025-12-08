@@ -5,36 +5,24 @@ import DynamicSnippetProducts from "@website/snippets/s_dynamic_snippet_products
 
 const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
 
-    /**
-     * Gets the brand search domain
-     *
-     * @private
-     */
     _getBrandSearchDomain() {
-        const searchDomain = [];
-        let productBrandId = this.$el.get(0).dataset.productBrandId;
-        if (productBrandId && productBrandId !== 'all') {
-            // 🔹 Filtra directamente por el campo dr_brand_value_id en product.product
-            searchDomain.push(['dr_brand_value_id', '=', parseInt(productBrandId)]);
+        const domain = [];
+        const brandId = this.$el[0].dataset.productBrandId;
+
+        if (brandId && brandId !== "all") {
+            domain.push(['dr_brand_value_id', '=', parseInt(brandId)]);
         }
-        return searchDomain;
+        return domain;
     },
 
-    /**
-     * Override search domain to include brand
-     *
-     * @override
-     * @private
-     */
-    _getSearchDomain: function () {
-        const searchDomain = this._super.apply(this, arguments);
-        searchDomain.push(...this._getBrandSearchDomain());
-        return searchDomain;
+    searchDomainFromUI: function () {
+        const domain = this._super.apply(this, arguments);
+        domain.push(...this._getBrandSearchDomain());
+        return domain;
     },
 });
 
 publicWidget.registry.dynamic_snippet_products_brand = DynamicSnippetProductsBrand;
-
 export default DynamicSnippetProductsBrand;
 
 // /** @odoo-module **/
