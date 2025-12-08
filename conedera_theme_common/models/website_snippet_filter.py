@@ -1,4 +1,3 @@
-
 from odoo import api, models
 from odoo.osv import expression
 from odoo.http import request
@@ -31,20 +30,18 @@ class WebsiteSnippetFilter(models.Model):
         return res
 
     @api.model
-    def _get_products_by_brand(self, website, limit, domain, **kwargs):
-        brand_id = kwargs.get('brand_id')
-        products = self.env['product.template']
+    def _get_products_by_brand(self, brand_id=None, limit=16):
+        domain = [('website_published', '=', True)]
         if brand_id and brand_id != 'all':
             domain = expression.AND([
                 domain,
                 [('dr_brand_value_id', '=', int(brand_id))],
             ])
-        products = products.with_context(display_default_code=False).search(domain, limit=limit)
+        products = self.env['product.template'].with_context(display_default_code=False).search(domain, limit=limit)
 
         # Log para depuración
         _logger.info("Filtro por marca: brand_id=%s, productos encontrados=%s", brand_id, products.ids)
 
-        # Igual que en categorías: devolvemos los valores procesados
         dynamic_filter = self.env.context.get('dynamic_filter')
         return dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
 
