@@ -14,14 +14,14 @@ class WebsiteSnippetFilter(models.Model):
             for data in res:
                 product = data['_record']
 
-                # Imagen del producto
-                if not data.get('image_512'):
-                    data['image_512'] = "/web/static/img/placeholder.png"
-
-                # Nombre del producto
+                # Imagen del producto (usa image_1920 o placeholder)
+                if not product.image_1920:
+                    data['image_1920'] = "/web/static/img/placeholder.png"
+                else:
+                    data['image_1920'] = "/web/image/product.template/%s/image_1920" % product.id
                 data['name'] = product.name or ""
 
-                # Marca: siempre añadir la clave, aunque esté vacía
+                # Marca
                 data['brand'] = product.dr_brand_value_id.name if product.dr_brand_value_id else ""
 
         return res
