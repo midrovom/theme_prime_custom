@@ -28,6 +28,7 @@ class WebsiteSaleProductsByBrand(http.Controller):
             "is_sample": with_sample,
         }
 
+
 # from odoo import http
 # from odoo.http import request
 

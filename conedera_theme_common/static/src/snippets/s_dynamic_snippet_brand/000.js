@@ -1,34 +1,43 @@
 /** @odoo-module **/
 
-import { DynamicSnippetCarousel } from "@website/snippets/dynamic_snippet_carousel";
-import { registry } from "@web/core/registry";
+import publicWidget from "@web/legacy/js/public/public_widget";
+import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel/000";
 
-export class DynamicSnippetBrand extends DynamicSnippetCarousel {
-    static selector = ".s_dynamic_snippet_brand";
+const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
+    selector: ".s_dynamic_snippet_brand",
 
-    // ---------------------------
-    // BRAND FILTER
-    // ---------------------------
-    getBrandDomain() {
-        const brandId = this.props.product_brand_id || "all";
-        if (brandId === "all") {
+    /**
+     * Agrega el filtro por marca
+     */
+    _getBrandDomain() {
+        const brand = this.el.dataset.productBrandId || "all";
+        if (brand === "all") {
             return [];
         }
-        return [["dr_brand_value_id", "=", parseInt(brandId)]];
-    }
+        return [["dr_brand_value_id", "=", parseInt(brand)]];
+    },
 
-    getSearchDomain() {
-        const domain = super.getSearchDomain();
-        domain.push(...this.getBrandDomain());
+    /**
+     * @override
+     */
+    _getSearchDomain() {
+        const domain = this._super(...arguments);
+        domain.push(...this._getBrandDomain());
         return domain;
-    }
+    },
 
-    getMainPageUrl() {
+    /**
+     * @override
+     * Url de clic “ver más”
+     */
+    _getMainPageUrl() {
         return "/shop";
-    }
-}
+    },
+});
 
-registry.category("public_widgets").add("DynamicSnippetBrand", DynamicSnippetBrand);
+publicWidget.registry.dynamic_snippet_brand = DynamicSnippetBrand;
+
+export default DynamicSnippetBrand;
 
 
 // /** @odoo-module **/

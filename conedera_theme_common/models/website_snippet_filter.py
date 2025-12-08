@@ -13,6 +13,7 @@ class WebsiteSnippetFilter(models.Model):
             ])
         return self.env['product.template'].search(domain, limit=limit)
 
+
     # @api.model
     # def _get_products_by_brand(self, website, limit, domain, **kwargs):
     #     """Devuelve productos filtrados por marca (dr_brand_value_id)."""
