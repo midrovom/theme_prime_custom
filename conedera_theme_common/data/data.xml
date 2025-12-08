@@ -18,7 +18,8 @@
             <field name="field_names">display_name,description_sale,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Products by Brand</field>
+            <!-- 🔹 Obligatorio: modelo sobre el que trabaja -->
+            <field name="model_name">product.template</field>
         </record>
-
     </data>
 </odoo>
