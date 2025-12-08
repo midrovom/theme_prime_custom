@@ -19,9 +19,10 @@ class WebsiteSnippetFilter(models.Model):
                     data['image_512'] = "/web/static/img/placeholder.png"
 
                 # Nombre del producto
-                data['name'] = product.name
+                data['name'] = product.name or ""
 
                 # Marca (campo dr_brand_value_id)
+                # Aseguramos que siempre exista la clave 'brand'
                 data['brand'] = product.dr_brand_value_id.name if product.dr_brand_value_id else ""
 
         return res
