@@ -6,9 +6,6 @@ import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel
 const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
     selector: ".s_dynamic_snippet_brand",
 
-    /**
-     * Agrega el filtro por marca
-     */
     _getBrandDomain() {
         const brand = this.el.dataset.productBrandId || "all";
         if (brand === "all") {
@@ -17,19 +14,12 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
         return [["dr_brand_value_id", "=", parseInt(brand)]];
     },
 
-    /**
-     * @override
-     */
     _getSearchDomain() {
         const domain = this._super(...arguments);
         domain.push(...this._getBrandDomain());
         return domain;
     },
 
-    /**
-     * @override
-     * Url de clic “ver más”
-     */
     _getMainPageUrl() {
         return "/shop";
     },

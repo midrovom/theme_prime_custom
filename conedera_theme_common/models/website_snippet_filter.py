@@ -18,10 +18,10 @@ class WebsiteSnippetFilter(models.Model):
             ])
         products = products.with_context(display_default_code=False).search(domain, limit=limit)
 
-        # Loguear lo que se está retornando
+        # Log para depuración
         _logger.info("Filtro por marca: brand_id=%s, productos encontrados=%s", brand_id, products.ids)
 
-        return products
+        return products   # devolvemos el recordset
 
 
     # @api.model

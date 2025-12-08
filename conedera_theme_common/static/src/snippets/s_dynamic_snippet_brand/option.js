@@ -4,22 +4,12 @@ import options from "@web_editor/js/editor/snippets.options";
 import s_dynamic_snippet_carousel_options from "@website/snippets/s_dynamic_snippet_carousel/options";
 
 const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
-    /**
-     * @override
-     */
     init() {
         this._super(...arguments);
-
-        // Filtra productos, no categorías ni variantes
         this.modelNameFilter = "product.template";
-
         this.orm = this.bindService("orm");
         this.productBrands = {};
     },
-
-    //----------------------------------------------------------------------
-    // Fetch
-    //----------------------------------------------------------------------
 
     async _fetchProductBrands() {
         const brandAttr = await this.orm.searchRead(
@@ -39,10 +29,6 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
         );
     },
 
-    //----------------------------------------------------------------------
-    // Builder UI
-    //----------------------------------------------------------------------
-
     async _renderCustomXML(uiFragment) {
         await this._super(...arguments);
         await this._renderBrandSelector(uiFragment);
@@ -60,10 +46,6 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
 
         return this._renderSelectUserValueWidgetButtons(brandSelectorEl, this.productBrands);
     },
-
-    //----------------------------------------------------------------------
-    // Defaults
-    //----------------------------------------------------------------------
 
     _setOptionsDefaultValues() {
         this._setOptionValue("productBrandId", "all");
