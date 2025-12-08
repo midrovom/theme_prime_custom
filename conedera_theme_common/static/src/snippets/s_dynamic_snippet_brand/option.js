@@ -51,6 +51,16 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
         this._setOptionValue("productBrandId", "all");
         this._super(...arguments);
     },
+
+    // 🔹 CORRECCIÓN: propagar el valor al dataset del snippet
+    _setOptionValue(optionName, value) {
+        this._super(...arguments);
+        if (optionName === "productBrandId") {
+            this.$target[0].dataset.productBrandId = value;
+            // Forzar recarga del snippet
+            this.trigger_up("snippet_option_update", { optionName, value });
+        }
+    },
 });
 
 options.registry.dynamic_snippet_brand = DynamicSnippetBrandOptions;
