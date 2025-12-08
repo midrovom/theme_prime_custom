@@ -8,9 +8,9 @@
             <field name="state">code</field>
 
             <field name="code">
-                brand_id = env.context.get("productBrandId")
-                DynamicFilter = env["website.snippet.filter"]
-                return DynamicFilter._get_products_by_brand(brand_id=brand_id, limit=16)
+brand_id = env.context.get("productBrandId")
+DynamicFilter = env["website.snippet.filter"]
+return DynamicFilter._get_products_by_brand(brand_id=brand_id, limit=16)
             </field>
         </record>
 
