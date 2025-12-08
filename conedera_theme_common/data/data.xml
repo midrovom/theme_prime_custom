@@ -6,11 +6,11 @@
             <field name="name">Productos por Marca</field>
             <field name="model_id" ref="website_sale.model_product_template"/>
             <field name="state">code</field>
-            <field name="code">
+            <field name="code"><![CDATA[
 brand_id = env.context.get("productBrandId")
 DynamicFilter = env["website.snippet.filter"]
 return DynamicFilter._get_products_by_brand(brand_id=brand_id, limit=16)
-            </field>
+]]></field>
         </record>
 
         <!-- Filtro dinámico -->
@@ -21,6 +21,6 @@ return DynamicFilter._get_products_by_brand(brand_id=brand_id, limit=16)
             <field name="name">Productos por Marca</field>
             <field name="model_name">product.template</field>
         </record>
-
     </data>
 </odoo>
+
