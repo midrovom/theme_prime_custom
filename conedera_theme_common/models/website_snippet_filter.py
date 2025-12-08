@@ -7,44 +7,39 @@ class WebsiteSnippetFilter(models.Model):
     _inherit = 'website.snippet.filter'
 
     def _filter_records_to_values(self, records, is_sample=False):
-        # Llamamos al super primero
+
+        # Si estamos en modo sample y el snippet es de productos, cargar datos reales
+        if is_sample and self.model_name == "product.template":
+            is_sample = False
+
+        # Llamamos al super una vez corregido el flag
         res = super()._filter_records_to_values(records, is_sample)
 
-        # FIX: evitar que Odoo intente decode() sobre valores booleanos
+        # FIX: Odoo hace decode() sobre valores booleanos
         for data in res:
             for key, value in list(data.items()):
-                if isinstance(value, bool):   # este fix evita el AttributeError
-                    data[key] = ""            # cambiar False/True por string vacío
+                if isinstance(value, bool):
+                    data[key] = ""
 
-        # ---- Customización específica para product.template ----
+        # ---- Custom para product.template ----
         if self.model_name == 'product.template':
             for data in res:
                 product = data.get('_record')
 
-                # Si no hay record, valores por defecto
                 if not product:
                     data['name'] = ""
                     data['image_1920'] = "/web/static/img/placeholder.png"
                     data['brand'] = ""
                     continue
 
-                # Imagen del producto
-                if not getattr(product, "image_1920", False):
-                    data['image_1920'] = "/web/static/img/placeholder.png"
-                else:
+                data['name'] = product.name or ""
+                data['brand'] = product.dr_brand_value_id.name if product.dr_brand_value_id else ""
+
+                # Imagen
+                if product.image_1920:
                     data['image_1920'] = f"/web/image/product.template/{product.id}/image_1920"
-
-                # Nombre del producto
-                data['name'] = getattr(product, "name", "") or ""
-
-                # Marca
-                brand = getattr(product, "dr_brand_value_id", False)
-                data['brand'] = brand.name if brand else ""
-
-                # Asegurar que las claves existan
-                data.setdefault('image_1920', "/web/static/img/placeholder.png")
-                data.setdefault('name', "")
-                data.setdefault('brand', "")
+                else:
+                    data['image_1920'] = "/web/static/img/placeholder.png"
 
         return res
 
