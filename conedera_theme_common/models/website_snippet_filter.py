@@ -8,14 +8,8 @@ class WebsiteSnippetFilter(models.Model):
     _inherit = 'website.snippet.filter'
 
     def _filter_records_to_values(self, records, is_sample=False):
-
-        # 🔥 Builder envía la marca por contexto
         brand_ctx = self.env.context.get("product_brand_id")
-
-        # Detectamos builder SOLO si existe el context.product_brand_id
         is_builder = bool(brand_ctx)
-
-        # Si es builder y este snippet es de productos → NO usar sample
         if is_builder and self.model_name == "product.template":
             is_sample = False
 
@@ -65,16 +59,25 @@ class WebsiteSnippetFilter(models.Model):
 
     @api.model
     def _get_products_by_brand(self, brand_id=None, limit=16):
-
-        if not brand_id or brand_id == "all":
+        # Validación de marca
+        if not brand_id or brand_id == 'all':
+            _logger.info("No se seleccionó marca, no se retornan productos")
             return []
+
         try:
             brand_id = int(brand_id)
-        except:
+        except (ValueError, TypeError):
+            _logger.error("brand_id inválido: %s", brand_id)
             return []
 
-        products = self.env['product.template'].search([
+        # Filtrado de productos por marca
+        domain = [
             ('website_published', '=', True),
             ('dr_brand_value_id', '=', brand_id)
-        ], limit=limit)
-        return self._filter_records_to_values(products, is_sample=False)
+        ]
+        products = self.env['product.template'].search(domain, limit=limit)
+
+        _logger.info("Filtro por marca: brand_id=%s, productos=%s", brand_id, products.ids)
+
+        dynamic_filter = self.env.context.get('dynamic_filter')
+        return dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
