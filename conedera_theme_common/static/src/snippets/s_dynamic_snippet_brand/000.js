@@ -16,7 +16,17 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
 
     _getSearchDomain() {
         const domain = this._super(...arguments);
-        domain.push(...this._getBrandDomain());
+
+        const brand = this.el.dataset.productBrandId || "all";
+
+        // Dominio normal
+        if (brand !== "all") {
+            domain.push(["dr_brand_value_id", "=", parseInt(brand)]);
+        }
+
+        this.options.context = this.options.context || {};
+        this.options.context.product_brand_id = brand;
+
         return domain;
     },
 

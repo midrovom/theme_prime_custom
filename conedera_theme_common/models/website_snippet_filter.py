@@ -3,22 +3,45 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
+
 class WebsiteSnippetFilter(models.Model):
     _inherit = 'website.snippet.filter'
 
     def _filter_records_to_values(self, records, is_sample=False):
 
-        # Si estamos en modo sample y el snippet es de productos, cargar datos reales
-        if is_sample and self.model_name == "product.template":
+        # 🔥 Builder envía la marca por contexto
+        brand_ctx = self.env.context.get("product_brand_id")
+
+        # Detectamos builder SOLO si existe el context.product_brand_id
+        is_builder = bool(brand_ctx)
+
+        # Si es builder y este snippet es de productos → NO usar sample
+        if is_builder and self.model_name == "product.template":
             is_sample = False
+
+            # Si viene marca → filtrar productos reales
+            if brand_ctx and brand_ctx != "all":
+                try:
+                    brand_id = int(brand_ctx)
+                except Exception:
+                    brand_id = False
+
+                if brand_id:
+                    records = self.env['product.template'].search([
+                        ('website_published', '=', True),
+                        ('dr_brand_value_id', '=', brand_id)
+                    ])
+
+        # Llamada normal al super
         res = super()._filter_records_to_values(records, is_sample)
 
-        # FIX: Odoo hace decode() sobre valores booleanos
+        # FIX: evitar decode() de valores booleanos
         for data in res:
             for key, value in list(data.items()):
                 if isinstance(value, bool):
                     data[key] = ""
 
+        # Custom de product.template
         if self.model_name == 'product.template':
             for data in res:
                 product = data.get('_record')
