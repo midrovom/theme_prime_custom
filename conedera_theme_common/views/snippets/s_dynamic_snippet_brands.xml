@@ -3,7 +3,7 @@
 
     <template id="s_dynamic_snippet_brand_options" inherit_id="website.s_dynamic_snippet_options_template">
         <xpath expr="//we-select[@data-name='filter_opt']" position="after">
-            <t t-if="snippet_name == 's_dynamic_snippet_products'">
+            <t t-if="snippet_name == 'dynamic_snippet_products'">
                 <we-select string="Brand" data-name="product_category_opt" data-attribute-name="productCategoryId" data-no-preview="true">
                     <we-button data-select-data-attribute="current">Marcas</we-button>
                 </we-select>
