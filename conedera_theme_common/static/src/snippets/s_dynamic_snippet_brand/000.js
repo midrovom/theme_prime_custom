@@ -14,7 +14,7 @@ const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
         const searchDomain = [];
         let productBrandId = this.$el.get(0).dataset.productBrandId;
         if (productBrandId && productBrandId !== 'all') {
-            // 🔹 Ahora filtramos por el campo dr_brand_value_id
+            // 🔹 Filtra directamente por el campo dr_brand_value_id en product.product
             searchDomain.push(['dr_brand_value_id', '=', parseInt(productBrandId)]);
         }
         return searchDomain;
@@ -53,8 +53,8 @@ export default DynamicSnippetProductsBrand;
 //         const searchDomain = [];
 //         let productBrandId = this.$el.get(0).dataset.productBrandId;
 //         if (productBrandId && productBrandId !== 'all') {
-//             // Filtra por valor de atributo "Marca"
-//             searchDomain.push(['attribute_line_ids.value_ids', '=', parseInt(productBrandId)]);
+//             // 🔹 Ahora filtramos por el campo dr_brand_value_id
+//             searchDomain.push(['dr_brand_value_id', '=', parseInt(productBrandId)]);
 //         }
 //         return searchDomain;
 //     },
@@ -75,3 +75,4 @@ export default DynamicSnippetProductsBrand;
 // publicWidget.registry.dynamic_snippet_products_brand = DynamicSnippetProductsBrand;
 
 // export default DynamicSnippetProductsBrand;
+
