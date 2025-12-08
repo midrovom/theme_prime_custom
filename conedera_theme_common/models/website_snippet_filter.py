@@ -1,6 +1,5 @@
 from odoo import api, models
 from odoo.osv import expression
-from odoo.http import request
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -9,37 +8,21 @@ class WebsiteSnippetFilter(models.Model):
     _inherit = 'website.snippet.filter'
 
     def _filter_records_to_values(self, records, is_sample=False):
-        # Llamamos al super para obtener la estructura base
         res = super()._filter_records_to_values(records, is_sample)
 
         if self.model_name == 'product.template':
-            website = self.env['website'].get_current_website()
-            pricelist = website.get_current_pricelist()
-            partner = self.env.user.partner_id
-
             for data in res:
                 product = data['_record']
 
-                # URL del producto
-                data['url'] = product.website_url or "/shop/product/%s" % product.id
-
-                # Imagen por defecto si no tiene
+                # Imagen del producto (usa la imagen del template)
                 if not data.get('image_512'):
                     data['image_512'] = "/web/static/img/placeholder.png"
 
-                # Descripción de venta
-                data['description_sale'] = product.description_sale or ""
+                # Nombre del producto
+                data['name'] = product.name
 
-                # Precio calculado según la lista de precios del website
-                data['price'] = pricelist.get_product_price(product, 1.0, partner)
-                data['currency_id'] = pricelist.currency_id.id
-
-                # Stock disponible
-                data['qty_available'] = product.qty_available
-
-                # Rating
-                data['rating_avg'] = product.rating_avg
-                data['rating_count'] = product.rating_count
+                # Marca (campo dr_brand_value_id)
+                data['brand'] = product.dr_brand_value_id.name if product.dr_brand_value_id else ""
 
         return res
 
@@ -51,9 +34,8 @@ class WebsiteSnippetFilter(models.Model):
                 domain,
                 [('dr_brand_value_id', '=', int(brand_id))],
             ])
-        products = self.env['product.template'].with_context(display_default_code=False).search(domain, limit=limit)
+        products = self.env['product.template'].search(domain, limit=limit)
 
-        # Log para depuración
         _logger.info("Filtro por marca: brand_id=%s, productos encontrados=%s", brand_id, products.ids)
 
         dynamic_filter = self.env.context.get('dynamic_filter')
