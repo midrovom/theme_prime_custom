@@ -15,7 +15,7 @@ products = env['website.snippet.filter']._get_products_by_brand(
     domain,
     brand_id=brand_id
 )
-response = env['website.snippet.filter']._return_values(products)
+response = env['website.snippet.filter']._filter_records_to_values(products, is_sample=False)
             </field>
         </record>
 
