@@ -43,10 +43,26 @@ const dynamicSnippetProductsOptions = s_dynamic_snippet_carousel_options.extend(
     },
 
     /**
-     * 
+     * 🔹 Nuevo: Fetches product brands desde product.attribute.value
      */
-    _fetchProductBrands: function () {
-        return this.orm.searchRead("product.brand", wUtils.websiteDomain(this), ["id", "name"]);
+    _fetchProductBrands: async function () {
+        // Busca el atributo "Marca"
+        const brandAttribute = await this.orm.searchRead(
+            "product.attribute",
+            [["name", "=", "Marca"]],
+            ["id"]
+        );
+        if (!brandAttribute.length) {
+            return [];
+        }
+        const brandAttributeId = brandAttribute[0].id;
+
+        // Trae los valores de ese atributo
+        return this.orm.searchRead(
+            "product.attribute.value",
+            [["attribute_id", "=", brandAttributeId]],
+            ["id", "name"]
+        );
     },
 
     //--------------------------------------------------------------------------
