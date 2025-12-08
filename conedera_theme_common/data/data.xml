@@ -7,15 +7,8 @@
             <field name="model_id" ref="website_sale.model_product_template"/>
             <field name="state">code</field>
             <field name="code">
-brand_id = request.params.get('productBrandId')
-domain = [('website_published','=',True)]
-products = env['website.snippet.filter']._get_products_by_brand(
-    env['website'].get_current_website(),
-    16,
-    domain,
-    brand_id=brand_id
-)
-action = self._filter_records_to_values(products, is_sample=False)
+DynamicFilter = model.env['website.snippet.filter']
+response = DynamicFilter._get_products_by_brand()
             </field>
         </record>
 
