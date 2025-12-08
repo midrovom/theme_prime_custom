@@ -12,20 +12,19 @@ class WebsiteSnippetFilter(models.Model):
         # Llamamos al super para obtener la estructura base
         res = super()._filter_records_to_values(records, is_sample)
 
-        # Aplicar solo cuando el snippet está configurado para productos
         if self.model_name == 'product.template':
+            website = self.env['website'].get_current_website()
             for data in res:
                 product = data['_record']
-
-                # URL del producto
-                data['url'] = "/shop/product/%s" % product.id
-
-                # Imagen por defecto si no tiene
+                data['url'] = product.website_url or "/shop/product/%s" % product.id
                 if not data.get('image_512'):
                     data['image_512'] = "/web/static/img/placeholder.png"
-
-                # Puedes añadir más campos si lo necesitas
                 data['description_sale'] = product.description_sale or ""
+                data['price'] = product.website_price
+                data['currency_id'] = website.currency_id.id
+                data['qty_available'] = product.qty_available
+                data['rating_avg'] = product.rating_avg
+                data['rating_count'] = product.rating_count
 
         return res
 
