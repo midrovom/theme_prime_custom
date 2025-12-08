@@ -2,26 +2,26 @@
 <odoo>
     <data>
         <record id="dynamic_snippet_products_by_brand_action" model="ir.actions.server">
-        <field name="name">Productos por Marca</field>
-        <field name="model_id" ref="website_sale.model_product_template"/>
-        <field name="state">code</field>
-        <field name="code">
+            <field name="name">Productos por Marca</field>
+            <field name="model_id" ref="website_sale.model_product_template"/>
+            <field name="state">code</field>
+            <field name="code">
 brand_id = request.params.get('productBrandId')
 domain = [('website_published','=',True)]
 products = env['website.snippet.filter']._get_products_by_brand(
-        env['website'].get_current_website(),
-        16,
-        domain,
-        brand_id=brand_id
-    )
+            env['website'].get_current_website(),
+            16,
+            domain,
+            brand_id=brand_id
+        )
 values = env['website.snippet.filter']._filter_records_to_values(products, is_sample=False)
-response = {
-        'records': values,
-        'is_sample': False,
-    }
-return response   
-        </field>
-    </record>
+action = {
+            'records': values,
+            'is_sample': False,
+        }
+            </field>
+        </record>
+
 
         <record id="dynamic_filter_products_by_brand" model="website.snippet.filter">
             <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_products_by_brand_action"/>
