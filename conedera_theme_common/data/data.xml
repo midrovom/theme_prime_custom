@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+
         <!-- Server Action: Productos por Marca -->
         <record id="dynamic_snippet_products_by_brand_action" model="ir.actions.server">
             <field name="name">Productos por Marca</field>
