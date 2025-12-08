@@ -12,7 +12,8 @@ const dynamicSnippetProductsOptions = s_dynamic_snippet_carousel_options.extend(
 
     init: function () {
         this._super.apply(this, arguments);
-        this.modelNameFilter = 'product.product';
+        // 🔹 Ahora trabajamos sobre product.template
+        this.modelNameFilter = 'product.template';
 
         const productTemplateId = this.$target.closest("#wrapwrap").find("input.product_template_id");
         this.hasProductTemplateId = productTemplateId.val();

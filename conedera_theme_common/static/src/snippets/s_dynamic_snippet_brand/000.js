@@ -14,7 +14,7 @@ const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
         const searchDomain = [];
         let productBrandId = this.$el.get(0).dataset.productBrandId;
         if (productBrandId && productBrandId !== 'all') {
-            // 🔹 Filtra directamente por el campo dr_brand_value_id en product.product
+            // 🔹 Filtra directamente por el campo dr_brand_value_id en product.template
             searchDomain.push(['dr_brand_value_id', '=', parseInt(productBrandId)]);
         }
         return searchDomain;
