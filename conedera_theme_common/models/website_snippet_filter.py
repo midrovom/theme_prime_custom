@@ -14,18 +14,21 @@ class WebsiteSnippetFilter(models.Model):
             for data in res:
                 product = data['_record']
 
-                # Imagen del producto (usa la imagen del template)
+                # Imagen del producto
                 if not data.get('image_512'):
                     data['image_512'] = "/web/static/img/placeholder.png"
 
                 # Nombre del producto
                 data['name'] = product.name or ""
 
-                # Marca (campo dr_brand_value_id)
-                # Aseguramos que siempre exista la clave 'brand'
-                data['brand'] = product.dr_brand_value_id.name if product.dr_brand_value_id else ""
+                # Marca: siempre añadir la clave, aunque esté vacía
+                brand_name = ""
+                if product.dr_brand_value_id:
+                    brand_name = product.dr_brand_value_id.name or ""
+                data['brand'] = brand_name
 
         return res
+
 
     @api.model
     def _get_products_by_brand(self, brand_id=None, limit=16):
