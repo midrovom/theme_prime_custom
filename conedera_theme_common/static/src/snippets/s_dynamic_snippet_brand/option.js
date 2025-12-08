@@ -1,27 +1,16 @@
 /** @odoo-module **/
 
-import options from "@web_editor/js/editor/snippets.options";
-import s_dynamic_snippet_carousel_options from "@website/snippets/s_dynamic_snippet_carousel/options";
+import { DynamicSnippetCarouselOptions } from "@website/snippets/dynamic_snippet_carousel/options";
+import { registry } from "@web/core/registry";
 
-const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
-    /**
-     * @override
-     */
-    init() {
-        this._super(...arguments);
+export class DynamicSnippetBrandOptions extends DynamicSnippetCarouselOptions {
 
-        // Filtra productos, no categorías ni variantes
-        this.modelNameFilter = "product.template";
+    async willStart() {
+        await super.willStart();
+        this.productBrands = await this._fetchBrands();
+    }
 
-        this.orm = this.bindService("orm");
-        this.productBrands = {};
-    },
-
-    //----------------------------------------------------------------------
-    // Fetch
-    //----------------------------------------------------------------------
-
-    async _fetchProductBrands() {
+    async _fetchBrands() {
         const brandAttr = await this.orm.searchRead(
             "product.attribute",
             [["name", "=", "Marca"]],
@@ -29,51 +18,44 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
         );
 
         if (!brandAttr.length) {
-            return [];
+            return {};
         }
 
-        return this.orm.searchRead(
+        const values = await this.orm.searchRead(
             "product.attribute.value",
             [["attribute_id", "=", brandAttr[0].id]],
             ["id", "name"]
         );
-    },
 
-    //----------------------------------------------------------------------
-    // Builder UI
-    //----------------------------------------------------------------------
+        const dict = {};
+        for (const val of values) dict[val.id] = val;
+        return dict;
+    }
 
     async _renderCustomXML(uiFragment) {
-        await this._super(...arguments);
-        await this._renderBrandSelector(uiFragment);
-    },
+        await super._renderCustomXML(uiFragment);
 
-    async _renderBrandSelector(uiFragment) {
-        const brands = await this._fetchProductBrands();
+        const brandSelect = uiFragment.querySelector(
+            '[data-name="product_brand_id"]'
+        );
 
-        for (const b of brands) {
-            this.productBrands[b.id] = b;
+        if (brandSelect) {
+            return this._renderSelectUserValueWidgetButtons(
+                brandSelect,
+                this.productBrands
+            );
         }
+    }
 
-        const brandSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
-        if (!brandSelectorEl) return;
+    get defaultValues() {
+        return {
+            product_brand_id: "all",
+            ...super.defaultValues,
+        };
+    }
+}
 
-        return this._renderSelectUserValueWidgetButtons(brandSelectorEl, this.productBrands);
-    },
-
-    //----------------------------------------------------------------------
-    // Defaults
-    //----------------------------------------------------------------------
-
-    _setOptionsDefaultValues() {
-        this._setOptionValue("productBrandId", "all");
-        this._super(...arguments);
-    },
-});
-
-options.registry.dynamic_snippet_brand = DynamicSnippetBrandOptions;
-
-export default DynamicSnippetBrandOptions;
+registry.category("snippet_options").add("DynamicSnippetBrandOptions", DynamicSnippetBrandOptions);
 
 
 // /** @odoo-module **/
