@@ -2,112 +2,78 @@
 
 import options from "@web_editor/js/editor/snippets.options";
 import s_dynamic_snippet_carousel_options from "@website/snippets/s_dynamic_snippet_carousel/options";
-import wUtils from "@website/js/utils";
 
-const alternativeSnippetRemovedOptions = [
-    'filter_opt', 'product_category_opt', 'product_tag_opt', 'product_names_opt',
-]
+const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
+    /**
+     * @override
+     */
+    init() {
+        this._super(...arguments);
 
-const dynamicSnippetProductsOptions = s_dynamic_snippet_carousel_options.extend({
-
-    init: function () {
-        this._super.apply(this, arguments);
-        // 🔹 Ahora trabajamos sobre product.template
-        this.modelNameFilter = 'product.template';
-
-        const productTemplateId = this.$target.closest("#wrapwrap").find("input.product_template_id");
-        this.hasProductTemplateId = productTemplateId.val();
-        if (!this.hasProductTemplateId) {
-            this.contextualFilterDomain.push(['product_cross_selling', '=', false]);
-        }
-
-        this.productCategories = {};
-        this.productBrands = {};   // 🔹 nuevo diccionario para marcas
-        this.isAlternativeProductSnippet = this.$target.hasClass('o_wsale_alternative_products');
+        // Filtra productos, no categorías ni variantes
+        this.modelNameFilter = "product.template";
 
         this.orm = this.bindService("orm");
+        this.productBrands = {};
     },
 
-    _computeWidgetVisibility(widgetName, params) {
-        if (this.isAlternativeProductSnippet && alternativeSnippetRemovedOptions.includes(widgetName)) {
-            return false;
-        }
-        return this._super(...arguments);
-    },
+    //----------------------------------------------------------------------
+    // Fetch
+    //----------------------------------------------------------------------
 
-    //--------------------------------------------------------------------------
-    // Fetchers
-    //--------------------------------------------------------------------------
-
-    _fetchProductCategories: function () {
-        return this.orm.searchRead("product.public.category", wUtils.websiteDomain(this), ["id", "name"]);
-    },
-
-    /**
-     * 🔹 Nuevo: Fetches product brands desde product.attribute.value
-     */
-    _fetchProductBrands: async function () {
-        // Busca el atributo "Marca"
-        const brandAttribute = await this.orm.searchRead(
+    async _fetchProductBrands() {
+        const brandAttr = await this.orm.searchRead(
             "product.attribute",
             [["name", "=", "Marca"]],
             ["id"]
         );
-        if (!brandAttribute.length) {
+
+        if (!brandAttr.length) {
             return [];
         }
-        const brandAttributeId = brandAttribute[0].id;
 
-        // Trae los valores de ese atributo (Samsung, LG, etc.)
         return this.orm.searchRead(
             "product.attribute.value",
-            [["attribute_id", "=", brandAttributeId]],
+            [["attribute_id", "=", brandAttr[0].id]],
             ["id", "name"]
         );
     },
 
-    //--------------------------------------------------------------------------
-    // Renderers
-    //--------------------------------------------------------------------------
+    //----------------------------------------------------------------------
+    // Builder UI
+    //----------------------------------------------------------------------
 
     async _renderCustomXML(uiFragment) {
-        await this._super.apply(this, arguments);
-        await this._renderProductCategorySelector(uiFragment);
-        await this._renderProductBrandSelector(uiFragment);   
+        await this._super(...arguments);
+        await this._renderBrandSelector(uiFragment);
     },
 
-    _renderProductCategorySelector: async function (uiFragment) {
-        const productCategories = await this._fetchProductCategories();
-        for (let index in productCategories) {
-            this.productCategories[productCategories[index].id] = productCategories[index];
+    async _renderBrandSelector(uiFragment) {
+        const brands = await this._fetchProductBrands();
+
+        for (const b of brands) {
+            this.productBrands[b.id] = b;
         }
-        const productCategoriesSelectorEl = uiFragment.querySelector('[data-name="product_category_opt"]');
-        return this._renderSelectUserValueWidgetButtons(productCategoriesSelectorEl, this.productCategories);
+
+        const brandSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
+        if (!brandSelectorEl) return;
+
+        return this._renderSelectUserValueWidgetButtons(brandSelectorEl, this.productBrands);
     },
 
-    /**
-     * 🔹 Nuevo: Renderiza las marcas en el builder
-     */
-    _renderProductBrandSelector: async function (uiFragment) {
-        const productBrands = await this._fetchProductBrands();
-        for (let index in productBrands) {
-            this.productBrands[productBrands[index].id] = productBrands[index];
-        }
-        const productBrandsSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
-        return this._renderSelectUserValueWidgetButtons(productBrandsSelectorEl, this.productBrands);
-    },
+    //----------------------------------------------------------------------
+    // Defaults
+    //----------------------------------------------------------------------
 
-    _setOptionsDefaultValues: function () {
-        this._setOptionValue('productCategoryId', 'all');
-        this._setOptionValue('productBrandId', 'all');   
-        this._setOptionValue('showVariants', true);
-        this._super.apply(this, arguments);
+    _setOptionsDefaultValues() {
+        this._setOptionValue("productBrandId", "all");
+        this._super(...arguments);
     },
 });
 
-options.registry.dynamic_snippet_products = dynamicSnippetProductsOptions;
+options.registry.dynamic_snippet_brand = DynamicSnippetBrandOptions;
 
-export default dynamicSnippetProductsOptions;
+export default DynamicSnippetBrandOptions;
 
 
 // /** @odoo-module **/
