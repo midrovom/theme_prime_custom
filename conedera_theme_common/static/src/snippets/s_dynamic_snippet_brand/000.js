@@ -35,7 +35,7 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
     },
 });
 
-publicWidget.registry.dynamic_snippet_brands = DynamicSnippetBrand;
+publicWidget.registry.dynamic_snippet_brand = DynamicSnippetBrand;
 
 export default DynamicSnippetBrand;
 
