@@ -22,22 +22,22 @@ class WebsiteSnippetFilter(models.Model):
                 data['name'] = product.name or ""
 
                 # Marca: siempre añadir la clave, aunque esté vacía
-                brand_name = ""
-                if product.dr_brand_value_id:
-                    brand_name = product.dr_brand_value_id.name or ""
-                data['brand'] = brand_name
+                data['brand'] = product.dr_brand_value_id.name if product.dr_brand_value_id else ""
 
         return res
 
-
     @api.model
     def _get_products_by_brand(self, brand_id=None, limit=16):
-        domain = [('website_published', '=', True)]
-        if brand_id and brand_id != 'all':
-            domain = expression.AND([
-                domain,
-                [('dr_brand_value_id', '=', int(brand_id))],
-            ])
+        # Si no se selecciona marca, no devolver nada
+        if not brand_id or brand_id == 'all':
+            _logger.info("No se seleccionó marca, no se retornan productos")
+            return []
+
+        # Si hay marca seleccionada, filtrar por ella
+        domain = [
+            ('website_published', '=', True),
+            ('dr_brand_value_id', '=', int(brand_id))
+        ]
         products = self.env['product.template'].search(domain, limit=limit)
 
         _logger.info("Filtro por marca: brand_id=%s, productos encontrados=%s", brand_id, products.ids)
