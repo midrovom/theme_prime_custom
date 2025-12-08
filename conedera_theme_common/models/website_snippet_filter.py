@@ -65,25 +65,16 @@ class WebsiteSnippetFilter(models.Model):
 
     @api.model
     def _get_products_by_brand(self, brand_id=None, limit=16):
-        # Validación de marca
-        if not brand_id or brand_id == 'all':
-            _logger.info("No se seleccionó marca, no se retornan productos")
-            return []
 
+        if not brand_id or brand_id == "all":
+            return []
         try:
             brand_id = int(brand_id)
-        except (ValueError, TypeError):
-            _logger.error("brand_id inválido: %s", brand_id)
+        except:
             return []
 
-        # Filtrado de productos por marca
-        domain = [
+        products = self.env['product.template'].search([
             ('website_published', '=', True),
             ('dr_brand_value_id', '=', brand_id)
-        ]
-        products = self.env['product.template'].search(domain, limit=limit)
-
-        _logger.info("Filtro por marca: brand_id=%s, productos=%s", brand_id, products.ids)
-
-        dynamic_filter = self.env.context.get('dynamic_filter')
-        return dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
+        ], limit=limit)
+        return self._filter_records_to_values(products, is_sample=False)

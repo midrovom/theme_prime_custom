@@ -6,20 +6,11 @@ import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel
 const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
     selector: ".s_dynamic_snippet_brand",
 
-    _getBrandDomain() {
-        const brand = this.el.dataset.productBrandId || "all";
-        if (brand === "all") {
-            return [];
-        }
-        return [["dr_brand_value_id", "=", parseInt(brand)]];
-    },
-
     _getSearchDomain() {
         const domain = this._super(...arguments);
 
         const brand = this.el.dataset.productBrandId || "all";
 
-        // Dominio normal
         if (brand !== "all") {
             domain.push(["dr_brand_value_id", "=", parseInt(brand)]);
         }
@@ -28,6 +19,13 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
         this.options.context.product_brand_id = brand;
 
         return domain;
+    },
+
+    _getDynamicFilterContext() {
+        const ctx = this._super(...arguments) || {};
+        ctx.dynamic_filter_id = this.el.dataset.dynamicFilterId;
+        ctx.product_brand_id = this.el.dataset.productBrandId || "all";
+        return ctx;
     },
 
     _getMainPageUrl() {
