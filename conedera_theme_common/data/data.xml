@@ -23,4 +23,3 @@ response = DynamicFilter._get_products_by_brand(brand_id=brand_id, limit=16)
         </record>
     </data>
 </odoo>
-

@@ -12,31 +12,55 @@ class WebsiteSnippetFilter(models.Model):
 
         if self.model_name == 'product.template':
             for data in res:
-                product = data['_record']
+                product = data.get('_record')
+
+                # Validación: si no hay record, continuar
+                if not product:
+                    data['name'] = ""
+                    data['image_1920'] = "/web/static/img/placeholder.png"
+                    data['brand'] = ""
+                    continue
 
                 # Imagen del producto (usa image_1920 o placeholder)
-                if not product.image_1920:
+                if not getattr(product, "image_1920", False):
                     data['image_1920'] = "/web/static/img/placeholder.png"
                 else:
                     data['image_1920'] = "/web/image/product.template/%s/image_1920" % product.id
-                data['name'] = product.name or ""
 
-                # Marca
-                data['brand'] = product.dr_brand_value_id.name if product.dr_brand_value_id else ""
+                # Nombre del producto (siempre string)
+                data['name'] = getattr(product, "name", "") or ""
+
+                # Marca (siempre string)
+                brand = getattr(product, "dr_brand_value_id", False)
+                data['brand'] = brand.name if brand else ""
+
+                # Validación extra: asegurar que las claves existen
+                if 'image_1920' not in data:
+                    data['image_1920'] = "/web/static/img/placeholder.png"
+                if 'name' not in data:
+                    data['name'] = ""
+                if 'brand' not in data:
+                    data['brand'] = ""
 
         return res
 
     @api.model
     def _get_products_by_brand(self, brand_id=None, limit=16):
-        # Si no se selecciona marca, no devolver nada
+        # Validación: si no se selecciona marca, no devolver nada
         if not brand_id or brand_id == 'all':
             _logger.info("No se seleccionó marca, no se retornan productos")
+            return []
+
+        try:
+            brand_id = int(brand_id)
+        except (ValueError, TypeError):
+            _logger.error("brand_id inválido: %s", brand_id)
             return []
 
         # Si hay marca seleccionada, filtrar por ella
         domain = [
             ('website_published', '=', True),
-            ('dr_brand_value_id', '=', int(brand_id))
+            ('dr_brand_value_id', '=', brand_id)
         ]
         products = self.env['product.template'].search(domain, limit=limit)
 
