@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Filtro base: todos los productos publicados -->
+        <!-- Action Server: productos filtrados por marca -->
+        <record id="dynamic_snippet_is_show_brands_action" model="ir.actions.server">
+            <field name="name">Marcas Seleccionadas</field>
+            <field name="model_id" ref="website_sale.model_product_template"/>
+            <field name="state">code</field>
+            <field name="code">
+brand_id = request.params.get('productBrandId')
+domain = [('website_published','=',True)]
+products = env['website.snippet.filter']._get_products_by_brand(
+    env['website'].get_current_website(), 16, domain, brand_id=brand_id
+)
+response = env['website.snippet.filter']._return_values(products)
+            </field>
+        </record>
+
+        <!-- IR.FILTERS: todos los productos publicados -->
         <record id="dynamic_snippet_all_products_filter" model="ir.filters">
             <field name="name">Todos los Productos</field>
             <field name="model_id">product.template</field>
@@ -11,7 +26,7 @@
             <field name="sort">["id desc"]</field>
         </record>
 
-        <!-- Snippet filter: todos los productos -->
+        <!-- WEBSITE SNIPPET FILTER: todos los productos -->
         <record id="dynamic_filter_all_products" model="website.snippet.filter">
             <field name="filter_id" ref="dynamic_snippet_all_products_filter"/>
             <field name="field_names">name,description_sale,image_512</field>
@@ -20,29 +35,9 @@
             <field name="model_name">product.template</field>
         </record>
 
-        <!-- Action Server: productos filtrados por marca -->
-        <record id="dynamic_snippet_products_by_brand_action" model="ir.actions.server">
-            <field name="name">Productos por Marca</field>
-            <field name="model_id" ref="website_sale.model_product_template"/>
-            <field name="state">code</field>
-            <field name="code">
-brand_id = request.params.get('productBrandId')
-domain = [('website_published','=',True)]
-if brand_id and brand_id != 'all':
-    domain.append(('dr_brand_value_id','=', int(brand_id)))
-products = env['website.snippet.filter']._get_products_by_brand(
-    env['website'].get_current_website(),
-    16,
-    domain,
-    brand_id=brand_id
-)
-response = env['website.snippet.filter']._return_values(products)
-            </field>
-        </record>
-
-        <!-- Snippet filter: productos por marca -->
+        <!-- WEBSITE SNIPPET FILTER: productos por marca -->
         <record id="dynamic_filter_products_by_brand" model="website.snippet.filter">
-            <field name="action_server_id" ref="dynamic_snippet_products_by_brand_action"/>
+            <field name="action_server_id" ref="dynamic_snippet_is_show_brands_action"/>
             <field name="field_names">name,description_sale,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Productos por Marca</field>
