@@ -17,8 +17,7 @@
             <field name="limit" eval="16"/>
             <field name="name">Products by Brand</field>
             <field name="model_name">product.template</field>
-            <!-- 🔹 Conecta con tu método Python -->
-            <field name="mode">by_brand</field>
         </record>
+
     </data>
 </odoo>
