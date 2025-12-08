@@ -6,7 +6,6 @@ class WebsiteSnippetFilter(models.Model):
 
     @api.model
     def _get_products_by_brand(self, website, limit, domain, **kwargs):
-        """Devuelve productos filtrados por marca (dr_brand_value_id)."""
         brand_id = kwargs.get('brand_id')
         products = self.env['product.template']
         if brand_id and brand_id != 'all':
@@ -15,7 +14,8 @@ class WebsiteSnippetFilter(models.Model):
                 [('dr_brand_value_id', '=', int(brand_id))],
             ])
         products = products.with_context(display_default_code=False).search(domain, limit=limit)
-        return products
+        return products  
+
 
 
     # @api.model
