@@ -1,36 +1,46 @@
 /** @odoo-module **/
-import publicWidget from "@web/legacy/js/public/public_widget";
-import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel/000";
-import { utils as uiUtils } from "@web/core/ui/ui_service";
 
-const DynamicSnippetCategories = DynamicSnippetCarousel.extend({
-    selector: ".s_dynamic_snippet_brand",
+import publicWidget from "@web/legacy/js/public/public_widget";
+import DynamicSnippetProducts from "@website/snippets/s_dynamic_snippet_products/000";
+
+const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
 
     /**
-     * @override
+     * Gets the brand search domain
+     *
      * @private
      */
-    _getMainPageUrl() {
-        return "/shop";
+    _getBrandSearchDomain() {
+        const searchDomain = [];
+        let productBrandId = this.$el.get(0).dataset.productBrandId;
+        if (productBrandId && productBrandId !== 'all') {
+            if (productBrandId === 'current') {
+                // lógica para detectar la marca actual si estás en página de producto
+                const productBrandField = $("#product_details").find(".product_brand_id");
+                if (productBrandField && productBrandField.length) {
+                    productBrandId = parseInt(productBrandField[0].value);
+                }
+            }
+            if (productBrandId) {
+                searchDomain.push(['product_brand_id', '=', parseInt(productBrandId)]);
+            }
+        }
+        return searchDomain;
     },
 
     /**
+     * Override search domain to include brand
+     *
      * @override
      * @private
      */
-    _getQWebRenderOptions: function () {
-        const options = this._super.apply(this, arguments);
-
-        if (uiUtils.isSmall()) {
-            options.chunkSize = 2; //cantidad movil
-        }else {
-            options.chunkSize = 4; // cantidad de productos web/escritorio
-        }
-
-        return options;
+    _getSearchDomain: function () {
+        const searchDomain = this._super.apply(this, arguments);
+        searchDomain.push(...this._getBrandSearchDomain());
+        return searchDomain;
     },
 });
 
-publicWidget.registry.dynamic_snippet_brand = DynamicSnippetCategories;
+publicWidget.registry.dynamic_snippet_products_brand = DynamicSnippetProductsBrand;
 
-export default DynamicSnippetCategories;
+export default DynamicSnippetProductsBrand;
