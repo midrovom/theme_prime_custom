@@ -1,11 +1,34 @@
+
 from odoo import api, models
 from odoo.osv import expression
+from odoo.http import request
 import logging
 
 _logger = logging.getLogger(__name__)
 
 class WebsiteSnippetFilter(models.Model):
     _inherit = 'website.snippet.filter'
+
+    def _filter_records_to_values(self, records, is_sample=False):
+        # Llamamos al super para obtener la estructura base
+        res = super()._filter_records_to_values(records, is_sample)
+
+        # Aplicar solo cuando el snippet está configurado para productos
+        if self.model_name == 'product.template':
+            for data in res:
+                product = data['_record']
+
+                # URL del producto
+                data['url'] = "/shop/product/%s" % product.id
+
+                # Imagen por defecto si no tiene
+                if not data.get('image_512'):
+                    data['image_512'] = "/web/static/img/placeholder.png"
+
+                # Puedes añadir más campos si lo necesitas
+                data['description_sale'] = product.description_sale or ""
+
+        return res
 
     @api.model
     def _get_products_by_brand(self, website, limit, domain, **kwargs):
@@ -21,8 +44,9 @@ class WebsiteSnippetFilter(models.Model):
         # Log para depuración
         _logger.info("Filtro por marca: brand_id=%s, productos encontrados=%s", brand_id, products.ids)
 
-        return products   # devolvemos el recordset
-
+        # Igual que en categorías: devolvemos los valores procesados
+        dynamic_filter = self.env.context.get('dynamic_filter')
+        return dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
 
     # @api.model
     # def _get_products_by_brand(self, website, limit, domain, **kwargs):
