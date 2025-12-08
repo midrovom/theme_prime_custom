@@ -21,14 +21,14 @@ response = DynamicFilter._get_public_categories()
         </record>
 
         <record id="dynamic_filter_all_categories" model="website.snippet.filter">
-            <field name="filter_id" ref="advance_theme_custom.dynamic_snippet_all_categories_filter"/>
+            <field name="filter_id" ref="conedera_theme_common.dynamic_snippet_all_categories_filter"/>
             <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Todas las categorias</field>
         </record>
 
         <record id="dynamic_filter_is_show_categories" model="website.snippet.filter">
-            <field name="action_server_id" ref="advance_theme_custom.dynamic_snippet_is_show_categories_action"/>
+            <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_is_show_categories_action"/>
             <field name="field_names">name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Categorias Seleccionadas</field>
