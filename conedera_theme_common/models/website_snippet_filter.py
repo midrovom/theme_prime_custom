@@ -14,15 +14,30 @@ class WebsiteSnippetFilter(models.Model):
 
         if self.model_name == 'product.template':
             website = self.env['website'].get_current_website()
+            pricelist = website.get_current_pricelist()
+            partner = self.env.user.partner_id
+
             for data in res:
                 product = data['_record']
+
+                # URL del producto
                 data['url'] = product.website_url or "/shop/product/%s" % product.id
+
+                # Imagen por defecto si no tiene
                 if not data.get('image_512'):
                     data['image_512'] = "/web/static/img/placeholder.png"
+
+                # Descripción de venta
                 data['description_sale'] = product.description_sale or ""
-                data['price'] = product.website_price
-                data['currency_id'] = website.currency_id.id
+
+                # Precio calculado según la lista de precios del website
+                data['price'] = pricelist.get_product_price(product, 1.0, partner)
+                data['currency_id'] = pricelist.currency_id.id
+
+                # Stock disponible
                 data['qty_available'] = product.qty_available
+
+                # Rating
                 data['rating_avg'] = product.rating_avg
                 data['rating_count'] = product.rating_count
 
