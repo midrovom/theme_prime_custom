@@ -29,11 +29,12 @@ response = DynamicFilter._get_products_by_brand(
 
         <!-- Snippet filter -->
         <record id="dynamic_filter_products_by_brand" model="website.snippet.filter">
-            <field name="action_server_id" ref="dynamic_snippet_products_by_brand_action"/>
+            <field name="filter_id" ref="dynamic_snippet_products_by_brand_filter"/>
             <field name="field_names">display_name,description_sale,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Products by Brand</field>
             <field name="model_name">product.template</field>
         </record>
+
     </data>
 </odoo>
