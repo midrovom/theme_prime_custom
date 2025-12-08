@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="s_dynamic_snippet_brand" name="Marcas">
-        <div class="s_dynamic_snippet_brand" data-dynamic-filter-id="dynamic_filter_products_by_brand"
-            data-product-brand-id="all">
-            <t t-call="website.s_dynamic_snippet_template">
-                <t t-set="snippet_name" t-value="'s_dynamic_snippet_brand'"/>
-                <t t-call="conedera_theme_common.s_dynamic_snippet_products_preview_data"/>
-            </t>
-        </div>
+        <t t-call="website.s_dynamic_snippet_template">
+            <t t-set="snippet_name" t-value="'s_dynamic_snippet_brand'"/>
+            <t t-call="conedera_theme_common.s_dynamic_snippet_products_preview_data"/>
+        </t>
     </template>
 
     <template id="s_dynamic_snippet_brand_options" inherit_id="website.snippet_options">
