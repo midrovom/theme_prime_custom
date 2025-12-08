@@ -6,29 +6,18 @@ import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel
 const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
     selector: ".s_dynamic_snippet_brand",
 
-    _getBrandDomain() {
-        const brand = this.el.dataset.productBrandId || "all";
-        if (brand === "all") {
-            return [];
-        }
-        return [["dr_brand_value_id", "=", parseInt(brand)]];
-    },
+    _getRPCParams() {
+        const params = this._super(...arguments);
 
-    _getSearchDomain() {
-        const domain = this._super(...arguments);
-        domain.push(...this._getBrandDomain());
-        return domain;
-    },
+        params.context = params.context || {};
+        params.context.productBrandId = this.el.dataset.productBrandId || "all";
 
-    _getMainPageUrl() {
-        return "/shop";
+        return params;
     },
 });
 
 publicWidget.registry.dynamic_snippet_brand = DynamicSnippetBrand;
-
 export default DynamicSnippetBrand;
-
 
 // /** @odoo-module **/
 
