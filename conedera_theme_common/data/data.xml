@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <!-- Server Action: Productos por Marca -->
         <record id="dynamic_snippet_products_by_brand_action" model="ir.actions.server">
             <field name="name">Productos por Marca</field>
             <field name="model_id" ref="website_sale.model_product_template"/>
@@ -10,14 +11,15 @@ brand_id = request.params.get('productBrandId')
 domain = [('website_published','=',True)]
 products = env['website.snippet.filter']._get_products_by_brand(
     env['website'].get_current_website(),
-                16,
-                domain,
-                brand_id=brand_id
-            )
-action = env['website.snippet.filter']._filter_records_to_values(products, is_sample=False)
+    16,
+    domain,
+    brand_id=brand_id
+)
+action = self._filter_records_to_values(products, is_sample=False)
             </field>
         </record>
 
+        <!-- Filtro dinámico que usa el server action -->
         <record id="dynamic_filter_products_by_brand" model="website.snippet.filter">
             <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_products_by_brand_action"/>
             <field name="field_names">name,description_sale,image_512</field>
@@ -25,6 +27,5 @@ action = env['website.snippet.filter']._filter_records_to_values(products, is_sa
             <field name="name">Productos por Marca</field>
             <field name="model_name">product.template</field>
         </record>
-
     </data>
 </odoo>
