@@ -27,7 +27,7 @@ response = DynamicFilter._get_products_by_brand()
             <field name="filter_id" ref="conedera_theme_common.dynamic_snippet_all_products_filter"/>
             <field name="field_names">display_name,image_512</field>
             <field name="limit" eval="16"/>
-            <field name="name">Todos los productos</field>
+            <field name="name">Todos los productos y marcas</field>
         </record>
 
         <!-- Snippet filter: productos por marca -->
