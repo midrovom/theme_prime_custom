@@ -1,35 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
-        <template id="s_dynamic_snippet_brand" name="Marcas" data-product_brand_id="all">
-            <t t-call="website.s_dynamic_snippet_template">
-                <t t-set="snippet_name" t-value="'s_dynamic_snippet_brand'"/>
-                <t t-call="conedera_theme_common.s_dynamic_snippet_products_preview_data"/>
+    <template id="s_dynamic_snippet_products_template_options_brand" inherit_id="website.s_dynamic_snippet_options_template">
+        <xpath expr="//we-select[@data-name='filter_opt']" position="after">
+            <t t-if="snippet_name == 'dynamic_snippet_products'">
+                <we-select string="Brand" data-name="product_brand_opt" data-attribute-name="productBrandId" data-no-preview="true">
+                    <we-button data-select-data-attribute="all">All Brands</we-button>
+                </we-select>
             </t>
-        </template>
-
-        <template id="s_dynamic_snippet_brand_options" inherit_id="website.snippet_options">
-            <xpath expr="." position="inside">
-                <t t-call="website.dynamic_snippet_carousel_options_template">
-                    <t t-set="snippet_name" t-value="'dynamic_snippet_brand'"/>
-                    <t t-set="snippet_selector" t-value="'.s_dynamic_snippet_brand'"/>
-                </t>
-            </xpath>
-        </template>
-
-        <template id="s_dynamic_snippet_products_template_options_inherit" inherit_id="website.s_dynamic_snippet_options_template">
-            <xpath expr="//we-select[@data-name='filter_opt']" position="after">
-                <t t-if="snippet_name == 'dynamic_snippet_brand'">
-                    <we-select data-name="product_brand_opt" data-attribute-name="product_brand_id"></we-select>
-                </t>
-            </xpath>
-        </template>
-
-        <record id="conedera_theme_common.s_dynamic_snippet_brand_js" model="ir.asset">
-            <field name="name">Dynamic snippet brand 000 JS</field>
-            <field name="bundle">web.assets_frontend</field>
-            <field name="path">conedera_theme_common/static/src/snippets/s_dynamic_snippet_brand/000.js</field>
-        </record>
-
-    </data>
+        </xpath>
+    </template>
 </odoo>
+
+<!-- <?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="s_dynamic_snippet_brand" name="Marcas" data-product_brand_id="all">
+        <t t-call="website.s_dynamic_snippet_template">
+            <t t-set="snippet_name" t-value="'s_dynamic_snippet_brand'"/>
+            <t t-call="conedera_theme_common.s_dynamic_snippet_products_preview_data"/>
+        </t>
+    </template>
+
+    <template id="s_dynamic_snippet_brand_options" inherit_id="website.snippet_options">
+        <xpath expr="." position="inside">
+            <t t-call="website.dynamic_snippet_carousel_options_template">
+                <t t-set="snippet_name" t-value="'dynamic_snippet_brand'"/>
+                <t t-set="snippet_selector" t-value="'.s_dynamic_snippet_brand'"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="s_dynamic_snippet_products_template_options_inherit" inherit_id="website.s_dynamic_snippet_options_template">
+        <xpath expr="//we-select[@data-name='filter_opt']" position="after">
+            <t t-if="snippet_name == 'dynamic_snippet_brand'">
+                <we-select data-name="product_brand_opt" data-attribute-name="product_brand_id"></we-select>
+            </t>
+        </xpath>
+    </template>
+
+    <record id="conedera_theme_common.s_dynamic_snippet_brand_js" model="ir.asset">
+        <field name="name">Dynamic snippet brand 000 JS</field>
+        <field name="bundle">web.assets_frontend</field>
+        <field name="path">conedera_theme_common/static/src/snippets/s_dynamic_snippet_brand/000.js</field>
+    </record>
+</odoo> -->
