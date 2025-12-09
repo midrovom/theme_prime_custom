@@ -47,10 +47,18 @@ class WebsiteSnippetFilter(models.Model):
             result.append(data)
         return result
 
+
     def _get_products(self, mode, **kwargs):
+        _logger.info(">>> _get_products() llamado con mode=%s kwargs=%s", mode, kwargs)
+
         if mode == "by_brand":
-            return self._get_products_by_brand(
+            result = self._get_products_by_brand(
                 kwargs.get("product_brand_id"),
                 limit=self.env.context.get("limit", self.limit)
             )
-        return super()._get_products(mode, **kwargs)
+            _logger.info(">>> _get_products() resultado by_brand=%s", result)
+            return result
+
+        result = super()._get_products(mode, **kwargs)
+        _logger.info(">>> _get_products() resultado super=%s", result)
+        return result
