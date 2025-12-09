@@ -2,15 +2,15 @@
 <odoo>
     <template id="dynamic_filter_template_product_product_style_1" name="Productos por Marca">
         <t t-foreach="records" t-as="data" data-thumb="/website_sale/static/src/img/snippets_options/product_borderless_1.svg">
-            <t t-set="record" t-value="data.get('_record')"/>
+            <t t-set="record" t-value="data['_record']"/>
             <div class="o_carousel_product_card bg-transparent w-100 card border-0">
                 <div t-if="is_sample" class="h5 o_ribbon_right bg-primary text-uppercase">Sample</div>
 
                 <div class="overflow-hidden rounded text-center">
                     <img class="card-img-top o_img_product_square o_img_product_cover h-auto"
                          loading="lazy"
-                         t-att-src="data.get('image_512') or '/web/static/img/placeholder.png'"
-                         t-att-alt="data.get('display_name', 'Producto')"/>
+                         t-att-src="data['image_512']"
+                         t-att-alt="record.name"/>
                 </div>
 
                 <div class="o_carousel_product_card_body d-flex flex-column align-items-center p-3">
