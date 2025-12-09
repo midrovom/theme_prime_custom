@@ -1,27 +1,3 @@
-/** @odoo-module **/
-
-import publicWidget from "@web/legacy/js/public/public_widget";
-import DynamicSnippetProducts from "website.snippets.s_dynamic_snippet_products.000"; // importa el original
-
-const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
-
-    /**
-     * Sobrescribimos el contexto para pasar product_brand_id
-     */
-    _getSearchContext: function () {
-        const searchContext = this._super.apply(this, arguments);
-        let productBrandId = this.$el.get(0).dataset.productBrandId;
-        if (productBrandId && productBrandId !== 'all') {
-            searchContext.product_brand_id = parseInt(productBrandId);
-        }
-        return searchContext;
-    },
-});
-
-publicWidget.registry.dynamic_snippet_products = DynamicSnippetProductsBrand;
-
-export default DynamicSnippetProductsBrand;
-
 
 // /** @odoo-module **/
 
