@@ -6,7 +6,7 @@ import s_dynamic_snippet_carousel_options from "@website/snippets/s_dynamic_snip
 const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
     init() {
         this._super(...arguments);
-        this.modelNameFilter = "product.product";
+        this.modelNameFilter = "product.template";
         this.orm = this.bindService("orm");
         this.productBrands = {};
     },

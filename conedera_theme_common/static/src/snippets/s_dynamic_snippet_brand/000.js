@@ -11,7 +11,7 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
         const brand = this.el.dataset.product_brand_id || "all";
 
         if (brand !== "all") {
-            domain.push(["dr_brand_value_id", "=", parseInt(brand)]);
+            domain.push(["attribute_line_ids.value_ids", "=", parseInt(brand)]);
         }
 
         this.options.context = this.options.context || {};
