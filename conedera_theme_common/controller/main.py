@@ -5,9 +5,7 @@ class WebsiteSaleBrands(http.Controller):
 
     @http.route(['/website_sale/get_brands'], type='json', auth='public', website=True)
     def get_dynamic_snippet_brands(self, filter_id=None, limit=None, search_domain=None, with_sample=False):
-        """
-        Returns products for dynamic snippet based on brand filter and search domain
-        """
+
         domain = request.website.sale_get_order() and request.website.website_domain() or []
         
         if search_domain:
