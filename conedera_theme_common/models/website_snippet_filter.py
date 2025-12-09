@@ -17,28 +17,27 @@ class WebsiteSnippetFilter(models.Model):
 
     @api.model
     def _get_products_by_brand(self, brand_id=None, limit=16):
-        _logger.info("Ejecutando _get_products_by_brand con brand_id=%s limit=%s", brand_id, limit)
+        brand_id = brand_id or self.env.context.get("product_brand_id")
+
+        _logger.info(">>> Ejecutando _get_products_by_brand con brand_id=%s limit=%s", brand_id, limit)
 
         if not brand_id or brand_id == "all":
-            _logger.warning("brand_id vacío o 'all', devolviendo lista vacía")
+            _logger.warning(">>> brand_id vacío o 'all', devolviendo lista vacía")
             return []
 
         try:
             brand_id = int(brand_id)
-        except Exception as e:
-            _logger.error("Error convirtiendo brand_id a int: %s", e)
+        except Exception:
+            _logger.error(">>> brand_id inválido: %s", brand_id)
             return []
 
         domain = [
-            ('website_published', '=', True),
-            ('dr_brand_value_id', '=', brand_id),
+            ("website_published", "=", True),
+            ("dr_brand_value_id", "=", brand_id),
         ]
-        _logger.debug("Dominio de búsqueda: %s", domain)
 
         products = self.env["product.product"].search(domain, limit=limit)
-        _logger.info("Productos encontrados: %s", products)
 
-        values = self._filter_records_to_values(products, is_sample=False)
-        _logger.info("Valores filtrados: %s", values)
+        _logger.info(">>> Productos encontrados: %s", products.ids)
 
-        return values
+        return self._filter_records_to_values(products, is_sample=False)

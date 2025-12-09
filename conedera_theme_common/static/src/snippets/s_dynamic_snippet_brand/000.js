@@ -8,13 +8,14 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
 
     _getSearchDomain() {
         const domain = this._super(...arguments);
+
         const brand = this.el.dataset.productBrandId || "all";
 
         if (brand !== "all") {
             domain.push(["dr_brand_value_id", "=", parseInt(brand)]);
         }
 
-        // FIX: enviar al backend
+        // pasar siempre al backend
         this.options.context = this.options.context || {};
         this.options.context.product_brand_id = brand;
         this.options.context.mode = "by_brand";
@@ -24,9 +25,11 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
 
     _getDynamicFilterContext() {
         const ctx = this._super(...arguments) || {};
+
         ctx.dynamic_filter_id = this.el.dataset.dynamicFilterId;
         ctx.product_brand_id = this.el.dataset.productBrandId || "all";
         ctx.mode = "by_brand";
+
         return ctx;
     },
 

@@ -4,6 +4,9 @@
         <t t-call="website.s_dynamic_snippet_template">
             <t t-set="snippet_name" t-value="'s_dynamic_snippet_brand'"/>
             <t t-set="dynamic_filter_id" t-value="env.ref('conedera_theme_common.dynamic_filter_products_by_brand').id"/>
+            <t t-if="options">
+                <t t-att-data-product-brand-id="options.get('productBrandId')"/>
+            </t>
             <t t-att-data-dynamic-filter-id="dynamic_filter_id"/>
             <t t-call="conedera_theme_common.s_dynamic_snippet_products_preview_data"/>
         </t>
