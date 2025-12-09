@@ -19,11 +19,21 @@ class WebsiteSnippetFilter(models.Model):
 
         domain = [
             ("website_published", "=", True),
-            ("product_template_attribute_value_ids.product_attribute_value_id", "=", brand_id),
+            ("dr_brand_value_id", "=", brand_id),
         ]
 
+        # Buscar primero en product.product
         products = self.env["product.product"].sudo().search(domain, limit=limit)
-        return self._convert_brand_products_to_values(products)
+        _logger.info(">>> Productos encontrados en product.product: %s", products.ids)
+
+        if products:
+            return self._convert_brand_products_to_values(products)
+
+        # Si no hay variantes, buscar en product.template
+        templates = self.env["product.template"].sudo().search(domain, limit=limit)
+        _logger.info(">>> Productos encontrados en product.template: %s", templates.ids)
+
+        return self._convert_brand_templates_to_values(templates)
 
     def _convert_brand_products_to_values(self, products):
         result = []
@@ -36,6 +46,21 @@ class WebsiteSnippetFilter(models.Model):
                     and f"/web/image/product.product/{prod.id}/image_512"
                     or "/web/static/img/placeholder.png",
                 "brand": prod.dr_brand_value_id.name or "",
+            }
+            result.append(data)
+        return result
+
+    def _convert_brand_templates_to_values(self, templates):
+        result = []
+        for tmpl in templates:
+            data = {
+                "_record": tmpl,
+                "id": tmpl.id,
+                "display_name": tmpl.name,
+                "image_512": tmpl.image_512
+                    and f"/web/image/product.template/{tmpl.id}/image_512"
+                    or "/web/static/img/placeholder.png",
+                "brand": tmpl.dr_brand_value_id.name or "",
             }
             result.append(data)
         return result
