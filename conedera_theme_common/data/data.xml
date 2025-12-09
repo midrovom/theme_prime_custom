@@ -19,7 +19,6 @@ response = DynamicFilter._get_products_by_brand(brand_id=brand_id, limit=16)
             <field name="field_names">display_name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Productos por Marca</field>
-            <field name="model_name">product.product</field>
         </record>
 
     </data>
