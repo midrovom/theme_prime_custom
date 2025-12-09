@@ -43,10 +43,9 @@ class WebsiteSnippetFilter(models.Model):
         domain = [
             ('website_published', '=', True),
             ('website_id', 'in', [False, website.id]),
-            ('product_template_attribute_value_ids.attribute_value_id', '=', brand_id),
+            ('dr_brand_value_id', '=', brand_id),
         ]
 
-        # Traer productos ordenados
         products = self.env['product.product'].sudo().search(domain, order="sequence ASC, name ASC")
 
         return dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
