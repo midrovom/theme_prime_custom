@@ -36,7 +36,7 @@ class WebsiteSnippetFilter(models.Model):
             ("dr_brand_value_id", "=", brand_id),
         ]
 
-        products = self.env["product.product"].search(domain, limit=limit)
+        products = self.env["product.template"].search(domain, limit=limit)
 
         _logger.info(">>> Productos encontrados: %s", products.ids)
 
