@@ -15,8 +15,10 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
             domain.push(["dr_brand_value_id", "=", parseInt(brand)]);
         }
 
+        // Enviar SIEMPRE los 2 nombres (camelCase + snake_case)
         this.options.context = this.options.context || {};
-        this.options.context.product_brand_id = brand;
+        this.options.context.productBrandId = brand;      // JS original
+        this.options.context.product_brand_id = brand;    // requerido por backend
         this.options.context.mode = "by_brand";
 
         return domain;
@@ -25,8 +27,11 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
     _getDynamicFilterContext() {
         const ctx = this._super(...arguments) || {};
 
-        ctx.dynamic_filter_id = this.el.dataset.dynamicFilterId;
-        ctx.product_brand_id = this.el.dataset.productBrandId || "all";
+        const brand = this.el.dataset.productBrandId || "all";
+
+        // Igual enviamos ambas variantes
+        ctx.productBrandId = brand;
+        ctx.product_brand_id = brand;
         ctx.mode = "by_brand";
 
         return ctx;
