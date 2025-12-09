@@ -7,7 +7,7 @@ import wSaleUtils from "@website_sale/js/website_sale_utils";
 import { WebsiteSale } from "../../js/website_sale";
 
 const DynamicSnippetBrands = DynamicSnippetCarousel.extend({
-    selector: '.s_dynamic_snippet_brands',
+    selector: '.s_dynamic_snippet_brand',
 
     //--------------------------------------------------------------------------
     // Private
@@ -99,6 +99,6 @@ const DynamicSnippetBrandsCard = WebsiteSale.extend({
 });
 
 publicWidget.registry.dynamic_snippet_brands_cta = DynamicSnippetBrandsCard;
-publicWidget.registry.dynamic_snippet_brands = DynamicSnippetBrands;
+publicWidget.registry.dynamic_snippet_brand = DynamicSnippetBrands;
 
 export default DynamicSnippetBrands;
