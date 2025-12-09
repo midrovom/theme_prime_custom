@@ -8,7 +8,7 @@ const dynamicSnippetProductsOptions = s_dynamic_snippet_carousel_options.extend(
 
     init: function () {
         this._super.apply(this, arguments);
-        this.productBrands = {};   
+        this.productBrands = {};
         this.orm = this.bindService("orm");
     },
 
@@ -22,7 +22,7 @@ const dynamicSnippetProductsOptions = s_dynamic_snippet_carousel_options.extend(
 
     async _renderCustomXML(uiFragment) {
         await this._super.apply(this, arguments);
-        await this._renderProductBrandSelector(uiFragment);  
+        await this._renderProductBrandSelector(uiFragment);
     },
 
     async _renderProductBrandSelector(uiFragment) {
@@ -40,7 +40,7 @@ const dynamicSnippetProductsOptions = s_dynamic_snippet_carousel_options.extend(
     },
 
     _setOptionsDefaultValues: function () {
-        this._setOptionValue('productBrandId', 'all');   
+        this._setOptionValue('productBrandId', 'all');
         this._super.apply(this, arguments);
     },
 

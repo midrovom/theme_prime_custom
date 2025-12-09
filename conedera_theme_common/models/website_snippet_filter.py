@@ -35,12 +35,13 @@ class WebsiteSnippetFilter(models.Model):
         domain = [
             ('website_published', '=', True),
             ('website_id', 'in', [False, website.id]),
-            '|',  # operador OR
+            '|',
             ('dr_brand_value_id', '=', brand_id),
             ('dr_brand_attribute_ids', 'in', [brand_id]),
         ]
 
         products = self.env['product.product'].sudo().search(domain, order="sequence ASC, name ASC")
+        _logger.info("Filtro de marca %s → productos encontrados: %s", brand_id, products.ids)
         return dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
 
 # from odoo import api, models

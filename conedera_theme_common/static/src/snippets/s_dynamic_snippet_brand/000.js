@@ -5,9 +5,6 @@ import DynamicSnippetProducts from "website.snippets.s_dynamic_snippet_products.
 
 const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
 
-    /**
-     * Sobrescribimos el contexto para pasar el product_brand_id
-     */
     _getSearchContext: function () {
         const searchContext = this._super.apply(this, arguments);
         let productBrandId = this.$el.get(0).dataset.productBrandId;
@@ -21,7 +18,6 @@ const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
 publicWidget.registry.dynamic_snippet_products = DynamicSnippetProductsBrand;
 
 export default DynamicSnippetProductsBrand;
-
 
 // /** @odoo-module **/
 
