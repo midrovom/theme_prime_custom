@@ -2,77 +2,48 @@
 
 import options from "@web_editor/js/editor/snippets.options";
 import s_dynamic_snippet_carousel_options from "@website/snippets/s_dynamic_snippet_carousel/options";
+import wUtils from "@website/js/utils";
 
-const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
-    init() {
-        this._super(...arguments);
-        this.modelNameFilter = "product.product";
-        this.orm = this.bindService("orm");
+const dynamicSnippetBrandsOptions = s_dynamic_snippet_carousel_options.extend({
+
+    init: function () {
+        this._super.apply(this, arguments);
+        this.modelNameFilter = 'product.product';
         this.productBrands = {};
-    },
-
-    async _fetchProductBrands() {
-        const brandAttr = await this.orm.searchRead(
-            "product.attribute",
-            [["name", "=", "Marca"]],
-            ["id"]
-        );
-
-        if (!brandAttr.length) {
-            return [];
-        }
-
-        return this.orm.searchRead(
-            "product.attribute.value",
-            [["attribute_id", "=", brandAttr[0].id]],
-            ["id", "name"]
-        );
-    },
-
-    async _renderCustomXML(uiFragment) {
-        await this._super(...arguments);
-        await this._renderBrandSelector(uiFragment);
-    },
-
-    async _renderBrandSelector(uiFragment) {
-        const brands = await this._fetchProductBrands();
-
-        for (const b of brands) {
-            this.productBrands[b.id] = b;
-        }
-
-        const brandSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
-        if (!brandSelectorEl) return;
-
-        brandSelectorEl.innerHTML = "";
-
-        for (const b of brands) {
-            const btn = document.createElement("we-button");
-            btn.dataset.selectDataAttribute = b.id;
-            btn.textContent = b.name;
-            brandSelectorEl.appendChild(btn);
-        }
-
-        return uiFragment;
-    },
-
-    _setOptionsDefaultValues() {
-        this._setOptionValue("product_brand_id", "all");
-        this._super(...arguments);
+        this.orm = this.bindService("orm");
     },
 
     /**
-     * Extiende el dominio de búsqueda para filtrar por marca
+     * Fetch brands from product.brand (or your custom model).
+     * @private
      */
-    _getSearchDomain() {
-        const domain = this._super(...arguments);
-        const brandId = this.getOptionValue("product_brand_id");
-        if (brandId && brandId !== "all") {
-            domain.push(["product_brand_id", "=", parseInt(brandId)]);
+    _fetchProductBrands: function () {
+        return this.orm.searchRead("product.brand", wUtils.websiteDomain(this), ["id", "name"]);
+    },
+
+    /**
+     * Render custom XML with brand selector.
+     * @override
+     */
+    _renderCustomXML: async function (uiFragment) {
+        await this._super.apply(this, arguments);
+        await this._renderProductBrandSelector(uiFragment);
+    },
+
+    /**
+     * Render brand selector buttons.
+     * @private
+     */
+    _renderProductBrandSelector: async function (uiFragment) {
+        const productBrands = await this._fetchProductBrands();
+        for (let index in productBrands) {
+            this.productBrands[productBrands[index].id] = productBrands[index];
         }
-        return domain;
+        const productBrandsSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
+        return this._renderSelectUserValueWidgetButtons(productBrandsSelectorEl, this.productBrands);
     },
 });
 
-options.registry.dynamic_snippet_brand = DynamicSnippetBrandOptions;
-export default DynamicSnippetBrandOptions;
+options.registry.dynamic_snippet_brands = dynamicSnippetBrandsOptions;
+
+export default dynamicSnippetBrandsOptions;
