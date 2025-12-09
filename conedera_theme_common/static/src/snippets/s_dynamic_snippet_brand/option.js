@@ -60,6 +60,18 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
         this._setOptionValue("product_brand_id", "all");
         this._super(...arguments);
     },
+
+    /**
+     * Extiende el dominio de búsqueda para filtrar por marca
+     */
+    _getSearchDomain() {
+        const domain = this._super(...arguments);
+        const brandId = this.getOptionValue("product_brand_id");
+        if (brandId && brandId !== "all") {
+            domain.push(["product_brand_id", "=", parseInt(brandId)]);
+        }
+        return domain;
+    },
 });
 
 options.registry.dynamic_snippet_brand = DynamicSnippetBrandOptions;
