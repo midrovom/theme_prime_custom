@@ -31,6 +31,7 @@ class WebsiteSnippetFilter(models.Model):
         website = self.env['website'].get_current_website()
 
         brand_id = kwargs.get("product_brand_id") or self.env.context.get("product_brand_id")
+
         if not brand_id or brand_id == "all":
             return []
 

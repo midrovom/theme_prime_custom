@@ -8,7 +8,7 @@
             <field name="state">code</field>
             <field name="code">
 DynamicFilter = model.env['website.snippet.filter']
-response = DynamicFilter._get_products_by_brand('by_brand')
+response = DynamicFilter._get_products_by_brand()
             </field>
         </record>
 
