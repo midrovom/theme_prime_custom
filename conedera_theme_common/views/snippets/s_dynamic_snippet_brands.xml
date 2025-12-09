@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="s_dynamic_snippet_brand" name="Marcas">
+    <template id="s_dynamic_snippet_brand" name="Marcas" data-product_brand_id="all">
         <t t-call="website.s_dynamic_snippet_template">
             <t t-set="snippet_name" t-value="'s_dynamic_snippet_brand'"/>
             <t t-call="conedera_theme_common.s_dynamic_snippet_products_preview_data"/>
