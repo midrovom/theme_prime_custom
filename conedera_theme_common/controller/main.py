@@ -31,7 +31,6 @@ class WebsiteSaleBrands(http.Controller):
                 'display_name': product.display_name,
                 'image_512': product.image_512 and f'/web/image/product.product/{product.id}/image_512' or '/web/static/src/img/placeholder.png',
                 'image_1920': product.image_1920 and f'/web/image/product.product/{product.id}/image_1920' or '/web/static/src/img/placeholder.png',
-                'url': product.website_url or f'/shop/product/{product.id}',
             }
             brand_data.append(data)
         
