@@ -14,7 +14,7 @@ response = DynamicFilter._get_products_by_brand(brand_id=brand_id, limit=16)
 
         <record id="dynamic_filter_products_by_brand" model="website.snippet.filter">
             <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_products_by_brand_action"/>
-            <field name="field_names">name</field>
+            <field name="field_names">name,image_1920,brand</field>
             <field name="limit" eval="16"/>
             <field name="name">Productos por Marca</field>
             <field name="model_name">product.product</field>
