@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="dynamic_filter_template_product_template_style_1" name="Productos por Marca">
+    <template id="dynamic_filter_template_product_product_style_1" name="Productos por Marca">
         <t t-foreach="records" t-as="data" data-thumb="/website_sale/static/src/img/snippets_options/product_borderless_1.svg">
             <t t-set="record" t-value="data.get('_record')"/>
             <div class="o_carousel_product_card bg-transparent w-100 card border-0">
                 <div t-if="is_sample" class="h5 o_ribbon_right bg-primary text-uppercase">Sample</div>
-                <input type="hidden" name="product-id" t-att-data-product-id="record and record.id"/>
+
                 <div class="overflow-hidden rounded text-center">
                     <img class="card-img-top o_img_product_square o_img_product_cover h-auto"
                          loading="lazy"
                          t-att-src="data.get('image_1920') or '/web/static/img/placeholder.png'"
                          t-att-alt="data.get('name', 'Producto')"/>
                 </div>
+
                 <div class="o_carousel_product_card_body d-flex flex-column align-items-center p-3">
                     <div class="h6 card-title" t-esc="data.get('name', '')"/>
                     <div class="text-muted small" t-esc="data.get('brand', '')"/>

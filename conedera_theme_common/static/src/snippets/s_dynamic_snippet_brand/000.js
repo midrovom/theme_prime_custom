@@ -15,7 +15,6 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
             domain.push(["dr_brand_value_id", "=", parseInt(brand)]);
         }
 
-        // pasar siempre al backend
         this.options.context = this.options.context || {};
         this.options.context.product_brand_id = brand;
         this.options.context.mode = "by_brand";
@@ -39,4 +38,5 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
 });
 
 publicWidget.registry.dynamic_snippet_brand = DynamicSnippetBrand;
+
 export default DynamicSnippetBrand;
