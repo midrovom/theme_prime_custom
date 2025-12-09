@@ -19,17 +19,22 @@ class WebsiteSnippetFilter(models.Model):
 
     @api.model
     def _get_products_by_brand(self, mode=None, **kwargs):
+        _logger.info(">>> Entrando a _get_products_by_brand con kwargs=%s y context=%s", kwargs, self.env.context)
+
         dynamic_filter = self.env.context.get('dynamic_filter')
         website = self.env['website'].get_current_website()
 
         brand_id = kwargs.get("product_brand_id") or self.env.context.get("product_brand_id")
+        _logger.info(">>> brand_id recibido: %s", brand_id)
 
         if not brand_id or brand_id == "all":
+            _logger.info(">>> No se recibió brand_id válido, devolviendo lista vacía")
             return []
 
         try:
             brand_id = int(brand_id)
-        except Exception:
+        except Exception as e:
+            _logger.warning(">>> Error convirtiendo brand_id a int: %s", e)
             return []
 
         domain = [
@@ -39,10 +44,14 @@ class WebsiteSnippetFilter(models.Model):
             ('dr_brand_value_id', '=', brand_id),
             ('dr_brand_attribute_ids', 'in', [brand_id]),
         ]
+        _logger.info(">>> Dominio de búsqueda: %s", domain)
 
         products = self.env['product.product'].sudo().search(domain, order="sequence ASC, name ASC")
-        _logger.info("Filtro de marca %s → productos encontrados: %s", brand_id, products.ids)
-        return dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
+        _logger.info(">>> Productos encontrados para brand_id=%s: %s", brand_id, products.ids)
+
+        values = dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
+        _logger.info(">>> Valores devueltos al snippet: %s", values)
+        return values
 
 # from odoo import api, models
 # import logging
