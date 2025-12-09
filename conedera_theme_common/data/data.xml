@@ -15,10 +15,18 @@ response = DynamicFilter._get_products_by_brand()
         <!-- Snippet filter: productos por marca -->
         <record id="dynamic_filter_products_by_brand" model="website.snippet.filter">
             <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_products_by_brand_action"/>
+            <field name="template_id" ref="conedera_theme_common.dynamic_filter_template_product_product_style_1"/>
             <field name="field_names">display_name,image_512</field>
             <field name="limit" eval="16"/>
             <field name="name">Marcas seleccionadas</field>
         </record>
+
+        <!-- <record id="dynamic_filter_products_by_brand" model="website.snippet.filter">
+            <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_products_by_brand_action"/>
+            <field name="field_names">display_name,image_512</field>
+            <field name="limit" eval="16"/>
+            <field name="name">Marcas seleccionadas</field>
+        </record> -->
     </data>
 </odoo>
 

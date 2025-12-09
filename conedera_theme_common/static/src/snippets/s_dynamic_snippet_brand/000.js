@@ -5,6 +5,15 @@ import DynamicSnippetProducts from "website.snippets.s_dynamic_snippet_products.
 
 const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
 
+    _getSearchDomain: function () {
+        const searchDomain = this._super.apply(this, arguments);
+        let productBrandId = this.$el.get(0).dataset.productBrandId;
+        if (productBrandId && productBrandId !== 'all') {
+            searchDomain.push(['dr_brand_value_id', '=', parseInt(productBrandId)]);
+        }
+        return searchDomain;
+    },
+
     _getSearchContext: function () {
         const searchContext = this._super.apply(this, arguments);
         let productBrandId = this.$el.get(0).dataset.productBrandId;
