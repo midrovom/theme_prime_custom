@@ -44,6 +44,29 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
         const brandSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
         if (!brandSelectorEl) return;
 
+        // Limpia botones previos
+        brandSelectorEl.innerHTML = "";
+
+        // Botón "Todas las marcas"
+        const allBtn = document.createElement("we-button");
+        allBtn.dataset.selectDataAttribute = "all";
+        allBtn.textContent = "Todas las marcas";
+        brandSelectorEl.appendChild(allBtn);
+
+        // Botón "Marca actual"
+        const currentBtn = document.createElement("we-button");
+        currentBtn.dataset.selectDataAttribute = "current";
+        currentBtn.textContent = "Marca actual";
+        brandSelectorEl.appendChild(currentBtn);
+
+        // Botones dinámicos por cada marca
+        for (const b of brands) {
+            const btn = document.createElement("we-button");
+            btn.dataset.selectDataAttribute = b.id;
+            btn.textContent = b.name;
+            brandSelectorEl.appendChild(btn);
+        }
+
         return this._renderSelectUserValueWidgetButtons(brandSelectorEl, this.productBrands);
     },
 
