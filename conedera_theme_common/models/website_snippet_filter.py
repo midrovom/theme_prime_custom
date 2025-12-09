@@ -21,6 +21,7 @@ class WebsiteSnippetFilter(models.Model):
     def _get_products_by_brand(self, mode=None, **kwargs):
         dynamic_filter = self.env.context.get('dynamic_filter')
         website = self.env['website'].get_current_website()
+
         brand_id = kwargs.get("product_brand_id") or self.env.context.get("product_brand_id")
 
         if not brand_id or brand_id == "all":
@@ -34,13 +35,15 @@ class WebsiteSnippetFilter(models.Model):
         domain = [
             ('website_published', '=', True),
             ('website_id', 'in', [False, website.id]),
+            '|',  # operador OR
             ('dr_brand_value_id', '=', brand_id),
+            ('dr_brand_attribute_ids', 'in', [brand_id]),
         ]
+
         products = self.env['product.product'].sudo().search(domain, order="sequence ASC, name ASC")
         return dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
 
 # from odoo import api, models
-# from odoo.http import request
 # import logging
 
 # _logger = logging.getLogger(__name__)
@@ -53,24 +56,16 @@ class WebsiteSnippetFilter(models.Model):
 #         if self.model_name == 'product.product':
 #             for data in res:
 #                 product = data['_record']
-
-#                 # Asegurar que tenga URL
 #                 data['url'] = product.website_url or "/shop/product/%s" % product.id
-
-#                 # Si deseas incluir la marca
 #                 data['brand'] = product.dr_brand_value_id.name if product.dr_brand_value_id else ""
-
-#                 # Imagen por defecto si no tiene
 #                 if not data.get('image_512'):
 #                     data['image_512'] = "/web/static/img/placeholder.png"
-
 #         return res
 
 #     @api.model
 #     def _get_products_by_brand(self, mode=None, **kwargs):
 #         dynamic_filter = self.env.context.get('dynamic_filter')
 #         website = self.env['website'].get_current_website()
-
 #         brand_id = kwargs.get("product_brand_id") or self.env.context.get("product_brand_id")
 
 #         if not brand_id or brand_id == "all":
@@ -81,13 +76,10 @@ class WebsiteSnippetFilter(models.Model):
 #         except Exception:
 #             return []
 
-#         # Dominio base: productos publicados en el website actual
 #         domain = [
 #             ('website_published', '=', True),
 #             ('website_id', 'in', [False, website.id]),
 #             ('dr_brand_value_id', '=', brand_id),
 #         ]
-
 #         products = self.env['product.product'].sudo().search(domain, order="sequence ASC, name ASC")
-
 #         return dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)

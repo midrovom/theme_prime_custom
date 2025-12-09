@@ -27,7 +27,7 @@ response = DynamicFilter._get_products_by_brand()
             <field name="filter_id" ref="conedera_theme_common.dynamic_snippet_all_products_filter"/>
             <field name="field_names">display_name,image_512</field>
             <field name="limit" eval="16"/>
-            <field name="name">Todos los productos y marcas</field>
+            <field name="name">Todas las marcas</field>
         </record>
 
         <!-- Snippet filter: productos por marca -->
@@ -35,45 +35,7 @@ response = DynamicFilter._get_products_by_brand()
             <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_products_by_brand_action"/>
             <field name="field_names">display_name,image_512</field>
             <field name="limit" eval="16"/>
-            <field name="name">Productos por Marca</field>
+            <field name="name">Marcas seleccionadas</field>
         </record>
     </data>
 </odoo>
-
-<!-- <?xml version="1.0" encoding="utf-8"?>
-<odoo>
-    <data>
-        <record id="dynamic_snippet_products_by_brand_action" model="ir.actions.server">
-            <field name="name">Productos por Marca</field>
-            <field name="model_id" ref="website_sale.model_product_product"/>
-            <field name="state">code</field>
-            <field name="code">
-DynamicFilter = model.env['website.snippet.filter']
-response = DynamicFilter._get_products_by_brand()
-            </field>
-        </record>
-
-        <record id="dynamic_snippet_all_products_filter" model="ir.filters">
-            <field name="name">Todos los productos</field>
-            <field name="model_id">product.product</field>
-            <field name="user_id" eval="False"/>
-            <field name="domain">[]</field>
-            <field name="context">{}</field>
-            <field name="sort">["id desc"]</field>
-        </record>
-
-        <record id="dynamic_filter_all_products" model="website.snippet.filter">
-            <field name="filter_id" ref="conedera_theme_common.dynamic_snippet_all_products_filter"/>
-            <field name="field_names">display_name,image_512</field>
-            <field name="limit" eval="16"/>
-            <field name="name">Todos los productos y marcas</field>
-        </record>
-
-        <record id="dynamic_filter_products_by_brand" model="website.snippet.filter">
-            <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_products_by_brand_action"/>
-            <field name="field_names">display_name,image_512</field>
-            <field name="limit" eval="16"/>
-            <field name="name">Productos por Marca</field>
-        </record>
-    </data>
-</odoo> -->
