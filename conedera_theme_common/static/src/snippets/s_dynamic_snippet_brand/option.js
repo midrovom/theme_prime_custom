@@ -49,9 +49,18 @@ const dynamicSnippetProductsOptions = s_dynamic_snippet_carousel_options.extend(
         if (optionName === 'productBrandId') {
             // Guardar en el DOM
             this.$target[0].dataset.productBrandId = value;
-            // También añadir al dominio de búsqueda
+
+            // Limpiar entradas previas de marca en el dominio contextual
+            if (this.contextualFilterDomain) {
+                this.contextualFilterDomain = this.contextualFilterDomain.filter(
+                    (c) => !(Array.isArray(c) && c[0] === 'dr_brand_value_id')
+                );
+            } else {
+                this.contextualFilterDomain = [];
+            }
+
+            // Añadir nueva marca seleccionada
             if (value && value !== 'all') {
-                this.contextualFilterDomain = this.contextualFilterDomain || [];
                 this.contextualFilterDomain.push(['dr_brand_value_id', '=', parseInt(value)]);
             }
         }
