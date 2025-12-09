@@ -19,27 +19,23 @@ class WebsiteSnippetFilter(models.Model):
 
         domain = [
             ("website_published", "=", True),
-            ("attribute_line_ids.value_ids", "=", brand_id),
+            ("product_template_attribute_value_ids.product_attribute_value_id", "=", brand_id),
         ]
 
-        templates = self.env["product.template"].sudo().search(domain, limit=limit)
-        _logger.info(">>> Productos encontrados en product.template: %s", templates.ids)
+        products = self.env["product.template"].sudo().search(domain, limit=limit)
+        return self._convert_brand_products_to_values(products)
 
-        return self._convert_brand_templates_to_values(templates)
-
-    def _convert_brand_templates_to_values(self, templates):
+    def _convert_brand_products_to_values(self, products):
         result = []
-        for tmpl in templates:
+        for prod in products:
             data = {
-                "_record": tmpl,
-                "id": tmpl.id,
-                "display_name": tmpl.name,
-                "image_512": tmpl.image_512
-                    and f"/web/image/product.template/{tmpl.id}/image_512"
+                "_record": prod,
+                "id": prod.id,
+                "display_name": prod.display_name,
+                "image_512": prod.image_512
+                    and f"/web/image/product.product/{prod.id}/image_512"
                     or "/web/static/img/placeholder.png",
-                "brand": ", ".join(tmpl.attribute_line_ids.filtered(
-                    lambda l: l.attribute_id.name == "Brand"
-                ).mapped("value_ids.name")),
+                "brand": prod.dr_brand_value_id.name or "",
             }
             result.append(data)
         return result
