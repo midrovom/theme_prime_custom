@@ -34,23 +34,22 @@ class WebsiteSnippetFilter(models.Model):
         return self._convert_brand_products_to_values(products)
 
     def _convert_brand_products_to_values(self, products):
-        """Genera solo los campos seguros: name, image, brand."""
         result = []
 
         for prod in products:
             data = {
                 "_record": prod,
                 "id": prod.id,
-                "name": prod.name,
-                "image_1920": prod.image_1920
-                and f"/web/image/product.product/{prod.id}/image_1920"
-                or "/web/static/img/placeholder.png",
+                "display_name": prod.display_name,
+                "image_512": prod.image_512
+                    and f"/web/image/product.product/{prod.id}/image_512"
+                    or "/web/static/img/placeholder.png",
                 "brand": prod.dr_brand_value_id.name or "",
             }
-
             result.append(data)
 
         return result
+
 
     # intercepta la llamada del snippet
     def _get_products(self, mode, **kwargs):
