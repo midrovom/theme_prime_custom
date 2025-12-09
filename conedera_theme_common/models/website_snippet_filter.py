@@ -4,32 +4,59 @@ import logging
 _logger = logging.getLogger(__name__)
 
 class WebsiteSnippetFilter(models.Model):
-    _inherit = 'website.snippet.filter'
+    _inherit = "website.snippet.filter"
 
-    def _filter_records_to_values(self, records, is_sample=False):
-        """Corrige el error decode() en campos booleanos"""
-        res = super()._filter_records_to_values(records, is_sample)
+    @api.model
+    def _get_products_by_brand(self, brand_id=None, limit=16):
+        brand_id = brand_id or self.env.context.get("product_brand_id")
 
-        # FIX: evitar decode() de valores booleanos del core de Odoo
-        for data in res:
-            for key, value in list(data.items()):
-                if isinstance(value, bool):
-                    data[key] = ""  # O "" o convertir a str(value)
+        _logger.info(">>> _get_products_by_brand() brand_id=%s", brand_id)
 
-        # Custom exclusivo para productos
-        if self.model_name in ['product.product', 'product.template']:
-            for data in res:
-                product = data.get('_record')
-                if not product:
-                    continue
-                
-                data['name'] = product.name or ""
-                data['brand'] = product.dr_brand_value_id.name if product.dr_brand_value_id else ""
+        if not brand_id or brand_id == "all":
+            return []
 
-                # Imagen
-                if product.image_1920:
-                    data['image_1920'] = f"/web/image/{product._name}/{product.id}/image_1920"
-                else:
-                    data['image_1920'] = "/web/static/img/placeholder.png"
+        try:
+            brand_id = int(brand_id)
+        except Exception:
+            _logger.error(">>> Error convirtiendo brand_id a entero: %s", brand_id)
+            return []
 
-        return res
+        # dominio sobre product.product
+        domain = [
+            ("website_published", "=", True),
+            ("dr_brand_value_id", "=", brand_id),
+        ]
+
+        products = self.env["product.product"].sudo().search(domain, limit=limit)
+
+        _logger.info(">>> Productos encontrados para brand %s: %s", brand_id, products.ids)
+
+        return self._convert_brand_products_to_values(products)
+
+    def _convert_brand_products_to_values(self, products):
+        """Genera solo los campos seguros: name, image, brand."""
+        result = []
+
+        for prod in products:
+            data = {
+                "_record": prod,
+                "id": prod.id,
+                "name": prod.name,
+                "image_1920": prod.image_1920
+                and f"/web/image/product.product/{prod.id}/image_1920"
+                or "/web/static/img/placeholder.png",
+                "brand": prod.dr_brand_value_id.name or "",
+            }
+
+            result.append(data)
+
+        return result
+
+    # intercepta la llamada del snippet
+    def _get_products(self, mode, **kwargs):
+        if mode == "by_brand":
+            return self._get_products_by_brand(
+                kwargs.get("product_brand_id"),
+                limit=self.env.context.get("limit", self.limit)
+            )
+        return super()._get_products(mode, **kwargs)
