@@ -46,19 +46,6 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
 
         brandSelectorEl.innerHTML = "";
 
-        // Opción: Todas
-        const allBtn = document.createElement("we-button");
-        allBtn.dataset.selectDataAttribute = "all";
-        allBtn.textContent = "Todas las marcas";
-        brandSelectorEl.appendChild(allBtn);
-
-        // Opción: Actual
-        const currentBtn = document.createElement("we-button");
-        currentBtn.dataset.selectDataAttribute = "current";
-        currentBtn.textContent = "Marca actual";
-        brandSelectorEl.appendChild(currentBtn);
-
-        // Marcas reales
         for (const b of brands) {
             const btn = document.createElement("we-button");
             btn.dataset.selectDataAttribute = b.id;
