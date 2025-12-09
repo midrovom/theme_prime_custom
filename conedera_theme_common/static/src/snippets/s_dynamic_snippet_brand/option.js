@@ -46,19 +46,19 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
 
         brandSelectorEl.innerHTML = "";
 
-        // Botón "Todas las marcas"
+        // Opción: Todas
         const allBtn = document.createElement("we-button");
         allBtn.dataset.selectDataAttribute = "all";
         allBtn.textContent = "Todas las marcas";
         brandSelectorEl.appendChild(allBtn);
 
-        // Botón "Marca actual"
+        // Opción: Actual
         const currentBtn = document.createElement("we-button");
         currentBtn.dataset.selectDataAttribute = "current";
         currentBtn.textContent = "Marca actual";
         brandSelectorEl.appendChild(currentBtn);
 
-        // Botones dinámicos por cada marca
+        // Marcas reales
         for (const b of brands) {
             const btn = document.createElement("we-button");
             btn.dataset.selectDataAttribute = b.id;
@@ -66,7 +66,7 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
             brandSelectorEl.appendChild(btn);
         }
 
-        return this._renderSelectUserValueWidgetButtons(brandSelectorEl, this.productBrands);
+        return uiFragment;
     },
 
     _setOptionsDefaultValues() {
@@ -76,5 +76,4 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
 });
 
 options.registry.dynamic_snippet_brand = DynamicSnippetBrandOptions;
-
 export default DynamicSnippetBrandOptions;

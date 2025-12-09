@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <!-- Acción del Dynamic Snippet -->
         <record id="dynamic_snippet_products_by_brand_action" model="ir.actions.server">
             <field name="name">Productos por Marca</field>
             <field name="model_id" ref="website_sale.model_product_product"/>
             <field name="state">code</field>
             <field name="code">
-brand_id = request.params.get('product_brand_id')
-DynamicFilter = model.env['website.snippet.filter']
+brand_id = request.params.get('product_brand_id') or env.context.get('product_brand_id')
+DynamicFilter = env['website.snippet.filter']
 response = DynamicFilter._get_products_by_brand(brand_id=brand_id, limit=16)
             </field>
         </record>
 
+        <!-- Registro del filtro dinámico -->
         <record id="dynamic_filter_products_by_brand" model="website.snippet.filter">
             <field name="action_server_id" ref="conedera_theme_common.dynamic_snippet_products_by_brand_action"/>
             <field name="field_names">display_name,image_512</field>
@@ -19,5 +21,6 @@ response = DynamicFilter._get_products_by_brand(brand_id=brand_id, limit=16)
             <field name="name">Productos por Marca</field>
             <field name="model_name">product.product</field>
         </record>
+
     </data>
 </odoo>
