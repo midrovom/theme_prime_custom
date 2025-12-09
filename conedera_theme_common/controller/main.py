@@ -1,89 +1,61 @@
-# -*- coding: utf-8 -*-
 from odoo import http
 from odoo.http import request
 
-class WebsiteSaleBrand(http.Controller):
+class WebsiteSaleBrands(http.Controller):
 
-    @http.route(['/website_sale/get_products_by_brand'], type='json', auth='public', website=True)
-    def get_dynamic_snippet_brand(
-        self,
-        filter_id=None,
-        product_brand_id=None,
-        limit=16,
-        search_domain=None,
-        with_sample=False
-    ):
+    @http.route(['/website_sale/get_brands'], type='json', auth='public', website=True)
+    def get_dynamic_snippet_brands(self, filter_id=None, limit=None, search_domain=None, with_sample=False):
         """
-        Devuelve productos filtrados por marca para el snippet dinámico.
+        Returns products for dynamic snippet based on brand filter and search domain
         """
-        Product = request.env["product.product"].sudo()
-        domain = [("website_published", "=", True)]
-
+        domain = request.website.sale_get_order() and request.website.website_domain() or []
+        
         if search_domain:
             domain += search_domain
-
-        # Marca seleccionada
-        if product_brand_id and product_brand_id not in ("all", "current"):
-            try:
-                product_brand_id = int(product_brand_id)
-                domain.append(
-                    ("product_template_attribute_value_ids.attribute_value_id", "=", product_brand_id)
-                )
-            except:
-                pass
-
-        # Filtro dinámico si viene uno asignado
+        
+        # Always show only published products
+        domain += [('website_published', '=', True)]
+        
+        Product = request.env['product.product']
+        
         if filter_id:
-            filter_sudo = request.env["website.snippet.filter"].sudo().browse(int(filter_id))
+            filter_sudo = request.env['website.snippet.filter'].sudo().browse(int(filter_id))
             if filter_sudo.exists():
                 domain += filter_sudo._get_eval_domain()
-
-        products = Product.search(domain, limit=limit)
-
-        # Preparar salida
-        records = []
-        for prod in products:
-            records.append({
-                "_record": prod,
-                "id": prod.id,
-                "display_name": prod.display_name,
-                "image_512": prod.image_512
-                    and f"/web/image/product.product/{prod.id}/image_512"
-                    or "/web/static/img/placeholder.png",
-                "brand": prod.dr_brand_value_id.name if prod.dr_brand_value_id else "",
-            })
-
+        
+        products = Product.search(domain, limit=limit or 16)
+        
+        # Prepare data
+        brand_data = []
+        for product in products:
+            data = {
+                '_record': product,
+                'display_name': product.display_name,
+                'image_512': product.image_512 and f'/web/image/product.product/{product.id}/image_512' or '/web/static/src/img/placeholder.png',
+                'image_1920': product.image_1920 and f'/web/image/product.product/{product.id}/image_1920' or '/web/static/src/img/placeholder.png',
+                'url': product.website_url or f'/shop/product/{product.id}',
+            }
+            brand_data.append(data)
+        
         return {
-            "records": records,
-            "is_sample": with_sample,
+            'records': brand_data,
+            'is_sample': with_sample,
         }
-
-
-class WebsiteBrandFilter(http.Controller):
+class WebsiteSaleBrandsFilter(http.Controller):
 
     @http.route(['/website_sale/brand_filter'], type='json', auth='public', website=True)
-    def get_brand_filter(self, filter_name="Productos por Marca"):
-        """
-        Crea o devuelve el filtro dinámico del snippet de marca.
-        """
+    def get_brands_filter(self, filter_name=None):
         domain = [
-            ('name', '=', filter_name),
-            ('model_name', '=', 'product.product'),
-            ('website_id', 'in', (False, request.website.id)),
+            ('filter_id.model_id', '=', 'product.product'),
+            ('filter_id.website_id', 'in', (False, request.website.id)),
         ]
-
-        brand_filter = request.env["website.snippet.filter"].sudo().search(domain, limit=1)
-
-        if not brand_filter:
-            brand_filter = request.env["website.snippet.filter"].sudo().create({
-                "name": filter_name,
-                "model_name": "product.product",
-                "field_names": "display_name,image_512",
-                "limit": 16,
-                "website_id": request.website.id,
-                "action_server_id": request.env.ref(
-                    "conedera_theme_common.dynamic_snippet_products_by_brand_action"
-                ).id,
-            })
-
-        return brand_filter.id
+        
+        if filter_name:
+            domain += [('filter_id.name', '=', filter_name)]
+        
+        filters = request.env['website.snippet.filter'].sudo().search(domain, limit=1)
+        
+        if filters:
+            return filters.id
+        
+        return False
