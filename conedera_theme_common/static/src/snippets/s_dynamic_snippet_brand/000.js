@@ -8,7 +8,6 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
 
     _getSearchDomain() {
         const domain = this._super(...arguments);
-
         const brand = this.el.dataset.product_brand_id || "all";
 
         if (brand !== "all") {
@@ -24,7 +23,6 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
 
     _getDynamicFilterContext() {
         const ctx = this._super(...arguments) || {};
-
         const brand = this.el.dataset.product_brand_id || "all";
 
         ctx.product_brand_id = brand;
@@ -35,7 +33,6 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
 
     _getDynamicFilterData() {
         const data = this._super(...arguments) || {};
-
         const brand = this.el.dataset.product_brand_id || "all";
 
         data.product_brand_id = brand;

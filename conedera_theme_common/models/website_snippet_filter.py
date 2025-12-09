@@ -47,7 +47,6 @@ class WebsiteSnippetFilter(models.Model):
             result.append(data)
         return result
 
-
     def _get_products(self, mode, **kwargs):
         _logger.info(">>> _get_products() llamado con mode=%s", mode)
         _logger.info(">>> _get_products() kwargs=%s", kwargs)
