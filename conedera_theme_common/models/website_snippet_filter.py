@@ -21,7 +21,6 @@ class WebsiteSnippetFilter(models.Model):
             _logger.error(">>> Error convirtiendo brand_id a entero: %s", brand_id)
             return []
 
-        # dominio sobre product.product
         domain = [
             ("website_published", "=", True),
             ("dr_brand_value_id", "=", brand_id),
@@ -35,7 +34,6 @@ class WebsiteSnippetFilter(models.Model):
 
     def _convert_brand_products_to_values(self, products):
         result = []
-
         for prod in products:
             data = {
                 "_record": prod,
@@ -47,11 +45,8 @@ class WebsiteSnippetFilter(models.Model):
                 "brand": prod.dr_brand_value_id.name or "",
             }
             result.append(data)
-
         return result
 
-
-    # intercepta la llamada del snippet
     def _get_products(self, mode, **kwargs):
         if mode == "by_brand":
             return self._get_products_by_brand(

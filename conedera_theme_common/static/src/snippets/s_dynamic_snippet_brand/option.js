@@ -44,7 +44,6 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
         const brandSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
         if (!brandSelectorEl) return;
 
-        // Limpia botones previos
         brandSelectorEl.innerHTML = "";
 
         // Botón "Todas las marcas"
@@ -71,7 +70,7 @@ const DynamicSnippetBrandOptions = s_dynamic_snippet_carousel_options.extend({
     },
 
     _setOptionsDefaultValues() {
-        this._setOptionValue("productBrandId", "all");
+        this._setOptionValue("product_brand_id", "all");
         this._super(...arguments);
     },
 });

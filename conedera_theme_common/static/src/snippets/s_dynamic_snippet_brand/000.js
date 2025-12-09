@@ -9,14 +9,13 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
     _getSearchDomain() {
         const domain = this._super(...arguments);
 
-        const brand = this.el.dataset.productBrandId || "all";
+        const brand = this.el.dataset.product_brand_id || "all";
 
         if (brand !== "all") {
             domain.push(["dr_brand_value_id", "=", parseInt(brand)]);
         }
 
         this.options.context = this.options.context || {};
-        this.options.context.productBrandId = brand;
         this.options.context.product_brand_id = brand;
         this.options.context.mode = "by_brand";
 
@@ -26,9 +25,8 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
     _getDynamicFilterContext() {
         const ctx = this._super(...arguments) || {};
 
-        const brand = this.el.dataset.productBrandId || "all";
+        const brand = this.el.dataset.product_brand_id || "all";
 
-        ctx.productBrandId = brand;
         ctx.product_brand_id = brand;
         ctx.mode = "by_brand";
 
@@ -38,9 +36,8 @@ const DynamicSnippetBrand = DynamicSnippetCarousel.extend({
     _getDynamicFilterData() {
         const data = this._super(...arguments) || {};
 
-        const brand = this.el.dataset.productBrandId || "all";
+        const brand = this.el.dataset.product_brand_id || "all";
 
-        data.productBrandId = brand;
         data.product_brand_id = brand;
         data.mode = "by_brand";
 
