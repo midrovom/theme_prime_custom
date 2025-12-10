@@ -48,8 +48,8 @@ options.registry.dynamic_snippet_products.include({
 
     _setOptionsDefaultValues: function () {
         console.log("[dynamic_snippet_products] _setOptionsDefaultValues llamado");
-        this._super.apply(this, arguments);
         this._setOptionValue('productBrandId', 'all');
+        this._super.apply(this, arguments);
         console.log("[dynamic_snippet_products] Valor por defecto productBrandId = all");
     },
 });
