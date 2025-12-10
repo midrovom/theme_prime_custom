@@ -15,7 +15,7 @@ const dynamicSnippetProductsOptionsBrand = dynamicSnippetProductsOptions.extend(
     // Fetch marcas
     // -------------------------------
     _fetchProductBrands: function () {
-        return this.orm.searchRead("product.attribute.value", [["attribute_id.dr_is_brand", "=", true]], ["id", "name", "attribute_id"]);
+        return this.orm.searchRead("product.product",[["dr_brand_value_id", "=", brandId]], ["id", "name", "dr_brand_value_id", "website_id"]);
     },
     // _fetchProductBrands: function () {
     //     return this.orm.searchRead("product.template.attribute.line", wUtils.websiteDomain(this), ["id", "name"]);
