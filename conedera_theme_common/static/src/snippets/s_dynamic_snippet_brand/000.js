@@ -2,6 +2,7 @@
 
 import publicWidget from "@web/legacy/js/public/public_widget";
 import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel/000";
+import { rpc } from "@web/core/network/rpc";
 
 const DynamicSnippetProducts = DynamicSnippetCarousel.extend({
     selector: '.s_dynamic_snippet_products',
@@ -18,7 +19,21 @@ const DynamicSnippetProducts = DynamicSnippetCarousel.extend({
     _getSearchDomain: function () {
         const searchDomain = this._super.apply(this, arguments);
         const brandDomain = this._getBrandSearchDomain();
-        console.log("Dominio final:", searchDomain.concat(brandDomain)); 
+        const finalDomain = searchDomain.concat(brandDomain);
+
+        // 🔹 Depuración: ver el dominio final
+        console.log("Dominio final:", finalDomain);
+
+        // 🔹 Depuración: probar qué productos devuelve ese dominio
+        rpc("/web/dataset/call_kw/product.product/search_read", {
+            model: "product.product",
+            method: "search_read",
+            args: [finalDomain, ["id", "name", "dr_brand_value_id"]],
+            kwargs: { limit: 5 },
+        }).then(result => {
+            console.log("Productos filtrados por marca:", result);
+        });
+
         searchDomain.push(...brandDomain);
         return searchDomain;
     },
