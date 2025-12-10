@@ -1,60 +1,39 @@
 /** @odoo-module **/
 
-import options from "@web_editor/js/editor/snippets.options";
+import publicWidget from "@web/legacy/js/public/public_widget";
 
-const DynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_products.extend({
+const DynamicSnippetProductsBrand = publicWidget.registry.dynamic_snippet_products.extend({
 
-    init: function () {
-        this._super.apply(this, arguments);
-        this.productBrands = {};
-        this.orm = this.bindService("orm");
-    },
-
-    _fetchProductBrands: function () {
-        return this.orm.searchRead(
-            "product.attribute.value",
-            [["attribute_id.dr_is_brand", "=", true]],
-            ["id", "name", "display_name"]
-        );
-    },
-
-    _renderProductBrandSelector: async function (uiFragment) {
-        const productBrands = await this._fetchProductBrands();
-        for (let brand of productBrands) {
-            this.productBrands[brand.id] = brand;
+    /**
+     * Filtro por marca
+     *
+     * @private
+     */
+    _getBrandSearchDomain() {
+        const searchDomain = [];
+        let productBrandId = this.$el.get(0).dataset.productBrandId;
+        if (productBrandId && productBrandId !== 'all') {
+            // Como el snippet trabaja sobre product.product, usamos dr_brand_value_id
+            searchDomain.push(['dr_brand_value_id', '=', parseInt(productBrandId)]);
         }
-        const productBrandsSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
-        return this._renderSelectUserValueWidgetButtons(productBrandsSelectorEl, this.productBrands);
+        return searchDomain;
     },
 
-    _renderCustomXML: async function (uiFragment) {
-        await this._super.apply(this, arguments);   
-        await this._renderProductBrandSelector(uiFragment); 
-    },
-
-    _setOptionsDefaultValues: function () {
-        this._super.apply(this, arguments);
-        this._setOptionValue('productBrandId', 'all');
-    },
-
-    _setOptionValue: function (optionName, value) {
-        this._super.apply(this, arguments);
-        if (optionName === 'productBrandId') {
-            this.$target[0].dataset.productBrandId = value;
-            this.contextualFilterDomain = (this.contextualFilterDomain || []).filter(
-                (c) => !(Array.isArray(c) && c[0] === 'dr_brand_value_id')
-            );
-            if (value && value !== 'all') {
-                this.contextualFilterDomain.push(['dr_brand_value_id', '=', parseInt(value)]);
-            }
-            this.trigger_up('widgets_start_request', { $target: this.$target });
-        }
+    /**
+     * @override
+     */
+    _getSearchDomain: function () {
+        const searchDomain = this._super.apply(this, arguments);
+        const brandDomain = this._getBrandSearchDomain();
+        console.log("Dominio final con marca:", searchDomain.concat(brandDomain)); // 🔹 depuración
+        searchDomain.push(...brandDomain);
+        return searchDomain;
     },
 });
 
-options.registry.dynamic_snippet_products = DynamicSnippetProductsOptionsBrand;
+publicWidget.registry.dynamic_snippet_products = DynamicSnippetProductsBrand;
 
-export default DynamicSnippetProductsOptionsBrand;
+export default DynamicSnippetProductsBrand;
 
 // /** @odoo-module **/
 
