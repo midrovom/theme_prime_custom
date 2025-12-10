@@ -10,7 +10,7 @@
                     data-name="product_brand_opt"
                     data-attribute-name="productBrandIds"
                     data-no-preview="true"
-                    data-model="product.brand"
+                    data-model="product.product"
                     data-allow-delete="true"
                     data-fakem2m="true"
                     data-select-data-attribute=""/>
