@@ -6,7 +6,7 @@ class WebsiteSaleBrand(WebsiteSale):
         self, category=None, attrib_values=None, tags=None,
         min_price=0.0, max_price=0.0, conversion_rate=1, **post
     ):
-        # Llamamos al original
+        # Llamamos al original para no perder funcionalidad
         options = super()._get_search_options(
             category=category,
             attrib_values=attrib_values,
@@ -28,9 +28,9 @@ class WebsiteSaleBrand(WebsiteSale):
         # Llamamos al original
         domain = super()._get_search_domain(options)
 
-        # añadimos el filtro por marca
+        # 👇 añadimos el filtro por marca usando value_ids
         product_brand_id = options.get('productBrandId')
         if product_brand_id and product_brand_id != 'all':
-            domain.append(('dr_brand_value_id', '=', int(product_brand_id)))
+            domain.append(('value_ids', '=', int(product_brand_id)))
 
         return domain
