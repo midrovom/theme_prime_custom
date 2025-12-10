@@ -47,7 +47,6 @@ const dynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_prod
             if (value && value !== 'all') {
                 this.contextualFilterDomain.push(['dr_brand_value_id', '=', parseInt(value)]);
             }
-            // 🔹 Forzar refresco del snippet al cambiar la marca
             this.trigger_up('widgets_start_request', { $target: this.$target });
         }
     },
