@@ -16,7 +16,7 @@ const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
 
     _getSearchDomain: function () {
         const searchDomain = this._super.apply(this, arguments);
-        searchDomain.push(...this._getBrandSearchDomain());
+        searchDomain.push(...this._getBrandSearchDomain());  
         return searchDomain;
     },
 });
