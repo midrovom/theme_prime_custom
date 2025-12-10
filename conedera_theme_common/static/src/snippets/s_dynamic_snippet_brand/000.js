@@ -6,17 +6,26 @@ import DynamicSnippetProducts from "@website/snippets/s_dynamic_snippet_carousel
 const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
 
     _getBrandSearchDomain() {
+        console.log("[DynamicSnippetProductsBrand] _getBrandSearchDomain ejecutado");
         const searchDomain = [];
         let productBrandId = this.$el.get(0).dataset.productBrandId;
+        console.log("[DynamicSnippetProductsBrand] Valor de productBrandId:", productBrandId);
         if (productBrandId && productBrandId !== 'all') {
             searchDomain.push(['dr_brand_value_id', '=', parseInt(productBrandId)]);
+            console.log("[DynamicSnippetProductsBrand] Dominio aplicado:", searchDomain);
+        } else {
+            console.log("[DynamicSnippetProductsBrand] No se aplica filtro de marca");
         }
         return searchDomain;
     },
 
     _getSearchDomain: function () {
+        console.log("[DynamicSnippetProductsBrand] _getSearchDomain ejecutado");
         const searchDomain = this._super.apply(this, arguments);
-        searchDomain.push(...this._getBrandSearchDomain());  
+        console.log("[DynamicSnippetProductsBrand] Dominio original:", searchDomain);
+        const brandDomain = this._getBrandSearchDomain();
+        searchDomain.push(...brandDomain);
+        console.log("[DynamicSnippetProductsBrand] Dominio final con marca:", searchDomain);
         return searchDomain;
     },
 });
