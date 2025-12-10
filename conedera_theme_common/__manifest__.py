@@ -38,6 +38,7 @@
             'conedera_theme_common/static/src/css/style.css',
             'conedera_theme_common/static/src/snippets/footers/footer_style_11.scss',
             'conedera_theme_common/static/src/snippets/Key_images/key_images_custom.scss',
+            'conedera_theme_common/static/src/snippets/s_dynamic_snippet_brand/snippet_brand.scss',
             'conedera_theme_common/static/src/snippets/s_dynamic_snippet_brand/000.js',
 
         ],
