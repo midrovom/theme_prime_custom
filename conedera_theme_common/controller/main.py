@@ -1,33 +1,35 @@
-from odoo.addons.website_sale.controllers.main import WebsiteSale
+# -*- coding: utf-8 -*-
+from odoo import http
+from odoo.http import request
 
-class WebsiteSaleBrand(WebsiteSale):
 
-    def _get_search_options(
-        self, category=None, attrib_values=None, tags=None,
-        min_price=0.0, max_price=0.0, conversion_rate=1, **post
-    ):
-        # Llamamos al original para no perder funcionalidad
-        options = super()._get_search_options(
-            category=category,
-            attrib_values=attrib_values,
-            tags=tags,
-            min_price=min_price,
-            max_price=max_price,
-            conversion_rate=conversion_rate,
-            **post
+class DynamicSnippetProductsBrand(http.Controller):
+
+    @http.route(
+        '/dynamic_snippet_products/brand',
+        type='json', auth='public', website=True
+    )
+    def dynamic_snippet_products_brand(self, **kwargs):
+
+        # Recibir parámetros desde JS
+        product_brand_id = kwargs.get('productBrandId')
+        limit = kwargs.get('limit', 8)
+        domain = kwargs.get('domain', [])
+
+        # Convertir el dominio del snippet en objeto Python
+        if isinstance(domain, str):
+            try:
+                domain = request.env[domain]
+            except Exception:
+                domain = []
+
+        # Agregar dominio de marca
+        if product_brand_id and product_brand_id != "all":
+            domain.append(("value_ids", "=", int(product_brand_id)))
+
+        products = request.env["product.template"].sudo().search(domain, limit=limit)
+
+        return request.env["ir.ui.view"]._render_template(
+            "website.s_dynamic_snippet_products",
+            {"products": products}
         )
-
-        # 👇 añadimos nuestra opción de marca
-        product_brand_id = post.get('productBrandId')
-        if product_brand_id and product_brand_id != 'all':
-            options['productBrandId'] = product_brand_id
-
-        return options
-
-    def _get_search_domain(self, options):
-        domain = super()._get_search_domain(options)
-        product_brand_id = options.get('productBrandId')
-        if product_brand_id and product_brand_id != 'all':
-            domain.append(('value_ids', '=', int(product_brand_id)))
-        return domain
-
