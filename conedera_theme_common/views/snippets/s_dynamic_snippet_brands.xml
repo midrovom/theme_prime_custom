@@ -6,6 +6,14 @@
                 <we-select string="Brand" data-name="product_brand_opt" data-attribute-name="productBrandId" data-no-preview="true">
                     <we-button data-select-data-attribute="all">All Brands</we-button>
                 </we-select>
+                <we-many2many string="Brands"
+                    data-name="product_brand_opt"
+                    data-attribute-name="productBrandIds"
+                    data-no-preview="true"
+                    data-model="product.brand"
+                    data-allow-delete="true"
+                    data-fakem2m="true"
+                    data-select-data-attribute=""/>
             </t>
         </xpath>
     </template>
