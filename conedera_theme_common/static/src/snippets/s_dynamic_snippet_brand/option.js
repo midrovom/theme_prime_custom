@@ -1,13 +1,12 @@
 /** @odoo-module **/
 
 import options from "@web_editor/js/editor/snippets.options";
-import dynamicSnippetProductsOptions from "@website/snippets/s_dynamic_snippet_carousel/options";  
 
-const dynamicSnippetProductsOptionsBrand = dynamicSnippetProductsOptions.extend({
+options.registry.dynamic_snippet_products.include({
 
     init: function () {
         this._super.apply(this, arguments);
-        this.productBrands = {};   
+        this.productBrands = {};
     },
 
     // -------------------------------
@@ -26,7 +25,7 @@ const dynamicSnippetProductsOptionsBrand = dynamicSnippetProductsOptions.extend(
     // -------------------------------
     async _renderCustomXML(uiFragment) {
         await this._super.apply(this, arguments);
-        await this._renderProductBrandSelector(uiFragment);  
+        await this._renderProductBrandSelector(uiFragment);
     },
 
     async _renderProductBrandSelector(uiFragment) {
@@ -40,13 +39,9 @@ const dynamicSnippetProductsOptionsBrand = dynamicSnippetProductsOptions.extend(
 
     _setOptionsDefaultValues: function () {
         this._super.apply(this, arguments);
-        this._setOptionValue('productBrandId', 'all');   
+        this._setOptionValue('productBrandId', 'all');
     },
 });
-
-options.registry.dynamic_snippet_products_brand = dynamicSnippetProductsOptionsBrand;
-
-export default dynamicSnippetProductsOptionsBrand;
 
 // /** @odoo-module **/
 
