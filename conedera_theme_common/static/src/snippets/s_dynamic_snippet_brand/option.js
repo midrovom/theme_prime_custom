@@ -42,7 +42,7 @@ const dynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_prod
         this._setOptionValue('productBrandId', 'all');
     },
 
-    _setOptionValue: function (optionName, value) {
+    _setOptionValue: function () {
         console.log("_setOptionValue ejecutado con optionName:", optionName, "y value:", value);
         this._super.apply(this, arguments);
         if (optionName === 'productBrandId') {
