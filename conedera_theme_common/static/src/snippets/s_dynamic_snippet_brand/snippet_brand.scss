@@ -1,10 +1,18 @@
 /* Estilo para las cards */
 .o_carousel_product_card {
-    border: 1px solid;       
+    border: 1px solid #ddd;       
     border-radius: 16px;          
     overflow: hidden;             
-    //box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
     background-color: #ffff;      
+}
+
+.o_carousel_product_card_body {
+    background-color: #fff;   /* 🔑 fondo blanco */
+    border-radius: 0 0 16px 16px; /* opcional: esquinas redondeadas solo abajo */
+    padding: 15px;
+    width: 100%;
+    text-align: center;
 }
 
 /* Ajuste del cuerpo de la card */
