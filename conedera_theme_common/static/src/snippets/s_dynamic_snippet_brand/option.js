@@ -8,6 +8,7 @@ const dynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_prod
         this._super.apply(this, arguments);
         this.productBrands = {};
         this.orm = this.bindService("orm");
+        console.log("Init ejecutado: productBrands inicializado y orm vinculado");
     },
 
     _fetchProductBrands: function () {
