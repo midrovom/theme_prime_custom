@@ -12,8 +12,8 @@
     'category': 'Website',
     'depends': [
         'website',
-        'product',
         'website_sale',
+        'product',
         'droggol_theme_common',
     ],
     'data': [
