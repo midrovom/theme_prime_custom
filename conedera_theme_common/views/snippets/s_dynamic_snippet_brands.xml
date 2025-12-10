@@ -5,15 +5,12 @@
             <t t-if="snippet_name == 'dynamic_snippet_products'">
                 <we-select string="Brand" data-name="product_brand_opt" data-attribute-name="productBrandId" data-no-preview="true">
                     <we-button data-select-data-attribute="all">All Brands</we-button>
+                        <t t-foreach="brand_values" t-as="brand">
+                            <we-button t-att-data-select-data-attribute="brand.id">
+                                <t t-esc="brand.name"/>
+                            </we-button>
+                        </t>
                 </we-select>
-                <we-many2many string="Brands"
-                    data-name="product_brand_opt"
-                    data-attribute-name="productBrandIds"
-                    data-no-preview="true"
-                    data-model="product.product"
-                    data-allow-delete="true"
-                    data-fakem2m="true"
-                    data-select-data-attribute=""/>
             </t>
         </xpath>
     </template>
