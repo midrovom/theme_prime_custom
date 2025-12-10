@@ -1,47 +1,60 @@
 /** @odoo-module **/
 
-import publicWidget from "@web/legacy/js/public/public_widget";
-import DynamicSnippetCarousel from "@website/snippets/s_dynamic_snippet_carousel/000";
-import { rpc } from "@web/core/network/rpc";
+import options from "@web_editor/js/editor/snippets.options";
 
-const DynamicSnippetProducts = DynamicSnippetCarousel.extend({
-    selector: '.s_dynamic_snippet_products',
+const DynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_products.extend({
 
-    _getBrandSearchDomain() {
-        const searchDomain = [];
-        let productBrandId = this.$el.get(0).dataset.productBrandId;
-        if (productBrandId && productBrandId !== 'all') {
-            searchDomain.push(['dr_brand_value_id', '=', parseInt(productBrandId)]);
-        }
-        return searchDomain;
+    init: function () {
+        this._super.apply(this, arguments);
+        this.productBrands = {};
+        this.orm = this.bindService("orm");
     },
 
-    _getSearchDomain: function () {
-        const searchDomain = this._super.apply(this, arguments);
-        const brandDomain = this._getBrandSearchDomain();
-        const finalDomain = searchDomain.concat(brandDomain);
+    _fetchProductBrands: function () {
+        return this.orm.searchRead(
+            "product.attribute.value",
+            [["attribute_id.dr_is_brand", "=", true]],
+            ["id", "name", "display_name"]
+        );
+    },
 
-        // 🔹 Depuración: ver el dominio final
-        console.log("Dominio final:", finalDomain);
+    _renderProductBrandSelector: async function (uiFragment) {
+        const productBrands = await this._fetchProductBrands();
+        for (let brand of productBrands) {
+            this.productBrands[brand.id] = brand;
+        }
+        const productBrandsSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
+        return this._renderSelectUserValueWidgetButtons(productBrandsSelectorEl, this.productBrands);
+    },
 
-        // 🔹 Depuración: probar qué productos devuelve ese dominio
-        rpc("/web/dataset/call_kw/product.product/search_read", {
-            model: "product.product",
-            method: "search_read",
-            args: [finalDomain, ["id", "name", "dr_brand_value_id"]],
-            kwargs: { limit: 5 },
-        }).then(result => {
-            console.log("Productos filtrados por marca:", result);
-        });
+    _renderCustomXML: async function (uiFragment) {
+        await this._super.apply(this, arguments);   
+        await this._renderProductBrandSelector(uiFragment); 
+    },
 
-        searchDomain.push(...brandDomain);
-        return searchDomain;
+    _setOptionsDefaultValues: function () {
+        this._super.apply(this, arguments);
+        this._setOptionValue('productBrandId', 'all');
+    },
+
+    _setOptionValue: function (optionName, value) {
+        this._super.apply(this, arguments);
+        if (optionName === 'productBrandId') {
+            this.$target[0].dataset.productBrandId = value;
+            this.contextualFilterDomain = (this.contextualFilterDomain || []).filter(
+                (c) => !(Array.isArray(c) && c[0] === 'dr_brand_value_id')
+            );
+            if (value && value !== 'all') {
+                this.contextualFilterDomain.push(['dr_brand_value_id', '=', parseInt(value)]);
+            }
+            this.trigger_up('widgets_start_request', { $target: this.$target });
+        }
     },
 });
 
-publicWidget.registry.dynamic_snippet_products = DynamicSnippetProducts;
+options.registry.dynamic_snippet_products = DynamicSnippetProductsOptionsBrand;
 
-export default DynamicSnippetProducts;
+export default DynamicSnippetProductsOptionsBrand;
 
 // /** @odoo-module **/
 
