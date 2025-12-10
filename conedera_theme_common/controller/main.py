@@ -25,12 +25,9 @@ class WebsiteSaleBrand(WebsiteSale):
         return options
 
     def _get_search_domain(self, options):
-        # Llamamos al original
         domain = super()._get_search_domain(options)
-
-        # 👇 añadimos el filtro por marca usando value_ids
         product_brand_id = options.get('productBrandId')
         if product_brand_id and product_brand_id != 'all':
             domain.append(('value_ids', '=', int(product_brand_id)))
-
         return domain
+
