@@ -6,11 +6,16 @@ const dynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_prod
 
     init: function () {
         this._super.apply(this, arguments);
+        this.modelNameFilter = 'product.product'
         this.productBrands = {};
         this.orm = this.bindService("orm");
         console.log("Init ejecutado: productBrands inicializado y orm vinculado");
     },
-
+    /**
+     * Fetches product categories.
+     * @private
+     * @returns {Promise}
+     */
     _fetchProductBrands: function () {
         console.log("_fetchProductBrands ejecutado");
         return this.orm.searchRead(
@@ -19,7 +24,11 @@ const dynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_prod
             ["id", "name", "display_name", "dr_image"]
         );
     },
-
+    /**
+     *
+     * @override
+     * @private
+     */
     _renderProductBrandSelector: async function (uiFragment) {
         console.log("_renderProductBrandSelector ejecutado");
         const productBrands = await this._fetchProductBrands();
@@ -29,7 +38,11 @@ const dynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_prod
         const productBrandsSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
         return this._renderSelectUserValueWidgetButtons(productBrandsSelectorEl, this.productBrands);
     },
-
+    /**
+     * Renders the product categories option selector content into the provided uiFragment.
+     * @private
+     * @param {HTMLElement} uiFragment
+     */
     _renderCustomXML: async function (uiFragment) {
         console.log("_renderCustomXML ejecutado");
         await this._super.apply(this, arguments);   
