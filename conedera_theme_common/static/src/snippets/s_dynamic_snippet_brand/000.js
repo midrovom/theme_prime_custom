@@ -15,8 +15,7 @@ const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
         console.log("[DynamicSnippetProductsBrand] Valor de productBrandId:", productBrandId);
 
         if (productBrandId && productBrandId !== 'all') {
-            // Filtramos productos cuyo atributo tenga el valor de marca seleccionado
-            searchDomain.push(['attribute_line_ids.value_ids', '=', parseInt(productBrandId)]);
+            searchDomain.push(['attribute_line_ids.value_ids', 'in', [parseInt(productBrandId)]]);
             console.log("[DynamicSnippetProductsBrand] Dominio aplicado:", searchDomain);
         } else {
             console.log("[DynamicSnippetProductsBrand] No se aplica filtro de marca");
