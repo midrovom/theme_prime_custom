@@ -8,7 +8,7 @@ const dynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_prod
         this._super.apply(this, arguments);
         this.productBrands = {};
         this.orm = this.bindService("orm");
-        console.log("Init ejecutado: productBrands inicializado y orm vinculado", this.productBrands, this.orm);
+        console.log("Init ejecutado: productBrands inicializado y orm vinculado");
     },
 
     _fetchProductBrands: function () {
@@ -17,53 +17,43 @@ const dynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_prod
             "product.attribute.value",
             [["attribute_id.dr_is_brand", "=", true]],
             ["id", "name", "display_name", "dr_image"]
-        ).then(result => {
-            console.log("_fetchProductBrands resultado:", result);
-            return result;
-        });
+        );
     },
 
     _renderProductBrandSelector: async function (uiFragment) {
-        console.log("_renderProductBrandSelector ejecutado con uiFragment:", uiFragment);
+        console.log("_renderProductBrandSelector ejecutado");
         const productBrands = await this._fetchProductBrands();
         for (let brand of productBrands) {
             this.productBrands[brand.id] = brand;
         }
-        console.log("_renderProductBrandSelector productBrands procesados:", this.productBrands);
         const productBrandsSelectorEl = uiFragment.querySelector('[data-name="product_brand_opt"]');
-        console.log("_renderProductBrandSelector selector encontrado:", productBrandsSelectorEl);
         return this._renderSelectUserValueWidgetButtons(productBrandsSelectorEl, this.productBrands);
     },
 
     _renderCustomXML: async function (uiFragment) {
-        console.log("_renderCustomXML ejecutado con uiFragment:", uiFragment);
+        console.log("_renderCustomXML ejecutado");
         await this._super.apply(this, arguments);   
         await this._renderProductBrandSelector(uiFragment); 
-        console.log("_renderCustomXML finalizado");
     },
 
     _setOptionsDefaultValues: function () {
         console.log("_setOptionsDefaultValues ejecutado");
         this._super.apply(this, arguments);         
         this._setOptionValue('productBrandId', 'all');
-        console.log("_setOptionsDefaultValues valor por defecto aplicado: productBrandId = all");
     },
 
     _setOptionValue: function (optionName, value) {
-        console.log("_setOptionValue ejecutado con optionName:", optionName, "value:", value);
+        console.log("_setOptionValue ejecutado con optionName:", optionName, "y value:", value);
         this._super.apply(this, arguments);
         if (optionName === 'productBrandId') {
             this.$target[0].dataset.productBrandId = value;
-            console.log("_setOptionValue dataset actualizado:", this.$target[0].dataset);
             this.contextualFilterDomain = (this.contextualFilterDomain || []).filter(
                 (c) => !(Array.isArray(c) && c[0] === 'dr_brand_value_id')
             );
             if (value && value !== 'all') {
                 this.contextualFilterDomain.push(['dr_brand_value_id', '=', parseInt(value)]);
             }
-            console.log("_setOptionValue contextualFilterDomain actualizado:", this.contextualFilterDomain);
             this.trigger_up('widgets_start_request', { $target: this.$target });
-            console.log("_setOptionValue widgets_start_request disparado");
         }
     },
 });
@@ -71,7 +61,6 @@ const dynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_prod
 options.registry.dynamic_snippet_products = dynamicSnippetProductsOptionsBrand;
 
 export default dynamicSnippetProductsOptionsBrand;
-
 
 // /** @odoo-module **/
 
