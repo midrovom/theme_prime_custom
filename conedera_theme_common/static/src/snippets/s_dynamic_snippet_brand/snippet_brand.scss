@@ -1,0 +1,15 @@
+/* Estilo para las cards */
+.o_carousel_product_card {
+    border: 1px solid #ddd;       
+    border-radius: 16px;          
+    overflow: hidden;             
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+    background-color: #fff;      
+}
+
+/* Ajuste del cuerpo de la card */
+.o_carousel_product_card_body {
+    width: 100%;
+    text-align: center;
+    padding: 15px;
+}
