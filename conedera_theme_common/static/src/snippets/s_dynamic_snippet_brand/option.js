@@ -35,26 +35,14 @@ const dynamicSnippetProductsOptionsBrand = options.registry.dynamic_snippet_prod
         await this._super.apply(this, arguments);   
         await this._renderProductBrandSelector(uiFragment); 
     },
-
+    /**
+     * @override
+     * @private
+     */
     _setOptionsDefaultValues: function () {
         console.log("_setOptionsDefaultValues ejecutado");
         this._super.apply(this, arguments);         
         this._setOptionValue('productBrandId', 'all');
-    },
-
-    _setOptionValue: function () {
-        console.log("_setOptionValue ejecutado con optionName:", optionName, "y value:", value);
-        this._super.apply(this, arguments);
-        if (optionName === 'productBrandId') {
-            this.$target[0].dataset.productBrandId = value;
-            this.contextualFilterDomain = (this.contextualFilterDomain || []).filter(
-                (c) => !(Array.isArray(c) && c[0] === 'dr_brand_value_id')
-            );
-            if (value && value !== 'all') {
-                this.contextualFilterDomain.push(['dr_brand_value_id', '=', parseInt(value)]);
-            }
-            this.trigger_up('widgets_start_request', { $target: this.$target });
-        }
     },
 });
 
