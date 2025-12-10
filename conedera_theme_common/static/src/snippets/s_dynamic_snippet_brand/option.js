@@ -1,8 +1,7 @@
 /** @odoo-module **/
 
 import options from "@web_editor/js/editor/snippets.options";
-import dynamicSnippetProductsOptions from "@website/snippets/s_dynamic_snippet_carousel/options";  // 👈 Importas el original
-import wUtils from "@website/js/utils";
+import dynamicSnippetProductsOptions from "@website/snippets/s_dynamic_snippet_carousel/options";  
 
 const dynamicSnippetProductsOptionsBrand = dynamicSnippetProductsOptions.extend({
 
@@ -15,7 +14,7 @@ const dynamicSnippetProductsOptionsBrand = dynamicSnippetProductsOptions.extend(
     // Fetch marcas
     // -------------------------------
     _fetchProductBrands: function () {
-        return this.orm.searchRead("product.product",[["dr_brand_value_id", "=", brandId]], ["id", "name", "dr_brand_value_id", "website_id"]);
+        return this.orm.searchRead("product.attribute.value", [["attribute_id.dr_is_brand", "=", true]], ["id", "name", "attribute_id"]);
     },
     // _fetchProductBrands: function () {
     //     return this.orm.searchRead("product.template.attribute.line", wUtils.websiteDomain(this), ["id", "name"]);
