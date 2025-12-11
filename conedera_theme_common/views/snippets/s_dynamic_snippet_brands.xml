@@ -10,45 +10,39 @@
     </template>
 
 
+
     <template id="dynamic_snippet_products_wrapper_style_2" inherit_id="website.s_dynamic_snippet_template">
-        <xpath expr="//div[@class='s_dynamic_snippet_row']" position="replace">
-
-            <!-- SOLO aplica si el template activo es product_product_style_2 -->
-            <t t-if="snippet.template == 'product_product_style_2'">
-
-                <div class="row g-4 align-items-start o_snippet_products_style_2">
-
-                    <!-- Imagen editable fuera del carrusel -->
+        <xpath expr="//div[@class='dynamic_snippet_template']" position="replace">
+            <t t-if="custom_template_data and custom_template_data.get('template_key') == 'product_product_style_2'">
+                <div class="row align-items-start g-4">
                     <div class="col-lg-4 text-center my-4">
                         <img class="img-fluid oe_image oe_editable"
-                            data-oe-type="image"
-                            data-oe-expression="snippet_custom_img"
-                            src="/web/static/img/placeholder.png"
-                            style="max-width:220px;" />
+                             data-oe-type="image"
+                             data-oe-expression="snippet_custom_img"
+                             src="/web/static/img/placeholder.png"
+                             style="max-width:220px;" />
                     </div>
 
-                    <!-- Carrusel original -->
+                    <!-- Columna derecha: contenido ORIGINAL del carrusel -->
                     <div class="col-lg-8">
-                        <div class="s_dynamic_snippet_row">
-                            <t t-original="1"/>
+                        <div class="dynamic_snippet_template">
+                            <t t-out="0"/>
                         </div>
                     </div>
 
                 </div>
-
             </t>
 
-            <!-- Para todos los demás templates dejar como estaba -->
-            <t t-if="snippet.template != 'product_product_style_2'">
-                <div class="s_dynamic_snippet_row">
-                    <t t-original="1"/>
+            <!-- Para todos los demás templates: dejar igual -->
+            <t t-else="">
+                <div class="dynamic_snippet_template">
+                    <t t-out="0"/>
                 </div>
             </t>
 
         </xpath>
 
     </template>
-
 
 
 
