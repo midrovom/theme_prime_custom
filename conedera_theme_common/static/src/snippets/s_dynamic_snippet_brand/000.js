@@ -18,21 +18,6 @@ const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
         return searchDomain;
     },
 
-    // _getBrandSearchDomain() {
-    //     console.log("[DynamicSnippetProductsBrand] _getBrandSearchDomain ejecutado");
-    //     const searchDomain = [];
-    //     let productBrandId = this.$el.get(0).dataset.productBrandId;
-    //     console.log("[DynamicSnippetProductsBrand] Valor de productBrandId:", productBrandId);
-
-    //     if (productBrandId && productBrandId !== 'all') {
-    //         searchDomain.push(['attribute_line_ids.value_ids.id', '=', parseInt(productBrandId)]);
-    //         console.log("[DynamicSnippetProductsBrand] Dominio aplicado:", searchDomain);
-    //     } else {
-    //         console.log("[DynamicSnippetProductsBrand] No se aplica filtro de marca");
-    //     }
-    //     return searchDomain;
-    // },
-
     /**
      * Extiende el dominio original del snippet para añadir el filtro de marca
      */
