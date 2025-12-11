@@ -1,69 +1,51 @@
 /** @odoo-module **/
 
 import publicWidget from "@web/legacy/js/public/public_widget";
-import DynamicSnippetProducts from "@website/snippets/s_dynamic_snippet_carousel/000";
+import DynamicSnippet from "@website/snippets/s_dynamic_snippet/000";
 
 console.log("%c[DynamicSnippetProductsBrand] Archivo cargado", "color: green; font-weight: bold;");
 
-const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
+const DynamicSnippetProductsBrand = DynamicSnippet.extend({
+
+    selector: ".s_dynamic_snippet_products",  
 
     /**
-     * INICIO SNIPPET FRONTEND
-     * (se ejecuta en el sitio web, no en el editor)
-     */
-
-    start() {
-        console.log("%c[DynamicSnippetProductsBrand] start()", "color: #00bfff");
-        return this._super(...arguments);
-    },
-
-    /**
-     * Construye el dominio base + dominio por marca
+     * DOMINIO FINAL DE PRODUCTOS
      */
     _getSearchDomain: function () {
         console.log("%c[DynamicSnippetProductsBrand] _getSearchDomain ejecutado", "color: orange");
 
-        const searchDomain = this._super.apply(this, arguments);
-        console.log("[DynamicSnippetProductsBrand] Dominio original:", JSON.stringify(searchDomain));
+        const domain = this._super(...arguments);
+        console.log("[DynamicSnippetProductsBrand] Dominio original:", domain);
 
         const brandDomain = this._getBrandSearchDomain();
-        console.log("[DynamicSnippetProductsBrand] Dominio generado por marca:", JSON.stringify(brandDomain));
+        console.log("[DynamicSnippetProductsBrand] Dominio marca:", brandDomain);
 
-        searchDomain.push(...brandDomain);
+        domain.push(...brandDomain);
 
-        console.log("%c[DynamicSnippetProductsBrand] Dominio final:", "color: yellow", JSON.stringify(searchDomain));
-        return searchDomain;
+        console.log("%c[DynamicSnippetProductsBrand] Dominio final:", "color: yellow", domain);
+        return domain;
     },
 
     /**
-     * Dominio para filtrar por marca
+     * FILTRAR POR MARCA
      */
-    _getBrandSearchDomain: function () {
+    _getBrandSearchDomain() {
         console.log("%c[DynamicSnippetProductsBrand] _getBrandSearchDomain()", "color: purple");
 
         const brandId = this.options.productBrandId;
-        console.log("[DynamicSnippetProductsBrand] Marca seleccionada:", brandId);
+        console.log("[DynamicSnippetProductsBrand] brandId:", brandId);
 
-        if (!brandId || brandId === "all") {
-            console.log("[DynamicSnippetProductsBrand] Marca = all → No filtrar");
-            return [];
-        }
+        if (!brandId || brandId === "all") return [];
 
         const idInt = parseInt(brandId);
-        if (isNaN(idInt)) {
-            console.warn("[DynamicSnippetProductsBrand] ERROR: brandId no es entero:", brandId);
-            return [];
-        }
 
-        const domain = [
-            ["attribute_line_ids.value_ids", "in", [idInt]]
+        return [
+            ["attribute_line_ids.value_ids", "=", idInt]
         ];
-
-        console.log("[DynamicSnippetProductsBrand] Dominio construido:", domain);
-        return domain;
     },
 });
 
-publicWidget.registry.dynamic_snippet_products_brand = DynamicSnippetProductsBrand;
+publicWidget.registry.DynamicSnippetProductsBrand = DynamicSnippetProductsBrand;
 
 export default DynamicSnippetProductsBrand;
