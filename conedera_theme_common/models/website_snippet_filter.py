@@ -1,46 +1,99 @@
 from odoo import api, models
-import logging
-import base64
-
-_logger = logging.getLogger(__name__)
 
 class WebsiteSnippetFilter(models.Model):
     _inherit = "website.snippet.filter"
 
     def _filter_records_to_values(self, records, is_sample=False):
         res = super()._filter_records_to_values(records, is_sample)
-
-        if self.model_name == "product.product":
+        if self.model_name == 'product.product':
             for data in res:
-                product = data["_record"]
+                product = data['_record']
+                data['url'] = product.website_url or "/shop/product/%s" % product.id
 
-                data["url"] = product.website_url or f"/shop/product/{product.id}"
-
+                # Extraer la marca desde los atributos del template
                 brand_name = ""
-                brand_image = ""
-
                 tmpl = product.product_tmpl_id
-
-                for val in tmpl.attribute_line_ids.mapped("value_ids"):
+                for val in tmpl.attribute_line_ids.mapped('value_ids'):
                     if val.attribute_id.dr_is_brand:
                         brand_name = val.name
-
-                        # 🔥🔥 CONVERTIR IMAGEN BINARIA A BASE64 SIN b''
-                        if val.dr_image:
-                            try:
-                                brand_image = base64.b64encode(val.dr_image).decode()
-                            except Exception as e:
-                                _logger.error("Error codificando imagen de marca: %s", e)
-                                brand_image = ""
                         break
+                data['brand'] = brand_name
 
-                data["brand"] = brand_name
-                data["brand_image"] = brand_image
-
-                if not data.get("image_512"):
-                    data["image_512"] = "/web/static/img/placeholder.png"
-
+                if not data.get('image_512'):
+                    data['image_512'] = "/web/static/img/placeholder.png"
         return res
+
+    @api.model
+    def _get_products_by_brand(self, mode=None, **kwargs):
+        dynamic_filter = self.env.context.get('dynamic_filter')
+        website = self.env['website'].get_current_website()
+
+        brand_id = kwargs.get("product_brand_id") or self.env.context.get("product_brand_id")
+
+        if not brand_id or brand_id == "all":
+            return []
+
+        try:
+            brand_id = int(brand_id)
+        except Exception:
+            return []
+
+        # Buscar en product.template
+        domain = [
+            ('website_published', '=', True),
+            ('website_id', 'in', [False, website.id]),
+            ('attribute_line_ids.value_ids', 'in', [brand_id]),
+        ]
+
+        products_tmpl = self.env['product.template'].sudo().search(domain, order="sequence ASC, name ASC")
+        products = products_tmpl.mapped('product_variant_ids')
+
+        values = dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
+        return values
+
+
+# from odoo import api, models
+# import logging
+# import base64
+
+# _logger = logging.getLogger(__name__)
+
+# class WebsiteSnippetFilter(models.Model):
+#     _inherit = "website.snippet.filter"
+
+#     def _filter_records_to_values(self, records, is_sample=False):
+#         res = super()._filter_records_to_values(records, is_sample)
+
+#         if self.model_name == "product.product":
+#             for data in res:
+#                 product = data["_record"]
+
+#                 data["url"] = product.website_url or f"/shop/product/{product.id}"
+
+#                 brand_name = ""
+#                 brand_image = ""
+
+#                 tmpl = product.product_tmpl_id
+
+#                 for val in tmpl.attribute_line_ids.mapped("value_ids"):
+#                     if val.attribute_id.dr_is_brand:
+#                         brand_name = val.name
+
+#                         if val.dr_image:
+#                             try:
+#                                 brand_image = base64.b64encode(val.dr_image).decode()
+#                             except Exception as e:
+#                                 _logger.error("Error codificando imagen de marca: %s", e)
+#                                 brand_image = ""
+#                         break
+
+#                 data["brand"] = brand_name
+#                 data["brand_image"] = brand_image
+
+#                 if not data.get("image_512"):
+#                     data["image_512"] = "/web/static/img/placeholder.png"
+
+#         return res
 
 
 # from odoo import api, models

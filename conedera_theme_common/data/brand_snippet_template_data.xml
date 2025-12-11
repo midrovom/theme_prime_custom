@@ -24,16 +24,19 @@
     </template>
 
     <template id="dynamic_filter_template_product_product_style_2" name="Productos por Marca">
-        <t t-if="records and records[0].get('brand_image')">
-            <div class="text-center my-4">
-                <img t-att-src="'data:image/png;base64,%s' % records[0].get('brand_image')"
-                    alt="Brand Logo"
-                    class="img-fluid"
-                    style="max-width:180px;" />
-            </div>
-        </t>
 
-        <t t-foreach="records" t-as="data" data-thumb="/website_sale/static/src/img/snippets_options/product_borderless_1.svg">
+        <!-- Imagen editable desde el Website Builder -->
+        <div class="my-4 text-center">
+            <img class="img-fluid oe_editable oe_image"
+                data-oe-expression="snippet_custom_img"
+                data-oe-type="image"
+                style="max-width:220px;"
+                src="/web/static/img/placeholder.png"/>
+        </div>
+
+        <!-- Carrusel de productos -->
+        <t t-foreach="records" t-as="data"
+        data-thumb="/website_sale/static/src/img/snippets_options/product_borderless_1.svg">
 
             <t t-set="record" t-value="data['_record']"/>
 
@@ -58,6 +61,7 @@
         </t>
 
     </template>
+
 
 
 </odoo>
