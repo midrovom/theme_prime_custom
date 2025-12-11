@@ -1,4 +1,47 @@
 from odoo import api, models
+
+class WebsiteSnippetFilter(models.Model):
+    _inherit = 'website.snippet.filter'
+
+    @api.model
+    def _get_products_by_brand(self, website, limit, domain, **kwargs):
+        """
+        Handler para filtrar productos por marca.
+        El dominio ya incluye ('dr_brand_value_id', '=', brand_id) desde el JS.
+        """
+        products = self.env['product.product'].sudo().search(domain, limit=limit)
+        return products
+
+    @api.model
+    def _get_products(self, mode, **kwargs):
+        """
+        Extiende el método original para soportar el modo 'by_brand'.
+        """
+        dynamic_filter = self.env.context.get('dynamic_filter')
+        # Si el modo es 'by_brand', usamos nuestro handler
+        if mode == 'by_brand':
+            website = self.env['website'].get_current_website()
+            search_domain = self.env.context.get('search_domain')
+            limit = self.env.context.get('limit')
+            hide_variants = self.env.context.get('hide_variants')
+            domain = [
+                ('website_published', '=', True),
+                ('company_id', 'in', [False, website.company_id.id]),
+            ]
+            if search_domain:
+                domain += search_domain
+            products = self._get_products_by_brand(website, limit, domain, **kwargs)
+            return dynamic_filter.with_context(
+                hide_variants=hide_variants,
+            )._filter_records_to_values(products, is_sample=False)
+
+        # Para otros modos, seguimos con la lógica original
+        return super()._get_products(mode, **kwargs)
+
+
+
+
+from odoo import api, models
 import logging
 
 _logger = logging.getLogger(__name__)
