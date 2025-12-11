@@ -3,7 +3,7 @@
     <template id="s_key_images_2" name="Key Images">
         <section class="s_key_images_2 pt72 pb72">
             <div class="container">
-                <div class="key-images-wrapper p-4 oe_structure o_we_customize">
+                <div class="key-images-wrapper p-4">
                     <div class="row s_nb_column_fixed text-center">
                         <div class="col-6 col-lg-2">
                             <img src="/web/image/website.s_key_images_default_image_1"
@@ -60,48 +60,3 @@
         </section>
     </template>
 </odoo>
-
-
-
-<!-- <?xml version="1.0" encoding="UTF-8"?>
-<odoo>
-    <template id="s_key_images_custom" name="Key Images">
-        <section class="s_key_images_custom pt72 pb72">
-            <div class="container">
-                <div class="row s_nb_column_fixed text-center">
-                    <div class="col-6 col-lg-2">
-                        <img src="/web/image/website.s_key_images_default_image_1"
-                             class="img img-fluid rounded" alt=""/>
-                        <a href="/page/example1" class="d-block mt-2">This is a small title related to the current image</a>
-                    </div>
-                    <div class="col-6 col-lg-2">
-                        <img src="/web/image/website.s_key_images_default_image_2"
-                             class="img img-fluid rounded" alt=""/>
-                        <a href="/page/example2" class="d-block mt-2">This is a small title related to the current image</a>
-                    </div>
-                    <div class="col-6 col-lg-2">
-                        <img src="/web/image/website.s_key_images_default_image_3"
-                             class="img img-fluid rounded" alt=""/>
-                        <a href="/page/example3" class="d-block mt-2">This is a small title related to the current image</a>
-                    </div>
-                    <div class="col-6 col-lg-2">
-                        <img src="/web/image/website.s_key_images_default_image_4"
-                             class="img img-fluid rounded" alt=""/>
-                        <a href="/page/example4" class="d-block mt-2">This is a small title related to the current image</a>
-                    </div>
-                    <div class="col-6 col-lg-2">
-                        <img src="/web/image/website.s_key_images_default_image_4"
-                             class="img img-fluid rounded" alt=""/>
-                        <a href="/page/example5" class="d-block mt-2">This is a small title related to the current image</a>
-                    </div>
-                    <div class="col-6 col-lg-2">
-                        <img src="/web/image/website.s_key_images_default_image_4"
-                             class="img img-fluid rounded" alt=""/>
-                        <a href="/page/example6" class="d-block mt-2">This is a small title related to the current image</a>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </template>
-</odoo> -->
-

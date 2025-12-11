@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <!-- Opciones para seleccionar las marcas -->
     <template id="s_dynamic_snippet_products_template_options_brand" inherit_id="website.s_dynamic_snippet_options_template">
@@ -10,6 +11,7 @@
         </xpath>
     </template>
 
+    <!-- Opciones para agregar apartado de imagen -->
     <template id="website_s_dynamic_snippet_template_inherit" inherit_id="website.s_dynamic_snippet_template" name="Dynamic Snippet Template Inherit">
         <xpath expr="//section[contains(@class, 's_dynamic_snippet_title')]" position="after">
             <section class="s_dynamic_snippet_image_only text-center my-4">
@@ -18,12 +20,7 @@
         </xpath>
     </template>
 
-
-    <template id="website_s_dynamic_snippet_options_template_inherit"
-              inherit_id="website.s_dynamic_snippet_options_template"
-              name="Dynamic Snippet Options Template Inherit">
-
-        <!-- Insertamos las opciones para la imagen -->
+    <template id="website_s_dynamic_snippet_options_template_inherit" inherit_id="website.s_dynamic_snippet_options_template" name="Dynamic Snippet Options Template Inherit">
         <xpath expr="//div[@data-js='DynamicSnippetTitle']" position="after">
             <div data-no-preview="true" t-attf-data-selector="#{snippet_selector}" data-target=".s_dynamic_snippet_image_only">
                 <we-button-group string="Section Image">
@@ -34,8 +31,6 @@
                 <div data-js="DynamicSnippetImage" data-selector=".s_dynamic_snippet_image_only"/>
             </div>
         </xpath>
-
     </template>
-
 
 </odoo>
