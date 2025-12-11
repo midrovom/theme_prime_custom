@@ -72,11 +72,12 @@
 
     <template id="website_submenu_icon_image_inherit" inherit_id="website.submenu" name="Add icon_image to Website Menu">
         <xpath expr="//a" position="inside">
-            <t t-if="icon_image">
-                <img t-att-src="'/web/image/website.menu/%s/icon_image' % menu.id" class="tp-menu-icon me-2"
+            <t t-if="submenu.icon_image">
+                <img t-att-src="'/web/image/website.menu/%s/icon_image' % submenu.id"
+                    class="tp-menu-icon me-2"
                     style="height:18px; width:18px; object-fit:contain;"/>
             </t>
         </xpath>
     </template>
-    
+
 </odoo>
