@@ -1,4 +1,40 @@
 <odoo>
+
+    <template id="dynamic_snippet_add_image_block" inherit_id="website.s_dynamic_snippet_template">
+        <xpath expr="//section[@class='s_dynamic_snippet_title']" position="after">
+            <t t-if="custom_template_data and custom_template_data.get('template_key') == 'product_product_style_2'">
+                <div class="s_dynamic_snippet_image_block text-center my-3">
+                    <img class="img-fluid oe_image oe_editable" data-oe-type="image"
+                         data-oe-expression="snippet_custom_img"
+                         src="/web/static/img/placeholder.png"
+                         style="max-width:220px;" />
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="dynamic_snippet_image_block_options" inherit_id="website.s_dynamic_snippet_options_template">
+        <xpath expr="." position="inside">
+            <div data-no-preview="true"
+                 t-attf-data-selector="#{snippet_selector}"
+                 data-target=".s_dynamic_snippet_image_block">
+
+                <we-button-group string="Brand Image Position">
+                    <we-button data-select-class="text-center" title="Top">Top</we-button>
+                    <we-button data-select-class="s_dynamic_snippet_image_left" title="Left">Left</we-button>
+                    <we-button data-select-class="d-none" title="None">None</we-button>
+                </we-button-group>
+
+                <!-- Hace editable el bloque (como el título) -->
+                <div data-js="DynamicSnippetImage"
+                     data-selector=".s_dynamic_snippet_image_block"/>
+            </div>
+
+        </xpath>
+
+    </template>
+
+    <!-- Opciones para seleccionar las marcas -->
     <template id="s_dynamic_snippet_products_template_options_brand" inherit_id="website.s_dynamic_snippet_options_template">
         <xpath expr="//we-select[@data-name='filter_opt']" position="after">
             <t t-if="snippet_name == 'dynamic_snippet_products'">
@@ -8,54 +44,4 @@
             </t>
         </xpath>
     </template>
-
-
-    <template id="dynamic_snippet_products_wrapper_style_2"
-              inherit_id="website.s_dynamic_snippet_template">
-
-        <xpath expr="//div[@class='dynamic_snippet_template']" position="replace">
-
-            <!-- Solo activar estructura especial si el template elegido es product_product_style_2 -->
-            <t t-if="custom_template_data 
-                     and custom_template_data.get('template_key') == 'product_product_style_2'">
-
-                <div class="row align-items-start g-4">
-
-                    <!-- Imagen editable -->
-                    <div class="col-lg-4 text-center my-4">
-                        <img class="img-fluid oe_image oe_editable"
-                             data-oe-type="image"
-                             data-oe-expression="snippet_custom_img"
-                             src="/web/static/img/placeholder.png"
-                             style="max-width:220px;" />
-                    </div>
-
-                    <!-- Carrusel a la derecha -->
-                    <div class="col-lg-8">
-                        <div class="dynamic_snippet_template">
-                            <t t-out="0"/>
-                        </div>
-                    </div>
-
-                </div>
-
-            </t>
-
-            <!-- Si NO es product_product_style_2 → comportamiento normal -->
-            <t t-else="">
-                <div class="dynamic_snippet_template">
-                    <t t-out="0"/>
-                </div>
-            </t>
-
-        </xpath>
-
-    </template>
-
-
- 
-
-
-
-
 </odoo>
