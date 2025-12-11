@@ -13,17 +13,15 @@
         </xpath>
 
         <!-- Inyectamos el icono en cada item del menú -->
-        <xpath expr="//t[@t-call='website.submenu']" position="after">
-            <xpath expr="//a/span" position="before">
-                <t t-if="submenu.icon_image">
-                    <img t-att-src="'data:image/png;base64,%s' % submenu.icon_image.decode()"
-                         alt="icono"
-                         class="me-2"
-                         style="width:20px; height:20px;"/>
-                </t>
-            </xpath>
+        <xpath expr="//a/span" position="before">
+            <t t-if="submenu.icon_image">
+                <img t-att-src="'data:image/png;base64,%s' % submenu.icon_image.decode()"
+                    alt="icono"
+                    class="me-2"
+                    style="width:20px; height:20px;"/>
+            </t>
         </xpath>
-        
+
         <!-- Bloque de login y carrito -->
         <xpath expr="//div[@class='row align-items-center justify-content-end tp-account-info']" position="replace">
             <div class="row align-items-center justify-content-end tp-account-info">
