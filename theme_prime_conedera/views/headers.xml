@@ -110,7 +110,6 @@
                                      style="margin-bottom: 3px;"
                                      width="22"
                                      height="22"/>
-                                <!-- <i class="dri dri-user"/> -->
                             </a>
                         </div>
                         <div class="flex-grow-1 ms-3 d-none d-xl-block">
@@ -132,7 +131,6 @@
                                              style="margin-bottom: 3px;"
                                              width="22"
                                              height="22"/>
-                                        <!-- <i class="dri dri-cart"/> -->
                                         <sup class="my_cart_quantity badge" style="background-color: #FF931E !important;" t-out="website_sale_cart_quantity" t-att-data-order-id="request.session.get('sale_order_id', '')"/>
                                     </a>
                                 </div>
