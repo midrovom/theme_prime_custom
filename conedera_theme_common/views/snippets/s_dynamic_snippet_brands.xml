@@ -11,38 +11,46 @@
 
 
 
-    <template id="dynamic_snippet_products_wrapper_style_2" inherit_id="website.s_dynamic_snippet_template">
-        <xpath expr="//div[@class='dynamic_snippet_template']" position="replace">
-            <t t-if="custom_template_data and custom_template_data.get('template_key') == 'product_product_style_2'">
-                <div class="row align-items-start g-4">
-                    <div class="col-lg-4 text-center my-4">
-                        <img class="img-fluid oe_image oe_editable"
-                             data-oe-type="image"
-                             data-oe-expression="snippet_custom_img"
-                             src="/web/static/img/placeholder.png"
-                             style="max-width:220px;" />
-                    </div>
 
-                    <!-- Columna derecha: contenido ORIGINAL del carrusel -->
-                    <div class="col-lg-8">
-                        <div class="dynamic_snippet_template">
-                            <t t-out="0"/>
+        <template id="dynamic_snippet_products_wrapper_style_2"
+                inherit_id="website.s_dynamic_snippet_template">
+
+            <xpath expr="//div[@class='dynamic_snippet_template']" position="replace">
+                <t t-if="snippet.template == 'product_product_style_2'">
+
+                    <div class="row align-items-start g-4">
+
+                        <!-- Imagen editable a la izquierda -->
+                        <div class="col-lg-4 text-center my-4">
+                            <img class="img-fluid oe_image oe_editable"
+                                data-oe-type="image"
+                                data-oe-expression="snippet_custom_img"
+                                src="/web/static/img/placeholder.png"
+                                style="max-width:220px;" />
                         </div>
+
+                        <!-- Carrusel a la derecha -->
+                        <div class="col-lg-8">
+                            <div class="dynamic_snippet_template">
+                                <t t-out="0"/>
+                            </div>
+                        </div>
+
                     </div>
 
-                </div>
-            </t>
+                </t>
 
-            <!-- Para todos los demás templates: dejar igual -->
-            <t t-else="">
-                <div class="dynamic_snippet_template">
-                    <t t-out="0"/>
-                </div>
-            </t>
+                <t t-else="">
+                    <div class="dynamic_snippet_template">
+                        <t t-out="0"/>
+                    </div>
+                </t>
 
-        </xpath>
+            </xpath>
 
-    </template>
+        </template>
+ 
+
 
 
 
