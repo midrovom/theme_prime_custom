@@ -2,26 +2,26 @@
 <odoo>
 
     <template id="template_header_style_4" inherit_id="theme_prime.template_header_style_4">
-        <!-- Barra de búsqueda -->
         <xpath expr="//t[@t-call='website.website_search_box_input']" position="inside">
             <t t-set="_classes" t-valuef="position-relative"/>
             <t t-set="_input_classes" t-valuef="rounded-pill"/>
             <t t-set="_submit_classes" t-valuef="btn-search-custom position-absolute end-0 top-0 rounded-pill"/>
         </xpath>
 
-        <!-- Submenú: clases personalizadas -->
         <xpath expr="//t[@t-call='website.submenu']" position="inside">
             <t t-set="item_class" t-value="'nav-item flex-grow-1 text-center nav-item-short-border'"/>
         </xpath>
 
         <!-- Inyectamos el icono en cada item del menú -->
-        <xpath expr="//a/span/span" position="before">
-            <t t-if="submenu.icon_image">
-                <img t-att-src="'data:image/png;base64,%s' % submenu.icon_image.decode()"
-                     alt="icono"
-                     class="me-2"
-                     style="width:20px; height:20px;"/>
-            </t>
+        <xpath expr="//t[@t-call='website.submenu']" position="after">
+            <xpath expr="//a/span" position="before">
+                <t t-if="submenu.icon_image">
+                    <img t-att-src="'data:image/png;base64,%s' % submenu.icon_image.decode()"
+                         alt="icono"
+                         class="me-2"
+                         style="width:20px; height:20px;"/>
+                </t>
+            </xpath>
         </xpath>
         
         <!-- Bloque de login y carrito -->
@@ -84,6 +84,7 @@
     </template>
     
 </odoo>
+
 
 <!-- <?xml version="1.0" encoding="utf-8"?>
 <odoo>
