@@ -16,7 +16,9 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='sequence']" position="after">
                 <div class="o_row">
-                    <field name="icon_image" widget="image" class="oe_avatar" options="{'size': (64, 64)}"/>
+                    <label for="icon_image" string="Icono del menú"/>
+                    <field name="icon_image" widget="image" class="oe_avatar"
+                           options="{'size': (48, 48)}"/>
                 </div>
             </xpath>
         </field>
