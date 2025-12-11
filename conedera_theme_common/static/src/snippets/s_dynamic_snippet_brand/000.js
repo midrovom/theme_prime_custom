@@ -7,16 +7,15 @@ console.log("%c[DynamicSnippetProductsBrand] Archivo cargado", "color: green; fo
 
 const DynamicSnippetProductsBrand = DynamicSnippet.extend({
 
-    selector: ".s_dynamic_snippet_products",  
+    selector: ".s_dynamic_snippet_products",
 
-    /**
-     * DOMINIO FINAL DE PRODUCTOS
-     */
-    _getSearchDomain: function () {
+    _getSearchDomain() {
         console.log("%c[DynamicSnippetProductsBrand] _getSearchDomain ejecutado", "color: orange");
 
         const domain = this._super(...arguments);
         console.log("[DynamicSnippetProductsBrand] Dominio original:", domain);
+
+        console.log("OPTIONS COMPLETAS:", this.options);
 
         const brandDomain = this._getBrandSearchDomain();
         console.log("[DynamicSnippetProductsBrand] Dominio marca:", brandDomain);
@@ -27,21 +26,20 @@ const DynamicSnippetProductsBrand = DynamicSnippet.extend({
         return domain;
     },
 
-    /**
-     * FILTRAR POR MARCA
-     */
     _getBrandSearchDomain() {
         console.log("%c[DynamicSnippetProductsBrand] _getBrandSearchDomain()", "color: purple");
 
-        const brandId = this.options.productBrandId;
-        console.log("[DynamicSnippetProductsBrand] brandId:", brandId);
+        const brandId = this.options["product-brand-id"];
+        console.log("[DynamicSnippetProductsBrand] brandId REAL:", brandId);
 
-        if (!brandId || brandId === "all") return [];
+        if (!brandId || brandId === "all") {
+            console.log("[DynamicSnippetProductsBrand] Marca = all → Sin filtro");
+            return [];
+        }
 
         const idInt = parseInt(brandId);
-
         return [
-            ["attribute_line_ids.value_ids", "=", idInt]
+            ["attribute_line_ids.value_ids", "in", [idInt]]
         ];
     },
 });
