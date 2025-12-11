@@ -7,19 +7,4 @@
             </t>
         </xpath>
     </template>
-
-    <!-- Registro del snippet de marcas -->
-    <!-- <template id="snippets" inherit_id="website.snippets" name="e-commerce snippets">
-        <xpath expr="//t[@id='installed_snippets_hook']" position="after">
-            <t snippet-group="brand" t-snippet="website.s_snippet_group" string="Marcas"
-                t-thumbnail="/website/static/src/img/snippets_thumbs/s_dynamic_products.svg"/>
-        </xpath>
-
-        <xpath expr="//snippets[@id='snippet_structure']" position="inside">
-            <t id="sale_brand_hook" />
-        </xpath>
-        <xpath expr="//t[@id='sale_brand_hook']" position="replace">
-            <t t-snippet="conedera_theme_common.s_dynamic_snippet_brand" string="Marcas" group="brand"/>
-        </xpath>
-    </template> -->
 </odoo>
