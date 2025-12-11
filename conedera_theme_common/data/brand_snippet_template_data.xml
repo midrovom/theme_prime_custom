@@ -25,42 +25,45 @@
 
     <template id="dynamic_filter_template_product_product_style_2" name="Productos por Marca">
 
-        <div class="o_dynamic_snippet_top_content">
-            <div class="my-4 text-center">
-                <img class="img-fluid oe_image oe_editable"
-                    data-oe-type="image"
-                    data-oe-expression="snippet_custom_img"
-                    src="/web/static/img/placeholder.png"
-                    style="max-width:220px;" />
-            </div>
+        <!-- Imagen editable fuera del grupo -->
+        <div class="my-4 text-center">
+            <img class="img-fluid oe_image oe_editable"
+                data-oe-type="image"
+                data-oe-expression="snippet_custom_img"
+                src="/web/static/img/placeholder.png"
+                style="max-width:220px;" />
         </div>
 
-        <t t-foreach="records" t-as="data"
+        <!-- Grupo de contenido del snippet -->
+        <div class="o_dynamic_snippet_top_content">
+            <t t-foreach="records" t-as="data"
             data-thumb="/website_sale/static/src/img/snippets_options/product_borderless_1.svg">
 
-            <t t-set="record" t-value="data['_record']"/>
+                <t t-set="record" t-value="data['_record']"/>
 
-            <div class="o_carousel_product_card bg-transparent w-100 card border-0">
+                <div class="o_carousel_product_card bg-transparent w-100 card border-0">
 
-                <div class="overflow-hidden rounded text-center">
-                    <a t-att-href="data['url']">
-                        <img class="card-img-top o_img_product_square o_img_product_cover h-auto"
-                            loading="lazy"
-                            t-att-src="data['image_512']"
-                            t-att-alt="record.name"/>
-                    </a>
+                    <div class="overflow-hidden rounded text-center">
+                        <a t-att-href="data['url']">
+                            <img class="card-img-top o_img_product_square o_img_product_cover h-auto"
+                                loading="lazy"
+                                t-att-src="data['image_512']"
+                                t-att-alt="record.name"/>
+                        </a>
+                    </div>
+
+                    <div class="o_carousel_product_card_body d-flex flex-column align-items-center p-3">
+                        <div class="text-muted small" t-esc="data.get('brand')"/>
+                        <div class="h6 card-title" t-esc="data.get('display_name')"/>
+                    </div>
+
                 </div>
 
-                <div class="o_carousel_product_card_body d-flex flex-column align-items-center p-3">
-                    <div class="text-muted small" t-esc="data.get('brand')"/>
-                    <div class="h6 card-title" t-esc="data.get('display_name')"/>
-                </div>
-
-            </div>
-
-        </t>
+            </t>
+        </div>
 
     </template>
+
 
 
 
