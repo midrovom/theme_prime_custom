@@ -24,4 +24,16 @@
         </field>
     </record>
 
+    <!-- Insertar icono de submenu -->
+    <template id="website_submenu_with_icon" inherit_id="website.submenu">
+        <xpath expr="//span[@data-oe-field='name']" position="before">
+            <t t-if="submenu.icon_image">
+                <img t-att-src="'data:image/png;base64,%s' % submenu.icon_image.decode()"
+                     alt="icono"
+                     class="me-2"
+                     style="width:20px; height:20px;"/>
+            </t>
+        </xpath>
+    </template>
+
 </odoo>
