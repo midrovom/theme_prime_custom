@@ -1,21 +1,16 @@
 /** @odoo-module **/
 
 import publicWidget from "@web/legacy/js/public/public_widget";
-import DynamicSnippet from "@website/snippets/s_dynamic_snippet/000";
+import DynamicSnippetProducts from "@website/snippets/s_dynamic_snippet_products/000";
 
 console.log("%c[DynamicSnippetProductsBrand] Archivo cargado", "color: green; font-weight: bold;");
 
-const DynamicSnippetProductsBrand = DynamicSnippet.extend({
-
-    selector: ".s_dynamic_snippet_products",
+const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
 
     _getSearchDomain() {
         console.log("%c[DynamicSnippetProductsBrand] _getSearchDomain ejecutado", "color: orange");
 
         const domain = this._super(...arguments);
-        console.log("[DynamicSnippetProductsBrand] Dominio original:", domain);
-
-        console.log("OPTIONS COMPLETAS:", this.options);
 
         const brandDomain = this._getBrandSearchDomain();
         console.log("[DynamicSnippetProductsBrand] Dominio marca:", brandDomain);
@@ -29,21 +24,23 @@ const DynamicSnippetProductsBrand = DynamicSnippet.extend({
     _getBrandSearchDomain() {
         console.log("%c[DynamicSnippetProductsBrand] _getBrandSearchDomain()", "color: purple");
 
-        const brandId = this.options["product-brand-id"];
-        console.log("[DynamicSnippetProductsBrand] brandId REAL:", brandId);
+        // LEEMOS EL ATRIBUTO IGUAL QUE LA CATEGORÍA
+        let brandId = this.$el.get(0).dataset.productBrandId;
 
-        if (!brandId || brandId === "all") {
-            console.log("[DynamicSnippetProductsBrand] Marca = all → Sin filtro");
+        console.log("[DynamicSnippetProductsBrand] brandId:", brandId);
+
+        if (!brandId || brandId === 'all') {
             return [];
         }
 
-        const idInt = parseInt(brandId);
+        brandId = parseInt(brandId);
+
         return [
-            ["attribute_line_ids.value_ids", "in", [idInt]]
+            ["attribute_line_ids.value_ids", "in", [brandId]]
         ];
     },
 });
 
-publicWidget.registry.DynamicSnippetProductsBrand = DynamicSnippetProductsBrand;
+publicWidget.registry.dynamic_snippet_products_brand = DynamicSnippetProductsBrand;
 
 export default DynamicSnippetProductsBrand;
