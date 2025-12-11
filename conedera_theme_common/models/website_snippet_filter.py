@@ -9,38 +9,48 @@ class WebsiteSnippetFilter(models.Model):
     def _filter_records_to_values(self, records, is_sample=False):
         res = super()._filter_records_to_values(records, is_sample)
 
-        if self.model_name == 'product.product':
+        if self.model_name == "product.product":
             for data in res:
-                product = data['_record']
-                data['url'] = product.website_url or "/shop/product/%s" % product.id
+                product = data["_record"]
 
-                # Extraer la marca desde atributos
+                # URL del producto
+                data["url"] = product.website_url or f"/shop/product/{product.id}"
+
                 brand_name = ""
                 brand_image = False
 
                 tmpl = product.product_tmpl_id
-                for val in tmpl.attribute_line_ids.mapped('value_ids'):
+
+                for val in tmpl.attribute_line_ids.mapped("value_ids"):
                     if val.attribute_id.dr_is_brand:
                         brand_name = val.name
-                        brand_image = val.dr_image  
+                        brand_image = val.dr_image  # imagen binaria del atributo
                         break
 
-                data['brand'] = brand_name
-                data['brand_image'] = brand_image   
+                data["brand"] = brand_name
+                data["brand_image"] = brand_image
 
-                if not data.get('image_512'):
-                    data['image_512'] = "/web/static/img/placeholder.png"
+                # Imagen del producto
+                if not data.get("image_512"):
+                    data["image_512"] = "/web/static/img/placeholder.png"
 
         return res
 
     @api.model
     def _get_products_by_brand(self, mode=None, **kwargs):
-        _logger.info(">>> Entrando a _get_products_by_brand con kwargs=%s y context=%s", kwargs, self.env.context)
+        _logger.info(
+            ">>> Entrando a _get_products_by_brand con kwargs=%s y context=%s",
+            kwargs,
+            self.env.context,
+        )
 
-        dynamic_filter = self.env.context.get('dynamic_filter')
-        website = self.env['website'].get_current_website()
+        dynamic_filter = self.env.context.get("dynamic_filter")
+        website = self.env["website"].get_current_website()
 
-        brand_id = kwargs.get("product_brand_id") or self.env.context.get("product_brand_id")
+        brand_id = (
+            kwargs.get("product_brand_id")
+            or self.env.context.get("product_brand_id")
+        )
 
         if not brand_id or brand_id == "all":
             _logger.info(">>> No se recibió brand_id válido, devolviendo lista vacía")
@@ -52,19 +62,29 @@ class WebsiteSnippetFilter(models.Model):
             _logger.warning(">>> Error convirtiendo brand_id a int: %s", e)
             return []
 
+        # -----------------------------
+        #  DOMINIO POR MARCA
+        # -----------------------------
         domain = [
-            ('website_published', '=', True),
-            ('website_id', 'in', [False, website.id]),
-            ('attribute_line_ids.value_ids', 'in', [brand_id]),
+            ("website_published", "=", True),
+            ("website_id", "in", [False, website.id]),
+            ("attribute_line_ids.value_ids", "in", [brand_id]),
         ]
 
-        products_tmpl = self.env['product.template'].sudo().search(domain, order="sequence ASC, name ASC")
-        products = products_tmpl.mapped('product_variant_ids')
+        products_tmpl = (
+            self.env["product.template"]
+            .sudo()
+            .search(domain, order="sequence ASC, name ASC")
+        )
 
-        values = dynamic_filter.with_context()._filter_records_to_values(products, is_sample=False)
+        products = products_tmpl.mapped("product_variant_ids")
+
+        # Aplicar la conversión a valores
+        values = dynamic_filter.with_context()._filter_records_to_values(
+            products, is_sample=False
+        )
+
         return values
-
-
 
 # from odoo import api, models
 # import logging
