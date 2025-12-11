@@ -7,4 +7,16 @@
             </a>
         </xpath>
     </template>
+
+    <record id="website_menus_form_view_inherit" model="ir.ui.view">
+        <field name="name">website.menu.form.inherit.icon</field>
+        <field name="model">website.menu</field>
+        <field name="inherit_id" ref="website.website_menus_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group/field[@name='url']" position="after">
+                <field name="icon_image" widget="image" class="oe_avatar"/>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>
