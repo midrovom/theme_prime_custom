@@ -15,10 +15,11 @@
         <field name="inherit_id" ref="website.website_menus_form_view"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='sequence']" position="after">
-                <field name="icon_image" widget="image" class="oe_avatar"/>
+                <div class="o_row">
+                    <field name="icon_image" widget="image" class="oe_avatar" options="{'size': (64, 64)}"/>
+                </div>
             </xpath>
         </field>
     </record>
-
 
 </odoo>
