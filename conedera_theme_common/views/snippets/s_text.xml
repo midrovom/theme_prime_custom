@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo> -->
+<odoo>
     <!-- Select para campo de texto -->
     <template id="s_text_block_1" name="Product Description Toggle">
         <div class="s_text_block o_mail_snippet_general pt24 pb24" style="padding-left: 15px; padding-right: 15px;">
