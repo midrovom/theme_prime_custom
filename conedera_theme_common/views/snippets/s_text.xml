@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Snippet Accordion Descripción -->
-    <template id="snippet_product_description" name="Accordion Descripción">
+    <template id="s_text_block_1" name="Accordion Descripción">
         <section class="s_text_block pt40 pb40 o_select_text_snippet">
             <div class="container s_allow_columns">
                 <div class="accordion" id="accordionProducto">
