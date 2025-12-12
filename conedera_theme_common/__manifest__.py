@@ -24,6 +24,7 @@
         'views/snippets/s_dynamic_snippet_brands.xml',
         'views/snippets/snippets.xml',
         'views/snippets/s_key_images_custom.xml',
+        'views/snippets/s_text.xml',
         
     ],
     'auto_install': False,
