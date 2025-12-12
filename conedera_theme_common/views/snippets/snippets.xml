@@ -5,6 +5,10 @@
             <t t-snippet="conedera_theme_common.s_key_images_2" string="Key Images Custom" group="columns">
                 <keywords>columns, gallery, pictures, photos, media, showcase, portfolio, custom</keywords>
             </t>
+
+            <t t-snippet="conedera_theme_common.s_product_description_toggle" string="Text Custom" group="columns">
+                <keywords>text</keywords>
+            </t>
         </xpath>
     </template>
 </odoo>
