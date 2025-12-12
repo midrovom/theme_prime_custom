@@ -1,15 +1,25 @@
 /** @odoo-module **/
 
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".o_desc_product_snippet .desc-header")
-        .forEach(header => {
-            header.addEventListener("click", () => {
-                const container = header.closest(".o_desc_product_snippet");
-                const body = container.querySelector(".desc-body");
-                const icon = container.querySelector(".desc-icon");
+import publicWidget from "@web/legacy/js/public/public_widget";
 
-                body.classList.toggle("d-none");
-                icon.style.transform = body.classList.contains("d-none") ? "rotate(0deg)" : "rotate(180deg)";
-            });
-        });
+publicWidget.registry.DescriptionAccordion = publicWidget.Widget.extend({
+    selector: '.o_desc_product_snippet',
+
+    events: {
+        'click .desc-header': '_toggleAccordion',
+    },
+
+    _toggleAccordion: function (ev) {
+        const container = ev.currentTarget.closest(".o_desc_product_snippet");
+        const body = container.querySelector(".desc-body");
+        const icon = container.querySelector(".desc-icon");
+
+        body.classList.toggle("d-none");
+
+        if (body.classList.contains("d-none")) {
+            icon.style.transform = "rotate(0deg)";
+        } else {
+            icon.style.transform = "rotate(180deg)";
+        }
+    },
 });
