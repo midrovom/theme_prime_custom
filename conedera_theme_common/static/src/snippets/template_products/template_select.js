@@ -1,25 +1,29 @@
 /** @odoo-module **/
 
-import publicWidget from "@web/legacy/js/public/public_widget";
+import publicWidget from 'web.public.widget'; // path común
+// Si tu versión no reconoce el import, puedes probar: import publicWidget from "@web/legacy/js/public/public_widget";
 
 publicWidget.registry.DescriptionAccordion = publicWidget.Widget.extend({
     selector: '.o_desc_product_snippet',
-
     events: {
-        'click .desc-header': '_toggleAccordion',
+        'click .desc-header': '_onToggle',
     },
 
-    _toggleAccordion: function (ev) {
-        const container = ev.currentTarget.closest(".o_desc_product_snippet");
-        const body = container.querySelector(".desc-body");
-        const icon = container.querySelector(".desc-icon");
+    start: function () {
+        this.$el.removeClass('open');
+        this._setCollapsed(true);
+        return this._super.apply(this, arguments);
+    },
 
-        body.classList.toggle("d-none");
+    _onToggle: function (ev) {
+        ev.preventDefault();
+        const $container = this.$el;
+        const isOpen = $container.hasClass('open');
 
-        if (body.classList.contains("d-none")) {
-            icon.style.transform = "rotate(0deg)";
-        } else {
-            icon.style.transform = "rotate(180deg)";
-        }
+        // alternar clase open
+        $container.toggleClass('open', !isOpen);
+
+        // Forzar recalculo si necesitas (no estrictamente obligatorio)
+        this._setCollapsed(isOpen);
     },
 });
