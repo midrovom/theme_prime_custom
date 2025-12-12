@@ -9,7 +9,7 @@
 
         <!--Registro de Texblog-->
         <xpath expr="//t[@t-snippet='website.s_faq_collapse']" position="after">
-            <t t-snippet="conedera_theme_common.s_text_block_custom" string="Text Custom" group="text">
+            <t t-snippet="conedera_theme_common.s_text_block_1" string="Text Custom" group="text">
                 <keywords>content, paragraph, article, body, description, information</keywords>
             </t>
         </xpath>
