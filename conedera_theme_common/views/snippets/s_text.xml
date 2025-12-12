@@ -1,28 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="s_text_block_register" name="register" inherit_id="website.snippets">
-        <xpath expr="//t[@t-snippet='website.s_text_block']" position="after">
-            <t t-snippet="conedera_theme_common.s_text_block_custom" string="Texblog" group="text">
-                <keywords>content, paragraph, article, body, description, information</keywords>
-            </t>
-        </xpath>
-    </template>
-
     <!-- Select para campo de texto -->
     <template id="s_text_block_custom" name="Descripcion del producto">
         <section class="s_text_block pt40 pb40">
             <div class="s_text_block o_mail_snippet_general pt24 pb24" style="padding-left: 15px; padding-right: 15px;">
                 <div class="container s_allow_columns">
                     <label class="fw-bold mb-2">Descripción del producto</label>
-                        <select id="toggleDescription" class="form-select w-auto mb-3">
-                            <option value="hide" selected="selected">Ocultar</option>
-                            <option value="show">Mostrar</option>
-                        </select>
-                        <div id="descriptionBox" class="description-box" style="display:none;">
-                        <textarea class="form-control description-textarea" rows="4" placeholder="Escriba la descripción aquí..."></textarea>
+                    
+                    <!-- Botón para mostrar/ocultar -->
+                    <button type="button" class="btn btn-primary mb-3" onclick="document.getElementById('descriptionBox').classList.toggle('d-none')">
+                        Mostrar / Ocultar
+                    </button>
+                    
+                    <!-- Caja de texto inicialmente oculta -->
+                    <div id="descriptionBox" class="description-box d-none">
+                        <textarea class="form-control description-textarea" rows="4"
+                                placeholder="Escriba la descripción aquí..."></textarea>
                     </div>
                 </div>
             </div>
         </section>
     </template>
+
 </odoo>
