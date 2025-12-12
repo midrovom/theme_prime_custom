@@ -13,9 +13,8 @@
                         </button>
                         <div t-attf-id="myCollapseTab{{uniq}}" class="accordion-collapse collapse" data-bs-parent="#myCollapse" role="region" t-attf-aria-labelledby="accordion-button{{uniq}}">
                             <div class="accordion-body">
-                                <p>
-                                    Accordion content goes here. You can edit this text directly from the website editor.
-                                </p>
+                                <!-- Aquí mostramos la descripción eCommerce del producto -->
+                                <t t-raw="product.description_ecommerce"/>
                             </div>
                         </div>
                     </div>
