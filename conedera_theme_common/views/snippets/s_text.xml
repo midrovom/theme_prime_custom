@@ -1,20 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="s_text_block_1" name="Accordion Description">
-        <section class="s_accordion pt40 pb40 o_cc">
-            <div class="container s_allow_columns">
-                <div class="accordion" id="productAccordion">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingOne">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                                Descripción del producto
-                            </button>
-                        </h2>
-                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#productAccordion">
+    <template id="s_accordion_single" name="Accordion (Single)">
+        <section class="s_text_block">
+            <t t-set="uniq" t-value="datetime.datetime.now().microsecond"/>
+            <div class="s_accordion" data-name="Accordion">
+                <div id="myCollapse" t-attf-class="{{extra_classes}} accordion">
+                    <div class="accordion-item position-relative z-1" data-name="Accordion Item">
+                        <button type="button"
+                                t-attf-id="accordion-button{{uniq}}"
+                                class="accordion-header accordion-button justify-content-between gap-2 bg-transparent h6-fs fw-bold text-decoration-none text-reset transition-none"
+                                data-bs-toggle="collapse"
+                                t-attf-data-bs-target="#myCollapseTab{{uniq}}"
+                                t-attf-aria-controls="myCollapseTab{{uniq}}"
+                                aria-expanded="true">
+                            <span class="flex-grow-1">
+                                Accordion title
+                            </span>
+                        </button>
+                        <div t-attf-id="myCollapseTab{{uniq}}"
+                            class="accordion-collapse collapse show"
+                            data-bs-parent="#myCollapse"
+                            role="region"
+                            t-attf-aria-labelledby="accordion-button{{uniq}}">
                             <div class="accordion-body">
                                 <p>
-                                    Aquí puedes escribir la descripción del producto.
+                                    Accordion content goes here. You can edit this text directly from the website editor.
                                 </p>
                             </div>
                         </div>
@@ -24,7 +34,6 @@
         </section>
     </template>
 </odoo>
-
 
 <!-- <?xml version="1.0" encoding="utf-8"?>
 <odoo>
