@@ -1,23 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Select para campo de texto -->
-    <template id="s_text_block_1" name="Select con textarea">
-        <section class="s_text_block pt40 pb40 o_select_text_snippet">
-            <div class="container s_allow_columns">
-                <div class="border p-3">
-                    <label class="fw-bold m-0 text-orange">Seleccione una opción</label>
-                    <select class="form-control form-control-lg mt-2 select-trigger">
-                        <option value="">-- Seleccione --</option>
-                        <option value="show">Mostrar cuadro de texto</option>
-                        <option value="hide">Ocultar cuadro de texto</option>
-                    </select>
+    <template id="s_text_block_1" name="Accordion Single">
+        <t t-set="uniq" t-value="datetime.datetime.now().microsecond"/>
+        <div t-attf-class="s_accordion" data-name="Accordion">
+            <div id="myCollapse" t-attf-class="{{extra_classes}} accordion">
+                
+                <!-- Único item del acordeón -->
+                <div class="accordion-item position-relative z-1" data-name="Accordion Item">
+                    <button type="button"
+                            t-attf-id="accordion-button{{uniq}}_1"
+                            class="accordion-header accordion-button justify-content-between gap-2 bg-transparent h6-fs fw-bold text-decoration-none text-reset transition-none"
+                            t-attf-data-bs-target="#myCollapseTab{{uniq}}_1"
+                            t-attf-aria-controls="myCollapseTab{{uniq}}_1"
+                            data-bs-toggle="collapse"
+                            aria-expanded="true">
+                        <span class="flex-grow-1">What services does your company offer ?</span>
+                    </button>
+                    
+                    <div t-attf-id="myCollapseTab{{uniq}}_1"
+                        class="accordion-collapse collapse show"
+                        data-bs-parent="#myCollapse"
+                        role="region"
+                        t-attf-aria-labelledby="accordion-button{{uniq}}_1">
+                        <div class="accordion-body">
+                            <p>
+                                Our company specializes in consulting, product development, and customer support.
+                                We tailor our services to fit the unique needs of businesses across various sectors,
+                                helping them grow and succeed in a competitive market.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <div class="desc-body border p-3 mt-3 d-none">
-                    <textarea class="form-control" rows="5"
-                            placeholder="Escriba la descripción aquí..."></textarea>
-                </div>
+                
             </div>
-        </section>
+        </div>
     </template>
 
 </odoo>
