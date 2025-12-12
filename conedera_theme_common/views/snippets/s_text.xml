@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Select para campo de texto -->
-    <template id="s_select_textarea" name="Select con textarea">
+    <template id="s_text_block_1" name="Select con textarea">
         <section class="s_text_block pt40 pb40 o_select_text_snippet">
             <div class="container s_allow_columns">
                 <div class="border p-3">
