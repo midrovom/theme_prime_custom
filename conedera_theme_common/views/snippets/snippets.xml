@@ -7,10 +7,10 @@
             </t>
         </xpath>
 
-        <!-- <xpath expr="//t[@t-snippet='website.s_faq_collapse']" position="after">
+        <xpath expr="//t[@t-snippet='website.s_faq_collapse']" position="after">
             <t t-snippet="conedera_theme_common.s_text_block_custom" string="Text Custom" group="text">
                 <keywords>content, paragraph, article, body, description, information</keywords>
             </t>
-        </xpath> -->
+        </xpath>
     </template>
 </odoo>
