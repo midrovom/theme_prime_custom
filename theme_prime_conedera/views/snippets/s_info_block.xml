@@ -2,7 +2,7 @@
 <odoo>
     <template id="s_register_snippet_block" inherit_id="theme_prime.snippets" name="Snippet Block - Registry">
         <xpath expr="//t[@t-snippet='theme_prime.s_info_block_8']" position="after">
-            <t t-snippet="theme_prime_image.s_text_block_9" string="Text Block" group="theme_prime_info_block">
+            <t t-snippet="theme_prime_conedera.s_text_block_9" string="Text Block" group="theme_prime_info_block">
                 <keywords>call to action, trending, cta</keywords>
             </t>
         </xpath>
