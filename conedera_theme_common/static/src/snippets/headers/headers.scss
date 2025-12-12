@@ -1,10 +1,19 @@
-/* Aplica a los enlaces del menú */
-#wrapwrap header .navbar-nav > li > a {
-  display: flex;              /* coloca icono y texto en línea */
-  align-items: center;        /* centra verticalmente */
+// /* Aplica a los enlaces del menú */
+// #wrapwrap header .navbar-nav > li > a {
+//   display: flex;              /* coloca icono y texto en línea */
+//   align-items: center;        /* centra verticalmente */
+// }
+
+// #wrapwrap header .navbar-nav > li > a img.tp-menu-icon {
+//   order: -1;                  /* mueve el icono antes del texto */
+//   margin-right: 6px;          /* separa icono del texto */
+// }
+
+.dropdown-menu .dropdown-item {
+    border-bottom: 1px solid #ccc; 
+    padding: 8px 12px;             
 }
 
-#wrapwrap header .navbar-nav > li > a img.tp-menu-icon {
-  order: -1;                  /* mueve el icono antes del texto */
-  margin-right: 6px;          /* separa icono del texto */
+.dropdown-menu .dropdown-item:last-child {
+    border-bottom: none; 
 }
