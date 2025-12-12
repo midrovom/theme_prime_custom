@@ -1,24 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Snippet Accordion Descripción -->
-    <template id="s_text_block_1" name="Accordion Descripción">
-        <section class="s_text_block pt40 pb40 o_select_text_snippet">
+    <template id="s_text_block_1" name="Accordion Description">
+        <section class="s_accordion pt40 pb40 o_cc">
             <div class="container s_allow_columns">
-                <div class="accordion" id="accordionProducto">
+                <div class="accordion" id="accordionBlock">
                     <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingDesc">
-                            <button class="accordion-button collapsed" type="button"
-                                    data-bs-toggle="collapse" data-bs-target="#collapseDesc"
-                                    aria-expanded="false" aria-controls="collapseDesc">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#collapseOne"
+                                    aria-expanded="false"
+                                    aria-controls="collapseOne">
                                 Descripción del producto
                             </button>
                         </h2>
-                        <div id="collapseDesc" class="accordion-collapse collapse"
-                             aria-labelledby="headingDesc" data-bs-parent="#accordionProducto">
+                        <div id="collapseOne"
+                            class="accordion-collapse collapse"
+                            aria-labelledby="headingOne"
+                            data-bs-parent="#accordionBlock">
                             <div class="accordion-body">
                                 <p>
-                                    Aquí puedes escribir la descripción del producto.  
-                                    Ejemplo: "Este teléfono cuenta con pantalla de 6.6'', batería de 5000mAh y Android 13."
+                                    Aquí puedes escribir la descripción del producto.
                                 </p>
                             </div>
                         </div>
@@ -27,6 +31,7 @@
             </div>
         </section>
     </template>
+
 </odoo>
 
 
