@@ -1,0 +1,12 @@
+/* Contenedor del cuadro */
+.description-box {
+    border: 1px solid #ccc;   /* borde gris claro */
+    padding: 10px;
+    border-radius: 4px;
+}
+
+/* Textarea con borde gris */
+.description-textarea {
+    border: 1px solid #ccc;   /* borde gris */
+    resize: vertical;         /* permite ajustar altura */
+}
