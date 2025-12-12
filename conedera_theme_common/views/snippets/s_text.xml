@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Snippet Accordion Descripción -->
-    <template id="s_text_block_1" name="Simple Accordion">
-        <section class="o_snippet s_simple_accordion pt40 pb40 o_cc">
+    <template id="s_text_block_1" name="Accordion Description">
+        <section class="s_accordion pt40 pb40 o_cc">
             <div class="container s_allow_columns">
-                <div class="sa_accordion">
-                    <div class="sa_item">
-                        <div class="sa_header">
-                            <h4>Descripción del producto</h4>
-                            <span class="sa_icon">+</span>
-                        </div>
-                        <div class="sa_body">
-                            <p>
-                                Aquí puedes escribir la descripción del producto.
-                            </p>
+                <div class="accordion" id="productAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                Descripción del producto
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#productAccordion">
+                            <div class="accordion-body">
+                                <p>
+                                    Aquí puedes escribir la descripción del producto.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
     </template>
-
 </odoo>
-
-
 
 
 <!-- <?xml version="1.0" encoding="utf-8"?>
