@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="product_inherit_remove_description" inherit_id="website_sale.product" name="Product Inherit Remove Description">
-        <xpath expr="//div[@id='product_full_description']" position="replace"/>
-        <xpath expr="//div[@id='oe_structure_website_sale_product_2']" position="replace"/>
+        <xpath expr="//div[@id='product_details']" position="inside">
+        <div class="oe_structure oe_empty" id="oe_structure_product_detail_snippet"
+             t-att-data-editor-message="editor_message"/>
+        </xpath>
     </template>
 </odoo>
+
+
+
 
