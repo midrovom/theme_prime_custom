@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Select para campo de texto -->
-    <template id="s_text_block_custom" name="Descripcion del producto">
-        <section class="s_text_block pt40 pb40 o_desc_product_snippet">
+    <template id="s_select_textarea" name="Select con textarea">
+        <section class="s_text_block pt40 pb40 o_select_text_snippet">
             <div class="container s_allow_columns">
-                <div class="desc-header d-flex justify-content-between align-items-center border p-3">
-                    <label class="fw-bold m-0 text-orange">Descripción del producto</label>
-                    <span class="desc-icon" aria-hidden="true">▾</span>
+                <div class="border p-3">
+                    <label class="fw-bold m-0 text-orange">Seleccione una opción</label>
+                    <select class="form-control form-control-lg mt-2 select-trigger">
+                        <option value="">-- Seleccione --</option>
+                        <option value="show">Mostrar cuadro de texto</option>
+                        <option value="hide">Ocultar cuadro de texto</option>
+                    </select>
                 </div>
-                <div class="desc-body border p-3 mt-1">
-                    <div class="desc-body-inner">
-                        <textarea class="form-control" rows="5"
-                                placeholder="Escriba la descripción aquí..."></textarea>
-                    </div>
+                <div class="desc-body border p-3 mt-3 d-none">
+                    <textarea class="form-control" rows="5"
+                            placeholder="Escriba la descripción aquí..."></textarea>
                 </div>
             </div>
         </section>
     </template>
-
 
 </odoo>
