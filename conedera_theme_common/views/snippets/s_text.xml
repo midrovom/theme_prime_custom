@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Select para campo de texto -->
+    <!-- Snippet Accordion Descripción -->
     <template id="s_text_block_1" name="Accordion Descripción">
-        <section class="s_text_block pt40 pb40 o_select_text_snippet">
+        <section class="s_text_block pt40 pb40 o_select_text_snippet" data-snippet="s_text_block_1" data-name="Accordion Descripción">
             <div class="container s_allow_columns">
                 <div class="accordion" id="accordionProducto">
                     <div class="accordion-item">
@@ -14,7 +14,7 @@
                             </button>
                         </h2>
                         <div id="collapseDesc" class="accordion-collapse collapse"
-                            aria-labelledby="headingDesc" data-bs-parent="#accordionProducto">
+                             aria-labelledby="headingDesc" data-bs-parent="#accordionProducto">
                             <div class="accordion-body">
                                 <p>
                                     Aquí puedes escribir la descripción del producto.  
@@ -27,6 +27,4 @@
             </div>
         </section>
     </template>
-
-
 </odoo>
