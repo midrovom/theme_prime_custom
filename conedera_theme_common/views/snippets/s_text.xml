@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <template id="s_text_block_register" name="register" inherit_id="website.snippets">
+        <xpath expr="//t[@t-snippet='website.s_title']" position="after">
+            <t t-snippet="conedera_theme_common.s_text_block_custom" string="Texblog" group="text">
+                <keywords>heading, h1, headline, header, main, top, caption, introductory, principal, key</keywords>
+            </t>
+        </xpath>
+    </template>
+
     <!-- Select para campo de texto -->
     <template id="s_text_block_custom" name="Product Description Toggle">
         <div class="s_text_block o_mail_snippet_general pt24 pb24" style="padding-left: 15px; padding-right: 15px;">

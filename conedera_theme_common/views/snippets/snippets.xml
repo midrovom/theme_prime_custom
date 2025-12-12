@@ -8,10 +8,10 @@
         </xpath>
 
         <!--Registro de Texblog-->
-        <xpath expr="//t[@t-snippet='website.s_title']" position="after">
+        <!-- <xpath expr="//t[@t-snippet='website.s_title']" position="after">
             <t t-snippet="conedera_theme_common.s_text_block_custom" string="Texblog" group="text">
                     <keywords>heading, h1, headline, header, main, top, caption, introductory, principal, key</keywords>
             </t>
-        </xpath>
+        </xpath> -->
     </template>
 </odoo>
