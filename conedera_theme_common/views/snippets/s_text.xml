@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="s_accordion_single" name="Accordion (Single)">
+    <template id="s_text_block_1" name="Accordion (Single)">
         <section class="s_text_block">
             <t t-set="uniq" t-value="datetime.datetime.now().microsecond"/>
             <div class="s_accordion" data-name="Accordion">
