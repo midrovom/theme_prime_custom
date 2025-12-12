@@ -6,23 +6,6 @@
              t-att-data-editor-message="editor_message"/>
         </xpath>
     </template>
-
-    <!-- Select para campo de texto -->
-    <template id="s_product_description_toggle" name="Product Description Toggle">
-        <div class="s_product_description_toggle o_mail_snippet_general pt24 pb24" style="padding-left: 15px; padding-right: 15px;">
-            <div class="container s_allow_columns">
-                <label class="fw-bold mb-2">Descripción del producto</label>
-                    <select id="toggleDescription" class="form-select w-auto mb-3">
-                        <option value="hide" selected="selected">Ocultar</option>
-                        <option value="show">Mostrar</option>
-                    </select>
-                <div id="descriptionBox" class="description-box" style="display:none;">
-                    <textarea class="form-control description-textarea" rows="4" placeholder="Escriba la descripción aquí..."></textarea>
-                </div>
-            </div>
-        </div>
-    </template>
-
 </odoo>
 
 
