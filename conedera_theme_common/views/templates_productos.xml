@@ -1,4 +1,4 @@
-<!-- <?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="product_inherit_remove_description" inherit_id="website_sale.product" name="Product Inherit Remove Description">
         <xpath expr="//div[@id='product_details']" position="inside">
@@ -6,8 +6,4 @@
              t-att-data-editor-message="editor_message"/>
         </xpath>
     </template>
-</odoo> -->
-
-
-
-
+</odoo> 
