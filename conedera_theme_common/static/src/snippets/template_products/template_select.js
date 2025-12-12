@@ -1,18 +1,21 @@
-odoo.define('conedera_theme_common.description_toggle', function (require) {
-    "use strict";
+/** @odoo-module **/
 
-    document.addEventListener("DOMContentLoaded", function() {
-        const select = document.getElementById("toggleDescription");
-        const box = document.getElementById("descriptionBox");
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".o_desc_product_snippet .desc-header")
+        .forEach(function (header) {
+            
+            header.addEventListener("click", function () {
+                const container = header.closest(".o_desc_product_snippet");
+                const body = container.querySelector(".desc-body");
+                const icon = container.querySelector(".desc-icon");
 
-        if (select && box) {
-            select.addEventListener("change", function() {
-                if (this.value === "show") {
-                    box.style.display = "block";
+                body.classList.toggle("d-none");
+
+                if (body.classList.contains("d-none")) {
+                    icon.style.transform = "rotate(0deg)";
                 } else {
-                    box.style.display = "none";
+                    icon.style.transform = "rotate(180deg)";
                 }
             });
-        }
-    });
+        });
 });

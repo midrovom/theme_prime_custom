@@ -1,3 +1,27 @@
+.o_desc_product_snippet {
+
+    .desc-header {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .desc-icon {
+        font-size: 20px;
+        transition: transform 0.3s ease;
+        display: inline-block;
+    }
+
+    .desc-body {
+        transition: all 0.3s ease;
+    }
+
+    /* Rotación cuando está activo */
+    .desc-body:not(.d-none) + .desc-header .desc-icon,
+    .desc-header.active .desc-icon {
+        transform: rotate(180deg);
+    }
+}
+
 /* Contenedor del cuadro */
 .description-box {
     border: 1px solid #ccc;   /* borde gris claro */
