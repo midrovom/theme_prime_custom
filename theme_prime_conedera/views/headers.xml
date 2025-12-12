@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
     <template id="template_header_style_4" inherit_id="theme_prime.template_header_style_4">
         <xpath expr="//t[@t-call='website.website_search_box_input']" position="inside">
             <t t-set="_classes" t-valuef="position-relative"/>
@@ -81,15 +80,12 @@
     </template> -->
 
     <template id="website_submenu_icon_image_inherit" inherit_id="website.submenu" name="Add icon_image to Website Menu">
-        <xpath expr="//a" position="replace">
-            <a t-att-href="submenu.url" t-attf-class="{{ submenu.css_class or '' }}">
-                <t t-if="submenu.icon_image">
-                    <img t-att-src="'/web/image/website.menu/%s/icon_image' % submenu.id"
-                        class="tp-menu-icon me-2"
-                        style="height:18px; width:18px; object-fit:contain;"/>
-                </t>
-                <t t-esc="submenu.name"/>
-            </a>
+        <xpath expr="//a/span" position="before">
+            <t t-if="submenu.icon_image">
+                <img t-att-src="'/web/image/website.menu/%s/icon_image' % submenu.id"
+                    class="tp-menu-icon me-2"
+                    style="height:18px; width:18px; object-fit:contain;"/>
+            </t>
         </xpath>
     </template>
 
