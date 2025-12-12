@@ -1,15 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="products_add_to_cart_notes" inherit_id="website_sale.products_item" name="Add to Cart Notes">
-        <xpath expr="//div[hasclass('o_wsale_product_btn')]" position="after">
-            <div class="form-group mt-2">
-                <label for="extra_notes">Notas adicionales</label>
-                <textarea id="extra_notes"
-                        name="extra_notes"
-                        class="form-control"
-                        rows="3"
-                        placeholder="Escriba sus comentarios aquí..."></textarea>
-            </div>
-        </xpath>
+    <template id="product_inherit_remove_description" inherit_id="product" name="Product Inherit Remove Description">
+        <xpath expr="//div[@id='product_full_description']" position="replace"/>
+        <xpath expr="//div[@id='oe_structure_website_sale_product_2']" position="replace"/>
     </template>
 </odoo>
+
