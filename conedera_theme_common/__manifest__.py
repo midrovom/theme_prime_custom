@@ -25,7 +25,7 @@
         'views/snippets/snippets.xml',
         'views/snippets/s_key_images_custom.xml',
         #'views/templates_productos.xml',
-        #'views/snippets/s_text.xml',
+        'views/snippets/s_text.xml',
 
         
     ],
