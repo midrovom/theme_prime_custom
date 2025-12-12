@@ -23,7 +23,7 @@
         </t>
     </template>
 
-    <template id="dynamic_filter_template_product_product_style_2" name="Productos por Marca">
+    <!-- <template id="dynamic_filter_template_product_product_style_2" name="Productos por Marca">
         <t t-foreach="records" t-as="data">
             <t t-set="record" t-value="data['_record']"/>
             <div class="o_carousel_product_card card bg-transparent border-0">
@@ -42,5 +42,36 @@
                 </div>
             </div>
         </t>
-    </template>
+    </template> -->
+
+    <template id="dynamic_filter_template_product_product_style_2" name="Productos por Marca">
+    <t t-foreach="records" t-as="data">
+        <t t-set="record" t-value="data['_record']"/>
+        <div class="o_carousel_product_card card bg-transparent border-0">
+            
+            <!-- Contenedor flexible: en móvil se alinean en fila -->
+            <div class="d-flex flex-column flex-sm-row align-items-center text-center p-3">
+                
+                <!-- Imagen / Icono -->
+                <div class="flex-shrink-0 mb-2 mb-sm-0 me-sm-3">
+                    <a t-att-href="data['url']">
+                        <img class="o_img_product_square o_img_product_cover"
+                             t-att-src="data['image_512']"
+                             t-att-alt="record.name"
+                             style="width:80px; height:80px; object-fit:contain;"
+                             loading="lazy"/>
+                    </a>
+                </div>
+                
+                <!-- Texto / Carrusel -->
+                <div class="flex-grow-1 text-sm-start text-center">
+                    <div class="text-muted small" t-esc="data.get('brand')"/>
+                    <div class="h6" t-esc="data.get('display_name')"/>
+                </div>
+            </div>
+            
+        </div>
+    </t>
+</template>
+
 </odoo>
