@@ -38,8 +38,10 @@
             <div class="accordion mt-3" id="accordionProduct">
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingDescription">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDescription"
-                            aria-expanded="false" aria-controls="collapseDescription"> Descripción del producto
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#collapseDescription"
+                                aria-expanded="false" aria-controls="collapseDescription">
+                            Descripción del producto
                         </button>
                     </h2>
                     <div id="collapseDescription" class="accordion-collapse collapse"
@@ -53,56 +55,53 @@
                 <!-- Item: Características -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingFeatures">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFeatures"
-                            aria-expanded="false" aria-controls="collapseFeatures"> Características del producto
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#collapseFeatures"
+                                aria-expanded="false" aria-controls="collapseFeatures">
+                            Características del producto
                         </button>
                     </h2>
-                    <div id="collapseFeatures" class="accordion-collapse collapse" aria-labelledby="headingFeatures" data-bs-parent="#accordionProduct">
+                    <div id="collapseFeatures" class="accordion-collapse collapse"
+                        aria-labelledby="headingFeatures" data-bs-parent="#accordionProduct">
                         <div class="accordion-body">
-                            <div class="row">
-                                <div class="col-6">
-                                    <t t-foreach="product.attribute_line_ids[:5]" t-as="line">
-                                        <t t-if="line.attribute_id.attribute_custom">
-                                            <div class="mb-2">
-                                                <strong><t t-esc="line.attribute_id.name"/>:</strong>
-                                                <t t-foreach="line.value_ids" t-as="val">
-                                                    <span class="d-inline-flex align-items-center me-2">
-                                                        <img t-if="val.image_1920"
-                                                            t-att-src="'/web/image/product.attribute.value/' + str(val.id) + '/image_1920'"
-                                                            alt="Imagen atributo"
-                                                            style="height:24px; width:24px; object-fit:contain; margin-right:4px;"/>
-                                                        <t t-esc="val.name"/>
-                                                    </span>
-                                                </t>
+                            <t t-if="product['attributes']">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <t t-foreach="product['attributes'][:5]" t-as="attr">
+                                            <div class="mb-2 d-flex align-items-center">
+                                                <img t-if="attr['image']"
+                                                    t-att-src="attr['image']"
+                                                    alt="Imagen atributo"
+                                                    style="height:24px; width:24px; object-fit:contain; margin-right:4px;"/>
+                                                <strong><t t-esc="attr['attribute_name']"/>:</strong>
+                                                <span class="ms-1"><t t-esc="attr['name']"/></span>
                                             </div>
                                         </t>
-                                    </t>
-                                </div>
-                                <div class="col-6">
-                                    <t t-foreach="product.attribute_line_ids[5:10]" t-as="line">
-                                        <t t-if="line.attribute_id.attribute_custom">
-                                            <div class="mb-2">
-                                                <strong><t t-esc="line.attribute_id.name"/>:</strong>
-                                                <t t-foreach="line.value_ids" t-as="val">
-                                                    <span class="d-inline-flex align-items-center me-2">
-                                                        <img t-if="val.image_1920"
-                                                            t-att-src="'/web/image/product.attribute.value/' + str(val.id) + '/image_1920'"
-                                                            alt="Imagen atributo"
-                                                            style="height:24px; width:24px; object-fit:contain; margin-right:4px;"/>
-                                                        <t t-esc="val.name"/>
-                                                    </span>
-                                                </t>
+                                    </div>
+                                    <div class="col-6">
+                                        <t t-foreach="product['attributes'][5:10]" t-as="attr">
+                                            <div class="mb-2 d-flex align-items-center">
+                                                <img t-if="attr['image']"
+                                                    t-att-src="attr['image']"
+                                                    alt="Imagen atributo"
+                                                    style="height:24px; width:24px; object-fit:contain; margin-right:4px;"/>
+                                                <strong><t t-esc="attr['attribute_name']"/>:</strong>
+                                                <span class="ms-1"><t t-esc="attr['name']"/></span>
                                             </div>
                                         </t>
-                                    </t>
+                                    </div>
                                 </div>
-                            </div>
+                            </t>
+                            <t t-else="">
+                                <p class="text-muted">Este producto no tiene características definidas.</p>
+                            </t>
                         </div>
                     </div>
                 </div>
             </div>
         </xpath>
     </template>
+
 
 
 
