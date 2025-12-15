@@ -49,6 +49,7 @@
                         </div>
                     </div>
                 </div>
+
                 <!-- Item: Características -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingFeatures">
@@ -58,24 +59,51 @@
                     </h2>
                     <div id="collapseFeatures" class="accordion-collapse collapse" aria-labelledby="headingFeatures" data-bs-parent="#accordionProduct">
                         <div class="accordion-body">
-                            <t t-foreach="product.attribute_line_ids" t-as="line">
-                                <div class="mb-2">
-                                    <strong><t t-esc="line.attribute_id.name"/>:</strong>
-                                    <t t-foreach="line.value_ids" t-as="val">
-                                        <span class="d-inline-flex align-items-center me-2">
-                                            <img t-if="val.image_1920" t-att-src="'/web/image/product.attribute.value/' + str(val.id) + '/image_1920'"
-                                                alt="Imagen atributo" style="height:24px; width:24px; object-fit:contain; margin-right:4px;"/>
-                                            <t t-esc="val.name"/>
-                                        </span>
+                            <div class="row">
+                                <div class="col-6">
+                                    <t t-foreach="product.attribute_line_ids[:5]" t-as="line">
+                                        <t t-if="line.attribute_id.attribute_custom">
+                                            <div class="mb-2">
+                                                <strong><t t-esc="line.attribute_id.name"/>:</strong>
+                                                <t t-foreach="line.value_ids" t-as="val">
+                                                    <span class="d-inline-flex align-items-center me-2">
+                                                        <img t-if="val.image_1920"
+                                                            t-att-src="'/web/image/product.attribute.value/' + str(val.id) + '/image_1920'"
+                                                            alt="Imagen atributo"
+                                                            style="height:24px; width:24px; object-fit:contain; margin-right:4px;"/>
+                                                        <t t-esc="val.name"/>
+                                                    </span>
+                                                </t>
+                                            </div>
+                                        </t>
                                     </t>
                                 </div>
-                            </t>
+                                <div class="col-6">
+                                    <t t-foreach="product.attribute_line_ids[5:10]" t-as="line">
+                                        <t t-if="line.attribute_id.attribute_custom">
+                                            <div class="mb-2">
+                                                <strong><t t-esc="line.attribute_id.name"/>:</strong>
+                                                <t t-foreach="line.value_ids" t-as="val">
+                                                    <span class="d-inline-flex align-items-center me-2">
+                                                        <img t-if="val.image_1920"
+                                                            t-att-src="'/web/image/product.attribute.value/' + str(val.id) + '/image_1920'"
+                                                            alt="Imagen atributo"
+                                                            style="height:24px; width:24px; object-fit:contain; margin-right:4px;"/>
+                                                        <t t-esc="val.name"/>
+                                                    </span>
+                                                </t>
+                                            </div>
+                                        </t>
+                                    </t>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </xpath>
     </template>
+
 
 
 
