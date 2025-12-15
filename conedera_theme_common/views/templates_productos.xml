@@ -36,43 +36,58 @@
     <template id="product_move_description_below_cart" inherit_id="website_sale.product">
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
             <div class="accordion mt-3" id="accordionProductDescription">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingDescription">
-                        <button class="accordion-button collapsed" type="button"
-                                data-bs-toggle="collapse" data-bs-target="#collapseDescription"
-                                aria-expanded="false" aria-controls="collapseDescription">
-                            Descripción del producto
-                        </button>
-                    </h2>
-                    <div id="collapseDescription" class="accordion-collapse collapse"
-                        aria-labelledby="headingDescription" data-bs-parent="#accordionProductDescription">
-                        <div class="accordion-body">
-                            <div t-field="product.description_ecommerce"/>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </xpath>
-    </template>
 
-    <template id="product_attribute_custom" inherit_id="website_sale.product">
-        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="before">
-            <div class="accordion mt-3" id="accordionProductDescription">
+                <!-- Primer acordeón -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingDescription">
                         <button class="accordion-button collapsed" type="button"
                                 data-bs-toggle="collapse" data-bs-target="#collapseDescription"
                                 aria-expanded="false" aria-controls="collapseDescription">
-                            Caracteristicas del producto
+                            Características del producto
                         </button>
                     </h2>
                     <div id="collapseDescription" class="accordion-collapse collapse"
-                        aria-labelledby="headingDescription" data-bs-parent="#accordionProductDescription">
+                            aria-labelledby="headingDescription" data-bs-parent="#accordionProductDescription">
                         <div class="accordion-body">
                             <div t-field="product.description_ecommerce"/>
                         </div>
                     </div>
                 </div>
+
+                <!-- Segundo acordeón -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingAttributes">
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#collapseAttributes"
+                                aria-expanded="false" aria-controls="collapseAttributes">
+                            Atributos del producto
+                        </button>
+                    </h2>
+                    <div id="collapseAttributes" class="accordion-collapse collapse"
+                            aria-labelledby="headingAttributes" data-bs-parent="#accordionProductDescription">
+                        <div class="accordion-body">
+                            <t t-foreach="product.attribute_line_ids" t-as="attr_line">
+                                <t t-if="attr_line.attribute_id.attribute_custom">
+                                    <div class="mt-3">
+                                        <h6><t t-esc="attr_line.attribute_id.name"/></h6>
+                                        <ul>
+                                            <t t-foreach="attr_line.value_ids" t-as="val">
+                                                <li>
+                                                    <span t-esc="val.name"/>
+                                                    <t t-if="val.dr_image">
+                                                        <img t-att-src="'/web/image/product.attribute.value/%s/dr_image' % val.id"
+                                                            alt="Imagen atributo" style="max-height:50px;"/>
+                                                    </t>
+                                                </li>
+                                            </t>
+                                        </ul>
+                                    </div>
+                                </t>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </xpath>
     </template>
