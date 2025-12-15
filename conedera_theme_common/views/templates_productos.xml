@@ -60,7 +60,7 @@
                                     type="button"
                                     data-bs-toggle="collapse"
                                     data-bs-target="#collapseCustomAttrs">
-                                Características
+                                Características del producto
                             </button>
                         </h2>
                         <div id="collapseCustomAttrs"
