@@ -38,32 +38,3 @@
     }
   }
 }
-
-/* ---------- Imagen principal ---------- */
-.o_wsale_product_images {
-    border: 1px solid #dee2e6; 
-    border-radius: 12px;
-    padding: 8px;
-}
-
-/* Evita que la imagen sobresalga del borde */
-.o_wsale_product_images .carousel-inner {
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-/* ---------- Thumbnails ---------- */
-.o_carousel_product_indicators {
-    overflow: visible !important;
-}
-
-.o_carousel_product_indicators li {
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 4px;
-}
-
-/* Imagen dentro del thumbnail */
-.o_carousel_product_indicators li img {
-    border-radius: 6px;
-}

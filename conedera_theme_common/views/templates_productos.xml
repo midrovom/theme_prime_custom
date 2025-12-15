@@ -90,83 +90,27 @@
         </xpath>
     </template>
 
-
-    <!-- <template id="product_custom_attributes_accordion"
-            inherit_id="website_sale.product">
-
-        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
-
-            <t t-if="product.attribute_line_ids.filtered(lambda l: l.attribute_id.attribute_custom)">
-                <div class="accordion mt-3" id="accordionCustomAttributes">
-
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingCustomAttrs">
-                            <button class="accordion-button collapsed"
-                                    type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#collapseCustomAttrs">
-                                Características
-                            </button>
-                        </h2>
-
-                        <div id="collapseCustomAttrs"
-                            class="accordion-collapse collapse"
-                            data-bs-parent="#accordionCustomAttributes">
-                            <div class="accordion-body">
-
-                                <ul class="list-unstyled d-flex flex-wrap gap-3">
-                                    <t t-foreach="product.attribute_line_ids.filtered(lambda l: l.attribute_id.attribute_custom)"
-                                    t-as="line"
-                                    t-key="line.id">
-
-                                        <t t-foreach="line.value_ids"
-                                        t-as="val"
-                                        t-key="val.id">
-
-                                            <li class="d-flex align-items-center">
-                                                <span t-out="val.name"/>
-
-                                                <img t-if="val.dr_image"
-                                                    t-att-src="'/web/image/product.attribute.value/%s/dr_image' % val.id"
-                                                    class="ms-2"
-                                                    style="height:30px"
-                                                    alt="attr"/>
-                                            </li>
-
-                                        </t>
-                                    </t>
-                                </ul>
-
-                            </div>
-                        </div>
-                    </div>
-
+    <!-- Apartado de shop arriba de la imagen del producto -->
+    <template id="product_move_top_row_above_image" inherit_id="website_sale.product">
+        <xpath expr="//div[@id='product_detail_main']" position="before">
+            <div class="row align-items-center mb-3">
+                <div class="col d-flex align-items-center order-1 order-lg-0">
+                    <ol class="o_wsale_breadcrumb breadcrumb p-0 mb-2 m-lg-0">
+                        <t t-call="website_sale.breadcrumbs"/>
+                    </ol>
                 </div>
-            </t>
-
-        </xpath>
-    </template> -->
-
-    <!-- <template id="product_move_description_below_cart" inherit_id="website_sale.product">
-        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
-            <div class="accordion mt-3" id="accordionProductDescription">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingDescription">
-                        <button class="accordion-button collapsed" type="button"
-                                data-bs-toggle="collapse" data-bs-target="#collapseDescription"
-                                aria-expanded="false" aria-controls="collapseDescription">
-                            Descripción del producto
-                        </button>
-                    </h2>
-                    <div id="collapseDescription" class="accordion-collapse collapse"
-                        aria-labelledby="headingDescription" data-bs-parent="#accordionProductDescription">
-                        <div class="accordion-body">
-                            <div t-field="product.description_ecommerce"/>
-                        </div>
+                <div class="col-lg-4 d-flex align-items-center">
+                    <div class="d-flex justify-content-between w-100">
+                        <t t-if="is_view_active('website_sale.search')" t-call="website_sale.search"/>
+                        <t t-call="website_sale.pricelist_list"/>
                     </div>
                 </div>
             </div>
         </xpath>
-    </template> -->
+        <xpath expr="//section[@id='product_detail']/div[@class='row align-items-center']" position="attributes">
+            <attribute name="class">d-none</attribute>
+        </xpath>
+    </template>
+
 
 </odoo> 
