@@ -3,8 +3,8 @@
   padding: 0;          
 }
 
+/* Ocultar atributos originales*/
 // Sección de marca 
-/* Ocultar atributos simples originales debajo del Add to Cart */
 #product_attributes_simple {
     display: none !important;
 }
@@ -14,6 +14,10 @@
 // Sección de descripción
 #wrap.o_wsale_product_page .tp-product-details-tab,
 #wrap.o_wsale_product_page .nav.nav-tabs.justify-content-center {
+    display: none !important;
+}
+//Sección de Descripción
+.o_wsale_product_page div[t-field="product.description_ecommerce"] {
     display: none !important;
 }
 
