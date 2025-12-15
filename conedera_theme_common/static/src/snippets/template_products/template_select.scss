@@ -11,5 +11,9 @@
 .o_wsale_product_page #product_details .d-flex.align-items-center.gap-3 {
     display: none !important;
 }
-
+// Sección de descripción
+#wrap.o_wsale_product_page .tp-product-details-tab,
+#wrap.o_wsale_product_page .nav.nav-tabs.justify-content-center {
+    display: none !important;
+}
 
