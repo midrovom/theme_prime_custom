@@ -11,36 +11,27 @@
     <template id="product_inherit_attributes_top"
             inherit_id="website_sale.product">
 
-        <!-- Eliminar atributos simples originales (Marca, etc.) -->
-        <xpath expr="//div[contains(@id, 'product_attributes_simple')]" position="replace"/>
-
-        <!-- Insertar atributos arriba del nombre -->
         <xpath expr="//h1[@itemprop='name']" position="before">
 
-            <div class="o_product_attributes_top mb-3">
+            <t t-set="single_value_attributes"
+            t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
 
-                <t t-set="single_value_attributes"
-                t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
-
-                <table t-attf-class="table table-sm text-muted {{'' if single_value_attributes else 'd-none'}}">
-                    <t t-foreach="single_value_attributes" t-as="attribute">
-                        <tr>
-                            <td>
-                                <strong t-field="attribute.name"/>:
-                                <t t-foreach="single_value_attributes[attribute]" t-as="ptal">
-                                    <span t-field="ptal.product_template_value_ids._only_active().name"/>
-                                    <t t-if="not ptal_last">, </t>
-                                </t>
-                            </td>
-                        </tr>
-                    </t>
-                </table>
-
+            <div t-if="single_value_attributes" class="o_product_attributes_top mb-2">
+                <t t-foreach="single_value_attributes" t-as="attribute">
+                    <div class="small text-muted">
+                        <strong t-esc="attribute.name"/>:
+                        <t t-foreach="single_value_attributes[attribute]" t-as="ptal">
+                            <span t-esc="ptal.product_template_value_ids._only_active().name"/>
+                            <t t-if="not ptal_last">, </t>
+                        </t>
+                    </div>
+                </t>
             </div>
 
         </xpath>
 
     </template>
+
 
 
 
