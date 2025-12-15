@@ -28,10 +28,6 @@
 
     <!-- Apartado de Descripción -->
     <template id="product_move_description_below_cart" inherit_id="website_sale.product">
-        <!-- Ocultar original -->
-        <xpath expr="//div[@id='product_full_description']" position="replace"/>
-        
-        <!-- Insertar acordeón -->
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
             <div class="accordion mt-3" id="accordionProductDescription">
                 <div class="accordion-item">
@@ -52,6 +48,7 @@
             </div>
         </xpath>
     </template>
+
 
 
     <!-- Acordeon de descripción -->
