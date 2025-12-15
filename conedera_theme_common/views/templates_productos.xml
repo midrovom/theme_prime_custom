@@ -91,8 +91,9 @@
     </template>
 
 
+
     <template id="product_breadcrumb_above_image" inherit_id="website_sale.product" name="Move Breadcrumb Above Product Image">
-        <xpath expr="//ol[contains(@class,'o_wsale_breadcrumb')]" position="remove"/>
+        <xpath expr="//ol[contains(@class,'o_wsale_breadcrumb')]" position="replace"/>
         <xpath expr="//div[contains(@class,'o_wsale_product_images')]" position="inside">
             <ol class="o_wsale_breadcrumb breadcrumb p-0 mb-3">
                 <li class="breadcrumb-item">
@@ -100,6 +101,7 @@
                         Shop
                     </a>
                 </li>
+
                 <li t-if="category" class="breadcrumb-item">
                     <a t-att-href="keep('/shop/category/%s' % slug(category),
                                         category=0,
@@ -115,6 +117,8 @@
             </ol>
         </xpath>
     </template>
+
+
 
 
 </odoo> 
