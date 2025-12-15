@@ -51,8 +51,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Segundo item: Características -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingFeatures">
                         <button class="accordion-button collapsed" type="button"
@@ -64,14 +62,13 @@
                     <div id="collapseFeatures" class="accordion-collapse collapse"
                         aria-labelledby="headingFeatures" data-bs-parent="#accordionProductInfo">
                         <div class="accordion-body">
-                            <t t-if="product.attribute_line_ids">
+                            <t t-if="item.attributes">
                                 <ul>
-                                    <t t-foreach="product.attribute_line_ids" t-as="line" t-key="line.id">
+                                    <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
                                         <li>
-                                            <t t-out="line.attribute_id.name"/>:
-                                            <t t-foreach="line.value_ids" t-as="val" t-key="val.id">
-                                                <t t-out="val.name"/>
-                                            </t>
+                                            <t t-out="attr.attribute_name"/>:
+                                            <t t-out="attr.name"/>
+                                            <img t-if="attr.image" t-att-src="attr.image" style="height:20px;" class="ms-2"/>
                                         </li>
                                     </t>
                                 </ul>
