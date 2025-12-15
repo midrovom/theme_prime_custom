@@ -1,26 +1,50 @@
-import logging
+from odoo import http
+from odoo.http import request
 from odoo.addons.website_sale.controllers.main import WebsiteSale
-
-_logger = logging.getLogger(__name__)
 
 class WebsiteSaleExtended(WebsiteSale):
 
-    def _prepare_product_data(self, products, fields, pricelist, options=None):
-        fields = list(set(fields or []))
-        fields += ['attribute_line_ids']
-        result = super()._prepare_product_data(products, fields, pricelist, options)
+    def _prepare_product_data(self, products, pricelist=False):
+        """Prepara datos de producto incluyendo atributos personalizados"""
+        result = []
 
-        for res_product, product in zip(result, products):
-            res_product['attributes'] = []
+        for product in products:
+            product_data = {
+                'id': product.id,
+                'name': product.name,
+                'price': product.price,
+                'attributes': [],
+                'other_attributes': [],
+            }
+
+            # Recorremos las líneas de atributos del producto
             for line in product.attribute_line_ids:
-                if getattr(line.attribute_id, 'attribute_custom', False):
-                    for val in line.value_ids:
-                        attr_data = {
-                            'id': val.id,
-                            'name': val.name,
-                            'attribute_name': line.attribute_id.name,
-                            'image': val.dr_image and f'/web/image/product.attribute.value/{val.id}/dr_image' or False,
-                        }
-                        res_product['attributes'].append(attr_data)
-                        _logger.debug("Producto %s - atributo añadido: %s", product.name, attr_data)
+                if getattr(line.attribute_id, 'dr_is_brand', False):
+                    continue
+
+                for val in line.value_ids:
+                    attr_data = {
+                        'id': val.id,
+                        'name': val.name,
+                        'image': val.dr_image and f'/web/image/product.attribute.value/{val.id}/dr_image' or False,
+                        'attribute_name': line.attribute_id.name,
+                    }
+                    if line.attribute_id.attribute_custom:
+                        product_data['attributes'].append(attr_data)
+                    else:
+                        product_data['other_attributes'].append(attr_data)
+
+            result.append(product_data)
+
         return result
+
+
+class ProductAttributesController(http.Controller):
+    @http.route('/product/attributes/<int:product_id>', type='json', auth='public', website=True)
+    def product_attributes(self, product_id):
+        product = request.env['product.template'].browse(product_id)
+        if not product.exists():
+            return {'error': 'Producto no encontrado'}
+
+        data = WebsiteSaleExtended()._prepare_product_data([product])
+        return data[0] if data else {}
