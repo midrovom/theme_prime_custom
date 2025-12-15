@@ -26,14 +26,15 @@
         </xpath>
     </template>
 
-        <!-- Apartado de Descripción -->
-    <!-- <template id="product_move_description_below_cart" inherit_id="website_sale.product">
-        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
-            <div class="o_product_description_below_cart mt-3"
-                t-field="product.description_ecommerce"/>
+    <!-- Apartado de Descripción -->
+    <!-- ocultar campo original -->
+    <template id="product_hide_original_description" inherit_id="website_sale.product">
+        <xpath expr="//div[@id='product_details']/div[t-field='product.description_ecommerce']" position="attributes">
+            <attribute name="style">display:none !important;</attribute>
         </xpath>
-    </template> -->
+    </template>
 
+    <!-- Acordeon de descripción -->
     <template id="product_move_description_below_cart" inherit_id="website_sale.product">
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
             <div class="accordion mt-3" id="accordionProductDescription">
@@ -48,7 +49,6 @@
                     <div id="collapseDescription" class="accordion-collapse collapse"
                         aria-labelledby="headingDescription" data-bs-parent="#accordionProductDescription">
                         <div class="accordion-body">
-                            <!-- Aquí va el campo en un nodo HTML válido -->
                             <div t-field="product.description_ecommerce"/>
                         </div>
                     </div>
