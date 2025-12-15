@@ -8,7 +8,7 @@
     </template>
 
     <!-- Eliminar sección de marcas -->
-    <template id="product_inherit_no_attributes" inherit_id="product">
+    <template id="product_inherit_no_attributes" inherit_id="website_sale.product">
         <xpath expr="//div[@id='product_attributes_simple']" position="replace"/>
     </template>
 
