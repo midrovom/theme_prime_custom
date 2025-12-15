@@ -17,3 +17,25 @@
     display: none !important;
 }
 
+//Estilo para los acordeones
+/* Estilos personalizados para las características del producto */
+#accordionCustomAttributes {
+  .accordion-body {
+    .d-flex {
+      img {
+        height: 20px;   
+        width: auto;
+        margin-right: 6px; 
+      }
+
+      span {
+        font-size: 0.9rem; 
+      }
+    }
+    .col-6 {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+  }
+}
+
