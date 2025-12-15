@@ -58,13 +58,25 @@
                     </h2>
                     <div id="collapseFeatures" class="accordion-collapse collapse" aria-labelledby="headingFeatures" data-bs-parent="#accordionProduct">
                         <div class="accordion-body">
-                            <!-- Vacío por ahora -->
+                            <t t-foreach="product.attribute_line_ids" t-as="line">
+                                <div class="mb-2">
+                                    <strong><t t-esc="line.attribute_id.name"/>:</strong>
+                                    <t t-foreach="line.value_ids" t-as="val">
+                                        <span class="d-inline-flex align-items-center me-2">
+                                            <img t-if="val.image_1920" t-att-src="'/web/image/product.attribute.value/' + str(val.id) + '/image_1920'"
+                                                alt="Imagen atributo" style="height:24px; width:24px; object-fit:contain; margin-right:4px;"/>
+                                            <t t-esc="val.name"/>
+                                        </span>
+                                    </t>
+                                </div>
+                            </t>
                         </div>
                     </div>
                 </div>
             </div>
         </xpath>
     </template>
+
 
 
     <!-- <template id="product_move_description_below_cart" inherit_id="website_sale.product">
