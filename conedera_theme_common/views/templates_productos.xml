@@ -6,4 +6,10 @@
              t-att-data-editor-message="editor_message"/>
         </xpath>
     </template>
+
+    <!-- Eliminar sección de marcas -->
+    <template id="product_inherit_no_attributes" inherit_id="product">
+        <xpath expr="//div[@id='product_attributes_simple']" position="replace"/>
+    </template>
+
 </odoo> 
