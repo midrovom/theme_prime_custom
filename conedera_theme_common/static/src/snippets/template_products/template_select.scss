@@ -2,3 +2,10 @@
   border: 1px solid #ccc;   
   padding: 0;          
 }
+
+// Sección de marca 
+/* Ocultar atributos simples originales debajo del Add to Cart */
+#product_attributes_simple {
+    display: none !important;
+}
+
