@@ -28,8 +28,9 @@
 
     <!-- Apartado de Descripción -->
     <template id="hide_original_description" inherit_id="website_sale.product">
-        <xpath expr="//div[@id='product_full_description']" position="replace"/>
+        <xpath expr="//div[@data-oe-version]" position="replace"/>
     </template>
+
 
     <!-- Acordeon de descripción -->
     <template id="product_move_description_below_cart" inherit_id="website_sale.product">
