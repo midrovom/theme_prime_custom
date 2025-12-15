@@ -56,7 +56,7 @@
     </template>
 
     <template id="product_attribute_custom" inherit_id="website_sale.product">
-        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
+        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="before">
             <div class="accordion mt-3" id="accordionProductDescription">
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingDescription">
