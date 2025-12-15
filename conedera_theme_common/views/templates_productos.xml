@@ -91,26 +91,23 @@
     </template>
 
     <!-- Apartado de shop arriba de la imagen del producto -->
-    <template id="product_move_top_row_above_image" inherit_id="website_sale.product">
+    <template id="product_move_breadcrumb_above_image" inherit_id="website_sale.product">
         <xpath expr="//div[@id='product_detail_main']" position="before">
             <div class="row align-items-center mb-3">
-                <div class="col d-flex align-items-center order-1 order-lg-0">
-                    <ol class="o_wsale_breadcrumb breadcrumb p-0 mb-2 m-lg-0">
+                <div class="col">
+                    <ol class="o_wsale_breadcrumb breadcrumb p-0 mb-2">
                         <t t-call="website_sale.breadcrumbs"/>
                     </ol>
                 </div>
-                <div class="col-lg-4 d-flex align-items-center">
-                    <div class="d-flex justify-content-between w-100">
-                        <t t-if="is_view_active('website_sale.search')" t-call="website_sale.search"/>
-                        <t t-call="website_sale.pricelist_list"/>
-                    </div>
-                </div>
             </div>
         </xpath>
+
+        <!-- Ocultar breadcrumb original -->
         <xpath expr="//section[@id='product_detail']/div[@class='row align-items-center']" position="attributes">
             <attribute name="class">d-none</attribute>
         </xpath>
     </template>
+
 
 
 </odoo> 
