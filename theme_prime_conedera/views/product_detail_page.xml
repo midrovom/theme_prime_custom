@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_tabs_inherit" inherit_id="theme_prime.product_tabs" name="Herencia Product Tabs">
+        <xpath expr="//li[@t-if='product_documents_ids']/a/span" position="replace">
+            <span class="fa fa-file-pdf-o me-1"/> Descargar Ficha Técnica
+        </xpath>
+    </template>
+</odoo>
+

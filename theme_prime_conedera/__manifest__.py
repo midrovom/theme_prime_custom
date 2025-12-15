@@ -25,6 +25,7 @@
         'views/snippets/dynamic_snippets.xml',
         'views/snippets.xml',
         'views/snippets/s_banner_16.xml',
+        'views/product_detail_page.xml',
     ],
     'auto_install': False,
     'application': False,
