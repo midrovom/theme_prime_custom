@@ -27,10 +27,32 @@
     </template>
 
         <!-- Apartado de Descripción -->
-    <template id="product_move_description_below_cart" inherit_id="website_sale.product">
+    <!-- <template id="product_move_description_below_cart" inherit_id="website_sale.product">
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
             <div class="o_product_description_below_cart mt-3"
                 t-field="product.description_ecommerce"/>
+        </xpath>
+    </template> -->
+
+    <template id="product_move_description_below_cart" inherit_id="website_sale.product">
+        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
+            <div class="accordion mt-3" id="accordionProductDescription">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingDescription">
+                        <button class="accordion-button collapsed" type="button" 
+                                data-bs-toggle="collapse" data-bs-target="#collapseDescription" 
+                                aria-expanded="false" aria-controls="collapseDescription">
+                            Descripción del producto
+                        </button>
+                    </h2>
+                    <div id="collapseDescription" class="accordion-collapse collapse" 
+                        aria-labelledby="headingDescription" data-bs-parent="#accordionProductDescription">
+                        <div class="accordion-body">
+                            <t t-field="product.description_ecommerce"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </xpath>
     </template>
 
