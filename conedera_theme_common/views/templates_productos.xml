@@ -60,25 +60,28 @@
                                     type="button"
                                     data-bs-toggle="collapse"
                                     data-bs-target="#collapseCustomAttrs">
-                                Características del Producto
+                                Características
                             </button>
                         </h2>
                         <div id="collapseCustomAttrs"
                             class="accordion-collapse collapse"
                             data-bs-parent="#accordionCustomAttributes">
                             <div class="accordion-body">
-                                <ul class="list-unstyled d-flex flex-wrap gap-3">
-                                    <t t-foreach="product.attribute_line_ids.filtered(lambda l: l.attribute_id.attribute_custom)"
-                                    t-as="line" t-key="line.id">
+                                <div class="row">
+                                    <t t-foreach="product.attribute_line_ids.filtered(lambda l: l.attribute_id.attribute_custom)" t-as="line" t-key="line.id">
                                         <t t-foreach="line.value_ids" t-as="val" t-key="val.id">
-                                            <li class="d-flex align-items-center">
-                                                <span t-out="val.name"/>
-                                                <img t-if="val.dr_image" t-att-src="'/web/image/product.attribute.value/%s/dr_image' % val.id"
-                                                    class="ms-2" style="height:30px" alt="attr"/>
-                                            </li>
+                                            <div class="col-6 mb-3">
+                                                <div class="d-flex align-items-center">
+                                                    <img t-if="val.dr_image"
+                                                        t-att-src="'/web/image/product.attribute.value/%s/dr_image' % val.id"
+                                                        style="height:30px; width:auto; margin-right:8px;"
+                                                        alt="attr"/>
+                                                    <span t-out="val.name"/>
+                                                </div>
+                                            </div>
                                         </t>
                                     </t>
-                                </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -86,6 +89,7 @@
             </t>
         </xpath>
     </template>
+
 
     <!-- <template id="product_custom_attributes_accordion"
             inherit_id="website_sale.product">
