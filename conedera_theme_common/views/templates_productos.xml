@@ -27,9 +27,10 @@
     </template>
 
     <!-- Apartado de Descripción -->
-    <template id="hide_original_description" inherit_id="website_sale.product">
-        <xpath expr="//div[@data-oe-version]" position="replace"/>
+    <template id="remove_original_description" inherit_id="website_sale.product">
+        <xpath expr="//div[@class='oe_structure'][@t-field='product.description_ecommerce']" position="replace"/>
     </template>
+
 
 
     <!-- Acordeon de descripción -->
