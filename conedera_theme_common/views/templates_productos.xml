@@ -33,27 +33,25 @@
     </template>
 
     <!-- Acordeon de descripción -->
-    <template id="product_attributes_custom_accordion"
+    <template id="product_custom_attributes_accordion"
             inherit_id="website_sale.product">
 
-        <!-- Reemplazamos COMPLETAMENTE la tabla original -->
-        <xpath expr="//div[@id='product_attributes_simple']" position="replace">
+        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
 
             <t t-if="product.attribute_line_ids.filtered(lambda l: l.attribute_id.attribute_custom)">
                 <div class="accordion mt-3" id="accordionCustomAttributes">
 
                     <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingCustomAttributes">
+                        <h2 class="accordion-header" id="headingCustomAttrs">
                             <button class="accordion-button collapsed"
                                     type="button"
                                     data-bs-toggle="collapse"
-                                    data-bs-target="#collapseCustomAttributes"
-                                    aria-expanded="false">
+                                    data-bs-target="#collapseCustomAttrs">
                                 Características
                             </button>
                         </h2>
 
-                        <div id="collapseCustomAttributes"
+                        <div id="collapseCustomAttrs"
                             class="accordion-collapse collapse"
                             data-bs-parent="#accordionCustomAttributes">
                             <div class="accordion-body">
@@ -73,8 +71,8 @@
                                                 <img t-if="val.dr_image"
                                                     t-att-src="'/web/image/product.attribute.value/%s/dr_image' % val.id"
                                                     class="ms-2"
-                                                    style="height:30px;"
-                                                    alt="attribute"/>
+                                                    style="height:30px"
+                                                    alt="attr"/>
                                             </li>
 
                                         </t>
@@ -89,8 +87,8 @@
             </t>
 
         </xpath>
-
     </template>
+
 
 
     <!-- <template id="product_move_description_below_cart" inherit_id="website_sale.product">
