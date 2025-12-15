@@ -34,7 +34,6 @@
 
     <!-- Acordeon de descripción -->
     <template id="product_move_description_below_cart" inherit_id="website_sale.product">
-
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
             <div class="accordion mt-3" id="accordionProductInfo">
                 <div class="accordion-item">
@@ -47,13 +46,16 @@
                             Descripción del producto
                         </button>
                     </h2>
+
                     <div id="collapseDescription"
                         class="accordion-collapse collapse"
                         aria-labelledby="headingDescription"
                         data-bs-parent="#accordionProductInfo">
+
                         <div class="accordion-body">
                             <div t-field="product.description_ecommerce"/>
                         </div>
+
                     </div>
                 </div>
                 <div class="accordion-item">
@@ -66,36 +68,47 @@
                             Características
                         </button>
                     </h2>
+
                     <div id="collapseFeatures"
                         class="accordion-collapse collapse"
                         aria-labelledby="headingFeatures"
                         data-bs-parent="#accordionProductInfo">
+
                         <div class="accordion-body">
+                            <t t-set="custom_attributes"
+                            t-value="product.get_custom_attributes()"/>
 
-                            <t t-set="single_value_attributes"
-                            t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
+                            <t t-if="custom_attributes">
+                                <ul class="list-unstyled d-flex flex-wrap gap-3">
 
-                            <t t-if="single_value_attributes">
-                                <ul class="list-unstyled d-flex flex-wrap">
-                                    <t t-foreach="single_value_attributes" t-as="attribute" t-key="attribute.id">
-                                        <t t-foreach="single_value_attributes[attribute]" t-as="ptal" t-key="ptal.id">
-                                            <li class="me-3 mb-2">
-                                                <strong t-field="attribute.name"/>:
-                                                <span t-field="ptal.product_template_value_ids._only_active().name"/>
-                                            </li>
-                                        </t>
+                                    <t t-foreach="custom_attributes"
+                                    t-as="attr"
+                                    t-key="attr['id']">
+
+                                        <li class="d-flex align-items-center">
+
+                                            <!-- Nombre del valor -->
+                                            <span t-out="attr['name']"/>
+
+                                            <!-- Imagen dr_image -->
+                                            <img t-if="attr['image']"
+                                                t-att-src="attr['image']"
+                                                alt="attribute"
+                                                class="ms-2"
+                                                style="height:30px;"/>
+
+                                        </li>
+
                                     </t>
                                 </ul>
                             </t>
-
                         </div>
                     </div>
                 </div>
-
             </div>
         </xpath>
-
     </template>
+
 
 
 
