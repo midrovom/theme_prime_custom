@@ -7,20 +7,28 @@
         </xpath>
     </template>
 
-    <!-- Sección de marcas -->
+    <!-- Mostrar Marca y atributos arriba del nombre -->
     <template id="product_inherit_attributes_top" inherit_id="website_sale.product">
-        <xpath expr="//t[@t-call='website_sale.variants']" position="replace"/>
+        <xpath expr="//div[@id='product_attributes_simple']" position="replace"/>
             <xpath expr="//h1[@itemprop='name']" position="before">
                 <div class="o_product_attributes_top mb-3">
-                    <t t-call="website_sale.variants">
-                        <t t-set="ul_class" t-value="'flex-column'"/>
-                        <t t-set="parent_combination" t-value="None"/>
-                        <t t-set="combination"
-                        t-value="product._get_combination_info()['combination']"/>
+                    <t t-set="single_value_attributes" t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
+                        <table t-attf-class="table table-sm text-muted {{'' if single_value_attributes else 'd-none'}}">
+                            <t t-foreach="single_value_attributes" t-as="attribute">
+                                <tr> <td>
+                                    <strong t-field="attribute.name"/>:
+                                    <t t-foreach="single_value_attributes[attribute]" t-as="ptal">
+                                        <span t-field="ptal.product_template_value_ids._only_active().name"/>
+                                    <t t-if="not ptal_last">, </t>
+                                </t>
+                            </td>
+                        </tr>
                     </t>
-                </div>
-            </xpath>
+                </table>
+            </div>
+        </xpath>
     </template>
+
 
 
 </odoo> 
