@@ -12,10 +12,10 @@
     display: none !important;
 }
 // Sección de descripción
-// #wrap.o_wsale_product_page .tp-product-details-tab,
-// #wrap.o_wsale_product_page .nav.nav-tabs.justify-content-center {
-//     display: none !important;
-// }
+#wrap.o_wsale_product_page .nav.nav-tabs.justify-content-center a[href="#tp-product-description-tab"] {
+    display: none !important;
+}
+
 
 //Estilo para los acordeones
 /* Estilos personalizados para las características del producto */
