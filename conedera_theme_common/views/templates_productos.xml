@@ -54,7 +54,7 @@
                     </div>
                 </div>
 
-                <!-- Segundo item: Características (conectado al controlador) -->
+                <!-- Segundo item: Características -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingFeatures">
                         <button class="accordion-button collapsed" type="button"
@@ -66,14 +66,19 @@
                     <div id="collapseFeatures" class="accordion-collapse collapse"
                         aria-labelledby="headingFeatures" data-bs-parent="#accordionProductInfo">
                         <div class="accordion-body">
-                            <t t-if="item.attributes">
+                            <t t-if="product.attribute_line_ids">
                                 <ul class="list-unstyled d-flex flex-wrap">
-                                    <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
-                                        <li class="me-3 mb-2 d-flex align-items-center">
-                                            <span><t t-out="attr.name"/></span>
-                                            <img t-if="attr.image" t-att-src="attr.image"
-                                                alt="logo" style="height:30px;" class="ms-2"/>
-                                        </li>
+                                    <t t-foreach="product.attribute_line_ids" t-as="line" t-key="line.id">
+                                        <t t-if="line.attribute_id.attribute_custom">
+                                            <t t-foreach="line.value_ids" t-as="val" t-key="val.id">
+                                                <li class="me-3 mb-2 d-flex align-items-center">
+                                                    <span><t t-out="val.name"/></span>
+                                                    <img t-if="val.dr_image"
+                                                        t-att-src="'/web/image/product.attribute.value/' + str(val.id) + '/dr_image'"
+                                                        alt="logo" style="height:30px;" class="ms-2"/>
+                                                </li>
+                                            </t>
+                                        </t>
                                     </t>
                                 </ul>
                             </t>
@@ -84,6 +89,7 @@
             </div>
         </xpath>
     </template>
+
 
 
 
