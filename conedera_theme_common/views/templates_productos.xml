@@ -91,17 +91,7 @@
     </template>
 
     <!-- Ruta de navegacion del producto -->
-    <template id="product_breadcrumb_above_carousel" inherit_id="website_sale.product">
-        <xpath expr="//div[@id='product_detail_main']//div[contains(@class,'o_wsale_product_images')]" position="before">
-            <div class="row mb-3">
-                <div class="col">
-                    <ol class="o_wsale_breadcrumb breadcrumb p-0 m-0 bg-transparent">
-                        <t t-call="website_sale.breadcrumbs"/>
-                    </ol>
-                </div>
-            </div>
-        </xpath>
-    </template>
+
 
 
 </odoo> 
