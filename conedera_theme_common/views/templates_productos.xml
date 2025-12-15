@@ -92,6 +92,7 @@
         </xpath>
     </template>
 
+
     <!-- <template id="product_move_description_below_cart" inherit_id="website_sale.product">
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
             <div class="accordion mt-3" id="accordionProductDescription">
