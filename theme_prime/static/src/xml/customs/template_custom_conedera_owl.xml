@@ -6,6 +6,62 @@
             <div class="d_product_box position-relative d-flex align-items-center overflow-hidden rounded-4">
                 <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" 
                     class="card-img-top d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0 "/>
+                    <div t-if="userParams.anyActionEnabled" class="d_card_overlay text-center w-100 h-100 position-absolute top-0 start-0"/>
+                         <div t-if="userParams.anyActionEnabled" class="d_actions w-100 text-center position-absolute top-50">
+                            <button t-if="widget._isActionEnabled('quick_view')" t-att-data-product-template-id="item.product_template_id" 
+                                t-att-data-product-product-id="item.product_variant_id" class="btn btn-light tp-rounded-border d_action_btn d_product_quick_view" title="Quick View">
+                            <i class="d_action_btn_icon dri dri-eye"></i>
+                        </button>
+                    <button t-if="widget._isActionEnabled('add_to_cart')" t-att-data-product-product-id="item.product_variant_id" 
+                            class="btn btn-light tp-rounded-border d_action_btn d_add_to_cart_btn" title="Add to Cart">
+                <i class="d_action_btn_icon dri dri-cart"></i> </button>
+                    <button t-if="widget._isActionEnabled('comparison') and !widget.isMobile" 
+                            t-att-data-product-product-id="item.product_variant_id" 
+                            class="btn btn-light tp-rounded-border d_action_btn d_product_comparison" 
+                            title="Compare">
+                        <span class="d_action_btn_icon dri dri-compare"></span>
+                    </button>
+                    <button t-if="widget._isActionEnabled('wishlist')" 
+                            t-att-data-product-product-id="item.product_variant_id" 
+                            class="btn btn-light tp-rounded-border d_action_btn d_add_to_wishlist_btn" 
+                            title="Add to Wishlist">
+                        <i class="d_action_btn_icon dri dri-wishlist"></i>
+                    </button>
+                </div>
+                <t t-call="dr_s_lable_tmpl"/>
+            </div>
+            <div class="card-body text-start rounded-4">
+                <t t-if="item.attributes">
+                    <p class="text-muted small mb-1">
+                        <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
+                            <span class="me-2">
+                                <t t-out="attr.name"/>
+                            </span>
+                            <img t-if="attr.image" t-att-src="attr.image" class="brand-img me-2" style="height:20px;"/>
+                        </t>
+                    </p>
+                </t>
+
+                <h5 class="card-title text-truncate fw-light d-product-name text-start mb-1">
+                    <a t-att-href="item.website_url">
+                        <t t-out="item.name"/>
+                    </a>
+                </h5>
+
+                <div class="row g-0">
+                    <div t-if="widget._isActionEnabled('rating')" class="col-12 small text-end">
+                        <t t-out="item.rating"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <!-- <t t-name="s_card_style_12">
+        <div t-attf-class="card h-100 s_card_style_2 border-1 rounded-4 dr-image-fill-#{widget.imageFill} dr-image-size-#{widget.imageSize}">
+            <div class="d_product_box position-relative d-flex align-items-center overflow-hidden rounded-4">
+                <img loading="lazy" t-att-alt="item.name" t-att-src="item.img_medium" 
+                    class="card-img-top d-product-img h-100 w-100 position-absolute top-0 start-0 end-0 bottom-0 "/>
                 
                 <div t-if="userParams.anyActionEnabled" class="d_card_overlay text-center w-100 h-100 position-absolute top-0 start-0"/>
                 <div t-if="userParams.anyActionEnabled" class="d_actions w-100 text-center position-absolute top-50">
@@ -62,7 +118,7 @@
                 </div>
             </div>
         </div>
-    </t>
+    </t> -->
 
 <!-- Template movil  -->
 
