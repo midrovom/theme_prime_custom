@@ -34,87 +34,85 @@
 
     <!-- Acordeon de descripción -->
     <template id="product_move_description_below_cart" inherit_id="website_sale.product">
+
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
+
             <div class="accordion mt-3" id="accordionProductInfo">
+
+                <!-- ===================== -->
+                <!-- DESCRIPCIÓN -->
+                <!-- ===================== -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingDescription">
                         <button class="accordion-button collapsed" type="button"
                                 data-bs-toggle="collapse"
-                                data-bs-target="#collapseDescription"
-                                aria-expanded="false"
-                                aria-controls="collapseDescription">
+                                data-bs-target="#collapseDescription">
                             Descripción del producto
                         </button>
                     </h2>
 
                     <div id="collapseDescription"
                         class="accordion-collapse collapse"
-                        aria-labelledby="headingDescription"
                         data-bs-parent="#accordionProductInfo">
-
                         <div class="accordion-body">
                             <div t-field="product.description_ecommerce"/>
                         </div>
-
                     </div>
                 </div>
+
+                <!-- ===================== -->
+                <!-- CARACTERÍSTICAS -->
+                <!-- ===================== -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingFeatures">
                         <button class="accordion-button collapsed" type="button"
                                 data-bs-toggle="collapse"
-                                data-bs-target="#collapseFeatures"
-                                aria-expanded="false"
-                                aria-controls="collapseFeatures">
+                                data-bs-target="#collapseFeatures">
                             Características
                         </button>
                     </h2>
 
                     <div id="collapseFeatures"
                         class="accordion-collapse collapse"
-                        aria-labelledby="headingFeatures"
                         data-bs-parent="#accordionProductInfo">
-
                         <div class="accordion-body">
+
+                            <!-- SIEMPRE deja algo de HTML -->
                             <t t-set="custom_attributes"
                             t-value="product.get_custom_attributes()"/>
 
                             <t t-if="custom_attributes">
                                 <ul class="list-unstyled d-flex flex-wrap gap-3">
-
                                     <t t-foreach="custom_attributes"
                                     t-as="attr"
                                     t-key="attr['id']">
-
                                         <li class="d-flex align-items-center">
-
-                                            <!-- Nombre del valor -->
                                             <span t-out="attr['name']"/>
-
-                                            <!-- Imagen dr_image -->
                                             <img t-if="attr['image']"
                                                 t-att-src="attr['image']"
-                                                alt="attribute"
                                                 class="ms-2"
-                                                style="height:30px;"/>
-
+                                                style="height:30px;"
+                                                alt="attribute"/>
                                         </li>
-
                                     </t>
                                 </ul>
                             </t>
+
+                            <!-- IMPORTANTE: contenido fallback -->
+                            <t t-else="">
+                                <span class="d-inline-block">&nbsp;</span>
+                            </t>
+
                         </div>
                     </div>
                 </div>
+
             </div>
+
         </xpath>
+
     </template>
 
-
-
-
-
-
-    
     <!-- <template id="product_move_description_below_cart" inherit_id="website_sale.product">
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
             <div class="accordion mt-3" id="accordionProductDescription">
