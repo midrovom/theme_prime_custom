@@ -90,35 +90,22 @@
         </xpath>
     </template>
 
+    <!-- Ruta del producto -->
+    <template id="product_breadcrumb_above_carousel" inherit_id="website_sale.product">
+        <xpath expr="//div[@id='product_detail_main']/div[contains(@class,'o_wsale_product_images')]" position="before">
+            <div class="row mb-3">
+                <div class="col">
+                    <ol class="o_wsale_breadcrumb breadcrumb p-0 m-0 bg-transparent">
+                        <t t-call="website_sale.breadcrumbs"/>
+                    </ol>
+                </div>
+            </div>
+        </xpath>
 
-
-    <template id="product_breadcrumb_above_image" inherit_id="website_sale.product" name="Move Breadcrumb Above Product Image">
-        <xpath expr="//ol[contains(@class,'o_wsale_breadcrumb')]" position="replace"/>
-        <xpath expr="//div[contains(@class,'o_wsale_product_images')]" position="inside">
-            <ol class="o_wsale_breadcrumb breadcrumb p-0 mb-3">
-                <li class="breadcrumb-item">
-                    <a t-att-href="keep(category=0, attribute_value=0, tags=0)">
-                        Shop
-                    </a>
-                </li>
-
-                <li t-if="category" class="breadcrumb-item">
-                    <a t-att-href="keep('/shop/category/%s' % slug(category),
-                                        category=0,
-                                        attribute_value=0,
-                                        tags=0)">
-                        <t t-out="category.name"/>
-                    </a>
-                </li>
-
-                <li class="breadcrumb-item active">
-                    <span t-field="product.name"/>
-                </li>
-            </ol>
+        <xpath expr="//ol[contains(@class,'o_wsale_breadcrumb')]" position="attributes">
+            <attribute name="class">d-none</attribute>
         </xpath>
     </template>
-
-
 
 
 </odoo> 
