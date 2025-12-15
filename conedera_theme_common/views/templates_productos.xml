@@ -36,6 +36,8 @@
     <template id="product_move_description_below_cart" inherit_id="website_sale.product">
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
             <div class="accordion mt-3" id="accordionProductInfo">
+
+                <!-- Primer item: Descripción -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingDescription">
                         <button class="accordion-button collapsed" type="button"
@@ -51,6 +53,8 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Segundo item: Características (conectado al controlador) -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingFeatures">
                         <button class="accordion-button collapsed" type="button"
@@ -63,12 +67,12 @@
                         aria-labelledby="headingFeatures" data-bs-parent="#accordionProductInfo">
                         <div class="accordion-body">
                             <t t-if="item.attributes">
-                                <ul>
+                                <ul class="list-unstyled d-flex flex-wrap">
                                     <t t-foreach="item.attributes" t-as="attr" t-key="attr.id">
-                                        <li>
-                                            <t t-out="attr.attribute_name"/>:
-                                            <t t-out="attr.name"/>
-                                            <img t-if="attr.image" t-att-src="attr.image" style="height:20px;" class="ms-2"/>
+                                        <li class="me-3 mb-2 d-flex align-items-center">
+                                            <span><t t-out="attr.name"/></span>
+                                            <img t-if="attr.image" t-att-src="attr.image"
+                                                alt="logo" style="height:30px;" class="ms-2"/>
                                         </li>
                                     </t>
                                 </ul>
@@ -80,6 +84,7 @@
             </div>
         </xpath>
     </template>
+
 
 
     

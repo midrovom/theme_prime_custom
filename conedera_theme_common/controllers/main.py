@@ -1,5 +1,6 @@
-from odoo.addons.website_sale.controllers.main import WebsiteSale
 import logging
+from odoo.addons.website_sale.controllers.main import WebsiteSale
+
 _logger = logging.getLogger(__name__)
 
 class WebsiteSaleExtended(WebsiteSale):
@@ -12,14 +13,14 @@ class WebsiteSaleExtended(WebsiteSale):
         for res_product, product in zip(result, products):
             res_product['attributes'] = []
             for line in product.attribute_line_ids:
-                if line.attribute_id.attribute_custom:
+                if getattr(line.attribute_id, 'attribute_custom', False):
                     for val in line.value_ids:
                         attr_data = {
                             'id': val.id,
                             'name': val.name,
                             'attribute_name': line.attribute_id.name,
-                            'image': val.image_1920 and f'/web/image/product.attribute.value/{val.id}/image_1920' or False,
+                            'image': val.dr_image and f'/web/image/product.attribute.value/{val.id}/dr_image' or False,
                         }
                         res_product['attributes'].append(attr_data)
-                        _logger.info("Producto %s - atributo añadido: %s", product.name, attr_data)
+                        _logger.debug("Producto %s - atributo añadido: %s", product.name, attr_data)
         return result
