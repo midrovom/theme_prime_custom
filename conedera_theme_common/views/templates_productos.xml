@@ -35,7 +35,7 @@
     <!-- Acordeon de descripción -->
     <template id="product_move_description_below_cart" inherit_id="website_sale.product">
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
-            <div class="accordion mt-3" id="accordionProduct">
+            <div class="accordion mt-3" id="accordionProductInfo">
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingDescription">
                         <button class="accordion-button collapsed" type="button"
@@ -45,67 +45,47 @@
                         </button>
                     </h2>
                     <div id="collapseDescription" class="accordion-collapse collapse"
-                        aria-labelledby="headingDescription" data-bs-parent="#accordionProduct">
+                        aria-labelledby="headingDescription" data-bs-parent="#accordionProductInfo">
                         <div class="accordion-body">
                             <div t-field="product.description_ecommerce"/>
                         </div>
                     </div>
                 </div>
 
-                <!-- Item: Características -->
+                <!-- Segundo item: Características -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingFeatures">
                         <button class="accordion-button collapsed" type="button"
                                 data-bs-toggle="collapse" data-bs-target="#collapseFeatures"
                                 aria-expanded="false" aria-controls="collapseFeatures">
-                            Características del producto
+                            Características
                         </button>
                     </h2>
                     <div id="collapseFeatures" class="accordion-collapse collapse"
-                        aria-labelledby="headingFeatures" data-bs-parent="#accordionProduct">
+                        aria-labelledby="headingFeatures" data-bs-parent="#accordionProductInfo">
                         <div class="accordion-body">
-                            <t t-if="product['attributes']">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <t t-foreach="product['attributes'][:5]" t-as="attr">
-                                            <div class="mb-2 d-flex align-items-center">
-                                                <img t-if="attr['image']"
-                                                    t-att-src="attr['image']"
-                                                    alt="Imagen atributo"
-                                                    style="height:24px; width:24px; object-fit:contain; margin-right:4px;"/>
-                                                <strong><t t-esc="attr['attribute_name']"/>:</strong>
-                                                <span class="ms-1"><t t-esc="attr['name']"/></span>
-                                            </div>
-                                        </t>
-                                    </div>
-                                    <div class="col-6">
-                                        <t t-foreach="product['attributes'][5:10]" t-as="attr">
-                                            <div class="mb-2 d-flex align-items-center">
-                                                <img t-if="attr['image']"
-                                                    t-att-src="attr['image']"
-                                                    alt="Imagen atributo"
-                                                    style="height:24px; width:24px; object-fit:contain; margin-right:4px;"/>
-                                                <strong><t t-esc="attr['attribute_name']"/>:</strong>
-                                                <span class="ms-1"><t t-esc="attr['name']"/></span>
-                                            </div>
-                                        </t>
-                                    </div>
-                                </div>
-                            </t>
-                            <t t-else="">
-                                <p class="text-muted">Este producto no tiene características definidas.</p>
+                            <t t-if="product.attribute_line_ids">
+                                <ul>
+                                    <t t-foreach="product.attribute_line_ids" t-as="line" t-key="line.id">
+                                        <li>
+                                            <t t-out="line.attribute_id.name"/>:
+                                            <t t-foreach="line.value_ids" t-as="val" t-key="val.id">
+                                                <t t-out="val.name"/>
+                                            </t>
+                                        </li>
+                                    </t>
+                                </ul>
                             </t>
                         </div>
                     </div>
                 </div>
+
             </div>
         </xpath>
     </template>
 
 
-
-
-
+    
     <!-- <template id="product_move_description_below_cart" inherit_id="website_sale.product">
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
             <div class="accordion mt-3" id="accordionProductDescription">
