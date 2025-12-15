@@ -39,22 +39,24 @@
             <div class="accordion mt-3" id="accordionProductDescription">
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingDescription">
-                        <button class="accordion-button collapsed" type="button" 
-                                data-bs-toggle="collapse" data-bs-target="#collapseDescription" 
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#collapseDescription"
                                 aria-expanded="false" aria-controls="collapseDescription">
                             Descripción del producto
                         </button>
                     </h2>
-                    <div id="collapseDescription" class="accordion-collapse collapse" 
+                    <div id="collapseDescription" class="accordion-collapse collapse"
                         aria-labelledby="headingDescription" data-bs-parent="#accordionProductDescription">
                         <div class="accordion-body">
-                            <t t-field="product.description_ecommerce"/>
+                            <!-- Aquí va el campo en un nodo HTML válido -->
+                            <div t-field="product.description_ecommerce"/>
                         </div>
                     </div>
                 </div>
             </div>
         </xpath>
     </template>
+
 
 
 
