@@ -5,12 +5,12 @@
 
 /* Ocultar atributos originales*/
 // Sección de marca 
-#product_attributes_simple {
-    display: none !important;
-}
-.o_wsale_product_page #product_details .d-flex.align-items-center.gap-3 {
-    display: none !important;
-}
+  // #product_attributes_simple {
+  //     display: none !important;
+  // }
+  // .o_wsale_product_page #product_details .d-flex.align-items-center.gap-3 {
+  //     display: none !important;
+  // }
 // Sección de descripción
 #wrap.o_wsale_product_page .nav.nav-tabs.justify-content-center a[href="#tp-product-description-tab"] {
     display: none !important;
@@ -95,11 +95,5 @@
 //Ocultar apartdo de categorias en vista grid
 .tp-category-pill-container {
   display: none !important;   // oculta el bloque
-}
-
-//Producto vista grid bordes redondeados
-.row.row-cols-2.row-cols-md-3.row-cols-lg-4.g-2.g-lg-3.mt-0 .card {
-  border-radius: 12px;   
-  overflow: hidden;      
 }
 
