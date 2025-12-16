@@ -57,7 +57,7 @@
 // Contador 
 .css_quantity {
   border: none !important;        
-  background-color: transparent;  
+  background-color: none;  
   box-shadow: none;             
 }
 
@@ -72,7 +72,7 @@
 .css_quantity input.quantity {
   background-color: #fff;      
   border: 1px solid #ccc;
-  border-radius: 8px;          
+  border-radius: 8px !important;          
   text-align: center;
   width: 60px;
   margin: 0 4px;              
