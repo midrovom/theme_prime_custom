@@ -92,3 +92,7 @@
   background-color: transparent; // mantiene el fondo limpio
 }
 
+//Ocultar apartdo de categorias en vista grid
+.tp-category-pill-container {
+  display: none !important;   // oculta el bloque
+}
