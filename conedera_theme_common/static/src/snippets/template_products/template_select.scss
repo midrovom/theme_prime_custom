@@ -55,36 +55,35 @@
 }
 
 // Contador 
-.o_wsale_product_quantity {
-  display: flex;
+.css_quantity {
+  display: inline-flex;
   align-items: center;
   border: 1px solid #ddd;   // borde alrededor del bloque
   border-radius: 8px;       // bordes redondeados
-  overflow: hidden;
-  margin-top: 10px;         // separación respecto al resto
-  width: fit-content;
+  padding: 4px;             // espacio interno
+  margin: 8px 0;            // separación respecto a otros elementos
 
-  input[type="number"] {
-    border: none;
-    text-align: center;
-    width: 60px;
-    font-weight: bold;
-  }
-
-  .btn-minus,
-  .btn-plus {
+  a.btn-link {
     background-color: #f8f9fa;
     border: 1px solid #ddd;
-    padding: 8px 12px;
-    font-size: 16px;
-    cursor: pointer;
     border-radius: 8px;     // bordes redondeados en los botones
-    margin: 0 4px;          // ligera separación entre ellos
+    margin: 0 4px;          // ligera separación entre botones e input
+    padding: 6px 10px;
+    color: #333;
     transition: background-color 0.3s ease;
 
     &:hover {
       background-color: #e0e0e0;
     }
+  }
+
+  input.quantity {
+    border: 1px solid #ddd;
+    border-radius: 8px;     // bordes redondeados en el input
+    text-align: center;
+    width: 60px;
+    margin: 0 4px;          // separación respecto a los botones
+    font-weight: bold;
   }
 }
 
