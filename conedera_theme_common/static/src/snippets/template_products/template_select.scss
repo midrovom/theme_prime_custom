@@ -58,17 +58,14 @@
 .css_quantity {
   display: inline-flex;
   align-items: center;
-  border: 1px solid #ddd;   // borde alrededor del bloque
-  border-radius: 8px;       // bordes redondeados
-  padding: 4px;             // espacio interno
-  margin: 8px 0;            // separación respecto a otros elementos
+  gap: 6px;                 // separación entre cada sección
+  margin: 10px 0;
 
   a.btn-link {
     background-color: #f8f9fa;
     border: 1px solid #ddd;
-    border-radius: 8px;     // bordes redondeados en los botones
-    margin: 0 4px;          // ligera separación entre botones e input
-    padding: 6px 10px;
+    border-radius: 8px;     // bordes redondeados en cada botón
+    padding: 6px 12px;
     color: #333;
     transition: background-color 0.3s ease;
 
@@ -82,8 +79,9 @@
     border-radius: 8px;     // bordes redondeados en el input
     text-align: center;
     width: 60px;
-    margin: 0 4px;          // separación respecto a los botones
     font-weight: bold;
+    padding: 6px;
   }
 }
+
 
