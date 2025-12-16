@@ -104,9 +104,11 @@
     <!-- Ruta del producto -->
     <template id="product_inherit_breadcrumb_position" inherit_id="website_sale.product">
         <xpath expr="//div[@id='product_detail_main']/div[1]" position="before">
-            <t t-call="website_sale.product_breadcrumb"/>
+            <t t-call="website.layout_breadcrumb"/>
         </xpath>
     </template>
+
+
 
 
 
