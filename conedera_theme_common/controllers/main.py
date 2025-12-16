@@ -1,19 +1,19 @@
 from odoo.addons.website_sale.controllers.main import WebsiteSale
+from odoo.osv import expression
 
 
 class WebsiteSaleFilterAttribute(WebsiteSale):
 
-    def _get_shop_values(self, category, search, **kwargs):
-        values = super()._get_shop_values(category, search, **kwargs)
+    def _get_search_domain(self, search, category, attrib_values):
+        domain = super()._get_search_domain(search, category, attrib_values)
 
-        attributes = values.get('attributes')
-        if attributes:
-            # Forzar carga del campo
-            attributes.read(['filter_attribute'])
+        allowed_attributes = self.env['product.attribute'].search([
+            ('filter_attribute', '=', True)
+        ])
 
-            # Filtrar SOLO los marcados
-            values['attributes'] = attributes.filtered(
-                lambda a: a.filter_attribute
-            )
+        domain = expression.AND([
+            domain,
+            [('attribute_line_ids.attribute_id', 'in', allowed_attributes.ids)]
+        ])
 
-        return values
+        return domain
