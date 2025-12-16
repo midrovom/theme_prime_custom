@@ -1,5 +1,7 @@
 
 from odoo.addons.theme_prime.controllers.main import ThemePrimeMainClass
+from odoo.addons.website_sale.controllers.main import WebsiteSale
+from odoo import http
 class ThemePrimeMainClassExtended(ThemePrimeMainClass):
 
     def _prepare_product_data(self, products, fields, pricelist, options=None):
@@ -18,10 +20,6 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
         return result
     
 # Funcion para filtrar atributos marcados
-
-from odoo.addons.website_sale.controllers.main import WebsiteSale
-from odoo import http
-
 class WebsiteSaleExtended(WebsiteSale):
 
     @http.route()
