@@ -22,47 +22,24 @@
             </div>
         </t>
     </template>
-<!-- 
+
     <template id="dynamic_filter_template_product_product_style_2" name="Productos por Marca">
         <t t-foreach="records" t-as="data">
             <t t-set="record" t-value="data['_record']"/>
             <div class="o_carousel_product_card card bg-transparent border-0">
                 <div class="overflow-hidden rounded text-center">
                     <a t-att-href="data['url']">
-                        <img class="card-img-top o_img_product_square o_img_product_cover"
-                            t-att-src="data['image_512']"
-                            t-att-alt="record.name"
-                            loading="lazy"/>
+                        <img class="card-img-top o_img_product_square o_img_product_cover" t-att-src="data['image_512']" t-att-alt="record.name" loading="lazy"/>
                     </a>
                 </div>
-
                 <div class="o_carousel_product_card_body text-center p-3">
                     <div class="text-muted small" t-esc="data.get('brand')"/>
                     <div class="h6" t-esc="data.get('display_name')"/>
                 </div>
             </div>
         </t>
-    </template> -->
-
-    <template id="dynamic_filter_template_product_product_style_2" name="Productos por Marca">
-        <t t-foreach="records" t-as="data">
-            <t t-set="record" t-value="data['_record']"/>
-            <div class="o_carousel_product_card card bg-transparent border-0">
-                <div class="overflow-hidden rounded text-center">
-                    <a t-att-href="data['url']">
-                        <img class="card-img-top o_img_product_square o_img_product_cover o_product_img_mobile"
-                            t-att-src="data['image_512']" t-att-alt="record.name" loading="lazy"/>
-                    </a>
-                </div>
-                <div class="o_carousel_product_card_body text-center p-3">
-                    <div class="text-muted small"
-                        t-esc="data.get('brand')"/>
-                    <div class="h6"
-                        t-esc="data.get('display_name')"/>
-                </div>
-            </div>
-        </t>
     </template>
+
 
 
 </odoo>
