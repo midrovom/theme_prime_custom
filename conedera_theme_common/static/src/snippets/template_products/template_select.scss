@@ -55,20 +55,26 @@
 }
 
 // Contador 
+.css_quantity {
+  border: none !important;        
+  background-color: transparent;  
+  box-shadow: none;             
+}
+
 .css_quantity a.btn-link {
-  background-color: #e0e0e0;   // gris para los botones
+  background-color: #e0e0e0;   
   border: 1px solid #ccc;
-  border-radius: 8px;          // bordes redondeados
-  margin: 0 4px;               // ligera separación
+  border-radius: 8px !important;          
+  margin: 0 4px;              
   padding: 6px 12px;
 }
 
 .css_quantity input.quantity {
-  background-color: #fff;      // blanco para el input
+  background-color: #fff;      
   border: 1px solid #ccc;
-  border-radius: 8px;          // bordes redondeados
+  border-radius: 8px;          
   text-align: center;
   width: 60px;
-  margin: 0 4px;               // ligera separación
+  margin: 0 4px;              
 }
 
