@@ -19,8 +19,14 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
     
 # Funcion para filtrar atributos marcados
 
+from odoo.addons.website_sale.controllers.main import WebsiteSale
+from odoo import http
+
+class WebsiteSaleExtended(WebsiteSale):
+
+    @http.route()
     def shop(self, page=0, category=None, search='', min_price=0.0,
-            max_price=0.0, ppg=False, **post):
+             max_price=0.0, ppg=False, **post):
 
         response = super().shop(
             page=page,
@@ -40,5 +46,3 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
             )
 
         return response
-
-
