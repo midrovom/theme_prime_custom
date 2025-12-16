@@ -12,9 +12,7 @@
     </template>
 
     <!-- Opciones para agregar apartado de imagen -->
-
-
-    <!-- <template id="website_s_dynamic_snippet_template_inherit" inherit_id="website.s_dynamic_snippet_template" name="Dynamic Snippet Template Inherit">
+    <template id="website_s_dynamic_snippet_template_inherit" inherit_id="website.s_dynamic_snippet_template" name="Dynamic Snippet Template Inherit">
         <xpath expr="//section[contains(@class, 's_dynamic_snippet_title')]" position="after">
             <section class="s_dynamic_snippet_image_only text-center my-4">
                 <img class="img-fluid oe_image oe_editable" data-oe-type="image" data-oe-expression="snippet_custom_img" src="/web/static/img/placeholder.png" style="max-width:220px;" />
@@ -33,35 +31,7 @@
                 <div data-js="DynamicSnippetImage" data-selector=".s_dynamic_snippet_image_only"/>
             </div>
         </xpath>
-    </template> -->
-
-    <template id="website_s_dynamic_snippet_template_inherit" inherit_id="website.s_dynamic_snippet_template" name="Dynamic Snippet Template Inherit">
-        <xpath expr="//section[contains(@class, 's_dynamic_snippet_title')]" position="after">
-            <section class="s_dynamic_snippet_image_only my-4">
-                <div class="row align-items-center">
-                    <div class="col-6 col-lg-3 text-center">
-                        <img class="img-fluid oe_image oe_editable" data-oe-type="image" data-oe-expression="snippet_custom_img"
-                            src="/web/static/img/placeholder.png" style="max-width:220px;" />
-                        </div>
-                    <div class="col-6 col-lg-9">
-                        <t t-call="dynamic_filter_template_product_product_style_2"/>
-                    </div>
-                </div>
-            </section>
-        </xpath>
     </template>
 
-    <template id="website_s_dynamic_snippet_options_template_inherit" inherit_id="website.s_dynamic_snippet_options_template" name="Dynamic Snippet Options Template Inherit">
-        <xpath expr="//div[@data-js='DynamicSnippetTitle']" position="after">
-            <div data-no-preview="true" t-attf-data-selector="#{snippet_selector}" data-target=".s_dynamic_snippet_image_only">
-                <we-button-group string="Section Image">
-                    <we-button data-select-class="justify-content-between" title="Top">Top</we-button>
-                    <we-button data-select-class="s_dynamic_snippet_image_aside col-lg-3 justify-content-between flex-lg-column justify-content-lg-start" title="Left">Left</we-button>
-                    <we-button data-select-class="d-none" title="No image">None</we-button>
-                </we-button-group>
-                <div data-js="DynamicSnippetImage" data-selector=".s_dynamic_snippet_image_only"/>
-            </div>
-        </xpath>
-    </template>
 
 </odoo>
