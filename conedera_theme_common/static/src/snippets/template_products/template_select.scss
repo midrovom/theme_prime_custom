@@ -49,8 +49,42 @@
     color: orange !important;        
 }
 
-// .oe_price, .oe_currency_value {
-//     font-weight: bold;
-//     color: orange !important;
-// }
+// Apartado de add to card
+#add_to_cart {
+  border-radius: 8px;  
+}
+
+// Contador 
+.o_wsale_product_quantity {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;   // borde alrededor del bloque
+  border-radius: 8px;       // bordes redondeados
+  overflow: hidden;
+  margin-top: 10px;         // separación respecto al resto
+  width: fit-content;
+
+  input[type="number"] {
+    border: none;
+    text-align: center;
+    width: 60px;
+    font-weight: bold;
+  }
+
+  .btn-minus,
+  .btn-plus {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 8px;     // bordes redondeados en los botones
+    margin: 0 4px;          // ligera separación entre ellos
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: #e0e0e0;
+    }
+  }
+}
 
