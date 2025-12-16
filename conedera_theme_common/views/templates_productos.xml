@@ -91,11 +91,13 @@
     </template>
 
     <!-- Precio del producto -->
-    <template id="product_price_inherit_precio_final" inherit_id="website_sale.product_price">
-        <xpath expr="//div[contains(@class, 'oe_price')]" position="replace">
-            <div class="oe_price" itemprop="offers" itemscope itemtype="http://schema.org/Offer">
-                <span class="me-1 fw-bold">Precio final: </span>
-                <!-- Precio actual -->
+    <template id="product_inherit_precio_final" inherit_id="website_sale.product">
+        <xpath expr="//div[@class='js_product js_main_product mb-3']/div" position="inside">
+            <div class="oe_price" itemprop="offers" itemscope="itemscope" itemtype="http://schema.org/Offer">
+                <span class="me-1 fw-bold">
+                    Precio final:
+                </span>
+
                 <span
                     class="price text-primary"
                     t-esc="combination_info['price']"
@@ -108,19 +110,6 @@
                 <span class="ms-1 text-muted">
                     (+IVA)
                 </span>
-
-                <!-- Precio tachado si hay descuento -->
-                <t t-if="combination_info.get('has_discounted_price')">
-                    <span
-                        class="text-muted text-decoration-line-through ms-2"
-                        t-esc="combination_info['list_price']"
-                        t-options="{
-                            'widget': 'monetary',
-                            'display_currency': combination_info['currency']
-                        }"
-                    />
-                </t>
-
             </div>
 
         </xpath>
