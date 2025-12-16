@@ -78,3 +78,17 @@
   margin: 0 4px;              
 }
 
+//Descargar Ficha Tecnica
+.tp-product-details-tab .nav-tabs {
+  border: none !important;       // elimina el borde inferior del contenedor de pestañas
+}
+
+.tp-product-details-tab .nav-tabs .nav-link {
+  border: none !important;       // elimina los bordes de cada pestaña
+}
+
+.tp-product-details-tab .nav-tabs .nav-link.active {
+  border: none !important;       // elimina el borde de la pestaña activa
+  background-color: transparent; // mantiene el fondo limpio
+}
+
