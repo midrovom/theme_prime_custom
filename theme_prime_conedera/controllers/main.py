@@ -18,13 +18,25 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
         return result
     
 # Funcion para filtrar atributos marcados
-    def _get_shop_values(self, category, search, **kwargs):
-        values = super()._get_shop_values(category, search, **kwargs)
 
-        attributes = values.get('attributes')
+    def shop(self, page=0, category=None, search='', min_price=0.0,
+             max_price=0.0, ppg=False, **post):
+
+        response = super().shop(
+            page=page,
+            category=category,
+            search=search,
+            min_price=min_price,
+            max_price=max_price,
+            ppg=ppg,
+            **post
+        )
+
+        attributes = response.qcontext.get('attributes')
         if attributes:
-            values['attributes'] = attributes.filtered(
+            response.qcontext['attributes'] = attributes.filtered(
                 lambda a: a.filter_attribute
             )
 
-        return values
+        return response
+
