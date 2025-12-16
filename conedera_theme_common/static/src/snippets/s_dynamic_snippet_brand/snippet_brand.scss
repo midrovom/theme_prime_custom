@@ -32,17 +32,6 @@
 }
 
 ///////////////////////////////////////////
-@media (max-width: 768px) {
-    .s_dynamic_snippet_image_aside {
-        display: flex;
-        flex-direction: row;       /* imagen a la izquierda, texto a la derecha */
-        align-items: center;
-    }
 
-    .s_dynamic_snippet_image_aside img {
-        max-width: 100px;          /* tamaño reducido en móvil */
-        margin-right: 10px;        /* espacio entre imagen y texto */
-    }
-}
 
 
