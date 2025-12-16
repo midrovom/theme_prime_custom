@@ -30,3 +30,39 @@
     text-align: left;         
     width: 100%;                   
 }
+
+/* ===============================
+   Carrusel productos - Mobile
+   =============================== */
+
+@media (max-width: 767.98px) {
+
+    .o_carousel_product_card {
+        max-width: 160px;   // evita cards gigantes
+        margin: 0 auto;
+    }
+
+    .o_product_img_mobile {
+        height: 140px;     // imagen más pequeña
+        object-fit: contain;
+    }
+
+    .o_carousel_product_card_body {
+        padding: 0.5rem !important;
+    }
+
+    .o_carousel_product_card_body .h6 {
+        font-size: 0.85rem;
+        line-height: 1.2;
+    }
+}
+
+/* ===============================
+   Desktop (comportamiento normal)
+   =============================== */
+
+@media (min-width: 768px) {
+    .o_product_img_mobile {
+        height: auto;
+    }
+}
