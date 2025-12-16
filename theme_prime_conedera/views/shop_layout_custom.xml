@@ -1,15 +1,11 @@
 <odoo>
-    <template id="shop_layout_filters_only_filter_attribute"
-              inherit_id="theme_prime.shop_layout_filters">
+    <!-- <template id="shop_layout_filters_only_filter_attribute" inherit_id="theme_prime.shop_layout_filters">
         <xpath expr="//t[@t-foreach='attributes']" position="replace">
             <t t-foreach="attributes.filtered(lambda a: a.filter_attribute)" t-as="attribute">
-
-                <li t-if="attribute.value_ids
-                          and len(attribute.value_ids) &gt; 1
-                          and attribute.visibility == 'visible'"
+                <li t-if="attribute.value_ids and len(attribute.value_ids) &gt; 1 and attribute.visibility == 'visible'"
                     t-attf-class="nav-item tp-filter-attribute #{_filter_attribute_classes}">
 
-                    <!-- VARIABLES -->
+
                     <t t-set="string">
                         <span t-field="attribute.name"/>
                     </t>
@@ -26,10 +22,10 @@
                     <t t-set="show_count" t-value="_filter_show_attribute_count"/>
                     <t t-set="count_list" t-value="get_attrib_count"/>
 
-                    <!-- WRAPPER + CONTENIDO DENTRO -->
+
                     <t t-call="theme_prime.filter_attribute">
 
-                        <!-- VALORES DENTRO DEL COLLAPSIBLE -->
+
                         <t t-if="attribute.display_type == 'select'">
                             <t t-call="theme_prime.filter_attribute_select"/>
                         </t>
@@ -68,7 +64,7 @@
             </t>
         </xpath>
 
-    </template>
+    </template> -->
 
 
     <!-- <template id="shop_layout_filters_only_filter_attribute" inherit_id="theme_prime.shop_layout_filters">
