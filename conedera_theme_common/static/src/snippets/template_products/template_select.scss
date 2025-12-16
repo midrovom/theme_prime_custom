@@ -96,3 +96,10 @@
 .tp-category-pill-container {
   display: none !important;   // oculta el bloque
 }
+
+//Producto vista grid bordes redondeados
+.row.row-cols-2.row-cols-md-3.row-cols-lg-4.g-2.g-lg-3.mt-0 .card {
+  border-radius: 12px;   
+  overflow: hidden;      
+}
+
