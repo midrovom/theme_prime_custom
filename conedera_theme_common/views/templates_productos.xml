@@ -92,22 +92,12 @@
 
     <!-- Precio del producto -->
     <template id="product_inherit_precio_final" inherit_id="website_sale.product">
-        <!-- Localizamos el div que contiene la llamada a product_price -->
         <xpath expr="//div[@class='js_product js_main_product mb-3']/div" position="replace">
             <div>
-                <!-- Texto antes del precio -->
-                <span class="me-1 fw-bold">Precio Final:</span>
-
-                <!-- Precio original -->
-                <t t-call="website_sale.product_price"/>
-
-                <!-- Texto después del precio -->
-                <span class="ms-1 text-muted">(+IVA)</span>
-
-                <!-- Mantener el precio unitario si aplica -->
-                <small t-if="'base_unit_price' in combination_info"
-                       class="ms-1 text-muted o_base_unit_price_wrapper d-none"
-                       groups="website_sale.group_show_uom_price">
+                <span class="precio-texto">Precio Final:</span>
+                    <t t-call="website_sale.product_price"/>
+                        <span class="precio-texto">(+IVA)</span>
+                            <small t-if="'base_unit_price' in combination_info" class="ms-1 text-muted o_base_unit_price_wrapper d-none" groups="website_sale.group_show_uom_price">
                     <t t-call="website_sale.base_unit_price"/>
                 </small>
             </div>
