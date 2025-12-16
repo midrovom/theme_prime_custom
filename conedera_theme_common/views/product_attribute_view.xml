@@ -1,4 +1,5 @@
 <odoo>
+    <!-- Registro de snippet de check para atributos -->
     <record id="product_attribute_view_form_inherit_dia" model="ir.ui.view">
         <field name="name">product.attribute.view.form.inherit.dia</field>
         <field name="model">product.attribute</field>

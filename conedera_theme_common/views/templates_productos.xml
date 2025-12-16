@@ -27,7 +27,7 @@
     </template>
 
     <!-- Apartado de Descripción -->
-    <!-- Eliminar seccion original -->
+    <!-- Eliminar seccion original de descripción -->
     <template id="remove_original_description" inherit_id="website_sale.product">
         <xpath expr="//div[@t-field='product.description_ecommerce']" position="replace"/>
     </template>
