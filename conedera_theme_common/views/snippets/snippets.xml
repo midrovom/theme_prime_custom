@@ -6,12 +6,5 @@
                 <keywords>columns, gallery, pictures, photos, media, showcase, portfolio, custom</keywords>
             </t>
         </xpath>
-
-        <!-- Registro de snippet de cuadro de texto -->
-        <!-- <xpath expr="//t[@t-snippet='website.s_text_block']" position="after">
-            <t t-snippet="conedera_theme_common.s_text_block_1" string="Texblog" group="text">
-                <keywords>content, paragraph, article, body, description, information</keywords>
-            </t>
-        </xpath> -->
     </template>
 </odoo>
