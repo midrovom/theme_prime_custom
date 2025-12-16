@@ -12,7 +12,7 @@ const DynamicSnippetProductsExtended = DynamicSnippetProducts.extend({
         if (uiUtils.isSmall()) {
             options.chunkSize = 2; //vista de productos mobil
         } else {
-            options.chunkSize = 4;// cantidad de productos web/escritorio
+            options.chunkSize = 6;// cantidad de productos web/escritorio
         }
         return options;
     },
