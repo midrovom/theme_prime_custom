@@ -103,10 +103,12 @@
 
     <!-- Ruta del producto -->
     <template id="product_inherit_carousel_position" inherit_id="website_sale.product">
-        <xpath expr="//div[@id='product_detail_main']/div[contains(@class,'o_wsale_product_images')]" position="before">
+        <xpath expr="//div[@id='product_detail_main']" position="inside">
             <t t-call="website_sale.shop_product_carousel"/>
         </xpath>
     </template>
+
+
 
 
 </odoo> 
