@@ -16,3 +16,15 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
                         res_product['brands'].append(val.name)
 
         return result
+    
+# Funcion para filtrar atributos marcados
+    def _get_shop_values(self, category, search, **kwargs):
+        values = super()._get_shop_values(category, search, **kwargs)
+
+        attributes = values.get('attributes')
+        if attributes:
+            values['attributes'] = attributes.filtered(
+                lambda a: a.filter_attribute
+            )
+
+        return values
