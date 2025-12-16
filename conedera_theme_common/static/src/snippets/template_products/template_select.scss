@@ -10,6 +10,10 @@
 #wrap.o_wsale_product_page .nav.nav-tabs.justify-content-center a[href="#tp-product-description-tab"] {
     display: none !important;
 }
+//Borde redondeados a Productos
+#wrap.js_sale .oe_website_sale .tp-rounded-border-radius {
+    border-radius: 15px;
+}
 
 //Estilo para los acordeones
 /* Estilos personalizados para las características del producto */
