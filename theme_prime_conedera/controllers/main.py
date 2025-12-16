@@ -20,7 +20,7 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
 # Funcion para filtrar atributos marcados
 
     def shop(self, page=0, category=None, search='', min_price=0.0,
-             max_price=0.0, ppg=False, **post):
+            max_price=0.0, ppg=False, **post):
 
         response = super().shop(
             page=page,
@@ -34,9 +34,11 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
 
         attributes = response.qcontext.get('attributes')
         if attributes:
+            attributes.read(['filter_attribute'])
             response.qcontext['attributes'] = attributes.filtered(
                 lambda a: a.filter_attribute
             )
 
         return response
+
 
