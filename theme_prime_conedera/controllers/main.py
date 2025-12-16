@@ -16,3 +16,19 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
                         res_product['brands'].append(val.name)
 
         return result
+
+# Controlador para check de atributos
+
+from odoo.addons.website_sale.controllers.main import WebsiteSale
+from odoo.http import request
+
+class WebsiteSaleInherit(WebsiteSale):
+
+    def _get_shop_values(self, category, search, **kwargs):
+        values = super()._get_shop_values(category, search, **kwargs)
+
+        attributes = values.get('attributes')
+        if attributes:
+            attributes.read(['filter_attribute'])
+
+        return values
