@@ -56,25 +56,19 @@
 
 // Contador 
 .css_quantity a.btn-link {
-  border: 1px solid #ddd;
-  border-radius: 8px;     // bordes redondeados
-  margin: 0 4px;          // ligera separación
+  background-color: #e0e0e0;   // gris para los botones
+  border: 1px solid #ccc;
+  border-radius: 8px;          // bordes redondeados
+  margin: 0 4px;               // ligera separación
   padding: 6px 12px;
-  background-color: inherit; // mantiene el color original
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #f0f0f0; // efecto suave al pasar el mouse
-  }
 }
 
-/* Input de cantidad */
 .css_quantity input.quantity {
-  border: 1px solid #ddd;
-  border-radius: 8px;     // bordes redondeados
+  background-color: #fff;      // blanco para el input
+  border: 1px solid #ccc;
+  border-radius: 8px;          // bordes redondeados
   text-align: center;
   width: 60px;
-  margin: 0 4px;          // separación respecto a los botones
-  font-weight: bold;
-  background-color: inherit; // mantiene el color original
+  margin: 0 4px;               // ligera separación
 }
+
