@@ -32,17 +32,17 @@
 }
 
 ///////////////////////////////////////////
-/* Estilo general */
-.o_carousel_product_card img {
-    max-width: 100%;
-    height: auto;
-}
-
-/* En pantallas móviles (ejemplo: menos de 768px) */
 @media (max-width: 768px) {
-    .o_carousel_product_card img {
-        width: 120px;   /* ajusta el tamaño según lo que necesites */
-        height: auto;
+    .s_dynamic_snippet_image_aside {
+        display: flex;
+        flex-direction: row;       /* imagen a la izquierda, texto a la derecha */
+        align-items: center;
+    }
+
+    .s_dynamic_snippet_image_aside img {
+        max-width: 100px;          /* tamaño reducido en móvil */
+        margin-right: 10px;        /* espacio entre imagen y texto */
     }
 }
+
 

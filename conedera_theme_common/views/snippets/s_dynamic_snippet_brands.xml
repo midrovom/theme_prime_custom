@@ -23,7 +23,7 @@
     <template id="website_s_dynamic_snippet_options_template_inherit" inherit_id="website.s_dynamic_snippet_options_template" name="Dynamic Snippet Options Template Inherit">
         <xpath expr="//div[@data-js='DynamicSnippetTitle']" position="after">
             <div data-no-preview="true" t-attf-data-selector="#{snippet_selector}" data-target=".s_dynamic_snippet_image_only">
-                <we-button-group string="Section Image">
+                <we-button-group string="Seccion imagen">
                     <we-button data-select-class="justify-content-between" title="Top">Top</we-button>
                     <we-button data-select-class="s_dynamic_snippet_image_aside col-lg-3 justify-content-between flex-lg-column justify-content-lg-start" title="Left">Left</we-button>
                     <we-button data-select-class="d-none" title="No image">None</we-button>
