@@ -1,10 +1,16 @@
 <odoo>
-    <template id="shop_layout_filters_only_filter_attribute" inherit_id="theme_prime.shop_layout_filters">
+    <template id="shop_layout_filters_only_filter_attribute"
+              inherit_id="theme_prime.shop_layout_filters">
+
         <xpath expr="//t[@t-foreach='attributes']" position="replace">
             <t t-foreach="attributes.filtered(lambda a: a.filter_attribute)" t-as="attribute">
-                <li t-if="attribute.value_ids and len(attribute.value_ids) &gt; 1 and attribute.visibility == 'visible'"
+
+                <li t-if="attribute.value_ids
+                          and len(attribute.value_ids) &gt; 1
+                          and attribute.visibility == 'visible'"
                     t-attf-class="nav-item tp-filter-attribute #{_filter_attribute_classes}">
-                    <!-- VARIABLES OBLIGATORIAS -->
+
+                    <!-- CONTEXTO OBLIGATORIO -->
                     <t t-set="string">
                         <span t-field="attribute.name"/>
                     </t>
@@ -20,12 +26,50 @@
                        t-value="_config_shop_filters.get('hide_extra_attrib_value')"/>
                     <t t-set="show_count" t-value="_filter_show_attribute_count"/>
                     <t t-set="count_list" t-value="get_attrib_count"/>
-                    <!-- LLAMADA FINAL -->
+
+                    <!-- WRAPPER -->
                     <t t-call="theme_prime.filter_attribute"/>
+
+                    <t t-if="attribute.display_type == 'select'">
+                        <t t-call="theme_prime.filter_attribute_select"/>
+                    </t>
+
+                    <t t-if="attribute.display_type in ['radio', 'pills', 'radio_circle', 'radio_square']">
+                        <t t-call="theme_prime.filter_attribute_checkbox"/>
+                    </t>
+
+                    <t t-if="attribute.display_type == 'radio_image'">
+                        <t t-if="attribute.dr_radio_image_style == 'default'">
+                            <t t-call="theme_prime.filter_attribute_checkbox"/>
+                        </t>
+                        <t t-elif="attribute.dr_radio_image_style in ['image', 'image_compact']">
+                            <t t-set="show_image" t-value="True"/>
+                            <t t-set="image_model" t-value="'product.attribute.value'"/>
+                            <t t-set="image_field" t-value="'dr_image'"/>
+                            <t t-set="compact_image"
+                               t-value="attribute.dr_radio_image_style == 'image_compact'"/>
+                            <t t-call="theme_prime.filter_attribute_image"/>
+                        </t>
+                        <t t-elif="attribute.dr_radio_image_style == 'image_text'">
+                            <t t-set="show_image" t-value="True"/>
+                            <t t-set="image_model" t-value="'product.attribute.value'"/>
+                            <t t-set="image_field" t-value="'dr_image'"/>
+                            <t t-call="theme_prime.filter_attribute_checkbox"/>
+                        </t>
+                    </t>
+
+                    <t t-if="attribute.display_type == 'color'">
+                        <t t-set="show_color" t-value="True"/>
+                        <t t-call="theme_prime.filter_attribute_checkbox"/>
+                    </t>
+
                 </li>
             </t>
         </xpath>
+
     </template>
+
+
 
 
 
