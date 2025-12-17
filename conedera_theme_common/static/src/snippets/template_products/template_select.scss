@@ -102,3 +102,8 @@
   display: none !important;   // oculta el bloque
 }
 // Sección de ruta del producto
+@media (max-width: 767.98px) {
+    .o_wsale_product_page .breadcrumb {
+        --bs-breadcrumb-divider: "/";
+    }
+}
