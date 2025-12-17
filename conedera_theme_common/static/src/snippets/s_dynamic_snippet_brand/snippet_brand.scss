@@ -38,6 +38,14 @@
     height: auto;               
   }
 }
+// Versión mobil para el carrucel de producto tempalte style 2
+@media (max-width: 767px) {
+  .dynamic_filter_template_product_product_style_2 .s_dynamic_snippet_row .col-6 {
+    flex: 0 0 100%;   /* ocupa todo el ancho */
+    max-width: 100%;  /* asegura que no se divida en dos */
+  }
+}
+
 
 
 
