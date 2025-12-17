@@ -6,13 +6,20 @@
         </xpath>
     </template>
 
-<!--Apartado para ocultar sección de item found-->
+    <!--Apartado para ocultar sección de item found-->
     <template id="inherit_shop_layout_add_mobile_class" inherit_id="theme_prime.shop_layout">
         <xpath expr="//div[contains(@t-attf-class, 'tp-shop-topbar')]" position="attributes">
             <attribute name="t-attf-class"> py-2 tp-shop-topbar shop-mobile-header #{_bordered_classes} </attribute>
         </xpath>
     </template>
 
+    <template id="inherit_shop_filters_title_desktop" inherit_id="theme_prime.shop_layout">
+        <xpath expr="//div[@id='products_grid_before']/div[@class='tp-filters-container']" position="before">
+            <div class="d-none d-lg-block mb-2">
+                <h5 class="mb-0 fw-semibold">Filtros</h5>
+            </div>
+        </xpath>
+    </template>
 
 </odoo>
 
