@@ -15,12 +15,13 @@
 
     <!--Apartado para filtros-->
     <template id="shop_filters_add_title_inside" inherit_id="theme_prime.shop_layout_filters">
-        <xpath expr="//ul[contains(@class,'nav-pills')]/li[1]" position="before">
-            <li class="tp-filter-attribute tp-filters-header d-none d-lg-block">
-                <span class="tp-filters-title"> Filtros </span>
-            </li>
+        <xpath expr="//div[contains(@class,'tp-filters-container')]" osition="inside">
+            <div class="tp-filters-header d-none d-lg-block">
+                <span class="tp-filters-title">Filtros</span>
+            </div>
         </xpath>
     </template>
+
 
 
     <!-- <template id="inherit_shop_filters_title_desktop" inherit_id="theme_prime.shop_layout">
