@@ -40,21 +40,12 @@
 }
 
 /* Ajustar tamaño de imágenes en el carrusel Imagen marca + Producto */
-
 @media (max-width: 767px) {
-  .dynamic_filter_template_product_product_style_2 {
-    max-width: 220px !important;   /* igual al snippet de imagen */
-    margin: 0 auto !important;     /* centra el carrusel */
-  }
-
-  .dynamic_filter_template_product_product_style_2 .o_carousel_product_card {
-    max-width: 100% !important;    /* las cards se ajustan al nuevo ancho */
-  }
-
-  .dynamic_filter_template_product_product_style_2 .o_carousel_product_card img {
-    max-width: 100% !important;    /* imagen se adapta al ancho reducido */
-    height: auto !important;
+  .dynamic_filter_template_product_product_style_2 .w-100 {
+    width: 80% !important;  /* se aplica solo dentro de ese template */
+    margin: 0 auto;         /* opcional: centra el carrusel */
   }
 }
+
 
 
