@@ -111,10 +111,19 @@
 }
 
 //Sección de item found oculta
+//Mobile
 @media (max-width: 767.98px) {
     .shop-mobile-header {
         display: none !important;
     }
 }
+
+//Escritorio
+@media (min-width: 992px) {
+  .tp-shop-topbar .d-lg-flex {
+    display: none !important;
+  }
+}
+
 
 
