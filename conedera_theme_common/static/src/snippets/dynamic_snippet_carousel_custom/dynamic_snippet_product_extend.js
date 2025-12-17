@@ -8,14 +8,13 @@ const DynamicSnippetProductsExtended = DynamicSnippetProducts.extend({
     _getQWebRenderOptions() {
         const options = this._super.apply(this, arguments);
 
-        if (options.templateKey === 'dynamic_filter_template_product_product_style_2') {
+        if (this.templateKey === 'dynamic_filter_template_product_product_style_2') {
             if (uiUtils.isSmall()) {
                 options.chunkSize = 1; // mobile: 1 producto
             } else {
-                options.chunkSize = 4; // desktop (o el valor que quieras)
+                options.chunkSize = 4;
             }
         } else {
-            // comportamiento normal para el resto
             if (uiUtils.isSmall()) {
                 options.chunkSize = 2;
             } else {
@@ -27,7 +26,6 @@ const DynamicSnippetProductsExtended = DynamicSnippetProducts.extend({
     },
 });
 
-// Sobrescribimos el snippet original
 publicWidget.registry.dynamic_snippet_products = DynamicSnippetProductsExtended;
 
 export default DynamicSnippetProductsExtended;
