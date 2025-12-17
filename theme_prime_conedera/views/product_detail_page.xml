@@ -5,5 +5,13 @@
             <span class="fa fa-file-pdf-o me-1"/> Descargar Ficha Técnica
         </xpath>
     </template>
+
+<!--Apartado para ocultar sección de item found-->
+    <template id="inherit_shop_layout_add_mobile_class" inherit_id="theme_prime.shop_layout">
+        <xpath expr="//div[contains(@class, 'tp-shop-topbar')]" position="attributes">
+            <attribute name="class" add="shop-mobile-header"/>
+        </xpath>
+    </template>
+
 </odoo>
 
