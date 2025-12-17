@@ -126,52 +126,36 @@
 }
 
 //Filtros para productos
-// Contenedor general 
+//Bordes Generales
 #products_grid_before .tp-filters-container {
     border-radius: 12px;
     border: 1px solid #e5e7eb;
+    padding: 12px;
     background: #fff;
-    overflow: hidden; 
 }
 
-// Header "Filtros"
-#products_grid_before .tp-filters-header {
+.tp-filters-header {
     padding: 16px 20px;
     border-bottom: 1px solid #e5e5e5;
 }
 
-#products_grid_before .tp-filters-title {
+.tp-filters-title {
     font-size: 22px;
     font-weight: 700;
     color: #ff7a00;
-    margin: 0;
 }
 
-// Cada bloque de filtro
+/* Cada filtro */
 #products_grid_before .tp-filter-attribute {
     border-bottom: 1px solid #e5e5e5;
 }
 
-// Quitar borde al último filtro
+/* Último sin borde */
 #products_grid_before .tp-filter-attribute:last-child {
     border-bottom: none;
 }
 
-// Título de cada atributo
-#products_grid_before .tp-filter-attribute-title {
-    padding: 14px 20px;
-}
 
-@media (max-width: 991px) {
-    #products_grid_before .tp-filters-header {
-        padding: 14px 16px;
-    }
 
-    #products_grid_before .tp-filters-title {
-        font-size: 18px;
-    }
 
-    #products_grid_before .tp-filter-attribute-title {
-        padding: 12px 16px;
-    }
-}
+
