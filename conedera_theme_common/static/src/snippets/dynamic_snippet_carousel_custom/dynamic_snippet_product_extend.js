@@ -7,23 +7,17 @@ const DynamicSnippetProductsExtended = DynamicSnippetProducts.extend({
     /**
      * @override
      */
-    _getQWebRenderOptions() {
-        const options = this._super.apply(this, arguments);
-
-        // Forzar chunkSize = 1 SOLO para tu template
-        if (options.templateKey === "conedera_theme_common.dynamic_filter_template_product_product_style_2") {
+    getQWebRenderOptions() {
+        const options = this._super(...arguments);
+        console.log("Options:", options);
+        if (options.templateKey && options.templateKey.includes("dynamic_filter_template_product_product_style_2")) {
             options.chunkSize = 1;
-            console.log("Forzando chunkSize=1 para este template");
         } else {
-            // Para los demás templates, mantener la lógica normal
-            if (uiUtils.isSmall()) {
-                options.chunkSize = 2; // vista móvil
-            } else {
-                options.chunkSize = 4; // vista escritorio
-            }
+            options.chunkSize = uiUtils.isSmall() ? 2 : 4;
         }
         return options;
     },
+
 });
 
 // Sobrescribir el registro original
