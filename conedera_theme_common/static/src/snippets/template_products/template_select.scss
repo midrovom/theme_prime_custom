@@ -15,9 +15,11 @@
     border-radius: 15px !important;
 }
 //Ruta de navegación del producto
-#product_detail > .row:first-of-type ol.breadcrumb {
+/* Hide ORIGINAL Theme Prime product breadcrumb */
+#product_detail .col-auto.mb-2.flex-grow-1.flex-shrink-1 > ol.breadcrumb {
     display: none !important;
 }
+
 
 //Estilo para los acordeones
 /* Estilos personalizados para las características del producto */
