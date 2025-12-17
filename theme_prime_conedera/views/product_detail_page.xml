@@ -5,15 +5,5 @@
             <span class="fa fa-file-pdf-o me-1"/> Descargar Ficha Técnica
         </xpath>
     </template>
-
-    <!-- Apartado de ruta del producto -->
-    <template id="theme_prime_hide_original_breadcrumb" inherit_id="theme_prime.product">
-        <xpath expr="//section[@id='product_detail']//ol[contains(@class,'breadcrumb')]"
-               position="attributes">
-            <attribute name="t-if">False</attribute>
-        </xpath>
-    </template>
-
-
 </odoo>
 
