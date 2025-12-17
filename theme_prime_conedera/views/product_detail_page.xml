@@ -8,10 +8,11 @@
 
 <!--Apartado para ocultar sección de item found-->
     <template id="inherit_shop_layout_add_mobile_class" inherit_id="theme_prime.shop_layout">
-        <xpath expr="//div[contains(@class, 'tp-shop-topbar')]" position="attributes">
-            <attribute name="class" add="shop-mobile-header"/>
+        <xpath expr="//div[contains(@t-attf-class, 'tp-shop-topbar')]" position="attributes">
+            <attribute name="t-attf-class"> py-2 tp-shop-topbar shop-mobile-header #{_bordered_classes} </attribute>
         </xpath>
     </template>
+
 
 </odoo>
 
