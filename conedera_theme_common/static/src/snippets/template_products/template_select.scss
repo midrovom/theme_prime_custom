@@ -110,3 +110,10 @@
   }
 }
 
+//Sección de item found oculta
+@media (max-width: 767px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
