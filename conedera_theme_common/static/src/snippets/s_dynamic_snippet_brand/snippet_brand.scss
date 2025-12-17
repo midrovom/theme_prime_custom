@@ -31,7 +31,13 @@
     width: 100%;                   
 }
 
-///////////////////////////////////////////
+//Version mobil para apartado de imagen
+@media (max-width: 767px) {
+  .s_dynamic_snippet_image_only img {
+    max-width: 100px !important; 
+    height: auto;               
+  }
+}
 
 
 
