@@ -9,9 +9,7 @@ const DynamicSnippetProductsExtended = DynamicSnippetProducts.extend({
 
         // Leer el template-key directamente del DOM
         const tplKey = this.$el.data("template-key");
-        console.log("template-key detectado:", tplKey);
 
-        // Si es tu template y es móvil → forzar 1 producto por slide
         if (
             tplKey &&
             tplKey.includes("dynamic_filter_template_product_product_style_2") &&
