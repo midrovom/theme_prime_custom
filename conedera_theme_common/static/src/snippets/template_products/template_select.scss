@@ -14,6 +14,10 @@
 #wrap.js_sale .oe_website_sale .tp-rounded-border-radius {
     border-radius: 15px !important;
 }
+//Ruta de navegación del producto
+#product_detail > .row:first-of-type ol.breadcrumb {
+    display: none !important;
+}
 
 //Estilo para los acordeones
 /* Estilos personalizados para las características del producto */
