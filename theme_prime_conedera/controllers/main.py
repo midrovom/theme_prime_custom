@@ -19,7 +19,7 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
 
         return result
     
-# Funcion para filtrar atributos marcados
+# Funcion para agregar los atributos marcados al filtro
 class WebsiteSaleExtended(WebsiteSale):
 
     @http.route()
