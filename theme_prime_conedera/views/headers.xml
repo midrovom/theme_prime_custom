@@ -85,11 +85,6 @@
         <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace"></xpath>
         <!-- Ocultar carrito -->
         <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace"/>
-        <!-- Centrar logo-->
-        <xpath expr="//t[@t-call='website.placeholder_header_brand']/t[@t-set='_link_class']" position="attributes">
-            <attribute name="t-valuef">mx-auto d-block text-center</attribute>
-        </xpath>
-    
     </template>
 
 
