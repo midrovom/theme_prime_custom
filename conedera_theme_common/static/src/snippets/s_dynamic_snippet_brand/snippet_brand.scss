@@ -40,12 +40,14 @@
 }
 
 /* Ajustar tamaño de imágenes en el carrusel Imagen marca + Producto */
+/* Móvil: reducir SOLO el carrusel del template Imagen marca + Producto */
 @media (max-width: 767px) {
-  .dynamic_filter_template_product_product_style_2 .w-100 {
-    width: 80% !important;  /* se aplica solo dentro de ese template */
-    margin: 0 auto;         /* opcional: centra el carrusel */
+  section[data-template-key*="dynamic_filter_template_product_product_style_2"] .carousel-inner.w-100 {
+    width: 80% !important;
+    margin: 0 auto !important;
   }
 }
+
 
 
 
