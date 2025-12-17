@@ -1,0 +1,11 @@
+/* Centrar logo en header móvil */
+.o_header_mobile [data-name="Navbar Logo"] {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  text-align: center;
+}
+
+.o_header_mobile [data-name="Navbar Logo"] img {
+  display: inline-block; /* asegura que la imagen se centre dentro del span */
+}
