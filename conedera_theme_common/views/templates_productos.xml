@@ -104,7 +104,7 @@
     <!-- Ruta del producto -->
     <template id="remove_original_breadcrumb" inherit_id="website_sale.product">
         <!-- Elimina el breadcrumb original -->
-        <xpath expr="//ol[@class='breadcrumb p-0 m-0 bg-transparent']" position="replace"/>
+        <xpath expr="//ol[contains(@class,'o_wsale_breadcrumb')]" position="replace"/>
     </template>
     
     <!-- Agregar ruta arriba del nombre del producto -->
