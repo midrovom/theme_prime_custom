@@ -13,6 +13,7 @@ const DynamicSnippetProductsExtended = DynamicSnippetProducts.extend({
         // Forzar chunkSize = 1 SOLO para tu template
         if (options.templateKey === "conedera_theme_common.dynamic_filter_template_product_product_style_2") {
             options.chunkSize = 1;
+            console.log("Forzando chunkSize=1 para este template");
         } else {
             // Para los demás templates, mantener la lógica normal
             if (uiUtils.isSmall()) {
