@@ -34,21 +34,26 @@
 //Version mobil para apartado de imagen
 @media (max-width: 767px) {
   .s_dynamic_snippet_image_only img {
-    max-width: 120px !important; 
+    max-width: 110px !important; 
     height: auto;               
   }
 }
 
 /* Ajustar tamaño de imágenes en el carrusel Imagen marca + Producto */
+
 @media (max-width: 767px) {
-  .dynamic_filter_template_product_product_style_2 .o_carousel_product_card {
-    max-width: 180px !important;   /* ajusta el ancho de la card */
-    margin: 0 auto !important;     /* centra la card dentro del slide */
-    padding: 0.5rem !important;    /* reduce el padding interno */
+  .dynamic_filter_template_product_product_style_2 {
+    max-width: 220px !important;   /* igual al snippet de imagen */
+    margin: 0 auto !important;     /* centra el carrusel */
   }
 
-  .dynamic_filter_template_product_product_style_2 .o_carousel_product_card_body {
-    font-size: 0.85rem !important; /* texto más compacto */
+  .dynamic_filter_template_product_product_style_2 .o_carousel_product_card {
+    max-width: 100% !important;    /* las cards se ajustan al nuevo ancho */
+  }
+
+  .dynamic_filter_template_product_product_style_2 .o_carousel_product_card img {
+    max-width: 100% !important;    /* imagen se adapta al ancho reducido */
+    height: auto !important;
   }
 }
 
