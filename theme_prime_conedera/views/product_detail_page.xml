@@ -13,13 +13,20 @@
         </xpath>
     </template>
 
-    <template id="inherit_shop_filters_title_desktop" inherit_id="theme_prime.shop_layout">
+    <!--Apartado para filtros-->
+    <template id="inherit_shop_filters_title_inside" inherit_id="theme_prime.shop_layout">
+        <xpath expr="//div[@id='products_grid_before']/div[@class='tp-filters-container']" position="inside">
+            <div class="tp-filters-title d-none d-lg-block"> Filtros </div>
+        </xpath>
+    </template>
+
+    <!-- <template id="inherit_shop_filters_title_desktop" inherit_id="theme_prime.shop_layout">
         <xpath expr="//div[@id='products_grid_before']/div[@class='tp-filters-container']" position="before">
             <div class="d-none d-lg-block mb-2">
                 <h5 class="mb-0 fw-semibold">Filtros</h5>
             </div>
         </xpath>
-    </template>
+    </template> -->
 
 </odoo>
 
