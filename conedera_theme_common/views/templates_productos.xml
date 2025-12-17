@@ -106,7 +106,7 @@
         <xpath expr="//ol[contains(@class,'o_wsale_breadcrumb')]" position="replace"> </xpath>
         <xpath expr="//div[@id='product_detail_main']" position="before">
             <div class="container mb-3">
-                <ol class="o_wsale_breadcrumb breadcrumb p-0 m-0 bg-transparent">
+                <ol class="o_wsale_breadcrumb breadcrumb p-0 m-2 bg-transparent">
                     <li class="breadcrumb-item">
                         <a href="/"><i class="dri dri-home-l"/></a>
                     </li>
