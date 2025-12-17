@@ -23,7 +23,7 @@
         </t>
     </template>
 
-    <template id="dynamic_filter_template_product_product_style_2" name="Productos por Marca">
+    <template id="dynamic_filter_template_product_product_style_2" name="Imagen marca + Producto">
         <t t-foreach="records" t-as="data">
             <t t-set="record" t-value="data['_record']"/>
             <div class="o_carousel_product_card card bg-transparent border-0">
