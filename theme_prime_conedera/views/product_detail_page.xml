@@ -15,10 +15,10 @@
 
     <!--Apartado para filtros-->
     <template id="theme_prime_filters_title_inside_card" inherit_id="theme_prime.shop_layout">
-        <xpath expr="//ul[contains(@class,'nav') and contains(@class,'flex-column')]" position="inside">
-            <li class="tp-filters-header d-none d-lg-block">
+        <xpath expr="//ul[contains(@class,'nav nav-pills flex-column')]/li[contains(@class,'nav-item tp-filter-attribute')][1]" position="before">
+            <div class="tp-filters-header d-none d-lg-block">
                 <span class="tp-filters-title">Filtros</span>
-            </li>
+            </div>
         </xpath>
     </template>
 
