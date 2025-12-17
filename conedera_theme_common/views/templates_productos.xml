@@ -102,40 +102,13 @@
     </template>
 
     <!-- Ruta del producto -->
-        <template id="product_breadcrumb_above_image" inherit_id="website_sale.product">
-        <xpath expr="//ol[contains(@class,'o_wsale_breadcrumb')]" position="attributes">
-            <attribute name="t-if">False</attribute>
-        </xpath>
-        <xpath expr="//div[@id='product_detail_main']" position="before">
-            <div class="container mb-3">
-                <ol class="o_wsale_breadcrumb breadcrumb p-0 m-0 bg-transparent">
-
-                    <li class="breadcrumb-item">
-                        <a href="/"><i class="dri dri-home-l"/></a>
-                    </li>
-
-                    <li class="breadcrumb-item">
-                        <a href="/shop">Shop</a>
-                    </li>
-
-                    <li t-if="category" class="breadcrumb-item">
-                        <a t-att-href="keep('/shop/category/%s' % slug(category),
-                            category=0, attribute_value=0, tags=0)">
-                            <t t-esc="category.name"/>
-                        </a>
-                    </li>
-
-                    <li class="breadcrumb-item active">
-                        <span t-field="product.name"/>
-                    </li>
-
-                </ol>
-            </div>
-        </xpath>
-
+    <template id="remove_original_breadcrumb" inherit_id="website_sale.product">
+        <!-- Elimina el breadcrumb original -->
+        <xpath expr="//ol[@class='breadcrumb p-0 m-0 bg-transparent']" position="replace"/>
     </template>
-
-    <!-- <template id="product_breadcrumb_above_image" inherit_id="website_sale.product">
+    
+    <!-- Agregar ruta arriba del nombre del producto -->
+    <template id="product_breadcrumb_above_image" inherit_id="website_sale.product">
         <xpath expr="//ol[contains(@class,'o_wsale_breadcrumb')]" position="replace"> </xpath>
         <xpath expr="//div[@id='product_detail_main']" position="before">
             <div class="container mb-3">
@@ -163,6 +136,6 @@
                 </ol>
             </div>
         </xpath>
-    </template> -->
+    </template>
 
 </odoo> 
