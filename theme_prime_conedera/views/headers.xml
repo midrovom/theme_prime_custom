@@ -84,7 +84,8 @@
         <!-- Ocultar menu-->
         <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace"></xpath>
         <!-- Ocultar carrito -->
-        <xpath expr="//div[contains(@class, 'tp-account-info')]" position="replace"/>
+        <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace"/>
+
     </template>
 
 
