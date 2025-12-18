@@ -7,6 +7,9 @@
 .carousel-indicators li {
   border: 2px solid #ccc;   /* borde gris */
   border-radius: 10px;      /* esquinas redondeadas */
+  padding: 4px;             /* espacio para que el borde se vea */
+  display: inline-block;    /* asegura que el borde rodee al contenido */
 }
+
 
 
