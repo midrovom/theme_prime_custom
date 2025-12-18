@@ -5,7 +5,7 @@ import { utils as uiUtils } from "@web/core/ui/ui_service";
 
 const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
 
-    // Ajuste de chunkSize según template y tamaño de pantalla
+    // Ajuste de chunkSize según template, tamaño de pantalla y builder
     _getQWebRenderOptions() {
         const options = this._super(...arguments);
 
@@ -14,9 +14,9 @@ const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
         if (
             tplKey &&
             tplKey.includes("dynamic_filter_template_product_product_style_2") &&
-            uiUtils.isSmall()
+            (uiUtils.isSmall() || this.editableMode)
         ) {
-            options.chunkSize = 1;   // un producto por slide en móviles
+            options.chunkSize = 1;
         } else {
             options.chunkSize = uiUtils.isSmall() ? 2 : 4;
         }
@@ -45,12 +45,32 @@ publicWidget.registry.dynamic_snippet_products = DynamicSnippetProductsCombined;
 export default DynamicSnippetProductsCombined;
 
 // /** @odoo-module **/
-
 // import publicWidget from "@web/legacy/js/public/public_widget";
 // import DynamicSnippetProducts from "@website_sale/snippets/s_dynamic_snippet_products/000";
+// import { utils as uiUtils } from "@web/core/ui/ui_service";
 
-// const DynamicSnippetProductsBrand = DynamicSnippetProducts.extend({
+// const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
 
+//     // Ajuste de chunkSize según template y tamaño de pantalla
+//     _getQWebRenderOptions() {
+//         const options = this._super(...arguments);
+
+//         const tplKey = this.$el.data("template-key");
+
+//         if (
+//             tplKey &&
+//             tplKey.includes("dynamic_filter_template_product_product_style_2") &&
+//             uiUtils.isSmall()
+//         ) {
+//             options.chunkSize = 1;   // un producto por slide en móviles
+//         } else {
+//             options.chunkSize = uiUtils.isSmall() ? 2 : 4;
+//         }
+
+//         return options;
+//     },
+
+//     // Filtro por marca
 //     _getSearchDomain() {
 //         const domain = this._super(...arguments);
 //         const brandDomain = this._getBrandSearchDomain();
@@ -67,6 +87,5 @@ export default DynamicSnippetProductsCombined;
 //     },
 // });
 
-// publicWidget.registry.dynamic_snippet_products = DynamicSnippetProductsBrand;
-
-// export default DynamicSnippetProductsBrand;
+// publicWidget.registry.dynamic_snippet_products = DynamicSnippetProductsCombined;
+// export default DynamicSnippetProductsCombined;
