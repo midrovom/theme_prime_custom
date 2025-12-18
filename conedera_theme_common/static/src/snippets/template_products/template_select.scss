@@ -83,6 +83,29 @@
   margin: 0 4px;              
 }
 
+//Descargar Ficha Tecnica
+.tp-product-details-tab .nav-tabs {
+  border: none !important;       // elimina el borde inferior del contenedor de pestañas
+}
+
+.tp-product-details-tab .nav-tabs .nav-link {
+  border: none !important;       // elimina los bordes de cada pestaña
+}
+
+.tp-product-details-tab .nav-tabs .nav-link.active {
+  border: none !important;       // elimina el borde de la pestaña activa
+  background-color: transparent; // mantiene el fondo limpio
+}
+
+@media (max-width: 767px) {
+  .tp-product-details-tab .nav-tabs .nav-link,
+  .tp-product-details-tab .nav-tabs .nav-link.active {
+    border: none !important;
+    background-color: transparent !important;
+  }
+}
+
+
 //Ocultar apartdo de categorias en vista grid
 .tp-category-pill-container {
   display: none !important;   // oculta el bloque
@@ -148,35 +171,6 @@
     }
 }
 
-/////// Descargar Ficha Tecnica ///////
-/* Estilos generales (desktop, tablet, etc.) */
-.tp-product-details-tab .nav-tabs {
-  border: none !important;
-}
 
-.tp-product-details-tab .nav-tabs .nav-link {
-  border: none !important;
-}
-
-.tp-product-details-tab .nav-tabs .nav-link.active {
-  border: none !important;
-  background-color: transparent;
-}
-
-/* Estilos específicos para móviles */
-@media (max-width: 768px) {
-  .tp-product-details-tab .nav-tabs {
-    border: none !important;       
-  }
-
-  .tp-product-details-tab .nav-tabs .nav-link {
-    border: none !important;    
-  }
-
-  .tp-product-details-tab .nav-tabs .nav-link.active {
-    border: none !important;       
-    background-color: transparent; 
-  }
-}
 
 
