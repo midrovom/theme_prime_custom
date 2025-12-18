@@ -91,11 +91,17 @@
   box-shadow: none !important;
 }
 
-.d-flex.align-items-center.p-2.border.rounded {
-  flex-direction: column;     
-  align-items: center;        
-  text-align: center;          
+//Centrar contenido de descargar ficha tecnica
+#tp-product-documents-tab .row {
+  justify-content: center;
 }
+
+#tp-product-documents-tab .d-flex.align-items-center {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
 
 .tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
   border: 1px solid #999 !important;   
