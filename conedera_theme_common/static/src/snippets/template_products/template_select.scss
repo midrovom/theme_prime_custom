@@ -164,5 +164,10 @@
 }
 
 
+/* Estilo solo para el li de ficha técnica */
+.tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
+  border: 1px solid #ccc;   
+  border-radius: 8px;       
+}
 
 
