@@ -30,13 +30,14 @@
 
     <!--Apartado para filtros-->
 
-    <template id="shop_layout_add_filters_header" inherit_id="theme_prime.shop_layout" name="Shop Layout: Add Filters Header">
-        <xpath expr="//div[@id='products_grid_before']" position="before">
+    <template id="shop_layout_add_filters_header_inside" inherit_id="theme_prime.shop_layout">
+        <xpath expr="//div[@t-att-class='_filter_container_classes']/t[@t-call='theme_prime.shop_layout_filters']" position="before">
             <div class="tp-filters-header d-none d-lg-block">
                 <span class="tp-filters-title">Filtros</span>
             </div>
         </xpath>
     </template>
+
 
     <!-- <template id="theme_prime_filters_title_inside_card" inherit_id="theme_prime.shop_layout">
         <xpath expr="//div[contains(@t-attf-class,'_filter_extra_content_classes')]" position="before">
