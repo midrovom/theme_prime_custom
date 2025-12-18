@@ -84,14 +84,17 @@
 }
 
 //Descargar Ficha Tecnica
-/* Quitar bordes del UL que contiene las pestañas */
+/* Quitar bordes del UL */
 .tp-product-details-tab .nav-tabs {
   border: none !important;
 }
 
-/* Quitar bordes de TODOS los nav-link */
-.tp-product-details-tab .nav-tabs .nav-link {
+/* Quitar bordes de TODOS los nav-link en cualquier vista (web y móvil) */
+.tp-product-details-tab .nav-tabs .nav-link,
+.tp-product-details-tab .nav-tabs .nav-link.active,
+.tp-product-details-tab .nav-tabs .nav-item.show .nav-link {
   border: none !important;
+  border-radius: 0 !important;
 }
 
 /* Aplicar borde redondeado y gris SOLO al enlace de Documents */
@@ -105,6 +108,7 @@
   border: 1px solid #666 !important;   /* borde gris más oscuro */
   border-radius: 10px !important;
 }
+
 
 
 
