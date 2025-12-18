@@ -97,14 +97,6 @@
   background-color: transparent; // mantiene el fondo limpio
 }
 
-@media (max-width: 767px) {
-  .tp-product-details-tab .nav-tabs .nav-link,
-  .tp-product-details-tab .nav-tabs .nav-link.active {
-    border: none !important;
-    background-color: transparent !important;
-  }
-}
-
 
 //Ocultar apartdo de categorias en vista grid
 .tp-category-pill-container {
