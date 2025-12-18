@@ -88,6 +88,10 @@
   border: none !important;
 }
 
+.tp-product-details-tab .nav-tabs li.nav-item .nav-link.active {
+  box-shadow: none !important;
+}
+
 .tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
   border: 1px solid #999 !important;   
   border-radius: 10px !important;      
@@ -107,9 +111,6 @@
     border-bottom: none !important;
   }
 
-  .tp-product-details-tab .nav-tabs li.nav-item .nav-link.active {
-        box-shadow: none !important;
-    }
 }
 
 ///// Ocultar apartdo de categorias en vista grid ///////
