@@ -10,7 +10,7 @@ const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
         const tplKey = this.$el.data("template-key");
 
         if (
-            this.editableMode || 
+            (this.editableMode && uiUtils.isSmall()) ||
             (tplKey &&
              tplKey.includes("dynamic_filter_template_product_product_style_2") &&
              uiUtils.isSmall())
@@ -41,7 +41,6 @@ const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
 
 publicWidget.registry.dynamic_snippet_products = DynamicSnippetProductsCombined;
 export default DynamicSnippetProductsCombined;
-
 
 // /** @odoo-module **/
 // import publicWidget from "@web/legacy/js/public/public_widget";
