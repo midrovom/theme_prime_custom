@@ -98,16 +98,17 @@
 // }
 
 
-/* Quitar bordes y redondeado SOLO en la fila de la pestaña Ficha Técnica */
-#tp-product-documents-tab .row .d-flex {
-  border: none !important;       /* elimina el borde */
-  border-radius: 0 !important;   /* elimina el redondeado */
+/* Estilos aplicados a pestaña Ficha Técnica */
+.tp-product-details-tab .nav-tabs {
+  border: none !important;   /* elimina el borde inferior que pone Bootstrap */
 }
 
+/* 2. Dar estilo SOLO al li de "Documents" */
 .tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
-  border: 1px solid #ccc;   
-  border-radius: 8px;       
+  border: 1px solid #ccc;    /* borde gris */
+  border-radius: 8px;        /* bordes redondeados */
 }
+
 
 
 
