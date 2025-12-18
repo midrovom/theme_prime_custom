@@ -150,40 +150,16 @@
         </xpath>
     </template>
 
-    <!-- <template id="product_brand_mobile_under_breadcrumb" inherit_id="website_sale.product">
-        <xpath expr="//div[@id='product_detail_main']" position="before">
-            <div class="container-fluid mt-3 mb-2 px-2">
-                <ol class="o_wsale_breadcrumb breadcrumb p-0 ms-0 bg-transparent">
-                    <li class="breadcrumb-item">
-                        <a href="/"><i class="dri dri-home-l"/></a>
-                    </li>
-                    <li class="breadcrumb-item">
-                        <a href="/shop">Shop</a>
-                    </li>
-                    <li t-if="category" class="breadcrumb-item">
-                        <a t-att-href="keep('/shop/category/%s' % slug(category),category=0, attribute_value=0, tags=0)">
-                            <t t-esc="category.name"/>
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active">
-                        <span t-field="product.name"/>
-                    </li>
-                </ol>
-                <t t-set="single_value_attributes" t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
-                <div class="o_product_brand_top_mobile mt-1 d-md-none"
-                    t-if="single_value_attributes">
-                    <t t-foreach="single_value_attributes" t-as="attribute">
-                        <t t-if="attribute.name == 'Marca'">
-                            <span class="text-muted fw-semibold">
-                                <t t-foreach="single_value_attributes[attribute]" t-as="ptal">
-                                    <t t-esc="ptal.product_template_value_ids._only_active().name"/>
-                                </t>
-                            </span>
-                        </t>
-                    </t>
-                </div>
+    <!-- Apartado para marca del producto --> 
+    <template id="products_item_brand_above_name" inherit_id="website_sale.products_item">
+        <xpath expr="//a[@itemprop='name']" position="before">
+            <t t-set="brand_attr" t-value="product.attribute_line_ids.filtered(lambda l: l.attribute_id.name == 'Marca')"/>
+            <div t-if="brand_attr" class="o_product_brand_top text-muted small fw-semibold mb-1">
+                <t t-foreach="brand_attr.value_ids" t-as="val">
+                    <t t-esc="val.name"/>
+                </t>
             </div>
         </xpath>
-    </template> -->
+    </template>
 
 </odoo> 
