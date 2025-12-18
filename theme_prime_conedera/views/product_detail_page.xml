@@ -13,25 +13,6 @@
         </xpath>
     </template>
 
-    <!--Apartado para marca del producto-->
-    <template id="product_item_grid_brand_above_name" inherit_id="theme_prime.product_item_grid_1">
-        <xpath expr="//t[@t-field='product.name']" position="before">
-            <t t-set="single_value_attributes" t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
-            <div t-if="single_value_attributes" class="o_product_brand_top mb-1">
-                <t t-foreach="single_value_attributes" t-as="attribute">
-                    <t t-if="attribute.name == 'Marca'">
-                        <span class="text-muted small fw-semibold">
-                            <t t-foreach="single_value_attributes[attribute]" t-as="ptal">
-                                <t t-esc="ptal.product_template_value_ids._only_active().name"/>
-                            </t>
-                        </span>
-                    </t>
-                </t>
-            </div>
-        </xpath>
-    </template>
-
-
     <!--Apartado para filtros-->
     <template id="theme_prime_filters_title_inside_card" inherit_id="theme_prime.shop_layout">
         <xpath expr="//div[contains(@t-attf-class,'_filter_extra_content_classes')]" position="inside">
