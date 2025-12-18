@@ -5,16 +5,15 @@ import { utils as uiUtils } from "@web/core/ui/ui_service";
 
 const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
 
-    // Ajuste de chunkSize según template, tamaño de pantalla y builder
     _getQWebRenderOptions() {
         const options = this._super(...arguments);
-
         const tplKey = this.$el.data("template-key");
 
         if (
-            tplKey &&
-            tplKey.includes("dynamic_filter_template_product_product_style_2") &&
-            (uiUtils.isSmall() || this.editableMode)
+            this.editableMode || 
+            (tplKey &&
+             tplKey.includes("dynamic_filter_template_product_product_style_2") &&
+             uiUtils.isSmall())
         ) {
             options.chunkSize = 1;
         } else {
@@ -24,7 +23,6 @@ const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
         return options;
     },
 
-    // Filtro por marca
     _getSearchDomain() {
         const domain = this._super(...arguments);
         const brandDomain = this._getBrandSearchDomain();
@@ -43,6 +41,7 @@ const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
 
 publicWidget.registry.dynamic_snippet_products = DynamicSnippetProductsCombined;
 export default DynamicSnippetProductsCombined;
+
 
 // /** @odoo-module **/
 // import publicWidget from "@web/legacy/js/public/public_widget";
