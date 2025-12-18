@@ -22,5 +22,15 @@
         </xpath>
     </template>
 
+    <!-- Marca del producto -->
+    <template id="product_tabs_inherit_brand" inherit_id="theme_prime.product_tabs" name="Theme Prime: Product Tabs Inherit Brand">
+        <xpath expr="//h6[@class='mb-1 tp-product-title']" position="inside">
+            <t t-if="product.brand_id">
+                <span class="tp-product-brand d-block text-muted" t-field="product.brand_id.name"/>
+            </t>
+        </xpath>
+    </template>
+
+
 </odoo>
 
