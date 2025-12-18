@@ -30,7 +30,8 @@
 
     <!--Apartado para filtros-->
     <template id="theme_prime_filters_title_inside_card" inherit_id="theme_prime.shop_layout">
-        <xpath expr="//li[contains(@class,'tp-filter')]" position="before">
+        <!-- Insertar antes del primer li de filtros -->
+        <xpath expr="//li[contains(@class,'tp-filter-attribute')][1]" position="before">
             <div class="tp-filters-header d-none d-lg-block">
                 <span class="tp-filters-title">Filtros</span>
             </div>
