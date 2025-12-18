@@ -158,4 +158,10 @@
     }
 }
 
-
+// Estilo general de la marca
+.tp-product-brand {
+  // En móviles (pantallas menores a 768px)
+  @media (max-width: 767.98px) {
+    text-align: left; // alinea a la izquierda solo en móvil
+  }
+}
