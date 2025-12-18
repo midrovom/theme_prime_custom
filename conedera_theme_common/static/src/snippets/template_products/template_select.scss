@@ -92,6 +92,16 @@
   border: 1px solid #999 !important;   
   border-radius: 10px !important;      
 }
+//Quitar bordes
+@media (max-width: 991.98px) {
+  .tp-product-details-tab .nav-tabs li.nav-item {
+    border-top: none !important;
+  }
+
+  .tp-product-details-tab .nav-tabs li.nav-item:last-child {
+    border-bottom: none !important;
+  }
+}
 
 ///// Ocultar apartdo de categorias en vista grid ///////
 .tp-category-pill-container {
@@ -165,3 +175,4 @@
     text-align: left; 
   }
 }
+
