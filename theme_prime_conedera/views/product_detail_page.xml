@@ -24,7 +24,7 @@
 
     <!-- Marca del producto -->
     <template id="product_item_grid_1_inherit_brand" inherit_id="theme_prime.product_item_grid_2">
-        <xpath expr="//h6[@class='mb-1 tp-product-title']" position="inside">
+        <xpath expr="//h6[@class='mb-1 tp-product-title']" position="before">
             <t t-foreach="product.attribute_line_ids" t-as="line">
                 <t t-if="line.attribute_id.dr_is_brand">
                     <span class="tp-product-brand d-block text-muted">
