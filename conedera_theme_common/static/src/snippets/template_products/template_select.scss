@@ -111,15 +111,15 @@
     border-bottom: none !important;
   }
 
-  
-
+  .tp-product-details-tab .nav-tabs li.nav-item .nav-link.active {
+    color: #0000 !important;
+    background-color: none !important;
+  }
 }
 
 @media (max-width: 767px) {
   .tp-product-details-tab .nav-tabs li.nav-item .nav-link.active {
     box-shadow: none !important;
-    color: #0000 !important;
-    background-color: none !important;
   }
 }
 
