@@ -1,8 +1,9 @@
 body.o_wsale_product_page {
 
-    .o_wsale_product_images {
+    div[data-oe-field="image_1920"] {
         border: 1px solid #dee2e6;
         border-radius: 12px;
+        padding: 8px;
         background-color: #ffffff;
     }
 
