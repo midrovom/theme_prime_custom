@@ -91,6 +91,11 @@
 .tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
   border: 1px solid #999 !important;   
   border-radius: 10px !important;      
+
+  display: flex;              
+  justify-content: center;    
+  align-items: center;        
+  text-align: center; 
 }
 //Quitar bordes
 @media (max-width: 991.98px) {
