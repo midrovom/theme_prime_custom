@@ -30,12 +30,20 @@
 
     <!--Apartado para filtros-->
     <template id="theme_prime_filters_title_inside_card" inherit_id="theme_prime.shop_layout">
-        <xpath expr="//div[contains(@t-attf-class,'_filter_extra_content_classes')]" position="before">
+        <xpath expr="//li[contains(@class,'nav-item') and contains(@class,'tp-filter-attribute')]" position="before">
             <div class="tp-filters-header d-none d-lg-block">
                 <span class="tp-filters-title">Filtros</span>
             </div>
         </xpath>
     </template>
+
+    <!-- <template id="theme_prime_filters_title_inside_card" inherit_id="theme_prime.shop_layout">
+        <xpath expr="//div[contains(@t-attf-class,'_filter_extra_content_classes')]" position="before">
+            <div class="tp-filters-header d-none d-lg-block">
+                <span class="tp-filters-title">Filtros</span>
+            </div>
+        </xpath>
+    </template> -->
 
 
 </odoo>
