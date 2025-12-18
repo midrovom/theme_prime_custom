@@ -20,7 +20,6 @@
     display: none !important;
 }
 
-
 //Estilo para los acordeones
 /* Estilos personalizados para las características del producto */
 #accordionCustomAttributes {
@@ -110,16 +109,14 @@
   .tp-product-details-tab .nav-tabs li.nav-item:last-child {
     border-bottom: none !important;
   }
-
-  .tp-product-details-tab .nav-tabs li.nav-item .nav-link.active {
-    color: #0000 !important;
-    background-color: none !important;
-  }
 }
 
 @media (max-width: 767px) {
   .tp-product-details-tab .nav-tabs li.nav-item .nav-link.active {
     box-shadow: none !important;
+    background-color: transparent !important; 
+    color: #000 !important;                   
+    border-color: transparent !important;
   }
 }
 
