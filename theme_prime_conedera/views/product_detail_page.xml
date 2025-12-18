@@ -31,7 +31,7 @@
     <!--Apartado para filtros-->
 
     <template id="shop_layout_add_filters_header" inherit_id="theme_prime.shop_layout" name="Shop Layout: Add Filters Header">
-        <xpath expr="//div[@id='products_grid_before']" position="before">
+        <xpath expr="//div[@id='products_grid_before']" position="inside">
             <div class="tp-filters-header d-none d-lg-block">
                 <span class="tp-filters-title">Filtros</span>
             </div>
