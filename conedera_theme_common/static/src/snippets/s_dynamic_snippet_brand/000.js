@@ -5,6 +5,7 @@ import { utils as uiUtils } from "@web/core/ui/ui_service";
 
 const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
 
+    // Controla cuántos productos se muestran por slide
     _getQWebRenderOptions() {
         const options = this._super(...arguments);
         const tplKey = this.$el.data("template-key");
@@ -23,6 +24,7 @@ const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
         return options;
     },
 
+    // Define el dominio de búsqueda de productos
     _getSearchDomain() {
         const domain = this._super(...arguments);
         const brandDomain = this._getBrandSearchDomain();
@@ -30,6 +32,7 @@ const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
         return domain;
     },
 
+    // Construye el filtro por marca
     _getBrandSearchDomain() {
         let brandId = this.$el.get(0).dataset.productBrandId;
         if (!brandId || brandId === "all") {
