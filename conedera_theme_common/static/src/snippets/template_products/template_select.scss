@@ -88,22 +88,15 @@
   border: none !important;
 }
 
-.tp-product-details-tab .nav-tabs .nav-link {
-  border: none !important;
-}
+// .tp-product-details-tab .nav-tabs .nav-link {
+//   border: none !important;
+// }
 
 /* Aplicar borde redondeado y gris SOLO al enlace de Documents */
 .tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
   border: 1px solid #999 !important;   
   border-radius: 10px !important;      
 }
-
-// .tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"].active {
-//   border: 1px solid #666 !important;   
-//   border-radius: 10px !important;
-// }
-
-
 
 
 
