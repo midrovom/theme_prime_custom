@@ -39,6 +39,11 @@
   }
 }
 
+/* Alinear a la izquierda el contenido del body en todas las cards de producto */
+.o_carousel_product_card_body {
+  text-align: left !important;
+}
+
 /* Ajustar tamaño de imágenes en el carrusel Imagen marca + Producto */
 @media (max-width: 767px) {
   section[data-template-key*="dynamic_filter_template_product_product_style_2"] .carousel-inner.w-100 {
