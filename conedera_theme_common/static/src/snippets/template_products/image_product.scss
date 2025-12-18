@@ -1,15 +1,10 @@
 //Borde a la imagenes
 .carousel-item img.product_detail_img {
-  border: 2px solid #ccc;   
-  border-radius: 15px;      
+    border: 2px solid #ccc;   
+    border-radius: 15px;      
 }
 
 .carousel-indicators li {
-  border: 2px solid #ccc;   /* borde gris */
+  border: 2px solid #ccc !important;   /* borde gris */
   border-radius: 10px;      /* esquinas redondeadas */
-  padding: 4px;             /* espacio para que el borde se vea */
-  display: inline-block;    /* asegura que el borde rodee al contenido */
 }
-
-
-
