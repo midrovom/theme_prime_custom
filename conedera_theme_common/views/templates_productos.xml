@@ -24,60 +24,64 @@
         </xpath>
     </template>
 
+    <!-- Apartado de Descripción -->
+    <template id="remove_original_description" inherit_id="website_sale.product">
+        <xpath expr="//div[@t-field='product.description_ecommerce']" position="replace"/>     <!-- Eliminar seccion original de descripción -->
+    </template>
+
     <!-- Acordeon de descripción -->
     <template id="product_description_and_attributes" inherit_id="website_sale.product">
-        <xpath expr="//div[@t-field='product.description_ecommerce']" position="replace"/> <!-- Eliminar seccion original de descripción -->
-            <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
-                <div class="accordion mt-3" id="accordionProductDescription">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingDescription">
-                            <button class="accordion-button collapsed titulo-naranja" type="button"
-                                    data-bs-toggle="collapse" data-bs-target="#collapseDescription"
-                                    aria-expanded="false" aria-controls="collapseDescription">
-                                Descripción del producto
-                            </button>
-                        </h2>
-                        <div id="collapseDescription" class="accordion-collapse collapse"
-                            aria-labelledby="headingDescription" data-bs-parent="#accordionProductDescription">
-                            <div class="accordion-body">
-                                <div t-field="product.description_ecommerce"/>
-                            </div>
+        <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="after">
+            <div class="accordion mt-3" id="accordionProductDescription">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingDescription">
+                        <button class="accordion-button collapsed titulo-naranja" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#collapseDescription"
+                                aria-expanded="false" aria-controls="collapseDescription">
+                            Descripción del producto
+                        </button>
+                    </h2>
+                    <div id="collapseDescription" class="accordion-collapse collapse"
+                        aria-labelledby="headingDescription" data-bs-parent="#accordionProductDescription">
+                        <div class="accordion-body">
+                            <div t-field="product.description_ecommerce"/>
                         </div>
                     </div>
                 </div>
-                <t t-if="product.attribute_line_ids.filtered(lambda l: l.attribute_id.attribute_custom)">
-                    <div class="accordion mt-3" id="accordionCustomAttributes">
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingCustomAttrs">
-                                <button class="accordion-button collapsed titulo-naranja" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCustomAttrs" >
-                                    Características del producto
-                                </button>
-                            </h2>
-                            <div id="collapseCustomAttrs"
-                                class="accordion-collapse collapse"
-                                data-bs-parent="#accordionCustomAttributes">
-                                <div class="accordion-body">
-                                    <div class="row">
-                                        <t t-foreach="product.attribute_line_ids.filtered(lambda l: l.attribute_id.attribute_custom)" t-as="line" t-key="line.id">
-                                            <t t-foreach="line.value_ids" t-as="val" t-key="val.id">
-                                                <div class="col-6 mb-3">
-                                                    <div class="d-flex align-items-center">
-                                                        <img t-if="val.dr_image"
-                                                            t-att-src="'/web/image/product.attribute.value/%s/dr_image' % val.id"
-                                                            style="height:30px; width:auto; margin-right:8px;"
-                                                            alt="attr"/>
-                                                        <span t-out="val.name"/>
-                                                    </div>
+            </div>
+            <t t-if="product.attribute_line_ids.filtered(lambda l: l.attribute_id.attribute_custom)">
+                <div class="accordion mt-3" id="accordionCustomAttributes">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingCustomAttrs">
+                            <button class="accordion-button collapsed titulo-naranja" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCustomAttrs" >
+                                Características del producto
+                            </button>
+                        </h2>
+                        <div id="collapseCustomAttrs"
+                            class="accordion-collapse collapse"
+                            data-bs-parent="#accordionCustomAttributes">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <t t-foreach="product.attribute_line_ids.filtered(lambda l: l.attribute_id.attribute_custom)" t-as="line" t-key="line.id">
+                                        <t t-foreach="line.value_ids" t-as="val" t-key="val.id">
+                                            <div class="col-6 mb-3">
+                                                <div class="d-flex align-items-center">
+                                                    <img t-if="val.dr_image"
+                                                        t-att-src="'/web/image/product.attribute.value/%s/dr_image' % val.id"
+                                                        style="height:30px; width:auto; margin-right:8px;"
+                                                        alt="attr"/>
+                                                    <span t-out="val.name"/>
                                                 </div>
-                                            </t>
+                                            </div>
                                         </t>
-                                    </div>
+                                    </t>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </t>
-            </xpath>
+                </div>
+            </t>
+        </xpath>
     </template>
 
     <!-- Precio del producto -->
@@ -114,8 +118,7 @@
                         <span t-field="product.name"/>
                     </li>
                 </ol>
-                <t t-set="single_value_attributes"
-                t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
+                <t t-set="single_value_attributes" t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
                 <div class="o_product_brand_top_mobile mt-1 d-md-none"
                     t-if="single_value_attributes">
                     <t t-foreach="single_value_attributes" t-as="attribute">
