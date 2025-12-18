@@ -150,26 +150,4 @@
         </xpath>
     </template>
 
-    <!-- Apartado para marca del producto --> 
-    <template id="products_item_brand_above_name" inherit_id="website_sale.products_item">
-        <xpath expr="//a[@itemprop='name']" position="before">
-            <t t-set="single_value_attributes"
-                t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
-                    <div t-if="single_value_attributes" class="o_product_brand_top text-muted small fw-semibold mb-1">
-
-                <t t-foreach="single_value_attributes" t-as="attribute">
-                    <t t-if="attribute.name == 'Marca'">
-                        <t t-foreach="single_value_attributes[attribute]" t-as="ptal">
-                            <t t-esc="ptal.product_template_value_ids._only_active().name"/>
-                        </t>
-                    </t>
-                </t>
-
-            </div>
-
-        </xpath>
-
-    </template>
-
-
 </odoo> 
