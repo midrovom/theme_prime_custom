@@ -106,6 +106,10 @@
   .tp-product-details-tab .nav-tabs li.nav-item:last-child {
     border-bottom: none !important;
   }
+
+  .tp-product-details-tab .nav-tabs li.nav-item .nav-link.active {
+        box-shadow: none !important;
+    }
 }
 
 ///// Ocultar apartdo de categorias en vista grid ///////
