@@ -84,30 +84,28 @@
 }
 
 //Descargar Ficha Tecnica
-// .tp-product-details-tab .nav-tabs {
-//   border: none !important;       // elimina el borde inferior del contenedor de pestañas
-// }
-
-// .tp-product-details-tab .nav-tabs .nav-link {
-//   border: none !important;       // elimina los bordes de cada pestaña
-// }
-
-// .tp-product-details-tab .nav-tabs .nav-link.active {
-//   border: none !important;       // elimina el borde de la pestaña activa
-//   background-color: transparent; // mantiene el fondo limpio
-// }
-
-
-/* Estilos aplicados a pestaña Ficha Técnica */
+/* Quitar bordes del UL que contiene las pestañas */
 .tp-product-details-tab .nav-tabs {
-  border: none !important;   /* elimina el borde inferior que pone Bootstrap */
+  border: none !important;
 }
 
-/* 2. Dar estilo SOLO al li de "Documents" */
-.tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
-  border: 1px solid #ccc;    /* borde gris */
-  border-radius: 8px;        /* bordes redondeados */
+/* Quitar bordes de TODOS los nav-link */
+.tp-product-details-tab .nav-tabs .nav-link {
+  border: none !important;
 }
+
+/* Aplicar borde redondeado y gris SOLO al enlace de Documents */
+.tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
+  border: 1px solid #999 !important;   /* borde gris */
+  border-radius: 10px !important;      /* bordes redondeados */
+}
+
+/* Estado activo también con borde redondeado */
+.tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"].active {
+  border: 1px solid #666 !important;   /* borde gris más oscuro */
+  border-radius: 10px !important;
+}
+
 
 
 
