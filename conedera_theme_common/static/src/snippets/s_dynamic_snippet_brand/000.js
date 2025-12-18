@@ -16,7 +16,7 @@ const DynamicSnippetProductsCombined = DynamicSnippetProducts.extend({
             tplKey.includes("dynamic_filter_template_product_product_style_2") &&
             uiUtils.isSmall()
         ) {
-            options.chunkSize = 1;
+            options.chunkSize = 1;   // un producto por slide en móviles
         } else {
             options.chunkSize = uiUtils.isSmall() ? 2 : 4;
         }
