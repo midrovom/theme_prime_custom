@@ -113,6 +113,12 @@
 
 }
 
+@media (max-width: 767px) {
+  .tp-product-details-tab .nav-tabs li.nav-item .nav-link.active {
+    box-shadow: none !important;
+  }
+}
+
 ///// Ocultar apartdo de categorias en vista grid ///////
 .tp-category-pill-container {
   display: none !important;   // oculta el bloque
