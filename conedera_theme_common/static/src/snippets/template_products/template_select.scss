@@ -97,7 +97,13 @@
 //   background-color: transparent; // mantiene el fondo limpio
 // }
 
-/* Estilo solo para el li de ficha técnica */
+
+/* Quitar bordes y redondeado SOLO en la fila de la pestaña Ficha Técnica */
+#tp-product-documents-tab .row .d-flex {
+  border: none !important;       /* elimina el borde */
+  border-radius: 0 !important;   /* elimina el redondeado */
+}
+
 .tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
   border: 1px solid #ccc;   
   border-radius: 8px;       
