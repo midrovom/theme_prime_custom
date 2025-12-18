@@ -91,6 +91,11 @@
   box-shadow: none !important;
 }
 
+.col-12.col-sm-6.col-md-4.col-lg-3.my-2 {
+  display: flex;
+  justify-content: center;   
+}
+
 .tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
   border: 1px solid #999 !important;   
   border-radius: 10px !important;      
