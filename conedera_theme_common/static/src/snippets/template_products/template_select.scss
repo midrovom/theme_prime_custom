@@ -107,20 +107,6 @@
     border-bottom: none !important;
   }
 }
-//el link no ocupe todo el ancho de la pantalla
-@media (max-width: 767.98px) {
-  .tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
-    width: auto;        
-    max-width: 200px;   
-    margin: 0 auto;     
-    padding: 8px 16px;  
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-  }
-}
-
 
 ///// Ocultar apartdo de categorias en vista grid ///////
 .tp-category-pill-container {
