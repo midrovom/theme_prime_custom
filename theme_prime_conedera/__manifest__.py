@@ -19,7 +19,7 @@
         'conedera_theme_common'
     ],
     'data': [
-        'views/headers.xml',
+        #'views/headers.xml',
         'views/footers.xml',
         'views/snippets/s_cover_1.xml',
         'views/snippets/dynamic_snippets.xml',
