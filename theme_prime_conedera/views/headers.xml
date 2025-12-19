@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_header_style_4_custom" inherit_id="theme_prime.template_header_style_4">
+    <template id="template_header_style_4" inherit_id="theme_prime.template_header_style_4">
         <xpath expr="//t[@t-call='website.website_search_box_input']" position="inside">
             <t t-set="_classes" t-valuef="position-relative"/>
             <t t-set="_input_classes" t-valuef="rounded-pill"/>
