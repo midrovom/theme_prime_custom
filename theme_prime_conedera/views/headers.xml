@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_header_style_4" inherit_id="theme_prime.template_header_style_4">
+    <!-- <template id="template_header_style_4" inherit_id="theme_prime.template_header_style_4">
         <xpath expr="//t[@t-call='website.website_search_box_input']" position="inside">
             <t t-set="_classes" t-valuef="position-relative"/>
             <t t-set="_input_classes" t-valuef="rounded-pill"/>
@@ -39,7 +39,6 @@
                                              style="margin-bottom: 3px;"
                                              width="22"
                                              height="22"/>
-                                        <!-- <i class="dri dri-cart"/> -->
                                         <sup class="my_cart_quantity badge" style="background-color: #FF931E !important;" t-out="website_sale_cart_quantity" t-att-data-order-id="request.session.get('sale_order_id', '')"/>
                                     </a>
                                 </div>
@@ -62,7 +61,95 @@
             <t t-set="_nav_class" t-value="'flex-grow-1 justify-content-between'"/>
         </xpath>
         
+    </template> -->
+
+    <?xml version="1.0" encoding="utf-8"?>
+
+    <template id="template_header_style_12_custom" inherit_id="website.layout" name="Header Style - 4 Custom" active="False">
+        <xpath expr="//header" position="attributes">
+            <attribute name="t-attf-class" add="tp-custom-header tp-header-style-4-custom" separator=" "/>
+        </xpath>
+        <xpath expr="//header//nav" position="replace">
+            <div class="tp-header-box o_header_hide_on_scroll d-none d-lg-block o_colored_level o_cc">
+                <div class="container">
+                    <div class="row align-items-center">
+                        <div class="col-auto py-3">
+                            <t t-call="website.placeholder_header_brand">
+                                <t t-set="_link_class" t-valuef="d-inline-block"/>
+                            </t>
+                        </div>
+                        <div class="col-auto py-3 flex-grow-1">
+                            <t t-call="website.website_search_box_input">
+                                <t t-set="_form_classes" t-valuef="mx-auto o_wsale_products_searchbar_form o_not_editable"/>
+                                <t t-set="_classes" t-valuef="border tp-input-border-radius position-relative"/>
+                                <t t-set="_input_classes" t-valuef="rounded-pill"/>
+                                <t t-set="_submit_classes" t-valuef="btn-search-custom position-absolute end-0 top-0 rounded-pill"/>
+                                <t t-set="search_type" t-valuef="products"/>
+                                <t t-set="action" t-value="'/shop'"/>
+                            </t>
+                        </div>
+                        <div class="col-auto py-3 o_not_editable">
+                            <div class="row align-items-center justify-content-end tp-account-info">
+                                <div class="col-auto my-1"
+                                     t-if="not user_id._is_public() or request.website.viewref('portal.user_sign_in').active">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <a href="#" class="tp-account-info-sidebar-action">
+                                                <img src="/theme_prime_conedera/static/src/img/login.png"
+                                                     width="22" height="22"/>
+                                            </a>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3 d-none d-xl-block">
+                                            <a href="#"><p class="h6 mb-0">Login</p></a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-auto my-1">
+                                    <t t-nocache="">
+                                        <t t-set="website_sale_cart_quantity"
+                                           t-value="request.session.get('website_sale_cart_quantity', website.sale_get_order().cart_quantity or 0)"/>
+                                        <div class="o_not_editable position-relative o_wsale_my_cart tp-cart-sidebar-action">
+                                            <a href="/shop/cart">
+                                                <img src="/theme_prime_conedera/static/src/img/cart.png"
+                                                     width="22" height="22"/>
+                                                <sup class="my_cart_quantity badge bg-warning"
+                                                     t-out="website_sale_cart_quantity"/>
+                                            </a>
+                                        </div>
+                                    </t>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navbar -->
+            <t t-call="website.navbar">
+                <t t-set="_navbar_classes" t-valuef="d-none d-lg-block shadow-sm"/>
+                <div id="o_main_nav" class="container">
+                    <t t-call="website.navbar_nav">
+                        <t t-set="_nav_class" t-value="'flex-grow-1 justify-content-between'"/>
+                        <t t-foreach="website.menu_id.child_id" t-as="submenu">
+                            <t t-call="website.submenu">
+                                <t t-set="item_class"
+                                       t-value="'nav-item flex-grow-1 text-center nav-item-short-border'"/>
+                                <t t-set="link_class" t-value="'nav-link'"/>
+                            </t>
+                        </t>
+                    </t>
+                </div>
+            </t>
+
+            <!-- Mobile -->
+            <t t-call="theme_prime.template_header_mobile"/>
+
+        </xpath>
     </template>
+</odoo>
+
 
     <template id="website_submenu_icon_image_inherit" inherit_id="website.submenu" name="Add icon_image to Website Menu">
         <xpath expr="//a/span" position="before">
