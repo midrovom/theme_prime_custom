@@ -16,7 +16,7 @@
         </xpath>
             <!--Header -->
         <xpath expr="//we-select[@data-variable='header-template']/we-button[last()]" position="after">
-            <we-button title="Prime Header Style - 9" data-name="tp_header_style_9_opt" data-customize-website-views="theme_prime.template_header_style_9" data-customize-website-variable="'prime_style_9'" data-img="/theme_prime/static/src/img/options/header_4.svg"/>
+            <we-button title="Prime Header Style - 10" data-name="tp_header_style_10_opt" data-customize-website-views="theme_prime_conedera.template_header_style_10" data-customize-website-variable="'prime_style_10'" data-img="/theme_prime/static/src/img/options/header_4.svg"/>
         </xpath>
     </template>
 

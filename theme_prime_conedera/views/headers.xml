@@ -62,8 +62,8 @@
         </xpath>
         
     </template> -->
-    
-    <template id="template_header_style_12" inherit_id="website.layout" name="Header Style - 12" active="False">
+
+    <template id="template_header_style_10" inherit_id="website.layout" name="Header Style - 10" active="False">
         <xpath expr="//header" position="attributes">
             <attribute name="t-attf-class" add="tp-custom-header tp-header-style-4-custom" separator=" "/>
         </xpath>
