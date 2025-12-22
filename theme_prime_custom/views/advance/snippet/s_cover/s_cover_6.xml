@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
   <template id="s_cover_6" name="Cover - 6">
-    <section class="s_cover_6">
+    <section class="s_cover_2">
       <t t-set="uniq" t-value="dr_uid or datetime.datetime.now().microsecond"/>
         <div t-attf-id="myCarousel{{uniq}}" class="tp-custom-carousel s_carousel s_carousel_rounded carousel slide" 
             data-bs-ride="carousel" data-bs-interval="5000">
