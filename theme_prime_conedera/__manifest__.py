@@ -19,13 +19,13 @@
         'conedera_theme_common'
     ],
     'data': [
-        'views/headers.xml',
         'views/footers.xml',
         'views/snippets/s_cover_1.xml',
         'views/snippets/dynamic_snippets.xml',
         'views/snippets.xml',
         'views/snippets/s_banner_16.xml',
         'views/product_detail_page.xml',
+        'views/headers.xml',
     ],
     'auto_install': False,
     'application': False,
