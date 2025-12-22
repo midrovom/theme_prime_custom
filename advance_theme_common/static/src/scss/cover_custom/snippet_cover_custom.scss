@@ -1,0 +1,22 @@
+.s_cover_custom .img-web {
+  display: block !important;
+  //width: 100%;
+  height: 300px;       /* altura fija para web */
+  object-fit: cover;
+}
+
+.s_cover_custom .img-mobile {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .s_cover_custom .img-web {
+    display: none !important;
+  }
+  .s_cover_custom .img-mobile {
+    display: block !important;
+    width: 100%;
+    height: auto;       /* se adapta a su proporción */
+    object-fit: contain; /* mostrar completa sin recortar */
+  }
+}

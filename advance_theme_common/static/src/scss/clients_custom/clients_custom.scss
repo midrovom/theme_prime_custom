@@ -1,0 +1,52 @@
+.s_clients_brands {
+  .heading-brands {
+    top: -1.2rem;
+  }
+
+  .brand-logo {
+    max-height: 50px;
+    filter: grayscale(100%);
+    transition: all 0.3s ease;
+  }
+
+  .brand-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #6c757d;
+    transition: all 0.3s ease;
+  }
+
+  .brand-link:hover .brand-logo {
+    filter: grayscale(0%) saturate(2);
+    transform: scale(1.05);
+  }
+
+  .brand-link:hover .brand-name {
+    color: #28a745;
+  }
+
+  /* Slider horizontal para desktop y móvil */
+  .logo-slider {
+    display: flex;
+    animation: scroll-logos 15s linear infinite; /* más lento para desktop */
+  }
+
+  @keyframes scroll-logos {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* 👇 Espaciado solo en escritorio */
+  @media (min-width: 768px) {
+    .logo-slider {
+      gap: 3rem; /* espacio uniforme entre marcas */
+    }
+    .brand-link {
+      margin: 0 2rem; /* refuerzo de espacio adicional */
+    }
+  }
+}

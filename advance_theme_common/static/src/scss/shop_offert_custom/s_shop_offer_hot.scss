@@ -1,0 +1,32 @@
+.s_shop_offer_hot .shop-offer-hot-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 1rem;
+}
+
+.s_shop_offer_hot .text-content {
+  text-align: left;
+}
+
+.s_shop_offer_hot .action-button {
+  align-self: flex-start;
+}
+
+@media (min-width: 768px) {
+  .s_shop_offer_hot .shop-offer-hot-wrapper {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    text-align: start;
+  }
+
+  .s_shop_offer_hot .text-content {
+    text-align: start;
+  }
+
+  .s_shop_offer_hot .action-button {
+    align-self: center;
+  }
+}
