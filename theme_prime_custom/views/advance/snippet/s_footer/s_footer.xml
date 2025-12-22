@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="template_footer_style_custom" name="Footer - 11" inherit_id="website.layout" active="False">
-
-        <!-- FOOTER -->
         <xpath expr="//div[@id='footer']" position="replace">
             <div id="footer"
                  class="oe_structure oe_structure_solo template_footer_style_11"
