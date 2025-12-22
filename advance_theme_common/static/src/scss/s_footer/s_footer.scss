@@ -3,7 +3,7 @@
   @media (min-width: 992px) {
     .justify-content-lg-end {
       -webkit-box-pack: end !important;
-      /* justify-content: flex-end !important; */
+       justify-content: none !important; 
     }
   }
 }
