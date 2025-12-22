@@ -1,20 +1,7 @@
-#footer.template_footer_style_11_custom {
-
-    .tp-footer-collapse-btn {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem 0;
-        font-weight: 600;
-        border: 0;
-        background: transparent;
-    }
-
-    .tp-collapse-icon {
-        transition: transform 0.3s ease;
-    }
-
-    .tp-footer-collapse-btn[aria-expanded="true"] .tp-collapse-icon {
-        transform: rotate(180deg);
+#footer.footer-logo-left {
+    @media (min-width: 1200px) {
+        .col-xl-5 {
+            width: 25% !important;
+        }
     }
 }
