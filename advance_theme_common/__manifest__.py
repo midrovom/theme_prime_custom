@@ -17,8 +17,9 @@
     ],
     'assets': {
         'web.assets_frontend': [
-            'advance_theme_common/static/src/scss/banner_custom/s_banner_16.scss',
-            'advance_theme_common/static/src/scss/banner_custom/s_banner_17.scss',
+            'advance_theme_common/static/src/scss/s_banner/s_banner_16.scss',
+            'advance_theme_common/static/src/scss/s_banner/s_banner_17.scss',
+            'advance_theme_common/static/src/scss/s_cover/s_cover_6.scss',
             # 'advance_theme_custom/static/src/scss/gallery_custom/gallery_custom.scss',
             # 'advance_theme_custom/static/src/scss/texto_custom/texto_custom.scss',
             # 'advance_theme_custom/static/src/scss/banner_custom/custom_category_slider.scss',
