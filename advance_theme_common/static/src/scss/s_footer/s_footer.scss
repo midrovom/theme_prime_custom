@@ -1,4 +1,5 @@
 .template_footer_style_11 {
+  /* Logo */
   .o_footer_logo {
     display: flex;
     justify-content: center; 
@@ -7,23 +8,20 @@
     }
   }
 
-  /* Contacto y redes en móvil */
+  /* Apartados en móvil: Información útil, Ayuda y Contacto */
+  #footer_info_util,
+  #footer_ayuda,
   #footer_contacto {
-    text-align: left !important; 
-    display: block !important;
+    text-align: left !important; /* siempre orientados a la izquierda en móvil */
   }
 
   @media (min-width: 992px) {
-    .o_footer_logo {
-      justify-content: flex-start; /* logo a la izquierda */
-      text-align: left;
-    }
 
     #footer_contacto {
+      text-align: left; /* contenido orientado a la izquierda */
       display: flex;
       flex-direction: column;
       align-items: flex-end; /* bloque alineado a la derecha */
-      text-align: left;      /* contenido sigue mirando a la izquierda */
     }
   }
 }
