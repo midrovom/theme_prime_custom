@@ -7,6 +7,12 @@
                 <keywords>banner, hero</keywords>
             </t>
         </xpath>
+
+        <xpath expr="//t[@t-snippet='theme_prime_custom.s_banner_16']" position="after">
+            <t t-snippet="theme_prime_custom.s_banner_17" string="Banner - 17" group="theme_prime_banner">
+                <keywords>trending, image, link</keywords>
+            </t>
+        </xpath>
         <!-- Clients -->
         <xpath expr="//t[@t-snippet='theme_prime.s_cover_5']" position="after">
             <t t-snippet="theme_prime_custom.s_cover_6" string="Cover - 6" group="theme_prime_cover">
