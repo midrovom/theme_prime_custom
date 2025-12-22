@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_footer_style_11"
+    <template id="template_footer_style_11_"
               name="Footer - 11"
               inherit_id="website.layout"
               active="False">
@@ -22,11 +22,7 @@
                         <div class="row">
                             <div class="col-12 text-center text-lg-start mb-5">
                                 <a href="/" class="o_footer_logo logo d-inline-block">
-                                    <img src="/website/static/src/img/website_logo.svg"
-                                         class="img-fluid"
-                                         aria-label="Logo of MyCompany"
-                                         title="MyCompany"
-                                         role="img"/>
+                                    <img src="/website/static/src/img/website_logo.svg" class="img-fluid" aria-label="Logo of MyCompany" title="MyCompany" role="img"/>
                                 </a>
                             </div>
                         </div>
