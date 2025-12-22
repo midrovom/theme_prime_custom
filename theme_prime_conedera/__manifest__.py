@@ -26,6 +26,7 @@
         'views/snippets/s_banner_16.xml',
         'views/product_detail_page.xml',
         'views/headers.xml',
+        'views/website_template.xml',
     ],
     'auto_install': False,
     'application': False,
