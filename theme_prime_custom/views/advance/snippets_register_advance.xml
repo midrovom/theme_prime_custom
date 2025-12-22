@@ -1,15 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Snippets nativos de odoo --> 
-    <!-- <template id="snippets" inherit_id="website.snippets">
-        <t t-snippet="website.s_banner" position="before">
-            <t t-snippet="theme_prime_image.s_d_categories_snippet" string="Products" group="theme_prime_dynamic">
-                <keywords>categories, dynamic, carousel</keywords>
-            </t>
-        </t>
-    </template> -->
-
-    <!-- Snippets de Theme Prime --> 
     <template id="s_snippet_register" inherit_id="theme_prime.snippets" name="Snippet - Registry">
         <!-- Banners -->
         <xpath expr="//t[@t-snippet='theme_prime.s_banner_15']" position="after">
