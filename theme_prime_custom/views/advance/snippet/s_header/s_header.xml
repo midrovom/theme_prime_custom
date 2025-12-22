@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_header_style_9_" name="Header Style - 9" inherit_id="website.layout" active="False">
+    <template id="template_header_style_9" inherit_id="website.layout" name="Header Style - 9" active="False">
+
+        <!-- HEADER -->
         <xpath expr="//header" position="replace">
+
             <header class="tp-custom-header">
+
+                <!-- TOP HEADER -->
                 <div class="tp-header-box o_header_hide_on_scroll d-none d-lg-block o_colored_level o_cc">
                     <div class="container">
                         <div class="row align-items-center">
+
+                            <!-- LOGO -->
                             <div class="col-auto py-3">
                                 <t t-call="website.placeholder_header_brand">
                                     <t t-set="_link_class" t-value="'d-inline-block'"/>
                                 </t>
                             </div>
+
+                            <!-- SEARCH -->
                             <div class="col-auto py-3 flex-grow-1">
                                 <t t-call="website.website_search_box_input">
                                     <t t-set="_form_classes"
@@ -23,22 +32,26 @@
                                        t-value="'/shop'"/>
                                 </t>
                             </div>
+
+                            <!-- ACCOUNT INFO -->
                             <div class="col-auto py-3 o_not_editable">
                                 <div class="row align-items-center justify-content-end tp-account-info">
+
+                                    <!-- USER (CUSTOM) -->
                                     <div class="col-auto my-1">
                                         <div class="d-flex align-items-center">
+
+                                            <!-- PUBLIC USER -->
                                             <div class="flex-grow-1 d-none d-xl-block"
                                                  t-if="user_id._is_public()">
                                                 <a class="tp-account-info-sidebar-action me-2"
-                                                   href="/web/signup">
-                                                    Register
-                                                </a>
+                                                   href="/web/signup">Register</a>
                                                 <span class="mx-1">|</span>
                                                 <a class="tp-account-info-sidebar-action ms-2"
-                                                   href="/web/login">
-                                                    Login
-                                                </a>
+                                                   href="/web/login">Login</a>
                                             </div>
+
+                                            <!-- LOGGED USER -->
                                             <div class="flex-grow-1 d-none d-xl-flex align-items-center"
                                                  t-if="not user_id._is_public()">
                                                 <span class="me-2 text-truncate"
@@ -50,34 +63,42 @@
                                                     <i class="fa fa-caret-down"/>
                                                 </a>
                                             </div>
+
+                                            <!-- CART -->
+                                            <div class="flex-shrink-0 ms-3">
+                                                <t t-nocache="The number of products is dynamic">
+                                                    <t t-set="website_sale_cart_quantity"
+                                                       t-value="request.session['website_sale_cart_quantity']
+                                                                if 'website_sale_cart_quantity' in request.session
+                                                                else website.sale_get_order().cart_quantity or 0"/>
+                                                    <t t-set="show_cart"
+                                                       t-value="website.has_ecommerce_access()"/>
+
+                                                    <div t-attf-class="o_not_editable position-relative o_wsale_my_cart tp-cart-sidebar-action #{not show_cart and 'd-none'}">
+                                                        <a href="/shop/cart">
+                                                            <i class="dri dri-cart tp-light-bg rounded-circle"/>
+                                                            <sup class="my_cart_quantity badge bg-primary"
+                                                                 t-out="website_sale_cart_quantity"
+                                                                 t-att-data-order-id="request.session.get('sale_order_id', '')"/>
+                                                        </a>
+                                                    </div>
+                                                </t>
+                                            </div>
+
                                         </div>
                                     </div>
-                                    <div class="col-auto my-1 ms-3">
-                                        <t t-nocache="The number of products is dynamic">
-                                            <t t-set="website_sale_cart_quantity"
-                                               t-value="request.session['website_sale_cart_quantity']
-                                                        if 'website_sale_cart_quantity' in request.session
-                                                        else website.sale_get_order().cart_quantity or 0"/>
-                                            <t t-set="show_cart"
-                                               t-value="website.has_ecommerce_access()"/>
-                                            <div t-attf-class="o_not_editable position-relative o_wsale_my_cart tp-cart-sidebar-action #{not show_cart and 'd-none'}">
-                                                <a href="/shop/cart">
-                                                    <i class="dri dri-cart tp-light-bg rounded-circle"/>
-                                                    <sup class="my_cart_quantity badge bg-primary"
-                                                         t-out="website_sale_cart_quantity"
-                                                         t-att-data-order-id="request.session.get('sale_order_id', '')"/>
-                                                </a>
-                                            </div>
-                                        </t>
-                                    </div>
+
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
 
+                <!-- NAVBAR -->
                 <t t-call="website.navbar">
-                    <t t-set="_navbar_classes" t-value="'d-none d-lg-block shadow-sm'"/>
+                    <t t-set="_navbar_classes"
+                       t-value="'d-none d-lg-block shadow-sm'"/>
                     <div id="o_main_nav" class="container">
                         <t t-call="website.navbar_nav">
                             <t t-set="_nav_class" t-value="'flex-grow-1'"/>
@@ -90,9 +111,14 @@
                         </t>
                     </div>
                 </t>
+
+                <!-- MOBILE HEADER -->
                 <t t-call="theme_prime.template_header_mobile"/>
+
             </header>
+
         </xpath>
+
     </template>
 
 </odoo>
