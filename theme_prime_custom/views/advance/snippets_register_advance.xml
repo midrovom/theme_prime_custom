@@ -11,9 +11,16 @@
 
     <!-- Snippets de Theme Prime --> 
     <template id="s_snippet_register" inherit_id="theme_prime.snippets" name="Snippet - Registry">
+        <!-- Banners -->
         <xpath expr="//t[@t-snippet='theme_prime.s_banner_15']" position="after">
             <t t-snippet="theme_prime_custom.s_banner_16" string="Banner - 16" group="theme_prime_banner">
                 <keywords>banner, hero</keywords>
+            </t>
+        </xpath>
+        <!-- Clients -->
+        <xpath expr="//t[@t-snippet='theme_prime.s_cover_5']" position="after">
+            <t t-snippet="theme_prime_custom.s_cover_6" string="Cover - 6" group="theme_prime_cover">
+                <keywords>clients, brands, logo, reference</keywords>
             </t>
         </xpath>
     </template>

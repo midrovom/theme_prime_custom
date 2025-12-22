@@ -7,7 +7,7 @@
     'data': [
         # Snippet Advance
         'views/advance/snippets_register_advance.xml',
-        'views/advance/snippet/banner/s_banner_9_custom.xml',
+        'views/advance/snippet/s_banner/s_banner_9_custom.xml',
 
     ],
     'assets': {
