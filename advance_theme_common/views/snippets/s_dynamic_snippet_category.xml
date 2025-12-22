@@ -16,9 +16,9 @@
         </xpath>
     </template>
 
-    <record id="advance_theme_custom.s_dynamic_snippet_categories_js" model="ir.asset">
+    <record id="advance_theme_common.s_dynamic_snippet_categories_js" model="ir.asset">
         <field name="name">Dynamic snippet categories 000 JS</field>
         <field name="bundle">web.assets_frontend</field>
-        <field name="path">advance_theme_custom/static/src/snippets/s_dynamic_snippet_categories/000.js</field>
+        <field name="path">advance_theme_common/static/src/snippets/s_dynamic_snippet_categories/000.js</field>
     </record>
 </odoo>
