@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="template_header_style_9" name="Header Style - 4 Custom" inherit_id="website.layout" active="False">
+        <xpath expr="//header" position="replace">
+            <header class="tp-custom-header">
+                <div class="tp-header-box o_header_hide_on_scroll d-none d-lg-block o_colored_level o_cc">
+                    <div class="container">
+                        <div class="row align-items-center">
+                            <div class="col-auto py-3">
+                                <t t-call="website.placeholder_header_brand">
+                                    <t t-set="_link_class" t-value="'d-inline-block'"/>
+                                </t>
+                            </div>
+                            <div class="col-auto py-3 flex-grow-1">
+                                <t t-call="website.website_search_box_input">
+                                    <t t-set="_form_classes" t-value="'mx-auto o_wsale_products_searchbar_form o_not_editable'"/>
+                                    <t t-set="_classes" t-value="'border tp-input-border-radius'"/>
+                                    <t t-set="search_type" t-value="'products'"/>
+                                    <t t-set="action" t-value="'/shop'"/>
+                                </t>
+                            </div>
+                            <div class="col-auto py-3 o_not_editable">
+                                <div class="row align-items-center justify-content-end tp-account-info">
+                                    <div class="col-auto my-1">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-grow-1 d-none d-xl-block"
+                                                 t-if="user_id._is_public()">
+                                                <a class="tp-account-info-sidebar-action me-2"
+                                                   href="/web/signup">Register</a>
+                                                <span class="mx-1">|</span>
+                                                <a class="tp-account-info-sidebar-action ms-2"
+                                                   href="/web/login">Login</a>
+                                            </div>
+                                            <div class="flex-grow-1 d-none d-xl-flex align-items-center"
+                                                 t-if="not user_id._is_public()">
+                                                <span class="me-2 text-truncate"
+                                                      style="max-width:150px;">
+                                                    <t t-out="user_id.name"/>
+                                                </span>
+                                                <a class="tp-account-info-sidebar-action"
+                                                   href="/my/home">
+                                                    <i class="fa fa-caret-down"/>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto my-1 ms-3">
+                                        <t t-nocache="Cart quantity is dynamic">
+                                            <t t-set="website_sale_cart_quantity"
+                                               t-value="request.session.get('website_sale_cart_quantity', website.sale_get_order().cart_quantity or 0)"/>
+                                            <t t-set="show_cart"
+                                               t-value="website.has_ecommerce_access()"/>
+                                            <div t-attf-class="o_not_editable position-relative o_wsale_my_cart tp-cart-sidebar-action #{not show_cart and 'd-none'}">
+                                                <a href="/shop/cart">
+                                                    <i class="dri dri-cart tp-light-bg rounded-circle"/>
+                                                    <sup class="my_cart_quantity badge bg-primary"
+                                                         t-out="website_sale_cart_quantity"
+                                                         t-att-data-order-id="request.session.get('sale_order_id', '')"/>
+                                                </a>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <t t-call="website.navbar">
+                    <t t-set="_navbar_classes" t-value="'d-none d-lg-block shadow-sm'"/>
+                    <div id="o_main_nav" class="container">
+                        <t t-call="website.navbar_nav">
+                            <t t-set="_nav_class" t-value="'flex-grow-1'"/>
+                            <t t-foreach="website.menu_id.child_id" t-as="submenu">
+                                <t t-call="website.submenu">
+                                    <t t-set="item_class" t-value="'nav-item'"/>
+                                    <t t-set="link_class" t-value="'nav-link'"/>
+                                </t>
+                            </t>
+                        </t>
+                    </div>
+                </t>
+                <t t-call="theme_prime.template_header_mobile"/>
+            </header>
+        </xpath>
+    </template>
+
+</odoo>
