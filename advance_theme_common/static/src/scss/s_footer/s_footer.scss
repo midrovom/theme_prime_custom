@@ -1,7 +1,30 @@
-#footer.footer-logo-left {
-    @media (min-width: 1200px) {
-        .col-xl-5 {
-            width: 25% !important;
-        }
+.template_footer_style_11 {
+  /* Logo */
+  .o_footer_logo {
+    display: flex;
+    justify-content: center; /* centrado en móvil */
+    img {
+      max-height: 60px;
     }
+  }
+
+  /* Contacto y redes */
+  #footer_contacto {
+    text-align: left; /* contenido orientado a la izquierda */
+  }
+
+  @media (min-width: 992px) {
+    /* Desktop */
+    .o_footer_logo {
+      justify-content: flex-start; /* logo a la izquierda */
+      text-align: left;
+    }
+
+    #footer_contacto {
+      text-align: left; /* mantiene orientación a la izquierda */
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end; /* bloque alineado a la derecha */
+    }
+  }
 }
