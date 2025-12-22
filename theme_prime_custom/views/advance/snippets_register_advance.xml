@@ -37,14 +37,14 @@
                 <keywords>call to action, trending, cta</keywords>
             </t>
         </xpath>
-        <!-- Footer -->
-        <template id="snippet_options_inherit" inherit_id="website.snippet_options">
-            <xpath expr="//we-select[@data-variable='footer-template']/we-button[last()]" position="after">
-                <we-button title="Prime Footer Style - 11" data-name="tp_footer_style_11_opt" data-customize-website-views="theme_prime_custom.template_footer_style_11_custom" data-customize-website-variable="'prime_style_11_custom'" data-img="/theme_prime/static/src/img/options/footer_1.svg"/>
-            </xpath>
-        </template>
 
     </template>
 
+        <!-- Footer -->
+    <template id="snippet_options_inherit" inherit_id="website.snippet_options">
+        <xpath expr="//we-select[@data-variable='footer-template']/we-button[last()]" position="after">
+            <we-button title="Prime Footer Style - 11" data-name="tp_footer_style_11_opt" data-customize-website-views="theme_prime_custom.template_footer_style_11_custom" data-customize-website-variable="'prime_style_11_custom'" data-img="/theme_prime/static/src/img/options/footer_1.svg"/>
+        </xpath>
+    </template>
 
 </odoo>
