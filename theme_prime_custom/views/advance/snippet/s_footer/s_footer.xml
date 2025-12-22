@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_footer_style_custom" name="Footer - 11" inherit_id="website.layout" active="False">
+    <template id="template_footer_style_11"
+              name="Footer - 11"
+              inherit_id="website.layout"
+              active="False">
+
         <xpath expr="//div[@id='footer']" position="replace">
             <div id="footer"
                  class="oe_structure oe_structure_solo template_footer_style_11"
@@ -13,16 +17,19 @@
 
                     <div class="container">
 
-                        <!-- LOGO (centrado en móvil, izquierda en desktop) -->
+                        <!-- LOGO (VISIBLE + centrado móvil / izquierda desktop) -->
                         <div class="row">
-                            <div class="col-12 text-center text-lg-start mb-5">
-                                <a href="/" class="o_footer_logo logo d-inline-block">
-                                    <img src="/website/static/src/img/website_logo.svg"
-                                         class="img-fluid"
-                                         aria-label="Logo of MyCompany"
-                                         title="MyCompany"
-                                         role="img"/>
-                                </a>
+                            <div class="col-12 mb-5">
+                                <div class="d-flex justify-content-center justify-content-lg-start">
+                                    <a href="/" class="o_footer_logo logo">
+                                        <img src="/website/static/src/img/website_logo.svg"
+                                             class="img-fluid"
+                                             style="max-height: 60px;"
+                                             aria-label="Logo of MyCompany"
+                                             title="MyCompany"
+                                             role="img"/>
+                                    </a>
+                                </div>
                             </div>
                         </div>
 
@@ -33,8 +40,7 @@
 
                                 <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
                                         data-bs-toggle="collapse"
-                                        data-bs-target="#footer_info_util"
-                                        aria-expanded="false">
+                                        data-bs-target="#footer_info_util">
                                     Información útil
                                     <span class="tp-collapse-icon">v</span>
                                 </button>
@@ -42,12 +48,12 @@
                                 <div id="footer_info_util" class="collapse d-lg-block">
                                     <h5 class="d-none d-lg-block">Información útil</h5>
                                     <ul class="list-unstyled">
-                                        <li class="my-2"><a href="#">¿Quiénes somos?</a></li>
-                                        <li class="my-2"><a href="#">Blog</a></li>
-                                        <li class="my-2"><a href="#">Centro de ayuda en línea</a></li>
-                                        <li class="my-2"><a href="#">Medios de pago</a></li>
-                                        <li class="my-2"><a href="#">Políticas de devolución</a></li>
-                                        <li class="my-2"><a href="#">Términos y condiciones</a></li>
+                                        <li><a href="#">¿Quiénes somos?</a></li>
+                                        <li><a href="#">Blog</a></li>
+                                        <li><a href="#">Centro de ayuda</a></li>
+                                        <li><a href="#">Medios de pago</a></li>
+                                        <li><a href="#">Políticas de devolución</a></li>
+                                        <li><a href="#">Términos y condiciones</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -57,8 +63,7 @@
 
                                 <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
                                         data-bs-toggle="collapse"
-                                        data-bs-target="#footer_ayuda"
-                                        aria-expanded="false">
+                                        data-bs-target="#footer_ayuda">
                                     Podemos ayudarte
                                     <span class="tp-collapse-icon">v</span>
                                 </button>
@@ -66,21 +71,20 @@
                                 <div id="footer_ayuda" class="collapse d-lg-block">
                                     <h5 class="d-none d-lg-block">Podemos ayudarte</h5>
                                     <ul class="list-unstyled">
-                                        <li class="my-2"><a href="#">Tu cuenta</a></li>
-                                        <li class="my-2"><a href="#">Tus pedidos</a></li>
-                                        <li class="my-2"><a href="#">Tarifas de Envío</a></li>
-                                        <li class="my-2"><a href="#">Ayuda</a></li>
+                                        <li><a href="#">Tu cuenta</a></li>
+                                        <li><a href="#">Tus pedidos</a></li>
+                                        <li><a href="#">Tarifas de envío</a></li>
+                                        <li><a href="#">Ayuda</a></li>
                                     </ul>
                                 </div>
                             </div>
 
-                            <!-- CONTACTO Y REDES -->
-                            <div class="col-lg-4 col-xl-4 mb-4">
+                            <!-- CONTACTO + REDES (A LA DERECHA, TEXTO A LA IZQUIERDA) -->
+                            <div class="col-lg-4 col-xl-4 mb-4 ms-lg-auto">
 
                                 <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
                                         data-bs-toggle="collapse"
-                                        data-bs-target="#footer_contacto"
-                                        aria-expanded="false">
+                                        data-bs-target="#footer_contacto">
                                     Contacto
                                     <span class="tp-collapse-icon">v</span>
                                 </button>
@@ -89,13 +93,11 @@
                                     <h5 class="d-none d-lg-block">Contacto</h5>
 
                                     <ul class="list-unstyled">
-                                        <li class="py-1">
+                                        <li>
                                             <i class="fa fa-phone me-1"/>
-                                            <span class="o_force_ltr">
-                                                <a href="tel:+15555555556">+1 555-555-5556</a>
-                                            </span>
+                                            <a href="tel:+15555555556">+1 555-555-5556</a>
                                         </li>
-                                        <li class="py-1">
+                                        <li>
                                             <i class="fa fa-envelope me-1"/>
                                             <a href="mailto:info@yourcompany.com">info@yourcompany.com</a>
                                         </li>
@@ -105,15 +107,9 @@
                                     <div class="s_social_media o_not_editable d-flex gap-3"
                                          data-snippet="s_social_media"
                                          contenteditable="false">
-                                        <a href="/website/social/tiktok" class="s_social_media_tiktok" target="_blank">
-                                            <i class="fa fa-tiktok"/>
-                                        </a>
-                                        <a href="/website/social/instagram" class="s_social_media_instagram" target="_blank">
-                                            <i class="fa fa-instagram"/>
-                                        </a>
-                                        <a href="/website/social/facebook" class="s_social_media_facebook" target="_blank">
-                                            <i class="fa fa-facebook"/>
-                                        </a>
+                                        <a href="/website/social/tiktok"><i class="fa fa-tiktok"/></a>
+                                        <a href="/website/social/instagram"><i class="fa fa-instagram"/></a>
+                                        <a href="/website/social/facebook"><i class="fa fa-facebook"/></a>
                                     </div>
                                 </div>
                             </div>
@@ -127,9 +123,7 @@
         <!-- COPYRIGHT -->
         <xpath expr="//div[hasclass('o_footer_copyright')]/div[hasclass('container')]" position="replace">
             <div class="container text-center">
-                <div class="my-2">
-                    © MyCompany
-                </div>
+                <div class="my-2">© MyCompany</div>
             </div>
         </xpath>
 
