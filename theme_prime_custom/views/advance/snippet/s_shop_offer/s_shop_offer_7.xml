@@ -14,7 +14,7 @@
                 <p class="mt-2 mb-0 text-muted" style="font-size: 0.75rem;">*Aplican términos y condiciones</p>
               </div>
               <div class="image-box o_editable d-flex flex-column align-items-center">
-                <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg" alt="Imagen destacada" class="img-fluid"
+                <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner1.jpg" alt="Imagen destacada" class="img-fluid"
                   style="width: 320px; height: 140px; object-fit: cover; border-radius: 0.75rem;"/>
               </div>
             </div>
@@ -23,7 +23,7 @@
               <div class="d-flex flex-row align-items-center gap-2">
                 <h3 class="mb-0">36 MESES</h3>
                 <div class="image-box o_editable">
-                  <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1_mobile.jpg" alt="Imagen móvil" class="img-fluid"
+                  <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner1.jpg" alt="Imagen móvil" class="img-fluid"
                     style="width: 160px; height: 80px; object-fit: cover; border-radius: 0.75rem;"/>
                 </div>
               </div>
