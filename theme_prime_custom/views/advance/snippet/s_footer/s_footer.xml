@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_footer_style_11" name="Footer - 11" inherit_id="website.layout" active="False">
+    <template id="template_footer_style_11_" name="Footer - 11" inherit_id="website.layout" active="False">
         <xpath expr="//div[@id='footer']" position="replace">
             <div id="footer" class="oe_structure oe_structure_solo template_footer_style_11" t-ignore="true" t-if="not no_footer">
                 <section class="s_text_block pt64 pb32" data-snippet="s_text_block" data-name="Footer 11">
@@ -84,7 +84,7 @@
                                 </button>
                                 <div id="footer_redes" class="collapse d-lg-block text-start">
                                     <h5 class="d-none d-lg-block">Nuestras redes</h5>
-                                    <div class="s_social_media o_not_editable d-flex gap-3 justify-content-lg-end"
+                                    <div class="s_social_media o_not_editable d-flex gap-3 justify-content-start"
                                          data-snippet="s_social_media" contenteditable="false">
                                         <a href="/website/social/tiktok" class="s_social_media_tiktok" target="_blank">
                                             <i class="fa fa-tiktok"/>
