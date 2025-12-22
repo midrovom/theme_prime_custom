@@ -1,25 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_footer_style_11_custom" name="Footer - 11" inherit_id="website.layout" active="False">
+    <template id="template_footer_style_11" name="Footer - 11" inherit_id="website.layout" active="False">
         <xpath expr="//div[@id='footer']" position="replace">
             <div id="footer" class="oe_structure oe_structure_solo template_footer_style_11" t-ignore="true" t-if="not no_footer">
                 <section class="s_text_block pt64 pb32" data-snippet="s_text_block" data-name="Footer 11">
                     <div class="container">
+                        <!-- LOGO -->
                         <div class="row">
                             <div class="col-12 text-center text-lg-start mb-5">
                                 <a href="/" class="o_footer_logo logo d-inline-block">
-                                    <img src="/website/static/src/img/website_logo.svg"
-                                         class="img-fluid"
-                                         aria-label="Logo of MyCompany"
-                                         title="MyCompany"
-                                         role="img"/>
+                                    <img src="/website/static/src/img/website_logo.svg" class="img-fluid"
+                                        aria-label="Logo of MyCompany" title="MyCompany" role="img"/>
                                 </a>
                             </div>
                         </div>
 
                         <div class="row">
+                            <!-- INFORMACIÓN ÚTIL -->
                             <div class="col-lg-4 col-xl-3 mb-4 text-start">
-                                <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
+                                <button class="btn w-100 d-lg-none tp-footer-collapse-btn text-start"
                                         data-bs-toggle="collapse"
                                         data-bs-target="#footer_info_util"
                                         aria-expanded="false">
@@ -39,8 +38,9 @@
                                 </div>
                             </div>
 
+                            <!-- PODEMOS AYUDARTE -->
                             <div class="col-lg-4 col-xl-3 mb-4 text-start">
-                                <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
+                                <button class="btn w-100 d-lg-none tp-footer-collapse-btn text-start"
                                         data-bs-toggle="collapse"
                                         data-bs-target="#footer_ayuda"
                                         aria-expanded="false">
@@ -58,8 +58,9 @@
                                 </div>
                             </div>
 
+                            <!-- CONTACTO Y REDES -->
                             <div class="col-lg-4 col-xl-4 mb-4 text-start text-lg-end">
-                                <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
+                                <button class="btn w-100 d-lg-none tp-footer-collapse-btn text-start"
                                         data-bs-toggle="collapse"
                                         data-bs-target="#footer_contacto"
                                         aria-expanded="false">
@@ -82,7 +83,7 @@
                                     </ul>
                                     <h5 class="mt-3 d-none d-lg-block">Follow Us On</h5>
                                     <div class="s_social_media o_not_editable d-flex gap-3 justify-content-lg-end"
-                                        data-snippet="s_social_media" contenteditable="false">
+                                         data-snippet="s_social_media" contenteditable="false">
                                         <a href="/website/social/tiktok" class="s_social_media_tiktok" target="_blank">
                                             <i class="fa fa-tiktok"/>
                                         </a>
@@ -101,6 +102,7 @@
             </div>
         </xpath>
 
+        <!-- COPYRIGHT -->
         <xpath expr="//div[hasclass('o_footer_copyright')]/div[hasclass('container')]" position="replace">
             <div class="container text-center">
                 <div class="my-2">
@@ -110,4 +112,3 @@
         </xpath>
     </template>
 </odoo>
-
