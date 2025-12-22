@@ -7,12 +7,12 @@
             data-bs-ride="carousel" data-bs-interval="5000">
             <div class="carousel-inner w-100" data-oe-slideshow="true">
                 <div class="carousel-item active w-100" data-name="Slide">
-                    <img src="/theme_prime_image/static/src/img/s_banner_custom/banner.png" class="d-none d-md-block w-100" alt="Banner Web"/>
-                <img src="/theme_prime_image/static/src/img/s_banner_custom/banner_mobile.png" class="d-block d-md-none w-100" alt="Banner Móvil"/>
+                    <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner.png" class="d-none d-md-block w-100" alt="Banner Web"/>
+                <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner_mobile.png" class="d-block d-md-none w-100" alt="Banner Móvil"/>
             </div>
         <div class="carousel-item w-100" data-name="Slide">
-    <img src="/theme_prime_image/static/src/img/s_banner_custom/banner.png" class="d-none d-md-block w-100" alt="Banner Web 2"/>
-        <img src="/theme_prime_image/static/src/img/s_banner_custom/banner_mobile.png" class="d-block d-md-none w-100" alt="Banner Móvil 2"/>
+    <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner.png" class="d-none d-md-block w-100" alt="Banner Web 2"/>
+        <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner_mobile.png" class="d-block d-md-none w-100" alt="Banner Móvil 2"/>
             </div>
                 </div>
                     <button class="carousel-control-prev o_not_editable" contenteditable="false" t-attf-data-bs-target="#myCarousel{{uniq}}" 

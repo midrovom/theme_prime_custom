@@ -6,7 +6,7 @@
         <div class="row justify-content-center s_col_no_bgcolor s_nb_column_fixed d-none d-md-flex">
           <div class="col-6 col-md-6 col-lg-3 py-3 d-flex justify-content-center">
             <div class="card border rounded tp-animation-scale h-100">
-              <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+              <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner1.jpg"
                    class="img img-fluid card-img-top rounded-top" alt="Banner Image 01"/>
               <div class="p-3 text-center">
                 <a href="#" class="btn btn-primary rounded-pill">Comprar</a>
@@ -16,7 +16,7 @@
 
           <div class="col-6 col-md-6 col-lg-3 py-3 d-flex justify-content-center">
             <div class="card border rounded tp-animation-scale h-100">
-              <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+              <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner1.jpg"
                    class="img img-fluid card-img-top rounded-top" alt="Banner Image 02"/>
               <div class="p-3 text-center">
                 <a href="#" class="btn btn-primary rounded-pill">Comprar</a>
@@ -26,7 +26,7 @@
 
           <div class="col-6 col-md-6 col-lg-3 py-3 d-flex justify-content-center">
             <div class="card border rounded tp-animation-scale h-100">
-              <img src="/theme_prime_image/static/src/img/s_banner_custom/banner3.jpg"
+              <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner1.jpg"
                    class="img img-fluid card-img-top rounded-top" alt="Banner Image 03"/>
               <div class="p-3 text-center">
                 <a href="#" class="btn btn-primary rounded-pill">Comprar</a>
@@ -36,7 +36,7 @@
 
           <div class="col-6 col-md-6 col-lg-3 py-3 d-flex justify-content-center">
             <div class="card border rounded tp-animation-scale h-100">
-              <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+              <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner1.jpg"
                    class="img img-fluid card-img-top rounded-top" alt="Banner Image 04"/>
               <div class="p-3 text-center">
                 <a href="#" class="btn btn-primary rounded-pill">Comprar</a>
@@ -52,14 +52,14 @@
               <div class="carousel-item active">
                 <div class="d-flex justify-content-around">
                   <div class="card border rounded tp-animation-scale mx-2" style="width:45%;">
-                    <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+                    <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner1.jpg"
                          class="img img-fluid card-img-top rounded-top" alt="Banner Image 01"/>
                     <div class="p-2 text-center">
                       <a href="#" class="btn btn-primary btn-sm rounded-pill">Comprar</a>
                     </div>
                   </div>
                   <div class="card border rounded tp-animation-scale mx-2" style="width:45%;">
-                    <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+                    <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner1.jpg"
                          class="img img-fluid card-img-top rounded-top" alt="Banner Image 02"/>
                     <div class="p-2 text-center">
                       <a href="#" class="btn btn-primary btn-sm rounded-pill">Comprar</a>
@@ -71,14 +71,14 @@
               <div class="carousel-item">
                 <div class="d-flex justify-content-around">
                   <div class="card border rounded tp-animation-scale mx-2" style="width:45%;">
-                    <img src="/theme_prime_image/static/src/img/s_banner_custom/banner3.jpg"
+                    <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner1.jpg"
                          class="img img-fluid card-img-top rounded-top" alt="Banner Image 03"/>
                     <div class="p-2 text-center">
                       <a href="#" class="btn btn-primary btn-sm rounded-pill">Comprar</a>
                     </div>
                   </div>
                   <div class="card border rounded tp-animation-scale mx-2" style="width:45%;">
-                    <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+                    <img src="/theme_prime_custom/static/src/img/s_banner_custom/banner1.jpg"
                          class="img img-fluid card-img-top rounded-top" alt="Banner Image 04"/>
                     <div class="p-2 text-center">
                       <a href="#" class="btn btn-primary btn-sm rounded-pill">Comprar</a>
