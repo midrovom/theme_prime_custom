@@ -12,6 +12,7 @@
         'views/advance/snippet/s_shop_offer/s_shop_offer_6.xml',
         'views/advance/snippet/s_banner/s_banner_17.xml',
         'views/advance/snippet/s_shop_offer/s_shop_offer_7.xml',
+        'views/advance/snippet/s_text/s_text.xml',
 
     ],
     'assets': {

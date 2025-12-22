@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="s_trending_box_snippet" name="Trending Text Box">
+    <section class="s_trending_box o_snippet_editable py-3">
+      <div class="container-fluid">
+        <div class="row justify-content-center">
+          <div class="col-12 col-md-11 col-lg-10">
+            <div class="text-block d-flex flex-column flex-md-row align-items-center justify-content-center gap-2 o_editable">
+              <h3 class="mb-0">#Trending</h3>
+              <p class="mb-0 text-muted">Esto podría interesarte</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+</odoo>
