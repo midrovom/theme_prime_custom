@@ -31,12 +31,18 @@
                 <keywords>trending, image, link</keywords>
             </t>
         </xpath>
-
+        <!-- Cta -->
         <xpath expr="//t[@t-snippet='theme_prime.s_call_to_action_5']" position="after">
             <t t-snippet="theme_prime_custom.s_trending_box" string="Trending Text Box" group="theme_prime_cta">
                 <keywords>call to action, trending, cta</keywords>
             </t>
         </xpath>
+        <!-- Footer -->
+        <template id="snippet_options_inherit" inherit_id="website.snippet_options">
+            <xpath expr="//we-select[@data-variable='footer-template']/we-button[last()]" position="after">
+                <we-button title="Prime Footer Style - 11" data-name="tp_footer_style_11_opt" data-customize-website-views="theme_prime_custom.template_footer_style_11" data-customize-website-variable="'prime_style_11'" data-img="/theme_prime/static/src/img/options/footer_1.svg"/>
+            </xpath>
+        </template>
 
     </template>
 
