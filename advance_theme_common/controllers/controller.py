@@ -1,5 +1,6 @@
 from odoo import http
 from odoo.http import request
+from odoo.addons.website.controllers.main import QueryURL
 
 class WebsiteCategorySnippet(http.Controller):
 
@@ -11,13 +12,6 @@ class WebsiteCategorySnippet(http.Controller):
             "url": f"/shop/category/{cat.id}",
             "image": f"/web/image/product.public.category/{cat.id}/image_1920"
         } for cat in categories]
-    
-
-from odoo import http
-from odoo.http import request
-from odoo.addons.website.controllers.main import QueryURL
-
-
 class WebsiteSaleCategories(http.Controller):
 
     @http.route(['/website_sale/get_categories'], type='json', auth='public', website=True)
@@ -58,7 +52,6 @@ class WebsiteSaleCategories(http.Controller):
             'records': category_data,
             'is_sample': with_sample,
         }
-
 
 class WebsiteSaleCategoriesFilter(http.Controller):
     """Controller for category filters"""
