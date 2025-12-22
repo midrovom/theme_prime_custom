@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_footer_style_11"
+    <template id="template_footer_style_11_custom"
               name="Footer - 11"
               inherit_id="website.layout"
               active="False">
