@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="s_shop_offer_6" name="Shop Offer - 6">
+    <section class="s_shop_offer_6 parallax s_parallax_is_fixed pt120 pb120 s_parallax_no_overflow_hidden"
+        data-scroll-background-ratio="0" data-snippet="s_shop_offer_6" data-name="Shop Offer - 6">
+     <span class="s_parallax_bg oe_img_bg o_bg_img_center"
+        style="background-image: url('/theme_prime_image/static/src/img/s_banner_custom/shop_offer_bg.jpg'); background-position: 50% 0;"/>
+      <div class="container">
+        <div class="row s_nb_column_fixed">
+          <div class="col-12 col-md-11 col-lg-10 mx-auto text-center">
+            <div class="shop-offer-wrapper">
+              <div class="shop-offer-text">
+                <h3 class="shop-offer-title text-uppercase mb-0">
+                  HASTA EL <span class="text-o-color-1">30%</span> OFF EN TU PRIMERA COMPRA
+                </h3>
+                <p class="shop-offer-note mb-1 text-muted fw-light small d-none d-md-block"
+                   style="font-size: 0.7rem;">*Aplican términos y condiciones</p>
+              </div>
+              <div class="shop-offer-actions d-flex justify-content-center align-items-center flex-wrap gap-2">
+                <a href="#" class="btn btn-primary rounded-pill">Ver Ofertas</a>
+                <p class="shop-offer-note mb-0 text-muted fw-light d-block d-md-none"
+                   style="font-size: 0.6rem;">*Aplican términos y condiciones</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+</odoo>
