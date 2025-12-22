@@ -32,6 +32,11 @@
             </t>
         </xpath>
 
+        <xpath expr="//t[@t-snippet='theme_prime.s_call_to_action_5']" position="after">
+            <t t-snippet="theme_prime_custom.s_trending_box" string="Trending Text Box" group="theme_prime_cta">
+                <keywords>call to action, trending, cta</keywords>
+            </t>
+        </xpath>
 
     </template>
 
