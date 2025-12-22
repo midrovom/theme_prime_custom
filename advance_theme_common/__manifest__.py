@@ -22,6 +22,7 @@
             'advance_theme_common/static/src/scss/s_cover/s_cover_6.scss',
             'advance_theme_common/static/src/scss/s_shop_offert/s_shop_offer_6.scss',
             'advance_theme_common/static/src/scss/s_shop_offert/shop_offert_7.scss',
+            'advance_theme_common/static/src/scss/s_text/s_text.scss',
             # 'advance_theme_custom/static/src/scss/gallery_custom/gallery_custom.scss',
             # 'advance_theme_custom/static/src/scss/texto_custom/texto_custom.scss',
             # 'advance_theme_custom/static/src/scss/banner_custom/custom_category_slider.scss',
