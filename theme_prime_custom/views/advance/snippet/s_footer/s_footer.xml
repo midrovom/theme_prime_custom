@@ -1,5 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <template id="template_footer_style_11"
+              name="Footer - 11"
+              inherit_id="website.layout"
+              active="False">
+
+        <!-- FOOTER -->
+        <xpath expr="//div[@id='footer']" position="replace">
+            <div id="footer"
+                 class="oe_structure oe_structure_solo template_footer_style_11"
+                 t-ignore="true"
+                 t-if="not no_footer">
+
+                <section class="s_text_block pt64 pb32"
+                         data-snippet="s_text_block"
+                         data-name="Footer 11">
+
+                    <div class="container">
+
+                        <!-- LOGO -->
+                        <div class="row">
+                            <div class="col-12 text-start mb-5">
+                                <a href="/" class="o_footer_logo logo">
+                                    <img src="/website/static/src/img/website_logo.svg"
+                                         class="img-fluid"
+                                         aria-label="Logo of MyCompany"
+                                         title="MyCompany"
+                                         role="img"/>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="row">
+
+                            <!-- INFORMACIÓN ÚTIL -->
+                            <div class="col-lg-6 col-xl-3 mb-4">
+
+                                <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#footer_info_util"
+                                        aria-expanded="false">
+                                    Información útil
+                                    <span class="tp-collapse-icon">v</span>
+                                </button>
+
+                                <div id="footer_info_util" class="collapse d-lg-block">
+                                    <h5 class="d-none d-lg-block">Información útil</h5>
+                                    <ul class="list-unstyled">
+                                        <li class="my-2"><a href="#">¿Quiénes somos?</a></li>
+                                        <li class="my-2"><a href="#">Blog</a></li>
+                                        <li class="my-2"><a href="#">Centro de ayuda en línea</a></li>
+                                        <li class="my-2"><a href="#">Medios de pago</a></li>
+                                        <li class="my-2"><a href="#">Políticas de devolución</a></li>
+                                        <li class="my-2"><a href="#">Términos y condiciones</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- PODEMOS AYUDARTE -->
+                            <div class="col-lg-6 col-xl-3 mb-4">
+
+                                <button class="btn w-100 d-lg-none tp-footer-collapse-btn"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#footer_ayuda"
+                                        aria-expanded="false">
+                                    Podemos ayudarte
+                                    <span class="tp-collapse-icon">v</span>
+                                </button>
+
+                                <div id="footer_ayuda" class="collapse d-lg-block">
+                                    <h5 class="d-none d-lg-block">Podemos ayudarte</h5>
+                                    <ul class="list-unstyled">
+                                        <li class="my-2"><a href="#">Tu cuenta</a></li>
+                                        <li class="my-2"><a href="#">Tus pedidos</a></li>
+                                        <li class="my-2"><a href="#">Tarifas de Envío</a></li>
+                                        <li class="my-2"><a href="#">Ayuda</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- CONTACTO -->
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                                <h5>Contact Us</h5>
+                                <ul class="list-unstyled">
+                                    <li class="py-1">
+                                        <i class="fa fa-phone me-1"/>
+                                        <span class="o_force_ltr">
+                                            <a href="tel:+15555555556">+1 555-555-5556</a>
+                                        </span>
+                                    </li>
+                                    <li class="py-1">
+                                        <i class="fa fa-envelope me-1"/>
+                                        <a href="mailto:info@yourcompany.com">info@yourcompany.com</a>
+                                    </li>
+                                </ul>
+
+                                <h5 class="mt-3">Follow Us On</h5>
+                                <div class="s_social_media o_not_editable d-flex gap-3"
+                                     data-snippet="s_social_media"
+                                     contenteditable="false">
+                                    <a href="/website/social/tiktok" class="s_social_media_tiktok" target="_blank">
+                                        <i class="fa fa-tiktok"/>
+                                    </a>
+                                    <a href="/website/social/instagram" class="s_social_media_instagram" target="_blank">
+                                        <i class="fa fa-instagram"/>
+                                    </a>
+                                    <a href="/website/social/facebook" class="s_social_media_facebook" target="_blank">
+                                        <i class="fa fa-facebook"/>
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </xpath>
+
+        <!-- COPYRIGHT -->
+        <xpath expr="//div[hasclass('o_footer_copyright')]/div[hasclass('container')]" position="replace">
+            <div class="container text-center">
+                <div class="my-2">
+                    © MyCompany
+                </div>
+            </div>
+        </xpath>
+
+    </template>
+</odoo>
+
+
+<!-- <?xml version="1.0" encoding="utf-8"?>
+<odoo>
     <template id="template_footer_style_11" name="Footer - 11" inherit_id="website.layout" active="False">
         <xpath expr="//div[@id='footer']" position="replace">
             <div id="footer" class="oe_structure oe_structure_solo" t-ignore="true" t-if="not no_footer">
@@ -82,4 +214,4 @@
             </div>
         </xpath>
     </template>
-</odoo>
+</odoo> -->
