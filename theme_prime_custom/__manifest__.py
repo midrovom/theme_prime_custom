@@ -8,6 +8,7 @@
         # Snippet Advance
         'views/advance/snippets_register_advance.xml',
         'views/advance/snippet/s_banner/s_banner_9_custom.xml',
+        'views/advance/snippet/s_cover/s_cover_6.xml',
 
     ],
     'assets': {
