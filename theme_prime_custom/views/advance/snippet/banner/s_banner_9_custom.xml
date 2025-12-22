@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="s_banner_16" name="Banner - 16">
+    <section class="s_banner_16 pt16 pb16">
+      <div class="container">
+        <div class="row justify-content-center s_col_no_bgcolor s_nb_column_fixed d-none d-md-flex">
+          <div class="col-6 col-md-6 col-lg-3 py-3 d-flex justify-content-center">
+            <div class="card border rounded tp-animation-scale h-100">
+              <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+                   class="img img-fluid card-img-top rounded-top" alt="Banner Image 01"/>
+              <div class="p-3 text-center">
+                <a href="#" class="btn btn-primary rounded-pill">Comprar</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-6 col-lg-3 py-3 d-flex justify-content-center">
+            <div class="card border rounded tp-animation-scale h-100">
+              <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+                   class="img img-fluid card-img-top rounded-top" alt="Banner Image 02"/>
+              <div class="p-3 text-center">
+                <a href="#" class="btn btn-primary rounded-pill">Comprar</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-6 col-lg-3 py-3 d-flex justify-content-center">
+            <div class="card border rounded tp-animation-scale h-100">
+              <img src="/theme_prime_image/static/src/img/s_banner_custom/banner3.jpg"
+                   class="img img-fluid card-img-top rounded-top" alt="Banner Image 03"/>
+              <div class="p-3 text-center">
+                <a href="#" class="btn btn-primary rounded-pill">Comprar</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-6 col-lg-3 py-3 d-flex justify-content-center">
+            <div class="card border rounded tp-animation-scale h-100">
+              <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+                   class="img img-fluid card-img-top rounded-top" alt="Banner Image 04"/>
+              <div class="p-3 text-center">
+                <a href="#" class="btn btn-primary rounded-pill">Comprar</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Versión Mobile -->
+        <div class="d-md-none w-100">
+          <div id="bannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
+            <div class="carousel-inner">
+              <div class="carousel-item active">
+                <div class="d-flex justify-content-around">
+                  <div class="card border rounded tp-animation-scale mx-2" style="width:45%;">
+                    <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+                         class="img img-fluid card-img-top rounded-top" alt="Banner Image 01"/>
+                    <div class="p-2 text-center">
+                      <a href="#" class="btn btn-primary btn-sm rounded-pill">Comprar</a>
+                    </div>
+                  </div>
+                  <div class="card border rounded tp-animation-scale mx-2" style="width:45%;">
+                    <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+                         class="img img-fluid card-img-top rounded-top" alt="Banner Image 02"/>
+                    <div class="p-2 text-center">
+                      <a href="#" class="btn btn-primary btn-sm rounded-pill">Comprar</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="carousel-item">
+                <div class="d-flex justify-content-around">
+                  <div class="card border rounded tp-animation-scale mx-2" style="width:45%;">
+                    <img src="/theme_prime_image/static/src/img/s_banner_custom/banner3.jpg"
+                         class="img img-fluid card-img-top rounded-top" alt="Banner Image 03"/>
+                    <div class="p-2 text-center">
+                      <a href="#" class="btn btn-primary btn-sm rounded-pill">Comprar</a>
+                    </div>
+                  </div>
+                  <div class="card border rounded tp-animation-scale mx-2" style="width:45%;">
+                    <img src="/theme_prime_image/static/src/img/s_banner_custom/banner1.jpg"
+                         class="img img-fluid card-img-top rounded-top" alt="Banner Image 04"/>
+                    <div class="p-2 text-center">
+                      <a href="#" class="btn btn-primary btn-sm rounded-pill">Comprar</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+</odoo>
