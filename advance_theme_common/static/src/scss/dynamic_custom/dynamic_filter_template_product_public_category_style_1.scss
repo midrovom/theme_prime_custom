@@ -1,11 +1,12 @@
-.o_dynamic_category_card {
+/* Estilos aplicados únicamente al template s_dynamic_snippet_categories */
+.s_dynamic_snippet_categories .o_dynamic_category_card {
     background-color: #000;
     width: 200px;
     min-height: 170px;
     border-radius: 6px;
 }
 
-.o_dynamic_category_image {
+.s_dynamic_snippet_categories .o_dynamic_category_image {
     margin-top: 8px;                    
     height: 150px;
     object-fit: contain;
@@ -13,7 +14,7 @@
     border-top-right-radius: 6px;
 }
 
-.o_dynamic_category_body {
+.s_dynamic_snippet_categories .o_dynamic_category_body {
     background-color: #000;
     min-height: 80px;
     margin: 0 !important; 
@@ -21,27 +22,75 @@
 
 /* Ajustes específicos para móviles */
 @media (max-width: 768px) {
-    .o_dynamic_category_card {
+    .s_dynamic_snippet_categories .o_dynamic_category_card {
         width: 100%;         
         min-height: auto;     
         margin: 0;            
     }
 
-    .o_dynamic_category_image {
+    .s_dynamic_snippet_categories .o_dynamic_category_image {
         aspect-ratio: 1 / 1;  
         object-fit: cover;    
         height: auto;         
     }
 
-    .o_dynamic_category_body {
+    .s_dynamic_snippet_categories .o_dynamic_category_body {
         padding: 0.4rem;      
         min-height: auto;     
     }
 
     /* Ajuste del nombre de la categoría */
-    .o_dynamic_category_body .card-title {
+    .s_dynamic_snippet_categories .o_dynamic_category_body .card-title {
         font-size: 0.5rem;   
         line-height: 1rem;    
         white-space: normal;  
     }
 }
+
+// .o_dynamic_category_card {
+//     background-color: #000;
+//     width: 200px;
+//     min-height: 170px;
+//     border-radius: 6px;
+// }
+
+// .o_dynamic_category_image {
+//     margin-top: 8px;                    
+//     height: 150px;
+//     object-fit: contain;
+//     border-top-left-radius: 6px;
+//     border-top-right-radius: 6px;
+// }
+
+// .o_dynamic_category_body {
+//     background-color: #000;
+//     min-height: 80px;
+//     margin: 0 !important; 
+// }
+
+// /* Ajustes específicos para móviles */
+// @media (max-width: 768px) {
+//     .o_dynamic_category_card {
+//         width: 100%;         
+//         min-height: auto;     
+//         margin: 0;            
+//     }
+
+//     .o_dynamic_category_image {
+//         aspect-ratio: 1 / 1;  
+//         object-fit: cover;    
+//         height: auto;         
+//     }
+
+//     .o_dynamic_category_body {
+//         padding: 0.4rem;      
+//         min-height: auto;     
+//     }
+
+//     /* Ajuste del nombre de la categoría */
+//     .o_dynamic_category_body .card-title {
+//         font-size: 0.5rem;   
+//         line-height: 1rem;    
+//         white-space: normal;  
+//     }
+// }
