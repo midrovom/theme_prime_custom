@@ -17,11 +17,11 @@
         'views/advance/snippet/s_header/s_header.xml',
 
         #Snippet Conedera
-        'views/conedera/snippet/s_footer/footers.xml',
-        'views/conedera/product_detail_page.xml',
-        'views/conedera/snippets_register_conedera.xml',
+        #'views/conedera/snippet/s_footer/footers.xml',
+        #'views/conedera/product_detail_page.xml',
+        #'views/conedera/snippets_register_conedera.xml',
         #'views/conedera/headers.xml',
-        'views/conedera/website_template.xml',
+        #'views/conedera/website_template.xml',
 
     ],
     'assets': {
