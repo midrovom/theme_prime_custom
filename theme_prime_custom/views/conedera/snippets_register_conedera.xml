@@ -2,7 +2,7 @@
 <odoo>
     <template id="snippets" inherit_id="website.snippets">
         <t t-snippet="website.s_banner" position="before">
-            <t t-snippet="theme_prime_conedera.s_d_2_column_snippet_conedera" string="2 Col Deal Conedera" group="theme_prime_dynamic">
+            <t t-snippet="theme_prime_custom.s_d_2_column_snippet_conedera" string="2 Col Deal Conedera" group="theme_prime_dynamic">
                 <keywords>products, dynamic</keywords>
             </t>
         </t>
@@ -17,7 +17,7 @@
     <!-- Banner -->
     <template id="s_banner" inherit_id="theme_prime.snippets" name="Banner - Conedera">
         <xpath expr="//t[@t-snippet='theme_prime.s_banner_15']" position="after">
-            <t t-snippet="theme_prime_conedera.s_banner_16" string="Banner 16" group="theme_prime_banner">
+            <t t-snippet="theme_prime_custom.s_banner_16" string="Banner 16" group="theme_prime_banner">
                 <keywords>banner, hero</keywords>
             </t>
         </xpath>
