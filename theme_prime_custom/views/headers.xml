@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Header Desktop -->
+    <template id="template_header_style_4_unified" inherit_id="theme_prime.template_header_style_4" name="Header Style 4 Unified">
+
+        <!-- Bloque Usuario -->
+        <xpath expr="//div[contains(@class,'tp-account-info')]//div[contains(@class,'col-auto')][.//i[contains(@class,'dri-user')]]" position="replace">
+            <!-- Compañía 1 -->
+            <t t-if="website.company_id.id == 1">
+                <div class="col-auto my-1">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1 d-none d-xl-block">
+                            <!-- Register | Login -->
+                            <div class="d-flex align-items-center" t-if="user_id._is_public()">
+                                <a class="tp-account-info-sidebar-action me-2" href="/web/signup">Register</a>
+                                <span class="mx-1">|</span>
+                                <a class="tp-account-info-sidebar-action ms-2" href="/web/login">Login</a>
+                            </div>
+                            <div t-if="not user_id._is_public()" class="d-flex align-items-center">
+                                <span class="me-2 text-truncate" style="max-width: 150px;">
+                                    <t t-out="user_id.name"/>
+                                </span>
+                                <a class="tp-account-info-sidebar-action" href="/my/home">
+                                    <i class="fa fa-caret-down"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Carrito -->
+                        <div class="flex-shrink-0 ms-3">
+                            <t t-nocache="The number of products is dynamic, this rendering cannot be cached.">
+                                <t t-set="website_sale_cart_quantity"
+                                   t-value="request.session['website_sale_cart_quantity'] if 'website_sale_cart_quantity' in request.session else website.sale_get_order().cart_quantity or 0"/>
+                                <t t-set="show_cart" t-value="website.has_ecommerce_access()"/>
+                                <div t-attf-class="o_not_editable position-relative o_wsale_my_cart tp-cart-sidebar-action #{not show_cart and 'd-none'}">
+                                    <a href="/shop/cart">
+                                        <i class="dri dri-cart tp-light-bg rounded-circle"/>
+                                        <sup class="my_cart_quantity badge bg-primary"
+                                             t-out="website_sale_cart_quantity"
+                                             t-att-data-order-id="request.session.get('sale_order_id', '')"/>
+                                    </a>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </t>
+
+            <!-- Compañía 2 -->
+            <t t-if="website.company_id.id == 2">
+                <div class="row align-items-center justify-content-end tp-account-info">
+                    <div class="col-auto my-1" t-if="not user_id._is_public() or request.website.viewref('portal.user_sign_in').active">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <a href="#" class="tp-account-info-sidebar-action">
+                                    <img src="/theme_prime_conedera/static/src/img/login.png" alt="Login"
+                                         style="margin-bottom: 3px;" width="22" height="22"/>
+                                </a>
+                            </div>
+                            <div class="flex-grow-1 ms-3 d-none d-xl-block">
+                                <a class="tp-account-info-sidebar-action" href="#"><p class="h6 mb-0">Login</p></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto my-1">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <t t-nocache="The number of products is dynamic, this rendering cannot be cached.">
+                                    <t t-set="website_sale_cart_quantity" t-value="request.session['website_sale_cart_quantity'] if 'website_sale_cart_quantity' in request.session else website.sale_get_order().cart_quantity or 0"/>
+                                    <t t-set="show_cart" t-value="website.has_ecommerce_access()"/>
+                                    <div t-attf-class="o_not_editable position-relative o_wsale_my_cart tp-cart-sidebar-action #{not show_cart and 'd-none'}">
+                                        <a href="/shop/cart">
+                                            <img src="/theme_prime_conedera/static/src/img/cart.png"
+                                                 alt="Carrito"
+                                                 style="margin-bottom: 3px;"
+                                                 width="22" height="22"/>
+                                            <sup class="my_cart_quantity badge" style="background-color: #FF931E !important;"
+                                                 t-out="website_sale_cart_quantity"
+                                                 t-att-data-order-id="request.session.get('sale_order_id', '')"/>
+                                        </a>
+                                    </div>
+                                </t>
+                            </div>
+                            <div class="flex-grow-1 ms-3 d-none d-xl-block">
+                                <a class="tp-account-info-sidebar-action" href="/shop/cart"><p class="h6 mb-0">Carrito</p></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+
+        <!-- Ajustes de buscador -->
+        <xpath expr="//t[@t-call='website.website_search_box_input']" position="inside">
+            <t t-if="website.company_id.id == 1">
+                <t t-set="_classes" t-valuef="border tp-input-border-radius"/>
+            </t>
+            <t t-if="website.company_id.id == 2">
+                <t t-set="_classes" t-valuef="position-relative"/>
+                <t t-set="_input_classes" t-valuef="rounded-pill"/>
+                <t t-set="_submit_classes" t-valuef="btn-search-custom position-absolute end-0 top-0 rounded-pill"/>
+            </t>
+        </xpath>
+
+        <!-- Submenu -->
+        <xpath expr="//t[@t-call='website.submenu']" position="inside">
+            <t t-if="website.company_id.id == 2">
+                <t t-set="item_class" t-value="'nav-item flex-grow-1 text-center nav-item-short-border'"/>
+            </t>
+        </xpath>
+
+        <!-- Nav class -->
+        <xpath expr="//t[@t-set='_nav_class']" position="replace">
+            <t t-if="website.company_id.id == 2">
+                <t t-set="_nav_class" t-value="'flex-grow-1 justify-content-between'"/>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Header Mobile -->
+    <template id="template_header_mobile_unified" inherit_id="theme_prime.template_header_mobile" name="Header Mobile Unified">
+        <xpath expr="//div[@id='o_main_nav']" position="inside">
+            <t t-if="website.company_id.id == 1">
+                <div class="w-100 my-2">
+                    <t t-call="website.website_search_box_input">
+                        <t t-set="_form_classes" t-valuef="o_wsale_products_searchbar_form w-100"/>
+                        <t t-set="_classes" t-valuef="border tp-input-border-radius"/>
+                        <t t-set="search_type" t-valuef="products"/>
+                        <t t-set="action" t-value="'/shop'"/>
+                    </t>
+                </div>
+            </t>
+        </xpath>
+        <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace">
+            <t t-if="website.company_id.id == 2"/>
+        </xpath>
+        <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace">
+            <t t-if="website.company_id.id == 2"/>
+        </xpath>
+    </template>
+</odoo>
