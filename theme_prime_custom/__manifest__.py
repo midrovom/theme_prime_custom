@@ -19,7 +19,7 @@
         #Snippet Conedera
         #'views/conedera/footers.xml',
         #'views/conedera/snippets_register_conedera.xml',
-        'views/conedera/headers.xml',
+        #'views/conedera/headers.xml',
         'views/conedera/website_template.xml',
 
     ],
