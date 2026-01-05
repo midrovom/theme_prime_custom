@@ -16,6 +16,12 @@
         'views/advance/snippet/s_footer/s_footer.xml',
         'views/advance/snippet/s_header/s_header.xml',
 
+        #Snippet Conedera
+        #'views/conedera/footers.xml',
+        #'views/conedera/snippets_register_conedera.xml',
+        'views/conedera/headers.xml',
+        'views/conedera/website_template.xml',
+
     ],
     'assets': {
         'web.assets_frontend': [

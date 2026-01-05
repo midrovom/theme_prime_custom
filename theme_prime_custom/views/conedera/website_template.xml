@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="conedera_navbar_nav" name="Custom Navbar" inherit_id="website.navbar_nav">
+        <xpath expr="//ul" position="attributes">
+            <attribute name="class">justify-content-between</attribute>
+        </xpath>
+    </template>
+
+</odoo>
