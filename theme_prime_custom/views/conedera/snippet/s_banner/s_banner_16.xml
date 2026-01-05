@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="s_banner_16" name="Text">
+        <section class="s_banner_16">
+            <div class="container">
+                <div class="row s_nb_column_fixed">
+                    <div class="col-12 col-md-11 col-lg-10 mx-auto">
+                        <div class="shop-offer-hot-wrapper">
+                            <div class="text-content">
+                                <h3 class="text-uppercase fw-bold mb-1">Ultima Oportunidad</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </template>
+</odoo>

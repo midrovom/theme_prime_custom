@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="s_d_2_column_snippet_conedera" name="2 Column Deals Conedera">
+        <section class="s_d_2_column_snippet pt32 pb32">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 col-md-3 py-3 tp-block-container">
+                        <div class="tp-block-wrapper h-100">
+                            <div class="tp-block-container h-100 tp-editor-bg-image oe_img_bg o_bg_img_center" style="background-image: url('/web/image/theme_prime.s_gallery_01');"></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 s_d_product_small_block tp-droggol-18-builder-snippet" data-tp-snippet-id="s_d_product_small_block">
+                        <div class="mt-4">
+                            <h3 class="s_d_full_title">
+                                <span class="s_d_title_text"><p class="mb-0 d-inline-block"> Featured Products</p></span>
+                            </h3>
+                        </div>
+                        <div contenteditable="false" class="s_d_product_small_block_body dr_not_editable"/>
+                    </div>
+                </div>
+            </div>
+            <div class="s_dialog_preview">
+                <img src="/theme_prime/static/src/img/dynamic_snippet/s_d_two_column_snippet_preview.png" class="img-fluid mx-auto"/>
+            </div>
+        </section>
+    </template>
+
+</odoo>

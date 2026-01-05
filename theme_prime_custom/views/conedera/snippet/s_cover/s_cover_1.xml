@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="s_cover_1" name="S Cover 1 Conedera" inherit_id="theme_prime.s_cover_1">
+    <xpath expr="//div[@class='carousel-inner']" position="replace">
+      <div class="carousel-inner w-100" data-oe-slideshow="true">
+        <div class="carousel-item active w-100" data-name="Slide">
+          <a href="/shop">
+            <img t-att-src="'/web/image/cover_image_desktop_1'" class="d-none d-md-block img img-fluid w-100 rounded-4" alt="Cover Desktop 1"/>
+            <img t-att-src="'/web/image/cover_image_mobile_1'" class="d-block d-md-none img img-fluid w-100 rounded-4" alt="Cover Mobile 1"/>
+          </a>
+        </div>
+        <div class="carousel-item w-100" data-name="Slide">
+          <a href="/shop">
+            <img t-att-src="'/web/image/cover_image_desktop_2'" class="d-none d-md-block img img-fluid w-100 rounded-4" alt="Cover Desktop 2"/>
+            <img t-att-src="'/web/image/cover_image_mobile_2'" class="d-block d-md-none img img-fluid w-100 rounded-4" alt="Cover Mobile 2"/>
+          </a>
+        </div>
+      </div>
+    </xpath>
+  </template>
+</odoo>
