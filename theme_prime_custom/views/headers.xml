@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Header Desktop -->
-    <template id="template_header_style_4_unified" inherit_id="theme_prime.template_header_style_4" name="Header Style 4 Unified">
+    <template id="template_header_style_4" inherit_id="theme_prime.template_header_style_4" name="Header Style 4 Unified">
 
         <!-- Bloque Usuario -->
         <xpath expr="//div[contains(@class,'tp-account-info')]//div[contains(@class,'col-auto')][.//i[contains(@class,'dri-user')]]" position="replace">
