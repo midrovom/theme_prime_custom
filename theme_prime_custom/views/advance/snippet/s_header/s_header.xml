@@ -2,7 +2,7 @@
 <odoo>
     <template id="template_header_style_4_inherit" inherit_id="theme_prime.template_header_style_4" name="Header Style - 4 Inherit">
         <xpath expr="//div[contains(@class,'tp-account-info')]//div[contains(@class,'col-auto')][.//i[contains(@class,'dri-user')]]" position="replace">
-            <t t-if="website.company_id.id == 2">
+            <t t-if="website.company_id.id == 1">
                 <div class="col-auto my-1">
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1 d-none d-xl-block">
@@ -44,18 +44,18 @@
 
         <xpath expr="//div[contains(@class,'tp-account-info')]//div[contains(@class,'col-auto')][.//i[contains(@class,'dri-wishlist')]]"
                position="replace">
-            <t t-if="website.company_id.id == 2"/>
+            <t t-if="website.company_id.id == 1"/>
         </xpath>
         <xpath expr="//div[contains(@class,'tp-account-info')]//div[contains(@class,'col-auto')][.//i[contains(@class,'dri-cart')]]"
                position="replace">
-            <t t-if="website.company_id.id == 2"/>
+            <t t-if="website.company_id.id == 1"/>
         </xpath>
     </template>
 
     <!-- Header Mobile -->
     <template id="template_header_mobile_inherit" inherit_id="theme_prime.template_header_mobile" name="Template Header Mobile Inherit">
         <xpath expr="//div[@id='o_main_nav']" position="inside">
-            <t t-if="website.company_id.id == 2">
+            <t t-if="website.company_id.id == 1">
                 <div class="w-100 my-2">
                     <t t-call="website.website_search_box_input">
                         <t t-set="_form_classes" t-valuef="o_wsale_products_searchbar_form w-100"/>
