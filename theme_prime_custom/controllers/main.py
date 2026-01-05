@@ -9,8 +9,8 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
         fields += ['attribute_line_ids']
         result = super()._prepare_product_data(products, fields, pricelist, options)
 
-        # Solo aplicar si la compañía del sitio web es la 2
-        if request.website.company_id.id == 2:
+        # Solo aplicar si la compañía del sitio web es la 1
+        if request.website.company_id.id == 1:
             for res_product, product in zip(result, products):
                 res_product['attributes'] = []
                 res_product['other_attributes'] = []
@@ -39,8 +39,8 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
             product, product_data, price_public_visibility, visibility_label, currency_id
         )
 
-        # Solo aplicar si la compañía del sitio web es la 2
-        if request.website.company_id.id == 2:
+        # Solo aplicar si la compañía del sitio web es la 1
+        if request.website.company_id.id == 1:
             base_price = product.list_price if product._name == 'product.template' else product.product_tmpl_id.list_price
             final_price = product_data.get('price', base_price)
             formatted_price = formatLang(request.env, base_price, currency_obj=currency_id, monetary=True)
