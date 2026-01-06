@@ -3,51 +3,52 @@
     <!-- Header Desktop -->
     <template id="template_header_style_4" inherit_id="theme_prime.template_header_style_4" name="Header Style 4 Unified">
 
-        <!-- Bloque Usuario -->
-        <xpath expr="//div[contains(@class,'tp-account-info')]//div[contains(@class,'col-auto')][.//i[contains(@class,'dri-user')]]" position="replace">
-            <!-- Compañía 1 -->
-            <t t-if="website.company_id.id == 1">
-                <div class="col-auto my-1">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1 d-none d-xl-block">
-                            <!-- Register | Login -->
-                            <div class="d-flex align-items-center" t-if="user_id._is_public()">
-                                <a class="tp-account-info-sidebar-action me-2" href="/web/signup">Register</a>
-                                <span class="mx-1">|</span>
-                                <a class="tp-account-info-sidebar-action ms-2" href="/web/login">Login</a>
-                            </div>
-                            <div t-if="not user_id._is_public()" class="d-flex align-items-center">
-                                <span class="me-2 text-truncate" style="max-width: 150px;">
-                                    <t t-out="user_id.name"/>
-                                </span>
-                                <a class="tp-account-info-sidebar-action" href="/my/home">
-                                    <i class="fa fa-caret-down"></i>
-                                </a>
-                            </div>
-                        </div>
-                        <!-- Carrito original compañía 1 -->
-                        <div class="flex-shrink-0 ms-3">
-                            <t t-nocache="The number of products is dynamic, this rendering cannot be cached.">
-                                <t t-set="website_sale_cart_quantity"
-                                   t-value="request.session['website_sale_cart_quantity'] if 'website_sale_cart_quantity' in request.session else website.sale_get_order().cart_quantity or 0"/>
-                                <t t-set="show_cart" t-value="website.has_ecommerce_access()"/>
-                                <div t-attf-class="o_not_editable position-relative o_wsale_my_cart tp-cart-sidebar-action #{not show_cart and 'd-none'}">
-                                    <a href="/shop/cart">
-                                        <i class="dri dri-cart tp-light-bg rounded-circle"/>
-                                        <sup class="my_cart_quantity badge bg-primary"
-                                             t-out="website_sale_cart_quantity"
-                                             t-att-data-order-id="request.session.get('sale_order_id', '')"/>
+        <!-- Bloque Usuario + Carrito -->
+        <xpath expr="//div[@class='row align-items-center justify-content-end tp-account-info']" position="replace">
+            <div class="row align-items-center justify-content-end tp-account-info">
+
+                <!-- Compañía 1 -->
+                <t t-if="website.company_id.id == 1">
+                    <div class="col-auto my-1">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1 d-none d-xl-block">
+                                <!-- Register | Login -->
+                                <div class="d-flex align-items-center" t-if="user_id._is_public()">
+                                    <a class="tp-account-info-sidebar-action me-2" href="/web/signup">Register</a>
+                                    <span class="mx-1">|</span>
+                                    <a class="tp-account-info-sidebar-action ms-2" href="/web/login">Login</a>
+                                </div>
+                                <div t-if="not user_id._is_public()" class="d-flex align-items-center">
+                                    <span class="me-2 text-truncate" style="max-width: 150px;">
+                                        <t t-out="user_id.name"/>
+                                    </span>
+                                    <a class="tp-account-info-sidebar-action" href="/my/home">
+                                        <i class="fa fa-caret-down"></i>
                                     </a>
                                 </div>
-                            </t>
+                            </div>
+                            <!-- Carrito compañía 1 -->
+                            <div class="flex-shrink-0 ms-3">
+                                <t t-nocache="The number of products is dynamic, this rendering cannot be cached.">
+                                    <t t-set="website_sale_cart_quantity"
+                                       t-value="request.session['website_sale_cart_quantity'] if 'website_sale_cart_quantity' in request.session else website.sale_get_order().cart_quantity or 0"/>
+                                    <t t-set="show_cart" t-value="website.has_ecommerce_access()"/>
+                                    <div t-attf-class="o_not_editable position-relative o_wsale_my_cart tp-cart-sidebar-action #{not show_cart and 'd-none'}">
+                                        <a href="/shop/cart">
+                                            <i class="dri dri-cart tp-light-bg rounded-circle"/>
+                                            <sup class="my_cart_quantity badge bg-primary"
+                                                 t-out="website_sale_cart_quantity"
+                                                 t-att-data-order-id="request.session.get('sale_order_id', '')"/>
+                                        </a>
+                                    </div>
+                                </t>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </t>
+                </t>
 
-            <!-- Compañía 2 -->
-            <t t-if="website.company_id.id == 2">
-                <div class="row align-items-center justify-content-end tp-account-info">
+                <!-- Compañía 2 -->
+                <t t-if="website.company_id.id == 2">
                     <div class="col-auto my-1" t-if="not user_id._is_public() or request.website.viewref('portal.user_sign_in').active">
                         <div class="d-flex align-items-center">
                             <div class="flex-shrink-0">
@@ -61,7 +62,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Carrito original compañía 2 -->
+                    <!-- Carrito compañía 2 -->
                     <div class="col-auto my-1">
                         <div class="d-flex align-items-center">
                             <div class="flex-shrink-0">
@@ -87,8 +88,8 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </t>
+                </t>
+            </div>
         </xpath>
 
         <!-- Ajustes de buscador -->
@@ -116,6 +117,16 @@
                 <t t-set="_nav_class" t-value="'flex-grow-1 justify-content-between'"/>
             </t>
         </xpath>
+
+        <!-- Ocultar Wishlist del tema base -->
+        <xpath expr="//div[contains(@class,'o_wsale_my_wish')]" position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+
+        <!-- Ocultar My Cart extra del tema base -->
+        <xpath expr="//div[contains(@class,'o_wsale_my_cart') and .//div[contains(text(),'My Cart')]]" position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
     </template>
 
     <!-- Header Mobile -->
@@ -140,4 +151,3 @@
         </xpath>
     </template>
 </odoo>
-
