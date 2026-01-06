@@ -22,10 +22,6 @@
         <xpath expr="//we-select[@data-variable='footer-template']/we-button[last()]" position="after">
             <we-button title="Prime Footer Style - 12" data-name="tp_footer_style_12_opt" data-customize-website-views="theme_prime_custom.template_footer_style_12" data-customize-website-variable="'prime_style_12'" data-img="/theme_prime/static/src/img/options/footer_1.svg"/>
         </xpath>
-    <!-- Header -->
-        <xpath expr="//we-select[@data-variable='header-template']/we-button[last()]" position="after">
-            <we-button title="Prime Header Style - 9" data-name="tp_header_style_4_opt" data-customize-website-views="theme_prime.template_header_style_9" data-customize-website-variable="'prime_style_4'" data-img="/theme_prime/static/src/img/options/header_4.svg"/>
-        </xpath>
     </template>
 
 
