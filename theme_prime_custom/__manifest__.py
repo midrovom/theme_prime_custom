@@ -13,7 +13,7 @@
         # 'views/advance/snippet/s_banner/s_banner_17.xml',
         # 'views/advance/snippet/s_shop_offer/s_shop_offer_7.xml',
         # 'views/advance/snippet/s_text/s_text.xml',
-        # 'views/advance/snippet/s_footer/s_footer.xml',
+        'views/advance/snippet/s_footer/s_footer.xml',
         'views/advance/snippet/s_header/s_header.xml',
 
         #Snippet Conedera
