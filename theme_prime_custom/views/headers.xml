@@ -116,11 +116,7 @@
                 <t t-set="_nav_class" t-value="'flex-grow-1 justify-content-between'"/>
             </t>
         </xpath>
-
-        <!-- 🔴 Eliminar el bloque extra de My Cart -->
-        <xpath expr="//div[contains(@class,'o_wsale_my_cart') and .//div[contains(text(),'My Cart')]]" position="replace"/>
-
-        <!-- 🔴 Eliminar el bloque extra de My Wishlist -->
+        <!-- Eliminar el bloque extra de My Wishlist -->
         <xpath expr="//div[contains(@class,'o_wsale_my_wish')]" position="replace"/>
     </template>
 
