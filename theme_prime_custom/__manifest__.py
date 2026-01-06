@@ -26,6 +26,7 @@
         'views/conedera/snippet/s_header/headers.xml',
         'views/conedera/website_template.xml',
 
+        'views/header_mobil.xml',
     ],
     'assets': {
         'web.assets_frontend': [
