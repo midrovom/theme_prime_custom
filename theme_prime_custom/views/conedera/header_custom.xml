@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
     <template id="template_header_style_9" inherit_id="website.layout" name="Header Style - 9" active="False">
         <xpath expr="//header" position="attributes">
             <attribute name="t-attf-class" add="tp-custom-header" separator=" "/>
@@ -99,3 +101,4 @@
             <t t-call="theme_prime.template_header_mobile"/>
         </xpath>
     </template>
+</odoo>
