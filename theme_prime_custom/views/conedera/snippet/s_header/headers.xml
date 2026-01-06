@@ -94,7 +94,7 @@
 </odoo>
 
 
-<!-- <?xml version="1.0" encoding="utf-8"?>
+<!-- 
 <odoo>
     <template id="template_header_style_4_custom" inherit_id="theme_prime.template_header_style_4">
         <xpath expr="//t[@t-call='website.website_search_box_input']" position="inside">
@@ -135,7 +135,6 @@
                                              style="margin-bottom: 3px;"
                                              width="22"
                                              height="22"/>
-                                        <!-- <i class="dri dri-cart"/> -->
                                         <sup class="my_cart_quantity badge" style="background-color: #FF931E !important;" t-out="website_sale_cart_quantity" t-att-data-order-id="request.session.get('sale_order_id', '')"/>
                                     </a>
                                 </div>
@@ -170,13 +169,11 @@
         </xpath>
     </template>
 
-    <!-- Header versión mobil -->
     <template id="template_header_mobile_hide_cart_and_menu" inherit_id="theme_prime.template_header_mobile">
-        <!-- Ocultar menu-->
+
         <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace"></xpath>
-        <!-- Ocultar carrito -->
+
         <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace"/>
     </template>
-
 
 </odoo> -->
