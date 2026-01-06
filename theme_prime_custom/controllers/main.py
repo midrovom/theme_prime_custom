@@ -1,7 +1,8 @@
 from odoo.addons.theme_prime.controllers.main import ThemePrimeMainClass
+from odoo.addons.website_sale.controllers.main import WebsiteSale
 from odoo.http import request
 from odoo.tools import formatLang
-
+from odoo import http
 class ThemePrimeMainClassExtended(ThemePrimeMainClass):
 
     def _prepare_product_data(self, products, fields, pricelist, options=None):
@@ -38,33 +39,27 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
         res = super()._get_computed_product_price(
             product, product_data, price_public_visibility, visibility_label, currency_id
         )
-
-        # Solo aplicar si la compañía del sitio web es la 1
-        if request.website.company_id.id == 1:
-            base_price = product.list_price if product._name == 'product.template' else product.product_tmpl_id.list_price
-            final_price = product_data.get('price', base_price)
-            formatted_price = formatLang(request.env, base_price, currency_obj=currency_id, monetary=True)
-
-            if price_public_visibility and final_price != base_price:
-                res.update({
-                    'list_price_base_raw': base_price,
-                    'list_price_base': formatted_price
-                })
-            else:
-                res.update({
-                    'list_price_base_raw': ' ',
-                    'list_price_base': ' '
-                })
+        base_price = product.list_price if product._name == 'product.template' else product.product_tmpl_id.list_price
+        final_price = product_data.get('price', base_price)
+        # formatLang para obtener el valor como string plano
+        formatted_price = formatLang(request.env, base_price, currency_obj=currency_id, monetary=True)
+        # solo mostrar si el precio final es distinto al base
+        if price_public_visibility and final_price != base_price:
+            res.update({
+                'list_price_base_raw': base_price,
+                'list_price_base': formatted_price
+            })
+        else:
+            res.update({
+                'list_price_base_raw': ' ',
+                'list_price_base': ' '
+            })
 
         return res
 
 #conedera
-
-from odoo.addons.theme_prime.controllers.main import ThemePrimeMainClass
-from odoo.addons.website_sale.controllers.main import WebsiteSale
-from odoo import http
-class ThemePrimeMainClassExtended(ThemePrimeMainClass):
-
+class ThemePrimeMainClassExtendeds(ThemePrimeMainClass):
+    # Funcion para filtrar productos por marca
     def _prepare_product_data(self, products, fields, pricelist, options=None):
         fields = list(set(fields or []))
         fields += ['attribute_line_ids']
