@@ -77,10 +77,10 @@
     <!-- Header versión mobil -->
     <template id="template_header_mobile_hide_cart_and_menu" inherit_id="theme_prime.template_header_mobile">
         <!-- Ocultar menu-->
-        <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace"></xpath>
+        <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace"> <t t-if="website.company_id.id == 2"/> </xpath>
         <!-- Ocultar carrito -->
-        <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace"/>
-    </template>
+        <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace"> <t t-if="website.company_id.id == 2"/> </xpath>
 
+    </template>
 
 </odoo>
