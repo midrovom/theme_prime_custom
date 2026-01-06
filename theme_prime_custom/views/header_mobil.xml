@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Header Mobile Unificado -->
-    <template id="template_header_mobile_unificado" inherit_id="theme_prime.template_header_mobile" name="Template Header Mobile Unificado">
+    <template id="template_header_mobile_inherit" inherit_id="theme_prime.template_header_mobile" name="Template Header Mobile ">
         <!-- Bloque buscador solo para compañía 1 -->
         <xpath expr="//div[@id='o_main_nav']" position="inside">
             <t t-if="website.company_id.id == 1">
@@ -17,14 +16,14 @@
         </xpath>
 
         <!-- Ocultar menú solo para compañía 2 -->
-        <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace">
-            <t t-if="website.company_id.id == 2"/>
-        </xpath>
+        <t t-if="website.company_id.id == 2">
+            <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace"/>
+        </t>
 
         <!-- Ocultar carrito solo para compañía 2 -->
-        <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace">
-            <t t-if="website.company_id.id == 2"/>
-        </xpath>
+        <t t-if="website.company_id.id == 2">
+            <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace"/>
+        </t>
 
     </template>
 </odoo>
