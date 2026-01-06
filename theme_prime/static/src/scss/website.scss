@@ -416,7 +416,7 @@ $menu-color: o-color('menu-custom') or o-color('menu') or rgba(0, 0, 0, 0);
                 }
             }
         }
-    }@else if o-website-value('header-template') == 'prime_style_9' {
+    } @else if o-website-value('header-template') == 'prime_style_9' {
         #wrapwrap > header {
             // Header
             .tp-header-box {
