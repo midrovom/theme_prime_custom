@@ -14,7 +14,7 @@
         # 'views/advance/snippet/s_shop_offer/s_shop_offer_7.xml',
         # 'views/advance/snippet/s_text/s_text.xml',
         # 'views/advance/snippet/s_footer/s_footer.xml',
-        #'views/advance/snippet/s_header/s_header.xml',
+        'views/advance/snippet/s_header/s_header.xml',
 
         #Snippet Conedera
         'views/conedera/snippet/s_footer/footers.xml',
@@ -23,7 +23,7 @@
         'views/conedera/product_detail_page.xml',
         'views/conedera/snippet/s_banner/s_banner_16.xml',
         'views/conedera/snippets_register_conedera.xml',
-        #'views/conedera/snippet/s_header/headers.xml',
+        'views/conedera/snippet/s_header/headers.xml',
         'views/conedera/website_template.xml',
 
     ],
