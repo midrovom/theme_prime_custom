@@ -17,6 +17,7 @@
         #'views/advance/snippet/s_header/s_header.xml',
 
         #Snippet Conedera
+        'views/conedera/header_custom.xml',
         'views/conedera/snippet/s_footer/footers.xml',
         'views/conedera/snippet/s_cover/s_cover_1.xml',
         'views/conedera/snippet/s_d_2_column/dynamic_snippets.xml',
