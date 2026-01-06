@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Header Desktop Compañía 2 -->
-    <template id="template_header_style_4_company2" inherit_id="theme_prime.template_header_style_4" name="Header Style 4 - Company 2">
+    <template id="template_header_style_4" inherit_id="theme_prime.template_header_style_4" name="Header Style 4 - Company 2">
 
         <!-- Ajustes buscador -->
         <xpath expr="//t[@t-call='website.website_search_box_input']" position="inside">
