@@ -23,7 +23,7 @@
         'views/conedera/product_detail_page.xml',
         'views/conedera/snippet/s_banner/s_banner_16.xml',
         'views/conedera/snippets_register_conedera.xml',
-        #'views/conedera/snippet/s_header/headers.xml',
+        'views/conedera/snippet/s_header/headers.xml',
         'views/conedera/website_template.xml',
 
         'views/header_mobil.xml',
