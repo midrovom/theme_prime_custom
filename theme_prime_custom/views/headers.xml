@@ -25,7 +25,7 @@
                                 </a>
                             </div>
                         </div>
-                        <!-- Carrito -->
+                        <!-- Carrito original compañía 1 -->
                         <div class="flex-shrink-0 ms-3">
                             <t t-nocache="The number of products is dynamic, this rendering cannot be cached.">
                                 <t t-set="website_sale_cart_quantity"
@@ -61,6 +61,7 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Carrito original compañía 2 -->
                     <div class="col-auto my-1">
                         <div class="d-flex align-items-center">
                             <div class="flex-shrink-0">
@@ -72,7 +73,8 @@
                                             <img src="/theme_prime_conedera/static/src/img/cart.png"
                                                  alt="Carrito"
                                                  style="margin-bottom: 3px;"
-                                                 width="22" height="22"/>
+                                                 width="22"
+                                                 height="22"/>
                                             <sup class="my_cart_quantity badge" style="background-color: #FF931E !important;"
                                                  t-out="website_sale_cart_quantity"
                                                  t-att-data-order-id="request.session.get('sale_order_id', '')"/>
@@ -114,6 +116,12 @@
                 <t t-set="_nav_class" t-value="'flex-grow-1 justify-content-between'"/>
             </t>
         </xpath>
+
+        <!-- 🔴 Eliminar el bloque extra de My Cart -->
+        <xpath expr="//div[contains(@class,'o_wsale_my_cart') and .//div[contains(text(),'My Cart')]]" position="replace"/>
+
+        <!-- 🔴 Eliminar el bloque extra de My Wishlist -->
+        <xpath expr="//div[contains(@class,'o_wsale_my_wish')]" position="replace"/>
     </template>
 
     <!-- Header Mobile -->
@@ -138,3 +146,4 @@
         </xpath>
     </template>
 </odoo>
+
