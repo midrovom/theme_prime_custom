@@ -1,0 +1,200 @@
+/* Ocultar atributos originales*/
+// Sección de marca 
+#product_attributes_simple {
+    display: none !important;
+}
+.o_wsale_product_page #product_details .d-flex.align-items-center.gap-3 {
+    display: none !important;
+}
+// Sección de descripción
+#wrap.o_wsale_product_page .nav.nav-tabs.justify-content-center a[href="#tp-product-description-tab"] {
+    display: none !important;
+}
+//Borde redondeados a Productos
+#wrap.js_sale .oe_website_sale .tp-rounded-border-radius {
+    border-radius: 15px !important;
+}
+//Ruta de navegación del producto
+/* Hide ORIGINAL Theme Prime product breadcrumb */
+#product_detail .col-auto.mb-2.flex-grow-1.flex-shrink-1 > ol.breadcrumb {
+    display: none !important;
+}
+
+//Estilo para los acordeones
+/* Estilos personalizados para las características del producto */
+#accordionCustomAttributes {
+  .accordion-body {
+    .d-flex {
+      img {
+        height: 20px;   
+        width: auto;
+        margin-right: 6px; 
+      }
+
+      span {
+        font-size: 0.9rem; 
+      }
+    }
+    .col-6 {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+  }
+}
+
+.titulo-naranja {
+    color: orange !important;
+}
+
+//Apartado de precio del producto
+.precio-texto {
+    font-size: 18px;      
+    font-weight: bold;   
+    color: orange !important;        
+}
+
+// Apartado de add to card
+#add_to_cart {
+  border-radius: 8px;  
+}
+
+// Contador 
+.css_quantity {
+  border: none !important;        
+  background-color: none;  
+  box-shadow: none;             
+}
+
+.css_quantity a.btn-link {
+  background-color: #e0e0e0;   
+  border: 1px solid #ccc;
+  border-radius: 8px !important;          
+  margin: 0 4px;              
+  padding: 6px 12px;
+}
+
+.css_quantity input.quantity {
+  background-color: #fff;      
+  border: 1px solid #ccc;
+  border-radius: 8px !important;          
+  text-align: center;
+  width: 60px;
+  margin: 0 4px;              
+}
+
+///// Descargar Ficha Tecnica //////
+.tp-product-details-tab .nav-tabs {
+  border: none !important;
+}
+
+.tp-product-details-tab .nav-tabs li.nav-item .nav-link.active {
+  box-shadow: none !important;
+}
+
+//Centrar contenido de descargar ficha tecnica
+#tp-product-documents-tab .row {
+  justify-content: center;
+}
+
+.tp-product-details-tab .nav-tabs li.nav-item a[href="#tp-product-documents-tab"] {
+  border: 1px solid #999 !important;   
+  border-radius: 10px !important;      
+
+  display: flex;              
+  justify-content: center;    
+  align-items: center;        
+  text-align: center; 
+}
+//Quitar bordes
+@media (max-width: 991.98px) {
+  .tp-product-details-tab .nav-tabs li.nav-item {
+    border-top: none !important;
+  }
+
+  .tp-product-details-tab .nav-tabs li.nav-item:last-child {
+    border-bottom: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .tp-product-details-tab .nav-tabs li.nav-item .nav-link.active {
+    box-shadow: none !important;
+    background-color: transparent !important; 
+    color: #000 !important;                   
+    border-color: transparent !important;
+  }
+}
+
+///// Ocultar apartdo de categorias en vista grid ///////
+.tp-category-pill-container {
+  display: none !important;   // oculta el bloque
+}
+// Sección de ruta del producto
+@media (max-width: 767px) {
+  .o_wsale_breadcrumb.breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+      content: "/";
+      color: #6c757d;
+      padding: 0 0.5rem;
+  }
+}
+
+//Sección de item found oculta
+//Mobile
+@media (max-width: 767.98px) {
+    .shop-mobile-header {
+        display: none !important;
+    }
+}
+
+//Escritorio
+@media (min-width: 992px) {
+  .tp-shop-topbar .d-lg-flex {
+    display: none !important;
+  }
+}
+
+//Filtros para productos
+//Bordes Generales
+#products_grid_before .tp-filters-container {
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 12px;
+    background: #fff;
+}
+
+.tp-filters-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.tp-filters-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ff7a00;
+    text-align: left !important;
+}
+
+/* Cada filtro */
+#products_grid_before .tp-filter-attribute {
+    border-bottom: 1px solid #e5e5e5;
+}
+
+/* Último sin borde */
+#products_grid_before .tp-filter-attribute:last-child {
+    border-bottom: none;
+}
+
+/* Ocultar título original del producto en móvil */
+@media (max-width: 767.98px) {
+    #product_detail_main h1 {
+        display: none;
+    }
+}
+
+// Estilo general de la marca
+.tp-product-brand {
+  @media (max-width: 767.98px) {
+    text-align: left; 
+  }
+}
+

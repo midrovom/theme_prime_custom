@@ -1,0 +1,44 @@
+.s_shop_offer_7 {
+  .s_trending_box_with_image {
+    .text-block {
+      p {
+        font-size: 0.875rem;
+        margin-bottom: 0;
+      }
+
+      h3 {
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 0;
+      }
+
+      small,
+      .text-muted {
+        font-size: 0.75rem;
+      }
+    }
+
+    .image-box {
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+
+      img {
+        object-fit: cover;
+        border-radius: 0.75rem;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .image-box img {
+        width: 200px;
+        height: 100px;
+      }
+
+      .text-block {
+        text-align: center;
+        align-items: center;
+      }
+    }
+  }
+}

@@ -1,0 +1,46 @@
+@media (min-width: 992px) {
+    #wrapwrap > header {
+        // Header
+        .tp-header-box {
+            padding-top: 25px !important;
+            .tp-account-info {
+                .my_cart_quantity {
+                    top: -15px !important;
+                    left: 20px !important;
+                }
+            }
+        }
+
+        // Menu
+        > .navbar {
+            #top_menu {
+                > .nav-item {
+                    > a.nav-link {
+                        &:before {
+                            background-color: #FF931E !important;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+.tp-custom-carousel.s_carousel {
+    .carousel-indicators:not(.s_carousel_indicators_dots) {
+        button {
+            &.active, &:hover {
+                background-color: #FF931E !important;
+            }
+        }
+    }
+    .carousel-indicators.s_carousel_indicators_dots {
+        button {
+            &.active, &:hover {
+                background-color: #FF931E !important;
+            }
+        }
+    }
+}
