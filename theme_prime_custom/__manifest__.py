@@ -19,16 +19,16 @@
 
         #Snippet Conedera
 
-        'views/conedera/snippet/s_cover/s_cover_1.xml',
-        'views/conedera/snippet/s_d_2_column/dynamic_snippets.xml',
-        'views/conedera/product_detail_page.xml',
-        'views/conedera/snippet/s_banner/s_banner_16.xml',
-        'views/conedera/snippets_register_conedera.xml',
+        # 'views/conedera/snippet/s_cover/s_cover_1.xml',
+        # 'views/conedera/snippet/s_d_2_column/dynamic_snippets.xml',
+        # 'views/conedera/product_detail_page.xml',
+        # 'views/conedera/snippet/s_banner/s_banner_16.xml',
+        # 'views/conedera/snippets_register_conedera.xml',
 
-        'views/conedera/snippet/s_footer/footers.xml',
-        'views/conedera/snippet/s_header/headers.xml',
+        # 'views/conedera/snippet/s_footer/footers.xml',
+        # 'views/conedera/snippet/s_header/headers.xml',
 
-        'views/conedera/website_template.xml',
+        # 'views/conedera/website_template.xml',
 
         #version mobil advance / conedera
         'views/header_mobil.xml',
