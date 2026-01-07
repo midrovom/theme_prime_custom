@@ -19,6 +19,6 @@
     <record id="webpage_theme_common.s_dynamic_snippet_categories_js" model="ir.asset">
         <field name="name">Dynamic snippet categories 000 JS</field>
         <field name="bundle">web.assets_frontend</field>
-        <field name="path">webpage_theme_common/src/scss/advance/snippets/s_dynamic_snippet_categories/000.js</field>
+        <field name="path">webpage_theme_common/static/src/scss/advance/snippets/s_dynamic_snippet_categories/000.js</field>
     </record>
 </odoo>
