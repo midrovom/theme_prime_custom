@@ -21,10 +21,10 @@
 
         #Snippet Conedera
 
-        'views/conedera/snippet/s_cover/s_cover_1.xml',
-        'views/conedera/snippet/s_d_2_column/dynamic_snippets.xml',
+        'views/snippet/conedera/s_cover_1/s_cover_1.xml',
+        'views/snippet/conedera/s_dynamic_snippets/dynamic_snippets.xml',
+        'views/snippet/conedera/s_banner_18/s_banner_18.xml',
         'views/conedera/product_detail_page.xml',
-        'views/conedera/snippet/s_banner/s_banner_18.xml',
 
         # 'views/conedera/snippet/s_footer/footers.xml',
         # 'views/conedera/snippet/s_header/headers.xml',
