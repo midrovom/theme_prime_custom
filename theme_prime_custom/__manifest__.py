@@ -5,9 +5,6 @@
     'category': 'Theme/eCommerce',
     'depends': ['website', 'theme_prime', 'conedera_theme_common'],
     'data': [
-        #Register snippets
-
-        'views/snippet_register.xml',
 
         # Snippet Advance
         'views/snippet/advance/s_banner/s_banner_16.xml',
@@ -34,6 +31,8 @@
 
         # version mobil advance / conedera
         'views/header_mobil.xml',
+
+        'views/snippet_register.xml',
     ],
     'assets': {
         'web.assets_frontend': [
