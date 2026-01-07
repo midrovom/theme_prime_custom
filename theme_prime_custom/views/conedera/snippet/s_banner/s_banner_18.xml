@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="s_banner_16" name="Text">
-        <section class="s_banner_16">
+    <template id="s_banner_18" name="Text">
+        <section class="s_banner_18">
             <div class="container">
                 <div class="row s_nb_column_fixed">
                     <div class="col-12 col-md-11 col-lg-10 mx-auto">
