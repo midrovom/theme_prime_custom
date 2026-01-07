@@ -4,7 +4,7 @@
 
     <template id="s_snippet_register" inherit_id="theme_prime.snippets" name="Snippet - Registry">
         <!-- Banners -->
-        <xpath expr="//t[@t-snippet='theme_prime.s_banner_15']" position="after">
+        <!-- <xpath expr="//t[@t-snippet='theme_prime.s_banner_15']" position="after">
             <t t-snippet="theme_prime_custom.s_banner_16" string="Banner - 16" group="theme_prime_banner">
                 <keywords>banner, hero</keywords>
             </t>
@@ -14,7 +14,7 @@
             <t t-snippet="theme_prime_custom.s_banner_17" string="Banner - 17" group="theme_prime_banner">
                 <keywords>trending, image, link</keywords>
             </t>
-        </xpath>
+        </xpath> -->
 
         <!--Banner conedera-->
         <xpath expr="//t[@t-snippet='theme_prime_custom.s_banner_17']" position="after"> 
@@ -24,13 +24,13 @@
         </xpath>
 
         <!-- Clients -->
-        <xpath expr="//t[@t-snippet='theme_prime.s_cover_5']" position="after">
+        <!-- <xpath expr="//t[@t-snippet='theme_prime.s_cover_5']" position="after">
             <t t-snippet="theme_prime_custom.s_cover_6" string="Cover - 6" group="theme_prime_cover">
                 <keywords>clients, brands, logo, reference</keywords>
             </t>
-        </xpath>
+        </xpath> -->
         <!-- Shop Offer -->
-        <xpath expr="//t[@t-snippet='theme_prime.s_shop_offer_5']" position="after">
+        <!-- <xpath expr="//t[@t-snippet='theme_prime.s_shop_offer_5']" position="after">
             <t t-snippet="theme_prime_custom.s_shop_offer_6" string="Shop Offer - 6" group="theme_prime_shop_offer">
                 <keywords>offer</keywords>
             </t>
@@ -40,13 +40,13 @@
             <t t-snippet="theme_prime_custom.s_shop_offer_7" string="Shop offer - 7" group="theme_prime_shop_offer">
                 <keywords>trending, image, link</keywords>
             </t>
-        </xpath>
+        </xpath> -->
         <!-- Cta -->
-        <xpath expr="//t[@t-snippet='theme_prime.s_call_to_action_5']" position="after">
+        <!-- <xpath expr="//t[@t-snippet='theme_prime.s_call_to_action_5']" position="after">
             <t t-snippet="theme_prime_custom.s_trending_box" string="Trending Text Box" group="theme_prime_cta">
                 <keywords>call to action, trending, cta</keywords>
             </t>
-        </xpath>
+        </xpath> -->
 
     </template>
 
@@ -55,7 +55,7 @@
         <xpath expr="//we-select[@data-variable='footer-template']/we-button[last()]" position="after">
             <we-button title="Prime Footer Style - 11" data-name="tp_footer_style_11_opt" data-customize-website-views="theme_prime_custom.template_footer_style_11" data-customize-website-variable="'prime_style_11'" data-img="/theme_prime/static/src/img/options/footer_1.svg"/>
         </xpath>
-        
+
         <!-- Footer -->
         <xpath expr="//we-select[@data-variable='footer-template']/we-button[last()]" position="after">
             <we-button title="Prime Footer Style - 12" data-name="tp_footer_style_12_opt" data-customize-website-views="theme_prime_custom.template_footer_style_12" data-customize-website-variable="'prime_style_12'" data-img="/theme_prime/static/src/img/options/footer_1.svg"/>
