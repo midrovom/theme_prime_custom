@@ -25,7 +25,7 @@
     'assets': {
         'web.assets_frontend': [
             #Advance
-            'webpage_theme_common/src/scss/advance/s_cover/s_cover_6.scss',
+            'webpage_theme_common/src/scss/advance/s_cover/s_cover_6_.scss',
             'webpage_theme_common/src/scss/advance/gallery_custom/gallery_custom.scss',
             'webpage_theme_common/src/scss/advance/s_text/s_text.scss',
             'webpage_theme_common/src/scss/advance/s_banner/s_banner_16.scss',
