@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="template_header_style_9" inherit_id="theme_prime.template_header_style_9">
+    <template id="template_header_style_4" inherit_id="theme_prime.template_header_style_4">
         <xpath expr="//t[@t-call='website.website_search_box_input']" position="inside">
             <t t-set="_classes" t-valuef="position-relative"/>
             <t t-set="_input_classes" t-valuef="rounded-pill"/>
@@ -73,5 +73,14 @@
             </t>
         </xpath>
     </template>
+
+    <!-- Header versión mobil -->
+    <template id="template_header_mobile_hide_cart_and_menu" inherit_id="theme_prime.template_header_mobile">
+        <!-- Ocultar menu-->
+        <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace"></xpath>
+        <!-- Ocultar carrito -->
+        <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace"/>
+    </template>
+
 
 </odoo>

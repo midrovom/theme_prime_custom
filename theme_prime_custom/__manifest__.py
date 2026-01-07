@@ -10,15 +10,15 @@
         'views/snippet_register.xml',
 
         # Snippet Advance
-        'views/advance/snippet/s_banner/s_banner_16.xml',
-        'views/advance/snippet/s_banner/s_banner_17.xml',
-        'views/advance/snippet/s_cover/s_cover_6.xml',
-        'views/advance/snippet/s_shop_offer/s_shop_offer_6.xml',
-        'views/advance/snippet/s_shop_offer/s_shop_offer_7.xml',
-        'views/advance/snippet/s_text/s_text.xml',
+        'views/snippet/advance/s_banner/s_banner_16.xml',
+        'views/snippet/advance/s_banner/s_banner_17.xml',
+        'views/snippet/advance/s_cover/s_cover_6.xml',
+        'views/snippet/advance/s_shop_offer/s_shop_offer_6.xml',
+        'views/snippet/advance/s_shop_offer/s_shop_offer_7.xml'
+        'views/snippet/advance/s_text/s_text.xml',
 
-        'views/advance/snippet/s_footer/s_footer.xml',
-        'views/advance/snippet/s_header/s_header.xml',
+        'views/snippet/advance/s_footer/s_footer.xml',
+        'views/snippet/advance/s_header/s_header.xml',
 
         #Snippet Conedera
 

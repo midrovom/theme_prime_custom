@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-<!--Registro de Advance-->
+<!--Registro de snippets theme prime-->
 
     <template id="s_snippet_register" inherit_id="theme_prime.snippets" name="Snippet - Registry">
         <!-- Banners -->
@@ -51,15 +51,16 @@
     </template>
 
     <template id="snippet_options_inherit" inherit_id="website.snippet_options">
-        <!-- Footer -->
+        <!-- Footer conedera-->
         <xpath expr="//we-select[@data-variable='footer-template']/we-button[last()]" position="after">
             <we-button title="Prime Footer Style - 11" data-name="tp_footer_style_11_opt" data-customize-website-views="theme_prime_custom.template_footer_style_11" data-customize-website-variable="'prime_style_11'" data-img="/theme_prime/static/src/img/options/footer_1.svg"/>
         </xpath>
-
+        
+        <!-- Footer -->
         <xpath expr="//we-select[@data-variable='footer-template']/we-button[last()]" position="after">
             <we-button title="Prime Footer Style - 12" data-name="tp_footer_style_12_opt" data-customize-website-views="theme_prime_custom.template_footer_style_12" data-customize-website-variable="'prime_style_12'" data-img="/theme_prime/static/src/img/options/footer_1.svg"/>
         </xpath>
-        
+
     </template>
 
     <!--Registro snippets Odoo -->
