@@ -43,7 +43,7 @@
             'theme_prime_custom/static/src/xml/frontend/2_col_deal.xml',
         ],
         'website.assets_wysiwyg': [
-            'theme_prime_custom/static/src/components/registries.js',
+            'theme_prime_custom/static/src/components/registries.js'
         ],
     },
     'installable': True,
