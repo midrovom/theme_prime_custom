@@ -5,7 +5,7 @@
     'website': 'https://callphoneecuador.com',
     'license': 'LGPL-3',
     'category': 'Theme/eCommerce',
-    'depends': ['website', 'theme_prime', 'conedera_theme_common'],
+    'depends': ['website', 'theme_prime', 'webpage_theme_common'],
     'data': [
 
         #Snippet register
