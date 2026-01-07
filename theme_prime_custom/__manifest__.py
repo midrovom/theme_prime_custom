@@ -2,6 +2,8 @@
     'name': 'Theme Prime Custom',
     'version': '18.0.1.0.0',
     'summary': 'Temas y snippets personalizados para Conedera y Advance',
+    'website': 'https://callphoneecuador.com',
+    'license': 'LGPL-3',
     'category': 'Theme/eCommerce',
     'depends': ['website', 'theme_prime', 'conedera_theme_common'],
     'data': [
@@ -48,5 +50,5 @@
     },
     'installable': True,
     'application': False,
-    'auto_install': False
+    'auto_install': False,
 }
