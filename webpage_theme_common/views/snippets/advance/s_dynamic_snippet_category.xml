@@ -3,7 +3,7 @@
     <template id="s_dynamic_snippet_categories" name="Categorias">
         <t t-call="website.s_dynamic_snippet_template">
             <t t-set="snippet_name" t-value="'s_dynamic_snippet_categories'"/>
-            <t t-call="advance_theme_common.s_dynamic_snippet_categories_preview_data"/>
+            <t t-call="webpage_theme_common.s_dynamic_snippet_categories_preview_data"/>
         </t>
     </template>
 
@@ -19,6 +19,6 @@
     <record id="webpage_theme_common.s_dynamic_snippet_categories_js" model="ir.asset">
         <field name="name">Dynamic snippet categories 000 JS</field>
         <field name="bundle">web.assets_frontend</field>
-        <field name="path">webpage_theme_common/src/advance/snippets/s_dynamic_snippet_categories/000.js</field>
+        <field name="path">webpage_theme_common/src/scss/advance/snippets/s_dynamic_snippet_categories/000.js</field>
     </record>
 </odoo>
