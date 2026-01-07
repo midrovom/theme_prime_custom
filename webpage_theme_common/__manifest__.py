@@ -6,6 +6,7 @@
     'depends': ['product','website', 'website_sale'],
     'data': [
         #Advance
+        
         'data/advance/data.xml',
         'data/advance/category_snippet_template_data.xml',
         'data/advance/product_snippet_template_data_custom.xml',
@@ -14,12 +15,12 @@
         # 'data/conedera/brand_snippet_template_data.xml',
 
         #Advance
-        # 'views/snippets/advance/product_public_categ_view.xml',
-        # 'views/snippets/advance/s_dynamic_snippet_categories_preview_data.xml',
-        # 'views/snippets/advance/s_dynamic_snippet_category.xml',
 
-        # 'views/snippets/advance/snippets.xml',
-        # 'views/snippets/advance/product_attribute_view.xml',
+        'views/snippets/advance/product_public_categ_view.xml',
+        'views/snippets/advance/s_dynamic_categories/s_dynamic_snippet_categories_preview_data.xml',
+        'views/snippets/advance/s_dynamic_categories/s_dynamic_snippet_category.xml',
+        'views/snippets/advance/s_dynamic_categories/snippets.xml',
+        'views/product_attribute_view.xml',
 
         #Conedera
         # 'views/snippets/conedera/website_template.xml',
