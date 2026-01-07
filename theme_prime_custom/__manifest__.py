@@ -7,42 +7,42 @@
     'data': [
         #Register snippets
 
-        'views/snippet_register.xml',
+        # 'views/snippet_register.xml',
 
         # Snippet Advance
-        'views/snippet/advance/s_banner/s_banner_16.xml',
-        'views/snippet/advance/s_banner/s_banner_17.xml',
-        'views/snippet/advance/s_cover/s_cover_6.xml',
-        'views/snippet/advance/s_shop_offer/s_shop_offer_6.xml',
-        'views/snippet/advance/s_shop_offer/s_shop_offer_7.xml'
-        'views/snippet/advance/s_text/s_text.xml',
+        # 'views/snippet/advance/s_banner/s_banner_16.xml',
+        # 'views/snippet/advance/s_banner/s_banner_17.xml',
+        # 'views/snippet/advance/s_cover/s_cover_6.xml',
+        # 'views/snippet/advance/s_shop_offer/s_shop_offer_6.xml',
+        # 'views/snippet/advance/s_shop_offer/s_shop_offer_7.xml'
+        # 'views/snippet/advance/s_text/s_text.xml',
 
-        'views/snippet/advance/s_footer/s_footer.xml',
-        'views/snippet/advance/s_header/s_header.xml',
+        # 'views/snippet/advance/s_footer/s_footer.xml',
+        # 'views/snippet/advance/s_header/s_header.xml',
 
         #Snippet Conedera
 
-        'views/conedera/snippet/s_cover/s_cover_1.xml',
-        'views/conedera/snippet/s_d_2_column/dynamic_snippets.xml',
-        'views/conedera/product_detail_page.xml',
-        'views/conedera/snippet/s_banner/s_banner_18.xml',
+        # 'views/conedera/snippet/s_cover/s_cover_1.xml',
+        # 'views/conedera/snippet/s_d_2_column/dynamic_snippets.xml',
+        # 'views/conedera/product_detail_page.xml',
+        # 'views/conedera/snippet/s_banner/s_banner_18.xml',
 
-        'views/conedera/snippet/s_footer/footers.xml',
-        'views/conedera/snippet/s_header/headers.xml',
+        # 'views/conedera/snippet/s_footer/footers.xml',
+        # 'views/conedera/snippet/s_header/headers.xml',
 
-        'views/conedera/website_template.xml',
+        # 'views/conedera/website_template.xml',
 
         # version mobil advance / conedera
-        'views/header_mobil.xml',
+        # 'views/header_mobil.xml',
     ],
     'assets': {
         'web.assets_frontend': [
-            'theme_prime_custom/static/src/js/frontend/dynamic_snippets.js',
-            'theme_prime_custom/static/src/xml/frontend/2_col_deal.xml',
+            # 'theme_prime_custom/static/src/js/frontend/dynamic_snippets.js',
+            # 'theme_prime_custom/static/src/xml/frontend/2_col_deal.xml',
 
     ],
         'website.assets_wysiwyg': [
-            'theme_prime_custom/static/src/components/registries.js',
+            # 'theme_prime_custom/static/src/components/registries.js',
         ],
     },
     'installable': True,
