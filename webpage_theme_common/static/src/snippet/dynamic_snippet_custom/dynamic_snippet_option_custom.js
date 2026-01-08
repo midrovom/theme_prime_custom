@@ -4,6 +4,7 @@ import options from "@web_editor/js/editor/snippets.options";
 import publicWidget from "@web/legacy/js/public/public_widget";
 import DynamicSnippetProducts from "@website_sale/snippets/s_dynamic_snippet_products/000";
 
+// --- Opciones del builder (marcas + editable style_2) ---
 options.registry.dynamic_snippet_products.include({
 
     init: function () {
@@ -22,7 +23,7 @@ options.registry.dynamic_snippet_products.include({
         });
     },
 
-    // RENDER OPTIONS XML
+    // Render XML con selector de marcas y lógica editable
     async _renderCustomXML(uiFragment) {
         await this._super(...arguments);
         await this._renderProductBrandSelector(uiFragment);
@@ -52,7 +53,7 @@ options.registry.dynamic_snippet_products.include({
     },
 });
 
-// 🔑 Extensión del widget para aplicar chunkSize en builder
+// --- Extensión del widget frontend (para chunkSize en builder) ---
 const DynamicSnippetProductsWysiwyg = DynamicSnippetProducts.extend({
     _getQWebRenderOptions() {
         const options = this._super(...arguments);
