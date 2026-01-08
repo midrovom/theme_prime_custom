@@ -443,7 +443,7 @@
             <we-button title="Prime Header Style - 6" data-name="tp_header_style_6_opt" data-customize-website-views="theme_prime.template_header_style_6" data-customize-website-variable="'prime_style_6'" data-img="/theme_prime/static/src/img/options/header_6.svg"/>
             <we-button title="Prime Header Style - 7" data-name="tp_header_style_7_opt" data-customize-website-views="theme_prime.template_header_style_7" data-customize-website-variable="'prime_style_7'" data-img="/theme_prime/static/src/img/options/header_7.svg"/>
             <we-button title="Prime Header Style - 8" data-name="tp_header_style_8_opt" data-customize-website-views="theme_prime.template_header_style_8" data-customize-website-variable="'prime_style_8'" data-img="/theme_prime/static/src/img/options/header_8.svg"/>
-            <we-button title="Prime Header Style - 9" data-name="tp_header_style_9_opt" data-customize-website-views="theme_prime.template_header_style_9" data-customize-website-variable="'prime_style_9'" data-img="/theme_prime/static/src/img/options/header_4.svg"/> <!--custom-->
+            <we-button title="Prime Header Style - 9" data-name="tp_header_style_9_custom_opt" data-customize-website-views="theme_prime.template_header_style_9_custom" data-customize-website-variable="'prime_style_9'" data-img="/theme_prime/static/src/img/options/header_4.svg"/> <!--custom-->
         </xpath>
         <xpath expr="//div[@data-js='WebsiteLevelColor']/we-row" position="after">
             <we-select string="Preheader" data-dependencies="tp_preheader_opt" data-variable="tp-preheader-template" data-reload="/">
