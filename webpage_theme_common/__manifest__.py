@@ -12,7 +12,7 @@
         'data/advance/product_snippet_template_data_custom.xml',
 
         #Conedera
-        # 'data/conedera/brand_snippet_template_data.xml',
+        'data/conedera/brand_snippet_template_data.xml',
 
         #Advance
 
@@ -20,16 +20,18 @@
         'views/snippets/advance/s_dynamic_categories/s_dynamic_snippet_categories_preview_data.xml',
         'views/snippets/advance/s_dynamic_categories/s_dynamic_snippet_category.xml',
         'views/snippets/advance/s_dynamic_categories/snippets.xml',
-        'views/product_attribute_view.xml',
 
         #Conedera
-        # 'views/snippets/conedera/website_template.xml',
+        'views/snippets/conedera/website_template.xml',
 
-        # 'views/snippets/conedera/s_dynamic_snippet_brands.xml',
-        # 'views/snippets/conedera/snippets.xml',
-        # 'views/snippets/conedera/s_key_images_custom.xml',
-        # 'views/snippets/conedera/templates_productos.xml',
-        # 'views/snippets/conedera/product_attribute_view.xml',
+        'views/snippets/conedera/s_dynamic_snippet_brand/s_dynamic_snippet_brands.xml',
+        'views/snippets/conedera/s_key_images/snippets.xml',
+        'views/snippets/conedera/s_key_images/s_key_images_custom.xml',
+
+        'views/snippets/conedera/templates_productos.xml',
+        
+        #Advance/Conedera
+        'views/product_attribute_view.xml',
 
     ],
     'assets': {
@@ -45,7 +47,8 @@
             # 'webpage_theme_common/static/src/scss/advance/s_shop_offert/shop_offert_7.scss',
             # 'webpage_theme_common/static/src/scss/advance/s_footer/s_footer.scss',
 
-            'webpage_theme_common/static/src/scss/advance/dynamic_custom/dynamic_custom.scss',
+            #'webpage_theme_common/static/src/scss/advance/dynamic_custom/dynamic_custom.scss',
+
             'webpage_theme_common/static/src/scss/advance/dynamic_custom/dynamic_filter_template_product_public_category_style_1.scss',
             'webpage_theme_common/static/src/scss/advance/snippets/dynamic_snippet_carousel_custom/dynamic_snippet_products_extend.js',
 

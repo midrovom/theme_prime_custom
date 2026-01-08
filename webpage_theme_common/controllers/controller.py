@@ -12,6 +12,7 @@ class WebsiteCategorySnippet(http.Controller):
             "url": f"/shop/category/{cat.id}",
             "image": f"/web/image/product.public.category/{cat.id}/image_1920"
         } for cat in categories]
+    
 class WebsiteSaleCategories(http.Controller):
 
     @http.route(['/website_sale/get_categories'], type='json', auth='public', website=True)
