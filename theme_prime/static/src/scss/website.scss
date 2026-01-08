@@ -416,62 +416,7 @@ $menu-color: o-color('menu-custom') or o-color('menu') or rgba(0, 0, 0, 0);
                 }
             }
         }
-    } @else if o-website-value('header-template') == 'prime_style_9' {
-        #wrapwrap > header {
-            // Header
-            .tp-header-box {
-                border-bottom: 1px solid rgba($body-color, 0.12);
-                .tp-account-info {
-                    @include tp-font-icons {
-                        font-size: 1.2rem;
-                    }
-                    .my_wish_quantity, .my_cart_quantity {
-                        @include o-position-absolute($left: 30px, $top: -5px);
-                        padding: 0;
-                        border-radius: 40px;
-                        vertical-align: top;
-                    }
-                }
-            }
-            // Menu
-            > .navbar {
-                padding: 0px;
-                #top_menu {
-                    > .nav-item {
-                        > a.nav-link {
-                            font-weight: $headings-font-weight;
-                            // Animation
-                            padding: 1rem 1.6rem;
-                            position: relative;
-                            &:before {
-                                content: '';
-                                @include o-position-absolute($right: 50%, $left: 50%, $bottom: 0);
-                                height: 3px;
-                                background-color: color-contrast($menu-color, $color-contrast-dark: o-color('primary'), $color-contrast-light:o-color('white'));
-                                transition: 0.3s cubic-bezier(0.68, 0, 0.265, 1);
-                                transform: translate3d(0, 0, 0);
-                            }
-                            &:hover:before {
-                                left: 0;
-                                right: 0;
-                            }
-                            // Label
-                            .tp-menu-label {
-                                top: -4px;
-                            }
-                        }
-                    }
-                }
-            }
-            // Label in affixed
-            &.o_header_affixed > .navbar #top_menu > .nav-item > .nav-link {
-                padding: 1.4rem 1.6rem;
-                .tp-menu-label {
-                    top: 6px;
-                }
-            }
-        }
-    }
+    } 
 }
 
 //------------------------------------------------------------------------------
