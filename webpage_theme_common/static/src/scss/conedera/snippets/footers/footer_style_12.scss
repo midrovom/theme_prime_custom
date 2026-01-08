@@ -1,5 +1,5 @@
-/* Botón del collapse (móvil) */
-.tp-footer-collapse-btn {
+/* Botón del collapse (móvil) solo en footer style 12 */
+.tp-footer-style-12 .tp-footer-collapse-btn {
     background: none !important;
     border: none !important;
     padding: 10px 0;
@@ -7,34 +7,70 @@
     font-size: 1.1rem;
     color: inherit !important;
     width: 100%;
-
-    /* MUY IMPORTANTE:
-       Esto hace visible el icono SIEMPRE */
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-/* Icono "v" */
-.tp-collapse-icon {
-    color: inherit !important; /* evita que desaparezca */
+/* Icono "v" solo en footer style 12 */
+.tp-footer-style-12 .tp-collapse-icon {
+    color: inherit !important;
     font-weight: bold;
     transition: transform 0.3s ease;
 }
 
-/* Gira cuando está abierto */
-.tp-footer-collapse-btn[aria-expanded="true"] .tp-collapse-icon {
+.tp-footer-style-12 .tp-footer-collapse-btn[aria-expanded="true"] .tp-collapse-icon {
     transform: rotate(180deg);
 }
 
-/* Alineación izquierda solo móvil */
+/* Alineación izquierda y ocultar logo solo en móvil para style 12 */
 @media (max-width: 767px) {
-    .tp-mobile-left-text {
+    .tp-footer-style-12 .tp-mobile-left-text {
         text-align: left !important;
     }
-    /* Ocultar logo solo en móvil */
-    .o_footer_logo {
+    .tp-footer-style-12 .o_footer_logo {
         display: none !important;
     }
 }
+
+
+// /* Botón del collapse (móvil) */
+// .tp-footer-collapse-btn {
+//     background: none !important;
+//     border: none !important;
+//     padding: 10px 0;
+//     font-weight: 600;
+//     font-size: 1.1rem;
+//     color: inherit !important;
+//     width: 100%;
+
+//     /* MUY IMPORTANTE:
+//        Esto hace visible el icono SIEMPRE */
+//     display: flex;
+//     justify-content: space-between;
+//     align-items: center;
+// }
+
+// /* Icono "v" */
+// .tp-collapse-icon {
+//     color: inherit !important; /* evita que desaparezca */
+//     font-weight: bold;
+//     transition: transform 0.3s ease;
+// }
+
+// /* Gira cuando está abierto */
+// .tp-footer-collapse-btn[aria-expanded="true"] .tp-collapse-icon {
+//     transform: rotate(180deg);
+// }
+
+// /* Alineación izquierda solo móvil */
+// @media (max-width: 767px) {
+//     .tp-mobile-left-text {
+//         text-align: left !important;
+//     }
+//     /* Ocultar logo solo en móvil */
+//     .o_footer_logo {
+//         display: none !important;
+//     }
+// }
 
