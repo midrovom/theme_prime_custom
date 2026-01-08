@@ -47,7 +47,7 @@
 
             'webpage_theme_common/static/src/scss/advance/dynamic_custom/dynamic_custom.scss',
             'webpage_theme_common/static/src/scss/advance/dynamic_custom/dynamic_filter_template_product_public_category_style_1.scss',
-            'webpage_theme_common/static/src/scss/advance/snippets/dynamic_snippet_carousel_custom/dynamic_snippet_products_extend.js',
+            #'webpage_theme_common/static/src/scss/advance/snippets/dynamic_snippet_carousel_custom/dynamic_snippet_products_extend.js',
 
             # 'webpage_theme_common/static/src/scss/advance/dynamic_custom/product_snippet_template_custom.scss',
             # 'webpage_theme_common/static/src/scss/advance/product_item.scss',
