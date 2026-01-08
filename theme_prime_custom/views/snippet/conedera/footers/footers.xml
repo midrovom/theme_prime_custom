@@ -2,7 +2,7 @@
 <odoo>
     <template id="template_footer_style_12" inherit_id="website.layout" name="Footer Style - 12" active="False">
         <xpath expr="//div[@id='footer']" position="replace">
-            <div id="footer" class="oe_structure oe_structure_solo" t-ignore="true" t-if="not no_footer">
+            <div id="footer" class="oe_structure oe_structure_solo tp-footer-style-12" t-ignore="true" t-if="not no_footer">
                     <section class="s_text_block pt64 pb32" data-snippet="s_text_block" data-name="Text">
                         <div class="container">
                             <div class="row">
