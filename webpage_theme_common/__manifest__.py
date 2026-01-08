@@ -68,11 +68,11 @@
             # 'webpage_theme_common/static/src/scss/conedera/snippets/template_products/image_product.scss',
 
             # 'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/snippet_brand.scss',
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/000.js',
+            'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/000.js',
     ],
         'website.assets_wysiwyg': [
             'webpage_theme_common/static/src/scss/advance/snippets/s_dynamic_snippet_categories/option.js',
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/option.js',
+            'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/option.js',
         ],
     },
     'installable': True,
