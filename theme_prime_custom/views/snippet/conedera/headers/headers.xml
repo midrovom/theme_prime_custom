@@ -17,7 +17,7 @@
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
                             <a href="#" class="tp-account-info-sidebar-action">
-                                <img src="/theme_prime_conedera/static/src/img/login.png" alt="Carrito"
+                                <img src="/theme_prime_custom/static/src/img/login.png" alt="Carrito"
                                      style="margin-bottom: 3px;" width="22" height="22"/>
                             </a>
                         </div>
@@ -34,7 +34,7 @@
                                 <t t-set="show_cart" t-value="website.has_ecommerce_access()"/>
                                 <div t-attf-class="o_not_editable position-relative o_wsale_my_cart tp-cart-sidebar-action #{not show_cart and 'd-none'}">
                                     <a href="/shop/cart">
-                                        <img src="/theme_prime_conedera/static/src/img/cart.png"
+                                        <img src="/theme_prime_custom/static/src/img/cart.png"
                                              alt="Carrito"
                                              style="margin-bottom: 3px;"
                                              width="22"
