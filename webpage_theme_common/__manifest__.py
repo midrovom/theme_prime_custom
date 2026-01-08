@@ -47,7 +47,7 @@
             'webpage_theme_common/static/src/scss/advance/s_shop_offert/shop_offert_7.scss',
             'webpage_theme_common/static/src/scss/advance/s_footer/s_footer.scss',
 
-            #'webpage_theme_common/static/src/scss/advance/dynamic_custom/dynamic_custom.scss',
+            'webpage_theme_common/static/src/scss/advance/dynamic_custom/dynamic_custom.scss',
 
             'webpage_theme_common/static/src/scss/advance/dynamic_custom/dynamic_filter_template_product_public_category_style_1.scss',
             
@@ -55,8 +55,8 @@
             'webpage_theme_common/static/src/scss/advance/product_item.scss',
 
             #Conedera
-            
-            # 'webpage_theme_common/static/src/scss/conedera/website.scss',
+
+            'webpage_theme_common/static/src/scss/conedera/website.scss',
             'webpage_theme_common/static/src/scss/conedera/snippets/s_banner_2/000.scss',
             'webpage_theme_common/static/src/css/conedera/style.css',
 
