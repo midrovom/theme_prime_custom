@@ -50,7 +50,8 @@
             #'webpage_theme_common/static/src/scss/advance/dynamic_custom/dynamic_custom.scss',
 
             'webpage_theme_common/static/src/scss/advance/dynamic_custom/dynamic_filter_template_product_public_category_style_1.scss',
-            'webpage_theme_common/static/src/scss/advance/snippets/dynamic_snippet_carousel_custom/dynamic_snippet_products_extend.js',
+            
+            # (eliminar)'webpage_theme_common/static/src/scss/advance/snippets/dynamic_snippet_carousel_custom/dynamic_snippet_products_extend.js',
 
             # 'webpage_theme_common/static/src/scss/advance/dynamic_custom/product_snippet_template_custom.scss',
             # 'webpage_theme_common/static/src/scss/advance/product_item.scss',
@@ -67,8 +68,13 @@
             # 'webpage_theme_common/static/src/scss/conedera/snippets/header_mobile_custom/header_mobile.scss', #conedera /advance
             # 'webpage_theme_common/static/src/scss/conedera/snippets/template_products/image_product.scss',
 
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/snippet_brand.scss',
-            'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/000.js',
+            'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/snippet_brand.scss',
+            #(eliminar)'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/000.js',
+
+            'webpage_theme_common/static/src/snippet/dynamic_snippet_custom/dynamic_snippet_custom.js',
+
+            #Advance/Conedera (Dynamic_snippet)
+
     ],
         'website.assets_wysiwyg': [
             'webpage_theme_common/static/src/scss/advance/snippets/s_dynamic_snippet_categories/option.js',
