@@ -14,21 +14,22 @@ const DynamicSnippetProductsUnified = DynamicSnippetProducts.extend({
         const options = this._super(...arguments);
         const tplKey = this.$el.data("template-key");
 
-        // Enfoque 1: vista simple (móvil vs escritorio)
-        if (!tplKey) {
-            options.chunkSize = uiUtils.isSmall() ? 2 : 6;
-        }
-        // Enfoque 2: estilo especial con template style_2
-        else if (tplKey.includes("dynamic_filter_template_product_product_style_2")) {
-            if (uiUtils.isSmall()) {
-                options.chunkSize = this.editableMode ? 1 : 2;
+        if (uiUtils.isSmall()) {
+            // Vista móvil: todos muestran 2, excepto style_2 editable que muestra 1
+            if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_2") && this.editableMode) {
+                options.chunkSize = 1;
             } else {
-                options.chunkSize = 4;
+                options.chunkSize = 2;
             }
-        }
-        // Fallback por si aparece otro template
-        else {
-            options.chunkSize = uiUtils.isSmall() ? 2 : 4;
+        } else {
+            // Vista escritorio: depende del template
+            if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_2")) {
+                options.chunkSize = 1; // estilo 2 → 1 producto
+            } else if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_1")) {
+                options.chunkSize = 4; // estilo 1 → 4 productos
+            } else {
+                options.chunkSize = 6; // otros → 6 productos
+            }
         }
 
         return options;
