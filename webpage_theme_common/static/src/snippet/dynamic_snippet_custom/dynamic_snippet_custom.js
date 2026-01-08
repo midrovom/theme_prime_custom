@@ -18,6 +18,8 @@ const DynamicSnippetProductsUnified = DynamicSnippetProducts.extend({
             // Vista móvil
             if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_2")) {
                 options.chunkSize = 1; // estilo 2 → 1 producto en móvil
+            } else if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_1")) {
+                options.chunkSize = 2; // estilo 1 → 2 productos en móvil
             } else {
                 options.chunkSize = 2; // otros → 2 productos en móvil
             }
