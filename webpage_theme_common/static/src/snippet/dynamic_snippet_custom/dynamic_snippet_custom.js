@@ -5,11 +5,6 @@ import { utils as uiUtils } from "@web/core/ui/ui_service";
 
 const DynamicSnippetProductsUnified = DynamicSnippetProducts.extend({
 
-    /**
-     * Controla cuántos productos se muestran por slide
-     * según el tamaño de pantalla y el template.
-     * Aquí se combinan ambos enfoques en un solo registro.
-     */
     _getQWebRenderOptions() {
         const options = this._super(...arguments);
         const tplKey = this.$el.data("template-key");
@@ -17,7 +12,7 @@ const DynamicSnippetProductsUnified = DynamicSnippetProducts.extend({
         if (uiUtils.isSmall()) {
             // Vista móvil
             if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_2")) {
-                options.chunkSize = 1; // estilo 2 → 1 producto en móvil
+                options.chunkSize = 1; // estilo 2 → siempre 1 producto en móvil 
             } else if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_1")) {
                 options.chunkSize = 2; // estilo 1 → 2 productos en móvil
             } else {
@@ -37,10 +32,6 @@ const DynamicSnippetProductsUnified = DynamicSnippetProducts.extend({
         return options;
     },
 
-    /**
-     * Define el dominio de búsqueda de productos
-     * incluyendo filtro por marca.
-     */
     _getSearchDomain() {
         const domain = this._super(...arguments);
         const brandDomain = this._getBrandSearchDomain();
@@ -48,9 +39,6 @@ const DynamicSnippetProductsUnified = DynamicSnippetProducts.extend({
         return domain;
     },
 
-    /**
-     * Construye el filtro por marca a partir del dataset.
-     */
     _getBrandSearchDomain() {
         let brandId = this.$el.get(0).dataset.productBrandId;
         if (!brandId || brandId === "all") {
@@ -60,7 +48,6 @@ const DynamicSnippetProductsUnified = DynamicSnippetProducts.extend({
     },
 });
 
-// Un solo registro para el snippet
 publicWidget.registry.dynamic_snippet_products = DynamicSnippetProductsUnified;
 
 export default DynamicSnippetProductsUnified;
