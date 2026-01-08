@@ -15,20 +15,20 @@ const DynamicSnippetProductsUnified = DynamicSnippetProducts.extend({
         const tplKey = this.$el.data("template-key");
 
         if (uiUtils.isSmall()) {
-            // Vista móvil: todos muestran 2, excepto style_2 editable que muestra 1
-            if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_2") && this.editableMode) {
-                options.chunkSize = 1;
+            // Vista móvil
+            if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_2")) {
+                options.chunkSize = 1; // estilo 2 → 1 producto en móvil
             } else {
-                options.chunkSize = 2;
+                options.chunkSize = 2; // otros → 2 productos en móvil
             }
         } else {
-            // Vista escritorio: depende del template
+            // Vista escritorio
             if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_2")) {
-                options.chunkSize = 1; // estilo 2 → 1 producto
+                options.chunkSize = 4; // estilo 2 → 4 productos en escritorio
             } else if (tplKey && tplKey.includes("dynamic_filter_template_product_product_style_1")) {
-                options.chunkSize = 4; // estilo 1 → 4 productos
+                options.chunkSize = 4; // estilo 1 → 4 productos en escritorio
             } else {
-                options.chunkSize = 6; // otros → 6 productos
+                options.chunkSize = 6; // otros → 6 productos en escritorio
             }
         }
 
