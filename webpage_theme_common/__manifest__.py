@@ -61,6 +61,7 @@
             'webpage_theme_common/static/src/css/conedera/style.css',
 
             'webpage_theme_common/static/src/scss/conedera/snippets/footers/footer_style_12.scss',
+            'webpage_theme_common/static/src/scss/conedera/snippets/headers/prime_style_9.scss',
 
             'webpage_theme_common/static/src/scss/conedera/snippets/Key_images/key_images_custom.scss',
             'webpage_theme_common/static/src/scss/conedera/snippets/template_products/template_select.scss',
