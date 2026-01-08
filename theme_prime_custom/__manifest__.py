@@ -30,7 +30,7 @@
         'views/snippet/conedera/product_detail_page.xml',
 
         'views/snippet/conedera/footers/footers.xml',
-        #'views/snippet/conedera/headers/headers.xml',
+        'views/snippet/conedera/headers/headers.xml',
 
         'views/snippet/conedera/website_template.xml',
 
