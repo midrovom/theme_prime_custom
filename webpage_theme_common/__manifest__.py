@@ -76,8 +76,8 @@
     ],
         'website.assets_wysiwyg': [
             'webpage_theme_common/static/src/scss/advance/snippets/s_dynamic_snippet_categories/option.js',
-            'webpage_theme_common/static/src/snippet/dynamic_snippet_custom/dynamic_snippet_option_custom.js',
             'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/option.js',
+            'webpage_theme_common/static/src/snippet/dynamic_snippet_custom/dynamic_snippet_option_custom.js',
         ],
     },
     'installable': True,
