@@ -16,7 +16,7 @@
             </t>
         </xpath>
 
-        <!-- Ocultar menú solo para compañía 2 -->
+        <!-- Menú: mostrar solo si NO es compañía 2 -->
         <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace">
             <t t-if="website.company_id.id != 2">
                 <button type="button" class="tp-menu-sidebar-action">
@@ -25,7 +25,7 @@
             </t>
         </xpath>
 
-        <!-- Ocultar carrito solo para compañía 2 -->
+        <!-- Carrito: mostrar solo si NO es compañía 2 -->
         <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace">
             <t t-if="website.company_id.id != 2">
                 <t t-call="theme_prime.component_account_info"/>
@@ -34,6 +34,7 @@
 
     </template>
 </odoo>
+
 
 
 <!-- <?xml version="1.0" encoding="utf-8"?>
