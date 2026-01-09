@@ -3,6 +3,27 @@
     <template id="template_header_mobile_inherit" inherit_id="theme_prime.template_header_mobile" name="Template Header Mobile">
         <xpath expr="//div[@id='o_main_nav']" position="inside">
             <t t-if="website.company_id.id == 1">
+                <!-- Buscador solo para compañía 1 -->
+                <div class="w-100 my-2">
+                    <t t-call="website.website_search_box_input">
+                        <t t-set="_form_classes" t-valuef="o_wsale_products_searchbar_form w-100"/>
+                        <t t-set="_classes" t-valuef="border tp-input-border-radius"/>
+                        <t t-set="search_type" t-valuef="products"/>
+                        <t t-set="action" t-value="'/shop'"/>
+                    </t>
+                </div>
+
+                <!-- Carrito solo para compañía 1 -->
+                <div class="w-100 my-2">
+                    <t t-call="theme_prime.component_account_info"/>
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- <template id="template_header_mobile_inherit" inherit_id="theme_prime.template_header_mobile" name="Template Header Mobile">
+        <xpath expr="//div[@id='o_main_nav']" position="inside">
+            <t t-if="website.company_id.id == 1">
                 <div class="w-100 my-2">
                     <t t-call="website.website_search_box_input">
                         <t t-set="_form_classes" t-valuef="o_wsale_products_searchbar_form w-100"/>
@@ -14,7 +35,7 @@
             </t>
         </xpath>
 
-    </template>
+    </template> -->
 
     <template id="template_header_mobile_hide_cart_and_menu" inherit_id="theme_prime.template_header_mobile_2">
         <!-- Ocultar menu-->
