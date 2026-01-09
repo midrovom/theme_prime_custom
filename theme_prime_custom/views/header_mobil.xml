@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="template_header_mobile_inherit" inherit_id="theme_prime.template_header_mobile" name="Template Header Mobile">
-
-        <!-- Bloque buscador solo para compañía 1 -->
         <xpath expr="//div[@id='o_main_nav']" position="inside">
             <t t-if="website.company_id.id == 1">
                 <div class="w-100 my-2">
@@ -16,7 +14,23 @@
             </t>
         </xpath>
 
-        <!-- Menú: mostrar solo si NO es compañía 2 -->
+        <!-- <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace">
+            <t t-if="website.company_id.id != 2">
+                <button type="button" class="tp-menu-sidebar-action">
+                    <i class="fa fa-bars"/>
+                </button>
+            </t>
+        </xpath>
+
+        <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace">
+            <t t-if="website.company_id.id != 2">
+                <t t-call="theme_prime.component_account_info"/>
+            </t>
+        </xpath>  -->
+
+    </template>
+
+    <template id="template_header_mobile_inherit" inherit_id="theme_prime.template_header_mobile_2" name="Template Header Mobile">
         <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="replace">
             <t t-if="website.company_id.id != 2">
                 <button type="button" class="tp-menu-sidebar-action">
@@ -25,7 +39,6 @@
             </t>
         </xpath>
 
-        <!-- Carrito: mostrar solo si NO es compañía 2 -->
         <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="replace">
             <t t-if="website.company_id.id != 2">
                 <t t-call="theme_prime.component_account_info"/>
@@ -33,34 +46,6 @@
         </xpath>
 
     </template>
+
 </odoo>
-
-
-
-<!-- <?xml version="1.0" encoding="utf-8"?>
-<odoo>
-    <template id="template_header_mobile_inherit" inherit_id="theme_prime.template_header_mobile" name="Template Header Mobile">
-        <xpath expr="//div[@id='o_main_nav']" position="inside">
-            <t t-if="website.company_id.id == 1">
-                <div class="w-100 my-2">
-                    <t t-call="website.website_search_box_input">
-                        <t t-set="_form_classes" t-valuef="o_wsale_products_searchbar_form w-100"/>
-                        <t t-set="_classes" t-valuef="border tp-input-border-radius"/>
-                        <t t-set="search_type" t-valuef="products"/>
-                        <t t-set="action" t-value="'/shop'"/>
-                    </t>
-                </div>
-            </t>
-        </xpath>
-
-        <xpath expr="//button[contains(@class, 'tp-menu-sidebar-action')]" position="attributes">
-            <attribute name="t-if">website.company_id.id != 2</attribute>
-        </xpath>
-
-        <xpath expr="//t[@t-call='theme_prime.component_account_info']" position="attributes">
-            <attribute name="t-if">website.company_id.id != 2</attribute>
-        </xpath>
-
-    </template>
-</odoo> -->
 
