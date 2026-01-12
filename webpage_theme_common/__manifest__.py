@@ -27,7 +27,7 @@
         'views/snippets/conedera/s_dynamic_snippet_brand/s_dynamic_snippet_brands.xml',
         'views/snippets/conedera/s_key_images/snippets.xml',
         'views/snippets/conedera/s_key_images/s_key_images_custom.xml',
-
+        
         'views/snippets/conedera/templates_productos.xml',
         
         #Advance/Conedera
