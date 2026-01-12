@@ -4,6 +4,8 @@
     'summary': 'Extensión de estilos para Conedera / Advance',
     'category': 'eCommerce',
     'depends': ['product','website', 'website_sale'],
+    'website': 'https://callphoneecuador.com',
+    'license': 'LGPL-3',
     'data': [
         #Advance
         
@@ -29,7 +31,7 @@
         'views/snippets/conedera/s_key_images/s_key_images_custom.xml',
         
         'views/snippets/conedera/templates_productos.xml',
-        
+
         #Advance/Conedera
         'views/product_attribute_view.xml',
 
