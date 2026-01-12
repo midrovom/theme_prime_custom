@@ -8,28 +8,7 @@
     </template>
 
     <!-- Mostrar Marca y atributos arriba del nombre -->
-
     <template id="product_brand_desktop_above_name" inherit_id="website_sale.product">
-        <xpath expr="//h1[@itemprop='name']" position="before">
-            <t t-set="single_value_attributes"
-            t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
-            <div t-if="single_value_attributes" class="o_product_brand_top mb-2 d-none d-md-block">
-                <t t-foreach="single_value_attributes.items()" t-as="attr_item">
-                    <t t-set="attribute" t-value="attr_item[0]"/>
-                    <t t-set="values" t-value="attr_item[1]"/>
-                    <t t-if="attribute.dr_is_brand">
-                        <span class="text-muted fw-semibold">
-                            <t t-foreach="values" t-as="ptal">
-                                <t t-esc="ptal.product_template_value_ids._only_active().name"/>
-                            </t>
-                        </span>
-                    </t>
-                </t>
-            </div>
-        </xpath>
-    </template>
-
-    <!-- <template id="product_brand_desktop_above_name" inherit_id="website_sale.product">
         <xpath expr="//h1[@itemprop='name']" position="before">
             <t t-set="single_value_attributes" t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
                 <div t-if="single_value_attributes" class="o_product_brand_top mb-2 d-none d-md-block">
@@ -43,7 +22,7 @@
                 </t>
             </div>
         </xpath>
-    </template> -->
+    </template>
 
     <!-- Apartado de Descripción -->
     <template id="remove_original_description" inherit_id="website_sale.product">
