@@ -470,8 +470,6 @@
             <we-button title="Prime Footer Style - 8" data-name="tp_footer_style_8_opt" data-customize-website-views="theme_prime.template_footer_style_8" data-customize-website-variable="'prime_style_8'" data-img="/theme_prime/static/src/img/options/footer_8.svg"/>
             <we-button title="Prime Footer Style - 9" data-name="tp_footer_style_9_opt" data-customize-website-views="theme_prime.template_footer_style_9" data-customize-website-variable="'prime_style_9'" data-img="/theme_prime/static/src/img/options/footer_9.svg"/>
             <we-button title="Prime Footer Style - 10" data-name="tp_footer_style_10_opt" data-customize-website-views="theme_prime.template_footer_style_10" data-customize-website-variable="'prime_style_10'" data-img="/theme_prime/static/src/img/options/footer_10.svg"/>
-            <we-button title="Prime Footer Style - 12" data-name="tp_footer_style_12_opt" data-customize-website-views="theme_prime_custom.template_footer_style_12" data-customize-website-variable="'prime_style_12'" data-img="/theme_prime/static/src/img/options/footer_1.svg"/>
-
         </xpath>
         <xpath expr="//div[@data-selector='.o_footer_copyright']" position="attributes">
             <attribute name="data-selector" remove=".o_footer_copyright" add=".o_footer_copyright:not(.tp-custom-copyright)" separator=", "/>
