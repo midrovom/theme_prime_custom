@@ -174,26 +174,25 @@ class CustomSaleOrder(models.Model):
 
     @api.depends_context('lang')
     @api.depends('order_line.tax_id', 'order_line.negotiable_price', 'amount_total', 'amount_untaxed', 'currency_id')
-    # def _compute_tax_totals_negotiable(self):
-    #     for order in self:
-    #         order = order.with_company(order.company_id)
-    #         order_lines = order.order_line.filtered(lambda x: not x.display_type)
-    #         order.tax_totals_negotiable = order.env['account.tax']._prepare_tax_totals(
-    #             [x._convert_to_tax_base_line_dict_negotiable() for x in order_lines],
-    #             order.currency_id or order.company_id.currency_id,
-    #         )
-
     def _compute_tax_totals_negotiable(self):
+        # for order in self:
+        #     order = order.with_company(order.company_id)
+        #     order_lines = order.order_line.filtered(lambda x: not x.display_type)
+        #     order.tax_totals_negotiable = order.env['account.tax']._prepare_tax_totals(
+        #         [x._convert_to_tax_base_line_dict_negotiable() for x in order_lines],
+        #         order.currency_id or order.company_id.currency_id,
+        #     )
+        AccountTax = self.env['account.tax']
         for order in self:
-            order = order.with_company(order.company_id)
             order_lines = order.order_line.filtered(lambda x: not x.display_type)
-
-            order.tax_totals_negotiable = order._get_tax_totals(
-                base_lines=[
-                    x._convert_to_tax_base_line_dict_negotiable()
-                    for x in order_lines
-                ],
+            base_lines = [line._prepare_base_line_for_taxes_computation() for line in order_lines]
+            base_lines += order._add_base_lines_for_early_payment_discount()
+            AccountTax._add_tax_details_in_base_lines(base_lines, order.company_id)
+            AccountTax._round_base_lines_tax_details(base_lines, order.company_id)
+            order.tax_totals = AccountTax._get_tax_totals_summary(
+                base_lines=base_lines,
                 currency=order.currency_id or order.company_id.currency_id,
+                company=order.company_id,
             )
 
     def selection_multi(self):
