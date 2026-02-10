@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+
+        <!-- explicit list view definition -->
+        <record id="view_api_adminitrator_form" model="ir.ui.view">
+            <field name="name">view.api.adminitrator.form</field>
+            <field name="model">api.administrator</field>
+            <field name="arch" type="xml">
+                <form string="Centro Autorizado">
+                    <sheet>
+                        <group name="group_top">
+                            <group name="group_left">
+                                <field name="name"/>
+                                <field name="url"/>
+                                <field name="end_point"/>
+                                <field name="type"/>
+                                <field name="user_id"/>
+                                <field name="password"/>
+                                
+                            </group>
+                            <group name="group_right">
+                                <field name="status"/>
+                                <field name="flag"/>
+                                <field name="company_id"/>
+                                <field name="is_stock_update"/>
+                                <field name="price_list_id"/>
+                                <field name="warehouse_id"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Descripción">
+                                <field name="description" placeholder="Agrega descripción del api"/>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_api_adminitrator_tree" model="ir.ui.view">
+            <field name="name">view.api.administrator.tree</field>
+            <field name="model">api.administrator</field>
+            <field name="arch" type="xml">
+                <list string="Api Administrator's">
+                    <field name="name"/>
+                    <field name="url"/>
+                    <field name="end_point"/>
+                    <field name="company_id"/>
+                    <field name="flag"/>
+                    <field name="status"/>
+                    <field name="is_stock_update"/>
+                    <field name="price_list_id"/>
+                    <field name="warehouse_id"/>
+                    <!--  <field name="description" widget="text" options="{'truncate': 50}"/> -->
+                </list>
+            </field>
+        </record>
+
+        <record model="ir.actions.act_window" id="api_adminitrator_action_window">
+            <field name="name">Api Administrator</field>
+            <field name="res_model">api.administrator</field>
+            <field name="view_mode">list,form,kanban</field>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                Mantenimiento de apis
+                </p>
+                <p>
+                Click 'Nuevo' para añadir nuevos elementos
+                </p>
+            </field>
+        </record>
+        <!-- Top menu item -->
+        <menuitem name="Api Administration" id="api_administrator_menu_root" sequence="10" web_icon="api_administrator,static/description/icon.png"/>
+        <!-- menu categories -->
+        <menuitem name="Operaciones" id="api_administrator_menu" parent="api_administrator_menu_root" sequence="0"/>
+        <menuitem name="Administrador de APIS" id="custom_api_administrator_option" parent="api_administrator_menu" sequence="0" action="api_adminitrator_action_window"/>
+
+    </data>
+</odoo>
+
