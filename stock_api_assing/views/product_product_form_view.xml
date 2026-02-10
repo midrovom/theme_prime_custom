@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="product_stock_api_assing_view_form">
+        <field name="name">stock.api.assing.form.view.inherit</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <!-- <xpath expr="//header" position="inside">
+                <button name="cron_import_product" 
+                        icon="fa-solid fa-rotate-right" 
+                        class="oe_stat_button" 
+                        type="object"
+                        string="Update External Quantity"
+                        attrs="{'invisible': [('type', '!=', 'product')]}"
+                        />
+            </xpath> -->
+            <!-- <xpath expr="//div[@name='pricing']" position="after">
+                <field name="description" />
+            </xpath> -->
+            <xpath expr="//field[@name='purchase_ok']/.." position="after">
+                <div>
+                    <field name="check_manage_sync" />
+                    <label for="check_manage_sync" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

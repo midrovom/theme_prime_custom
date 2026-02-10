@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_stock_api_assing_user,stock_api_assing_user,model_stock_api_assing,stock_api_assing.group_stock_api_assing_basic,1,1,1,1
+access_stock_api_sync_user,stock_api_sync_user,model_stock_api_sync,stock_api_assing.group_stock_api_assing_basic,1,1,1,1
+access_quotes_api_assing_user,quotes_api_assing_user,model_quotes_api_assing,stock_api_assing.group_stock_api_assing_basic,1,1,1,1
+access_wizard_sale_order_line_selection,sale_order_line_selection,model_sale_order_select_products,,1,1,1,1

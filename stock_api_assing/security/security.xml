@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Create Groups -->
+        <record id="category_stock_api_assing" model="ir.module.category">
+            <field name="name">Control Stock APIS</field>
+            <field name="sequence">60</field>
+        </record>
+        <record id="category_stock_api_assing_access" model="ir.module.category">
+            <field name="name">Sincronizacion de Stock APIS </field>
+            <field name="sequence">5</field>
+            <field name="parent_id" ref="category_stock_api_assing"/>
+        </record>
+
+
+        <!-- Create Groups -->
+        <record id="group_stock_api_assing_basic" model="res.groups">
+            <field name="name">Permiso de acceso.</field>
+            <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+            <field name="category_id" ref="stock_api_assing.category_stock_api_assing_access"/>
+            <field name="comment">Use Stock Api Assing control apis</field>
+        </record>
+
+        <record id="rule_stock_api_assing" model="ir.rule">
+            <field name="name">rule.stock.api.assing</field>
+            <field name="model_id" ref="model_stock_api_assing"/>
+            <field name="groups" eval="[(4, ref('stock_api_assing.group_stock_api_assing_basic'))]"/>
+            <field name="domain_force">['|',('id', '=', user.id),('id', '!=', False)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record> 
+
+        <record id="group_quotes_restring" model="res.groups">
+            <field name="name">Restringir Cotizaciones</field>
+            <field name="category_id" ref="stock_api_assing.category_stock_api_assing_access"/>
+            <field name="comment">Solo usuarios con este grupo pueden ver el botón de sincronización con Radis.</field>
+        </record>
+
+        <record id="group_multi_warehouse" model="res.groups">
+            <field name="name">Seleccionar bodegas</field>
+            <field name="comment">Comment</field>
+            <field name="category_id" ref="base.module_category_sales_sales"/>
+        </record>
+
+        <record id="group_price_unit" model="res.groups">
+            <field name="name">No modificar precio unitario</field>
+            <field name="category_id" ref="stock_api_assing.category_stock_api_assing_access"/>
+            <field name="comment">Solo usuarios con este grupo no pueden modificar precio unitario.</field>
+        </record>
+
+
+    </data>
+</odoo>

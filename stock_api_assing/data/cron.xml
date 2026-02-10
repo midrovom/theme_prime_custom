@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <!-- Acualiza el stock, precio del producto segun la company valor 1 -->
+        <record id="stock_api_assing_update_company1" model="ir.cron">
+            <field name="name">stock_api_assing_update CN</field>
+            <field name="model_id" ref="stock_api_assing.model_stock_api_sync"/>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="state">code</field>
+            <field name="code">model.sync_all_inventory(1)</field>
+            <field name="interval_number">30</field>
+            <field name="interval_type">minutes</field>
+            <field name="priority">50</field>
+            <field name="active" eval="True"/>
+        </record>
+        
+        <record id="stock_api_assing_update_company2" model="ir.cron">
+            <field name="name">stock_api_assing_update US</field>
+            <field name="model_id" ref="stock_api_assing.model_stock_api_sync"/>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="state">code</field>
+            <field name="code">model.sync_all_inventory(2)</field>
+            <field name="interval_number">30</field>
+            <field name="interval_type">minutes</field>
+            <field name="priority">50</field>
+            <field name="active" eval="True"/>
+        </record>
+
+    </data>
+</odoo>

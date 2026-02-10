@@ -1,0 +1,50 @@
+<odoo>
+    <data>
+
+        <record id="view_quotes_api_assing_visit_tree" model="ir.ui.view">
+            <field name="name">view.quotes.api.assing.visit.tree</field>
+            <field name="model">quotes.api.assing</field>
+            <field name="arch" type="xml">
+                <!-- <button name="update_quotes_quantity" string="Mi Botón" type="object" class="oe_highlight"/> -->
+                <list string="Quotes">
+                    <field name="name"/>
+                    <field name="value"/>
+                    <field name="date"/>
+                    <field name="description" widget="text" options="{'truncate': 50}"/>
+                </list>
+            </field>
+        </record>
+
+
+        <record model="ir.actions.act_window" id="update_quotes_action_window">
+            <field name="name">Update quotes</field>
+            <field name="res_model">quotes.api.assing</field>
+            <field name="view_mode">list,form,kanban</field>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    Contizaciones desde Api
+                </p>
+                <p>
+                    Click 'Nuevo' para añadir nuevas cotizaciones
+                </p>
+            </field>
+        </record>
+        <!-- 
+        SE crea un codigo de vendedor para que pueda ser seleccionado en el 
+        formulario de cotizaciones paara el radis 
+        -->
+        <record id="res_users_stock_api_assing_form_view" model="ir.ui.view">
+            <field name="name">res.users.stock.api.assing.form.view</field>
+            <field name="model">res.users</field>
+            <field name="inherit_id" ref="base.view_users_form"/>
+            <field name="arch" type="xml">
+            <xpath expr="//group[@name='preferences']" position="after">
+                    <group string="Envio de cotizaciones a radis." name="Sales">
+                        <field name="vendor_codes"  />
+                    </group>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

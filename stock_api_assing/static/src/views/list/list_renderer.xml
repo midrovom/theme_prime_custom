@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="Many2ManyMultiField" t-inherit="web.ListRenderer" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o_list_renderer')]" position="attributes">
+            <attribute name="class">w-100 o_list_renderer o_renderer table-responsive</attribute>
+        </xpath>
+
+        <xpath expr="//th[contains(@class, 'o_list_record_selector')]" position="replace">
+            <th style="width: 30px;" t-if="hasSelectors" class="o_list_controller o_list_record_selector align-middle pe-1 cursor-pointer" tabindex="-1" t-on-keydown="(ev) => this.onCellKeydown(ev)" t-on-click.stop="toggleSelection">
+                <CheckBox disabled="!canSelectRecord" value="selectAll" className="'d-flex'" onChange.bind="toggleSelection"/>
+            </th>
+        </xpath>
+    </t>
+
+    <t t-name="Many2ManyMultiField.RecordRow" t-inherit="web.ListRenderer.RecordRow" t-inherit-mode="extension">
+        <xpath expr="//td[contains(@class, 'o_list_record_selector')]" position="replace">
+            <td t-on-keydown="(ev) => this.onCellKeydown(ev, group, record)" t-if="hasSelectors" class="o_list_record_selector" t-on-click.stop="() => this.toggleRecordSelection(record)" tabindex="-1">
+                <CheckBox disabled="!canSelectRecord" value="record.selected" onChange.alike="() => this.toggleRecordSelection(record)"/>
+            </td>
+        </xpath>
+    </t>
+
+</templates>

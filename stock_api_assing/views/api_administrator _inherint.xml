@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_api_adminitrator_form_inherit" model="ir.ui.view">
+        <field name="name">api.administrator.form.inherit</field>
+        <field name="model">api.administrator</field>
+        <field name="inherit_id" ref="api_administrator.view_api_adminitrator_form"/> 
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet" position="inside">
+            <button name="button_run_sync"
+                    string="Ejecutar Sincronización"
+                    type="object"
+                    class="btn-primary"
+                    modifiers="{'invisible': [('is_stock_update', '=', False)]}"/>
+        </xpath>
+        </field>
+    </record>
+</odoo>

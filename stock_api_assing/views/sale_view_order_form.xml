@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="sale_order_stock_api_assing_view_form" model="ir.ui.view">
+        <field name="name">sale.order.stock.api.assing.view.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="class">o_form_view_custom_stock</attribute>
+            </xpath>
+            <xpath expr="//header/button[@name='action_quotation_send']" position="after">
+                <button name="action_export_to_radis"
+                        string="Enviar a Radis"
+                        type="object"
+                        class="btn-primary"
+                        groups="stock_api_assing.group_quotes_restring"
+                        modifiers="{'invisible': ['|', ('state', '!=', 'draft'),('state', '!=', 'sent'),('export_send', '=', 'E')]}"/>
+            </xpath>
+            <xpath expr="//header/button[@name='action_confirm'][1]" position="attributes">
+                <attribute name="groups">!stock_api_assing.group_quotes_restring</attribute>
+            </xpath>
+
+            <xpath expr="//header/button[@name='action_confirm'][2]" position="attributes">
+                <attribute name="groups">!stock_api_assing.group_quotes_restring</attribute>
+            </xpath>
+
+            <!-- <xpath expr="//header/button[@name='action_quotation_send']" position="attributes">
+                    <attribute name="groups">!stock_api_assing.group_quotes_restring</attribute>
+            </xpath> -->
+            <xpath expr="//header/button[@name='action_cancel']" position="attributes">
+                    <attribute name="groups">!stock_api_assing.group_quotes_restring</attribute>
+            </xpath>
+            
+            <!-- <xpath expr="//sheet//div[@name='button_box']/button[@name='action_preview_sale_order']" position="attributes">
+                    <attribute name="groups">!stock_api_assing.group_quotes_restring</attribute>
+            </xpath> -->
+            <!-- Ocultar el botón "Confirm" para usuarios que NO pertenecen al grupo -->
+            <xpath expr="//field[@name='payment_term_id']" position="after">
+                <field name="export_send" groups="stock_api_assing.group_quotes_restring"/>
+            </xpath>
+
+            <!-- Statusbar principal condicional -->
+            <xpath expr="//field[@name='state']" position="attributes">
+                <field name="state" t-att-statusbar_visible="user_has_groups('your_module.group_specific') and 'async' or 'True'"/>
+            </xpath> 
+            <!-- <xpath expr="//header" position="replace">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,async"/>
+                </header>
+            </xpath> -->
+            <xpath expr="//field[@name='state']" position="attributes">
+                <field name="state" t-att-statusbar_visible="user_has_groups('your_module.group_specific') and 'async' or 'True'"/>
+            </xpath> 
+
+            <xpath expr="//page[@name='order_lines']//list/field[@name='price_unit']" position="before">
+                <field name="warehouse_id" readonly="1" options="{'no_create': True, 'no_open': True}" />
+                <field name="stock_quantity" readonly="1"/>
+            </xpath>
+            <xpath expr="//page[@name='order_lines']//form//group/field[@name='price_unit']" position="before">
+                <field name="warehouse_id" readonly="1" options="{'no_create': True, 'no_open': True}" />
+                <field name="stock_quantity" readonly="1"/>
+            </xpath>
+
+            <xpath expr="//kanban/field[last()]" position="after">
+                <field name="warehouse_id" readonly="1" options="{'no_create': True, 'no_open': True}" />
+                <field name="stock_quantity" readonly="1"/>
+            </xpath> 
+
+            <xpath expr="//page[@name='order_lines']//kanban//t[@t-name='card']//main[@class='col']" position="inside">
+                <div class="text-muted">
+                    Stock Disponible:
+                    <field name="stock_quantity" />
+                </div>
+            </xpath>
+            <!-- <xpath expr="//t[@t-name='kanban-box']//div[contains(@class, 'col text-muted') and contains(., 'Unit Price')]/.." position="before">
+                <div class="row">
+                    <div class="col-12 text-muted">
+                        Stock: 
+                        <t t-out="record.stock_quantity.value"/>
+                    </div>
+                </div>
+            </xpath> -->
+            <xpath expr="//group[@name='sale_header']" position="after">
+                <group name="sale_button_multi" string="Opcion para añadir multiples productos en los pedidos">
+                    <button name='selection_multi' string="Seleccionar productos" type="object" class="btn-primary mb-2" context="{ 'warehouse_id': warehouse_id }"/>
+                </group>
+            </xpath>
+
+            <xpath expr="//group/field[@name='product_id']" position="replace">
+                <field
+                    name="product_id"
+                    modifiers="{
+                        'readonly': [('product_updatable', '=', False)],
+                        'required': [('display_type', '=', False)],
+                    }"
+                    force_save="1"
+                    context="{
+                        'kanban_view_ref': 'stock_api_assing.custom_product_view_kanban',
+                        
+                    }"
+                    options="{
+                        'no_open': True,
+                    }"
+                    
+                    
+                />
+            </xpath>
+
+            <xpath expr="//list/field[@name='product_id']" position="replace">
+                <field
+                    name="product_id"
+                    modifiers="{
+                        'readonly': [('product_updatable', '=', False)],
+                        'required': [('display_type', '=', False)],
+                    }"
+                    force_save="1"
+                    context="{
+                        'list_view_ref': 'stock_api_assing.custom_product_tree_view',
+                        'partner_id': parent.partner_id,
+                        'quantity': product_uom_qty,
+                        'pricelist': parent.pricelist_id,
+                        'uom':product_uom,
+                        'company_id': parent.company_id,
+                        'default_lst_price': price_unit,
+                        'default_description_sale': name,
+                        'warehouse_id': parent.warehouse_id
+                    }"
+                    options="{
+                        'no_open': True,
+                    }"
+                    
+                    
+                />
+            </xpath>
+
+            <xpath expr="//group/field[@name='price_unit']" position="replace">
+                <field name="price_unit" readonly="1"/>
+            </xpath>
+
+            <xpath expr="//list/field[@name='price_unit']" position="attributes">
+                <attribute name="modifiers">{'readonly': [('readonly_price_unit', '=', True)]}</attribute>
+            </xpath>
+
+            <xpath expr="//group/field[@name='price_unit']" position="before">
+                <field name="negotiable_price" />
+            </xpath>
+
+            <xpath expr="//list/field[@name='price_unit']" position="before">
+                <field name="readonly_price_unit" invisible="1" />
+                <field name="negotiable_price" />
+            </xpath>
+
+            <!-- <xpath expr="//list/field[@name='price_subtotal']" position="after">
+                <field name="negotiable_price_subtotal" />
+            </xpath> -->
+
+            <xpath expr="//group/field[@name='tax_id']" position="replace">
+                <field readonly="1" name="tax_id" widget="many2many_tags" options="{'no_create': True}" context="{'search_view_ref': 'account.account_tax_view_search'}" domain="[('type_tax_use','=','sale'), ('company_id','=',parent.company_id), ('country_id', '=', parent.tax_country_id)]"/>
+            </xpath>
+
+            <xpath expr="//page/field[@name='order_line']" position="attributes" groups="stock_api_assing.group_quotes_restring">
+                <attribute name="modifiers">{'readonly': [('export_send', '=', 'E'), ('state', '=', 'async')]}</attribute>
+            </xpath>
+
+            <xpath expr="//page/field[@name='order_line']" position="attributes" groups="!stock_api_assing.group_quotes_restring">
+                <attribute name="modifiers">{'readonly': [('state', 'in', ('done','cancel'))]}</attribute>
+            </xpath>
+
+            <xpath expr="//kanban/field[@name='price_subtotal']" position="after">
+                <field name="negotiable_price" />
+                <field name="warehouse_id" readonly="1" options="{'no_create': True, 'no_open': True}" />
+            </xpath>
+
+            <xpath expr="//group[@name='sale_total']" position="after">
+                <group class="oe_subtotal_footer oe_right text-center" colspan="2" name="sale_total_negotible" string="Total negociable">
+                    <field name="tax_totals_negotiable" widget="account-tax-totals-field" nolabel="1" colspan="2" readonly="1"/>
+                    <separator/>
+                    <field name="total_peso" />
+                </group>
+            </xpath>
+
+            <xpath expr="//group/field[@name='note']" position="attributes">
+                <attribute name="placeholder">Comentarios...</attribute>
+            </xpath>
+
+            <xpath expr="//list/control" position="replace">
+                
+            </xpath>
+            <xpath expr="//field[@name='product_template_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <xpath expr="//main[@class='col']" position="inside">
+                <div class="row">
+                    <div class="col-12 text-muted">
+                        Precio negociable:
+                        <t t-out="record.negotiable_price.value"/>
+                    </div>
+                    <div class="col-12 text-muted">
+                        Bodega:
+                        <t t-out="record.warehouse_id.value"/>
+                    </div>
+                </div>
+            </xpath>
+
+            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/list" position="attributes">
+                <attribute name="create">0</attribute>
+            </xpath>
+            <xpath expr="//page[@name='order_lines']/field[@name='order_line']/kanban" position="attributes">
+                <attribute name="create">0</attribute>
+            </xpath>
+        </field> 
+    </record>
+
+
+    <!-- <record id="view_order_form_inherit_sale_stock_inherit" model="ir.ui.view">
+        <field name="name">view.order.form.inherit.sale.stock.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_stock.view_order_form_inherit_sale_stock"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='sale_shipping']/field[@name='warehouse_id'][2]" position="attributes">
+                <attribute name="attrs">{'readonly': [('order_line', '!=', False)]}</attribute>
+            </xpath>
+        </field>
+    </record> -->
+
+</odoo>
