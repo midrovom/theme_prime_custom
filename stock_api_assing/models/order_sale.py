@@ -178,8 +178,8 @@ class CustomSaleOrder(models.Model):
         for order in self:
             order = order.with_company(order.company_id)
             order_lines = order.order_line.filtered(lambda x: not x.display_type)
-            order.tax_totals_negotiable = order.env['account.tax']._prepare_tax_totals(
-            #order.tax_totals_negotiable = order.env['account.tax']._get_tax_totals_from_lines(
+            #order.tax_totals_negotiable = order.env['account.tax']._prepare_tax_totals(
+            order.tax_totals_negotiable = order.env['account.tax']._get_tax_totals_from_lines(
                 [x._convert_to_tax_base_line_dict_negotiable() for x in order_lines],
                 order.currency_id or order.company_id.currency_id,
             )
