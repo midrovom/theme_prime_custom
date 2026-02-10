@@ -188,12 +188,13 @@ class CustomSaleOrder(models.Model):
             order = order.with_company(order.company_id)
             order_lines = order.order_line.filtered(lambda x: not x.display_type)
 
-            base_lines = [ x._convert_to_tax_base_line_dict_negotiable()
-                for x in order_lines
-            ]
-
-            tax_lines = order.env['account.tax']._prepare_tax_lines( base_lines=base_lines, company=order.company_id,)
-            order.tax_totals_negotiable = order.env['account.tax']._get_tax_totals_from_lines(base_lines, tax_lines, order.currency_id or order.company_id.currency_id, order.company_id,)
+            order.tax_totals_negotiable = order._get_tax_totals(
+                base_lines=[
+                    x._convert_to_tax_base_line_dict_negotiable()
+                    for x in order_lines
+                ],
+                currency=order.currency_id or order.company_id.currency_id,
+            )
 
     def selection_multi(self):
         warehouse_id = self.env.context.get('warehouse_id')
