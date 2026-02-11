@@ -179,7 +179,7 @@ class CustomSaleOrder(models.Model):
         AccountTax = self.env['account.tax']
         for order in self:
             order_lines = order.order_line.filtered(lambda x: not x.display_type)
-            base_lines = [line._prepare_base_line_for_taxes_computation_negotiable() for line in order_lines]
+            base_lines = [line._convert_to_tax_base_line_dict_negotiable() for line in order_lines]
             base_lines += order._add_base_lines_for_early_payment_discount()
             
             AccountTax._add_tax_details_in_base_lines(base_lines, order.company_id)
