@@ -142,7 +142,6 @@ class SaleOrderLine(models.Model):
 
             line.stock_quantity = stock_quant.quantity if stock_quant else 0
 
-
     @api.constrains('product_uom_qty')
     def _check_product_stock(self):
         # company = self.env.user.company_id
@@ -150,8 +149,8 @@ class SaleOrderLine(models.Model):
             # if company.company_registry:
             #     continue
 
-            # Solo aplica a productos tipo Bienes con rastreo de inventario activado
-            if line.product_id.type != 'consu' or not line.product_id.is_storable:
+            # Si es Bienes y almacenable, no se ejecuta la validación
+            if line.product_id.type == 'consu' and line.product_id.is_storable:
                 continue  
 
             # Obtener el stock disponible en la ubicación del almacén del pedido
@@ -167,6 +166,7 @@ class SaleOrderLine(models.Model):
                     f"La cantidad solicitada: { line.product_uom_qty } excede el stock disponible: { available_qty } "
                     f"que hay en la bodega { line.warehouse_id.name } del producto '{ line.product_id.name }'."
                 )
+
 
     # @api.constrains('product_uom_qty')
     # def _check_product_stock(self):
