@@ -112,7 +112,7 @@ class SaleOrderLine(models.Model):
             price_unit = self.negotiable_price / (1 + tax)
 
         return self.env['account.tax']._convert_to_tax_base_line_dict(
-            self,
+            base_line=self,
             partner=self.order_id.partner_id,
             currency=self.order_id.currency_id,
             product=self.product_id,
@@ -120,8 +120,20 @@ class SaleOrderLine(models.Model):
             price_unit=price_unit,
             quantity=self.product_uom_qty,
             discount=self.discount,
-            price_subtotal=None,  # no lo necesitas aquí
+            price_subtotal=None,
         )
+
+        # return self.env['account.tax']._convert_to_tax_base_line_dict(
+        #     self,
+        #     partner=self.order_id.partner_id,
+        #     currency=self.order_id.currency_id,
+        #     product=self.product_id,
+        #     taxes=self.tax_id,
+        #     price_unit=price_unit,
+        #     quantity=self.product_uom_qty,
+        #     discount=self.discount,
+        #     price_subtotal=None,  # no lo necesitas aquí
+        # )
 
     # def _compute_amount_negotiable(self):
     #     for line in self:
