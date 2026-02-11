@@ -145,14 +145,21 @@ class SaleOrderLine(models.Model):
             'quantity': self.product_uom_qty,
             'price_unit': price_unit,
             'discount': self.discount,
-            'tax_ids': self.tax_id, 
+            'tax_ids': self.tax_id,
             'currency_id': self.order_id.currency_id,
             'company': self.order_id.company_id,
             'partner': self.order_id.partner_id,
-            'product_id': self.product_id, # <-- agregado
+            'product_id': self.product_id,
             'special_mode': None,
-            'manual_tax_amounts': {}, # <-- agregado
+            'manual_tax_amounts': {},       # impuestos manuales si aplica
+            'filter_tax_function': None,    # función de filtro de impuestos
+            'analytic_distribution': {},    # distribución analítica
+            'analytic_distribution_search': None,
+            'account_id': None,
+            'is_tax_closing': False,
+            'tax_tag_invert': False,
         }
+
 
 
     # @api.depends('product_id')
