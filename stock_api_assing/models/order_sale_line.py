@@ -149,6 +149,7 @@ class SaleOrderLine(models.Model):
             'currency_id': self.order_id.currency_id,
             'company': self.order_id.company_id,
             'partner': self.order_id.partner_id,
+            'product_id': self.product_id, # <-- agregado
         }
 
 
