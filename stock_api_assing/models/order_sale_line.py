@@ -91,39 +91,65 @@ class SaleOrderLine(models.Model):
 
 
     @api.depends('product_uom_qty', 'discount', 'negotiable_price', 'tax_id')
+    # def _compute_amount_negotiable(self):
+    #     for line in self:
+    #         tax_results = self.env['account.tax'].with_company(line.company_id)._compute_taxes(
+    #             [line._convert_to_tax_base_line_dict_negotiable()]
+    #         )
+    #         totals = list(tax_results['totals'].values())[0]
+    #         amount_untaxed = totals['amount_untaxed']
+
+    #         # Solo calculamos y asignamos nuestro nuevo campo
+    #         line.negotiable_price_subtotal = amount_untaxed
+
+    # def _convert_to_tax_base_line_dict_negotiable(self):
+    #     self.ensure_one()
+
+    #     price_unit = self.negotiable_price
+
+    #     if self.tax_id:
+    #         tax = self.tax_id[0].amount / 100
+    #         price_unit = self.negotiable_price / (1 + tax)
+
+    #     return self.env['account.tax']._convert_to_tax_base_line_dict(
+    #         self,
+    #         partner=self.order_id.partner_id,
+    #         currency=self.order_id.currency_id,
+    #         product=self.product_id,
+    #         taxes=self.tax_id,
+    #         price_unit=price_unit,
+    #         quantity=self.product_uom_qty,
+    #         discount=self.discount,
+    #         price_subtotal=None,  # no lo necesitas aquí
+    #     )
+
+
     def _compute_amount_negotiable(self):
         for line in self:
-            tax_results = self.env['account.tax'].with_company(line.company_id)._compute_taxes(
-                [line._convert_to_tax_base_line_dict_negotiable()]
-            )
-            totals = list(tax_results['totals'].values())[0]
-            amount_untaxed = totals['amount_untaxed']
+            base_line = line._prepare_base_line_for_taxes_computation_negotiable()
+            self.env['account.tax']._add_tax_details_in_base_line(base_line, line.company_id)
+            line.negotiable_price_subtotal = base_line['tax_details']['raw_total_excluded_currency']
 
-            # Solo calculamos y asignamos nuestro nuevo campo
-            line.negotiable_price_subtotal = amount_untaxed
-
-    def _convert_to_tax_base_line_dict_negotiable(self):
+    def _prepare_base_line_for_taxes_computation_negotiable(self):
         self.ensure_one()
-
         price_unit = self.negotiable_price
 
         if self.tax_id:
             tax = self.tax_id[0].amount / 100
             price_unit = self.negotiable_price / (1 + tax)
 
-        return self.env['account.tax']._convert_to_tax_base_line_dict(
-            self,
-            partner=self.order_id.partner_id,
-            currency=self.order_id.currency_id,
-            product=self.product_id,
-            taxes=self.tax_id,
-            price_unit=price_unit,
-            quantity=self.product_uom_qty,
-            discount=self.discount,
-            price_subtotal=None,  # no lo necesitas aquí
-        )
-
-
+        return {
+            'record': self,
+            'base_amount': price_unit * self.product_uom_qty,
+            'base_amount_currency': price_unit * self.product_uom_qty,
+            'quantity': self.product_uom_qty,
+            'price_unit': price_unit,
+            'discount': self.discount,
+            'taxes': self.tax_id,
+            'currency': self.order_id.currency_id,
+            'company': self.order_id.company_id,
+            'partner': self.order_id.partner_id,
+        }
 
     # @api.depends('product_id')
     # def _compute_stock_quantity(self):
