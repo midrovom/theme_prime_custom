@@ -151,6 +151,7 @@ class SaleOrderLine(models.Model):
             'partner': self.order_id.partner_id,
             'product_id': self.product_id, # <-- agregado
             'special_mode': None,
+            'manual_tax_amounts': {}, # <-- agregado
         }
 
 
