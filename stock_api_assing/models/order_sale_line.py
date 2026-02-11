@@ -102,6 +102,7 @@ class SaleOrderLine(models.Model):
             # Solo calculamos y asignamos nuestro nuevo campo
             line.negotiable_price_subtotal = amount_untaxed
 
+    # Se actualizo la funcion de _convert_to_tax_base_line_dict a _prepare_base_line_for_taxes_computation para odoo18
     def _convert_to_tax_base_line_dict_negotiable(self):
         self.ensure_one()
 
@@ -122,18 +123,6 @@ class SaleOrderLine(models.Model):
             price_subtotal=None,
         )
 
-    # @api.depends('product_id')
-    # def _compute_stock_quantity(self):
-    #     warehouse_id = self.warehouse_id
-    #     location_id = warehouse_id.lot_stock_id
-    #     for line in self:
-    #         if line.product_id:
-    #             stock_quant = self.env['stock.quant'].search([
-    #                 ('product_id', '=', line.product_id.id),
-    #                 # ('location_id.usage', '=', 'internal')
-    #                 ('location_id', '=', location_id.id)
-    #             ], limit=1)
-    #             line.stock_quantity = stock_quant.quantity if stock_quant else 0
 
     @api.depends('product_id', 'warehouse_id')
     def _compute_stock_quantity(self):
@@ -154,6 +143,7 @@ class SaleOrderLine(models.Model):
             line.stock_quantity = stock_quant.quantity if stock_quant else 0
 
 
+    @api.constrains('product_uom_qty')
     def _check_product_stock(self):
         # company = self.env.user.company_id
         for line in self:
@@ -161,7 +151,7 @@ class SaleOrderLine(models.Model):
             #     continue
 
             if line.product_id.type != 'consu':
-                continue  # No aplica para servicios ni consumibles 11
+                continue  # No aplica para servicios ni consumibles
 
             # Obtener el stock disponible en la ubicación del almacén del pedido
             location_id = line.warehouse_id.lot_stock_id
@@ -176,14 +166,32 @@ class SaleOrderLine(models.Model):
                     f"La cantidad solicitada: { line.product_uom_qty } excede el stock disponible: { available_qty } que hay en la bodega { line.warehouse_id.name } del producto '{ line.product_id.name }'."
                 )
             
+    # def _check_product_stock(self):
+    #     # company = self.env.user.company_id
+    #     for line in self:
+    #         # if company.company_registry:
+    #         #     continue
+
+    #         if line.product_id.type != 'consu':
+    #             continue  # No aplica para servicios ni consumibles 11
+
+    #         # Obtener el stock disponible en la ubicación del almacén del pedido
+    #         location_id = line.warehouse_id.lot_stock_id
+    #         stock_quant = self.env['stock.quant'].search([
+    #             ('product_id', '=', line.product_id.id),
+    #             ('location_id', '=', location_id.id)
+    #         ], limit=1)
+    #         available_qty = stock_quant.quantity if stock_quant else 0
+
+    #         if line.product_uom_qty > available_qty:
+    #             raise ValidationError(
+    #                 f"La cantidad solicitada: { line.product_uom_qty } excede el stock disponible: { available_qty } que hay en la bodega { line.warehouse_id.name } del producto '{ line.product_id.name }'."
+    #             )
+            
 
     @api.model
-    # def create(self, vals):
-    #     order = self.env['sale.order'].browse(vals.get('order_id'))
-    #     if order.export_send == 'E' and self.env.context.get('bypass_radis_lock') != True:
-    #         raise ValidationError(f"No se pueden agregar líneas a la Orden {order.name} porque ya fue enviada a Radis.")
-    #     return super(SaleOrderLine, self).create(vals)
 
+    # Se agrega el id del
     def create(self, vals):
         order = self.env['sale.order'].browse(vals.get('order_id'))
         if order and order.warehouse_id and not vals.get('warehouse_id'):

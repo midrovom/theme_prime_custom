@@ -175,6 +175,7 @@ class CustomSaleOrder(models.Model):
     @api.depends_context('lang')
     @api.depends('order_line.tax_id', 'order_line.negotiable_price', 'amount_total', 'amount_untaxed', 'currency_id')
 
+    # Se actualizo la funcion para con los parametros de odoo18
     def _compute_tax_totals_negotiable(self):
         AccountTax = self.env['account.tax']
         for order in self:
