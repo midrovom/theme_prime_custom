@@ -122,28 +122,6 @@ class SaleOrderLine(models.Model):
             price_subtotal=None,
         )
 
-    # def _convert_to_tax_base_line_dict_negotiable(self):
-    #     self.ensure_one()
-
-    #     price_unit = self.negotiable_price
-
-    #     if self.tax_id:
-    #         tax = self.tax_id[0].amount / 100
-    #         price_unit = self.negotiable_price / (1 + tax)
-
-    #     return self.env['account.tax']._convert_to_tax_base_line_dict(
-    #         self,
-    #         partner=self.order_id.partner_id,
-    #         currency=self.order_id.currency_id,
-    #         product=self.product_id,
-    #         taxes=self.tax_id,
-    #         price_unit=price_unit,
-    #         quantity=self.product_uom_qty,
-    #         discount=self.discount,
-    #         price_subtotal=None,  # no lo necesitas aquí
-    #     )
-
-
     # @api.depends('product_id')
     # def _compute_stock_quantity(self):
     #     warehouse_id = self.warehouse_id

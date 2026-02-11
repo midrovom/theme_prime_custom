@@ -186,24 +186,8 @@ class CustomSaleOrder(models.Model):
             AccountTax._round_base_lines_tax_details(base_lines, order.company_id)
             order.tax_totals_negotiable = AccountTax._get_tax_totals_summary(
                 base_lines=base_lines,
-                currency=order.currency_id or order.company_id.currency_id,
-                company=order.company_id,
+                currency=order.currency_id or order.company_id.currency_id, company=order.company_id,
             )
-
-    # def _compute_tax_totals_negotiable(self):
-    #     AccountTax = self.env['account.tax']
-    #     for order in self:
-    #         order_lines = order.order_line.filtered(lambda x: not x.display_type)
-    #         base_lines = [line._prepare_base_line_for_taxes_computation_negotiable() for line in order_lines]
-    #         base_lines += order._add_base_lines_for_early_payment_discount()
-            
-    #         AccountTax._add_tax_details_in_base_lines(base_lines, order.company_id)
-    #         AccountTax._round_base_lines_tax_details(base_lines, order.company_id)
-    #         order.tax_totals_negotiable = AccountTax._get_tax_totals_summary(
-    #             base_lines=base_lines,
-    #             currency=order.currency_id or order.company_id.currency_id,
-    #             company=order.company_id,
-    #         )
 
     # def _compute_tax_totals_negotiable(self):
     #     for order in self:
