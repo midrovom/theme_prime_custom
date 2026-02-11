@@ -158,6 +158,7 @@ class SaleOrderLine(models.Model):
             'account_id': None,
             'is_tax_closing': False,
             'tax_tag_invert': False,
+            'rate': 0.0,
         }
 
 
