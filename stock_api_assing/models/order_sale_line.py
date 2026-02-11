@@ -162,7 +162,7 @@ class SaleOrderLine(models.Model):
             #     continue
 
             if line.product_id.type != 'consu':
-                continue  # No aplica para servicios ni consumibles
+                continue  # No aplica para servicios ni consumibles 11
 
             # Obtener el stock disponible en la ubicación del almacén del pedido
             location_id = line.warehouse_id.lot_stock_id
