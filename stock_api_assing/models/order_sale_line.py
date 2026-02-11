@@ -146,7 +146,7 @@ class SaleOrderLine(models.Model):
             'price_unit': price_unit,
             'discount': self.discount,
             'tax_ids': self.tax_id, 
-            'currency': self.order_id.currency_id,
+            'currency_id': self.order_id.currency_id,
             'company': self.order_id.company_id,
             'partner': self.order_id.partner_id,
         }
