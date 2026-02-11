@@ -161,7 +161,7 @@ class SaleOrderLine(models.Model):
             # if company.company_registry:
             #     continue
 
-            if line.product_id.type != 'consu':
+            if line.product_id.type != 'product':
                 continue  # No aplica para servicios ni consumibles
 
             # Obtener el stock disponible en la ubicación del almacén del pedido
