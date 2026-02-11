@@ -3,7 +3,7 @@
     'name': "stock_api_assing",
     "version": "18.0.1.0.0",
     'summary': """
-        update stock/ crea cotizaciones - Radis""",
+        update stock/ crea cotizaciones - Radiss""",
 
     'description': """
         1-actualiza y crea el stock desde radis (Update stock)
