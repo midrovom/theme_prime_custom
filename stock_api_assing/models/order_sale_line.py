@@ -106,73 +106,42 @@ class SaleOrderLine(models.Model):
         self.ensure_one()
 
         price_unit = self.negotiable_price
-
         if self.tax_id:
             tax = self.tax_id[0].amount / 100
             price_unit = self.negotiable_price / (1 + tax)
 
-        return self.env['account.tax']._convert_to_tax_base_line_dict(
-            base_line=self,
-            partner=self.order_id.partner_id,
-            currency=self.order_id.currency_id,
-            product=self.product_id,
-            taxes=self.tax_id,
+        return self.env['account.tax']._prepare_base_line_for_taxes_computation(
+            self,
+            partner_id=self.order_id.partner_id,
+            currency_id=self.order_id.currency_id,
+            product_id=self.product_id,
+            tax_ids=self.tax_id,
             price_unit=price_unit,
             quantity=self.product_uom_qty,
             discount=self.discount,
             price_subtotal=None,
         )
 
-        # return self.env['account.tax']._convert_to_tax_base_line_dict(
-        #     self,
-        #     partner=self.order_id.partner_id,
-        #     currency=self.order_id.currency_id,
-        #     product=self.product_id,
-        #     taxes=self.tax_id,
-        #     price_unit=price_unit,
-        #     quantity=self.product_uom_qty,
-        #     discount=self.discount,
-        #     price_subtotal=None,  # no lo necesitas aquí
-        # )
-
-    # def _compute_amount_negotiable(self):
-    #     for line in self:
-    #         base_line = line._prepare_base_line_for_taxes_computation_negotiable()
-    #         self.env['account.tax']._add_tax_details_in_base_line(base_line, line.company_id)
-    #         line.negotiable_price_subtotal = base_line['tax_details']['raw_total_excluded_currency']
-
-    # def _prepare_base_line_for_taxes_computation_negotiable(self):
+    # def _convert_to_tax_base_line_dict_negotiable(self):
     #     self.ensure_one()
+
     #     price_unit = self.negotiable_price
 
-    #     # Ajustar si el precio negociable incluye impuestos
     #     if self.tax_id:
     #         tax = self.tax_id[0].amount / 100
     #         price_unit = self.negotiable_price / (1 + tax)
 
-    #     return {
-    #         'record': self,
-    #         'base_amount': price_unit * self.product_uom_qty,
-    #         'base_amount_currency': price_unit * self.product_uom_qty,
-    #         'quantity': self.product_uom_qty,
-    #         'price_unit': price_unit,
-    #         'discount': self.discount,
-    #         'tax_ids': self.tax_id,
-    #         'currency_id': self.order_id.currency_id,
-    #         'company': self.order_id.company_id,
-    #         'partner': self.order_id.partner_id,
-    #         'product_id': self.product_id,
-    #         'special_mode': None,
-    #         'manual_tax_amounts': {},       # impuestos manuales si aplica
-    #         'filter_tax_function': None,    # función de filtro de impuestos
-    #         'analytic_distribution': {},    # distribución analítica
-    #         'analytic_distribution_search': None,
-    #         'account_id': None,
-    #         'is_tax_closing': False,
-    #         'tax_tag_invert': False,
-    #         'rate': 0.0,
-    #     }
-
+    #     return self.env['account.tax']._convert_to_tax_base_line_dict(
+    #         self,
+    #         partner=self.order_id.partner_id,
+    #         currency=self.order_id.currency_id,
+    #         product=self.product_id,
+    #         taxes=self.tax_id,
+    #         price_unit=price_unit,
+    #         quantity=self.product_uom_qty,
+    #         discount=self.discount,
+    #         price_subtotal=None,  # no lo necesitas aquí
+    #     )
 
 
     # @api.depends('product_id')
