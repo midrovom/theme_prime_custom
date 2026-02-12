@@ -148,21 +148,21 @@ class SaleOrderLine(models.Model):
         for line in self:
             # if company.company_registry:
             #     continue
-    
-            if line.product_id.type == 'consu' and line.product_id.is_storable:
-                continue  
-    
+
+            if line.product_id.type != 'consu':
+                continue  # No aplica para servicios ni consumibles
+
+            # Obtener el stock disponible en la ubicación del almacén del pedido
             location_id = line.warehouse_id.lot_stock_id
             stock_quant = self.env['stock.quant'].search([
                 ('product_id', '=', line.product_id.id),
                 ('location_id', '=', location_id.id)
             ], limit=1)
             available_qty = stock_quant.quantity if stock_quant else 0
-    
+
             if line.product_uom_qty > available_qty:
                 raise ValidationError(
-                    f"La cantidad solicitada: { line.product_uom_qty } excede el stock disponible: { available_qty } "
-                    f"que hay en la bodega { line.warehouse_id.name } del producto '{ line.product_id.name }'."
+                    f"La cantidad solicitada: { line.product_uom_qty } excede el stock disponible: { available_qty } que hay en la bodega { line.warehouse_id.name } del producto '{ line.product_id.name }'."
                 )
         
     @api.model

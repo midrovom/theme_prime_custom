@@ -295,8 +295,7 @@ class StockAPISync(models.Model):
             storable_products.write({
                 'is_published': True,
                 'check_manage_sync': True,
-                #'company_id': False
-                'company_id':self.env.company.id
+                'company_id': False
             })
 
     # def update_cero_quantity(self, products, warehouse):
