@@ -136,23 +136,6 @@ class SaleOrderLine(models.Model):
                 ], limit=1)
                 line.stock_quantity = stock_quant.quantity if stock_quant else 0
 
-    # def _compute_stock_quantity(self):
-    #     for line in self:
-    #         line.stock_quantity = 0  # default
-            
-    #         if not line.product_id or not line.warehouse_id:
-    #             continue
-
-    #         warehouse_id = line.warehouse_id
-    #         location_id = warehouse_id.lot_stock_id  # aquí sí es singleton
-
-    #         stock_quant = self.env['stock.quant'].search([
-    #             ('product_id', '=', line.product_id.id),
-    #             ('location_id', '=', location_id.id)
-    #         ], limit=1)
-
-    #         line.stock_quantity = stock_quant.quantity if stock_quant else 0
-
     @api.constrains('product_uom_qty')
     def _check_product_stock(self):
         # company = self.env.user.company_id
@@ -175,29 +158,7 @@ class SaleOrderLine(models.Model):
                 raise ValidationError(
                     f"La cantidad solicitada: { line.product_uom_qty } excede el stock disponible: { available_qty } que hay en la bodega { line.warehouse_id.name } del producto '{ line.product_id.name }'."
                 )
-            
-    # def _check_product_stock(self):
-    #     # company = self.env.user.company_id
-    #     for line in self:
-    #         # if company.company_registry:
-    #         #     continue
-
-    #         if line.product_id.type != 'consu':
-    #             continue  # No aplica para servicios ni consumibles
-
-    #         # Obtener el stock disponible en la ubicación del almacén del pedido
-    #         location_id = line.warehouse_id.lot_stock_id
-    #         stock_quant = self.env['stock.quant'].search([
-    #             ('product_id', '=', line.product_id.id),
-    #             ('location_id', '=', location_id.id)
-    #         ], limit=1)
-    #         available_qty = stock_quant.quantity if stock_quant else 0
-
-    #         if line.product_uom_qty > available_qty:
-    #             raise ValidationError(
-    #                 f"La cantidad solicitada: { line.product_uom_qty } excede el stock disponible: { available_qty } que hay en la bodega { line.warehouse_id.name } del producto '{ line.product_id.name }'."
-    #             )
-        
+              
     @api.model
 
     # Se agrega el id del
@@ -205,7 +166,7 @@ class SaleOrderLine(models.Model):
         order = self.env['sale.order'].browse(vals.get('order_id'))
         if order and order.warehouse_id and not vals.get('warehouse_id'):
             vals['warehouse_id'] = order.warehouse_id.id
-            
+
         if order.export_send == 'E' and self.env.context.get('bypass_radis_lock') != True:
             raise ValidationError(f"No se pueden agregar líneas a la Orden {order.name} porque ya fue enviada a Radis.")
         return super(SaleOrderLine, self).create(vals)
