@@ -136,6 +136,7 @@ class SaleOrderLine(models.Model):
                 ], limit=1)
                 line.stock_quantity = stock_quant.quantity if stock_quant else 0
 
+
     @api.constrains('product_uom_qty')
     def _check_product_stock(self):
         # company = self.env.user.company_id

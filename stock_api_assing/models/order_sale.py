@@ -43,20 +43,6 @@ class CustomSaleOrder(models.Model):
             
             record.total_peso = suma_total_peso / CONV_TONELADA
                     
-
-
-
-    # @api.constrains('order_line')
-    # def _check_duplicate_products(self):
-    #     for order in self:
-    #         product_names = [line.product_id.display_name for line in order.order_line if line.product_id]
-    #         duplicates = [product for product, count in Counter(product_names).items() if count > 1]
-    #         if duplicates:
-    #             duplicated_str = ', '.join(duplicates)
-    #             raise ValidationError(_(
-    #                 "No se pueden repetir productos en las líneas de la orden de venta de la misma Bodega. "
-    #                 "Productos duplicados: %s") % duplicated_str)
-
     @api.onchange('warehouse_id')
     def _onchange_warehouse_id(self):
         for record  in self:
@@ -137,24 +123,21 @@ class CustomSaleOrder(models.Model):
                     "de la misma Bodega. Productos duplicados: %s"
                 ) % ', '.join(duplicated_strs))
 
-
-    # @api.constrains('order_line')
-    # def _check_duplicate_products(self):
+    # @api.depends('user_id')
+    # def _compute_warehouse_id_by_user(self):
     #     for order in self:
-    #         for line in order.order_line:
-    #             count = 0
-    #             for l in order.order_line:
-    #                 if line.product_id.id == l.product_id.id:
-    #                     count += 1
-
-    #             if count > 1:
-    #                 raise ValidationError(_("No se pueden repetir productos en las líneas de la orden de venta."))
+    #         if order.state in ['draft', 'sent'] or not order.ids:
+    #             order.warehouse_id = order.user_id.property_warehouse_id
 
     @api.depends('user_id')
     def _compute_warehouse_id_by_user(self):
         for order in self:
             if order.state in ['draft', 'sent'] or not order.ids:
-                order.warehouse_id = order.user_id.property_warehouse_id
+                order.warehouse_id = (
+                    order.user_id.property_warehouse_id
+                    or self.env['stock.warehouse'].search([('company_id', '=', order.company_id.id)], limit=1)
+                )
+
 
     @api.depends()  # Sin dependencias para que no se recalcule automáticamente
     def _compute_note(self):
@@ -189,16 +172,6 @@ class CustomSaleOrder(models.Model):
                 base_lines=base_lines,
                 currency=order.currency_id or order.company_id.currency_id, company=order.company_id,
             )
-
-    # def _compute_tax_totals_negotiable(self):
-    #     for order in self:
-    #         order = order.with_company(order.company_id)
-    #         order_lines = order.order_line.filtered(lambda x: not x.display_type)
-    #         order.tax_totals_negotiable = order.env['account.tax']._prepare_tax_totals(
-    #             [x._convert_to_tax_base_line_dict_negotiable() for x in order_lines],
-    #             order.currency_id or order.company_id.currency_id,
-    #         )
-
 
     def selection_multi(self):
         warehouse_id = self.env.context.get('warehouse_id')
