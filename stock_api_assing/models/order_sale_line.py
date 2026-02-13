@@ -163,20 +163,14 @@ class SaleOrderLine(models.Model):
     @api.model
 
     # Se agrega el id del almacen
-    # def create(self, vals):
-    #     order = self.env['sale.order'].browse(vals.get('order_id'))
-    #     if order and order.warehouse_id and not vals.get('warehouse_id'):
-    #         vals['warehouse_id'] = order.warehouse_id.id
-
-    #     if order.export_send == 'E' and self.env.context.get('bypass_radis_lock') != True:
-    #         raise ValidationError(f"No se pueden agregar líneas a la Orden {order.name} porque ya fue enviada a Radis.")
-    #     return super(SaleOrderLine, self).create(vals)
-
     def create(self, vals):
         order = self.env['sale.order'].browse(vals.get('order_id'))
+        if order and order.warehouse_id and not vals.get('warehouse_id'):
+            vals['warehouse_id'] = order.warehouse_id.id
+
         if order.export_send == 'E' and self.env.context.get('bypass_radis_lock') != True:
             raise ValidationError(f"No se pueden agregar líneas a la Orden {order.name} porque ya fue enviada a Radis.")
-        return super(SaleOrderLine, self).create(vals)    
+        return super(SaleOrderLine, self).create(vals)
 
     def write(self, vals):
         for line in self:
