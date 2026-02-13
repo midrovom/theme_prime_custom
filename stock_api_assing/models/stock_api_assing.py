@@ -232,8 +232,6 @@ class StockAPISync(models.Model):
         return insertados, actualizados
 
 
-
-
     def _assign_price_to_pricelist(self, product, price_list, price):
 
         _logger.info(f"__DEBUG: product para LISTA {product} ")

@@ -126,21 +126,32 @@ class SaleOrderLine(models.Model):
 
     @api.depends('product_id', 'warehouse_id')
     def _compute_stock_quantity(self):
+        warehouse_id = self.warehouse_id
+        location_id = warehouse_id.lot_stock_id
         for line in self:
-            line.stock_quantity = 0  # default
+            if line.product_id:
+                stock_quant = self.env['stock.quant'].search([
+                    ('product_id', '=', line.product_id.id),
+                    ('location_id', '=', location_id.id)
+                ], limit=1)
+                line.stock_quantity = stock_quant.quantity if stock_quant else 0
+
+    # def _compute_stock_quantity(self):
+    #     for line in self:
+    #         line.stock_quantity = 0  # default
             
-            if not line.product_id or not line.warehouse_id:
-                continue
+    #         if not line.product_id or not line.warehouse_id:
+    #             continue
 
-            warehouse_id = line.warehouse_id
-            location_id = warehouse_id.lot_stock_id  # aquí sí es singleton
+    #         warehouse_id = line.warehouse_id
+    #         location_id = warehouse_id.lot_stock_id  # aquí sí es singleton
 
-            stock_quant = self.env['stock.quant'].search([
-                ('product_id', '=', line.product_id.id),
-                ('location_id', '=', location_id.id)
-            ], limit=1)
+    #         stock_quant = self.env['stock.quant'].search([
+    #             ('product_id', '=', line.product_id.id),
+    #             ('location_id', '=', location_id.id)
+    #         ], limit=1)
 
-            line.stock_quantity = stock_quant.quantity if stock_quant else 0
+    #         line.stock_quantity = stock_quant.quantity if stock_quant else 0
 
     @api.constrains('product_uom_qty')
     def _check_product_stock(self):
@@ -149,7 +160,7 @@ class SaleOrderLine(models.Model):
             # if company.company_registry:
             #     continue
 
-            if line.product_id.type != 'consu':
+            if line.product_id.type != 'product':
                 continue  # No aplica para servicios ni consumibles
 
             # Obtener el stock disponible en la ubicación del almacén del pedido
@@ -164,6 +175,28 @@ class SaleOrderLine(models.Model):
                 raise ValidationError(
                     f"La cantidad solicitada: { line.product_uom_qty } excede el stock disponible: { available_qty } que hay en la bodega { line.warehouse_id.name } del producto '{ line.product_id.name }'."
                 )
+            
+    # def _check_product_stock(self):
+    #     # company = self.env.user.company_id
+    #     for line in self:
+    #         # if company.company_registry:
+    #         #     continue
+
+    #         if line.product_id.type != 'consu':
+    #             continue  # No aplica para servicios ni consumibles
+
+    #         # Obtener el stock disponible en la ubicación del almacén del pedido
+    #         location_id = line.warehouse_id.lot_stock_id
+    #         stock_quant = self.env['stock.quant'].search([
+    #             ('product_id', '=', line.product_id.id),
+    #             ('location_id', '=', location_id.id)
+    #         ], limit=1)
+    #         available_qty = stock_quant.quantity if stock_quant else 0
+
+    #         if line.product_uom_qty > available_qty:
+    #             raise ValidationError(
+    #                 f"La cantidad solicitada: { line.product_uom_qty } excede el stock disponible: { available_qty } que hay en la bodega { line.warehouse_id.name } del producto '{ line.product_id.name }'."
+    #             )
         
     @api.model
 
