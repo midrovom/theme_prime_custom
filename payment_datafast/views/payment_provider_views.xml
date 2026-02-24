@@ -12,10 +12,8 @@
                     <field name="entity_id"/>
                     <field name="merchant_id"/>
                     <field name="terminal_id"/>
-
                     <field name="test_mode"
                            invisible="state in ('disabled', 'enabled')"/>
-
                     <field name="datafast_access_token"
                            string="Access Token"
                            required="code == 'datafast' and state != 'disabled'"
@@ -28,16 +26,22 @@
                       string="Codigos de mensaje"
                       invisible="code != 'datafast'">
 
-                    <field name="state_code_ids">
-                        <tree>
-                            <field name="code"/>
-                            <field name="name"/>
-                        </tree>
-                    </field>
-
+                    <field name="state_code_ids" widget="one2many_list"
+                           views="[(list, ref('view_state_code_list'))]"/>
                 </page>
             </xpath>
 
+        </field>
+    </record>
+
+    <record id="view_state_code_list" model="ir.ui.view">
+        <field name="name">payment.state.code.list</field>
+        <field name="model">payment.state.code</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+            </list>
         </field>
     </record>
 
