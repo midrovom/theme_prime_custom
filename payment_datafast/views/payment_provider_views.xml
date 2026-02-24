@@ -22,22 +22,23 @@
             <xpath expr="//page[@name='messages']" position="after">
                 <page invisible="code != 'datafast'" name="state_code_datafast" string="Codigos de mensaje">
                     <field name="state_code_ids" widget="one2many_list"
-                           views="[(tree, ref('view_state_code_tree'))]"/>
+                           views="[(list, ref('view_state_code_list'))]"/>
                 </page>
             </xpath>
         </field>
     </record>
 
-    <record id="view_state_code_tree" model="ir.ui.view">
-        <field name="name">payment.state.code.tree</field>
+    <record id="view_state_code_list" model="ir.ui.view">
+        <field name="name">payment.state.code.list</field>
         <field name="model">payment.state.code</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="code"/>
                 <field name="name"/>
-            </tree>
+            </list>
         </field>
     </record>
+
 
     <!-- <record id="payment_provider_form" model="ir.ui.view">
         <field name="name">DataFast Provider Form</field>
