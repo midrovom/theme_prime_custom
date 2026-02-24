@@ -19,23 +19,4 @@
     
     </data>
     
-    <!-- <data>
-    
-        <record id="payment_transaction_form_inherit" model="ir.ui.view">
-            <field name="name">payment.transaction.form.inherit</field>
-            <field name="model">payment.transaction</field>
-            <field name="inherit_id" ref="payment.payment_transaction_form"/>
-            <field name="arch" type="xml">
-                <xpath expr="//field[@name='reference']" position="before">
-                    <field name="transaction_df_id" attrs="{ 'invisible': [('provider_code', '!=', 'datafast')] }" />
-                </xpath>
-                <xpath expr="//field[@name='state']" position="before">
-                    <button attrs="{ 'invisible': [('provider_code', '!=', 'datafast')] }" type="object" name="cancel_transaction" string="Anular transacción" class="btn-primary"/>
-                </xpath>
-            </field>
-        </record>
-    
-    </data> -->
-    
-
 </odoo>
