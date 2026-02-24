@@ -2,28 +2,6 @@
 <odoo>
 
     <data>
-        <record id="res_partner_form_inherit" model="ir.ui.view">
-            <field name="name">res.partner.form.inherit</field>
-            <field name="model">res.partner</field>
-            <field name="inherit_id" ref="base.view_partner_form"/>
-            <field name="arch" type="xml">
-                <xpath expr="//page[@name='contact_addresses']" position="after">
-                    <page name="tokenization" string="Tokenización">
-                        <field name="payment_token_ids">
-                            <tree>
-                                <field name="name"/>
-                                <field name="provider_id"/>
-                                <field name="acquirer_ref"/>
-                            </tree>
-                        </field>
-                    </page>
-                </xpath>
-            </field>
-        </record>
-    </data>
-
-
-    <!-- <data>
     
         <record id="res_partner_form_inherit" model="ir.ui.view">
             <field name="name">res.partner.form.inherit</field>
@@ -43,7 +21,7 @@
             </field>
         </record>
     
-    </data> -->
+    </data>
     
 
 </odoo>
