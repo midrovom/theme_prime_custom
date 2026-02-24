@@ -32,35 +32,4 @@
         </field>
     </record>
 
-    <!-- <record id="payment_provider_form" model="ir.ui.view">
-        <field name="name">DataFast Provider Form</field>
-        <field name="model">payment.provider</field>
-        <field name="inherit_id" ref="payment.payment_provider_form"/>
-        <field name="arch" type="xml">
-            <group name="provider_credentials" position="inside">
-                <group attrs="{'invisible': [('code', '!=', 'datafast')]}">
-                    <field name="datafast_url" />
-                    <field name="entity_id" />
-                    <field name="merchant_id" />
-                    <field name="terminal_id" />
-                    <field name="test_mode" attrs="{ 'invisible': [('state', 'in', ('disabled', 'enabled'))] }" />
-                    <field name="datafast_access_token"
-                           string="Access Token"
-                           attrs="{'required': [('code', '=', 'datafast'), ('state', '!=', 'disabled')]}"
-                           password="True"/>
-                </group>
-            </group>
-            <xpath expr="//page[@name='messages']" position="after">
-                <page attrs="{'invisible': [('code', '!=', 'datafast')]}" name="state_code_datafast" string="Codigos de mensaje">
-                    <field name="state_code_ids">
-                        <tree>
-                            <field name="code" />
-                            <field name="name" />
-                        </tree>
-                    </field>
-                </page>
-            </xpath>
-        </field>
-    </record> -->
-
 </odoo>
