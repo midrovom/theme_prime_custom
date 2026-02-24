@@ -1,0 +1,10 @@
+ {
+    "result": {
+        "code": "000.200.100",
+        "description": "successfully created checkout"
+    }, 
+    "buildNumber": "acddc75f60a48737fd5a719cdcddc6b4f6192885@2025-06-02 06:09:11 +0000", 
+    "timestamp": "2025-06-02 16:58:45+0000",
+    "ndc": "DAA73247E6C8C158EA200B8BBA01E61D.uat01-vm-tx03",
+    "id": "DAA73247E6C8C158EA200B8BBA01E61D.uat01-vm-tx03"
+}

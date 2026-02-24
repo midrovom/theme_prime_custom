@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_create,perm_write,perm_unlink
+access_token_card,access_token_card,model_token_card,base.group_user,1,1,1,1
+access_state_code_datafast,access_state_code_datafast,model_state_code_datafast,base.group_user,1,1,1,1
+access_payment_transaction_verified,access_payment_transaction_verified,model_payment_transaction_verified,base.group_user,1,1,1,1

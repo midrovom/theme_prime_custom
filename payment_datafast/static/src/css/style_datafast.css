@@ -1,0 +1,12 @@
+form.wpwl-form {
+    max-width: 37em;
+}
+
+form.wpwl-form .wpwl-label-brand {
+    padding-right: 10px;
+}
+
+form.wpwl-form-card button  {
+    width: 100%;
+    height: 44px;
+}

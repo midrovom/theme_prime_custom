@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+    
+        <record id="payment_datafast_verified_view_form" model="ir.ui.view">
+            <field name="name">payment.datafast.verified.view.form</field>
+            <field name="model">payment.transaction.verified</field>
+            <field name="arch" type="xml">
+                <form string="Verificador de transacciones Datafast" create="false">
+                    <sheet>
+                        <group string="Buscar Transacción">
+                            <div class="d-flex">
+                                <field name="transaction_id" class="oe_inline" placeholder="Id de la transaccion"/>
+                                <span class="input-group-btn">
+                                    <button icon="fa-search" type="object" 
+                                            name="action_search_transaction" 
+                                            class="btn btn-default" string=""/>
+                                </span>
+                            </div>
+                        </group>
+                        <group name="verified_transaction">
+                            <group>
+                                <field name="payment_brand" readonly="1"/>
+                                <field name="amount" readonly="1"/>
+                                <field name="payment_type" readonly="1"/>
+                                <field name="payment_transaction" readonly="1"/>
+                            </group>
+                            <group>
+                                <field name="reference_nbr" readonly="1"/>
+                                <field name="auth_code" readonly="1"/>
+                                <field name="adquirer_response" readonly="1"/>
+                            </group>
+                        </group>
+                        <footer>
+                            <button string="Cerrar" class="btn-primary" special="cancel"/>
+                        </footer>
+                    </sheet>
+                </form>
+
+            </field>
+        </record>
+
+        <record id="payment_datafast_verified_action" model="ir.actions.act_window">
+            <field name="name">Verificador de Transacciones</field>
+            <field name="res_model">payment.transaction.verified</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="payment_datafast_verified_view_form"/>
+            <field name="target">new</field>
+        </record>
+
+        <menuitem action="payment_datafast_verified_action"
+            id="payment_transaction_verified_menu"
+            parent="account.root_payment_menu"
+            groups="base.group_no_one"
+            sequence="26"/>
+    
+    </data>
+    
+
+</odoo>

@@ -1,0 +1,103 @@
+{
+  "id": "8ac7a4a0973cf47d01973d0b960b2459",
+  "paymentType": "DB",
+  "paymentBrand": "VISA",
+  "amount": "19.52",
+  "currency": "USD",
+  "descriptor": "2882.1190.4162 SERENE",
+  "merchantTransactionId": "transaction_426",
+  "result": {
+    "code": "000.100.112",
+    "description": "Request successfully processed in 'Merchant in Connector Test Mode'"
+  },
+  "resultDetails": {
+    "AuthCode": "510943",
+    "ConnectorTxID1": "8ac7a4a0973cf47d01973d0b960b2459",
+    "ReferenceNbr": "250604_000132",
+    "BatchNo": "250604",
+    "TotalAmount": "19.52",
+    "Response": "00",
+    "ExtendedDescription": "Transaccion aprobada",
+    "clearingInstituteName": "Datafast",
+    "CardType": "MP",
+    "AcquirerCode": "01",
+    "AcquirerResponse": "00_01MP",
+    "ReferenceNo": "000132",
+    "AcquirerTimestamp": "2025-06-04 22:23:26"
+  },
+  "card": {
+    "bin": "420000",
+    "binCountry": "US",
+    "last4Digits": "0000",
+    "holder": "Empresa",
+    "expiryMonth": "07",
+    "expiryYear": "2026"
+  },
+  "customer": {
+    "givenName": "Mauricio",
+    "surname": "Idrovo",
+    "middleName": "Gabriel",
+    "merchantCustomerId": "3",
+    "phone": "+593984356899",
+    "email": "midrovo96@outlook.com",
+    "identificationDocType": "IDCARD",
+    "identificationDocId": "0953757259",
+    "ip": "186.101.216.45",
+    "ipCountry": "EC"
+  },
+  "billing": {
+    "street1": "0001 guerrero valenzuela",
+    "country": "BD"
+  },
+  "shipping": {
+    "street1": "0001 guerrero valenzuela",
+    "country": "BD"
+  },
+  "customParameters": {
+    "SHOPPER_VAL_BASEIMP": "16.97",
+    "SHOPPER_EndToEndIdentity": "8e2f811d1db23f04766b00d6178b2af216e4fc22e6ff3903922bf5098757e662",
+    "SHOPPER_TIPOCREDITO": "00",
+    "CTPE_DESCRIPTOR_TEMPLATE": "",
+    "SHOPPER_ECI": "0103910",
+    "SHOPPER_MID": "1000000505",
+    "SHOPPER_PSERV": "17913101",
+    "SHOPPER_VAL_BASE0": "0.00",
+    "SHOPPER_TID": "PD100406",
+    "SHOPPER_VAL_IVA": "2.55",
+    "SHOPPER_VERSIONDF": "2"
+  },
+  "risk": {
+    "score": "100",
+    "parameters": {
+      "USER_DATA2": "DATAFAST"
+    }
+  },
+  "cart": {
+    "items": [
+      {
+        "name": "Cargador iph completo tipo c a lightning 14 pro max 35w en caja KD2413-CG00080",
+        "description": "Descripcion: [KD2413-CG00080] Cargador iph completo tipo c a lightning 14 pro max 35w en caja KD2413-CG00080",
+        "quantity": "1.0",
+        "price": "15.97"
+      },
+      {
+        "name": "Producto 2",
+        "description": "Descripcion: Producto 2",
+        "quantity": "1.0",
+        "price": "1.00"
+      },
+      {
+        "name": "Entrega gratuita",
+        "description": "Descripcion: Entrega gratuita\nEnvío gratis",
+        "quantity": "1.0",
+        "price": "0.00"
+      }
+    ]
+  },
+  "buildNumber": "c6ca2f7e2ab6517140c927f556eac7d0a372941b@2025-06-03 14:14:03 +0000",
+  "timestamp": "2025-06-04 22:24:19+0000",
+  "ndc": "AF8B4A5C3248AB88F5EA85DB86F73268.uat01-vm-tx04",
+  "recurring": {
+    "numberOfInstallments": 0
+  }
+}
