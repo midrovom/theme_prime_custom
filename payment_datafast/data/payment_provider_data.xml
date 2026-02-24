@@ -1,6 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo noupdate="1">
 
+    <!-- Definición del proveedor -->
+    <record id="payment_provider_datafast" model="payment.provider">
+        <field name="name">DataFast</field>
+        <field name="display_as">Tarjeta de Crédito - Powered by DataFast</field>
+        <field name="image_128"
+               type="base64"
+               file="payment_datafast/static/description/icon.png"/>
+        <field name="module_id" ref="base.module_payment_datafast"/>
+    </record>
+
+    <!-- Configuración técnica del proveedor -->
+    <record id="payment_datafast.payment_provider_datafast" model="payment.provider">
+        <field name="code">datafast</field>
+        <field name="redirect_form_view_id" ref="redirect_form"/>
+    </record>
+
+    <!-- Método de pago asociado al proveedor -->
+    <record id="payment_method_datafast" model="payment.method">
+        <field name="name">Tarjeta de Crédito DataFast</field>
+        <field name="provider_id" ref="payment_provider_datafast"/>
+    </record>
+
+</odoo>
+
+
+<!-- <?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
     <record id="payment_provider_datafast" model="payment.provider">
         <field name="name">DataFast</field>
         <field name="display_as">Tarjeta de Crédito - Powered by DataFast</field>
@@ -24,4 +52,4 @@
         <field name="redirect_form_view_id" ref="redirect_form"/>
     </record>
 
-</odoo>
+</odoo> -->
