@@ -35,8 +35,8 @@
     </record>
 
     <record id="view_state_code_list" model="ir.ui.view">
-        <field name="name">payment.state.code.list</field>
-        <field name="model">payment.state.code</field>
+        <field name="name">state.code.datafast.list</field>
+        <field name="model">state.code.datafast</field>
         <field name="arch" type="xml">
             <list>
                 <field name="code"/>
@@ -44,5 +44,6 @@
             </list>
         </field>
     </record>
+
 
 </odoo>
