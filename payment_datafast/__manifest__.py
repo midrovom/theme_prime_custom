@@ -32,11 +32,15 @@
         'data/payment_provider_data.xml', 
     ],
     'assets': {
-        'web.assets_frontend': [
+        'web.assets_frontend': {
+            'append': [
+                
             'payment_datafast/static/src/js/payment_form.js',
             'payment_datafast/static/src/js/wpwl_options.js',
             'payment_datafast/static/src/css/style_datafast.css',
-        ],
+
+            ],
+        },
     },
     'application': False,
     'installable': True,
