@@ -13,7 +13,8 @@
                         <field name="token_ids">
                             <tree>
                                 <field name="name" />
-                                <field name="token" />
+                                <!-- <field name="token" /> -->
+                                <field name="token_ids"/>
                             </tree>
                         </field>
                     </page>
