@@ -65,7 +65,55 @@ class DatafastController(http.Controller):
 
         return request.redirect('/payment/status')
     
-    
+
+    # @http.route('/payment/datafast/callback', type='http', auth='public', website=True)
+    # def payment_datafast_callback(self, **kwargs):
+    #     id = kwargs.get('id')
+    #     if not id:
+    #         _logger.error('No se recibió el ID en el callback.')
+    #         return request.redirect('/payment/status?error=no_id')
+
+    #     headers = {
+    #         'Authorization': 'Bearer OGE4Mjk0MTg1YTY1YmY1ZTAxNWE2YzhjNzI4YzBkOTV8YmZxR3F3UTMyWA=='
+    #     }
+
+    #     url = f'https://eu-test.oppwa.com/v1/checkouts/{ id }/payment'
+    #     params = {
+    #         'entityId': '8ac7a4c795a0f72f0195a5faf0cf0984'
+    #     }
+
+    #     try:
+    #         response = requests.get(url, headers=headers, params=params)
+    #         response.raise_for_status()
+    #         result = response.json()
+    #         _logger.info(f'MOSTRANDO RESPONSE >>> {result}')
+
+    #         # Buscar la transacción en Odoo
+    #         tx_sudo = request.env['payment.transaction'].sudo().search([
+    #             ('reference', '=', result.get('merchantTransactionId'))
+    #         ])
+
+    #         if tx_sudo:
+    #             if result['result']['code'] == '000.100.112' and result['resultDetails']['Response'] == '00':
+    #                 _logger.info(f"Datafast payment approved for tx {tx_sudo.reference}")
+    #                 tx_sudo._handle_notification_data('datafast', result)
+    #             else:
+    #                 _logger.warning(f"Datafast payment failed for tx {tx_sudo.reference}")
+    #                 tx_sudo._handle_notification_data('datafast', result)
+    #         else:
+    #             _logger.error(f"Transaction with reference {result.get('merchantTransactionId')} not found.")
+
+    #     except requests.exceptions.HTTPError as e:
+    #         _logger.error(f'HTTPError: {e.response.status_code} - {e.response.text}')
+    #         return request.redirect('/payment/status?error=http')
+    #     except Exception as e:
+    #         _logger.error(f'Error inesperado: {str(e)}')
+    #         return request.redirect('/payment/status?error=unexpected')
+
+    #     return request.redirect('/payment/status')
+
+
+
     @http.route(_return_url, type='http', methods=['GET'], auth='public')
     def datafast_return_from_checkout(self, **data):
         """ Process the notification data sent by DataFast after redirection from checkout.
@@ -115,7 +163,6 @@ class DatafastController(http.Controller):
         return ''  # Acknowledge the notification.
 
 
-
 class PaymentPortalDatafast(main.PaymentPortal):
     @http.route(
         '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
@@ -129,5 +176,4 @@ class PaymentPortalDatafast(main.PaymentPortal):
         request.session['checkout_id'] = result.get("data").get("id")
 
         return result
-    
     
