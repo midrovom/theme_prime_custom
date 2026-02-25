@@ -231,9 +231,10 @@ class PaymentTransaction(models.Model):
 
     #     return processing_values
     
+
     def _get_processing_values(self):
         if self.provider_code != 'datafast':
-            return super()._get_processing_values()
+            return super(PaymentTransaction, self)._get_processing_values()
 
         self.ensure_one()
 
@@ -246,32 +247,35 @@ class PaymentTransaction(models.Model):
             'partner_id': self.partner_id.id,
         }
 
+        # Valores específicos del proveedor
         processing_values.update(self._get_specific_processing_values(processing_values))
-
         _logger.info(
             "generic and provider-specific processing values for transaction with reference "
             "%(ref)s:\n%(values)s",
             {'ref': self.reference, 'values': pprint.pformat(processing_values)},
         )
 
+        # Renderizar formulario de redirección si aplica
         if self.operation in ('online_redirect', 'validation'):
             redirect_form_view = self.provider_id._get_redirect_form_view(
                 is_validation=self.operation == 'validation'
             )
-
             if redirect_form_view:
-
                 rendering_values = self._get_specific_rendering_values(processing_values)
-
                 _logger.error("RENDER VALUES >>> %s", pprint.pformat(rendering_values))
 
                 checkout_id = rendering_values['api_url']['id']
 
+                # Aquí añadimos las claves que la plantilla espera
+                render_context = {
+                    'checkout_id': checkout_id,
+                    'main_object': self,   # objeto principal
+                    'html_data': {},       # diccionario vacío para evitar KeyError
+                }
+
                 redirect_form_html = self.env['ir.qweb']._render(
                     redirect_form_view.id,
-                    {
-                        'checkout_id': checkout_id
-                    }
+                    render_context
                 )
 
                 _logger.error("HTML GENERADO >>> %s", redirect_form_html)
