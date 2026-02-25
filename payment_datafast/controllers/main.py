@@ -2,12 +2,12 @@
 
 import logging
 import pprint
-
-from odoo.addons.website_sale.controllers import main
+from odoo.addons.payment.controllers.portal import PaymentPortal
 from odoo import http
 from odoo.exceptions import ValidationError
 from odoo.http import request
 from werkzeug.exceptions import NotFound
+
 
 _logger = logging.getLogger(__name__)
 
@@ -163,7 +163,7 @@ class DatafastController(http.Controller):
         return ''  # Acknowledge the notification.
 
 
-class PaymentPortalDatafast(main.PaymentPortal):
+class PaymentPortalDatafast(PaymentPortal):
     @http.route(
         '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
     )
@@ -177,3 +177,4 @@ class PaymentPortalDatafast(main.PaymentPortal):
 
         return result
     
+   
