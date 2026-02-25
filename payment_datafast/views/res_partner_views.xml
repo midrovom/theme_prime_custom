@@ -3,7 +3,34 @@
 
     <data>
     
+        <!-- Vista tree para token.card -->
+        <record id="view_token_card_tree_simple" model="ir.ui.view">
+            <field name="name">token.card.tree.simple</field>
+            <field name="model">token.card</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="token"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Herencia de la vista de res.partner -->
         <record id="res_partner_form_inherit" model="ir.ui.view">
+            <field name="name">res.partner.form.inherit</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='contact_addresses']" position="after">
+                    <page name="tokenization" string="Tokenización">
+                        <field name="token_ids" mode="tree"
+                               view_id="view_token_card_tree_simple"/>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- <record id="res_partner_form_inherit" model="ir.ui.view">
             <field name="name">res.partner.form.inherit</field>
             <field name="model">res.partner</field>
             <field name="inherit_id" ref="base.view_partner_form"/>
@@ -14,13 +41,12 @@
                             <tree>
                                 <field name="name" />
                                 <field name="token" />
-                                <!-- <field name="token_ids"/> -->
                             </tree>
                         </field>
                     </page>
                 </xpath>
             </field>
-        </record>
+        </record> -->
     
     </data>
     
