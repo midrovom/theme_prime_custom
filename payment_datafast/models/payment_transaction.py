@@ -125,56 +125,6 @@ class PaymentTransaction(models.Model):
         return payload
 
 
-    # def _process_notification_data(self, notification_data):
-    #     """ Override of `payment` to process the transaction based on DataFast data.
-
-    #     Note: self.ensure_one() from `_process_notification_data`
-
-    #     :param dict notification_data: The notification data sent by the provider.
-    #     :return: None
-    #     :raise ValidationError: If inconsistent data were received.
-    #     """
-    #     super()._process_notification_data(notification_data)
-    #     if self.provider_code != 'datafast':
-    #         return
-
-    #     payment_id = notification_data.get('payment_id')
-    #     if not payment_id:
-    #         raise ValidationError("DataFast: " + _("Received data with missing payment id."))
-    #     self.provider_reference = payment_id
-
-    #     # Verify the notification data.
-    #     verified_payment_data = self.provider_id._datafast_make_request(
-    #         f'/v1/payments/{self.provider_reference}', method='GET'
-    #     )
-
-    #     payment_status = verified_payment_data.get('status')
-    #     if not payment_status:
-    #         raise ValidationError("DataFast: " + _("Received data with missing status."))
-
-    #     if payment_status in TRANSACTION_STATUS_MAPPING['pending']:
-    #         self._set_pending()
-    #     elif payment_status in TRANSACTION_STATUS_MAPPING['done']:
-    #         self._set_done()
-    #     elif payment_status in TRANSACTION_STATUS_MAPPING['canceled']:
-    #         self._set_canceled()
-    #     elif payment_status in TRANSACTION_STATUS_MAPPING['error']:
-    #         status_detail = verified_payment_data.get('status_detail')
-    #         _logger.warning(
-    #             "Received data for transaction with reference %s with status %s and error code: %s",
-    #             self.reference, payment_status, status_detail
-    #         )
-    #         error_message = self._datafast_get_error_msg(status_detail)
-    #         self._set_error(error_message)
-    #     else:  # Classify unsupported payment status as the `error` tx state.
-    #         _logger.warning(
-    #             "Received data for transaction with reference %s with invalid payment status: %s",
-    #             self.reference, payment_status
-    #         )
-    #         self._set_error(
-    #             "DataFast: " + _("Received data with invalid status: %s", payment_status)
-    #         )
-
     @api.model
     def _datafast_get_error_msg(self, status_detail):
         """ Return the error message corresponding to the payment status.

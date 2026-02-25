@@ -29,76 +29,42 @@ class DatafastController(http.Controller):
             'checkout_id': checkout_id,
         })
     
-    # @http.route('/payment/datafast/callback', type='http', auth='public', website=True)
-    # def payment_datafast_callback(self, **kwargs):
-    #     _logger.info(f'MOSTRANDO RESOURCE PATH >> { kwargs }')
-    #     id = kwargs.get('id')
-    #     if not id:
-    #         _logger.error('No se recibió el ID en el callback.')
-    #         return request.redirect('/payment/status?error=no_id')
-        
-    #     provider = request.env['payment.provider'].sudo().search([('code', '=', 'datafast')], limit=1)
-
-    #     headers = {
-    #         'Authorization': f'Bearer { provider.datafast_access_token }'
-    #     }
-
-    #     url = f'{ provider.datafast_url }/v1/checkouts/{ id }/payment'
-    #     params = {
-    #         'entityId': provider.entity_id
-    #     }
-
-    #     try:
-    #         response = requests.get(url, headers=headers, params=params)
-    #         result = response.json()
-    #         response.raise_for_status()
-
-    #         _logger.info(f'MOSTRANDO RESPONSE >>> { result }')
-    #         request.env['payment.transaction'].sudo()._handle_notification_data('datafast', result)
-
-    #     except requests.exceptions.HTTPError as e:
-    #         _logger.error(f'HTTPError: {e.response.status_code} - {e.response.text}')
-    #         return request.redirect('/payment/status?error=http')
-    #     except Exception as e:
-    #         _logger.error(f'Error inesperado: {str(e)}')
-    #         return request.redirect('/payment/status?error=unexpected')
-
-    #     return request.redirect('/payment/status')
-    
-    @http.route('/payment/datafast/callback', type='http', auth='public', website=True, csrf=False)
+    @http.route('/payment/datafast/callback', type='http', auth='public', website=True)
     def payment_datafast_callback(self, **kwargs):
-        _logger.info(f'CALLBACK DATAFAST >> {kwargs}')
-
-        resource_path = kwargs.get('resourcePath')
-
-        if not resource_path:
-            _logger.error('No se recibió resourcePath en el callback.')
-            return request.redirect('/payment/status?error=no_resource')
-
+        _logger.info(f'MOSTRANDO RESOURCE PATH >> { kwargs }')
+        id = kwargs.get('id')
+        if not id:
+            _logger.error('No se recibió el ID en el callback.')
+            return request.redirect('/payment/status?error=no_id')
+        
         provider = request.env['payment.provider'].sudo().search([('code', '=', 'datafast')], limit=1)
 
         headers = {
-            'Authorization': f'Bearer {provider.datafast_access_token}'
+            'Authorization': f'Bearer { provider.datafast_access_token }'
         }
 
-        url = f"{provider.datafast_url}{resource_path}"
-        params = {'entityId': provider.entity_id}
+        url = f'{ provider.datafast_url }/v1/checkouts/{ id }/payment'
+        params = {
+            'entityId': provider.entity_id
+        }
 
         try:
             response = requests.get(url, headers=headers, params=params)
             result = response.json()
             response.raise_for_status()
 
-            _logger.info(f'DATAFAST RESPONSE >>> {result}')
-
+            _logger.info(f'MOSTRANDO RESPONSE >>> { result }')
             request.env['payment.transaction'].sudo()._handle_notification_data('datafast', result)
 
+        except requests.exceptions.HTTPError as e:
+            _logger.error(f'HTTPError: {e.response.status_code} - {e.response.text}')
+            return request.redirect('/payment/status?error=http')
         except Exception as e:
-            _logger.error(f'Error consultando pago: {str(e)}')
+            _logger.error(f'Error inesperado: {str(e)}')
             return request.redirect('/payment/status?error=unexpected')
 
         return request.redirect('/payment/status')
-    
+
     @http.route(_return_url, type='http', methods=['GET'], auth='public')
     def datafast_return_from_checkout(self, **data):
         """ Process the notification data sent by DataFast after redirection from checkout.
