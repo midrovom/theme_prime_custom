@@ -2,8 +2,6 @@
 
 import logging
 import pprint
-
-#from odoo.addons.website_sale.controllers import main
 from odoo.addons.payment.controllers.portal import PaymentPortal
 from odoo import http
 from odoo.exceptions import ValidationError
