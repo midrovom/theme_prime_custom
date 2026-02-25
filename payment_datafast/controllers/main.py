@@ -14,20 +14,20 @@ _logger = logging.getLogger(__name__)
 import requests
 
 class DatafastController(http.Controller):
-    _return_url = '/payment/datafast/return'
-    _webhook_url = '/payment/datafast/webhook'
+    # _return_url = '/payment/datafast/return'
+    # _webhook_url = '/payment/datafast/webhook'
 
-    @http.route('/payment/datafast', type='http', auth='public', website=True)
-    def payment_redirect(self, **kwargs):
-        checkout_id = request.session.get('checkout_id')
-        if not checkout_id:
-            raise NotFound("Missing checkout_id in session.")
+    # @http.route('/payment/datafast', type='http', auth='public', website=True)
+    # def payment_redirect(self, **kwargs):
+    #     checkout_id = request.session.get('checkout_id')
+    #     if not checkout_id:
+    #         raise NotFound("Missing checkout_id in session.")
         
-        _logger.info(f'MOSTRANDO EL CHECKOUT ID >>> { checkout_id }')
+    #     _logger.info(f'MOSTRANDO EL CHECKOUT ID >>> { checkout_id }')
 
-        return request.render('payment_datafast.redirect_form', {
-            'checkout_id': checkout_id,
-        })
+    #     return request.render('payment_datafast.redirect_form', {
+    #         'checkout_id': checkout_id,
+    #     })
     
     @http.route('/payment/datafast/callback', type='http', auth='public', website=True)
     def payment_datafast_callback(self, **kwargs):
@@ -173,7 +173,7 @@ class PaymentPortalDatafast(PaymentPortal):
         if result.get('provider_code') != 'datafast':
             return result
         
-        request.session['checkout_id'] = result.get("data").get("id")
+        #request.session['checkout_id'] = result.get("data").get("id")
 
         return result
     
