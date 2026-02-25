@@ -1,26 +1,23 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
-import { CheckoutForm } from "@payment/js/checkout/checkout_form";
-import { ManageForm } from "@payment/js/manage/manage_form";
+import { registry } from "@web/core/registry";
 
-patch(CheckoutForm.prototype, {
-    _processRedirectPayment(code, providerId, processingValues) {
-        if (code !== "datafast") {
-            return super._processRedirectPayment(...arguments);
-        }
-        window.location.href = processingValues.redirect_form_html;
-    },
-});
+const serviceRegistry = registry.category("services");
 
-patch(ManageForm.prototype, {
-    _processRedirectPayment(code, providerId, processingValues) {
-        if (code !== "datafast") {
-            return super._processRedirectPayment(...arguments);
-        }
-        window.location.href = processingValues.redirect_form_html;
-    },
-});
+if (registry.category("public_components").contains("payment.checkout_form")) {
+
+    const CheckoutForm = registry.category("public_components").get("payment.checkout_form");
+
+    patch(CheckoutForm.prototype, {
+        _processRedirectPayment(code, providerId, processingValues) {
+            if (code !== "datafast") {
+                return super._processRedirectPayment(...arguments);
+            }
+            window.location.href = processingValues.redirect_form_html;
+        },
+    });
+}
 
 // odoo.define("payment_datafast.payment_form", require => {
 //     'use strict';
