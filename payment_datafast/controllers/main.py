@@ -113,32 +113,32 @@ class DatafastController(http.Controller):
                 _logger.exception("Unable to handle the notification data; skipping to acknowledge")
         return ''  # Acknowledge the notification.
 
-class PaymentPortalDatafast(PaymentPortal):
-
-    @http.route('/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True)
-    def shop_payment_transaction(self, order_id, access_token, **kwargs):
-        result = super().shop_payment_transaction(order_id, access_token, **kwargs)
-        if result.get('provider_code') != 'datafast':
-            return result
-        
-        result.setdefault('main_object', False)
-        result.setdefault('html_data', {})
-
-        return result
-
-    
 # class PaymentPortalDatafast(PaymentPortal):
-#     @http.route(
-#         '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
-#     )
-#     def shop_payment_transaction(self, order_id, access_token, **kwargs):
-#         result = super(PaymentPortalDatafast, self).shop_payment_transaction(order_id, access_token, **kwargs)
 
+#     @http.route('/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True)
+#     def shop_payment_transaction(self, order_id, access_token, **kwargs):
+#         result = super().shop_payment_transaction(order_id, access_token, **kwargs)
 #         if result.get('provider_code') != 'datafast':
 #             return result
         
-#         #request.session['checkout_id'] = result.get("data").get("id")
+#         result.setdefault('main_object', False)
+#         result.setdefault('html_data', {})
 
 #         return result
+
+    
+class PaymentPortalDatafast(PaymentPortal):
+    @http.route(
+        '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
+    )
+    def shop_payment_transaction(self, order_id, access_token, **kwargs):
+        result = super(PaymentPortalDatafast, self).shop_payment_transaction(order_id, access_token, **kwargs)
+
+        if result.get('provider_code') != 'datafast':
+            return result
+        
+        request.session['checkout_id'] = result.get("data").get("id")
+
+        return result
     
    
