@@ -3,16 +3,6 @@
 <odoo>
 
     <template id="redirect_form">
-        <script t-att-src="'https://eu-test.oppwa.com/v1/paymentWidgets.js?checkoutId=' + checkout_id"/>
-        
-        <form action="/payment/datafast/callback"
-              class="paymentWidgets"
-              data-brands="VISA MASTER AMEX DINERS DISCOVER">
-        </form>
-    </template>
-
-
-    <!-- <template id="redirect_form">
         <t t-call="website.layout">
             <t t-set="title">Pago Seguro</t>
             <div id="wpwl-options" class="container mt-5 mb-4">
@@ -20,6 +10,6 @@
                 <form action="/payment/datafast/callback" class="paymentWidgets" data-brands="VISA MASTER AMEX DINERS DISCOVER"></form>
             </div>
         </t>
-    </template> -->
+    </template>
 
 </odoo>
