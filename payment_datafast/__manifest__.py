@@ -2,13 +2,13 @@
     'name': 'DataFast Payment',
     'version': '18.0.1.0.0',
     'description': '''
-        Modulo desarrollado en Odoo 16 Community
+        Modulo desarrollado en Odoo 18 Community
         Especificaciones:
             - Integración de pasarela de pagos DataFast
             - Botón de pagos en el sitio web
     ''',
     'summary': 'Botón de Pagos DataFast',
-    'author': 'Mauricio Idrovo',
+    'author': 'Ing.Mauricio Idrovo, Ing.Bolivar Rodriguez',
     'website': 'www.callphoneecuador.com',
     'license': 'LGPL-3',
     'category': 'Accounting/Payment Providers',
@@ -32,12 +32,13 @@
         'data/payment_provider_data.xml', 
     ],
     'assets': {
-        'web.assets_frontend': [
-            ('after', 'theme_prime/static/src/js/sidebar.js'), 
-            'payment_datafast/static/src/js/payment_form.js', 
-            'payment_datafast/static/src/js/wpwl_options.js', 
-            'payment_datafast/static/src/css/style_datafast.css', 
-        ],
+        'web.assets_frontend': {
+            'append': [
+                'payment_datafast/static/src/js/payment_form.js',
+                'payment_datafast/static/src/js/wpwl_options.js',
+                'payment_datafast/static/src/css/style_datafast.css',
+            ],
+        },
     },
     'application': False,
     'installable': True,
