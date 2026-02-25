@@ -82,7 +82,6 @@ class PaymentTransaction(models.Model):
         sale_order = sale_order_ids[0]
 
         payload = {
-            #"amount": f"{ self.amount }",
             "amount": "{:.2f}".format(self.amount), #formato 2 decimales para datafast
             "currency": self.currency_id.name,
             "paymentType": "DB",
@@ -103,7 +102,6 @@ class PaymentTransaction(models.Model):
             "customParameters[SHOPPER_ECI]": "0103910",
             "customParameters[SHOPPER_PSERV]": "17913101",
             "customParameters[SHOPPER_VAL_BASE0]": "{:.2f}".format(sale_order.shopper_val_base0),
-            #"customParameters[SHOPPER_VAL_BASEIMP]": f"{ sale_order.shopper_val_baseimp }",
             "customParameters[SHOPPER_VAL_BASEIMP]": "{:.2f}".format(sale_order.shopper_val_baseimp),#formato 2 decimales para datafast
             "customParameters[SHOPPER_VAL_IVA]": f"{ sale_order.shopper_val_iva }",
             "risk.parameters[USER_DATA2]": "DATAFAST",
@@ -114,9 +112,7 @@ class PaymentTransaction(models.Model):
 
         for i, l in enumerate(order_line_ids):
             payload[f"cart.items[{ i }].name"] = l.product_id.name
-            #payload[f"cart.items[{ i }].description"] = f"Descripcion: { l.name }"
             payload[f"cart.items[{ i }].price"] = "{:.2f}".format(l.price_unit)
-            #payload[f"cart.items[{ i }].quantity"] = f"{ l.product_uom_qty }"
             payload[f"cart.items[{ i }].quantity"] = "{:.0f}".format(l.product_uom_qty) #formato entero para datafast
 
         for i, p in enumerate(self.partner_id.token_ids):
@@ -137,7 +133,6 @@ class PaymentTransaction(models.Model):
             status_detail, ERROR_MESSAGE_MAPPING['cc_rejected_other_reason']
         )
     
-
     # def _get_processing_values(self):
     #     if self.provider_code != 'datafast':
     #         return super(PaymentTransaction, self)._get_processing_values()
