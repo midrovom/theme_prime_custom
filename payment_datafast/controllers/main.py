@@ -165,35 +165,18 @@ class DatafastController(http.Controller):
         return ''  # Acknowledge the notification.
 
 
+class PaymentPortalDatafast(PaymentPortal):
+    @http.route(
+        '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
+    )
+    def shop_payment_transaction(self, order_id, access_token, **kwargs):
+        result = super(PaymentPortalDatafast, self).shop_payment_transaction(order_id, access_token, **kwargs)
 
-# class PaymentPortalDatafast(PaymentPortal):
-#     @http.route(
-#         '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
-#     )
-#     def shop_payment_transaction(self, order_id, access_token, **kwargs):
-#         result = super(PaymentPortalDatafast, self).shop_payment_transaction(order_id, access_token, **kwargs)
-
-#         if result.get('provider_code') != 'datafast':
-#             return result
-        
-#         request.session['checkout_id'] = result.get("data").get("id")
-
-#         return result
-    
-    class PaymentPortalDatafast(PaymentPortal):
-        @http.route(
-            '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
-        )
-        def shop_payment_transaction(self, order_id, access_token, **kwargs):
-            result = super().shop_payment_transaction(order_id, access_token, **kwargs)
-
-            if result.get('provider_code') == 'datafast':
-                checkout_id = result.get("data", {}).get("id")
-                if checkout_id:
-                    request.session['checkout_id'] = checkout_id
-                    _logger.info(f"Checkout ID guardado en sesión: {checkout_id}")
-                else:
-                    _logger.error("No se encontró checkout_id en la respuesta de DataFast")
-
+        if result.get('provider_code') != 'datafast':
             return result
+        
+        request.session['checkout_id'] = result.get("data").get("id")
+
+        return result
+    
    
