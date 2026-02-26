@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo noupdate="1">
 
+    <!-- Metodos de pago odoo18 modelo payment -->
+    
     <record id="payment_provider_datafast" model="payment.provider">
         <field name="name">DataFast</field>
         <field name="code">datafast</field>
@@ -12,28 +14,5 @@
                 ref('payment.payment_method_card'),
             ])]"/>
     </record>
-
-    <!-- <record id="payment_provider_datafast" model="payment.provider">
-        <field name="name">DataFast</field>
-        <field name="display_as">Tarjeta de Crédito - Powered by DataFast</field>
-        <field name="image_128"
-               type="base64"
-               file="payment_datafast/static/description/icon.png"/>
-        <field name="module_id" ref="base.module_payment_datafast"/>
-
-        <field name="payment_icon_ids"
-               eval="[(6, 0, [
-                    ref('payment.payment_icon_cc_mastercard'),
-                    ref('payment.payment_icon_cc_visa'),
-                    ref('payment.payment_icon_cc_american_express'),
-                    ref('payment.payment_icon_cc_discover'),
-                    ref('payment.payment_icon_cc_diners_club_intl')
-               ])]"/>
-    </record>
-
-    <record id="payment_datafast.payment_provider_datafast" model="payment.provider">
-        <field name="code">datafast</field>
-        <field name="redirect_form_view_id" ref="redirect_form"/>
-    </record> -->
 
 </odoo>

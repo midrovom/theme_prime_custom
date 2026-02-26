@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+<!-- Se actualiza el esquema a vsita form y list para odoo18 -->
+
     <record id="payment_provider_form" model="ir.ui.view">
         <field name="name">DataFast Provider Form</field>
         <field name="model">payment.provider</field>
