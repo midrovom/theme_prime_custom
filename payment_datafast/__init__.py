@@ -9,11 +9,3 @@ def post_init_hook(env):
 
 def uninstall_hook(env):
     reset_payment_provider(env, 'datafast')
-
-
-# def post_init_hook(cr, registry):
-#     setup_provider(cr, registry, 'datafast')
-
-
-# def uninstall_hook(cr, registry):
-#     reset_payment_provider(cr, registry, 'datafast')
