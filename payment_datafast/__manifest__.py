@@ -8,7 +8,7 @@
             - Botón de pagos en el sitio web
     ''',
     'summary': 'Botón de Pagos DataFast',
-    'author': 'Mauricio Idrovo',
+    'author': 'Ing.Mauricio Idrovo, Ing.Bolivar Rodriguez',
     'website': 'www.callphoneecuador.com',
     'license': 'LGPL-3',
     'category': 'Accounting/Payment Providers',
