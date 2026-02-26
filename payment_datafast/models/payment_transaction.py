@@ -66,29 +66,35 @@ class PaymentTransaction(models.Model):
     #     return rendering_values
     
     def _get_specific_rendering_values(self, processing_values):
-
         """Override of `payment` to return DataFast-specific rendering values."""
+        self.ensure_one()
+        _logger.info("Entrando a _get_specific_rendering_values con provider_code=%s", self.provider_code)
 
         res = super()._get_specific_rendering_values(processing_values)
         if self.provider_code != 'datafast':
+            _logger.info("Proveedor no es Datafast, devolviendo valores estándar")
             return res
 
         # Preparar payload y hacer request
         payload = self._datafast_prepare_authorization_payload()
-        api_response = self.provider_id._datafast_make_request(
-            '/v1/checkouts', payload=payload
-        )
+        _logger.info("Payload enviado a Datafast:\n%s", pprint.pformat(payload))
+
+        api_response = self.provider_id._datafast_make_request('/v1/checkouts', payload=payload)
+        _logger.info("Respuesta cruda de Datafast:\n%s", pprint.pformat(api_response))
 
         # Extraer checkout_id del response
         checkout_id = api_response.get('id')
         if not checkout_id:
             _logger.error("No se recibió 'id' en la respuesta de Datafast: %s", api_response)
+        else:
+            _logger.info("Checkout ID recibido: %s", checkout_id)
 
         rendering_values = {
             'api_url': api_response,
-            'checkout_id': checkout_id,  # <-- clave necesaria para el template
-            'main_object': self, # clave necesaria
+            'checkout_id': checkout_id,
+            'main_object': self,
         }
+        _logger.info("Rendering values construidos:\n%s", pprint.pformat(rendering_values))
 
         return rendering_values
 
@@ -147,7 +153,6 @@ class PaymentTransaction(models.Model):
 
         return payload
 
-
     @api.model
     def _datafast_get_error_msg(self, status_detail):
         """ Return the error message corresponding to the payment status.
@@ -194,12 +199,12 @@ class PaymentTransaction(models.Model):
     def _get_processing_values(self):
         """Return the values used to process the transaction."""
         self.ensure_one()
+        _logger.info("Entrando a _get_processing_values para referencia=%s", self.reference)
 
-        # Si no es Datafast, usar la implementación estándar
         if self.provider_code != 'datafast':
+            _logger.info("Proveedor no es Datafast, usando super()")
             return super(PaymentTransaction, self)._get_processing_values()
 
-        # Valores genéricos
         processing_values = {
             'provider_id': self.provider_id.id,
             'provider_code': self.provider_code,
@@ -209,40 +214,40 @@ class PaymentTransaction(models.Model):
             'partner_id': self.partner_id.id,
             'should_tokenize': self.tokenize,
         }
+        _logger.info("Valores genéricos iniciales:\n%s", pprint.pformat(processing_values))
 
-        # Valores específicos del proveedor
         processing_values.update(self._get_specific_processing_values(processing_values))
+        _logger.info("Valores después de añadir específicos:\n%s", pprint.pformat(processing_values))
+
         secret_keys = self._get_specific_secret_keys()
         logged_values = {k: v for k, v in processing_values.items() if k not in secret_keys}
-        _logger.info(
-            "generic and provider-specific processing values for transaction with reference "
-            "%(ref)s:\n%(values)s",
-            {'ref': self.reference, 'values': pprint.pformat(logged_values)},
-        )
+        _logger.info("Valores loggeados (sin secretos):\n%s", pprint.pformat(logged_values))
 
-        # Flujo de redirección (redirect/validation)
         if self.operation in ('online_redirect', 'validation'):
+            _logger.info("Operación=%s, iniciando flujo de redirección", self.operation)
             redirect_form_view = self.provider_id._get_redirect_form_view(
                 is_validation=self.operation == 'validation'
             )
-            if redirect_form_view:  # Algunos proveedores no requieren formulario
+            if redirect_form_view:
+                _logger.info("Se encontró redirect_form_view: %s", redirect_form_view)
                 rendering_values = self._get_specific_rendering_values(processing_values)
-                _logger.info(
-                    "provider-specific rendering values for transaction with reference "
-                    "%(ref)s:\n%(values)s",
-                    {'ref': self.reference, 'values': pprint.pformat(rendering_values)},
-                )
-                # Renderizar el formulario con QWeb
+                _logger.info("Rendering values para redirección:\n%s", pprint.pformat(rendering_values))
+
                 redirect_form_html = self.env['ir.qweb']._render(
                     redirect_form_view.id, rendering_values
                 )
+                _logger.info("HTML renderizado del formulario:\n%s", redirect_form_html[:500])  # log parcial
+
                 processing_values.update(redirect_form_html=redirect_form_html)
 
-                # Lógica específica para Datafast: añadir api_url u otros datos
                 data = rendering_values.get('api_url')
                 if data:
+                    _logger.info("Añadiendo api_url a processing_values")
                     processing_values.update(data=data)
+            else:
+                _logger.warning("No se encontró redirect_form_view para Datafast")
 
+        _logger.info("Valores finales de processing_values:\n%s", pprint.pformat(processing_values))
         return processing_values
 
     def _get_tx_from_notification_data(self, provider_code, notification_data):
