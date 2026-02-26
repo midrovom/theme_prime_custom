@@ -32,8 +32,6 @@ class PaymentTransaction(models.Model):
 
             _logger.info(f"MOSTRANDO ANULACION >>> { result }")
 
-    # Envio de datos al api de datafast
-    
     # def _get_specific_rendering_values(self, processing_values):
     #     """ Override of `payment` to return DataFast-specific rendering values.
 
@@ -65,6 +63,7 @@ class PaymentTransaction(models.Model):
 
     #     return rendering_values
     
+    # Envio de datos al api de datafast (actualizo funcion)
     def _get_specific_rendering_values(self, processing_values):
         """Override of `payment` to return DataFast-specific rendering values."""
         self.ensure_one()
@@ -208,53 +207,6 @@ class PaymentTransaction(models.Model):
 
         return processing_values
     
-    # def _get_processing_values(self):
-    #     """Return the values used to process the transaction."""
-    #     self.ensure_one()
-    #     _logger.info("Entrando a _get_processing_values para referencia=%s", self.reference)
-
-    #     if self.provider_code != 'datafast':
-    #         _logger.info("Proveedor no es Datafast, usando super()")
-    #         return super()._get_processing_values()
-
-    #     # Valores base requeridos por Odoo
-    #     processing_values = {
-    #         'provider_id': self.provider_id.id,
-    #         'provider_code': self.provider_code,
-    #         'reference': self.reference,
-    #         'amount': self.amount,
-    #         'currency_id': self.currency_id.id,
-    #         'partner_id': self.partner_id.id,
-    #         'should_tokenize': self.tokenize,
-    #     }
-
-    #     _logger.info("Valores iniciales:\n%s", pprint.pformat(processing_values))
-
-    #     # Añadir valores específicos del provider (aquí se crea el checkout)
-    #     processing_values.update(
-    #         self._get_specific_processing_values(processing_values)
-    #     )
-
-    #     _logger.info("Valores tras específicos:\n%s", pprint.pformat(processing_values))
-
-    #     if self.operation in ('online_redirect', 'validation'):
-    #         _logger.info("Operación %s requiere redirección", self.operation)
-
-    #         rendering_values = self._get_specific_rendering_values(processing_values)
-
-    #         _logger.info("Rendering values:\n%s", pprint.pformat(rendering_values))
-
-    #         checkout_id = rendering_values.get('checkout_id')
-
-    #         if checkout_id:
-    #             processing_values['checkout_id'] = checkout_id
-    #             _logger.info("checkout_id añadido a processing_values")
-    #         else:
-    #             _logger.warning("No se encontró checkout_id en rendering_values")
-
-    #     _logger.info("Valores finales:\n%s", pprint.pformat(processing_values))
-    #     return processing_values
-
     def _get_processing_values(self):
         if self.provider_code != 'datafast':
             return super(PaymentTransaction, self)._get_processing_values()
