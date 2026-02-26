@@ -66,7 +66,7 @@ class PaymentTransaction(models.Model):
     #     return rendering_values
     
     def _get_specific_rendering_values(self, processing_values):
-        
+
         """Override of `payment` to return DataFast-specific rendering values."""
 
         res = super()._get_specific_rendering_values(processing_values)
@@ -87,6 +87,7 @@ class PaymentTransaction(models.Model):
         rendering_values = {
             'api_url': api_response,
             'checkout_id': checkout_id,  # <-- clave necesaria para el template
+            'main_object': self, # clave necesaria
         }
 
         return rendering_values
