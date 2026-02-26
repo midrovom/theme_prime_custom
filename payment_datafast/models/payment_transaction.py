@@ -34,37 +34,63 @@ class PaymentTransaction(models.Model):
 
     # Envio de datos al api de datafast
     
+    # def _get_specific_rendering_values(self, processing_values):
+    #     """ Override of `payment` to return DataFast-specific rendering values.
+
+    #     Note: self.ensure_one() from `_get_rendering_values`.
+
+    #     :param dict processing_values: The generic and specific processing values of the transaction
+    #     :return: The dict of provider-specific processing values.
+    #     :rtype: dict
+    #     """
+    #     res = super()._get_specific_rendering_values(processing_values)
+    #     if self.provider_code != 'datafast':
+    #         return res
+
+    #     # Initiate the payment and retrieve the payment link data.
+    #     payload = self._datafast_prepare_authorization_payload()
+    #     # _logger.info(
+    #     #     "Sending '/checkout/preferences' request for link creation:\n%s",
+    #     #     pprint.pformat(payload),
+    #     # )
+    #     api_url = self.provider_id._datafast_make_request(
+    #         '/v1/checkouts', payload=payload
+    #     )
+
+    #     # Extract the payment link URL and embed it in the redirect form.
+    #     _logger.info(api_url.get('id'))
+    #     rendering_values = {
+    #         'api_url': api_url,
+    #     }
+
+    #     return rendering_values
+    
     def _get_specific_rendering_values(self, processing_values):
-        """ Override of `payment` to return DataFast-specific rendering values.
+        
+        """Override of `payment` to return DataFast-specific rendering values."""
 
-        Note: self.ensure_one() from `_get_rendering_values`.
-
-        :param dict processing_values: The generic and specific processing values of the transaction
-        :return: The dict of provider-specific processing values.
-        :rtype: dict
-        """
         res = super()._get_specific_rendering_values(processing_values)
         if self.provider_code != 'datafast':
             return res
 
-        # Initiate the payment and retrieve the payment link data.
+        # Preparar payload y hacer request
         payload = self._datafast_prepare_authorization_payload()
-        # _logger.info(
-        #     "Sending '/checkout/preferences' request for link creation:\n%s",
-        #     pprint.pformat(payload),
-        # )
-        api_url = self.provider_id._datafast_make_request(
+        api_response = self.provider_id._datafast_make_request(
             '/v1/checkouts', payload=payload
         )
 
-        # Extract the payment link URL and embed it in the redirect form.
-        _logger.info(api_url.get('id'))
+        # Extraer checkout_id del response
+        checkout_id = api_response.get('id')
+        if not checkout_id:
+            _logger.error("No se recibió 'id' en la respuesta de Datafast: %s", api_response)
+
         rendering_values = {
-            'api_url': api_url,
+            'api_url': api_response,
+            'checkout_id': checkout_id,  # <-- clave necesaria para el template
         }
 
         return rendering_values
-    
+
     def _datafast_prepare_authorization_payload(self):
         """
             Crea el payload con respecto a los campos requeridos por Datafast
@@ -150,12 +176,6 @@ class PaymentTransaction(models.Model):
 
     #     # Complete generic processing values with provider-specific values.
     #     processing_values.update(self._get_specific_processing_values(processing_values))
-    #     _logger.info(
-    #         "generic and provider-specific processing values for transaction with reference "
-    #         "%(ref)s:\n%(values)s",
-    #         {'ref': self.reference, 'values': pprint.pformat(processing_values)},
-    #     )
-
     #     # Render the html form for the redirect flow if available.
     #     if self.operation in ('online_redirect', 'validation'):
     #         redirect_form_view = self.provider_id._get_redirect_form_view(
@@ -163,12 +183,6 @@ class PaymentTransaction(models.Model):
     #         )
     #         if redirect_form_view:  # Some provider don't need a redirect form.
     #             rendering_values = self._get_specific_rendering_values(processing_values)
-    #             _logger.info(
-    #                 "provider-specific rendering values for transaction with reference "
-    #                 "%(ref)s:\n%(values)s",
-    #                 {'ref': self.reference, 'values': pprint.pformat(rendering_values)},
-    #             )
-    #             _logger.error("RENDER VALUES >>> %s", pprint.pformat(rendering_values))
     #             processing_values.update(redirect_form_html="/payment/datafast")
     #             data = rendering_values.get('api_url')
     #             processing_values.update(data=data)
