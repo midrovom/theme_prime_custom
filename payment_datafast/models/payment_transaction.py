@@ -32,37 +32,6 @@ class PaymentTransaction(models.Model):
 
             _logger.info(f"MOSTRANDO ANULACION >>> { result }")
 
-    # def _get_specific_rendering_values(self, processing_values):
-    #     """ Override of `payment` to return DataFast-specific rendering values.
-
-    #     Note: self.ensure_one() from `_get_rendering_values`.
-
-    #     :param dict processing_values: The generic and specific processing values of the transaction
-    #     :return: The dict of provider-specific processing values.
-    #     :rtype: dict
-    #     """
-    #     res = super()._get_specific_rendering_values(processing_values)
-    #     if self.provider_code != 'datafast':
-    #         return res
-
-    #     # Initiate the payment and retrieve the payment link data.
-    #     payload = self._datafast_prepare_authorization_payload()
-    #     # _logger.info(
-    #     #     "Sending '/checkout/preferences' request for link creation:\n%s",
-    #     #     pprint.pformat(payload),
-    #     # )
-    #     api_url = self.provider_id._datafast_make_request(
-    #         '/v1/checkouts', payload=payload
-    #     )
-
-    #     # Extract the payment link URL and embed it in the redirect form.
-    #     _logger.info(api_url.get('id'))
-    #     rendering_values = {
-    #         'api_url': api_url,
-    #     }
-
-    #     return rendering_values
-    
     # Envio de datos al api de datafast (actualizo funcion)
     def _get_specific_rendering_values(self, processing_values):
         """Override of `payment` to return DataFast-specific rendering values."""
