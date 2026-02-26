@@ -115,46 +115,17 @@ class DatafastController(http.Controller):
         return ''  # Acknowledge the notification.
 
 class PaymentPortalDatafast(PaymentPortal):
-
     @http.route(
-        '/shop/payment/transaction/<int:order_id>',
-        type='json',
-        auth='public',
-        website=True
+        '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
     )
     def shop_payment_transaction(self, order_id, access_token, **kwargs):
-
-        result = super().shop_payment_transaction(
-            order_id, access_token, **kwargs
-        )
+        result = super(PaymentPortalDatafast, self).shop_payment_transaction(order_id, access_token, **kwargs)
 
         if result.get('provider_code') != 'datafast':
             return result
-
-        tx = request.env['payment.transaction'].sudo().browse(
-            result.get('transaction_id')
-        )
-
-        if not tx or not tx.checkout_id:
-            return result
-
-        result['redirect_url'] = f'/payment/datafast?checkout_id={tx.checkout_id}'
+        
+        request.session['checkout_id'] = result.get("data").get("id")
 
         return result
-
-
-# class PaymentPortalDatafast(PaymentPortal):
-#     @http.route(
-#         '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
-#     )
-#     def shop_payment_transaction(self, order_id, access_token, **kwargs):
-#         result = super(PaymentPortalDatafast, self).shop_payment_transaction(order_id, access_token, **kwargs)
-
-#         if result.get('provider_code') != 'datafast':
-#             return result
-        
-#         request.session['checkout_id'] = result.get("data").get("id")
-
-#         return result
     
    
