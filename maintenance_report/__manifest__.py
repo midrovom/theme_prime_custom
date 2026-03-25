@@ -6,7 +6,7 @@
     'website': 'https://callphoneecuador.com',
     'license': 'LGPL-3',
     'description': """
-        Este módulo agrega un reporte PDF para Acta de entrega de equipos.
+        Este módulo permite generar Acta de entrega de equipos.
     """,
     'author': 'Ing. Bolivar Rodriguez',
     'depends': ['maintenance'],
