@@ -2,31 +2,32 @@
 <odoo>
     <template id="report_equipment">
         <t t-call="web.basic_layout">
-            <div class="page" style="font-family:Arial, sans-serif; line-height:1.5;">
+            <div class="page" style="font-family: 'Times New Roman', serif; line-height:1.6; font-size:13px; color:#000;">
+                <h2 style="text-align:center; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">
+                    Acta de Entrega de Equipo
+                </h2>
 
-                <h2 style="text-align:center;">ACTA DE ENTREGA DE EQUIPO</h2>
-
-                <p style="margin-top:20px; text-align:justify;">
-                    Se deja constancia por parte de la Coordinadora de Recursos Humanos la entrega de los siguientes equipos:
+                <p style="margin-top:25px; text-align:justify;">
+                    La Coordinación de Recursos Humanos deja constancia de la entrega de los siguientes equipos:
                 </p>
 
                 <t t-foreach="docs" t-as="equipment">
-                    <div style="margin-top:10px; padding:5px; text-align:left; font-size:12px; display:block;">
+                    <div style="margin-top:15px; padding:5px; text-align:left; font-size:12px;">
                         <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
                         <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
                         <p><strong>Serie:</strong> <span t-out="equipment.serial_no"/></p>
                         <p><strong>Ubicación:</strong> <span t-out="equipment.location"/></p>
-                        <div t-out="equipment.note"/>
+                        <p><span t-out="equipment.note"/></p>
                     </div>
                 </t>
 
-                <p style="margin-top:20px; text-align:justify;">
+                <p style="margin-top:25px; text-align:justify;">
                     Al trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
-                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, se le entrega el equipo en buen estado físico y de funcionamiento. 
-                    El trabajador se compromete a mantenerlo en estas condiciones y a darle el uso adecuado.
+                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, se le entrega el equipo en óptimas condiciones físicas y de funcionamiento. 
+                    El trabajador se compromete a conservarlo en buen estado y a darle el uso adecuado conforme a las políticas de la organización.
                 </p>
 
-                <div style="margin-top:40px; text-align:center;">
+                <div style="margin-top:50px; text-align:center;">
                     <div style="display:inline-block; width:45%; vertical-align:top;">
                         <strong>ENTREGA</strong><br/><br/><br/>
                         ___________________________<br/>
@@ -40,8 +41,11 @@
                         <span t-out="docs[0].employee_id.name"/><br/>
                         C.C. <span t-out="docs[0].employee_id.identification_id"/>
                     </div>
-
                 </div>
+
+                <p style="margin-top:40px; text-align:center; font-size:11px; color:#555;">
+                    Este documento constituye constancia formal de entrega y recepción de equipo institucional.
+                </p>
 
             </div>
         </t>
