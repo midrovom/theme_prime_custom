@@ -4,9 +4,12 @@
         <t t-call="web.basic_layout">
             <div class="page">
                 <h2 style="text-align:center;">ACTA DE ENTREGA DE EQUIPO</h2>
+                <p style="margin-top:20px; text-align:justify;">
+                    Se deja constancia por parte de la Coordinadora de Recursos Humanos la entrega de los siguientes equipos:
+                </p>
 
                 <t t-foreach="docs" t-as="equipment">
-                    <div style="margin-top:20px; border:1px solid #000; padding:15px; border-radius:6px;">
+                    <div style="margin-top:10px; border:1px solid #000; padding:10px; border-radius:6px;">
                         <table style="width:100%; border-collapse:collapse;">
                             <tr>
                                 <td><strong>Nombre del Equipo:</strong></td>
@@ -28,19 +31,14 @@
                     </div>
                 </t>
 
-                <h3 style="margin-top:20px;">Datos del Responsable</h3>
-                <table style="width:100%; border-collapse:collapse;">
-                    <tr>
-                        <td><strong>Nombre:</strong></td>
-                        <td t-out="docs[0].employee_id.name"/>
-                    </tr>
-                    <tr>
-                        <td><strong>Cédula:</strong></td>
-                        <td t-out="docs[0].employee_id.identification_id"/>
-                    </tr>
-                    
-                </table>
+                <!-- Párrafo dirigido al trabajador -->
+                <p style="margin-top:20px; text-align:justify;">
+                    Al trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
+                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, se le entrega el equipo en buen estado físico y de funcionamiento. 
+                    El trabajador se compromete a mantenerlo en estas condiciones y a darle el uso adecuado.
+                </p>
 
+                <!-- Firmas -->
                 <h3 style="margin-top:20px;">Firmas</h3>
                 <table style="width:100%; border-collapse:collapse; margin-top:10px;">
                     <tr>
@@ -59,6 +57,7 @@
                     </tr>
                 </table>
             </div>
+
         </t>
     </template>
 </odoo>
