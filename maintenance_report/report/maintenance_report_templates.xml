@@ -13,12 +13,12 @@
                     Se deja constancia por parte de la Coordinadora de Recursos Humanos la entrega de los siguientes equipos:
                 </p>
 
-                <!-- Listado de equipos -->
+                <!-- Listado de equipos con saltos de línea -->
                 <t t-foreach="docs" t-as="equipment">
                     <p style="margin-left:20px; margin-top:10px;">
-                        • <strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/>  
-                        <strong>Modelo:</strong> <span t-out="equipment.model"/>  
-                        <strong>Número de Serie:</strong> <span t-out="equipment.serial_no"/>  
+                        • <strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/><br/>
+                        <strong>Modelo:</strong> <span t-out="equipment.model"/><br/>
+                        <strong>Número de Serie:</strong> <span t-out="equipment.serial_no"/><br/>
                         <strong>Ubicación:</strong> <span t-out="equipment.location"/>
                     </p>
                 </t>
@@ -50,3 +50,4 @@
         </t>
     </template>
 </odoo>
+
