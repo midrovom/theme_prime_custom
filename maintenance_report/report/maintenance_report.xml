@@ -11,6 +11,7 @@
         <field name="binding_model_id" ref="maintenance.model_maintenance_equipment"/>
         <field name="binding_type">report</field>
     </record>
+    
 </odoo>
 
 
