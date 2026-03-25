@@ -11,8 +11,8 @@
     'author': 'Ing. Bolivar Rodriguez',
     'depends': ['maintenance'],
     'data': [
-        'reports/maintenance_report.xml',
-        'reports/maintenance_report_templates.xml',
+        'report/maintenance_report.xml',
+        'report/maintenance_report_templates.xml',
     ],
     'assets': {
         'web.assets_frontend': [
