@@ -38,10 +38,7 @@
                         <td><strong>Cédula:</strong></td>
                         <td t-out="docs[0].employee_id.identification_id"/>
                     </tr>
-                    <tr>
-                        <td><strong>Departamento:</strong></td>
-                        <td t-out="docs[0].employee_id.department_id.name"/>
-                    </tr>
+                    
                 </table>
 
                 <h3 style="margin-top:20px;">Firmas</h3>
