@@ -2,18 +2,14 @@
 <odoo>
     <template id="report_equipment">
         <t t-call="web.basic_layout">
-            <div class="page" style="font-family:Arial, sans-serif; line-height:1.5; font-size:14px;">
+            <div class="page" style="font-family:Arial, sans-serif; line-height:1.6; font-size:18px;">
 
-                <h2 style="text-align:center; margin-bottom:20px;">
+                <h2 style="text-align:center; margin-bottom:20px; font-size:22px;">
                     ACTA DE ENTREGA DE EQUIPO
                 </h2>
-
-                <!-- Párrafo introductorio -->
                 <p style="margin-top:20px; text-align:justify;">
                     Se deja constancia por parte de la Coordinadora de Recursos Humanos la entrega de los siguientes equipos:
                 </p>
-
-                <!-- Listado de equipos con saltos de línea -->
                 <t t-foreach="docs" t-as="equipment">
                     <p style="margin-left:20px; margin-top:10px;">
                         <strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/><br/>
@@ -23,7 +19,6 @@
                     </p>
                 </t>
 
-                <!-- Párrafo dirigido al trabajador -->
                 <p style="margin-top:25px; text-align:justify;">
                     Al trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
                     <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, quien ejerce el cargo de 
@@ -31,8 +26,8 @@
                     El trabajador se compromete a mantenerlo en estas condiciones y a darle el uso adecuado.
                 </p>
 
-                <!-- Firmas alineadas horizontalmente con columnas -->
-                <div class="row" style="margin-top:60px; text-align:center;">
+                <!-- Firmas alineadas horizontalmente con columnas Bootstrap -->
+                <div class="row" style="margin-top:60px; text-align:center; font-size:18px;">
                     <div class="col-12 col-md-6 d-flex flex-column align-items-center">
                         <strong>ENTREGA</strong><br/><br/><br/>
                         ___________________________<br/>
