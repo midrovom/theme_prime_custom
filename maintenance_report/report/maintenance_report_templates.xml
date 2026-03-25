@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="report_equipment_delivery">
+    <template id="report_equipment">
         <t t-call="web.basic_layout">
             <div class="page">
                 <h2 style="text-align:center;">ACTA DE ENTREGA DE EQUIPO</h2>
