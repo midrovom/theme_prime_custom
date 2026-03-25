@@ -6,8 +6,7 @@
     'website': 'https://callphoneecuador.com',
     'license': 'LGPL-3',
     'description': """
-        Este módulo agrega un reporte PDF para las solicitudes de mantenimiento
-        en Odoo 18, mostrando información clave de cada request.
+        Este módulo agrega un reporte PDF para Acta de entrega de equipos.
     """,
     'author': 'Ing. Bolivar Rodriguez',
     'depends': ['maintenance'],
