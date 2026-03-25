@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- <record id="maintenance_equipment_report" model="ir.actions.report">
+    <record id="maintenance_equipment_report" model="ir.actions.report">
         <field name="name">Generar Acta de Entrega</field>
         <field name="model">maintenance.equipment</field>
         <field name="report_type">qweb-pdf</field>
@@ -10,17 +10,7 @@
         <field name="print_report_name">'Equipment - %s' % (object.name).replace('/', '')</field>
         <field name="binding_model_id" ref="maintenance.model_maintenance_equipment"/>
         <field name="binding_type">report</field>
-    </record> -->
-
-
-    <menuitem
-        id="maintenance_equipment_report"
-        action="maintenance_request_action_reports"
-        parent="maintenance_reporting"/>
-
-
-
-
+    </record>
 </odoo>
 
 
