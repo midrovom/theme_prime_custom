@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="report_equipment_clean">
+    <template id="report_equipment">
         <t t-call="web.basic_layout">
             <div class="page" style="font-family:Arial, sans-serif; line-height:1.5;">
 
@@ -44,6 +44,7 @@
                 </div>
 
             </div>
+
         </t>
     </template>
 </odoo>
