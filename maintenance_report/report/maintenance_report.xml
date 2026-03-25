@@ -12,19 +12,11 @@
         <field name="binding_type">report</field>
     </record> -->
 
-    <record id="maintenance_equipment_action_reports" model="ir.actions.act_window">
-        <field name="name">Acta de Entrega de Equipos</field>
-        <field name="res_model">maintenance.equipment</field>
-        <field name="view_mode">tree,form</field>
-        <field name="context">{}</field>
-    </record>
 
     <menuitem
-        id="maintenance_equipment_reporting"
-        name="Acta de Entrega de Equipos"
-        parent="maintenance_reporting"
-        action="maintenance_equipment_action_reports"
-        sequence="30"/>
+        id="maintenance_equipment_report"
+        action="maintenance_request_action_reports"
+        parent="maintenance_reporting"/>
 
 
 
