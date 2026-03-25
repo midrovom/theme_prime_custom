@@ -1,39 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="report_equipment">
+    <template id="report_equipment_delivery">
         <t t-call="web.basic_layout">
             <div class="page">
-                <h2 style="text-align:center;">Maintenance Equipment Report</h2>
+                <h2 style="text-align:center;">ACTA DE ENTREGA DE EQUIPO</h2>
                 <t t-foreach="docs" t-as="equipment">
-                    <div style="margin-top:20px; border:1px solid #000; padding:10px; border-radius:6px;">
+                    <div style="margin-top:20px; border:1px solid #000; padding:15px; border-radius:6px;">
                         <table style="width:100%; border-collapse:collapse;">
                             <tr>
-                                <td><strong>Equipment Name:</strong></td>
+                                <td><strong>Nombre del Equipo:</strong></td>
                                 <td t-out="equipment.name"/>
                             </tr>
                             <tr>
-                                <td><strong>Category:</strong></td>
-                                <td t-out="equipment.category_id.name"/>
+                                <td><strong>Modelo:</strong></td>
+                                <td t-out="equipment.model"/>
                             </tr>
                             <tr>
-                                <td><strong>Assigned Employee:</strong></td>
+                                <td><strong>Número de Serie:</strong></td>
+                                <td t-out="equipment.serial_no"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Ubicación:</strong></td>
+                                <td t-out="equipment.location"/>
+                            </tr>
+                        </table>
+
+                        <h3 style="margin-top:20px;">Datos del Responsable</h3>
+                        <table style="width:100%; border-collapse:collapse;">
+                            <tr>
+                                <td><strong>Nombre:</strong></td>
                                 <td t-out="equipment.employee_id.name"/>
                             </tr>
                             <tr>
-                                <td><strong>Department:</strong></td>
-                                <td t-out="equipment.department_id.name"/>
+                                <td><strong>Cédula:</strong></td>
+                                <td t-out="equipment.employee_id.identification_id"/>
                             </tr>
                             <tr>
-                                <td><strong>Used By:</strong></td>
-                                <td t-out="equipment.equipment_assign_to"/>
+                                <td><strong>Departamento:</strong></td>
+                                <td t-out="equipment.employee_id.department_id.name"/>
                             </tr>
+                        </table>
+
+                        <h3 style="margin-top:20px;">Firmas</h3>
+                        <table style="width:100%; border-collapse:collapse; margin-top:10px;">
                             <tr>
-                                <td><strong>Assign Date:</strong></td>
-                                <td t-out="equipment.assign_date"/>
-                            </tr>
-                            <tr>
-                                <td><strong>Owner User:</strong></td>
-                                <td t-out="equipment.owner_user_id.name"/>
+                                <td style="width:50%; text-align:center;">
+                                    <strong>ENTREGA</strong><br/><br/><br/>
+                                    ___________________________<br/>
+                                    Nombre:<br/>
+                                    Cédula:
+                                </td>
+                                <td style="width:50%; text-align:center;">
+                                    <strong>RECIBE</strong><br/><br/><br/>
+                                    ___________________________<br/>
+                                    <span t-out="equipment.employee_id.name"/><br/>
+                                    <span t-out="equipment.employee_id.identification_id"/>
+                                </td>
                             </tr>
                         </table>
                     </div>
@@ -42,5 +64,6 @@
         </t>
     </template>
 </odoo>
+
 
 
