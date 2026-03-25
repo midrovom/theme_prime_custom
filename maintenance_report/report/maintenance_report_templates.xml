@@ -1,63 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="report_equipment">
+    <template id="report_equipment_clean">
         <t t-call="web.basic_layout">
-            <div class="page">
-                <h2 style="text-align:center;">ACTA DE ENTREGA DE EQUIPO</h2>
-                <p style="margin-top:20px; text-align:justify;">
+            <div class="page" style="font-family:Arial, sans-serif; line-height:1.5;">
+
+                <h2 style="text-align:center; margin-bottom:20px;">
+                    ACTA DE ENTREGA DE EQUIPO
+                </h2>
+
+                <p style="text-align:justify; margin-bottom:20px;">
                     Se deja constancia por parte de la Coordinadora de Recursos Humanos la entrega de los siguientes equipos:
                 </p>
 
                 <t t-foreach="docs" t-as="equipment">
-                    <div style="margin-top:10px; padding:10px;">
-                        <table style="width:100%;">
-                            <tr>
-                                <td><strong>Nombre del Equipo:</strong></td>
-                                <td t-out="equipment.name"/>
-                            </tr>
-                            <tr>
-                                <td><strong>Modelo:</strong></td>
-                                <td t-out="equipment.model"/>
-                            </tr>
-                            <tr>
-                                <td><strong>Número de Serie:</strong></td>
-                                <td t-out="equipment.serial_no"/>
-                            </tr>
-                            <tr>
-                                <td><strong>Ubicación:</strong></td>
-                                <td t-out="equipment.location"/>
-                            </tr>
-                        </table>
+                    <div style="margin-bottom:15px; padding:10px; border:1px solid #ccc; border-radius:5px;">
+                        <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
+                        <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
+                        <p><strong>Número de Serie:</strong> <span t-out="equipment.serial_no"/></p>
+                        <p><strong>Ubicación:</strong> <span t-out="equipment.location"/></p>
                     </div>
                 </t>
 
-                <!-- Párrafo dirigido al trabajador -->
                 <p style="margin-top:20px; text-align:justify;">
                     Al trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
                     <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, se le entrega el equipo en buen estado físico y de funcionamiento. 
                     El trabajador se compromete a mantenerlo en estas condiciones y a darle el uso adecuado.
                 </p>
 
-                <table style="width:100%; margin-top:10px;">
-                    <tr>
-                        <td style="width:50%; text-align:center;">
-                            <strong>ENTREGA</strong><br/><br/><br/>
-                            ___________________________<br/>
-                            <span t-out="docs[0].entregado_por_id.name"/><br/>
-                            C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
-                        </td>
+                <div style="margin-top:40px; display:flex; justify-content:space-between; text-align:center;">
+                    <div style="width:45%;">
+                        <strong>ENTREGA</strong><br/><br/><br/>
+                        ___________________________<br/>
+                        <span t-out="docs[0].entregado_por_id.name"/><br/>
+                        C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
+                    </div>
 
-                        <td style="width:50%; text-align:center;">
-                            <strong>RECIBE</strong><br/><br/><br/>
-                            ___________________________<br/>
-                            <span t-out="docs[0].employee_id.name"/><br/>
-                            C.C. <span t-out="docs[0].employee_id.identification_id"/>
-                        </td>
-                    </tr>
-                </table>
+                    <div style="width:45%;">
+                        <strong>RECIBE</strong><br/><br/><br/>
+                        ___________________________<br/>
+                        <span t-out="docs[0].employee_id.name"/><br/>
+                        C.C. <span t-out="docs[0].employee_id.identification_id"/>
+                    </div>
+                </div>
 
             </div>
-
         </t>
     </template>
 </odoo>
