@@ -9,34 +9,54 @@
                 </p>
 
                 <t t-foreach="docs" t-as="equipment">
-                    <div style="margin-top:15px; text-align:center; padding:10px;">
-                        <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
-                        <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
-                        <p><strong>Número de Serie:</strong> <span t-out="equipment.serial_no"/></p>
-                        <p><strong>Ubicación:</strong> <span t-out="equipment.location"/></p>
+                    <div style="margin-top:10px; padding:10px;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <tr>
+                                <td><strong>Nombre del Equipo:</strong></td>
+                                <td t-out="equipment.name"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Modelo:</strong></td>
+                                <td t-out="equipment.model"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Número de Serie:</strong></td>
+                                <td t-out="equipment.serial_no"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Ubicación:</strong></td>
+                                <td t-out="equipment.location"/>
+                            </tr>
+                        </table>
                     </div>
                 </t>
 
+                <!-- Párrafo dirigido al trabajador -->
                 <p style="margin-top:20px; text-align:justify;">
                     Al trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
                     <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, se le entrega el equipo en buen estado físico y de funcionamiento. 
                     El trabajador se compromete a mantenerlo en estas condiciones y a darle el uso adecuado.
                 </p>
 
-                <div style="margin-top:30px; text-align:center;">
-                    <p><strong>ENTREGA</strong></p>
-                    <p>___________________________</p>
-                    <p><span t-out="docs[0].entregado_por_id.name"/></p>
-                    <p><span t-out="docs[0].entregado_por_id.identification_id"/></p>
-                </div>
+                <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                    <tr>
+                        <td style="width:50%; text-align:center;">
+                            <strong>ENTREGA</strong><br/><br/><br/>
+                            ___________________________<br/>
+                            <span t-out="docs[0].entregado_por_id.name"/><br/>
+                            <span t-out="docs[0].entregado_por_id.identification_id"/>
+                        </td>
 
-                <div style="margin-top:50px; text-align:center;">
-                    <p><strong>RECIBE</strong></p>
-                    <p>___________________________</p>
-                    <p><span t-out="docs[0].employee_id.name"/></p>
-                    <p><span t-out="docs[0].employee_id.identification_id"/></p>
-                </div>
+                        <td style="width:50%; text-align:center;">
+                            <strong>RECIBE</strong><br/><br/><br/>
+                            ___________________________<br/>
+                            <span t-out="docs[0].employee_id.name"/><br/>
+                            <span t-out="docs[0].employee_id.identification_id"/>
+                        </td>
+                    </tr>
+                </table>
             </div>
+
         </t>
     </template>
 </odoo>
