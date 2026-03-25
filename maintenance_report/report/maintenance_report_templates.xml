@@ -27,21 +27,21 @@
                     El trabajador se compromete a mantenerlo en estas condiciones y a darle el uso adecuado.
                 </p>
 
-                <!-- Firmas lado a lado -->
-                <div style="margin-top:40px; display:flex; justify-content:space-between; text-align:center;">
-                    <div style="width:45%;">
+                <div style="margin-top:40px; text-align:center;">
+                    <div style="display:inline-block; width:45%; vertical-align:top;">
                         <strong>ENTREGA</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].entregado_por_id.name"/><br/>
                         C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
                     </div>
 
-                    <div style="width:45%;">
+                    <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
                         <strong>RECIBE</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].employee_id.name"/><br/>
                         C.C. <span t-out="docs[0].employee_id.identification_id"/>
                     </div>
+                    
                 </div>
 
             </div>
