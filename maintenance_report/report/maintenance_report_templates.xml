@@ -44,17 +44,18 @@
                             <strong>ENTREGA</strong><br/><br/><br/>
                             ___________________________<br/>
                             <span t-out="docs[0].entregado_por_id.name"/><br/>
-                            <span t-out="docs[0].entregado_por_id.identification_id"/>
+                            C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
                         </td>
 
                         <td style="width:50%; text-align:center;">
                             <strong>RECIBE</strong><br/><br/><br/>
                             ___________________________<br/>
                             <span t-out="docs[0].employee_id.name"/><br/>
-                            <span t-out="docs[0].employee_id.identification_id"/>
+                            C.C. <span t-out="docs[0].employee_id.identification_id"/>
                         </td>
                     </tr>
                 </table>
+
             </div>
 
         </t>
