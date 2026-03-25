@@ -9,7 +9,7 @@
                 </p>
 
                 <t t-foreach="docs" t-as="equipment">
-                    <div style="margin-top:15px; text-align:center; border:1px solid #000; padding:10px; border-radius:6px;">
+                    <div style="margin-top:15px; text-align:center; padding:10px;">
                         <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
                         <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
                         <p><strong>Número de Serie:</strong> <span t-out="equipment.serial_no"/></p>
