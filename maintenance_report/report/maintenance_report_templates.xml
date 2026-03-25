@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="report_request">
+    <template id="report_equipment">
         <t t-call="web.basic_layout">
             <div class="page">
-                <h2 style="text-align:center;">Maintenance Request Report</h2>
-                <t t-foreach="docs" t-as="request">
+                <h2 style="text-align:center;">Maintenance Equipment Report</h2>
+                <t t-foreach="docs" t-as="equipment">
                     <div style="margin-top:20px; border:1px solid #000; padding:10px; border-radius:6px;">
                         <table style="width:100%; border-collapse:collapse;">
                             <tr>
-                                <td><strong>Request Name:</strong></td>
-                                <td t-out="request.name"/>
-                            </tr>
-                            <tr>
-                                <td><strong>Equipment:</strong></td>
-                                <td t-out="request.equipment_id.name"/>
+                                <td><strong>Equipment Name:</strong></td>
+                                <td t-out="equipment.name"/>
                             </tr>
                             <tr>
                                 <td><strong>Category:</strong></td>
-                                <td t-out="request.category_id.name"/>
+                                <td t-out="equipment.category_id.name"/>
                             </tr>
                             <tr>
-                                <td><strong>Responsible:</strong></td>
-                                <td t-out="request.user_id.name"/>
+                                <td><strong>Assigned Employee:</strong></td>
+                                <td t-out="equipment.employee_id.name"/>
                             </tr>
                             <tr>
-                                <td><strong>Scheduled Date:</strong></td>
-                                <td t-out="request.schedule_date"/>
+                                <td><strong>Department:</strong></td>
+                                <td t-out="equipment.department_id.name"/>
                             </tr>
                             <tr>
-                                <td><strong>Status:</strong></td>
-                                <td t-out="request.stage_id.name"/>
+                                <td><strong>Used By:</strong></td>
+                                <td t-out="equipment.equipment_assign_to"/>
                             </tr>
                             <tr>
-                                <td><strong>Description:</strong></td>
-                                <td t-out="request.description"/>
+                                <td><strong>Assign Date:</strong></td>
+                                <td t-out="equipment.assign_date"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Owner User:</strong></td>
+                                <td t-out="equipment.owner_user_id.name"/>
                             </tr>
                         </table>
                     </div>
@@ -42,4 +42,5 @@
         </t>
     </template>
 </odoo>
+
 
