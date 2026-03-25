@@ -16,6 +16,8 @@
                         <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
                         <p><strong>Número de Serie:</strong> <span t-out="equipment.serial_no"/></p>
                         <p><strong>Ubicación:</strong> <span t-out="equipment.location"/></p>
+                        <p><strong>Descripción:</strong></p>
+                        <div t-out="equipment.note"/>
                     </div>
                 </t>
 
