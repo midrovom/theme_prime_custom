@@ -18,7 +18,6 @@
                         <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
                         <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
                         <p><strong>Serie:</strong> <span t-out="equipment.serial_no"/></p>
-                        <p><strong>Ubicación:</strong> <span t-out="equipment.location"/></p>
                         <p><span t-out="equipment.note"/></p>
                     </div>
                 </t>
