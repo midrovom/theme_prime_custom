@@ -12,7 +12,7 @@
     'depends': ['maintenance'],
     'data': [
         'reports/maintenance_report.xml',
-        'views/maintenance_report_templates.xml',
+        'reports/maintenance_report_templates.xml',
     ],
     'assets': {
         'web.assets_frontend': [
