@@ -16,7 +16,7 @@
                 <!-- Listado de equipos con saltos de línea -->
                 <t t-foreach="docs" t-as="equipment">
                     <p style="margin-left:20px; margin-top:10px;">
-                        • <strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/><br/>
+                        <strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/><br/>
                         <strong>Modelo:</strong> <span t-out="equipment.model"/><br/>
                         <strong>Número de Serie:</strong> <span t-out="equipment.serial_no"/><br/>
                         <strong>Ubicación:</strong> <span t-out="equipment.location"/>
@@ -31,15 +31,15 @@
                     El trabajador se compromete a mantenerlo en estas condiciones y a darle el uso adecuado.
                 </p>
 
-                <!-- Firmas alineadas horizontalmente -->
-                <div style="margin-top:60px; display:flex; justify-content:space-between; text-align:center;">
-                    <div style="width:45%;">
+                <!-- Firmas alineadas horizontalmente con columnas -->
+                <div class="row" style="margin-top:60px; text-align:center;">
+                    <div class="col-12 col-md-6 d-flex flex-column align-items-center">
                         <strong>ENTREGA</strong><br/><br/><br/>
                         ___________________________<br/>
                         Nombre:<br/>
                         Cédula:
                     </div>
-                    <div style="width:45%;">
+                    <div class="col-12 col-md-6 d-flex flex-column align-items-center">
                         <strong>RECIBE</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].employee_id.name"/><br/>
@@ -50,4 +50,5 @@
         </t>
     </template>
 </odoo>
+
 
