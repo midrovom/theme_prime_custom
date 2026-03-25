@@ -8,7 +8,9 @@
                 </h2>
 
                 <p style="margin-top:25px; text-align:justify;">
-                    La Coordinación de Recursos Humanos deja constancia de la entrega de los siguientes equipos:
+                    La Coordinación de Recursos Humanos certifica, mediante el presente documento, la entrega oficial de los equipos descritos a continuación. 
+                    Esta constancia se emite con el propósito de dejar registro formal de la asignación de dichos bienes, en cumplimiento de las políticas internas 
+                    de la organización y con el compromiso de uso responsable por parte del trabajador.
                 </p>
 
                 <t t-foreach="docs" t-as="equipment">
