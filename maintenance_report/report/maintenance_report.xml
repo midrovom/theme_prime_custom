@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+
     <record id="maintenance_equipment_report" model="ir.actions.report">
         <field name="name">Generar Acta de Entrega</field>
         <field name="model">maintenance.equipment</field>
