@@ -7,8 +7,7 @@
         <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='employee_id']" position="after">
-                <field name="entregado_por_id" string="Responsable de Entrega" widget="many2one_avatar_employee" 
-                    domain="[('department_id.responsable_entrega_equipo','=',True)]"/>
+                <field name="entregado_por_id" widget="many2one_avatar_employee" domain="[('department_id.responsable_entrega_equipo','=',True)]"/>
             </xpath>
         </field>
     </record>
