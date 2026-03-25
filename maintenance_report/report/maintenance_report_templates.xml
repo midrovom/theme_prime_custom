@@ -2,37 +2,37 @@
 <odoo>
     <template id="report_equipment">
         <t t-call="web.basic_layout">
-            <div class="page" style="font-family:Arial, sans-serif; line-height:1.5;">
+            <div class="page" style="font-family:Arial, sans-serif; line-height:1.5; font-size:14px;">
 
-                <h2 style="text-align:center; margin-bottom:20px; border-bottom:2px solid #000; padding-bottom:10px;">
+                <h2 style="text-align:center; margin-bottom:20px;">
                     ACTA DE ENTREGA DE EQUIPO
                 </h2>
 
                 <!-- Párrafo introductorio -->
-                <p style="margin-top:20px; text-align:justify; font-size:14px;">
+                <p style="margin-top:20px; text-align:justify;">
                     Se deja constancia por parte de la Coordinadora de Recursos Humanos la entrega de los siguientes equipos:
                 </p>
 
-                <!-- Bloques de equipos -->
+                <!-- Listado de equipos -->
                 <t t-foreach="docs" t-as="equipment">
-                    <div style="margin-top:15px; border:1px solid #ccc; padding:15px; border-radius:8px; background:#f9f9f9;">
-                        <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
-                        <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
-                        <p><strong>Número de Serie:</strong> <span t-out="equipment.serial_no"/></p>
-                        <p><strong>Ubicación:</strong> <span t-out="equipment.location"/></p>
-                    </div>
+                    <p style="margin-left:20px; margin-top:10px;">
+                        • <strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/>  
+                        <strong>Modelo:</strong> <span t-out="equipment.model"/>  
+                        <strong>Número de Serie:</strong> <span t-out="equipment.serial_no"/>  
+                        <strong>Ubicación:</strong> <span t-out="equipment.location"/>
+                    </p>
                 </t>
 
                 <!-- Párrafo dirigido al trabajador -->
-                <p style="margin-top:25px; text-align:justify; font-size:14px;">
+                <p style="margin-top:25px; text-align:justify;">
                     Al trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
                     <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, quien ejerce el cargo de 
                     <strong><span t-out="docs[0].employee_id.job_title"/></strong>, se le entrega el equipo en buen estado físico y de funcionamiento. 
                     El trabajador se compromete a mantenerlo en estas condiciones y a darle el uso adecuado.
                 </p>
 
-                <!-- Firmas -->
-                <div style="margin-top:40px; display:flex; justify-content:space-between; text-align:center;">
+                <!-- Firmas alineadas horizontalmente -->
+                <div style="margin-top:60px; display:flex; justify-content:space-between; text-align:center;">
                     <div style="width:45%;">
                         <strong>ENTREGA</strong><br/><br/><br/>
                         ___________________________<br/>
