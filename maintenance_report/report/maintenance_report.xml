@@ -8,11 +8,11 @@
         <field name="report_name">maintenance_report.report_equipment</field>
         <field name="report_file">maintenance_report.report_equipment</field>
         <field name="paperformat_id" ref="base.paperformat_euro"/>
-        <field name="print_report_name">'Equipment - %s' % (object.name).replace('/', '')</field>
+        <field name="print_report_name">'Acta de entrega - %s' % (object.employee_id.name).replace('/', '')</field>
         <field name="binding_model_id" ref="maintenance.model_maintenance_equipment"/>
         <field name="binding_type">report</field>
     </record>
-    
+
 </odoo>
 
 
