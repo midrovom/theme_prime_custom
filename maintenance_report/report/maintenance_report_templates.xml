@@ -10,7 +10,7 @@
 
                 <t t-foreach="docs" t-as="equipment">
                     <div style="margin-top:10px; padding:10px;">
-                        <table style="width:100%; border-collapse:collapse;">
+                        <table style="width:100%;">
                             <tr>
                                 <td><strong>Nombre del Equipo:</strong></td>
                                 <td t-out="equipment.name"/>
@@ -38,7 +38,7 @@
                     El trabajador se compromete a mantenerlo en estas condiciones y a darle el uso adecuado.
                 </p>
 
-                <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                <table style="width:100%; margin-top:10px;">
                     <tr>
                         <td style="width:50%; text-align:center;">
                             <strong>ENTREGA</strong><br/><br/><br/>
