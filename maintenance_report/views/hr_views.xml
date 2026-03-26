@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="maintenance_equipment_view_form_inherit_hr" model="ir.ui.view">
-        <field name="name">maintenance.equipment.view.form.inherit.hr</field>
+    <record id="maintenance_equipment_view_form_inherit_model_serial" model="ir.ui.view">
+        <field name="name">maintenance.equipment.view.form.inherit.model.serial</field>
         <field name="model">maintenance.equipment</field>
         <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='employee_id']" position="after">
-                <field name="entregado_por_id" widget="many2one_avatar_employee" domain="[('department_id.responsable_entrega_equipo','=',True)]"/>
+            <xpath expr="//page[@name='product_information']/group/group/field[@name='partner_ref']" position="after">
+                <field name="enable_model_serial"/>
+            </xpath>
+
+            <!-- Condicionamos el campo model -->
+            <xpath expr="//page[@name='product_information']/group/group/field[@name='model']" position="attributes">
+                <attribute name="attrs">{'readonly':[('enable_model_serial','=',False)]}</attribute>
+            </xpath>
+
+            <!-- Condicionamos el campo serial_no -->
+            <xpath expr="//page[@name='product_information']/group/group/field[@name='serial_no']" position="attributes">
+                <attribute name="attrs">{'readonly':[('enable_model_serial','=',False)]}</attribute>
             </xpath>
         </field>
     </record>
-
-
+    
 </odoo>
-
