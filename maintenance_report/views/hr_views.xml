@@ -12,14 +12,15 @@
 
             <!-- Condicionamos el campo model -->
             <xpath expr="//page[@name='product_information']/group/group/field[@name='model']" position="attributes">
-                <attribute name="attrs">{'readonly':[('enable_model_serial','=',False)]}</attribute>
+                <attribute name="modifiers">{'invisible': [('enable_model_serial','=',False)]}</attribute>
             </xpath>
 
             <!-- Condicionamos el campo serial_no -->
             <xpath expr="//page[@name='product_information']/group/group/field[@name='serial_no']" position="attributes">
-                <attribute name="attrs">{'readonly':[('enable_model_serial','=',False)]}</attribute>
+                <attribute name="modifiers">{'invisible': [('enable_model_serial','=',False)]}</attribute>
             </xpath>
         </field>
     </record>
     
 </odoo>
+
