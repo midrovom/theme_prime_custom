@@ -14,7 +14,7 @@
         'data/advance/product_snippet_template_data_custom.xml',
 
         #Conedera
-        'data/conedera/brand_snippet_template_data.xml',
+        # 'data/conedera/brand_snippet_template_data.xml',
 
         #Advance
 
@@ -24,13 +24,13 @@
         'views/snippets/advance/s_dynamic_categories/snippets.xml',
 
         #Conedera
-        'views/snippets/conedera/website_template.xml',
+        # 'views/snippets/conedera/website_template.xml',
 
-        'views/snippets/conedera/s_dynamic_snippet_brand/s_dynamic_snippet_brands.xml',
-        'views/snippets/conedera/s_key_images/snippets.xml',
-        'views/snippets/conedera/s_key_images/s_key_images_custom.xml',
+        # 'views/snippets/conedera/s_dynamic_snippet_brand/s_dynamic_snippet_brands.xml',
+        # 'views/snippets/conedera/s_key_images/snippets.xml',
+        # 'views/snippets/conedera/s_key_images/s_key_images_custom.xml',
         
-        'views/snippets/conedera/templates_productos.xml',
+        # 'views/snippets/conedera/templates_productos.xml',
 
         #Advance/Conedera
         'views/product_attribute_view.xml',
