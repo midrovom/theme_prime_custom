@@ -110,7 +110,7 @@
                         <a href="/shop">Shop</a>
                     </li>
                     <li t-if="category" class="breadcrumb-item">
-                        <a t-att-href="'/shop/category/%s' % slug(category)">
+                        <a t-att-href="keep('/shop/category/%s' % slug(category),category=0, attribute_value=0, tags=0)">
                             <t t-esc="category.name"/>
                         </a>
                     </li>
