@@ -13,17 +13,18 @@
                     de la organización y con el compromiso de uso responsable por parte del trabajador.
                 </p>
 
-                <t t-foreach="docs" t-as="equipment">
-                    <div style="margin-top:15px; padding:5px; text-align:left; font-size:12px;">
-                        <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
-                        <t t-if="equipment.enable_model_serial">
-                            <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
-                            <p><strong>Serie:</strong> <span t-out="equipment.serial_no"/></p>
-                        </t>
-                        
-                        <p><span t-out="equipment.note"/></p>
-                    </div>
-                </t>
+                    <t t-foreach="docs" t-as="equipment">
+                        <div style="margin-top:15px; padding:5px; text-align:left; font-size:12px;">
+                            <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
+                            <t t-if="equipment.model">
+                                <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
+                            </t>
+                            <t t-if="equipment.serial_no">
+                                <p><strong>Serie:</strong> <span t-out="equipment.serial_no"/></p>
+                            </t>
+                            <p><span t-out="equipment.note"/></p>
+                        </div>
+                    </t>
 
                 <p style="margin-top:25px; text-align:justify;">
                     Al trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
