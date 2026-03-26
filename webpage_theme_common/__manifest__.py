@@ -58,24 +58,24 @@
 
             #Conedera
 
-            # 'webpage_theme_common/static/src/scss/conedera/website.scss',
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/s_banner_2/000.scss',
-            # 'webpage_theme_common/static/src/css/conedera/style.css',
+            'webpage_theme_common/static/src/scss/conedera/website.scss',
+            'webpage_theme_common/static/src/scss/conedera/snippets/s_banner_2/000.scss',
+            'webpage_theme_common/static/src/css/conedera/style.css',
 
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/footers/footer_style_12.scss',
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/headers/prime_style_9.scss',
+            'webpage_theme_common/static/src/scss/conedera/snippets/footers/footer_style_12.scss',
+            'webpage_theme_common/static/src/scss/conedera/snippets/headers/prime_style_9.scss',
 
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/Key_images/key_images_custom.scss',
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/template_products/template_select.scss',
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/template_products/image_product.scss',
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_style_12_theme_prime/s_style_12.scss',
+            'webpage_theme_common/static/src/scss/conedera/snippets/Key_images/key_images_custom.scss',
+            'webpage_theme_common/static/src/scss/conedera/snippets/template_products/template_select.scss',
+            'webpage_theme_common/static/src/scss/conedera/snippets/template_products/image_product.scss',
+            'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_style_12_theme_prime/s_style_12.scss',
 
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/snippet_brand.scss',
+            'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/snippet_brand.scss',
 
             #Advance/Conedera (Dynamic_snippet)
 
-            # 'webpage_theme_common/static/src/scss/conedera/snippets/header_mobile_custom/header_mobile.scss',
-            # 'webpage_theme_common/static/src/snippet/dynamic_snippet_custom/dynamic_snippet_custom.js',
+            'webpage_theme_common/static/src/scss/conedera/snippets/header_mobile_custom/header_mobile.scss',
+            'webpage_theme_common/static/src/snippet/dynamic_snippet_custom/dynamic_snippet_custom.js',
     ],
         'website.assets_wysiwyg': [
             'webpage_theme_common/static/src/scss/advance/snippets/s_dynamic_snippet_categories/option.js',
