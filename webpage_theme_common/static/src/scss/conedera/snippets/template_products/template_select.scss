@@ -125,10 +125,6 @@
   }
 }
 
-///// Ocultar apartdo de categorias en vista grid ///////
-.tp-category-pill-container {
-  display: none !important;   // oculta el bloque
-}
 // Sección de ruta del producto
 @media (max-width: 767px) {
   .o_wsale_breadcrumb.breadcrumb .breadcrumb-item + .breadcrumb-item::before {
