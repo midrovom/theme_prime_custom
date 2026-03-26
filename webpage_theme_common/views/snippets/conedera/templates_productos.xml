@@ -99,7 +99,7 @@
     </template>
 
     <!-- Ruta del producto -->    
-    <!-- <template id="product_brand_mobile_under_breadcrumb" inherit_id="website_sale.product">
+    <template id="product_brand_mobile_under_breadcrumb" inherit_id="website_sale.product">
         <xpath expr="//div[@id='product_detail_main']" position="before">
             <div class="container-fluid mt-3 mb-2 px-2">
                 <ol class="o_wsale_breadcrumb breadcrumb p-0 ms-0 bg-transparent">
@@ -138,7 +138,7 @@
                 </div>
             </div>
         </xpath>
-    </template> -->
+    </template>
 
 
 </odoo> 
