@@ -3,7 +3,7 @@ from odoo import models, fields
 class MaintenanceEquipment(models.Model):
     _inherit = 'maintenance.equipment'
 
-    entregado_por_id = fields.Many2one('hr.employee', string='Entrega RH', tracking=True)
+    entregado_por_id = fields.Many2one('hr.employee', string='Personal RRHH', tracking=True)
 
 class Department(models.Model):
     _inherit = "hr.department"
