@@ -11,7 +11,7 @@
                 <xpath expr="//sheet/notebook" position="inside">
                     <page name="footer_info" string="Footer de Factura">
                         <group name="footer">
-                            <field name="footer" />
+                            <!-- <field name="footer" /> -->
                         </group>
                     </page>
                 </xpath>
