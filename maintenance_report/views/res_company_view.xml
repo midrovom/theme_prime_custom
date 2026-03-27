@@ -9,7 +9,7 @@
             <field name="inherit_id" ref="base.view_company_form"/>
             <field name="arch" type="xml">
                 <xpath expr="//sheet/notebook" position="inside">
-                    <page name="footer_info" string="Footer de Factura">
+                    <page name="footer_info" string="Footer de Reporte Entrega/Devolucion de Equipos">
                         <group name="footer">
                             <!-- <field name="footer" /> -->
                         </group>

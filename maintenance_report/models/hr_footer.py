@@ -5,9 +5,3 @@ class HrFooter(models.Model):
     _description = 'Footer'
 
     descripcion = fields.Text(string="Descripción")
-
-
-# class ResCompany(models.Model):
-#     _inherit = 'res.company'
-
-#     descripcion = fields.Text(string="Footer de Reporte Entrega/Recepcion de Equipos")
