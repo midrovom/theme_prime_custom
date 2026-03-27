@@ -6,11 +6,11 @@
 
 #     descripcion = fields.Text(string="Descripción")
 
-from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo import models, fields
 
 class ResCompany(models.Model):
     _inherit = 'res.company'
-    
-    footer = fields.Html('Footer de Factura')
+
+    footer = fields.Html(string="Footer de Factura")
+
     
