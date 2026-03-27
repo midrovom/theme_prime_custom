@@ -49,7 +49,7 @@
                 </div>
 
                 <div style="margin-top:40px; border-top:1px solid #000; padding-top:10px; font-size:11px; text-align:center; color:#555;">
-                    <span t-out="docs[0].descripcion"/>
+                    <span t-out="docs[0].footer_id.descripcion"/>
                 </div>
 
             </div>
