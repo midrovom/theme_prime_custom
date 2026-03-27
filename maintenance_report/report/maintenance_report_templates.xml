@@ -24,11 +24,11 @@
                 <!-- Tabla de equipos -->
                 <table style="margin-top:20px; width:100%; border-collapse:collapse; font-size:12px;" border="1">
                     <thead>
-                        <tr style="background-color:#f0f0f0; text-align:center; font-weight:bold;">
-                            <th style="padding:5px;">Equipo</th>
-                            <th style="padding:5px;">Marca/Modelo</th>
-                            <th style="padding:5px;">Serie</th>
-                            <th style="padding:5px;">Detalle</th>
+                        <tr style="background-color:#f0f0f0; text-align:center;">
+                            <th style="padding:5px; font-weight:bold;">Equipo</th>
+                            <th style="padding:5px; font-weight:bold;">Marca/Modelo</th>
+                            <th style="padding:5px; font-weight:bold;">Serie</th>
+                            <th style="padding:5px; font-weight:bold;">Detalle</th>
                         </tr>
                     </thead>
                     <tbody>
