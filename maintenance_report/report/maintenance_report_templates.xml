@@ -9,7 +9,7 @@
 
                 <!-- Fecha y lugar -->
                 <p style="margin-top:25px; text-align:justify;">
-                    <strong>Guayaquil, <span t-out="docs[0].create_date"/></strong>
+                    <strong>Guayaquil, <span t-esc="docs[0].create_date.strftime('%d de %B de %Y')"/></strong>
                 </p>
 
                 <!-- Texto inicial -->
