@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="report_equipment_return">
+    <template id="report_equipment">
         <t t-call="web.basic_layout">
             <div class="page" style="font-family: 'Times New Roman', serif; line-height:1.6; font-size:13px; color:#000; margin-top:0; padding-top:0;">
                 <h2 style="text-align:center; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; font-weight:bold;">
-                    Acta de Devolución de Equipo
+                    Acta de Entrega de Equipo
                 </h2>
 
                 <p style="margin-top:25px; text-align:justify;">
-                    La Coordinación de Recursos Humanos certifica, mediante el presente documento, la devolución oficial de los equipos descritos a continuación. 
-                    Esta constancia se emite con el propósito de dejar registro formal de la restitución de dichos bienes, en cumplimiento de las políticas internas 
-                    de la organización y con el compromiso de entrega en las condiciones establecidas.
+                    La Coordinación de Recursos Humanos certifica, mediante el presente documento, la entrega oficial de los equipos descritos a continuación. 
+                    Esta constancia se emite con el propósito de dejar registro formal de la asignación de dichos bienes, en cumplimiento de las políticas internas 
+                    de la organización y con el compromiso de uso responsable por parte del trabajador.
                 </p>
 
                 <t t-foreach="docs" t-as="equipment">
@@ -27,25 +27,29 @@
                 </t>
 
                 <p style="margin-top:25px; text-align:justify;">
-                    El trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
-                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, devuelve el equipo en las condiciones físicas y de funcionamiento 
-                    previamente acordadas. La organización certifica la recepción conforme y el cierre del proceso de asignación.
+                    Al trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
+                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, se le entrega el equipo en óptimas condiciones físicas y de funcionamiento. 
+                    El trabajador se compromete a conservarlo en buen estado y a darle el uso adecuado conforme a las políticas de la organización.
                 </p>
 
                 <div style="margin-top:50px; text-align:center;">
                     <div style="display:inline-block; width:45%; vertical-align:top;">
-                        <strong>DEVUELVE</strong><br/><br/><br/>
+                        <strong>ENTREGA</strong><br/><br/><br/>
                         ___________________________<br/>
-                        <span t-out="docs[0].employee_id.name"/><br/>
-                        C.C. <span t-out="docs[0].employee_id.identification_id"/>
+                        <span t-out="docs[0].entregado_por_id.name"/><br/>
+                        C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
                     </div>
 
                     <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
                         <strong>RECIBE</strong><br/><br/><br/>
                         ___________________________<br/>
-                        <span t-out="docs[0].entregado_por_id.name"/><br/>
-                        C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
+                        <span t-out="docs[0].employee_id.name"/><br/>
+                        C.C. <span t-out="docs[0].employee_id.identification_id"/>
                     </div>
+                </div>
+
+                <div style="margin-top:40px; border-top:1px solid #000; padding-top:10px; font-size:11px; text-align:center; color:#555;">
+                    <span t-out="docs[0].descripcion"/>
                 </div>
 
             </div>
