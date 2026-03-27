@@ -34,14 +34,14 @@
 
                 <div style="margin-top:50px; text-align:center;">
                     <div style="display:inline-block; width:45%; vertical-align:top;">
-                        <strong>ENTREGA (Empleado)</strong><br/><br/><br/>
+                        <strong>ENTREGA</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].employee_id.name"/><br/>
                         C.C. <span t-out="docs[0].employee_id.identification_id"/>
                     </div>
 
                     <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
-                        <strong>RECIBE (Responsable)</strong><br/><br/><br/>
+                        <strong>RECIBE</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].entregado_por_id.name"/><br/>
                         C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
