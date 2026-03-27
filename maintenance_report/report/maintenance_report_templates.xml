@@ -32,6 +32,7 @@
                             <t t-if="equipment.serial_no">
                                 <p><strong>Serie:</strong> <span t-out="equipment.serial_no"/></p>
                             </t>
+                            <p><strong></strong> <span t-out="equipment.note"/></p>
                         </div>
                     </t>
                 </div>
