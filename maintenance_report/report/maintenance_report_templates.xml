@@ -15,7 +15,7 @@
 
                 <!-- Fecha de entrega -->
                 <p style="margin-top:15px; text-align:justify;">
-                    Fecha de entrega: <strong><span t-out="docs[0].date"/></strong>
+                    Fecha de entrega: <strong><span t-out="docs[0].entrega_date"/></strong>
                 </p>
 
                 <!-- Equipos -->
