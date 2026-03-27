@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="view_hr_footer_form" model="ir.ui.view">
         <field name="name">hr.footer.form</field>
@@ -13,13 +14,13 @@
         </field>
     </record>
 
-    <record id="view_hr_footer_tree" model="ir.ui.view">
-        <field name="name">hr.footer.tree</field>
+    <record id="view_hr_footer_list" model="ir.ui.view">
+        <field name="name">hr.footer.list</field>
         <field name="model">hr.footer</field>
         <field name="arch" type="xml">
-            <tree string="Footer">
+            <list string="Footer">
                 <field name="descripcion"/>
-            </tree>
+            </list>
         </field>
     </record>
 </odoo>
