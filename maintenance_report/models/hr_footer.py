@@ -7,10 +7,7 @@ class HrFooter(models.Model):
     descripcion = fields.Text(string="Descripción")
 
 
-    
-# from odoo import models, fields
+class ResCompany(models.Model):
+    _inherit = 'res.company'
 
-# class ResCompany(models.Model):
-#     _inherit = 'res.company'
-
-#     descripcion = fields.Text(string="Footer de Reporte Entrega/Recepcion de Equipos")
+    descripcion = fields.Text(string="Footer de Reporte Entrega/Recepcion de Equipos")
