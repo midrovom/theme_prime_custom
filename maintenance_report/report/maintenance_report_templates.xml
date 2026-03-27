@@ -26,7 +26,7 @@
                     <thead>
                         <tr style="background-color:#f0f0f0; text-align:center;">
                             <th style="padding:5px; font-weight:bold;">Equipo</th>
-                            <th style="padding:5px; font-weight:bold;">Marca/Modelo</th>
+                            <th style="padding:5px; font-weight:bold;">Modelo</th>
                             <th style="padding:5px; font-weight:bold;">Serie</th>
                             <th style="padding:5px; font-weight:bold;">Detalle</th>
                         </tr>
