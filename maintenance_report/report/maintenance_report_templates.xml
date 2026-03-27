@@ -16,7 +16,7 @@
                 <p style="margin-top:15px; text-align:justify;">
                     A través de la presente, yo <strong><span t-out="docs[0].entregado_por_id.name"/></strong>, con C.I. N° 
                     <strong><span t-out="docs[0].entregado_por_id.identification_id"/></strong>, en calidad de representante del 
-                     Departamento de <strong><span t-out="docs[0].entregado_por_id.department_id"/></strong>, procedo a realizar la entrega de los siguientes equipos al/la colaborador(a) 
+                     Departamento de <strong><span t-out="docs[0].entregado_por_id.department_id.name"/></strong>, procedo a realizar la entrega de los siguientes equipos al/la colaborador(a) 
                     <strong><span t-out="docs[0].employee_id.name"/></strong>, con cédula de identidad N° 
                     <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, quien desempeña el cargo de ____________________________.
                 </p>
