@@ -8,13 +8,20 @@
                 </h2>
 
                 <p style="margin-top:25px; text-align:justify;">
-                    La Coordinación de Recursos Humanos certifica, mediante el presente documento, la entrega oficial de los equipos descritos a continuación. 
-                    Esta constancia se emite con el propósito de dejar registro formal de la asignación de dichos bienes, en cumplimiento de las políticas internas 
-                    de la organización y con el compromiso de uso responsable por parte del trabajador.
+                    Por medio de la presente, la empresa certifica la entrega de los equipos de trabajo al colaborador, 
+                    necesarios para el adecuado desempeño de sus funciones. El empleado declara haberlos recibido en buen estado 
+                    y se compromete a darles un uso responsable y exclusivamente laboral.
                 </p>
 
+                <!-- Fecha de entrega -->
+                <p style="margin-top:15px; text-align:justify;">
+                    Fecha de entrega: <strong><span t-out="docs[0].date"/></strong>
+                </p>
+
+                <!-- Equipos -->
+                <div style="margin-top:25px; text-align:center;">
                     <t t-foreach="docs" t-as="equipment">
-                        <div style="margin-top:15px; padding:5px; text-align:left; font-size:12px;">
+                        <div style="margin-top:15px; padding:5px; text-align:left; font-size:12px; display:inline-block; text-align:left;">
                             <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
                             <t t-if="equipment.model">
                                 <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
@@ -25,11 +32,14 @@
                             <p><span t-out="equipment.note"/></p>
                         </div>
                     </t>
+                </div>
 
+                <!-- Texto mejorado debajo de equipos -->
                 <p style="margin-top:25px; text-align:justify;">
-                    Al trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
-                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, se le entrega el equipo en óptimas condiciones físicas y de funcionamiento. 
-                    El trabajador se compromete a conservarlo en buen estado y a darle el uso adecuado conforme a las políticas de la organización.
+                    El colaborador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
+                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, se compromete a mantener los equipos en buenas condiciones, 
+                    reportar cualquier novedad y devolverlos cuando la empresa lo requiera o al finalizar la relación laboral, 
+                    salvo el desgaste normal por uso.
                 </p>
 
                 <div style="margin-top:50px; text-align:center;">
