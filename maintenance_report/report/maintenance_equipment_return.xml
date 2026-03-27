@@ -2,49 +2,68 @@
 <odoo>
     <template id="report_equipment_return">
         <t t-call="web.basic_layout">
-            <div class="page" style="font-family: 'Times New Roman', serif; line-height:1.6; font-size:13px; color:#000; margin-top:0; padding-top:0;">
+            <div class="page" style="font-family: 'Times New Roman', serif; line-height:1.6; font-size:13px; color:#000;">
                 <h2 style="text-align:center; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; font-weight:bold;">
                     Acta de Devolución de Equipos
                 </h2>
 
+                <!-- Fecha y lugar -->
                 <p style="margin-top:25px; text-align:justify;">
-                    La Coordinación de Recursos Humanos certifica, mediante el presente documento, la devolución oficial de los equipos descritos a continuación. 
-                    Esta constancia se emite con el propósito de dejar registro formal de la entrega de dichos bienes por parte del trabajador, en cumplimiento de las políticas internas 
-                    de la organización y con el compromiso de uso responsable durante el tiempo de asignación.
+                    <strong>Guayaquil, <span t-esc="docs[0].create_date.strftime('%d/%m/%Y')"/></strong>
                 </p>
 
-                <t t-foreach="docs" t-as="equipment">
-                    <div style="margin-top:15px; padding:5px; text-align:left; font-size:12px;">
-                        <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
-                        <t t-if="equipment.model">
-                            <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
-                        </t>
-                        <t t-if="equipment.serial_no">
-                            <p><strong>Serie:</strong> <span t-out="equipment.serial_no"/></p>
-                        </t>
-                        <p><span t-out="equipment.note"/></p>
-                    </div>
-                </t>
-
-                <p style="margin-top:25px; text-align:justify;">
-                    El trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
-                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, devuelve el equipo en óptimas condiciones físicas y de funcionamiento. 
-                    La persona encargada de la recepción certifica que el equipo ha sido recibido conforme.
+                <!-- Texto inicial -->
+                <p style="margin-top:15px; text-align:justify;">
+                    A través de la presente, el Señor(a) <strong><span t-out="docs[0].employee_id.name"/></strong>, con C.I. N° 
+                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, en calidad de colaborador de la empresa, 
+                    procede a realizar la devolución de los siguientes equipos previamente entregados por el Departamento de 
+                    <strong><span t-out="docs[0].entregado_por_id.department_id.name"/></strong>, representado por 
+                    <strong><span t-out="docs[0].entregado_por_id.name"/></strong>, con C.I. N° 
+                    <strong><span t-out="docs[0].entregado_por_id.identification_id"/></strong>.
                 </p>
 
+                <!-- Tabla de equipos -->
+                <table style="margin-top:20px; width:100%; border-collapse:collapse; font-size:12px;" border="1">
+                    <thead>
+                        <tr style="background-color:#f0f0f0; text-align:center;">
+                            <th style="padding:5px; font-weight:bold;">Equipo</th>
+                            <th style="padding:5px; font-weight:bold;">Modelo</th>
+                            <th style="padding:5px; font-weight:bold;">Serie</th>
+                            <th style="padding:5px; font-weight:bold;">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="docs" t-as="equipment">
+                            <tr>
+                                <td style="padding:5px;"><span t-out="equipment.name"/></td>
+                                <td style="padding:5px;"><span t-out="equipment.model or ''"/></td>
+                                <td style="padding:5px;"><span t-out="equipment.serial_no or ''"/></td>
+                                <td style="padding:5px;"><span t-out="equipment.note or ''"/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+
+                <!-- Compromiso del colaborador -->
+                <p style="margin-top:25px; text-align:justify;">
+                    El señor(a) declara haber devuelto los equipos en buen estado, salvo el desgaste normal por uso, 
+                    quedando la empresa en conformidad con la recepción de los mismos.
+                </p>
+
+                <!-- Firmas -->
                 <div style="margin-top:50px; text-align:center;">
                     <div style="display:inline-block; width:45%; vertical-align:top;">
-                        <strong>ENTREGA</strong><br/><br/><br/>
-                        ___________________________<br/>
-                        <span t-out="docs[0].employee_id.name"/><br/>
-                        C.C. <span t-out="docs[0].employee_id.identification_id"/>
-                    </div>
-
-                    <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
                         <strong>RECIBE</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].entregado_por_id.name"/><br/>
-                        C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
+                        C.I. <span t-out="docs[0].entregado_por_id.identification_id"/>
+                    </div>
+
+                    <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
+                        <strong>ENTREGA</strong><br/><br/><br/>
+                        ___________________________<br/>
+                        <span t-out="docs[0].employee_id.name"/><br/>
+                        C.I. <span t-out="docs[0].employee_id.identification_id"/>
                     </div>
                 </div>
 
@@ -52,3 +71,4 @@
         </t>
     </template>
 </odoo>
+
