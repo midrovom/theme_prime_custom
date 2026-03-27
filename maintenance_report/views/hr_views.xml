@@ -13,7 +13,7 @@
     </record>
 
     <!-- menu item de Footer -->
-    
+<!--     
     <record id="hr_resume_type_action" model="ir.actions.act_window">
         <field name="name">Footer</field>
         <field name="res_model">hr.footer</field>
@@ -33,7 +33,7 @@
         action="hr_resume_type_action"
         parent="maintenance_report.menu_human_resources_configuration_resume"
         sequence="3"
-        groups="base.group_no_one"/>
+        groups="base.group_no_one"/> -->
 
 
 </odoo>
