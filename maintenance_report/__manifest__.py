@@ -18,7 +18,7 @@
         'views/hr_views.xml',
         'views/hr_department_views.xml',
         'views/hr_footer_views.xml',
-        'views/res_company_view.xml',
+        #'views/res_company_view.xml',
     ],
     'assets': {
         'web.assets_frontend': [
