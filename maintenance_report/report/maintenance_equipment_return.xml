@@ -4,13 +4,13 @@
         <t t-call="web.basic_layout">
             <div class="page" style="font-family: 'Times New Roman', serif; line-height:1.6; font-size:13px; color:#000; margin-top:0; padding-top:0;">
                 <h2 style="text-align:center; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; font-weight:bold;">
-                    Acta de Entrega de Equipo
+                    Acta de Devolución de Equipos
                 </h2>
 
                 <p style="margin-top:25px; text-align:justify;">
-                    La Coordinación de Recursos Humanos certifica, mediante el presente documento, la entrega oficial de los equipos descritos a continuación. 
-                    Esta constancia se emite con el propósito de dejar registro formal de la asignación de dichos bienes, en cumplimiento de las políticas internas 
-                    de la organización y con el compromiso de uso responsable por parte del trabajador.
+                    La Coordinación de Recursos Humanos certifica, mediante el presente documento, la devolución oficial de los equipos descritos a continuación. 
+                    Esta constancia se emite con el propósito de dejar registro formal de la entrega de dichos bienes por parte del trabajador, en cumplimiento de las políticas internas 
+                    de la organización y con el compromiso de uso responsable durante el tiempo de asignación.
                 </p>
 
                 <t t-foreach="docs" t-as="equipment">
@@ -27,24 +27,24 @@
                 </t>
 
                 <p style="margin-top:25px; text-align:justify;">
-                    Al trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
-                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, se le entrega el equipo en óptimas condiciones físicas y de funcionamiento. 
-                    El trabajador se compromete a conservarlo en buen estado y a darle el uso adecuado conforme a las políticas de la organización.
+                    El trabajador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
+                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, devuelve el equipo en óptimas condiciones físicas y de funcionamiento. 
+                    La persona encargada de la recepción certifica que el equipo ha sido recibido conforme.
                 </p>
 
                 <div style="margin-top:50px; text-align:center;">
                     <div style="display:inline-block; width:45%; vertical-align:top;">
-                        <strong>ENTREGA</strong><br/><br/><br/>
-                        ___________________________<br/>
-                        <span t-out="docs[0].entregado_por_id.name"/><br/>
-                        C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
-                    </div>
-
-                    <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
-                        <strong>RECIBE</strong><br/><br/><br/>
+                        <strong>ENTREGA (Empleado)</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].employee_id.name"/><br/>
                         C.C. <span t-out="docs[0].employee_id.identification_id"/>
+                    </div>
+
+                    <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
+                        <strong>RECIBE (Responsable)</strong><br/><br/><br/>
+                        ___________________________<br/>
+                        <span t-out="docs[0].entregado_por_id.name"/><br/>
+                        C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
                     </div>
                 </div>
 
