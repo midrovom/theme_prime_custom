@@ -1,0 +1,25 @@
+<odoo>
+    <record id="view_hr_footer_form" model="ir.ui.view">
+        <field name="name">hr.footer.form</field>
+        <field name="model">hr.footer</field>
+        <field name="arch" type="xml">
+            <form string="Footer">
+                <sheet>
+                    <group>
+                        <field name="descripcion"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hr_footer_tree" model="ir.ui.view">
+        <field name="name">hr.footer.tree</field>
+        <field name="model">hr.footer</field>
+        <field name="arch" type="xml">
+            <tree string="Footer">
+                <field name="descripcion"/>
+            </tree>
+        </field>
+    </record>
+</odoo>
