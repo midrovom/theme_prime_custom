@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_applicant_test">
+        <t t-call="web.basic_layout">
+
+            <t t-foreach="docs" t-as="applicant">
+
+                <div class="page" style="font-size:10px;">
+
+                    <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px;">
+                        <tr>
+                            <th colspan="4" style="border:1px solid #000; background:#e6e6e6;">
+                                ACTUALIZACIÓN DE DATOS PARA CANDIDATOS
+                            </th>
+                        </tr>
+
+                        <tr>
+                            <td style="border:1px solid #000; width:40%; vertical-align:top; word-break:break-word; line-height:1.3;">
+                                <b>Reglamento Interno</b><br/>
+                                <b>Art. 11</b><br/>
+                                    La alteración o falsificación de documentos presentados por el aspirante o trabajador<br/><br/>
+                                    constituye falta grave que faculta al empleador a solicitar visto bueno ante el inspector del Trabajo competente:<br/><br/>
+                                    sin perjuicio, de la obligatoria remisiòn de la información y documentos a la autoridades pensales que corresponda.<br/><br/>
+                                <b>NOTA:</b> Toda información aquí proporcionada será tratada.
+                            </td>
+
+                            <td colspan="2" style="border:1px solid #000; text-align:center;">
+                                <b>Fecha de solicitud</b><br/>
+                                <span t-field="applicant.create_date"/>
+                            </td>
+
+                            <td style="border:1px solid #000; text-align:center;">
+                                <t t-set="img"
+                                t-value="request.env['ir.attachment'].sudo().search([
+                                    ('res_model','=','hr.applicant'),
+                                    ('res_id','=',applicant.id),
+                                    ('mimetype','ilike','image')
+                                ], limit=1)"/>
+
+                                <t t-if="img">
+                                    <img t-att-src="'data:%s;base64,%s' % (img.mimetype, img.datas)"
+                                        style="width:70px;height:70px; object-fit:cover;"/>
+                                </t>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td colspan="4" style="background:#bcdff1; border:1px solid #000; text-align:center;">
+                                Datos Personales
+                            </td>
+                        </tr>
+
+                            <tr>
+                                <th style="border:1px solid #000; ">Nombre</th>
+                                <th style="border:1px solid #000;">Edad</th>
+                                <th colspan="2" style="border:1px solid #000;"></th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.partner_name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.age"/>
+                                <td colspan="2" style="border:1px solid #000;"></td>
+                            </tr>
+
+                            <tr>
+                                <th style="border:1px solid #000;">Dirección de domicilio</th>
+                                <th style="border:1px solid #000;">Parroquia</th>
+                                <th style="border:1px solid #000;">Fecha de nacimiento</th>
+                                <th style="border:1px solid #000;"></th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.address"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.parish"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.birthdate"/>
+                                <td style="border:1px solid #000;"></td>
+                            </tr>
+
+                            <tr>
+                                <th style="border:1px solid #000;">Lugar de nacimiento (país)</th>
+                                <th style="border:1px solid #000;">Provincia</th>
+                                <th style="border:1px solid #000;">Teléfono</th>
+                                <th style="border:1px solid #000;">Celular</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.birth_country_id.name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.provincia_id.name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.partner_phone"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.partner_mobile"/>
+                            </tr>
+
+                            <tr>
+                                <th style="border:1px solid #000;">Vive con</th>
+                                <th style="border:1px solid #000;">Tipo de vivienda</th>
+                                <th style="border:1px solid #000;">Número de hijos</th>
+                                <th style="border:1px solid #000;"></th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.vive_con"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.tipo_vivienda"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.num_hijos"/>
+                                <td style="border:1px solid #000;"></td>
+                            </tr>
+
+                            <tr>
+                                <th style="border:1px solid #000;">Personas que dependen de usted</th>
+                                <th colspan="3" style="border:1px solid #000;"></th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.dependientes"/>
+                                <td colspan="3" style="border:1px solid #000;"></td>
+                            </tr>
+
+                        <tr>
+                            <td colspan="4" style="background:#bcdff1; border:1px solid #000; text-align:center;">
+                                Datos Personales y Documentaciòn
+                            </td>
+                        </tr>
+
+                            <tr>
+                                <th style="border:1px solid #000;">Tipo</th>
+                                <th style="border:1px solid #000;">Número</th>
+                                <th style="border:1px solid #000;">Nacionalidad</th>
+                                <th style="border:1px solid #000;"></th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;">
+                                    <t t-esc="dict(applicant._fields['document_type'].selection).get(applicant.document_type)"/>
+                                </td>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.cedula"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.nacionality"/>
+                                <td style="border:1px solid #000;"></td>
+                            </tr>
+
+                        <tr>
+                            <td colspan="4" style="background:#bcdff1; border:1px solid #000; text-align:center;">
+                                Información de Salud Personal
+                            </td>
+                        </tr>
+
+                        <t t-foreach="applicant.medical_ids" t-as="med">
+                            <tr>
+                                <th style="border:1px solid #000;">Enfermedad</th>
+                                <th style="border:1px solid #000;">Detalle</th>
+                                <th style="border:1px solid #000;">Medicación</th>
+                                <th style="border:1px solid #000;">Detalle</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.enfermedad_persistente"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.detalle_enfermedad_persistente"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.medicacion_continua"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.detalle_medicacion_continua"/>
+                            </tr>
+
+                            <tr>
+                                <th style="border:1px solid #000;">Enf. laboral</th>
+                                <th style="border:1px solid #000;">Cirugía</th>
+                                <th style="border:1px solid #000;">Detalle</th>
+                                <th style="border:1px solid #000;">% Discapacidad</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.enfermedad_laboral"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.cirugia_realizada"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.detalle_cirugia_realizada"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.porcentaje_discapacidad"/>
+                            </tr>
+
+                            <tr>
+                                <th style="border:1px solid #000;">Tipo discapacidad</th>
+                                <th style="border:1px solid #000;">Tipo sangre</th>
+                                <th style="border:1px solid #000;"></th>
+                                <th style="border:1px solid #000;"></th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.tipo_discapacidad"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.tipo_sangre"/>
+                                <td style="border:1px solid #000;"></td>
+                                <td style="border:1px solid #000;"></td>
+                            </tr>
+                        </t>
+
+                        <tr>
+                            <td colspan="4" style="background:#bcdff1; border:1px solid #000; text-align:center;">
+                                Datos Familiares
+                            </td>
+                        </tr>
+
+                        <t t-foreach="applicant.family_ids" t-as="fam">
+                            <tr>
+                                <th style="border:1px solid #000;">Nombre</th>
+                                <th style="border:1px solid #000;">Cédula</th>
+                                <th style="border:1px solid #000;">Fecha nacimiento</th>
+                                <th style="border:1px solid #000;">Teléfono</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.cedula"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.birthdate"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.phone"/>
+                            </tr>
+                            <tr>
+                                <th style="border:1px solid #000;">Ocupación</th>
+                                <th style="border:1px solid #000;">Dependiente</th>
+                                <th style="border:1px solid #000;">Discapacidad</th>
+                                <th style="border:1px solid #000;">Tipo</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.occupation"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.economically_dependent"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.disability"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.disability_type"/>
+                            </tr>
+                        </t>
+
+                        <tr>
+                            <td colspan="4" style="background:#bcdff1; border:1px solid #000; text-align:center;">
+                                Formación
+                            </td>
+                        </tr>
+
+                        <t t-foreach="applicant.education_ids" t-as="edu">
+                            <tr>
+                                <th style="border:1px solid #000;">Nivel</th>
+                                    <th style="border:1px solid #000;">Institución</th>
+                                        <th style="border:1px solid #000;">Carrera</th>
+                                        <th style="border:1px solid #000;">Título</th>
+                                    </tr>
+                                    <tr>
+                                        <td style="border:1px solid #000; text-align:center;" t-esc="edu.level_id.name"/>
+                                        <td style="border:1px solid #000; text-align:center;" t-esc="edu.institucion"/>
+                                        <td style="border:1px solid #000; text-align:center;" t-esc="edu.carrera"/>
+                                        <td style="border:1px solid #000; text-align:center;" t-esc="edu.titulo"/>
+                                    </tr>
+
+                                    <tr>
+                                        <th style="border:1px solid #000;">Tipo</th>
+                                        <th style="border:1px solid #000;">Estado</th>
+                                        <th style="border:1px solid #000;">Inicio</th>
+                                        <th style="border:1px solid #000;">Fin</th>
+                                    </tr>
+                                    <tr>
+                                        <td style="border:1px solid #000; text-align:center;" t-esc="edu.titulo_por_obtener"/>
+                                        <td style="border:1px solid #000; text-align:center;" t-esc="edu.estado"/>
+                                        <td style="border:1px solid #000; text-align:center;" t-esc="edu.fecha_inicio"/>
+                                        <td style="border:1px solid #000; text-align:center;" t-esc="edu.year_fin"/>
+                                    </tr>
+
+                                    <tr>
+                                        <th style="border:1px solid #000;">País</th>
+                                        <th style="border:1px solid #000;">Horario</th>
+                                        <th style="border:1px solid #000;">Estudia</th>
+                                        <th style="border:1px solid #000;"></th>
+                                    </tr>
+                                    <tr>
+                                        <td style="border:1px solid #000; text-align:center;" t-esc="edu.pais_id.name"/>
+                                        <td style="border:1px solid #000; text-align:center;" t-esc="edu.horario"/>
+                                        <td style="border:1px solid #000; text-align:center;">
+                                    <t t-esc="dict(edu._fields['study_current'].selection).get(edu.study_current)"/></td>
+                                <td style="border:1px solid #000; text-align:center;"></td>
+                            </tr>
+                        </t>
+
+                        <tr>
+                            <td colspan="4" style="background:#bcdff1; border:1px solid #000; text-align:center;">
+                                Experiencia Laboral
+                            </td>
+                        </tr>
+
+                        <t t-foreach="applicant.experience_job_ids" t-as="exp">
+                            <tr>
+                                <th style="border:1px solid #000;">Empresa</th>
+                                <th style="border:1px solid #000;">Cargo</th>
+                                <th style="border:1px solid #000;">Tiempo</th>
+                                <th style="border:1px solid #000;">Teléfono</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.empresa"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.tiempo_servicio"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.telefonos"/>
+                            </tr>
+                            <tr>
+                                <th style="border:1px solid #000;">Ingreso</th>
+                                <th style="border:1px solid #000;">Motivo salida</th>
+                                <th style="border:1px solid #000;">Jefe</th>
+                                <th style="border:1px solid #000;">Cargo jefe</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.ingreso_mensual"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.motivo_separacion"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.jefe_directo"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.cargo_jefe_directo"/>
+                            </tr>
+                            <tr>
+                                <th style="border:1px solid #000;">Inicio</th>
+                                <th style="border:1px solid #000;">Fin</th>
+                                <th style="border:1px solid #000;">País</th>
+                                <th style="border:1px solid #000;"></th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.fecha_inicio"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.year_fin"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.pais_id.name"/>
+                                <td style="border:1px solid #000;"></td>
+                            </tr>
+                        </t>
+
+                        <tr>
+                            <td colspan="4" style="background:#bcdff1; border:1px solid #000; text-align:center;">
+                                Posee Familiares o conocidos que trabajen para el grupo Empresarial
+                            </td>
+                        </tr>
+
+                        <t t-foreach="applicant.known_ids" t-as="kn">
+                            <tr>
+                                <th style="border:1px solid #000;">Posee familiares</th>
+                                    <th style="border:1px solid #000;">Nombre</th>
+                                            <th style="border:1px solid #000;">Relación</th>
+                                        <th style="border:1px solid #000;">Parentesco</th>
+                                    </tr>
+                                    <tr>
+                                        <td style="border:1px solid #000; text-align:center;">
+                                            <t t-esc="dict(kn._fields['posee_familiares'].selection).get(kn.posee_familiares)"/>
+                                        </td>
+                                    <td style="border:1px solid #000; text-align:center;" t-esc="kn.nombre_completo"/>
+                                    <td style="border:1px solid #000;">
+                                    <t t-esc="dict(kn._fields['relacion'].selection).get(kn.relacion)"/></td>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="kn.parentesco"/>
+                            </tr>                        
+                        </t>
+
+                        <tr>
+                            <td colspan="4" style="background:#bcdff1; border:1px solid #000; text-align:center;">
+                                Referencias Personales
+                            </td>
+                        </tr>
+
+                        <t t-foreach="applicant.reference_ids" t-as="ref">
+                            <tr>
+                                <th style="border:1px solid #000;">Nombre</th>
+                                <th style="border:1px solid #000;">Teléfono</th>
+                                <th style="border:1px solid #000;">Domicilio</th>
+                                <th style="border:1px solid #000;">Ocupación</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="ref.nombre"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="ref.telefono"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="ref.domicilio"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="ref.ocupacion"/>
+                            </tr>
+                            <tr>
+                                <th style="border:1px solid #000;">Tiempo de conocerlo</th>
+                                <th style="border:1px solid #000;"></th>
+                                <th style="border:1px solid #000;"></th>
+                                <th style="border:1px solid #000;"></th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="ref.tiempo_conocerlo"/>
+                                <td style="border:1px solid #000;"></td>
+                                <td style="border:1px solid #000;"></td>
+                                <td style="border:1px solid #000;"></td>
+                            </tr>
+                        </t>
+
+                        <tr>
+                            <td style="border:1px solid #000;">
+                                Reglamento Interno<br/>Art. 11
+                            </td>
+
+                            <td colspan="3" style="border:1px solid #000; text-align:center; height:120px; vertical-align:bottom;">
+
+                                <div style="margin-bottom:15px;">
+                                    _______________________________
+                                </div>
+
+                                <div>Firma del solicitante</div>
+
+                                <div style="margin-top:10px;">
+                                    C.C.: <t t-esc="applicant.cedula"/>
+                                </div>
+
+                            </td>
+                        </tr> 
+
+                    </table>
+
+                </div> <!-- page -->
+
+            </t> <!-- foreach docs -->
+
+        </t> <!-- layout -->
+
+    </template>
+</odoo>

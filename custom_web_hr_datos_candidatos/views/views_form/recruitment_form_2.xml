@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="recruitment_form_2" name="Formulario 2">
+        <div id="form-step-2" class=" row mb-5 mt-3">
+
+            <div class="bg-light py-3 d-flex justify-content-start">
+                <div>
+                    <span class="fw-normal fs-4 text-info"> 2. Información de salud personal</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-9">
+                <div class="row d-flex justify-content-center">
+                    <div class="col-12 col-md-10 mx-auto">
+                        <div class="row g-3 justify-content-center">
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        ¿Padece actualmente alguna enfermedad persistente?
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="enfermedad_persistente" id="enfermedad_persistente_si" value="si"/>
+                                            <label class="form-check-label" for="enfermedad_persistente_si">Sí</label>
+                                        </div>
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="enfermedad_persistente" id="enfermedad_persistente_no" value="no"/>
+                                            <label class="form-check-label" for="enfermedad_persistente_no">No</label>
+                                        </div>
+                                        <input type="text" name="detalle_enfermedad_persistente" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Especifique la enfermedad"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        ¿Toma actualmente alguna medicación de uso continuo?
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="medicacion_continua" id="medicacion_continua_si" value="si"/>
+                                            <label class="form-check-label" for="medicacion_continua_si">Sí</label>
+                                        </div>
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="medicacion_continua" id="medicacion_continua_no" value="no"/>
+                                            <label class="form-check-label" for="medicacion_continua_no">No</label>
+                                        </div>
+                                        <input type="text" name="detalle_medicacion_continua" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Detalle la medicación"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        ¿Padece o ha padecido alguna enfermedad laboral?
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="enfermedad_laboral" id="enfermedad_laboral_si" value="si"/>
+                                            <label class="form-check-label" for="enfermedad_laboral_si">Sí</label>
+                                        </div>
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="enfermedad_laboral" id="enfermedad_laboral_no" value="no"/>
+                                            <label class="form-check-label" for="enfermedad_laboral_no">No</label>
+                                        </div>
+                                        <input type="text" name="detalle_enfermedad_laboral" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Especifique la enfermedad"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        ¿Ha sido sometido a alguna cirugía?
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="cirugia_realizada" id="cirugia_realizada_si" value="si"/>
+                                            <label class="form-check-label" for="cirugia_realizada_si">Sí</label>
+                                        </div>
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="cirugia_realizada" id="cirugia_realizada_no" value="no"/>
+                                            <label class="form-check-label" for="cirugia_realizada_no">No</label>
+                                        </div>
+                                        <input type="text" name="detalle_cirugia_realizada" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Detalle"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        ¿Tiene usted alguna discapacidad?
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="discapacidad" id="discapacidad_si" value="si"/>
+                                            <label class="form-check-label" for="discapacidad_si">Sí</label>
+                                        </div>
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="discapacidad" id="discapacidad_no" value="no"/>
+                                            <label class="form-check-label" for="discapacidad_no">No</label>
+                                        </div>
+                                        <input type="text" name="tipo_discapacidad" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Tipo de discapacidad"/>
+                                        <input type="text" name="porcentaje_discapacidad" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Porcentaje"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        Tipo de sangre
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" name="tipo_sangre" class="form-control rounded-pill py-2" placeholder="Ejemplo: O+, A-, B+"/>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div id="family_container"></div>
+
+                <div class="row d-flex justify-content-center my-4">
+                    <div class="col-12 col-md-10 text-start">
+                        <button type="button" id="add-family" class="btn btn-outline-primary rounded-pill px-4">
+                            + Agregar familiar
+                        </button>
+                    </div>
+                </div>
+            </div> 
+
+            <div class="row d-flex justify-content-center mt-2">
+                <div class="col-12 col-md-5"></div>
+                <div class="col-12 col-md-5 d-flex justify-content-end">
+                    <button class="btn btn-info rounded-pill px-5 py-2" id="next-button-step2" type="button">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </template>
+
+</odoo>

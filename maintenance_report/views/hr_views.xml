@@ -12,28 +12,7 @@
         </field>
     </record>
 
-    <!-- menu item de Footer -->
-<!--     
-    <record id="hr_resume_type_action" model="ir.actions.act_window">
-        <field name="name">Footer</field>
-        <field name="res_model">hr.footer</field>
-        <field name="view_mode">list,form</field>
-    </record>
 
-    <menuitem
-            id="menu_human_resources_configuration_resume"
-            name="Resume"
-            parent="hr.menu_human_resources_configuration"
-            sequence="15"
-            groups="base.group_no_one"/>
-
-    <menuitem
-        id="hr_menu_resume_footer"
-        name="Footer"
-        action="hr_resume_type_action"
-        parent="maintenance_report.menu_human_resources_configuration_resume"
-        sequence="3"
-        groups="base.group_no_one"/> -->
 
 
 </odoo>

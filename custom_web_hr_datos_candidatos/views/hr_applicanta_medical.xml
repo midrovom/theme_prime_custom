@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record model="ir.ui.view" id="applicant_medical_tree">
+            <field name="name">applicant.medical.tree</field>
+            <field name="model">applicant.medical</field>
+            <field name="arch" type="xml">
+                <tree string="Información Médica">
+                    <field name="enfermedad_persistente"/>
+                    <field name="detalle_enfermedad_persistente"/>
+                    <field name="medicacion_continua"/>
+                    <field name="detalle_medicacion_continua"/>
+                    <field name="enfermedad_laboral"/>
+                    <field name="detalle_enfermedad_laboral"/>
+                    <field name="cirugia_realizada"/>
+                    <field name="detalle_cirugia_realizada"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="hr_applicant_medical_action" model="ir.actions.act_window">
+            <field name="name">Información Médica</field>
+            <field name="res_model">applicant.medical</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="applicant_medical_tree"/>
+        </record>
+
+    </data>
+</odoo>

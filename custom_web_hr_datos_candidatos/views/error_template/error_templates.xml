@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <template id="custom_403" inherit_id="http_routing.403">
+
+    <xpath expr="//div[@id='wrap']/div[@class='container']" position="replace">
+      <div class="container text-center mt-5">
+        <h1>Acceso Restringido</h1>
+        <p> No puede ingresar. <a href="/web/signup">Cree su cuenta</a> o <a href="/web/login">inicie sesión</a> para continuar.
+        </p>
+      </div>
+    </xpath>
+
+    <xpath expr="//t[@t-call='http_routing.error_message']" position="replace">
+    </xpath>
+
+  </template>
+
+
+</odoo>

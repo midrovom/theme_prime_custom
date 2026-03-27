@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="hr_applicant_view_form_inherit" model="ir.ui.view">
+            <field name="name">hr.applicant.view.form.inherit</field>
+            <field name="model">hr.applicant</field>
+            <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
+            <field name="arch" type="xml">
+
+                <xpath expr="//field[@name='partner_mobile']" position="after">
+                    <!-- Datos personales -->
+                    <field name="document_type"/>
+                    <field name="cedula"/>
+                    <field name="address"/>
+                    <field name="parish"/>
+                    <field name="birthdate"/>
+                    <field name="age"/>
+                    <field name="birth_country_id"/>
+                    <field name="provincia_id"/>
+                    <field name="vive_con"/>
+                    <field name="tipo_vivienda"/>
+                    <field name="num_hijos"/>
+                    <field name="dependientes"/>
+                    <field name="estado_civil"/>
+                    
+                </xpath>
+
+                <!-- campos ocultos -->
+                <xpath expr="//field[@name='linkedin_profile']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='type_id']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+
+                <xpath expr="//notebook" position="inside">
+                    <page string="Información Médica" name="page_medical">
+                        <field name="medical_ids">
+                            <tree>
+                                <field name="enfermedad_persistente"/>
+                                <field name="detalle_enfermedad_persistente"/>
+                                <field name="medicacion_continua"/>
+                                <field name="detalle_medicacion_continua"/>
+                                <field name="enfermedad_laboral"/>
+                                <field name="detalle_enfermedad_laboral"/>
+                                <field name="cirugia_realizada"/>
+                                <field name="detalle_cirugia_realizada"/>
+                                <field name="discapacidad"/>
+                                <field name="tipo_discapacidad"/>
+                                <field name="porcentaje_discapacidad"/>
+                                <field name="tipo_sangre"/>
+                            </tree>
+                        </field>
+                    </page>
+
+                    <page string="Datos Familiares" name="page_family">
+                        <field name="family_ids">
+                            <tree>
+                                <field name="name"/>                     
+                                <field name="cedula"/>                   
+                                <field name="birthdate"/>                
+                                <field name="phone"/>                    
+                                <field name="occupation"/>               
+                                <field name="economically_dependent"/>   
+                                <field name="disability"/>               
+                                <field name="disability_type"/>          
+                            </tree>
+                        </field>
+                    </page>
+
+                    <page string="Formación Académica" name="page_education">
+                        <field name="education_ids">
+                            <tree>
+                                <field name="level_id"/>
+                                <field name="institucion"/>
+                                <field name="fecha_inicio"/>
+                                <field name="year_fin"/>
+                                <field name="pais_id"/>
+                                <field name="titulo"/>
+                                <field name="study_current"/>         
+                                <field name="titulo_por_obtener"/>    
+                                <field name="horario"/>              
+                                <field name="carrera"/>  
+                                <field name="estado"/>             
+                            </tree>
+                        </field>
+                    </page>
+
+                    <page string="Experiencia Laboral" name="page_experience">
+                        <field name="experience_job_ids">
+                            <tree>
+                                <field name="tiempo_servicio"/>
+                                <field name="empresa"/>
+                                <field name="pais_id"/>
+                                <field name="telefonos"/>
+                                <field name="name"/>
+                                <field name="ingreso_mensual"/>
+                                <field name="motivo_separacion"/>
+                                <field name="jefe_directo"/>
+                                <field name="cargo_jefe_directo"/>
+                                <field name="fecha_inicio"/>
+                                <field name="year_fin"/>
+                            </tree>
+                        </field>
+                    </page>
+
+                    <page string="Familiares o Conocidos del Grupo Empresarial" name="page_known">
+                        <field name="known_ids">
+                            <tree>
+                                <field name="posee_familiares"/>
+                                <field name="nombre_completo"/>
+                                <field name="relacion"/>
+                                <field name="parentesco"/>
+                            </tree>
+                        </field>
+                    </page>
+
+                    <page string="Referencias Personales" name="page_reference">
+                        <field name="reference_ids">
+                            <tree>
+                                <field name="nombre"/>
+                                <field name="domicilio"/>
+                                <field name="telefono"/>
+                                <field name="ocupacion"/>
+                                <field name="tiempo_conocerlo"/>
+                            </tree>
+                        </field>
+                    </page>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- Formación Académica -->
+        <menuitem
+            id="menu_hr_recruitment_academic_training"
+            name="Formación Académica"
+            parent="hr_recruitment.menu_hr_recruitment_config_applications"
+            sequence="1"/>
+
+        <menuitem
+            id="hr_recruitment.menu_hr_recruitment_degree"
+            name="Nivel Educativo"
+            parent="menu_hr_recruitment_academic_training"
+            action="hr_recruitment.hr_recruitment_degree_action"
+            sequence="1"/>
+
+        <!-- Datos Personales -->
+        <menuitem
+            id="menu_hr_recruitment_Datos_Personales"
+            name="Datos Personales"
+            parent="hr_recruitment.menu_hr_recruitment_config_applications"
+            sequence="2"/>
+
+        <menuitem
+            id="menu_applicant_family"
+            name="Datos Familiares"
+            parent="menu_hr_recruitment_Datos_Personales"
+            action="applicant_family_action"
+            sequence="1"
+            groups="base.group_no_one"/>
+
+        <menuitem
+            id="menu_applicant_medical"
+            name="Información Médica"
+            parent="menu_hr_recruitment_Datos_Personales"
+            action="hr_applicant_medical_action"
+            sequence="2"
+            groups="hr.group_hr_user"/>
+
+        <!-- Experiencia Laboral -->
+
+        <menuitem
+            id="menu_hr_recruitment_job_experience"
+            name="Experiencia Laboral"
+            parent="hr_recruitment.menu_hr_recruitment_config_applications"
+            sequence="3"/>
+
+    </data>
+
+
+</odoo>

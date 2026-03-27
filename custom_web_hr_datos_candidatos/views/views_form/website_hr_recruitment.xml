@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="web_recruitment" name="Formulario de Reclutamiento">
+        <t t-call="website.layout">
+            <div id="wrap_container" class="container">
+                <header class="d-flex justify-content-center mt-4 mb-3">
+                    <h1 class="text-info fw-bold">ACTUALIZACIÒN DE DATOS PARA CANDIDATOS</h1>
+                </header>
+            </div>
+            <div id="jobs_apply" class="container">
+                <div class="row">
+                    <!-- class="s_website_form" -->
+                    <section id="forms_apply" data-vcss="001" data-snippet="s_website_form">
+                        <div class="container">
+                            <form id="hr_job_recruitment_form" action="/jobs/submit"
+                                  method="post"
+                                  class="d-flex flex-column justify-content-center mx-1"
+                                  data-model_name="hr.applicant"
+                                  hide-change-model="true"
+                                  novalidate="novalidate"
+                                  enctype="multipart/form-data">
+
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                                <t t-call="custom_web_hr_datos_candidatos.recruitment_form_1"/>
+                                <t t-call="custom_web_hr_datos_candidatos.recruitment_form_2"/>
+                                <t t-call="custom_web_hr_datos_candidatos.recruitment_form_3"/>
+
+                                <input type="hidden" name="jobId" t-att-value="job.id"/>
+                                <input type="hidden" name="jobName" t-att-value="job.name"/>
+                                
+                            </form>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="index" name="template_name" inherit_id="website_hr_recruitment.index">
+        <xpath expr="//a[@draggable='false']" position="attributes">
+            <attribute name="style">/jobs/recruitment/#{ slug(job) }</attribute>
+        </xpath>
+        <xpath expr="//div[@class='o_job_infos d-flex flex-column']" position="after">
+            <a t-attf-href="/jobs/recruitment/#{ slug(job) }"
+               t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
+               draggable="false">APLICAR</a>
+        </xpath>
+    </template>
+
+</odoo>

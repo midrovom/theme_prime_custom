@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="recruitment_form_1" name="Formulario 1">
+        <div id="form-step-1" class="row justify-content-center my-5">
+            <div class="bg-light py-3 d-flex justify-content-start">
+                <div>
+                    <span class="fw-normal fs-4 text-info"> 1. Datos Personales</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-3 d-flex flex-column align-items-center mb-4">
+                <div class="size-200 position-relative rounded-circle bg-gray border d-flex flex-column justify-content-center align-items-center text-center">
+                    <img id="preview-img" src="" alt="Preview" class="position-absolute w-100 h-100 object-fit-cover rounded-circle" style="display: none;" />
+                    <small id="text-img" class="text-light fs-5 fw-normal px-2">
+                        Tamaño máx 3MB<br/>Formato: JPG o PNG
+                    </small>
+                    <input class="d-none" id="hr-perfil" name="imagen" type="file" accept=".jpg, .png"/>
+                    <label for="hr-perfil" class="cursor-hover d-flex justify-content-center align-items-center position-absolute size-60 bg-green-light rounded-circle bottom-0 end-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" 
+                                height="36px"
+                                viewBox="0 -960 960 960"
+                                width="36px"
+                                fill="#FFFFFF">
+                                <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+                        </svg>
+                    </label>
+                </div>
+                <div class="invalid-feedback text-center" id="image-error"></div>
+            </div>
+            <div class="col-12 col-md-9">
+                <div class="row d-flex justify-content-center">
+                    <div class="col-12 col-md-3 mb-4">
+                        <div>
+                            <label for="hr-lastname-paterno" class="fs-6">Apellido Paterno: <span class="text-danger">*</span></label>
+                            <input type="text" name="lastname_paterno" class="form-control rounded-pill py-2" id="hr-lastname-paterno" required=""/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-3 mb-4">
+                        <div>
+                            <label for="hr-lastname-materno" class="fs-6">Apellido Materno: <span class="text-danger">*</span></label>
+                            <input type="text" name="lastname_materno" class="form-control rounded-pill py-2" id="hr-lastname-materno" required=""/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-3 mb-4">
+                        <div>
+                            <label for="hr-name" class="fs-6">Nombre(s): <span class="text-danger">*</span></label>
+                            <input type="text" name="firstname" class="form-control rounded-pill py-2" id="hr-name" required=""/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-3 mb-4">
+                        <div>
+                            <label for="hr-age" class="fs-6">Edad: <span class="text-danger">*</span></label>
+                            <input type="number" name="age" class="form-control rounded-pill py-2" id="hr-age" min="18" required=""/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center">
+                    <div class="col-12 col-md-4 mb-4">
+                        <div>
+                            <label for="hr-address" class="fs-6">Dirección de domicilio: <span class="text-danger">*</span></label>
+                            <input type="text" name="address" class="form-control rounded-pill py-2" id="hr-address" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4 mb-4">
+                        <div>
+                            <label for="hr-parish" class="fs-6">Parroquia: <span class="text-danger">*</span></label>
+                            <input type="text" name="parish" class="form-control rounded-pill py-2" id="hr-parish" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4 mb-4">
+                        <div>
+                            <label for="hr-day" class="fs-6">Fecha de nacimiento: <span class="text-danger">*</span></label>
+                            <div class="d-flex">
+                                <select id="hr-day" name="diaNacimiento" class="form-select rounded-pill py-2" aria-label="Seleccionar día" required="required">
+                                    <option selected="selected">Dia</option>
+                                    <t t-foreach="days" t-as="day">
+                                        <option t-att-value="day"><t t-esc="day"/></option>
+                                    </t>
+                                </select>
+                                <select id="hr-month" name="mesNacimiento" class="form-select rounded-pill py-2 mx-2" aria-label="Seleccionar mes" required="required">
+                                    <option selected="selected">Mes</option>
+                                    <t t-foreach="months" t-as="month">
+                                        <option t-att-value="month[0]"><t t-esc="month[1]"/></option>
+                                    </t>
+                                </select>
+                                <select id="hr-year" name="anioNacimiento" class="form-select rounded-pill py-2" aria-label="Seleccionar año" required="required">
+                                    <option selected="selected">Año</option>
+                                    <t t-foreach="years" t-as="year">
+                                        <option t-att-value="year"><t t-esc="year"/></option>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center">
+                    <div class="col-12 col-md-3 mb-4">
+                        <div>
+                            <label for="hr-country" class="fs-6">Lugar de nacimiento (país): <span class="text-danger">*</span></label>
+                            <select id="hr-country" name="birthCountry" class="form-select rounded-pill py-2" aria-label="Seleccionar país" required="required">
+                                <option selected="selected"></option>
+                                <t t-foreach="countries" t-as="country">
+                                    <option t-att-value="country.id" t-esc="country.name"></option>
+                                </t>
+                            </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-3 mb-4">
+                        <div>
+                            <label for="hr-provincia" class="fs-6">Provincia: <span class="text-danger">*</span></label>
+                            <select id="hr-provincia" name="provincia" class="form-select rounded-pill py-2" aria-label="Seleccionar provincia" required="required">
+                                <option selected="selected"></option>
+                                <t t-foreach="country_states" t-as="country_state">
+                                    <option t-att-value="country_state.id" t-att-data-country="country_state.country_id.id" t-esc="country_state.name"> </option>
+                                </t>
+                            </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-3 mb-4">
+                        <div>
+                            <label for="hr-phone" class="fs-6">Teléfono: <span class="text-danger">*</span></label>
+                            <input type="text" name="phone" class="form-control rounded-pill py-2" id="hr-phone" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-3 mb-4">
+                        <div>
+                            <label for="hr-cellphone" class="fs-6">Celular: <span class="text-danger">*</span></label>
+                            <div class="d-flex">
+                                <div class="w-50 me-2">
+                                    <select id="hr-code-cellphone" name="codeCellphone" class="form-select rounded-pill w-100 py-2" aria-label="Seleccionar código" required="required">
+                                        <t t-foreach="countries" t-as="country">
+                                            <option t-att-value="'+' + str(country.phone_code)" 
+                                                    t-att-selected="'selected' if country.phone_code == 593 else None"
+                                                    t-esc="country.emoji_flag + ' +' + str(country.phone_code)"/>
+                                        </t>
+                                    </select>
+                                    <div class="invalid-feedback w-100">Seleccione una opción.</div>
+                                </div>
+                                <div class="flex-grow-1 w-100">
+                                    <input type="text" name="cellphone" class="form-control rounded-pill py-2 w-100" id="hr-cellphone" required="required"/>
+                                    <div class="invalid-feedback w-100" id="cell-error"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center">
+                    <div class="col-12 col-md-5 mb-4">
+                        <div>
+                            <label class="fs-6">Vive con: <span class="text-danger">*</span></label>
+                            <div class="d-flex flex-wrap">
+                                <div class="form-check me-2">
+                                    <input class="form-check-input" type="radio" name="viveCon" id="viveConPadres" value="padres" required="required"/>
+                                    <label class="form-check-label" for="viveConPadres">Padres</label>
+                                </div>
+                                <div class="form-check me-2">
+                                    <input class="form-check-input" type="radio" name="viveCon" id="viveConFamilia" value="familia"/>
+                                    <label class="form-check-label" for="viveConFamilia">Familia</label>
+                                </div>
+                                <div class="form-check me-2">
+                                    <input class="form-check-input" type="radio" name="viveCon" id="viveConParientes" value="parientes"/>
+                                    <label class="form-check-label" for="viveConParientes">Parientes</label>
+                                </div>
+                                <div class="form-check me-2">
+                                    <input class="form-check-input" type="radio" name="viveCon" id="viveConConyuge" value="conyuge"/>
+                                    <label class="form-check-label" for="viveConConyuge">Cónyuge</label>
+                                </div>
+                                <div class="form-check me-2">
+                                    <input class="form-check-input" type="radio" name="viveCon" id="viveConSolo" value="solo"/>
+                                    <label class="form-check-label" for="viveConSolo">Solo</label>
+                                </div>
+                                <div class="form-check me-2">
+                                    <input class="form-check-input" type="radio" name="viveCon" id="viveConOtro" value="otro"/>
+                                    <label class="form-check-label" for="viveConOtro">Otro</label>
+                                </div>
+                            </div>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4 mb-4">
+                        <div>
+                            <label class="fs-6">Tipo de vivienda: <span class="text-danger">*</span></label>
+                            <div class="d-flex">
+                                <div class="form-check me-2">
+                                    <input class="form-check-input" type="radio" name="tipoVivienda" id="viviendaPropia" value="propia" required="required"/>
+                                    <label class="form-check-label" for="viviendaPropia">Propia</label>
+                                </div>
+                                <div class="form-check me-2">
+                                    <input class="form-check-input" type="radio" name="tipoVivienda" id="viviendaArrendada" value="arrendada"/>
+                                    <label class="form-check-label" for="viviendaArrendada">Arrendada</label>
+                                </div>
+                            </div>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-3 mb-4">
+                        <div>
+                            <label for="hr-hijos" class="fs-6">Número de hijos: <span class="text-danger">*</span></label>
+                            <input type="number" name="numHijos" class="form-control rounded-pill py-2 w-75" id="hr-hijos" min="0" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-start">
+                    <div class="col-12 col-md-4 mb-4">
+                        <div id="dependientes-group">
+                            <label class="fs-6">
+                                Personas que dependen de usted: <span class="text-danger">*</span>
+                            </label>
+
+                            <div class="d-flex flex-wrap">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="dependientes" id="depHijos" value="hijos"/>
+                                    <label class="form-check-label" for="depHijos">Hijos</label>
+                                </div>
+
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="dependientes" id="depConyuge" value="conyuge"/>
+                                    <label class="form-check-label" for="depConyuge">Cónyuge</label>
+                                </div>
+
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="dependientes" id="depPadres" value="padres"/>
+                                    <label class="form-check-label" for="depPadres">Padres</label>
+                                </div>
+
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="dependientes" id="depOtros" value="otros"/>
+                                    <label class="form-check-label" for="depOtros">Otros</label>
+                                </div>
+                            </div>
+
+                            <div class="invalid-feedback d-block dependientes-error" style="display:none;">
+                                Seleccione al menos una opción.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-4 mb-4">
+                        <div>
+                            <label for="hr-email" class="fs-6">Email: <span class="text-danger">*</span></label>
+                            <input type="text" name="email" class="form-control rounded-pill py-2" id="hr-email" required="required"/>
+                            <div class="invalid-feedback" id="email-error"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center">
+                    <div class="col-12">
+                        <h5 class="mb-3">Datos Personales y Documentación</h5>
+                    </div>
+
+                    <div class="col-12 col-md-4 mb-4">
+                        <div>
+                            <label for="hr-type-doc" class="fs-6">Tipo de documento: <span class="text-danger">*</span></label>
+                            <select id="hr-type-doc" name="documentType" class="form-select rounded-pill py-2" aria-label="Seleccionar tipo de documento" required="required">
+                                <option selected="selected"></option>
+                                <t t-foreach="document_types" t-as="document_type">
+                                    <option t-att-value="document_type[0]" t-esc="document_type[1]"/>
+                                </t>
+                            </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4 mb-4">
+                        <div>
+                            <label for="hr-number-doc" class="fs-6">Número de documento: <span class="text-danger">*</span></label>
+                            <input type="text" name="documentNumber" class="form-control rounded-pill py-2" id="hr-number-doc" required="required"/>
+                            <div class="invalid-feedback" id="doc-error"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4 mb-4">
+                        <div>
+                            <label for="hr-nationality" class="fs-6">Nacionalidad: <span class="text-danger">*</span></label>
+                            <input type="text" name="nationality" class="form-control rounded-pill py-2" id="hr-nationality" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-start">
+                    <div class="col-12 col-md-6 mb-4">
+                        <div>
+                            <label class="fs-6">Estado civil: <span class="text-danger">*</span></label>
+                            <div class="d-flex flex-wrap">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="radio" name="estadoCivil" id="civilSoltero" value="soltero" required="required"/>
+                                    <label class="form-check-label" for="civilSoltero">Soltero</label>
+                                </div>
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="radio" name="estadoCivil" id="civilCasado" value="casado"/>
+                                    <label class="form-check-label" for="civilCasado">Casado</label>
+                                </div>
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="radio" name="estadoCivil" id="civilDivorciado" value="divorciado"/>
+                                    <label class="form-check-label" for="civilDivorciado">Divorciado</label>
+                                </div>
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="radio" name="estadoCivil" id="civilUnionLibre" value="union_libre"/>
+                                    <label class="form-check-label" for="civilUnionLibre">Unión libre</label>
+                                </div>
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="radio" name="estadoCivil" id="civilOtro" value="otro"/>
+                                    <label class="form-check-label" for="civilOtro">Otro</label>
+                                </div>
+                            </div>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row d-flex justify-content-center mt-2">
+                    <div class="col-12 col-md-5"></div>
+                    <div class="col-12 col-md-5 d-flex justify-content-end">
+                        <button class="btn btn-info rounded-pill px-5 py-2" id="next-button" type="button">Siguiente</button>
+                    </div>
+                </div>    
+            </div>
+        </div>
+    </template>
+
+</odoo>

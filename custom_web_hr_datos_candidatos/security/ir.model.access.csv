@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_applicant_education,applicant.education,model_applicant_education,,1,1,1,1
+access_applicant_family,applicant.family,model_applicant_family,,1,1,1,1
+access_hr_applicant,hr.applicant,model_hr_applicant,hr.group_hr_user,1,1,1,1
+access_applicant_experience,applicant.experience,model_applicant_experience_job,,1,1,1,1
+access_applicant_known_user,access_applicant_known_user,model_applicant_known,,1,1,1,1
+access_applicant_reference_user,access_applicant_reference_user,model_applicant_reference,,1,1,1,1
+access_applicant_medical,applicant.medical,model_applicant_medical,,1,1,1,1
+access_hr_applicant_report_wizard,access_hr_applicant_report_wizard,model_hr_applicant_report_wizard,base.group_user,1,1,1,1

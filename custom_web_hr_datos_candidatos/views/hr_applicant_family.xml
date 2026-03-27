@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<odoo>
+    <data>
+
+        <record model="ir.ui.view" id="applicant_family_tree">
+            <field name="name">applicant.family.tree</field>
+            <field name="model">applicant.family</field>
+            <field name="arch" type="xml">
+                <tree string="Familiares">
+                    <field name="name"/>
+                    <field name="cedula"/>
+                    <field name="birthdate"/>
+                    <field name="phone"/>
+                    <field name="occupation"/>
+                    <field name="economically_dependent"/>
+                    <field name="disability"/>
+                    <field name="disability_type"/>
+                </tree>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="applicant_family_form">
+            <field name="name">applicant.family.form</field>
+            <field name="model">applicant.family</field>
+            <field name="arch" type="xml">
+                <form string="Familiar">
+                    <sheet>
+                        <group>
+                            <field name="applicant_id"/>
+                        </group>
+
+                        <group string="Información personal">
+                            <field name="name"/>
+                            <field name="cedula"/>
+                            <field name="birthdate"/>
+                            <field name="phone"/>
+                            <field name="occupation"/>
+                            <field name="economically_dependent"/>
+                            <field name="disability"/>
+                            <field name="disability_type"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="applicant_family_action" model="ir.actions.act_window">
+            <field name="name">Familiares</field>
+            <field name="res_model">applicant.family</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="applicant_family_tree"/>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="recruitment_form_3" name="Formulario 3">
+        <div id="form-step-3" class=" row mb-5 mt-3">
+            <div class="bg-light py-3 d-flex justify-content-start">
+                <div>
+                    <span class="fw-normal fs-4 text-info">3. Formación</span>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="col-12 col-md-10">
+                        <div class="row">
+                            <span class="text-info fs-5" id="add-education">
+                                + añadir educación
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="education_container"></div>
+
+                <input type="hidden" name="total_educations" id="total_educations" value="1"/>
+
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="col-12 col-md-10">
+                        <div class="my-2 border border-1 border-gray"></div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="col-12 col-md-10">
+
+                        <div class="row d-flex align-items-start mb-4">
+
+                            <div class="col-12 col-md-4">
+                                <span class="fs-5 d-block mb-2">
+                                    ¿Estudia en la actualidad? <span class="text-danger">*</span>
+                                </span>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="studyOptions" value="t" required="required"/>
+                                    <label class="form-check-label">Sí</label>
+                                </div>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="studyOptions" value="f" required="required"/>
+                                    <label class="form-check-label">No</label>
+                                </div>
+
+                                <div class="invalid-radio">Seleccione una opción.</div>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="fs-6">Tipo de Formación: <span class="text-danger">*</span></label>
+                                <input type="text" name="titulo_por_obtener" class="form-control rounded-pill py-2" required="required"/>
+                                <div class="invalid-feedback">Campo obligatorio.</div>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="fs-6">Institución: <span class="text-danger">*</span></label>
+                                <input type="text" name="institucion" class="form-control rounded-pill py-2" required="required"/>
+                                <div class="invalid-feedback">Campo obligatorio.</div>
+                            </div>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <label class="fs-6">Horario: <span class="text-danger">*</span></label>
+                                <input type="text" name="horario" class="form-control rounded-pill py-2" required="required"/>
+                                <div class="invalid-feedback">Campo obligatorio.</div>
+                            </div>
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <label class="fs-6">Carrera: <span class="text-danger">*</span></label>
+                                <input type="text" name="carrera" class="form-control rounded-pill py-2" required="required"/>
+                                <div class="invalid-feedback">Campo obligatorio.</div>
+                            </div>
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <label class="fs-6">Nivel actual: <span class="text-danger">*</span></label>
+                                <input type="text" name="estado" class="form-control rounded-pill py-2" required="required"/>
+                                <div class="invalid-feedback">Campo obligatorio.</div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="bg-light py-3 d-flex justify-content-start">
+                        <div>
+                            <span class="fw-normal fs-4 text-info">4. Experiencia Laboral</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-10">
+                        <div class="row">
+                            <span class="text-info fs-5" id="add-experience">
+                                + añadir experiencia
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="experience_container"></div>
+
+                <input type="hidden" name="total_experiences" id="total_experiences" value="1"/>
+
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="col-12 col-md-10">
+                        <div class="my-2 border border-1 border-gray"></div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center mb-5">
+                    <div class="col-12 col-md-10">
+
+                        <div class="row">
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <span class="fs-5 d-block mb-2">
+                                    ¿Posee familiares o conocidos? <span class="text-danger">*</span>
+                                </span>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="knownPosee_1" value="t" required="required"/>
+                                    <label class="form-check-label">Sí</label>
+                                </div>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="knownPosee_1" value="f" required="required"/>
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <label class="fs-6">
+                                    Nombre completo:
+                                </label>
+                                <input type="text" name="knownNombre_1" class="form-control rounded-pill py-2"/>
+                            </div>
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <span class="fs-6 d-block mb-2">Relación:</span>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="knownRelacion_1" value="familiar"/>
+                                    <label class="form-check-label">Familiar</label>
+                                </div>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="knownRelacion_1" value="amigo"/>
+                                    <label class="form-check-label">Amigo</label>
+                                </div>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="knownRelacion_1" value="conocido"/>
+                                    <label class="form-check-label">Conocido</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <label class="fs-6">
+                                    En caso de ser familiar, indique el parentesco:
+                                </label>
+                                <input type="text" name="knownParentesco_1" class="form-control rounded-pill py-2"/>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="bg-light py-3 d-flex justify-content-start">
+                    <div>
+                        <span class="fw-normal fs-4 text-info">
+                            5. Referencias Personales (Favor de NO incluir FAMILIARES)
+                        </span>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="col-12 col-md-10">
+                        <div class="row">
+                            <span class="text-info fs-5" id="add-reference">
+                                + añadir referencia
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="reference_container"></div>
+
+                <!-- Botones -->
+                <div class="row d-flex justify-content-center">
+                    <div class="col-12 col-md-5"></div>
+
+                    <div class="col-12 col-md-5 d-flex justify-content-end">
+                        <button id="prev-button" class="btn btn-outline-info rounded-pill px-3 py-2 w-100" type="button">
+                            Anterior
+                        </button>
+
+                        <button id="submit-form" class="btn btn-info rounded-pill ms-2 px-3 py-2 w-100" type="submit">
+                            Enviar postulación
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </template>
+</odoo>
