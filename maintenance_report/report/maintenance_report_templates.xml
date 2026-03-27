@@ -4,57 +4,60 @@
         <t t-call="web.basic_layout">
             <div class="page" style="font-family: 'Times New Roman', serif; line-height:1.6; font-size:13px; color:#000; margin-top:0; padding-top:0;">
                 <h2 style="text-align:center; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; font-weight:bold;">
-                    Acta de Entrega de Equipo
+                    Acta de Entrega de Equipos
                 </h2>
 
+                <!-- Fecha y lugar -->
                 <p style="margin-top:25px; text-align:justify;">
-                    Por medio de la presente, la empresa certifica la entrega de los equipos de trabajo al colaborador, 
-                    necesarios para el adecuado desempeño de sus funciones. El empleado declara haberlos recibido en buen estado 
-                    y se compromete a darles un uso responsable y exclusivamente laboral.
+                    <strong>Guayaquil, <span t-out="docs[0].create_date"/></strong>
                 </p>
 
-                <!-- Fecha de entrega -->
+                <!-- Texto inicial -->
                 <p style="margin-top:15px; text-align:justify;">
-                    Fecha de entrega: <strong><span t-out="docs[0].entrega_date"/></strong>
+                    A través de la presente, yo <strong><span t-out="docs[0].entregado_por_id.name"/></strong>, con C.I. N° 
+                    <strong><span t-out="docs[0].entregado_por_id.identification_id"/></strong>, en calidad de representante del 
+                    <strong>Departamento de Recursos Humanos</strong> de la empresa ____________________________, procedo a realizar la entrega de los siguientes equipos al/la colaborador(a) 
+                    <strong><span t-out="docs[0].employee_id.name"/></strong>, con cédula de identidad N° 
+                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, quien desempeña el cargo de ____________________________.
                 </p>
 
-                <!-- Equipos -->
-                <div style="margin-top:25px; text-align:center;">
+                <!-- Detalle de equipos -->
+                <h3 style="margin-top:20px; text-align:left;">DETALLE DE EQUIPOS ENTREGADOS</h3>
+                <div style="margin-top:15px; text-align:left;">
                     <t t-foreach="docs" t-as="equipment">
-                        <div style="margin-top:15px; padding:5px; text-align:left; font-size:12px; display:inline-block; text-align:left;">
-                            <p><strong>Nombre del Equipo:</strong> <span t-out="equipment.name"/></p>
+                        <div style="margin-top:10px; padding:5px; font-size:12px;">
+                            <p><strong>Equipo:</strong> <span t-out="equipment.name"/></p>
                             <t t-if="equipment.model">
-                                <p><strong>Modelo:</strong> <span t-out="equipment.model"/></p>
+                                <p><strong>Marca/Modelo:</strong> <span t-out="equipment.model"/></p>
                             </t>
                             <t t-if="equipment.serial_no">
                                 <p><strong>Serie:</strong> <span t-out="equipment.serial_no"/></p>
                             </t>
-                            <p><span t-out="equipment.note"/></p>
+                            <p><strong>Estado:</strong> <span t-out="equipment.note"/></p>
                         </div>
                     </t>
                 </div>
 
-                <!-- Texto mejorado debajo de equipos -->
+                <!-- Compromiso del colaborador -->
                 <p style="margin-top:25px; text-align:justify;">
-                    El colaborador <strong><span t-out="docs[0].employee_id.name"/></strong>, identificado con C.C. 
-                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, se compromete a mantener los equipos en buenas condiciones, 
-                    reportar cualquier novedad y devolverlos cuando la empresa lo requiera o al finalizar la relación laboral, 
-                    salvo el desgaste normal por uso.
+                    El/la colaborador(a) declara haber recibido los equipos en buen estado y se compromete a darles un uso responsable, exclusivamente laboral, 
+                    y a devolverlos cuando la empresa lo requiera o al finalizar la relación laboral, salvo el desgaste normal por uso.
                 </p>
 
+                <!-- Firmas -->
                 <div style="margin-top:50px; text-align:center;">
                     <div style="display:inline-block; width:45%; vertical-align:top;">
-                        <strong>ENTREGA</strong><br/><br/><br/>
+                        <strong>ENTREGA (RRHH)</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].entregado_por_id.name"/><br/>
-                        C.C. <span t-out="docs[0].entregado_por_id.identification_id"/>
+                        C.I. <span t-out="docs[0].entregado_por_id.identification_id"/>
                     </div>
 
                     <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
-                        <strong>RECIBE</strong><br/><br/><br/>
+                        <strong>RECIBE (Colaborador)</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].employee_id.name"/><br/>
-                        C.C. <span t-out="docs[0].employee_id.identification_id"/>
+                        C.I. <span t-out="docs[0].employee_id.identification_id"/>
                     </div>
                 </div>
 
