@@ -77,9 +77,9 @@
 
             'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/snippet_brand.scss',
 
-            'webpage_theme_common/static/src/snippet/conedera/s_map/000.scss',
-            'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.js',
-            'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.scss',
+            # 'webpage_theme_common/static/src/snippet/conedera/s_map/000.scss',
+            # 'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.js',
+            # 'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.scss',
 
             #Advance/Conedera (Dynamic_snippet)
 
