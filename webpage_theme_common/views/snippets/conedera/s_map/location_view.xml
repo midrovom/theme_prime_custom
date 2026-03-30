@@ -10,6 +10,7 @@
                         <group>
                             <field name="name"/>
                             <field name="city"/>
+                            <field name="address"/>
                             <field name="latitude" widget="char"/>
                             <field name="longitude" widget="char"/>
                         </group>
@@ -25,6 +26,7 @@
                 <list string="Website Location">
                     <field name="name"/>
                     <field name="city"/>
+                    <field name="address"/>
                     <field name="latitude" widget="char"/>
                     <field name="longitude" widget="char"/>
                 </list>
