@@ -28,8 +28,8 @@
         #Conedera
         'views/snippets/conedera/website_template.xml',
 
-        'views/snippets/conedera/s_map/location_view.xml',
-        'views/snippets/conedera/s_map/s_map.xml',
+        'views/snippets/advance/s_map/location_view.xml',
+        'views/snippets/advance/s_map/s_map.xml',
 
         'views/snippets/conedera/s_dynamic_snippet_brand/s_dynamic_snippet_brands.xml',
         'views/snippets/conedera/s_key_images/snippets.xml',
@@ -44,9 +44,9 @@
     'assets': {
         'web.assets_frontend': [
             
-            'webpage_theme_common/static/src/scss/conedera/snippets/s_map/000.scss',
-            'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.js',
-            'webpage_theme_common/static/src/scss/conedera/snippets/s_map/map_locations_card.scss',
+            'webpage_theme_common/static/src/scss/advance/s_map/000.scss',
+            'webpage_theme_common/static/src/snippet/advance/s_map/map_locations_card.js',
+            'webpage_theme_common/static/src/scss/advance/s_map/map_locations_card.scss',
 
             #Advance
             'webpage_theme_common/static/src/scss/advance/s_cover/s_cover_6_.scss',
