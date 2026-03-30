@@ -1,0 +1,24 @@
+/* Estilo para cada ítem de la lista de locales */
+#localList .list-group-item {
+    border-radius: 20px;                 
+    background-color: var(--bs-primary); 
+    color: black;                         
+    margin-bottom: 8px;                  
+    padding: 10px 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    border: none;                        
+}
+
+/* Efecto hover tipo botón hundido */
+#localList .list-group-item:hover {
+    transform: translateY(2px);          
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+    background-color: var(--bs-primary); 
+}
+
+.city-select-custom {
+  border-radius: 6px; 
+}
+

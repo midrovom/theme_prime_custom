@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="s_map_custom" inherit_id="website.s_map" name="Mapa con selector de ciudad">
+        <xpath expr="//section[@class='s_map pb56 pt56']" position="replace">
+            <section class="s_map pb56 pt56 o_colored_level"
+                     data-map-type="m" data-map-zoom="12"
+                     t-att-data-map-address="' '.join(filter(None, (user_id.company_id.street, user_id.company_id.city, user_id.company_id.state_id.display_name, user_id.company_id.country_id.display_name)))">
+                <div class="container mt-4">
+                    <div class="row">
+                        <div class="col-lg-4 col-md-12 pt16 pb16">
+                            <label for="citySelect" class="form-label fw-bold">Selecciona tu ciudad</label>
+                            <select id="citySelect" class="form-select mt-2 city-select-custom">
+                                <option value="" selected="selected">-- Elegir tu ciudad --</option>
+                            </select>
+                            <div id="localList" class="mt-3 local-list-custom"></div>
+                        </div>
+                        <div class="col-lg-8 col-md-12 pt16 pb16">
+                            <div class="map_container o_not_editable rounded">
+                                <div class="css_non_editable_mode_hidden">
+                                    <div class="missing_option_warning alert alert-info rounded-0 fade show d-none d-print-none">
+                                        An address must be specified for a map to be embedded
+                                    </div>
+                                </div>
+                                <div class="s_map_color_filter"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </xpath>
+    </template>
+</odoo>
