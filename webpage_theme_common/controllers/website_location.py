@@ -1,24 +1,29 @@
 from odoo import http
 from odoo.http import request
 import json
+import logging
+_logger = logging.getLogger(__name__)
 
-# Controlador para obtener datos del local para el mapa
 class WebsiteLocations(http.Controller):
 
     @http.route('/locations', type='http', auth='public', methods=['GET'], csrf=False)
     def get_locations(self):
         records = request.env['website.location'].sudo().search([])
-        data = [
-            {
-                'name': rec.name,
-                'city': rec.city,
-                'address': rec.address,
-                'latitude': rec.latitude,
-                'longitude': rec.longitude,
-            }
-            for rec in records
-        ]
+        data = [{
+            'name': rec.name,
+            'city': rec.city,
+            'address': rec.address,
+            'latitude': rec.latitude,
+            'longitude': rec.longitude,
+        } for rec in records]
+
+        # Log de lo que se está devolviendo
+        _logger.info(">>> /locations devolviendo %s registros", len(data))
+        for d in data:
+            _logger.info(">>> Registro: %s", d)
+
         return request.make_response(
             json.dumps(data, ensure_ascii=False),
             headers=[('Content-Type', 'application/json')]
         )
+
