@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
-import publicWidget from 'web.public.widget';
-import {generateGMapLink, generateGMapIframe} from 'website.utils';
+import publicWidget from '@web/legacy/js/public/public_widget';
+import { generateGMapLink, generateGMapIframe } from '@website/js/utils';
 
 publicWidget.registry.MapLocationsCard = publicWidget.Widget.extend({
     selector: '.s_map',
@@ -11,84 +11,86 @@ publicWidget.registry.MapLocationsCard = publicWidget.Widget.extend({
 
     _loadCities: function () {
         fetch('/locations')
-        .then(response => response.json())
-        .then(data => {
-            const citySelect = document.getElementById("citySelect");
-            const localList = document.getElementById("localList");
-            const section = document.querySelector(".s_map");
+            .then(response => response.json())
+            .then(data => {
+                console.log(">>> Datos recibidos desde /locations:", data);
 
-            if (!citySelect || !localList || !section) {
-                console.warn("No se encontraron los elementos del snippet en el DOM");
-                return;
-            }
+                const citySelect = document.getElementById("citySelect");
+                const localList = document.getElementById("localList");
+                const section = document.querySelector(".s_map");
 
-            // Ciudades únicas
-            const cities = [...new Set(data.map(loc => loc.city))];
+                if (!citySelect || !localList || !section) {
+                    console.warn("No se encontraron los elementos del snippet en el DOM");
+                    return;
+                }
 
-            // Limpiar todas las opciones y volver a la inicial
-            citySelect.innerHTML = "";
-            const defaultOpt = document.createElement("option");
-            defaultOpt.value = "";
-            defaultOpt.textContent = "-- Elegir tu ciudad --";
-            defaultOpt.selected = true;
-            citySelect.appendChild(defaultOpt);
+                // Ciudades únicas
+                const cities = [...new Set(data.map(loc => loc.city))];
 
-            // Poblar el select con las ciudades
-            cities.forEach(city => {
-                const opt = document.createElement("option");
-                opt.value = city;
-                opt.textContent = city;
-                citySelect.appendChild(opt);
-            });
+                // Limpiar todas las opciones y volver a la inicial
+                citySelect.innerHTML = "";
+                const defaultOpt = document.createElement("option");
+                defaultOpt.value = "";
+                defaultOpt.textContent = "-- Elegir tu ciudad --";
+                defaultOpt.selected = true;
+                citySelect.appendChild(defaultOpt);
 
-            // Evento al cambiar ciudad
-            citySelect.addEventListener("change", function () {
-                const selectedCity = this.value;
-                localList.innerHTML = "";
+                // Poblar el select con las ciudades
+                cities.forEach(city => {
+                    const opt = document.createElement("option");
+                    opt.value = city;
+                    opt.textContent = city;
+                    citySelect.appendChild(opt);
+                });
 
-                const filtered = data.filter(loc => loc.city === selectedCity);
+                // Evento al cambiar ciudad
+                citySelect.addEventListener("change", function () {
+                    const selectedCity = this.value;
+                    localList.innerHTML = "";
 
-                if (filtered.length > 0) {
-                    const ul = document.createElement("ul");
-                    ul.className = "list-group";
+                    const filtered = data.filter(loc => loc.city === selectedCity);
 
-                    filtered.forEach(loc => {
-                        const li = document.createElement("li");
-                        li.className = "list-group-item btn btn-link text-start";
-                        li.textContent = loc.name;
+                    if (filtered.length > 0) {
+                        const ul = document.createElement("ul");
+                        ul.className = "list-group";
 
-                        // Guardar coordenadas en atributos
-                        li.dataset.lat = loc.latitude;
-                        li.dataset.lng = loc.longitude;
+                        filtered.forEach(loc => {
+                            const li = document.createElement("li");
+                            li.className = "list-group-item btn btn-link text-start";
+                            li.textContent = loc.name;
 
-                        // actualizar dataset y regenerar iframe
-                        li.addEventListener("click", function () {
-                            const lat = this.dataset.lat;
-                            const lng = this.dataset.lng;
-                            console.log("Moviendo mapa a:", lat, lng);
+                            // Guardar coordenadas en atributos
+                            li.dataset.lat = loc.latitude;
+                            li.dataset.lng = loc.longitude;
 
-                            section.dataset.mapAddress = `${lat},${lng}`;
-                            const iframeEl = section.querySelector(".s_map_embedded");
-                            const url = generateGMapLink(section.dataset);
+                            // actualizar dataset y regenerar iframe
+                            li.addEventListener("click", function () {
+                                const lat = this.dataset.lat;
+                                const lng = this.dataset.lng;
+                                console.log("Moviendo mapa a:", lat, lng);
 
-                            if (iframeEl) {
-                                iframeEl.setAttribute("src", url);
-                            } else {
-                                const newIframe = generateGMapIframe();
-                                newIframe.setAttribute("src", url);
-                                section.querySelector(".s_map_color_filter").before(newIframe);
-                            }
+                                section.dataset.mapAddress = `${lat},${lng}`;
+                                const iframeEl = section.querySelector(".s_map_embedded");
+                                const url = generateGMapLink(section.dataset);
+
+                                if (iframeEl) {
+                                    iframeEl.setAttribute("src", url);
+                                } else {
+                                    const newIframe = generateGMapIframe();
+                                    newIframe.setAttribute("src", url);
+                                    section.querySelector(".s_map_color_filter").before(newIframe);
+                                }
+                            });
+
+                            ul.appendChild(li);
                         });
 
-                        ul.appendChild(li);
-                    });
-
-                    localList.appendChild(ul);
-                }
+                        localList.appendChild(ul);
+                    }
+                });
+            })
+            .catch(err => {
+                console.error("Error al llamar al controlador /locations:", err);
             });
-        })
-        .catch(err => {
-            console.error("Error al llamar al controlador /locations:", err);
-        });
     }
 });
