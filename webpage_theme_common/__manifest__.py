@@ -44,10 +44,10 @@
     'assets': {
         'web.assets_frontend': [
             
-            'webpage_theme_common/static/src/snippet/conedera/s_map/000.scss',
+            'webpage_theme_common/static/src/scss/conedera/snippets/s_map/000.scss',
             'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.js',
-            'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.scss',
-            
+            'webpage_theme_common/static/src/scss/conedera/snippets/s_map/map_locations_card.scss',
+
             #Advance
             'webpage_theme_common/static/src/scss/advance/s_cover/s_cover_6_.scss',
             'webpage_theme_common/static/src/scss/advance/gallery_custom/gallery_custom.scss',
