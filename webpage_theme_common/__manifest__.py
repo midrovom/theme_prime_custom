@@ -9,7 +9,7 @@
     'data': [
 
         'security/ir.model.access.csv',
-        
+
         #Advance
         'data/advance/data.xml',
         'data/advance/category_snippet_template_data.xml',
@@ -67,10 +67,6 @@
             'webpage_theme_common/static/src/scss/conedera/snippets/s_banner_2/000.scss',
             'webpage_theme_common/static/src/css/conedera/style.css',
 
-            'webpage_theme_common/static/src/snippet/conedera/s_map/000.scss',
-            'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.js',
-            'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.scss',
-
             'webpage_theme_common/static/src/scss/conedera/snippets/footers/footer_style_12.scss',
             'webpage_theme_common/static/src/scss/conedera/snippets/headers/prime_style_9.scss',
 
@@ -80,6 +76,10 @@
             'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_style_12_theme_prime/s_style_12.scss',
 
             'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/snippet_brand.scss',
+
+            'webpage_theme_common/static/src/snippet/conedera/s_map/000.scss',
+            'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.js',
+            'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.scss',
 
             #Advance/Conedera (Dynamic_snippet)
 
