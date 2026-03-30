@@ -59,17 +59,30 @@ publicWidget.registry.MapLocationsCard = publicWidget.Widget.extend({
                             li.className = "list-group-item btn btn-link text-start";
                             li.textContent = loc.name;
 
-                            // Guardar coordenadas en atributos
+                            // Guardar datos en atributos
                             li.dataset.lat = loc.latitude;
                             li.dataset.lng = loc.longitude;
+                            li.dataset.address = loc.address;
 
                             // actualizar dataset y regenerar iframe
                             li.addEventListener("click", function () {
                                 const lat = this.dataset.lat;
                                 const lng = this.dataset.lng;
-                                console.log("Moviendo mapa a:", lat, lng);
+                                const addr = this.dataset.address;
 
-                                section.dataset.mapAddress = `${lat},${lng}`;
+                                let mapTarget;
+                                if (lat && lng) {
+                                    mapTarget = `${lat},${lng}`;
+                                    console.log("Moviendo mapa a coordenadas:", mapTarget);
+                                } else if (addr) {
+                                    mapTarget = addr;
+                                    console.log("Moviendo mapa a dirección:", mapTarget);
+                                } else {
+                                    console.warn("No hay datos de ubicación disponibles");
+                                    return;
+                                }
+
+                                section.dataset.mapAddress = mapTarget;
                                 const iframeEl = section.querySelector(".s_map_embedded");
                                 const url = generateGMapLink(section.dataset);
 
