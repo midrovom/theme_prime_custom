@@ -8,5 +8,5 @@ class WebsiteLocation(models.Model):
     address = fields.Char(string="Dirección (Google Maps)", help="Dirección completa")
 
     # Coordenadas
-    latitude = fields.Float(string="Latitud", digits=(10, 6), help="Ejemplo: -2.170998")
-    longitude = fields.Float(string="Longitud", digits=(10, 6), help="Ejemplo: -79.922359")
+    latitude = fields.Char(string="Latitud")
+    longitude = fields.Char(string="Longitud")
