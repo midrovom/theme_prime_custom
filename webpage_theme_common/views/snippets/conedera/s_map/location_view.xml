@@ -48,5 +48,16 @@
             </field>
         </record>
 
+
+            <menuitem id="menu_locations"
+                name="Localidades"
+                parent="website_sale.menu_ecommerce"
+                sequence="4">
+
+            <menuitem id="menu_locations_custom"
+                name="localidad"
+                action="webpage_theme_common.website_location_action_views"
+                sequence="1"/>
+
     </data>
 </odoo>
