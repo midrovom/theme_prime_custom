@@ -7,9 +7,10 @@
     'website': 'https://callphoneecuador.com',
     'license': 'LGPL-3',
     'data': [
-        #Advance
+
         'security/ir.model.access.csv',
         
+        #Advance
         'data/advance/data.xml',
         'data/advance/category_snippet_template_data.xml',
         'data/advance/product_snippet_template_data_custom.xml',
