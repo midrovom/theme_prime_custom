@@ -11,8 +11,8 @@
                             <field name="name"/>
                             <field name="city"/>
                             <field name="address"/>
-                            <field name="latitude"/>
-                            <field name="longitude"/>
+                            <field name="latitude" widget="char"/>
+                            <field name="longitude" widget="char"/>
                         </group>
                     </sheet>
                 </form>
@@ -27,8 +27,9 @@
                     <field name="name"/>
                     <field name="city"/>
                     <field name="address"/>
-                    <field name="latitude"/>
-                    <field name="longitude"/>
+                    <!-- Mostrar como texto plano -->
+                    <field name="latitude" widget="char"/>
+                    <field name="longitude" widget="char"/>
                 </list>
             </field>
         </record>
@@ -48,7 +49,7 @@
             </field>
         </record>
 
-        <!-- Menú principal autocerrado -->
+        <!-- Menú principal -->
         <menuitem id="menu_locations"
                   name="Localidades"
                   parent="website_sale.menu_ecommerce"
