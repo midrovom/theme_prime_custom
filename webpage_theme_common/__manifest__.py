@@ -18,6 +18,9 @@
         #Conedera
         'data/conedera/brand_snippet_template_data.xml',
 
+        'views/snippets/conedera/s_map/location_view.xml',
+        'views/snippets/conedera/s_map/s_map.xml',
+
         #Advance
 
         'views/snippets/advance/product_public_categ_view.xml',
@@ -27,10 +30,6 @@
 
         #Conedera
         'views/snippets/conedera/website_template.xml',
-
-        'views/snippets/conedera/s_map/location_view.xml',
-        'views/snippets/conedera/s_map/s_map.xml',
-
         'views/snippets/conedera/s_dynamic_snippet_brand/s_dynamic_snippet_brands.xml',
         'views/snippets/conedera/s_key_images/snippets.xml',
         'views/snippets/conedera/s_key_images/s_key_images_custom.xml',
