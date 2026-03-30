@@ -43,6 +43,11 @@
     ],
     'assets': {
         'web.assets_frontend': [
+            
+            'webpage_theme_common/static/src/snippet/conedera/s_map/000.scss',
+            'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.js',
+            'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.scss',
+            
             #Advance
             'webpage_theme_common/static/src/scss/advance/s_cover/s_cover_6_.scss',
             'webpage_theme_common/static/src/scss/advance/gallery_custom/gallery_custom.scss',
@@ -76,10 +81,6 @@
             'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_style_12_theme_prime/s_style_12.scss',
 
             'webpage_theme_common/static/src/scss/conedera/snippets/s_dynamic_snippet_brand/snippet_brand.scss',
-
-            # 'webpage_theme_common/static/src/snippet/conedera/s_map/000.scss',
-            # 'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.js',
-            # 'webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.scss',
 
             #Advance/Conedera (Dynamic_snippet)
 

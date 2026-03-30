@@ -30,26 +30,4 @@
         </xpath>
     </template>
 
-        <!-- CSS principal -->
-        <record id="webpage_theme_common.s_map_custom_card_scss" model="ir.asset">
-            <field name="name">Mapa custom card SCSS</field>
-            <field name="bundle">web.assets_frontend</field>
-            <field name="path">webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.scss</field>
-        </record>
-
-        <!-- CSS adicional -->
-        <record id="webpage_theme_common.s_map_custom_card_000_scss" model="ir.asset">
-            <field name="name">Mapa custom card 000 SCSS</field>
-            <field name="bundle">web.assets_frontend</field>
-            <field name="path">webpage_theme_common/static/src/snippet/conedera/s_map/000.scss</field>
-        </record>
-
-        <!-- JS -->
-        <record id="webpage_theme_common.s_map_custom_card_js" model="ir.asset">
-            <field name="name">Mapa custom card JS</field>
-            <field name="bundle">web.assets_frontend</field>
-            <field name="path">webpage_theme_common/static/src/snippet/conedera/s_map/map_locations_card.js</field>
-        </record>
-
-
 </odoo>
