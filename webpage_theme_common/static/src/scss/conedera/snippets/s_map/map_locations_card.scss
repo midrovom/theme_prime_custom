@@ -18,6 +18,10 @@
     background-color: var(--bs-primary); 
 }
 
+
 .city-select-custom {
-  border-radius: 6px; 
+    border-radius: 6px; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15); /* sombra ligera */
+    border-radius: 4px; /* esquinas redondeadas */
+    background-color: #f9f9f9; /* fondo gris claro */
 }
