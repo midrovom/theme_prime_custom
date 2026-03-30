@@ -8,6 +8,7 @@
     'license': 'LGPL-3',
     'data': [
         #Advance
+        'security/ir.model.access.csv',
         
         'data/advance/data.xml',
         'data/advance/category_snippet_template_data.xml',
