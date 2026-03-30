@@ -25,3 +25,11 @@
     border-radius: 4px; /* esquinas redondeadas */
     background-color: #f9f9f9; /* fondo gris claro */
 }
+
+.location-selector-box {
+    background-color: #fff; 
+    border: 1px solid #ddd; /* borde gris claro */
+    border-radius: 8px;     /* esquinas redondeadas */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* sombra suave */
+    padding: 16px;          /* espacio interno */
+}

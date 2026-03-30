@@ -7,7 +7,7 @@
                      t-att-data-map-address="' '.join(filter(None, (user_id.company_id.street, user_id.company_id.city, user_id.company_id.state_id.display_name, user_id.company_id.country_id.display_name)))">
                 <div class="container mt-4">
                     <div class="row">
-                        <div class="col-lg-4 col-md-12 pt16 pb16">
+                        <div class="col-lg-4 col-md-12 pt16 pb16 location-selector-box">
                             <label for="citySelect" class="form-label fw-bold">Selecciona tu ciudad</label>
                             <select id="citySelect" class="form-select mt-2 city-select-custom">
                                 <option value="" selected="selected">-- Elegir tu ciudad --</option>
