@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Grupo que actúa como "check" -->
+    <record id="group_allow_unlink_employee_attachments" model="res.groups">
+        <field name="name">Permitir eliminar adjuntos en empleados</field>
+        <field name="category_id" ref="base.module_category_human_resources_employees"/>
+        <field name="comment">Si el usuario pertenece a este grupo, podrá eliminar adjuntos en empleados.</field>
+    </record>
+
+    <!-- Regla restrictiva: todos los usuarios internos NO pueden eliminar -->
+    <record id="rule_block_unlink_employee_attachments" model="ir.rule">
+        <field name="name">Bloquear eliminar adjuntos en empleados</field>
+        <field name="model_id" ref="base.model_ir_attachment"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="domain_force">[('res_model','=','hr.employee')]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Regla permisiva: los que tengan el grupo sí pueden eliminar -->
+    <record id="rule_allow_unlink_employee_attachments" model="ir.rule">
+        <field name="name">Permitir eliminar adjuntos en empleados</field>
+        <field name="model_id" ref="base.model_ir_attachment"/>
+        <field name="groups" eval="[(4, ref('group_allow_unlink_employee_attachments'))]"/>
+        <field name="domain_force">[('res_model','=','hr.employee')]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+</odoo>
