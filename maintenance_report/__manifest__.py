@@ -11,7 +11,6 @@
     'author': 'Ing. Bolivar Rodriguez',
     'depends': ['maintenance','hr'],
     'data': [
-        'security/hr_security.xml',
         'report/maintenance_report.xml',
         'report/maintenance_report_templates.xml',
         'report/maintenance_equipment_return.xml',
