@@ -2,6 +2,7 @@
 
 import publicWidget from "@web/legacy/js/public/public_widget";
 import { _t } from "@web/core/l10n/translation";
+import ajax from 'web.ajax';
 
 const YEARS = Array.from({ length: 2026 - 1900 }, (_, i) => i + 1900);
 
@@ -118,9 +119,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
      */
     init() {
         this._super(...arguments);
-        this.orm = this.bindService("orm");
-        this.rpc = this.bindService("rpc");
-        this.notification = this.bindService("notification");
+        // this.orm = this.bindService("orm");
+        // this.rpc = this.bindService("rpc");
+        // this.notification = this.bindService("notification");
         this.educationCount = 1;
         this.experienceCount = 1;
         this.familyCount = 0;
@@ -167,6 +168,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         this._checkFieldsFilled();
         this._checkEducationFieldsFilled();
+    },
+
+    _showNotification(message, type = 'danger', title = '') {
+        alert((title ? title + '\n' : '') + message);
     },
 
     async _getExperienceBlock(isFirstBlock = false) {
@@ -620,10 +625,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isEstadoCivilValid
         ) {
 
-            this.notification.add(_t("Por favor complete todos los campos requeridos correctamente"), {
-                type: 'danger',
-                title: _t("Error de validación"),
-            });
+            this._showNotification(_t("Por favor complete todos los campos requeridos correctamente"),
+                'danger', _t("Error de validación")
+            );
 
             this._scrollToFirstError();
             return false;
