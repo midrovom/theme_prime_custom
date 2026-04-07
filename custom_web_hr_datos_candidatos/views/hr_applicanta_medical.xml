@@ -2,11 +2,11 @@
 <odoo>
     <data>
 
-        <record model="ir.ui.view" id="applicant_medical_tree">
-            <field name="name">applicant.medical.tree</field>
+        <record model="ir.ui.view" id="applicant_medical_list">
+            <field name="name">applicant.medical.list</field>
             <field name="model">applicant.medical</field>
             <field name="arch" type="xml">
-                <tree string="Información Médica">
+                <list string="Información Médica">
                     <field name="enfermedad_persistente"/>
                     <field name="detalle_enfermedad_persistente"/>
                     <field name="medicacion_continua"/>
@@ -15,15 +15,15 @@
                     <field name="detalle_enfermedad_laboral"/>
                     <field name="cirugia_realizada"/>
                     <field name="detalle_cirugia_realizada"/>
-                </tree>
+                </list>
             </field>
         </record>
 
         <record id="hr_applicant_medical_action" model="ir.actions.act_window">
             <field name="name">Información Médica</field>
             <field name="res_model">applicant.medical</field>
-            <field name="view_mode">tree,form</field>
-            <field name="view_id" ref="applicant_medical_tree"/>
+            <field name="view_mode">list,form</field>
+            <field name="view_id" ref="applicant_medical_list"/>
         </record>
 
     </data>
