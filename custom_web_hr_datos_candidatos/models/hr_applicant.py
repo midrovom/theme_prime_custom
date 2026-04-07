@@ -19,6 +19,9 @@ class HrApplicant(models.Model):
     provincia_id = fields.Many2one('res.country.state', string='Provincia')
     medical_ids = fields.One2many('applicant.medical', 'applicant_id', string="Información Médica")
 
+    lastname_paterno = fields.Char(string="Apellido Paterno")
+    lastname_materno = fields.Char(string="Apellido Materno")
+    firstname = fields.Char(string="Nombres")
 
     disability = fields.Boolean('Discapacidad', default=False)
     family_disability = fields.Boolean('Familiar con Discapacidad', default=False)
@@ -60,14 +63,17 @@ class HrApplicant(models.Model):
     dependientes = fields.Char(string="Personas que dependen de usted")
 
 
+    name = fields.Char(string="Nombre completo", compute="_compute_name", store=True)
+
     @api.depends('lastname_paterno', 'lastname_materno', 'firstname')
-    def _compute_partner_name(self):
+    def _compute_name(self):
         for record in self:
-            nombres = []
+            partes = []
             if record.lastname_paterno:
-                nombres.append(record.lastname_paterno)
+                partes.append(record.lastname_paterno)
             if record.lastname_materno:
-                nombres.append(record.lastname_materno)
+                partes.append(record.lastname_materno)
             if record.firstname:
-                nombres.append(record.firstname)
-            record.partner_name = " ".join(nombres)
+                partes.append(record.firstname)
+            record.name = " ".join(partes)
+
