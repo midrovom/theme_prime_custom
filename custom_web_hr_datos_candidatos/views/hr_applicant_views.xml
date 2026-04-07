@@ -38,7 +38,7 @@
                 <xpath expr="//notebook" position="inside">
                     <page string="Información Médica" name="page_medical">
                         <field name="medical_ids">
-                            <list editable="bottom">
+                            <list>
                                 <field name="enfermedad_persistente"/>
                                 <field name="detalle_enfermedad_persistente"/>
                                 <field name="medicacion_continua"/>
@@ -57,22 +57,22 @@
 
                     <page string="Datos Familiares" name="page_family">
                         <field name="family_ids">
-                            <tree>
-                                <field name="name"/>                     
-                                <field name="cedula"/>                   
-                                <field name="birthdate"/>                
-                                <field name="phone"/>                    
-                                <field name="occupation"/>               
-                                <field name="economically_dependent"/>   
-                                <field name="disability"/>               
-                                <field name="disability_type"/>          
-                            </tree>
+                            <list>
+                                <field name="name"/>
+                                <field name="cedula"/>
+                                <field name="birthdate"/>
+                                <field name="phone"/>
+                                <field name="occupation"/>
+                                <field name="economically_dependent"/>
+                                <field name="disability"/>
+                                <field name="disability_type"/>
+                            </list>
                         </field>
                     </page>
 
                     <page string="Formación Académica" name="page_education">
                         <field name="education_ids">
-                            <tree>
+                            <list>
                                 <field name="level_id"/>
                                 <field name="institucion"/>
                                 <field name="fecha_inicio"/>
@@ -84,13 +84,13 @@
                                 <field name="horario"/>              
                                 <field name="carrera"/>  
                                 <field name="estado"/>             
-                            </tree>
+                            </list>
                         </field>
                     </page>
 
                     <page string="Experiencia Laboral" name="page_experience">
                         <field name="experience_job_ids">
-                            <tree>
+                            <list>
                                 <field name="tiempo_servicio"/>
                                 <field name="empresa"/>
                                 <field name="pais_id"/>
@@ -102,30 +102,31 @@
                                 <field name="cargo_jefe_directo"/>
                                 <field name="fecha_inicio"/>
                                 <field name="year_fin"/>
-                            </tree>
+                            </list>
                         </field>
                     </page>
 
+
                     <page string="Familiares o Conocidos del Grupo Empresarial" name="page_known">
                         <field name="known_ids">
-                            <tree>
+                            <list>
                                 <field name="posee_familiares"/>
                                 <field name="nombre_completo"/>
                                 <field name="relacion"/>
                                 <field name="parentesco"/>
-                            </tree>
+                            </list>
                         </field>
                     </page>
 
                     <page string="Referencias Personales" name="page_reference">
                         <field name="reference_ids">
-                            <tree>
+                            <list>
                                 <field name="nombre"/>
                                 <field name="domicilio"/>
                                 <field name="telefono"/>
                                 <field name="ocupacion"/>
                                 <field name="tiempo_conocerlo"/>
-                            </tree>
+                            </list>
                         </field>
                     </page>
                 </xpath>
