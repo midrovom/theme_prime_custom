@@ -58,20 +58,15 @@ class WebsiteHRRecruitment(http.Controller):
         try:
             _logger.info(f"VALUES >>> {kwargs}")
 
-            #full_name = f"{kwargs.get('firstname') or ''} {kwargs.get('lastname_paterno') or ''} {kwargs.get('lastname_materno') or ''}".strip()
+            full_name = f"{kwargs.get('firstname') or ''} {kwargs.get('lastname_paterno') or ''} {kwargs.get('lastname_materno') or ''}".strip()
            
             dependientes_list = request.httprequest.form.getlist('dependientes')
             dependientes = ', '.join(dependientes_list) if dependientes_list else ''
-
-            full_name = f"{kwargs.get('firstname') or ''} {kwargs.get('lastname_paterno') or ''} {kwargs.get('lastname_materno') or ''}".strip()
 
             applicant_values = {
                 'job_id': safe_int(kwargs.get('jobId')),
                 'name': f"{full_name} - {kwargs.get('jobName')}",
                 'partner_name': full_name,
-                'firstname': kwargs.get('firstname'),
-                'lastname_paterno': kwargs.get('lastname_paterno'),
-                'lastname_materno': kwargs.get('lastname_materno'),
                 'age': safe_int(kwargs.get('age')),
                 'email_from': kwargs.get('email'),
                 'partner_phone': f"{kwargs.get('codePhone') or ''}{kwargs.get('phone') or ''}",
