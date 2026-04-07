@@ -8,7 +8,7 @@
             <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
             <field name="arch" type="xml">
 
-                <xpath expr="//field[@name='partner_mobile']" position="after">
+                <xpath expr="//field[@name='partner_phone']" position="after">
                     <!-- Datos personales -->
                     <field name="document_type"/>
                     <field name="cedula"/>
