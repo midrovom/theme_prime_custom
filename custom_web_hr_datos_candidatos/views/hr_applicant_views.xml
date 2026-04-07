@@ -38,7 +38,7 @@
                 <xpath expr="//notebook" position="inside">
                     <page string="Información Médica" name="page_medical">
                         <field name="medical_ids">
-                            <tree>
+                            <list editable="bottom">
                                 <field name="enfermedad_persistente"/>
                                 <field name="detalle_enfermedad_persistente"/>
                                 <field name="medicacion_continua"/>
@@ -51,7 +51,7 @@
                                 <field name="tipo_discapacidad"/>
                                 <field name="porcentaje_discapacidad"/>
                                 <field name="tipo_sangre"/>
-                            </tree>
+                            </list>
                         </field>
                     </page>
 
