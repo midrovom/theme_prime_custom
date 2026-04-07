@@ -2,7 +2,7 @@
     'name': 'HR Recruitment WebSite Empleados',
     'version': '18.0.1.0.0',
     'description': '''
-        Modulo desarrollado para la version community de Odoo 17
+        Modulo desarrollado para la version community de Odoo 18
         Especificaciones del modulo:
         - Vista personalizada del formulario de datos para candidatos
     ''',
