@@ -35,7 +35,7 @@ select.form-select {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    background-image: url('/custom_web_hr_recruitment/static/src/assets/svg/drown-arrow.svg'); /* tu propia flecha */
+    background-image: url('/custom_web_hr_datos_candidatos/static/src/assets/svg/drown-arrow.svg'); /* tu propia flecha */
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 24px;
