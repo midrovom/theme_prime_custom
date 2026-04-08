@@ -57,8 +57,6 @@ class WebsiteHRRecruitment(http.Controller):
 
         try:
             _logger.info(f"VALUES >>> {kwargs}")
-
-            #full_name = f"{kwargs.get('firstname') or ''} {kwargs.get('lastname_paterno') or ''} {kwargs.get('lastname_materno') or ''}".strip()
            
             dependientes_list = request.httprequest.form.getlist('dependientes')
             dependientes = ', '.join(dependientes_list) if dependientes_list else ''
