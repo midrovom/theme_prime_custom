@@ -240,7 +240,7 @@ export class TpRecordSelector extends AbstractComponent {
         return this.props.componentData.recordsIDs || [];
     }
     get defaultParams() {
-        return { model: this.environmentModel, fields: this.fields, limit: 30, extras: { activePricelist: this.activePricelist}};
+        return { model: this.environmentModel, fields: this.fields, limit: 10, extras: { activePricelist: this.activePricelist}};
     }
 }
 TpRecordSelector.template = 'theme_prime.TpRecordSelector';
