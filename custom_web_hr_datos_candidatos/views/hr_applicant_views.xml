@@ -9,7 +9,7 @@
             <field name="arch" type="xml">
 
             <xpath expr="//field[@name='candidate_id']" position="after">
-                <field name="name"/>
+                    <field name="candidate_id" context="{'show_name': True}"/>
             </xpath>
 
                 <xpath expr="//field[@name='partner_phone']" position="after">
