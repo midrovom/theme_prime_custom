@@ -188,7 +188,7 @@
     </template>
 
     <template id="s_d_brand_snippet" name="Brands">
-        <section class="s_d_brand_snippet_wrapper tp-droggol-18-builder-snippet pt32 pb32" data-tp-snippet-id="s_d_brand_snippet" data-brand-count="30">
+        <section class="s_d_brand_snippet_wrapper tp-droggol-18-builder-snippet pt32 pb32" data-tp-snippet-id="s_d_brand_snippet">
             <div class="container s_d_brand_snippet position-relative"/>
         </section>
     </template>
