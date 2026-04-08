@@ -18,7 +18,7 @@ class HrApplicant(models.Model):
     reference_ids = fields.One2many('applicant.reference', 'applicant_id', string='Referencias Personales')
     provincia_id = fields.Many2one('res.country.state', string='Provincia')
     medical_ids = fields.One2many('applicant.medical', 'applicant_id', string="Información Médica")
-    candidate_id = fields.Many2one('hr.candidate', 'candidate_id',string="Candidato", ondelete='cascade')
+    candidate_id = fields.Many2one('hr.candidate', 'applicant_id',string="Candidato", ondelete='cascade')
 
     disability = fields.Boolean('Discapacidad', default=False)
     family_disability = fields.Boolean('Familiar con Discapacidad', default=False)
