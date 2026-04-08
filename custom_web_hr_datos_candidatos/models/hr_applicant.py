@@ -20,7 +20,6 @@ class HrApplicant(models.Model):
     medical_ids = fields.One2many('applicant.medical', 'applicant_id', string="Información Médica")
     candidate_id = fields.Many2one('hr.candidate', string="Candidato", ondelete='cascade')
 
-    
 
     disability = fields.Boolean('Discapacidad', default=False)
     family_disability = fields.Boolean('Familiar con Discapacidad', default=False)
@@ -31,7 +30,7 @@ class HrApplicant(models.Model):
     address = fields.Char(string="Dirección de domicilio")
     parish = fields.Char(string="Parroquia")
     birth_country_id = fields.Many2one('res.country', string="Lugar de nacimiento (país)")
-    partner_mobile = fields.Char(string="Celular del contacto")
+    partner_mobile = fields.Char(string="Celular")
     code_cellphone = fields.Char(string="Código de celular")
     document_type = fields.Selection(DOCUMENT_TYPES, string='Tipo de documento')
     cedula = fields.Char(string='Número de documento')
