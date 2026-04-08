@@ -2,6 +2,7 @@
 
 import publicWidget from "@web/legacy/js/public/public_widget";
 import { _t } from "@web/core/l10n/translation";
+import { jsonrpc } from "@web/core/network/rpc_service";
 
 const YEARS = Array.from({ length: 2026 - 1900 }, (_, i) => i + 1900);
 
@@ -118,9 +119,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
      */
     init() {
         this._super(...arguments);
-        this.orm = this.bindService("orm");
-        this.rpc = this.bindService("rpc");
-        this.notification = this.bindService("notification");
+        // this.orm = this.bindService("orm");
+        // this.rpc = this.bindService("rpc");
+        // this.notification = this.bindService("notification");
         this.educationCount = 1;
         this.experienceCount = 1;
         this.familyCount = 0;
@@ -193,9 +194,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
-        const [countries] = await Promise.all([
-            fetch("/api/countries").then(r => r.json())
-        ]);
+        // const [countries] = await Promise.all([
+        //     fetch("/api/countries").then(r => r.json())
+        // ]);
+
+        const countries = await jsonrpc("/api/countries", {});
 
         const optionsCountries = countries.map(
             country => `<option value="${country.id}">${country.name}</option>`
@@ -320,10 +323,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
-        const [countries, studiesLevels] = await Promise.all([
-            fetch("/api/countries").then(r => r.json()),
-            fetch("/api/study_levels").then(r => r.json())
-        ]);
+        // const [countries, studiesLevels] = await Promise.all([
+        //     fetch("/api/countries").then(r => r.json()),
+        //     fetch("/api/study_levels").then(r => r.json())
+        // ]);
+
+        const countries = await jsonrpc("/api/countries", {});
+        const studiesLevels = await jsonrpc("/api/study_levels", {});
 
         const optionsCountries = countries.map(
             country => `<option value="${country.id}">${country.name}</option>`
@@ -620,10 +626,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isEstadoCivilValid
         ) {
 
-            this.notification.add(_t("Por favor complete todos los campos requeridos correctamente"), {
-                type: 'danger',
-                title: _t("Error de validación"),
-            });
+            // this.notification.add(_t("Por favor complete todos los campos requeridos correctamente"), {
+            //     type: 'danger',
+            //     title: _t("Error de validación"),
+            // });
+
+            alert("Por favor complete todos los campos requeridos correctamente");
 
             this._scrollToFirstError();
             return false;
@@ -639,10 +647,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const cirugia = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
         
         if (!enfermedad || !medicacion || !enfermedadLaboral || !cirugia) {
-            this.notification.add(_t("Complete correctamente la información médica"), {
-                type: 'danger',
-                title: _t("Error de validación"),
-            });
+            // this.notification.add(_t("Complete correctamente la información médica"), {
+            //     type: 'danger',
+            //     title: _t("Error de validación"),
+            // });
+
+            alert("Complete correctamente la información médica");
+
             this._scrollToFirstError();
             return false;
         }
@@ -711,9 +722,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isRelationValid ||
             !isParentescoValid
         ) {
-            this.notification.add(_t("Complete todos los campos obligatorios"), {
-                type: 'danger',
-            });
+            // this.notification.add(_t("Complete todos los campos obligatorios"), {
+            //     type: 'danger',
+            // });
+
+            alert("Complete todos los campos obligatorios");
+
             return false;
         }
 
@@ -1380,18 +1394,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
-    async _addReferenceBlock() {
-        this.referenceCount++;
-        const newBlock = await this._getReferenceBlock();
-        this.$('#reference_container').append(newBlock);
-        this.$('#total_references').val(this.referenceCount);
+    // async _addReferenceBlock() {
+    //     this.referenceCount++;
+    //     const newBlock = await this._getReferenceBlock();
+    //     this.$('#reference_container').append(newBlock);
+    //     this.$('#total_references').val(this.referenceCount);
 
-        this.$('#reference_container')
-            .find('.reference-block')
-            .last()
-            .find('input[required]')
-            .on('blur', (ev) => this._validateReferenceField(ev));
-    },
+    //     this.$('#reference_container')
+    //         .find('.reference-block')
+    //         .last()
+    //         .find('input[required]')
+    //         .on('blur', (ev) => this._validateReferenceField(ev));
+    // },
 
 
     _checkEducationFieldsFilled() {
@@ -1451,6 +1465,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
+    // async _addReferenceBlock() {
+    //     this.referenceCount++;
+
+    //     const html = await this._getReferenceBlock(this.referenceCount === 1);
+    //     this.$('#reference_container').append(html);
+
+    //     this.$('#reference_container').find('.remove-reference').last().on('click', (ev) => {
+    //         $(ev.currentTarget).closest('.reference-block').remove();
+    //         this.referenceCount--;
+    //     });
+    // },
+    
     async _addReferenceBlock() {
         this.referenceCount++;
 
@@ -1462,7 +1488,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.referenceCount--;
         });
     },
-    
+
     async _onAddReference(ev) {
         ev.preventDefault();
         await this._addReferenceBlock();
