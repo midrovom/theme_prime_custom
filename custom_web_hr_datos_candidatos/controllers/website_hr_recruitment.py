@@ -74,7 +74,7 @@ class WebsiteHRRecruitment(http.Controller):
             # Crear Applicant relacionado con Candidate
             applicant_values = {
                 'job_id': safe_int(kwargs.get('jobId')),
-                'name': f"{candidate.name} - {kwargs.get('jobName')}",  # usa el nombre completo computado del Candidate
+                #'name': f"{candidate.name} - {kwargs.get('jobName')}",  # usa el nombre completo computado del Candidate
                 'partner_name': candidate.name,
                 'firstname': kwargs.get('firstname'),
                 'lastname_paterno': kwargs.get('lastname_paterno'),
