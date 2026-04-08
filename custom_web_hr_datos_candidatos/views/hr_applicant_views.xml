@@ -9,6 +9,7 @@
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='partner_phone']" position="after">
                     <!-- Datos personales -->
+                    <field name="image_1920"/>
                     <field name="partner_mobile" />
                     <field name="document_type"/>
                     <field name="cedula"/>
