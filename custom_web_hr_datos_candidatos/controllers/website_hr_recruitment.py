@@ -65,7 +65,7 @@ class WebsiteHRRecruitment(http.Controller):
 
             applicant_values = {
                 'job_id': safe_int(kwargs.get('jobId')),
-                'name': f"{full_name} - {kwargs.get('jobName')}",
+                #'name': f"{full_name} - {kwargs.get('jobName')}",
                 'candidate_id': full_name,
                 'firstname': kwargs.get('firstname'),
                 'lastname_paterno': kwargs.get('lastname_paterno'),
