@@ -6,7 +6,7 @@
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">custom_web_hr_datos_candidatos.report_applicant_test</field>
         <field name="report_file">custom_web_hr_datos_candidatos.report_applicant_test</field>
-        <field name="print_report_name">'Reporte_Candidatos_Test - %s' % (object.partner_name).replace('/', '')</field>
+        <field name="print_report_name">'Reporte_Candidatos - %s' % (object.partner_name).replace('/', '')</field>
         <field name="binding_model_id" ref="hr_recruitment.model_hr_applicant"/>
         <field name="binding_type">report</field>
     </record>
