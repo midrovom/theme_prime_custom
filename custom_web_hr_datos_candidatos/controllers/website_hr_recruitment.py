@@ -58,18 +58,29 @@ class WebsiteHRRecruitment(http.Controller):
         try:
             _logger.info(f"VALUES >>> {kwargs}")
 
-            full_name = f"{kwargs.get('firstname') or ''} {kwargs.get('lastname_paterno') or ''} {kwargs.get('lastname_materno') or ''}".strip()
+            # full_name = f"{kwargs.get('firstname') or ''} {kwargs.get('lastname_paterno') or ''} {kwargs.get('lastname_materno') or ''}".strip()
            
+            full_name = f"{kwargs.get('firstname') or ''} {kwargs.get('lastname_paterno') or ''} {kwargs.get('lastname_materno') or ''}".strip()
+        
             dependientes_list = request.httprequest.form.getlist('dependientes')
             dependientes = ', '.join(dependientes_list) if dependientes_list else ''
 
-            applicant_values = {
-                'job_id': safe_int(kwargs.get('jobId')),
-                #'name': f"{full_name} - {kwargs.get('jobName')}",
-                'candidate_id': full_name,
+            candidate_vals = {
+                
                 'firstname': kwargs.get('firstname'),
                 'lastname_paterno': kwargs.get('lastname_paterno'),
                 'lastname_materno': kwargs.get('lastname_materno'),
+            }
+            candidate = request.env['hr.candidate'].sudo().create(candidate_vals)
+
+            applicant_values = {
+                'job_id': safe_int(kwargs.get('jobId')),
+                'name': f"{full_name} - {kwargs.get('jobName')}",
+                'partner_name': full_name,
+                'firstname': kwargs.get('firstname'),
+                'lastname_paterno': kwargs.get('lastname_paterno'),
+                'lastname_materno': kwargs.get('lastname_materno'),
+                'candidate_id': candidate.id,
                 'age': safe_int(kwargs.get('age')),
                 'email_from': kwargs.get('email'),
                 'partner_phone': f"{kwargs.get('codePhone') or ''}{kwargs.get('phone') or ''}",
