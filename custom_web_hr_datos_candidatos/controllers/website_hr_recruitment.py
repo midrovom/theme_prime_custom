@@ -76,9 +76,9 @@ class WebsiteHRRecruitment(http.Controller):
                 'job_id': safe_int(kwargs.get('jobId')),
                 #'name': f"{candidate.name} - {kwargs.get('jobName')}",  # usa el nombre completo computado del Candidate
                 'partner_name': candidate.name,
-                'firstname': kwargs.get('firstname'),
-                'lastname_paterno': kwargs.get('lastname_paterno'),
-                'lastname_materno': kwargs.get('lastname_materno'),
+                # 'firstname': kwargs.get('firstname'),
+                # 'lastname_paterno': kwargs.get('lastname_paterno'),
+                # 'lastname_materno': kwargs.get('lastname_materno'),
                 'candidate_id': candidate.id,
                 'dependientes': dependientes,
                 'age': safe_int(kwargs.get('age')),
