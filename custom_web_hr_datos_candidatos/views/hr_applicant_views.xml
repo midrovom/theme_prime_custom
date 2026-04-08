@@ -7,17 +7,11 @@
             <field name="model">hr.applicant</field>
             <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
             <field name="arch" type="xml">
-
-            <!-- <xpath expr="//field[@name='candidate_id']" position="after">
-                    <field name="candidate_id" context="{'show_name': True}"/>
-            </xpath> -->
-
                 <xpath expr="//field[@name='partner_phone']" position="after">
                     <!-- Datos personales -->
+                    <field name="partner_mobile" />
                     <field name="document_type"/>
                     <field name="cedula"/>
-                    <field name="partner_mobile" />
-                    <field name="code_cellphone"/>
                     <field name="address"/>
                     <field name="parish"/>
                     <field name="birthdate"/>

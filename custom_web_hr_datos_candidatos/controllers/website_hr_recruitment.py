@@ -58,7 +58,11 @@ class WebsiteHRRecruitment(http.Controller):
         try:
             _logger.info(f"VALUES >>> {kwargs}")
 
-            #full_name = f"{kwargs.get('firstname') or ''} {kwargs.get('lastname_paterno') or ''} {kwargs.get('lastname_materno') or ''}".strip()
+            # Recuperar archivo del formulario
+            imagen_file = request.httprequest.files.get('imagen')
+            imagen_b64 = False
+            if imagen_file:
+                imagen_b64 = base64.b64encode(imagen_file.read())
 
             dependientes_list = request.httprequest.form.getlist('dependientes')
             dependientes = ', '.join(dependientes_list) if dependientes_list else ''
@@ -76,9 +80,6 @@ class WebsiteHRRecruitment(http.Controller):
                 'job_id': safe_int(kwargs.get('jobId')),
                 #'name': f"{candidate.name} - {kwargs.get('jobName')}",  # usa el nombre completo computado del Candidate
                 'partner_name': candidate.name,
-                # 'firstname': kwargs.get('firstname'),
-                # 'lastname_paterno': kwargs.get('lastname_paterno'),
-                # 'lastname_materno': kwargs.get('lastname_materno'),
                 'candidate_id': candidate.id,
                 'dependientes': dependientes,
                 'age': safe_int(kwargs.get('age')),
@@ -100,6 +101,7 @@ class WebsiteHRRecruitment(http.Controller):
                 'nacionality': kwargs.get('nationality'),
                 'document_type': kwargs.get('documentType'),
                 'provincia_id': safe_int(kwargs.get('provincia')),
+                'image_1920': imagen_b64,
             }
 
             # ---------------- Información Médica ----------------
