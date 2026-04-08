@@ -2,7 +2,6 @@
 
 import publicWidget from "@web/legacy/js/public/public_widget";
 import { _t } from "@web/core/l10n/translation";
-import { jsonrpc } from "@web/core/network/rpc_service";
 
 const YEARS = Array.from({ length: 2026 - 1900 }, (_, i) => i + 1900);
 
@@ -198,7 +197,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         //     fetch("/api/countries").then(r => r.json())
         // ]);
 
-        const countries = await jsonrpc("/api/countries", {});
+        const countries = await fetch("/api/countries").then(r => r.json());
 
         const optionsCountries = countries.map(
             country => `<option value="${country.id}">${country.name}</option>`
@@ -328,8 +327,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         //     fetch("/api/study_levels").then(r => r.json())
         // ]);
 
-        const countries = await jsonrpc("/api/countries", {});
-        const studiesLevels = await jsonrpc("/api/study_levels", {});
+        const countries = await fetch("/api/countries").then(r => r.json());
+        const studiesLevels = await fetch("/api/study_levels").then(r => r.json());
 
         const optionsCountries = countries.map(
             country => `<option value="${country.id}">${country.name}</option>`
