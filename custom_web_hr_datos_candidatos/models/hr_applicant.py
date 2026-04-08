@@ -120,30 +120,3 @@ class HrApplicant(models.Model):
 
     num_hijos = fields.Integer(string="Número de hijos")
     dependientes = fields.Char(string="Personas que dependen de usted")
-
-    lastname_paterno = fields.Char(string="Apellido Paterno")
-    lastname_materno = fields.Char(string="Apellido Materno")
-    firstname = fields.Char(string="Nombres")
-    candidate_id = fields.Many2one('hr.candidate', string="Candidato", required=True)
-
-    @api.model
-    def create(self, vals):
-        candidate_vals = {
-            'firstname': vals.get('firstname'),
-            'lastname_paterno': vals.get('lastname_paterno'),
-            'lastname_materno': vals.get('lastname_materno'),
-        }
-        candidate = self.env['hr.candidate'].create(candidate_vals)
-        vals['candidate_id'] = candidate.id
-        return super(HrApplicant, self).create(vals)
-
-    def write(self, vals):
-        res = super(HrApplicant, self).write(vals)
-        for applicant in self:
-            if applicant.candidate_id:
-                applicant.candidate_id.write({
-                    'firstname': applicant.firstname,
-                    'lastname_paterno': applicant.lastname_paterno,
-                    'lastname_materno': applicant.lastname_materno,
-                })
-        return res
