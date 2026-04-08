@@ -991,13 +991,10 @@ publicWidget.registry.s_d_brand_snippet = RootWidget.extend({
     noDataTemplateString: _t("No brands are found!"),
     noDataTemplateSubString: _t("Sorry, We couldn't find any brands right now"),
     extraLibs: (RootWidget.prototype.extraLibs || []).concat(['/theme_prime/static/lib/OwlCarousel2-2.3.4/owl.carousel.js']),
-    
+
     /**
      * @private
      */
-
-      brandCount: 30,
-      
     _getOptions: function () {
         // Hack
         this.recordsIDs = this.selectionInfo && this.selectionInfo.recordsIDs || [];
