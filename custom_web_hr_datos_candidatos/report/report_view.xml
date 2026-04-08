@@ -31,7 +31,8 @@
 
                             <td style="border:1px solid #000; text-align:center;">
                                 <t t-if="applicant.image_1920">
-                                    <img t-att-src="'data:image/jpeg;base64,%s' % applicant.image_1920" style="width:70px;height:70px; object-fit:cover;"/>
+                                    <img t-att-src="'/web/image/hr.applicant/%s/image_1920' % applicant.id"
+                                        style="width:70px;height:70px; object-fit:cover;"/>
                                 </t>
                             </td>
 
