@@ -16,6 +16,7 @@
                     <!-- Datos personales -->
                     <field name="document_type"/>
                     <field name="cedula"/>
+                    <field name="partner_mobile" />
                     <field name="code_cellphone"/>
                     <field name="address"/>
                     <field name="parish"/>
