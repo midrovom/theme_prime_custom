@@ -60,13 +60,23 @@ class HrApplicant(models.Model):
     num_hijos = fields.Integer(string="Número de hijos")
     dependientes = fields.Char(string="Personas que dependen de usted")
 
-from odoo import _, api, fields, models
+    firstname = fields.Char(string="Nombres")
+    lastname_paterno = fields.Char(string="Apellido Paterno")
+    lastname_materno = fields.Char(string="Apellido Materno")
 
-DOCUMENT_TYPES = [
-    ('cedula', 'Cédula'),
-    ('ruc', 'RUC'),
-    ('pasaporte', 'Pasaporte'),
-]
+    nombre_completo = fields.Char(string="Nombre completo", compute="_compute_nombre_completo", store=True)
+
+    @api.depends('firstname', 'lastname_paterno', 'lastname_materno')
+    def _compute_nombre_completo(self):
+        for record in self:
+            partes = []
+            if record.lastname_paterno:
+                partes.append(record.lastname_paterno)
+            if record.lastname_materno:
+                partes.append(record.lastname_materno)
+            if record.firstname:
+                partes.append(record.firstname)
+            record.nombre_completo = " ".join(partes)
 
 
 class HrApplicant(models.Model):
