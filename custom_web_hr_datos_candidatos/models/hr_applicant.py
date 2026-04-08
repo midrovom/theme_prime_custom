@@ -29,6 +29,7 @@ class HrApplicant(models.Model):
     address = fields.Char(string="Dirección de domicilio")
     parish = fields.Char(string="Parroquia")
     birth_country_id = fields.Many2one('res.country', string="Lugar de nacimiento (país)")
+    partner_mobile = fields.Char(string="Celular del contacto")
     code_cellphone = fields.Char(string="Código de celular")
     document_type = fields.Selection(DOCUMENT_TYPES, string='Tipo de documento')
     cedula = fields.Char(string='Número de documento')

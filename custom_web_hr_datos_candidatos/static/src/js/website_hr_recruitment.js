@@ -193,10 +193,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
-        // const [countries] = await Promise.all([
-        //     fetch("/api/countries").then(r => r.json())
-        // ]);
-
         const countries = await fetch("/api/countries").then(r => r.json());
 
         const optionsCountries = countries.map(
@@ -321,11 +317,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 </div>
             </div>
         `;
-
-        // const [countries, studiesLevels] = await Promise.all([
-        //     fetch("/api/countries").then(r => r.json()),
-        //     fetch("/api/study_levels").then(r => r.json())
-        // ]);
 
         const countries = await fetch("/api/countries").then(r => r.json());
         const studiesLevels = await fetch("/api/study_levels").then(r => r.json());
@@ -1479,13 +1470,29 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     async _addReferenceBlock() {
         this.referenceCount++;
 
-        const html = await this._getReferenceBlock(this.referenceCount === 1);
-        this.$('#reference_container').append(html);
+        // Si es el primer bloque, pasamos true como parámetro
+        const newBlock = await this._getReferenceBlock(this.referenceCount === 1);
+        this.$('#reference_container').append(newBlock);
 
-        this.$('#reference_container').find('.remove-reference').last().on('click', (ev) => {
-            $(ev.currentTarget).closest('.reference-block').remove();
-            this.referenceCount--;
-        });
+        // Actualizar contador en el input hidden
+        this.$('#total_references').val(this.referenceCount);
+
+        // Validación de campos requeridos
+        this.$('#reference_container')
+            .find('.reference-block')
+            .last()
+            .find('input[required]')
+            .on('blur', (ev) => this._validateReferenceField(ev));
+
+        // Acción para eliminar el bloque
+        this.$('#reference_container')
+            .find('.remove-reference')
+            .last()
+            .on('click', (ev) => {
+                $(ev.currentTarget).closest('.reference-block').remove();
+                this.referenceCount--;
+                this.$('#total_references').val(this.referenceCount);
+            });
     },
 
     async _onAddReference(ev) {
