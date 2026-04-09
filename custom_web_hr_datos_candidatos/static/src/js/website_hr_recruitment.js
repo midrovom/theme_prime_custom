@@ -144,6 +144,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._toggleDisabilityFields();
         this._toggleFamilyKnownFields();
         this._toggleParentescoField();
+        this._toggleDisabilityFields();
 
         this._validateHealthQuestions();
         this._onChangeCountry({ currentTarget: this.$('#hr-country') });
@@ -1268,8 +1269,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
-    _toggleDisabilityFields: function(ev) {
-        const value = $(ev.currentTarget).val();
+    _toggleDisabilityFields: function() {
+        const value = this.$('input[name="discapacidad"]:checked').val();
         const tipo = this.$('input[name="tipo_discapacidad"]');
         const porcentaje = this.$('input[name="porcentaje_discapacidad"]');
 
