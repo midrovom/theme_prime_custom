@@ -170,7 +170,6 @@
                                 <th style="border:1px solid #000; font-weight:bold;">Tipo de discapacidad</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Porcentaje</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Tipo sangre</th>
-                                <th style="border:1px solid #000;"></th>
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="med.discapacidad"></td>
