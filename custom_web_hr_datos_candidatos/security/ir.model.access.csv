@@ -6,5 +6,4 @@ access_applicant_experience,applicant.experience,model_applicant_experience_job,
 access_applicant_known_user,access_applicant_known_user,model_applicant_known,,1,1,1,1
 access_applicant_reference_user,access_applicant_reference_user,model_applicant_reference,,1,1,1,1
 access_applicant_medical,applicant.medical,model_applicant_medical,,1,1,1,1
-access_hr_applicant_report_wizard,access_hr_applicant_report_wizard,model_hr_applicant_report_wizard,base.group_user,1,1,1,1
-
+access_hr_footer,access_hr_footer,model_hr_footer,base.group_user,1,1,1,1
