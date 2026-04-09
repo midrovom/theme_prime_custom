@@ -1,11 +1,23 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="signup_with_code" inherit_id="auth_signup.signup">
-        <xpath expr="//form" position="inside">
-            <div class="form-group mt-3">
-                <label for="verification_code">Código de verificación</label>
-                <input type="text" name="verification_code" class="form-control" required="required"/>
-            </div>
-        </xpath>
-    </template>
+  <template id="signup_code" name="Ingresar código">
+    <t t-call="web.login_layout">
+      <form action="/web/verify_code" method="post">
+        <input type="hidden" name="login" t-att-value="login"/>
+        <div class="form-group">
+          <label for="verification_code">Ingrese el código enviado a su correo</label>
+          <input type="text" name="verification_code" class="form-control" required="required"/>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Verificar</button>
+      </form>
+    </t>
+  </template>
+
+  <template id="signup_invalid" name="Código inválido">
+    <t t-call="web.login_layout">
+      <div class="alert alert-danger mt-5 text-center">
+        El código ingresado no es válido o ya fue usado.
+      </div>
+    </t>
+  </template>
 </odoo>
+
