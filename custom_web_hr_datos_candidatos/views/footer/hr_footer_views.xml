@@ -44,7 +44,7 @@
 
         <menuitem
             id="menu_applicant_footer"
-            name="Footer de Ley de Protección de Datos"
+            name="Ley de Protección de Datos"
             parent="menu_hr_recruitment_footer"
             action="action_hr_footer"
             sequence="1"
