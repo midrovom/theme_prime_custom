@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="email_verification_template" model="mail.template">
-        <field name="name">Verificación de correo</field>
+    <record id="email_template_signup_code" model="mail.template">
+        <field name="name">Signup Code</field>
         <field name="model_id" ref="base.model_res_users"/>
-        <field name="subject">Verifique su correo electrónico</field>
+        <field name="subject">Código de verificación</field>
+        <field name="email_from">${(user.email or '')}</field>
         <field name="body_html">
-        <![CDATA[
-        <p>Gracias por registrarse en nuestro portal.</p>
-        <p>Su código de verificación es: <strong>${object.email_verification_code}</strong></p>
-        <p>Ingrese este código en la pantalla de verificación para activar su cuenta.</p>
-        ]]>
+            <![CDATA[
+            <p>Tu código de verificación es:</p>
+            <h2>${ctx.get('code')}</h2>
+            ]]>
         </field>
     </record>
 

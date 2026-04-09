@@ -8,4 +8,4 @@ from . import applicant_personal_reference
 from . import applicant_medical
 from . import generar_reporte
 from . import hr_footer
-from . import res_users
+#from . import res_users
