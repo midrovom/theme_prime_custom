@@ -5,9 +5,9 @@
 
             <t t-foreach="docs" t-as="applicant">
 
-                <div class="page" style="font-size:12px;">
+                <div class="page" style="font-size:12px; font-family:'Times New Roman', Times, serif;">
 
-                    <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px;">
+                    <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:12px;">
                         <tr>
                             <th colspan="4" style="border:1px solid #000; background:#e6e6e6;">
                                 ACTUALIZACIÓN DE DATOS PARA CANDIDATOS
@@ -380,9 +380,9 @@
                 </div> <!-- page -->
 
                 <t t-set="footer" t-value="env['hr.footer'].search([], limit=1)"/>
-                <div style="width:100%; margin-top:20px; font-size:12px; text-align:justify; padding-top:5px;">
+                <div style="width:100%; margin-top:20px; font-size:12px; text-align:justify; font-family:'Times New Roman', Times, serif; padding-top:5px;">
                     <t t-if="footer">
-                        <span t-esc="footer.descripcion"/>
+                        <span t-raw="footer.descripcion"/>
                     </t>
                 </div>
 

@@ -4,5 +4,5 @@ class HrFooter(models.Model):
     _name = 'hr.footer'
     _description = 'Footer'
 
-    descripcion = fields.Text(string="Descripción")
+    descripcion = fields.Html(string="Descripción")
 
