@@ -110,6 +110,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this._validateDateField(ev.currentTarget);
         },
 
+        'blur input[name="tipo_sangre"]': '_validateTipoSangre',
+
 
     },
 
@@ -1180,6 +1182,19 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
 
         $error.hide();
+        $field.removeClass('is-invalid');
+        return true;
+    },
+
+    _validateTipoSangre: function(ev) {
+        const $field = $(ev.currentTarget);
+        const value = $field.val();
+
+        if (value === '') {
+            $field.addClass('is-invalid');
+            return false;
+        }
+
         $field.removeClass('is-invalid');
         return true;
     },

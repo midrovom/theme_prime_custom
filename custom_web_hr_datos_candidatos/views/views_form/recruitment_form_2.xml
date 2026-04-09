@@ -122,6 +122,7 @@
                                         <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" name="tipo_sangre" class="form-control rounded-pill py-2" placeholder="Ejemplo: O+, A-, B+"/>
+                                    <div class="invalid-feedback">Campo obligatorio.</div>
                                 </div>
                             </div>
 
