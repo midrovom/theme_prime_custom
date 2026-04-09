@@ -362,9 +362,9 @@
                                 La alteración o falsificación de documentos...
                             </td>
                             
-                            <td colspan="3" style="border:1px solid #000; height:100px; text-align:center; vertical-align:bottom;">
+                            <td colspan="3" style="border:1px solid #000; width:12% !important; height:100px; text-align:center; vertical-align:bottom;">
 
-                                <div style="height:12%; width:12% !important;  display:flex; flex-direction:column; justify-content:flex-end;">
+                                <div style="height:100%; display:flex; flex-direction:column; justify-content:flex-end;">
 
                                     <div style="margin-bottom:10px;">
                                         _______________________________
