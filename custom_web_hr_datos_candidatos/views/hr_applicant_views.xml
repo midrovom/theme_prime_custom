@@ -136,7 +136,7 @@
         </record>
 
         <!-- Formación Académica -->
-        <menuitem
+        <!-- <menuitem
             id="menu_hr_recruitment_academic_training"
             name="Formación Académica"
             parent="hr_recruitment.menu_hr_recruitment_config_applications"
@@ -147,7 +147,7 @@
             name="Nivel Educativo"
             parent="menu_hr_recruitment_academic_training"
             action="hr_recruitment.hr_recruitment_degree_action"
-            sequence="1"/>
+            sequence="1"/> -->
 
         <!-- Datos Personales -->
         <menuitem
