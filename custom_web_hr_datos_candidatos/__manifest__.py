@@ -13,7 +13,6 @@
     'category': 'Website',
     'depends': [
         'base',
-        'account',
         'contacts',
         'hr_recruitment',
         'web',
