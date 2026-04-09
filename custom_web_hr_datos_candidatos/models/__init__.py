@@ -7,3 +7,4 @@ from . import applicant_famility
 from . import applicant_personal_reference
 from . import applicant_medical
 from . import generar_reporte
+from . import hr_footer
