@@ -46,10 +46,10 @@
                         </tr>
 
                             <tr>
-                                <th style="border:1px solid #000;">Apellido Paterno</th>
-                                <th style="border:1px solid #000;">Apellido Materno</th>
-                                <th style="border:1px solid #000;">Nombres</th>
-                                <th style="border:1px solid #000;">Edad</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Apellido Paterno</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Apellido Materno</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Nombre(s)</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Edad</th>
                             </tr>
                             <tr>
                                 <t t-set="nombre_completo" t-value="applicant.partner_name.split(' ')"/>
@@ -60,9 +60,9 @@
                             </tr>
 
                             <tr>
-                                <th style="border:1px solid #000;">Dirección de domicilio</th>
-                                <th style="border:1px solid #000;">Parroquia</th>
-                                <th style="border:1px solid #000;">Fecha de nacimiento</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Dirección de domicilio:</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Parroquia</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Fecha de nacimiento:</th>
                                 <th style="border:1px solid #000;"></th>
                             </tr>
                             <tr>
@@ -73,10 +73,10 @@
                             </tr>
 
                             <tr>
-                                <th style="border:1px solid #000;">Lugar de nacimiento (país)</th>
-                                <th style="border:1px solid #000;">Provincia</th>
-                                <th style="border:1px solid #000;">Teléfono</th>
-                                <th style="border:1px solid #000;">Celular</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Lugar de nacimiento: Pais</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Provincia:</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Teléfono:</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Celular:</th>
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="applicant.birth_country_id.name"/>
@@ -86,9 +86,9 @@
                             </tr>
 
                             <tr>
-                                <th style="border:1px solid #000;">Vive con</th>
-                                <th style="border:1px solid #000;">Tipo de vivienda</th>
-                                <th style="border:1px solid #000;">Número de hijos</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Vive con:</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Tipo de vivienda</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Número de hijos:</th>
                                 <th style="border:1px solid #000;"></th>
                             </tr>
                             <tr>
