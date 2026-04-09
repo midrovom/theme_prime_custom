@@ -140,41 +140,42 @@
 
                         <t t-foreach="applicant.medical_ids" t-as="med">
                             <tr>
-                                <th style="border:1px solid #000;">Padece actualmente alguna enfermedad persistente</th>
-                                <th style="border:1px solid #000;">Detalle</th>
-                                <th style="border:1px solid #000;">Toma actualmente alguna medicacion de uso continuo</th>
-                                <th style="border:1px solid #000;">Detalle</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Padece actualmente alguna enfermedad persistente</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Toma actualmente alguna medicacion de uso continuo</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Padece o ha padecido alguna enfermedad laboral</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Ha sido sometido a alguna cirugia</th>
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="med.enfermedad_persistente"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="med.detalle_enfermedad_persistente"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="med.medicacion_continua"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="med.detalle_medicacion_continua"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.enfermedad_laboral"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.detalle_cirugia_realizada"/>
                             </tr>
 
                             <tr>
-                                <th style="border:1px solid #000;">Padece o ha padecido alguna enfermedad laboral</th>
-                                <th style="border:1px solid #000;">Detalle</th>
-                                <th style="border:1px solid #000;">Ha sido sometido a alguna cirugia</th>
-                                <th style="border:1px solid #000;">Detalle</th>
-                                <!-- <th style="border:1px solid #000;">% Discapacidad</th> -->
+                                <th style="border:1px solid #000; font-weight:bold;">Detalle de enfermedad persistente</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Detalle de medicacion de uso continuo</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Detalle de enfermedad laboral</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Detalle de cirugia</th>
                             </tr>
                             <tr>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="med.enfermedad_laboral"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.detalle_enfermedad_persistente"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.detalle_medicacion_continua"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="med.detalle_enfermedad_laboral"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="med.cirugia_realizada"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="med.detalle_cirugia_realizada"/>
-                                <!-- <td style="border:1px solid #000; text-align:center;" t-esc="med.porcentaje_discapacidad"/> -->
                             </tr>
 
                             <tr>
-                                <th style="border:1px solid #000;">Tipo discapacidad</th>
-                                <th style="border:1px solid #000;">Tipo sangre</th>
-                                <th style="border:1px solid #000;"></th>
+                                <th style="border:1px solid #000; font-weight:bold;">Tine usted alguna discapacidad</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Tipo de discapacidad</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Porcentaje</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Tipo sangre</th>
                                 <th style="border:1px solid #000;"></th>
                             </tr>
                             <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.discapacidad"></td>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="med.tipo_discapacidad"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="med.porcentaje_discapacidad"/> 
                                 <td style="border:1px solid #000; text-align:center;" t-esc="med.tipo_sangre"/>
                                 <td style="border:1px solid #000;"></td>
                                 <td style="border:1px solid #000;"></td>
