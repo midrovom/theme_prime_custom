@@ -362,13 +362,13 @@
 
                             <td colspan="3" style="border:1px solid #000; text-align:center; height:120px; vertical-align:bottom;">
 
-                                <div style="margin-bottom:15px;">
+                                <div style="margin-bottom:10px;">
                                     _______________________________
                                 </div>
 
                                 <div>Firma del solicitante</div>
 
-                                <div style="margin-top:10px;">
+                                <div style="margin-top:8px;">
                                     C.C.: <t t-esc="applicant.cedula"/>
                                 </div>
 
