@@ -1,23 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <template id="signup_pending">
-    <div class="container text-center mt-5">
-      <h1>Verificación pendiente</h1>
-      <p>Hemos enviado un correo con un enlace de verificación.</p>
-    </div>
-  </template>
-
-  <template id="signup_success">
-    <div class="container text-center mt-5">
-      <h1>Cuenta verificada</h1>
-      <p>Su correo ha sido confirmado. Ya puede iniciar sesión.</p>
-      <a href="/web/login" class="btn btn-primary">Iniciar sesión</a>
-    </div>
-  </template>
-
-  <template id="signup_invalid">
-    <div class="container text-center mt-5">
-      <h1>Token inválido</h1>
-      <p>El enlace de verificación no es válido o ya fue usado.</p>
-    </div>
-  </template>
+    <template id="auth_signup.signup" inherit_id="auth_signup.signup">
+        <xpath expr="//form" position="inside">
+        <div class="form-group mt-3">
+            <label for="verification_code">Código de verificación</label>
+            <input type="text" name="verification_code" class="form-control" required="required"/>
+        </div>
+        </xpath>
+        
+    </template>
 </odoo>

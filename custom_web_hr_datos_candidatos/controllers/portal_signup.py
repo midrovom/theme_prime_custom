@@ -1,4 +1,3 @@
-
 import secrets
 from odoo import http, _
 from odoo.http import request
@@ -15,34 +14,40 @@ class AuthSignupHomeCustom(http.Controller):
 
         if 'error' not in qcontext and request.httprequest.method == 'POST':
             try:
-                self.do_signup(qcontext)
-
-                # Buscar el usuario recién creado
+                # Validar código ingresado
+                code_entered = kw.get('verification_code')
                 user = request.env['res.users'].sudo().search([('login', '=', qcontext.get('login'))], limit=1)
-                if user and user.has_group('base.group_portal'):
-                    user.write({
-                        'email_verification_code': secrets.token_hex(16),
+
+                if not user:
+                    # Si no existe, primero generamos y enviamos el código
+                    code = secrets.token_hex(6)
+                    user = request.env['res.users'].sudo().create({
+                        'name': qcontext.get('name'),
+                        'login': qcontext.get('login'),
+                        'email': qcontext.get('login'),
+                        'password': qcontext.get('password'),
+                        'groups_id': [(6, 0, [request.env.ref('base.group_portal').id])],
+                        'email_verification_code': code,
                         'email_verified': False,
                     })
                     template = request.env.ref('custom_web_hr_datos_candidatos.email_verification_template', raise_if_not_found=False)
                     if template:
                         template.sudo().send_mail(user.id, force_send=True)
-                    return request.render('custom_web_hr_datos_candidatos.signup_pending')
+                    qcontext['error'] = _("Se ha enviado un código de verificación a su correo. Ingréselo en el campo correspondiente.")
+                    return request.render('auth_signup.signup', qcontext)
 
-                return self.web_login(*args, **kw)
+                else:
+                    # Si ya existe, validar el código
+                    if user.email_verification_code != code_entered:
+                        qcontext['error'] = _("El código de verificación no es válido.")
+                        return request.render('auth_signup.signup', qcontext)
+
+                    # Código correcto → marcar verificado y permitir login
+                    user.sudo().write({'email_verified': True})
+                    return self.web_login(*args, **kw)
 
             except UserError as e:
                 qcontext['error'] = e.args[0]
 
         response = request.render('auth_signup.signup', qcontext)
         return response
-
-class VerifyEmailController(http.Controller):
-
-    @http.route('/web/verify_email', type='http', auth='public', website=True)
-    def verify_email(self, token=None, **kwargs):
-        user = request.env['res.users'].sudo().search([('email_verification_code','=',token)], limit=1)
-        if user and user.has_group('base.group_portal'):
-            user.sudo().write({'email_verified': True})
-            return request.render('custom_web_hr_datos_candidatos.signup_success')
-        return request.render('custom_web_hr_datos_candidatos.signup_invalid')
