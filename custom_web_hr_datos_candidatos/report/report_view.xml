@@ -387,7 +387,7 @@
                 </div> <!-- page -->
 
                 <t t-set="footer" t-value="env['hr.footer'].search([], limit=1)"/>
-                <div style="width:100%; margin-top:20px; font-size:12px; text-align:justify; font-family:'Times New Roman', Times, serif; padding-top:5px;">
+                <div style="width:100%; margin-top:20px; text-align:justify; font-family:'Times New Roman', Times, serif; padding-top:5px;">
                     <t t-if="footer">
                         <span t-raw="footer.descripcion"/>
                     </t>
