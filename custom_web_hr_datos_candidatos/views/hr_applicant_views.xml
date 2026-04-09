@@ -144,7 +144,6 @@
 
         <menuitem
             id="hr_recruitment.menu_hr_recruitment_degree"
-            name="Nivel Educativo"
             parent="menu_hr_recruitment_academic_training"
             action="hr_recruitment.hr_recruitment_degree_action"
             sequence="1"/>
