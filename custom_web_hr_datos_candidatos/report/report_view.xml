@@ -177,7 +177,6 @@
                                 <td style="border:1px solid #000; text-align:center;" t-esc="med.tipo_discapacidad"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="med.porcentaje_discapacidad"/> 
                                 <td style="border:1px solid #000; text-align:center;" t-esc="med.tipo_sangre"/>
-                                <td style="border:1px solid #000;"></td>
                             </tr>
                         </t>
 
