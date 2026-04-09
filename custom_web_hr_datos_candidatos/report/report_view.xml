@@ -109,13 +109,15 @@
 
                             <tr>
                                 <th style="border:1px solid #000; font-weight:bold;">Personas que dependen de usted</th>
-                                <th colspan="2" style="border:1px solid #000;"></th>
                                 <th style="border:1px solid #000; font-weight:bold;">Correo electrónico:</th>
+                                <th style="border:1px solid #000;"></th>
+                                <th style="border:1px solid #000;"></th>
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="applicant.dependientes"/>
-                                <td colspan="2" style="border:1px solid #000;"></td>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="applicant.email_from"/>
+                                <td style="border:1px solid #000;"></td>
+                                <td style="border:1px solid #000;"></td>
                             </tr>
 
                         <tr>
