@@ -33,7 +33,6 @@
         'views/views_form/recruitment_form_3.xml',
         'views/views_form/website_hr_recruitment.xml',
         'views/error_template/error_templates.xml',
-        'views/footer/res_company_view.xml',
         'views/footer/hr_footer_views.xml',
 
     ],
