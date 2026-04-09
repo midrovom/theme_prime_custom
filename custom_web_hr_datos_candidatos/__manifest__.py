@@ -17,6 +17,9 @@
         'hr_recruitment',
         'web',
         'website',
+        'auth_signup', 
+        'portal', 
+        'mail'
     ],
     'data': [
         'security/ir.model.access.csv',
