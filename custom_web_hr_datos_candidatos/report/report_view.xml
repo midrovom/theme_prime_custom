@@ -356,27 +356,26 @@
                         </t>
 
                         <tr>
-                            <td style="border:1px solid #000;">
-                                Reglamento Interno<br/>Art. 11
+                            <td style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3;">
+                                <b>Reglamento Interno</b><br/>
+                                <b>Art. 11</b><br/>
+                                La alteración o falsificación de documentos...
                             </td>
 
-                            <td colspan="3" style="border:1px solid #000; height:100px; text-align:center; vertical-align:bottom;">
+                            <td colspan="2" style="border:1px solid #000; height:100px; text-align:center; vertical-align:bottom;">
+                                
+                                <div style="margin-bottom:10px;">
+                                    _______________________________
+                                </div>
 
-                                <div style="height:100%; display:flex; flex-direction:column; justify-content:flex-end;">
+                                <div>Firma del solicitante</div>
 
-                                    <div style="margin-bottom:10px;">
-                                        _______________________________
-                                    </div>
-
-                                    <div>Firma del solicitante</div>
-
-                                    <div style="margin-top:8px;">
-                                        C.C.: <t t-esc="applicant.cedula"/>
-                                    </div>
-
+                                <div style="margin-top:8px;">
+                                    C.C.: <t t-esc="applicant.cedula"/>
                                 </div>
 
                             </td>
+
                         </tr> 
 
                     </table>
