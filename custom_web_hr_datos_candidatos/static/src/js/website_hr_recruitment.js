@@ -51,6 +51,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         'change #hr-type-doc, #hr-country, #hr-provincia, #curriculum-vitae, #experience_container select, #education_container select': '_validateField',
         'change #hr-country': '_onChangeCountry',
+        'change input[name="discapacidad"]': '_toggleDisabilityFields',
         'change input[name="viveCon"]': '_validateField',
         'change input[name="tipoVivienda"]': '_validateField',
         'change input[name="dependientes"]': '_validateField',
@@ -1267,6 +1268,19 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
+    _toggleDisabilityFields: function(ev) {
+        const value = $(ev.currentTarget).val();
+        const tipo = this.$('input[name="tipo_discapacidad"]');
+        const porcentaje = this.$('input[name="porcentaje_discapacidad"]');
+
+        if (value === 'no') {
+            tipo.prop('disabled', true).val('');
+            porcentaje.prop('disabled', true).val('');
+        } else {
+            tipo.prop('disabled', false);
+            porcentaje.prop('disabled', false);
+        }
+    },
 
     _onChangeCountry(ev) {
         const countryId = $(ev.currentTarget).val();
