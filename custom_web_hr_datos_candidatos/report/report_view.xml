@@ -52,9 +52,9 @@
                                 <th style="border:1px solid #000;">Edad</th>
                             </tr>
                             <tr>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.candidate_id.lastname_paterno"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.candidate_id.lastname_materno"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="applicant.partner_name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.partner_name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.candidate_id.firstname"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="applicant.age"/>
                             </tr>
 
