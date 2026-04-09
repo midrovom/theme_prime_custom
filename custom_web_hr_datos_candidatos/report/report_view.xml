@@ -356,12 +356,12 @@
                         </t>
 
                         <tr>
-                            <td style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3;">
+                            <td style="border:1px solid #000; width:25%; vertical-align:top; word-break:break-word; line-height:1.3;">
                                 <b>Reglamento Interno</b><br/>
                                 <b>Art. 11</b><br/>
                                 La alteración o falsificación de documentos...
                             </td>
-
+                            
                             <td colspan="3" style="border:1px solid #000; height:100px; text-align:center; vertical-align:bottom;">
 
                                 <div style="height:100%; display:flex; flex-direction:column; justify-content:flex-end;">
@@ -379,7 +379,8 @@
                                 </div>
 
                             </td>
-                        </tr> 
+
+                        </tr>
 
                     </table>
 
