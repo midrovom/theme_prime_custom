@@ -142,12 +142,12 @@
             parent="hr_recruitment.menu_hr_recruitment_config_applications"
             sequence="1"/>
 
-        <!-- <menuitem
+        <menuitem
             id="hr_recruitment.menu_hr_recruitment_degree"
             name="Nivel Educativo"
             parent="menu_hr_recruitment_academic_training"
             action="hr_recruitment.hr_recruitment_degree_action"
-            sequence="1"/> -->
+            sequence="1"/>
 
         <!-- Datos Personales -->
         <menuitem
