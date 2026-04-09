@@ -360,16 +360,20 @@
                                 Reglamento Interno<br/>Art. 11
                             </td>
 
-                            <td colspan="3" style="border:1px solid #000; text-align:center; min-height:80px; vertical-align:bottom;">
+                            <td colspan="3" style="border:1px solid #000; height:100px; text-align:center; vertical-align:bottom;">
 
-                                <div style="margin-bottom:10px;">
-                                    _______________________________
-                                </div>
+                                <div style="height:100%; display:flex; flex-direction:column; justify-content:flex-end;">
 
-                                <div>Firma del solicitante</div>
+                                    <div style="margin-bottom:10px;">
+                                        _______________________________
+                                    </div>
 
-                                <div style="margin-top:8px;">
-                                    C.C.: <t t-esc="applicant.cedula"/>
+                                    <div>Firma del solicitante</div>
+
+                                    <div style="margin-top:8px;">
+                                        C.C.: <t t-esc="applicant.cedula"/>
+                                    </div>
+
                                 </div>
 
                             </td>
