@@ -7,7 +7,7 @@
             <form string="Footer">
                 <sheet>
                     <group>
-                        <field name="descripcion"/>
+                        <!-- <field name="descripcion"/> -->
                     </group>
                 </sheet>
             </form>
@@ -19,7 +19,7 @@
         <field name="model">hr.footer</field>
         <field name="arch" type="xml">
             <list string="Footer">
-                <field name="descripcion"/>
+                <!-- <field name="descripcion"/> -->
             </list>
         </field>
     </record>
