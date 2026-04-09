@@ -11,12 +11,13 @@
                 <xpath expr="//sheet/notebook" position="inside">
                     <page name="footer_info" string="Footer de Factura">
                         <group name="footer">
-                            <field name="footer" />
+                            <field name="footer"/>
                         </group>
                     </page>
                 </xpath>
             </field>
         </record>
+
     
         <!-- <record id="view_company_form_inherit" model="ir.ui.view">
             <field name="name">view.company.form.inherit</field>
