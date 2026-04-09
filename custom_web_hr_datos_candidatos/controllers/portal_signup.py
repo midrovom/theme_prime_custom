@@ -27,11 +27,10 @@ class AuthSignupHomeOTP(AuthSignupHome):
 
                 # Enviar email
                 template = request.env.ref('custom_web_hr_datos_candidatos.email_template_signup_code')
-                template.sudo().send_mail(
+                template.sudo().with_context(code=code).send_mail(
                     False,
                     force_send=True,
                     email_values={'email_to': email},
-                    context={'code': code}
                 )
 
                 return request.redirect('/web/signup/verify')
