@@ -6,9 +6,9 @@ class ResCompany(models.Model):
     footer = fields.Text(string="Footer de Reporte")
 
 
+class HrFooter(models.Model):
+    _name = 'hr.footer'
+    _description = 'Footer'
 
-# class HrFooter(models.Model):
-#     _name = 'hr.footer'
-#     _description = 'Footer'
+    descripcion = fields.Text(string="Descripción")
 
-#     descripcion = fields.Text(string="Descripción")
