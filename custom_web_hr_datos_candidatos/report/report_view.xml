@@ -379,6 +379,13 @@
 
                 </div> <!-- page -->
 
+                <t t-set="footer" t-value="env['hr.footer'].search([], limit=1)"/>
+                <div style="width:100%; margin-top:20px; font-size:10px; text-align:center; border-top:1px solid #000; padding-top:5px;">
+                    <t t-if="footer">
+                        <span t-esc="footer.descripcion"/>
+                    </t>
+                </div>
+
             </t> <!-- foreach docs -->
 
         </t> <!-- layout -->
