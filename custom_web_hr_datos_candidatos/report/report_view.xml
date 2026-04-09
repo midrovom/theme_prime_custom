@@ -46,14 +46,18 @@
                         </tr>
 
                             <tr>
-                                <th style="border:1px solid #000; ">Nombre</th>
+                                <th style="border:1px solid #000; ">Apellido Paterno</th>
+                                <th style="border:1px solid #000; ">Apellido Materno</th>
+                                <th style="border:1px solid #000; ">Nombres</th>
                                 <th style="border:1px solid #000;">Edad</th>
-                                <th colspan="2" style="border:1px solid #000;"></th>
+                                <!-- <th colspan="2" style="border:1px solid #000;"></th> -->
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="applicant.partner_name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.partner_name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="applicant.partner_name"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="applicant.age"/>
-                                <td colspan="2" style="border:1px solid #000;"></td>
+                                <!-- <td colspan="2" style="border:1px solid #000;"></td> -->
                             </tr>
 
                             <tr>
