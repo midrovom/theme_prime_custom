@@ -12,17 +12,12 @@
             <div class="col-12 col-md-3 d-flex flex-column align-items-center mb-4">
                 <div class="size-200 position-relative rounded-circle bg-gray border d-flex flex-column justify-content-center align-items-center text-center">
                     <img id="preview-img" src="" alt="Preview" class="position-absolute w-100 h-100 object-fit-cover rounded-circle" style="display: none;" />
-                    <small id="text-img" class="text-light fs-5 fw-normal px-2">
-                        Tamaño máx 3MB<br/>Formato: JPG o PNG
-                    </small>
-                    <input class="d-none" id="hr-perfil" name="imagen" type="file" accept=".jpg, .png"/>
-                    <label for="hr-perfil" class="cursor-hover d-flex justify-content-center align-items-center position-absolute size-60 bg-green-light rounded-circle bottom-0 end-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" 
-                                height="36px"
-                                viewBox="0 -960 960 960"
-                                width="36px"
-                                fill="#FFFFFF">
-                                <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+                        <small id="text-img" class="text-light fs-5 fw-normal px-2"> Tamaño máx 3MB<br/>Formato: JPG o PNG </small>
+                            <input class="d-none" id="hr-perfil" name="imagen" type="file" accept=".jpg, .png"/>
+                                <label for="hr-perfil" class="cursor-hover d-flex justify-content-center align-items-center position-absolute size-60 bg-green-light rounded-circle bottom-0 end-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="36px" viewBox="0 -960 960 960"
+                                        width="36px" fill="#FFFFFF">
+                            <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
                         </svg>
                     </label>
                 </div>

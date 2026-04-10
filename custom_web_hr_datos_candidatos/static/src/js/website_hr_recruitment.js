@@ -891,40 +891,42 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return isValid;
     },
 
-    _validateImage() {
-        const input = this.$('#hr-perfil')[0];
-        const $error = this.$('#image-error');
-        let isValid = true;
-        
-        if (input.files.length === 0) {
-            $error.text(_t("Por favor seleccione una imagen")).show();
-            isValid = false;
-        } else {
-            const file = input.files[0];
-            const validTypes = ['image/jpeg', 'image/png'];
-            const maxSize = 3 * 1024 * 1024; // 3MB
-            
-            if (!validTypes.includes(file.type)) {
-                $error.text(_t("El formato debe ser JPG o PNG")).show();
-                isValid = false;
-            } else if (file.size > maxSize) {
-                $error.text(_t("La imagen no debe superar los 3MB")).show();
-                isValid = false;
-            } else {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.$('#text-img').hide();
-                    this.$('#preview-img')
-                        .attr('src', e.target.result)
-                        .show();
-                };
-                reader.readAsDataURL(file);
+    _validateImage: function(ev) {
+        const file = ev.currentTarget.files[0];
+        const errorDiv = document.getElementById('image-error');
 
-                $error.hide();
-            }
+        if (!file) {
+            errorDiv.textContent = "Debe subir una foto de perfil.";
+            errorDiv.style.display = "block";
+            ev.currentTarget.classList.add("is-invalid");
+            return;
         }
-        
-        return isValid;
+
+        if (file.size > 3 * 1024 * 1024) {
+            errorDiv.textContent = "La imagen no debe superar 3MB.";
+            errorDiv.style.display = "block";
+            ev.currentTarget.classList.add("is-invalid");
+            return;
+        }
+
+        if (!["image/jpeg", "image/png"].includes(file.type)) {
+            errorDiv.textContent = "Formato inválido. Solo JPG o PNG.";
+            errorDiv.style.display = "block";
+            ev.currentTarget.classList.add("is-invalid");
+            return;
+        }
+
+        // Si pasa todas las validaciones
+        errorDiv.textContent = "";
+        errorDiv.style.display = "none";
+        ev.currentTarget.classList.remove("is-invalid");
+
+        // Mostrar preview
+        const preview = document.getElementById('preview-img');
+        const textImg = document.getElementById('text-img');
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = "block";
+        textImg.style.display = "none";
     },
 
     _validateEmail() {
