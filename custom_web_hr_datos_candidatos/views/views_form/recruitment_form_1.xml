@@ -103,12 +103,13 @@
                     <div class="col-12 col-md-3 mb-4">
                         <div>
                             <label for="hr-country" class="fs-6">Lugar de nacimiento (país): <span class="text-danger">*</span></label>
-                            <select id="hr-country" name="birthCountry" class="form-select rounded-pill py-2" aria-label="Seleccionar país" required="required">
-                                <option selected="selected"></option>
-                                <t t-foreach="countries" t-as="country">
-                                    <option t-att-value="country.id" t-esc="country.name"></option>
-                                </t>
-                            </select>
+                                <select id="hr-country" name="birthCountry" class="form-select rounded-pill py-2" aria-label="Seleccionar país" required="required">
+                                    <option value=""></option>
+                                    <t t-foreach="countries" t-as="country">
+                                        <option t-att-value="country.id" t-esc="country.name" 
+                                                t-att-selected="country.name == 'Ecuador' and 'selected' or None"></option>
+                                    </t>
+                                </select>
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
                     </div>
