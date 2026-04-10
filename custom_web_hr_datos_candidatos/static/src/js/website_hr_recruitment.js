@@ -328,23 +328,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
-
+        // const countries = await fetch("/api/countries").then(r => r.json());
         const studiesLevels = await fetch("/api/study_levels").then(r => r.json());
+
+        // const optionsCountries = countries.map(
+        //     country => `<option value="${country.id}">${country.name}</option>`
+        // ).join('');
+
         const optionsStudiesLevels = studiesLevels.map(
             studyLevel => `<option value="${studyLevel.id}">${studyLevel.name}</option>`
         ).join('');
-
-        // Países/Ciudad
-            const countries = await fetch("/api/countries").then(r => r.json());
-            let optionsCountries = "";
-
-            for (const country of countries) { optionsCountries += `<option value="country-${country.id}">${country.name}</option>`;
-                const states = await fetch(`/api/states/${country.id}`).then(r => r.json());
-                states.forEach(state => {
-                    optionsCountries += `<option value="state-${state.id}">${state.name}</option>`;
-                });
-            }
-            document.getElementById("hr-country").innerHTML = optionsCountries;
 
         return `
             <div class="row d-flex justify-content-center">
