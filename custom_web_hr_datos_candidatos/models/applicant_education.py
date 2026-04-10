@@ -7,7 +7,7 @@ class ApplicantEducation(models.Model):
     applicant_id = fields.Many2one('hr.applicant', string='Solicitante')
 
     level_id = fields.Many2one('hr.recruitment.degree', string='Nivel Educativo', required=True)
-    institucion = fields.Char(string="Institución", required=True)
+    institucion = fields.Char(string="Institución Educativa", required=True)
     fecha_inicio = fields.Date(string="Fecha de inicio", required=True)
     year_fin = fields.Char(string="Año de finalización")
     location_name = fields.Char(string="País/Ciudad", required=True)
