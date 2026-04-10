@@ -148,20 +148,30 @@ class WebsiteHRRecruitment(http.Controller):
             if family_lines:
                 applicant_values['family_ids'] = family_lines
 
-            # ---------------- Formación Académica ----------------
+            # ---------------- Funcion para parseo de localizacion Pais/Ciudad ----------------
+            def parse_location(val):
+                if not val:
+                    return None
+                val = str(val)
+                if val.startswith("country-"):
+                    return int(val[8:])  # recorta directamente después de "country-"
+                if val.startswith("state-"):
+                    state = request.env['res.country.state'].sudo().browse(int(val[6:]))
+                    return state.country_id.id if state else None
+                return None
 
+            # ---------------- Formación Académica ----------------
             education_lines = []
             i = 1
 
             while kwargs.get(f'titulo_{i}') is not None:
-
                 titulo = kwargs.get(f'titulo_{i}')
                 level_id = safe_int(kwargs.get(f'level_id_{i}'))
 
                 if titulo and level_id:
                     education_lines.append((0, 0, {
                         'level_id': level_id,
-                        'location_id': safe_int(kwargs.get(f'paisEducacion_{i}')),
+                        'location_id': parse_location(kwargs.get(f'paisEducacion_{i}')),
                         'titulo': titulo,
                         'fecha_inicio': kwargs.get(f'inicioEstudio_{i}'),
                         'year_fin': kwargs.get(f'finEstudio_{i}'),
@@ -174,7 +184,6 @@ class WebsiteHRRecruitment(http.Controller):
                         'estado': kwargs.get('estado') or '',
                         'study_current': 'si' if kwargs.get('studyOptions') == 't' else 'no',
                     }))
-
                 i += 1
 
             if education_lines:
@@ -182,19 +191,17 @@ class WebsiteHRRecruitment(http.Controller):
 
 
             # ---------------- Experiencia Laboral ----------------
-
             experience_lines = []
             j = 1
 
             while kwargs.get(f'cargo_{j}') is not None:
-
                 cargo = kwargs.get(f'cargo_{j}')
 
                 if cargo:
                     experience_lines.append((0, 0, {
                         'name': cargo,
                         'empresa': kwargs.get(f'company_{j}'),
-                        'location_id': safe_int(kwargs.get(f'paisExperiencia_{j}')),
+                        'location_id': parse_location(kwargs.get(f'paisExperiencia_{j}')),
                         'fecha_inicio': kwargs.get(f'jobInicio_{j}'),
                         'year_fin': kwargs.get(f'jobFin_{j}'),
                         'tiempo_servicio': kwargs.get(f'tiempo_{j}'),
@@ -204,7 +211,6 @@ class WebsiteHRRecruitment(http.Controller):
                         'jefe_directo': kwargs.get(f'jefe_{j}'),
                         'cargo_jefe_directo': kwargs.get(f'cargoJefe_{j}'),
                     }))
-
                 j += 1
 
             if experience_lines:
