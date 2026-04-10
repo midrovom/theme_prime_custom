@@ -7,6 +7,18 @@ const YEARS = Array.from({ length: 2026 - 1900 }, (_, i) => i + 1900);
 
 const optionsYears = YEARS.map(year => `<option value="${year}">${year}</option>`).join("");
 
+let cachedCountries = null;
+let cachedStatesByCountry = {};
+
+async function loadCountriesAndStates() {
+    if (!cachedCountries) {
+        cachedCountries = await fetch("/api/countries").then(r => r.json());
+        for (const country of cachedCountries) {
+            cachedStatesByCountry[country.id] = await fetch(`/api/states/${country.id}`).then(r => r.json());
+        }
+    }
+}
+
 publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     selector: '#hr_job_recruitment_form',
     events: {
@@ -114,6 +126,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
 
     },
+    
 
 
     /**
@@ -173,7 +186,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._checkEducationFieldsFilled();
     },
 
+
     async _getEducationBlock(isFirstBlock = false) {
+        await loadCountriesAndStates();  // asegura que ya están cargados
+
         const separator = isFirstBlock ? '' : `
             <div class="row d-flex justify-content-center my-4">
                 <div class="col-12 col-md-10">
@@ -187,14 +203,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
-        const countries = await fetch("/api/countries").then(r => r.json());
         const studiesLevels = await fetch("/api/study_levels").then(r => r.json());
 
+        // Construir opciones de país + ciudad usando cache
         let optionsCountries = "";
-        for (const country of countries) {
+        for (const country of cachedCountries) {
             optionsCountries += `<option value="country-${country.id}">${country.name}</option>`;
-            const states = await fetch(`/api/states/${country.id}`).then(r => r.json());
-            states.forEach(state => {
+            cachedStatesByCountry[country.id].forEach(state => {
                 optionsCountries += `<option value="state-${state.id}">${state.name}</option>`;
             });
         }
@@ -266,6 +281,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     async _getExperienceBlock(isFirstBlock = false) {
+        await loadCountriesAndStates();  // asegura que ya están cargados
+
         const separator = isFirstBlock ? '' : `
             <div class="row d-flex justify-content-center my-4">
                 <div class="col-12 col-md-10">
@@ -288,18 +305,15 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 </div>
             </div>
         `;
-        //Pais/Ciudad en apartado de experiencia laboral
-        const countries = await fetch("/api/countries").then(r => r.json());
-        let optionsCountries = "";
 
-        for (const country of countries) { optionsCountries += `<option value="country-${country.id}">${country.name}</option>`;
-            const states = await fetch(`/api/states/${country.id}`).then(r => r.json());
-            states.forEach(state => {
+        // Construir opciones de país + ciudad usando cache
+        let optionsCountries = "";
+        for (const country of cachedCountries) {
+            optionsCountries += `<option value="country-${country.id}">${country.name}</option>`;
+            cachedStatesByCountry[country.id].forEach(state => {
                 optionsCountries += `<option value="state-${state.id}">${state.name}</option>`;
             });
         }
-        document.getElementById("hr-country").innerHTML = optionsCountries;
-
 
         return `
             <div class="row d-flex justify-content-center">
@@ -320,7 +334,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Campo obligatorio.</div>
                         </div>
 
-                        <!-- País -->
+                        <!-- País/Ciudad -->
                         <div class="col-12 col-md-3 mb-4">
                             <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País/Ciudad: <span class="text-danger">*</span></label>
                             <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2" required>
