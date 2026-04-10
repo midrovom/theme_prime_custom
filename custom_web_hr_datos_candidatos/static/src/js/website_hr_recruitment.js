@@ -14,21 +14,10 @@ async function loadCountriesAndStates() {
     if (!cachedCountries) {
         cachedCountries = await fetch("/api/countries").then(r => r.json());
         for (const country of cachedCountries) {
-            cachedStatesByCountry[country.id] = await fetch(`/api/states/${country.id}`)
-                .then(r => r.json())
-                .catch(() => []); 
+            cachedStatesByCountry[country.id] = await fetch(`/api/states/${country.id}`).then(r => r.json());
         }
     }
-
-    const optionsCountries = cachedCountries.map(c => {
-        const isEcuador = c.name.toLowerCase() === "ecuador";
-        return `<option value="${c.id}" ${isEcuador ? "selected" : ""}>${c.name}</option>`;
-    }).join("");
-
-    document.querySelectorAll("select[id^='pais-educacion_'], select[id^='pais-experiencia_']")
-        .forEach(sel => sel.innerHTML = optionsCountries);
 }
-
 
 publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     selector: '#hr_job_recruitment_form',
@@ -145,9 +134,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
      */
     init() {
         this._super(...arguments);
-        // this.orm = this.bindService("orm");
-        // this.rpc = this.bindService("rpc");
-        // this.notification = this.bindService("notification");
         this.educationCount = 1;
         this.experienceCount = 1;
         this.familyCount = 0;
