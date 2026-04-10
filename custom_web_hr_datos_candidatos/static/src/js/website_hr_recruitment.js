@@ -14,7 +14,9 @@ async function loadCountriesAndStates() {
     if (!cachedCountries) {
         cachedCountries = await fetch("/api/countries").then(r => r.json());
         for (const country of cachedCountries) {
-            cachedStatesByCountry[country.id] = await fetch(`/api/states/${country.id}`).then(r => r.json());
+            cachedStatesByCountry[country.id] = await fetch(`/api/states/${country.id}`)
+                .then(r => r.json())
+                .catch(() => []); 
         }
     }
 
@@ -24,7 +26,7 @@ async function loadCountriesAndStates() {
     }).join("");
 
     document.querySelectorAll("select[id^='pais-educacion_'], select[id^='pais-experiencia_']")
-        .forEach(sel => sel.innerHTML = `<option></option>${optionsCountries}`);
+        .forEach(sel => sel.innerHTML = optionsCountries);
 }
 
 
