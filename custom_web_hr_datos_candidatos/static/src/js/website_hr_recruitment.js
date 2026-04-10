@@ -892,34 +892,38 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _validateImage: function(ev) {
-        const file = ev.currentTarget.files[0];
+        const input = ev ? ev.currentTarget : document.getElementById('hr-perfil');
         const errorDiv = document.getElementById('image-error');
+
+        if (!input) return;
+
+        const file = input.files[0];
 
         if (!file) {
             errorDiv.textContent = "Debe subir una foto de perfil.";
             errorDiv.style.display = "block";
-            ev.currentTarget.classList.add("is-invalid");
+            input.classList.add("is-invalid");
             return;
         }
 
         if (file.size > 3 * 1024 * 1024) {
             errorDiv.textContent = "La imagen no debe superar 3MB.";
             errorDiv.style.display = "block";
-            ev.currentTarget.classList.add("is-invalid");
+            input.classList.add("is-invalid");
             return;
         }
 
         if (!["image/jpeg", "image/png"].includes(file.type)) {
             errorDiv.textContent = "Formato inválido. Solo JPG o PNG.";
             errorDiv.style.display = "block";
-            ev.currentTarget.classList.add("is-invalid");
+            input.classList.add("is-invalid");
             return;
         }
 
         // Si pasa todas las validaciones
         errorDiv.textContent = "";
         errorDiv.style.display = "none";
-        ev.currentTarget.classList.remove("is-invalid");
+        input.classList.remove("is-invalid");
 
         // Mostrar preview
         const preview = document.getElementById('preview-img');
