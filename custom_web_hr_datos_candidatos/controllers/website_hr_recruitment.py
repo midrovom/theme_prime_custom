@@ -154,11 +154,10 @@ class WebsiteHRRecruitment(http.Controller):
                     return None
                 val = str(val)
                 if val.startswith("country-"):
-                    return ('res.country', int(val[8:]))
+                    return f"res.country,{val[8:]}"
                 if val.startswith("state-"):
-                    return ('res.country.state', int(val[6:]))
+                    return f"res.country.state,{val[6:]}"
                 return None
-
             # ---------------- Formación Académica ----------------
             education_lines = []
             i = 1
