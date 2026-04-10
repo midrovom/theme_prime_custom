@@ -173,6 +173,98 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._checkEducationFieldsFilled();
     },
 
+    async _getEducationBlock(isFirstBlock = false) {
+        const separator = isFirstBlock ? '' : `
+            <div class="row d-flex justify-content-center my-4">
+                <div class="col-12 col-md-10">
+                    <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
+                        <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+                            background: white; padding: 0 15px; color: #666; font-size: 14px;">
+                            Educación # ${this.educationCount - 1}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const countries = await fetch("/api/countries").then(r => r.json());
+        const studiesLevels = await fetch("/api/study_levels").then(r => r.json());
+
+        let optionsCountries = "";
+        for (const country of countries) {
+            optionsCountries += `<option value="country-${country.id}">${country.name}</option>`;
+            const states = await fetch(`/api/states/${country.id}`).then(r => r.json());
+            states.forEach(state => {
+                optionsCountries += `<option value="state-${state.id}">${state.name}</option>`;
+            });
+        }
+
+        const optionsStudiesLevels = studiesLevels.map(
+            studyLevel => `<option value="${studyLevel.id}">${studyLevel.name}</option>`
+        ).join('');
+
+        return `
+            <div class="row d-flex justify-content-center">
+                <div class="col-12 col-md-10">
+                    <div class="row d-flex justify-content-between">
+                        <!-- Nivel educativo -->
+                        <div class="col-12 col-md-4 mb-4">
+                            <label for="institucion-educativa_${this.educationCount}" class="fs-6">
+                                Nivel Educativo: <span class="text-danger">*</span>
+                            </label>
+                            <select id="institucion-educativa_${this.educationCount}" required name="level_id_${this.educationCount}" class="form-select rounded-pill py-2">
+                                <option selected="selected"></option>
+                                ${ optionsStudiesLevels }
+                            </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
+
+                        <!-- Institución -->
+                        <div class="col-12 col-md-4 mb-4">
+                            <label for="institucion_${this.educationCount}" class="fs-6">Nombre de la institución: <span class="text-danger">*</span></label>
+                            <input type="text" required name="institucion_${this.educationCount}" class="form-control rounded-pill py-2" id="institucion_${this.educationCount}"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+
+                        <!-- Fechas -->
+                        <div class="col-12 col-md-4 mb-4">
+                            <label for="estudio-inicio_${this.educationCount}" class="fs-6">Desde: <span class="text-danger">*</span></label>
+                            <input type="date" required name="inicioEstudio_${this.educationCount}" class="form-control rounded-pill py-2" id="estudio-inicio_${this.educationCount}"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+
+                        <div class="col-12 col-md-4 mb-4">
+                            <label for="estudio-fin_${this.educationCount}" class="fs-6">Hasta: <span class="text-danger">*</span></label>
+                            <select id="estudio-fin_${this.educationCount}" required name="finEstudio_${this.educationCount}" class="form-select rounded-pill py-2">
+                                <option selected="selected"></option>
+                                ${ optionsYears }
+                                <option value="presente">Presente</option>
+                            </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
+
+                        <!-- País/Ciudad -->
+                        <div class="col-12 col-md-4 mb-4">
+                            <label for="pais-educacion_${this.educationCount}" class="fs-6">País/Ciudad: <span class="text-danger">*</span></label>
+                            <select id="pais-educacion_${this.educationCount}" required name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2">
+                                <option selected="selected"></option>
+                                ${ optionsCountries }
+                            </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
+
+                        <!-- Título -->
+                        <div class="col-12 col-md-4 mb-4">
+                            <label for="titulo_${this.educationCount}" class="fs-6">Título Recibido: <span class="text-danger">*</span></label>
+                            <input type="text" required name="titulo_${this.educationCount}" class="form-control rounded-pill py-2" id="titulo_${this.educationCount}"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        ` + separator;
+    },
+
     async _getExperienceBlock(isFirstBlock = false) {
         const separator = isFirstBlock ? '' : `
             <div class="row d-flex justify-content-center my-4">
@@ -282,14 +374,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <!-- Fecha de inicio -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="job-inicio_${this.experienceCount}" class="fs-6">Fecha de inicio: <span class="text-danger">*</span></label>
+                            <label for="job-inicio_${this.experienceCount}" class="fs-6">Desde: <span class="text-danger">*</span></label>
                             <input id="job-inicio_${this.experienceCount}" type="date" name="jobInicio_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
                             <div class="invalid-feedback">Campo obligatorio.</div>
                         </div>
 
                         <!-- Año de finalización -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="job-fin_${this.experienceCount}" class="fs-6">Año de finalización: <span class="text-danger">*</span></label>
+                            <label for="job-fin_${this.experienceCount}" class="fs-6">Hasta: <span class="text-danger">*</span></label>
                             <select id="job-fin_${this.experienceCount}" name="jobFin_${this.experienceCount}" class="form-select rounded-pill py-2" required>
                                 <option selected="selected"></option>
                                 ${ optionsYears }
@@ -298,98 +390,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
-                    </div>
-                </div>
-            </div>
-        ` + separator;
-    },
-
-    async _getEducationBlock(isFirstBlock = false) {
-        const separator = isFirstBlock ? '' : `
-            <div class="row d-flex justify-content-center my-4">
-                <div class="col-12 col-md-10">
-                    <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
-                        <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-                            background: white; padding: 0 15px; color: #666; font-size: 14px;">
-                            Educación # ${this.educationCount - 1}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const countries = await fetch("/api/countries").then(r => r.json());
-        const studiesLevels = await fetch("/api/study_levels").then(r => r.json());
-
-        let optionsCountries = "";
-        for (const country of countries) {
-            optionsCountries += `<option value="country-${country.id}">${country.name}</option>`;
-            const states = await fetch(`/api/states/${country.id}`).then(r => r.json());
-            states.forEach(state => {
-                optionsCountries += `<option value="state-${state.id}">${state.name}</option>`;
-            });
-        }
-
-        const optionsStudiesLevels = studiesLevels.map(
-            studyLevel => `<option value="${studyLevel.id}">${studyLevel.name}</option>`
-        ).join('');
-
-        return `
-            <div class="row d-flex justify-content-center">
-                <div class="col-12 col-md-10">
-                    <div class="row d-flex justify-content-between">
-                        <!-- Nivel educativo -->
-                        <div class="col-12 col-md-4 mb-4">
-                            <label for="institucion-educativa_${this.educationCount}" class="fs-6">
-                                Nivel Educativo: <span class="text-danger">*</span>
-                            </label>
-                            <select id="institucion-educativa_${this.educationCount}" required name="level_id_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option selected="selected"></option>
-                                ${ optionsStudiesLevels }
-                            </select>
-                            <div class="invalid-feedback">Seleccione una opción.</div>
-                        </div>
-
-                        <!-- Institución -->
-                        <div class="col-12 col-md-4 mb-4">
-                            <label for="institucion_${this.educationCount}" class="fs-6">Nombre de la institución: <span class="text-danger">*</span></label>
-                            <input type="text" required name="institucion_${this.educationCount}" class="form-control rounded-pill py-2" id="institucion_${this.educationCount}"/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
-                        </div>
-
-                        <!-- Fechas -->
-                        <div class="col-12 col-md-4 mb-4">
-                            <label for="estudio-inicio_${this.educationCount}" class="fs-6">Desde: <span class="text-danger">*</span></label>
-                            <input type="date" required name="inicioEstudio_${this.educationCount}" class="form-control rounded-pill py-2" id="estudio-inicio_${this.educationCount}"/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
-                        </div>
-
-                        <div class="col-12 col-md-4 mb-4">
-                            <label for="estudio-fin_${this.educationCount}" class="fs-6">Hasta: <span class="text-danger">*</span></label>
-                            <select id="estudio-fin_${this.educationCount}" required name="finEstudio_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option selected="selected"></option>
-                                ${ optionsYears }
-                                <option value="presente">Presente</option>
-                            </select>
-                            <div class="invalid-feedback">Seleccione una opción.</div>
-                        </div>
-
-                        <!-- País/Ciudad -->
-                        <div class="col-12 col-md-4 mb-4">
-                            <label for="pais-educacion_${this.educationCount}" class="fs-6">País/Ciudad: <span class="text-danger">*</span></label>
-                            <select id="pais-educacion_${this.educationCount}" required name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option selected="selected"></option>
-                                ${ optionsCountries }
-                            </select>
-                            <div class="invalid-feedback">Seleccione una opción.</div>
-                        </div>
-
-                        <!-- Título -->
-                        <div class="col-12 col-md-4 mb-4">
-                            <label for="titulo_${this.educationCount}" class="fs-6">Título Recibido: <span class="text-danger">*</span></label>
-                            <input type="text" required name="titulo_${this.educationCount}" class="form-control rounded-pill py-2" id="titulo_${this.educationCount}"/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -612,11 +612,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isEstadoCivilValid
         ) {
 
-            // this.notification.add(_t("Por favor complete todos los campos requeridos correctamente"), {
-            //     type: 'danger',
-            //     title: _t("Error de validación"),
-            // });
-
             alert("Por favor complete todos los campos requeridos correctamente");
 
             this._scrollToFirstError();
@@ -633,10 +628,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const cirugia = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
         
         if (!enfermedad || !medicacion || !enfermedadLaboral || !cirugia) {
-            // this.notification.add(_t("Complete correctamente la información médica"), {
-            //     type: 'danger',
-            //     title: _t("Error de validación"),
-            // });
 
             alert("Complete correctamente la información médica");
 
@@ -708,12 +699,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isRelationValid ||
             !isParentescoValid
         ) {
-            // this.notification.add(_t("Complete todos los campos obligatorios"), {
-            //     type: 'danger',
-            // });
-
             alert("Complete todos los campos obligatorios");
-
             return false;
         }
 
@@ -1406,20 +1392,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
-    // async _addReferenceBlock() {
-    //     this.referenceCount++;
-    //     const newBlock = await this._getReferenceBlock();
-    //     this.$('#reference_container').append(newBlock);
-    //     this.$('#total_references').val(this.referenceCount);
-
-    //     this.$('#reference_container')
-    //         .find('.reference-block')
-    //         .last()
-    //         .find('input[required]')
-    //         .on('blur', (ev) => this._validateReferenceField(ev));
-    // },
-
-
     _checkEducationFieldsFilled() {
         const $inputs = this.$('#education_container').find('input:not(:disabled), select:not(:disabled)');
         let allFilled = true;
@@ -1477,18 +1449,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
-    // async _addReferenceBlock() {
-    //     this.referenceCount++;
-
-    //     const html = await this._getReferenceBlock(this.referenceCount === 1);
-    //     this.$('#reference_container').append(html);
-
-    //     this.$('#reference_container').find('.remove-reference').last().on('click', (ev) => {
-    //         $(ev.currentTarget).closest('.reference-block').remove();
-    //         this.referenceCount--;
-    //     });
-    // },
-    
     async _addReferenceBlock() {
         this.referenceCount++;
 
