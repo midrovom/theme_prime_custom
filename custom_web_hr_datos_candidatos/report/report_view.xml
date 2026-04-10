@@ -235,7 +235,7 @@
                             <tr>
                                 <th style="border:1px solid #000; font-weight:bold;">Título Recibido</th>
                                 <th style="border:1px solid #000; font-weight:bold;">País/Ciudad</th>
-                                <th style="border:1px solid #000; font-weight:bold;">Estudia</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Estudia en la actualidad</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Tipo de formación (título a obtener)</th>
                             </tr>
                             <tr>
@@ -249,27 +249,14 @@
                             <tr>
                                 <th style="border:1px solid #000; font-weight:bold;">Institución</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Horario</th>
-                                <th style="border:1px solid #000; font-weight:bold;">Estado</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Carrera</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Nivel Actual</th>
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="edu.institucion_2"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="edu.horario"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.estado"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="edu.carrera"/>
-                            </tr>
-
-                            <tr>
-                                <th style="border:1px solid #000; font-weight:bold;">Nivel actual:</th>
-                                <th style="border:1px solid #000; font-weight:bold;"></th>
-                                <th style="border:1px solid #000; font-weight:bold;"></th>
-                                <th style="border:1px solid #000; font-weight:bold;"></th>
-                            </tr>
-                            <tr>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.nivel_actual"/>
-                                <td style="border:1px solid #000;"></td>
-                                <td style="border:1px solid #000;"></td>
-                                <td style="border:1px solid #000;"></td>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.estado"/>
                             </tr>
                         </t>
 
