@@ -9,7 +9,6 @@ const optionsYears = YEARS.map(year => `<option value="${year}">${year}</option>
 
 let cachedCountries = null;
 let cachedStatesByCountry = {};
-let defaultCountry = null;
 
 async function loadCountriesAndStates() {
     if (!cachedCountries) {
@@ -17,12 +16,17 @@ async function loadCountriesAndStates() {
         for (const country of cachedCountries) {
             cachedStatesByCountry[country.id] = await fetch(`/api/states/${country.id}`).then(r => r.json());
         }
-        defaultCountry = cachedCountries.find(c => c.name.toLowerCase() === "ecuador");
-        if (defaultCountry) {
-            document.getElementById("countrySelect").value = defaultCountry.id;
-        }
     }
+
+    const optionsCountries = cachedCountries.map(c => {
+        const isEcuador = c.name.toLowerCase() === "ecuador";
+        return `<option value="${c.id}" ${isEcuador ? "selected" : ""}>${c.name}</option>`;
+    }).join("");
+
+    document.querySelectorAll("select[id^='pais-educacion_'], select[id^='pais-experiencia_']")
+        .forEach(sel => sel.innerHTML = `<option></option>${optionsCountries}`);
 }
+
 
 publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     selector: '#hr_job_recruitment_form',
