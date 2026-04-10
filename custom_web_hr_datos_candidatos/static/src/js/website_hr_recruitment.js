@@ -308,32 +308,27 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const separator = isFirstBlock ? '' : `
             <div class="row d-flex justify-content-center my-4">
                 <div class="col-12 col-md-10">
-                    <div class="separator-education" style="
-                        border-top: 2px solid #e0e0e0;
-                        position: relative;
-                        margin: 20px 0;
-                    ">
-                        <span style="
-                            position: absolute;
-                            top: -12px;
-                            left: 50%;
-                            transform: translateX(-50%);
-                            background: white;
-                            padding: 0 15px;
-                            color: #666;
-                            font-size: 14px;
-                        ">Educación # ${this.educationCount - 1}</span>
+                    <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
+                        <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+                            background: white; padding: 0 15px; color: #666; font-size: 14px;">
+                            Educación # ${this.educationCount - 1}
+                        </span>
                     </div>
                 </div>
             </div>
         `;
 
-        // const countries = await fetch("/api/countries").then(r => r.json());
+        const countries = await fetch("/api/countries").then(r => r.json());
         const studiesLevels = await fetch("/api/study_levels").then(r => r.json());
 
-        // const optionsCountries = countries.map(
-        //     country => `<option value="${country.id}">${country.name}</option>`
-        // ).join('');
+        let optionsCountries = "";
+        for (const country of countries) {
+            optionsCountries += `<option value="country-${country.id}">${country.name}</option>`;
+            const states = await fetch(`/api/states/${country.id}`).then(r => r.json());
+            states.forEach(state => {
+                optionsCountries += `<option value="state-${state.id}">${state.name}</option>`;
+            });
+        }
 
         const optionsStudiesLevels = studiesLevels.map(
             studyLevel => `<option value="${studyLevel.id}">${studyLevel.name}</option>`
@@ -343,65 +338,58 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-10">
                     <div class="row d-flex justify-content-between">
+                        <!-- Nivel educativo -->
                         <div class="col-12 col-md-4 mb-4">
-                            <div>
-                                <label for="institucion-educativa_${this.educationCount}" class="fs-6">
-                                    Nivel Educativo: <span class="text-danger">*</span>
-                                </label>
-                                    <select id="institucion-educativa_${this.educationCount}" required name="level_id_${this.educationCount}" class="form-select rounded-pill py-2">
-                                        <option selected="selected"></option>
-                                        ${ optionsStudiesLevels }
-                                    </select>
+                            <label for="institucion-educativa_${this.educationCount}" class="fs-6">
+                                Nivel Educativo: <span class="text-danger">*</span>
+                            </label>
+                            <select id="institucion-educativa_${this.educationCount}" required name="level_id_${this.educationCount}" class="form-select rounded-pill py-2">
+                                <option selected="selected"></option>
+                                ${ optionsStudiesLevels }
+                            </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
 
-                                <div class="invalid-feedback">Seleccione una opción.</div>
-                            </div>
+                        <!-- Institución -->
+                        <div class="col-12 col-md-4 mb-4">
+                            <label for="institucion_${this.educationCount}" class="fs-6">Nombre de la institución: <span class="text-danger">*</span></label>
+                            <input type="text" required name="institucion_${this.educationCount}" class="form-control rounded-pill py-2" id="institucion_${this.educationCount}"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+
+                        <!-- Fechas -->
+                        <div class="col-12 col-md-4 mb-4">
+                            <label for="estudio-inicio_${this.educationCount}" class="fs-6">Desde: <span class="text-danger">*</span></label>
+                            <input type="date" required name="inicioEstudio_${this.educationCount}" class="form-control rounded-pill py-2" id="estudio-inicio_${this.educationCount}"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
                         </div>
 
                         <div class="col-12 col-md-4 mb-4">
-                            <div>
-                                <label for="institucion_${this.educationCount}" class="fs-6">Nombre de la institución: <span class="text-danger">*</span></label>
-                                <input type="text" required="" name="institucion_${this.educationCount}" class="form-control rounded-pill py-2" id="institucion_${this.educationCount}"/>
-                                <div class="invalid-feedback">Campo obligatorio.</div>
-                            </div>
+                            <label for="estudio-fin_${this.educationCount}" class="fs-6">Hasta: <span class="text-danger">*</span></label>
+                            <select id="estudio-fin_${this.educationCount}" required name="finEstudio_${this.educationCount}" class="form-select rounded-pill py-2">
+                                <option selected="selected"></option>
+                                ${ optionsYears }
+                                <option value="presente">Presente</option>
+                            </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
+                        <!-- País/Ciudad -->
                         <div class="col-12 col-md-4 mb-4">
-                            <div>
-                                <label for="estudio-inicio_${this.educationCount}" class="fs-6">Desde: <span class="text-danger">*</span></label>
-                                <input type="date" required="" name="inicioEstudio_${this.educationCount}" class="form-control rounded-pill py-2" id="estudio-inicio_${this.educationCount}"/>
-                                <div class="invalid-feedback">Campo obligatorio.</div>
-                            </div>
+                            <label for="pais-educacion_${this.educationCount}" class="fs-6">País/Ciudad: <span class="text-danger">*</span></label>
+                            <select id="pais-educacion_${this.educationCount}" required name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2">
+                                <option selected="selected"></option>
+                                ${ optionsCountries }
+                            </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
+                        <!-- Título -->
                         <div class="col-12 col-md-4 mb-4">
-                            <div>
-                                <label for="estudio-fin_${this.educationCount}" class="fs-6">Hasta: <span class="text-danger">*</span></label>
-                                <select id="estudio-fin_${this.educationCount}" required="" name="finEstudio_${this.educationCount}" class="form-select rounded-pill py-2" aria-label="Default select example">
-                                    <option selected="selected"></option>
-                                    ${ optionsYears }
-                                    <option value="presente">Presente</option>
-                                </select>
-                                <div class="invalid-feedback">Seleccione una opción.</div>
-                            </div>
+                            <label for="titulo_${this.educationCount}" class="fs-6">Título Recibido: <span class="text-danger">*</span></label>
+                            <input type="text" required name="titulo_${this.educationCount}" class="form-control rounded-pill py-2" id="titulo_${this.educationCount}"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
                         </div>
-
-                        <div class="col-12 col-md-4 mb-4">
-                            <div>
-                                <label for="pais-educacion_${this.educationCount}" class="fs-6">País/Ciudad: <span class="text-danger">*</span></label>
-                                    <select id="pais-educacion_${this.educationCount}" name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2" required>
-                                        <option selected="selected"></option>${ optionsCountries } </select>
-                                <div class="invalid-feedback">Seleccione una opción.</div>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-4 mb-4">
-                            <div>
-                                <label for="titulo_${this.educationCount}" class="fs-6">Título Recibido: <span class="text-danger">*</span></label>
-                                <input type="text" required="" name="titulo_${this.educationCount}" class="form-control rounded-pill py-2" id="titulo_${this.educationCount}"/>
-                                <div class="invalid-feedback">Campo obligatorio.</div>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
