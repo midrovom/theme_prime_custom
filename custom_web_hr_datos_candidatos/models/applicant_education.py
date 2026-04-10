@@ -16,7 +16,7 @@ class ApplicantEducation(models.Model):
     titulo = fields.Char(string='Título Recibido')
     titulo_por_obtener = fields.Char(string='Tipo de formación')
     institucion_2 = fields.Char(string="Institución", required=True)
-    nivel_actual = fields.Char(string="Institución", required=True)
+    nivel_actual = fields.Char(string="Nivel Actual", required=True)
     carrera = fields.Char(string="Carrera", required=True)
     horario = fields.Char(string="Horario", required=True)
     estado = fields.Char(string="Nivel actual")
