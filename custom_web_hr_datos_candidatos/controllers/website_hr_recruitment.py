@@ -166,12 +166,12 @@ class WebsiteHRRecruitment(http.Controller):
                         'fecha_inicio': kwargs.get(f'inicioEstudio_{i}'),
                         'year_fin': kwargs.get(f'finEstudio_{i}'),
                         'institucion': kwargs.get(f'institucion_{i}'),
-                        'titulo_por_obtener': kwargs.get('titulo_por_obtener') or 'No especificado',
-                        'institucion_2': kwargs.get('institucion_2') or 'No especificado',
-                        'nivel_actual': kwargs.get('nivel_actual') or 'No especificado',
-                        'horario': kwargs.get('horario') or 'No especificado',
-                        'carrera': kwargs.get('carrera') or 'No especificado',
-                        'estado': kwargs.get('estado') or 'No especificado',
+                        'titulo_por_obtener': kwargs.get('titulo_por_obtener') or '',
+                        'institucion_2': kwargs.get('institucion_2') or '',
+                        'nivel_actual': kwargs.get('nivel_actual') or '',
+                        'horario': kwargs.get('horario') or '',
+                        'carrera': kwargs.get('carrera') or '',
+                        'estado': kwargs.get('estado') or '',
                         'study_current': 'si' if kwargs.get('studyOptions') == 't' else 'no',
                     }))
 
