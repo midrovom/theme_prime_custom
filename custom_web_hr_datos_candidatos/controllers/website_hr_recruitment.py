@@ -167,6 +167,8 @@ class WebsiteHRRecruitment(http.Controller):
                         'year_fin': kwargs.get(f'finEstudio_{i}'),
                         'institucion': kwargs.get(f'institucion_{i}'),
                         'titulo_por_obtener': kwargs.get('titulo_por_obtener') or 'No especificado',
+                        'institucion_2': kwargs.get('institucion_2') or 'No especificado',
+                        'nivel_actual': kwargs.get('nivel_actual') or 'No especificado',
                         'horario': kwargs.get('horario') or 'No especificado',
                         'carrera': kwargs.get('carrera') or 'No especificado',
                         'estado': kwargs.get('estado') or 'No especificado',

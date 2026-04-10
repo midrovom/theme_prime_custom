@@ -253,10 +253,23 @@
                                 <th style="border:1px solid #000; font-weight:bold;">Carrera</th>
                             </tr>
                             <tr>
-                                <td style="border:1px solid #000; text-align:center;"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.institucion_2"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="edu.horario"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="edu.estado"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="edu.carrera"/>
+                            </tr>
+
+                            <tr>
+                                <th style="border:1px solid #000; font-weight:bold;">Nivel actual:</th>
+                                <th style="border:1px solid #000; font-weight:bold;"></th>
+                                <th style="border:1px solid #000; font-weight:bold;"></th>
+                                <th style="border:1px solid #000; font-weight:bold;"></th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.nivel_actual"/>
+                                <td style="border:1px solid #000;"></td>
+                                <td style="border:1px solid #000;"></td>
+                                <td style="border:1px solid #000;"></td>
                             </tr>
                         </t>
 
