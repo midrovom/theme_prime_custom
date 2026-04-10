@@ -267,10 +267,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <!-- Ciudad -->
                         <div class="col-12 col-md-4 mb-4">
                             <label for="ciudad_${this.educationCount}" class="fs-6">Ciudad:</label>
-                            <input type="text" name="ciudad_${this.educationCount}" class="form-control rounded-pill py-2" id="ciudad_${this.educationCount}"/>
+                                <select id="ciudad_${this.educationCount}" name="ciudad_${this.educationCount}" class="form-select rounded-pill py-2">
+                                <option value=""></option> ${ Object.values(cachedStatesByCountry).flat().map(state => `
+                                    <option value="${state.id}" data-country="${state.country_id}">${state.name}</option>
+                                `).join('') }
+                            </select>
                         </div>
-                        
-                    <div class="row d-flex justify-content-between">
+
+                        <div class="row d-flex justify-content-between">
                         <div class="col-12 col-md-4 mb-4">
                             <label for="titulo_${this.educationCount}" class="fs-6">Título Recibido: <span class="text-danger">*</span></label>
                             <input type="text" required name="titulo_${this.educationCount}" class="form-control rounded-pill py-2" id="titulo_${this.educationCount}"/>
