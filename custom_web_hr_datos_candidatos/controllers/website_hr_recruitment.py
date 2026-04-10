@@ -154,10 +154,9 @@ class WebsiteHRRecruitment(http.Controller):
                     return None
                 val = str(val)
                 if val.startswith("country-"):
-                    return int(val[8:])  # recorta directamente después de "country-"
+                    return ('res.country', int(val[8:]))
                 if val.startswith("state-"):
-                    state = request.env['res.country.state'].sudo().browse(int(val[6:]))
-                    return state.country_id.id if state else None
+                    return ('res.country.state', int(val[6:]))
                 return None
 
             # ---------------- Formación Académica ----------------
