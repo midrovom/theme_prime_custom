@@ -1,7 +1,6 @@
 import random
 from odoo import http, _
 from odoo.addons.auth_signup.controllers.main import AuthSignupHome
-from odoo.exceptions import UserError
 from odoo.http import request
 
 class AuthSignupHomeOTP(AuthSignupHome):
@@ -31,16 +30,16 @@ class AuthSignupHomeOTP(AuthSignupHome):
                 mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
                 smtp_user = mail_server.smtp_user
 
-                # Enviar email con remitente dinámico
-                template = request.env.ref('custom_web_hr_datos_candidatos.email_template_signup_code')
-                template.sudo().with_context(code=code).send_mail(
-                    False,
-                    force_send=True,
-                    email_values={
-                        'email_to': email,
-                        'email_from': smtp_user,  
-                    },
-                )
+                # Enviar correo directamente con el código
+                mail_values = {
+                    'subject': 'Código de verificación',
+                    'body_html': f'<p>Tu código de verificación es:</p><h2>{code}</h2>',
+                    'email_to': email,
+                    'email_from': smtp_user,
+                }
+                mail = request.env['mail.mail'].sudo().create(mail_values)
+                mail.sudo().send()
+
                 return request.redirect('/web/signup/verify')
 
             except Exception as e:

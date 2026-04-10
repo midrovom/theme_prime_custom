@@ -7,8 +7,8 @@
         <field name="email_from"></field>
         <field name="body_html">
             <![CDATA[
-            <p>Tu código de verificación es:</p>
-            <h2>${ctx.get('code')}</h2>
+            <p>Este es un correo de verificación para completar tu registro.</p>
+            <p>El código será insertado directamente por el controlador.</p>
             ]]>
         </field>
     </record>
