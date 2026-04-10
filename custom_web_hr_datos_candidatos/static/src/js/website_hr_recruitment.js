@@ -257,18 +257,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <!-- País -->
                         <div class="col-12 col-md-4 mb-4">
-                            <label for="pais-educacion_${this.educationCount}" class="fs-6">
-                                País: <span class="text-danger">*</span>
-                            </label>
-                            <select id="pais-educacion_${this.educationCount}" 
-                                    name="paisEducacion_${this.educationCount}" 
-                                    class="form-select rounded-pill py-2" 
-                                    aria-label="Seleccionar país" required>
-                                <option value=""></option>
-                                ${ cachedCountries.map(country => `
-                                    <option value="${country.id}" 
-                                        ${country.name === 'Ecuador' ? 'selected' : ''}>
-                                        ${country.name}
+                            <label for="pais-educacion_${this.educationCount}" class="fs-6"> País: <span class="text-danger">*</span> </label>
+                                <select id="pais-educacion_${this.educationCount}" name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2" aria-label="Seleccionar país" required>
+                                    <option value=""></option>${ cachedCountries.map(country => `
+                                        <option value="${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}> ${country.name}
                                     </option>
                                 `).join('') }
                             </select>
@@ -283,15 +275,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                                     class="form-select rounded-pill py-2" 
                                     aria-label="Seleccionar ciudad/provincia">
                                 <option value=""></option>
-                                ${ Object.values(cachedStatesByCountry).flat().map(state => `
-                                    <option value="${state.id}" 
-                                            data-country="${state.country_id}">
-                                        ${state.name}
-                                    </option>
+                                ${ cachedStatesByCountry[
+                                    cachedCountries.find(c => c.name === 'Ecuador').id
+                                ].map(state => `
+                                    <option value="${state.id}">${state.name}</option>
                                 `).join('') }
                             </select>
                         </div>
-
 
                         <div class="row d-flex justify-content-between">
                         <div class="col-12 col-md-4 mb-4">
