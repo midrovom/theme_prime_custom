@@ -83,7 +83,6 @@
                                 <field name="study_current"/>         
                                 <field name="titulo_por_obtener"/>  
                                 <field name="institucion_2"/> 
-                                <field name="nivel_actual"/>   
                                 <field name="horario"/>              
                                 <field name="carrera"/>  
                                 <field name="estado"/>             
