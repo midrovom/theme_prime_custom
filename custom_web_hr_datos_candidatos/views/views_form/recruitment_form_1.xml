@@ -133,7 +133,7 @@
 
                     <div class="col-12 col-md-3 mb-4">
                         <div>
-                            <label for="hr-phone" class="fs-6">Teléfono: <span class="text-danger">*</span></label>
+                            <label for="hr-phone" class="fs-6">Teléfono:</label>
                             <input type="text" name="phone" class="form-control rounded-pill py-2" id="hr-phone" required="required"/>
                             <div class="invalid-feedback">Campo obligatorio.</div>
                         </div>
@@ -225,34 +225,27 @@
                 <div class="row d-flex justify-content-start">
                     <div class="col-12 col-md-4 mb-4">
                         <div id="dependientes-group">
-                            <label class="fs-6">
-                                Personas que dependen de usted: <span class="text-danger">*</span>
-                            </label>
+                            <label class="fs-6">Personas que dependen de usted:</label>
+                                <div class="d-flex flex-wrap">
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input" type="checkbox" name="dependientes" id="depHijos" value="hijos"/>
+                                        <label class="form-check-label" for="depHijos">Hijos</label>
+                                    </div>
 
-                            <div class="d-flex flex-wrap">
-                                <div class="form-check me-3">
-                                    <input class="form-check-input" type="checkbox" name="dependientes" id="depHijos" value="hijos"/>
-                                    <label class="form-check-label" for="depHijos">Hijos</label>
-                                </div>
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input" type="checkbox" name="dependientes" id="depConyuge" value="conyuge"/>
+                                        <label class="form-check-label" for="depConyuge">Cónyuge</label>
+                                    </div>
 
-                                <div class="form-check me-3">
-                                    <input class="form-check-input" type="checkbox" name="dependientes" id="depConyuge" value="conyuge"/>
-                                    <label class="form-check-label" for="depConyuge">Cónyuge</label>
-                                </div>
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input" type="checkbox" name="dependientes" id="depPadres" value="padres"/>
+                                        <label class="form-check-label" for="depPadres">Padres</label>
+                                    </div>
 
-                                <div class="form-check me-3">
-                                    <input class="form-check-input" type="checkbox" name="dependientes" id="depPadres" value="padres"/>
-                                    <label class="form-check-label" for="depPadres">Padres</label>
-                                </div>
-
-                                <div class="form-check me-3">
-                                    <input class="form-check-input" type="checkbox" name="dependientes" id="depOtros" value="otros"/>
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input" type="checkbox" name="dependientes" id="depOtros" value="otros"/>
                                     <label class="form-check-label" for="depOtros">Otros</label>
                                 </div>
-                            </div>
-
-                            <div class="invalid-feedback d-block dependientes-error" style="display:none;">
-                                Seleccione al menos una opción.
                             </div>
                         </div>
                     </div>

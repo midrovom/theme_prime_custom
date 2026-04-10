@@ -564,16 +564,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const isBirthCountryValid = this._validateField('#hr-country');
         const isProvinceValid = this._validateField('#hr-provincia');
 
-        const isPhoneValid = this._validateField('#hr-phone');
         const isCodeCellphoneValid = this._validateCodePhone();
         const isCellphoneValid = this._validatePhone();
-        const isPhomeHome = this._validatePhoneHome();
 
         const isViveConValid = this._validateField('input[name="viveCon"]');
         const isTipoViviendaValid = this._validateField('input[name="tipoVivienda"]');
         const isHijosValid = this._validateField('#hr-hijos');
-
-        const isDependientesValid = this._validateField('input[name="dependientes"]');
 
         const isEmailValid = this._validateEmail();
 
@@ -594,14 +590,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isBirthDateValid ||
             !isBirthCountryValid ||
             !isProvinceValid ||
-            !isPhoneValid ||
             !isCodeCellphoneValid ||
             !isCellphoneValid ||
-            !isPhomeHome ||
             !isViveConValid ||
             !isTipoViviendaValid ||
             !isHijosValid ||
-            !isDependientesValid ||
             !isEmailValid ||
             !isDocTypeValid ||
             !isDocNumberValid ||
@@ -856,10 +849,15 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         if ($field.is('[type="checkbox"]')) {
             const name = $field.attr('name');
             const $group = this.$(`input[name="${name}"]`);
-            const isValid = $group.is(':checked');
-            $group.toggleClass('is-invalid', !isValid);
 
-            return isValid;
+            const isChecked = $group.is(':checked');
+
+            if (!isChecked) {
+                $group.removeClass('is-invalid'); 
+                return true; 
+            }
+            $group.removeClass('is-invalid');
+            return true;
         }
 
         const isValid = !!$field.val();
