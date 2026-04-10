@@ -234,13 +234,13 @@
 
                             <tr>
                                 <th style="border:1px solid #000; font-weight:bold;">Título Recibido</th>
-                                <th style="border:1px solid #000; font-weight:bold;">País</th>
+                                <th style="border:1px solid #000; font-weight:bold;">País/Ciudad</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Estudia</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Tipo de formación (título a obtener)</th>
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="edu.titulo"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.pais_id.name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.location_name"/>
                                 <td style="border:1px solid #000; text-align:center;" 
                                     t-esc="dict(edu._fields['study_current'].selection).get(edu.study_current)"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="edu.titulo_por_obtener"/>
@@ -313,7 +313,7 @@
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="exp.fecha_inicio"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="exp.year_fin"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.pais_id.name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.location_name"/>
                                 <td style="border:1px solid #000;"></td>
                             </tr>
                         </t>
