@@ -197,11 +197,24 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
-        const countries = await fetch("/api/countries").then(r => r.json());
+        // const countries = await fetch("/api/countries").then(r => r.json());
 
-        const optionsCountries = countries.map(
-            country => `<option value="${country.id}">${country.name}</option>`
-        ).join('');
+        // const optionsCountries = countries.map(
+        //     country => `<option value="${country.id}">${country.name}</option>`
+        // ).join('');
+
+        // Traer países
+        const countries = await fetch("/api/countries").then(r => r.json());
+        let optionsCountries = "";
+
+        for (const country of countries) { optionsCountries += `<option value="country-${country.id}">${country.name}</option>`;
+            const states = await fetch(`/api/states/${country.id}`).then(r => r.json());
+            states.forEach(state => {
+                optionsCountries += `<option value="state-${state.id}">${state.name}</option>`;
+            });
+        }
+        document.getElementById("hr-country").innerHTML = optionsCountries;
+
 
         return `
             <div class="row d-flex justify-content-center">
@@ -361,7 +374,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <div class="col-12 col-md-4 mb-4">
                             <div>
-                                <label for="estudio-inicio_${this.educationCount}" class="fs-6">Fecha de inicio: <span class="text-danger">*</span></label>
+                                <label for="estudio-inicio_${this.educationCount}" class="fs-6">Desde: <span class="text-danger">*</span></label>
                                 <input type="date" required="" name="inicioEstudio_${this.educationCount}" class="form-control rounded-pill py-2" id="estudio-inicio_${this.educationCount}"/>
                                 <div class="invalid-feedback">Campo obligatorio.</div>
                             </div>
@@ -369,7 +382,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <div class="col-12 col-md-4 mb-4">
                             <div>
-                                <label for="estudio-fin_${this.educationCount}" class="fs-6">Año de finalización: <span class="text-danger">*</span></label>
+                                <label for="estudio-fin_${this.educationCount}" class="fs-6">Hasta: <span class="text-danger">*</span></label>
                                 <select id="estudio-fin_${this.educationCount}" required="" name="finEstudio_${this.educationCount}" class="form-select rounded-pill py-2" aria-label="Default select example">
                                     <option selected="selected"></option>
                                     ${ optionsYears }
@@ -381,7 +394,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <div class="col-12 col-md-4 mb-4">
                             <div>
-                                <label for="pais-educacion_${this.educationCount}" class="fs-6">País: <span class="text-danger">*</span></label>
+                                <label for="pais-educacion_${this.educationCount}" class="fs-6">País/Ciudad: <span class="text-danger">*</span></label>
                                 <select id="pais-educacion_${this.educationCount}" required="" name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2" aria-label="Default select example">
                                     <option selected="selected"></option>
                                     ${ optionsCountries }
