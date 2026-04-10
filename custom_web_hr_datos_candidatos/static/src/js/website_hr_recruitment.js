@@ -388,10 +388,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <div class="col-12 col-md-4 mb-4">
                             <div>
                                 <label for="pais-educacion_${this.educationCount}" class="fs-6">País/Ciudad: <span class="text-danger">*</span></label>
-                                <select id="pais-educacion_${this.educationCount}" required="" name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2" aria-label="Default select example">
-                                    <option selected="selected"></option>
-                                    ${ optionsCountries }
-                                </select>
+                                    <select id="pais-educacion_${this.educationCount}" name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2" required>
+                                        <option selected="selected"></option>${ optionsCountries } </select>
                                 <div class="invalid-feedback">Seleccione una opción.</div>
                             </div>
                         </div>
