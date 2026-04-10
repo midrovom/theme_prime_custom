@@ -27,14 +27,20 @@ class AuthSignupHomeOTP(AuthSignupHome):
                 request.session['signup_data'] = qcontext
                 request.session['signup_code'] = code
 
-                # Enviar email
+                # Buscar el servidor de correo configurado
+                mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+                smtp_user = mail_server.smtp_user
+
+                # Enviar email con remitente dinámico
                 template = request.env.ref('custom_web_hr_datos_candidatos.email_template_signup_code')
                 template.sudo().with_context(code=code).send_mail(
                     False,
                     force_send=True,
-                    email_values={'email_to': email},
+                    email_values={
+                        'email_to': email,
+                        'email_from': smtp_user,  
+                    },
                 )
-
                 return request.redirect('/web/signup/verify')
 
             except Exception as e:
