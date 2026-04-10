@@ -19,16 +19,16 @@ async function loadCountriesAndStates() {
     }
 }
 
-const countrySelect = document.getElementById(`pais-educacion_${this.educationCount}`);
-const citySelect = document.getElementById(`ciudad_${this.educationCount}`);
+// const countrySelect = document.getElementById(`pais-educacion_${this.educationCount}`);
+// const citySelect = document.getElementById(`ciudad_${this.educationCount}`);
 
-countrySelect.addEventListener('change', function() {
-    const selectedCountryId = this.value;
-    const states = cachedStatesByCountry[selectedCountryId] || [];
+// countrySelect.addEventListener('change', function() {
+//     const selectedCountryId = this.value;
+//     const states = cachedStatesByCountry[selectedCountryId] || [];
 
-    citySelect.innerHTML = '<option value=""></option>' + 
-        states.map(state => `<option value="${state.id}">${state.name}</option>`).join('');
-});
+//     citySelect.innerHTML = '<option value=""></option>' + 
+//         states.map(state => `<option value="${state.id}">${state.name}</option>`).join('');
+// });
 
 
 publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
@@ -282,15 +282,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <!-- Ciudad/Provincia -->
                         <div class="col-12 col-md-4 mb-4">
                             <label for="ciudad_${this.educationCount}" class="fs-6">Ciudad/Provincia:</label>
-                            <select id="ciudad_${this.educationCount}" 
-                                    name="ciudad_${this.educationCount}" 
-                                    class="form-select rounded-pill py-2" 
-                                    aria-label="Seleccionar ciudad/provincia">
-                                <option value=""></option>
-                                ${ cachedStatesByCountry[
-                                    cachedCountries.find(c => c.name === 'Ecuador').id
-                                ].map(state => `
-                                    <option value="${state.id}">${state.name}</option>
+                                <select id="ciudad_${this.educationCount}" name="ciudad_${this.educationCount}" class="form-select rounded-pill py-2" aria-label="Seleccionar ciudad/provincia">
+                                    <option value=""></option> ${ cachedStatesByCountry[ cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
+                                        <option value="${state.id}">${state.name}</option>
                                 `).join('') }
                             </select>
                         </div>
@@ -334,15 +328,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
-        // Construir opciones de país + ciudad usando cache
-        let optionsCountries = "";
-        for (const country of cachedCountries) {
-            optionsCountries += `<option value="country-${country.id}">${country.name}</option>`;
-            cachedStatesByCountry[country.id].forEach(state => {
-                optionsCountries += `<option value="state-${state.id}">${state.name}</option>`;
-            });
-        }
-
         return `
             <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-10">
@@ -362,17 +347,34 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Campo obligatorio.</div>
                         </div>
 
-                        <!-- País/Ciudad -->
+                        <!-- País -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País/Ciudad: <span class="text-danger">*</span></label>
+                            <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País: <span class="text-danger">*</span></label>
                             <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2" required>
-                                <option selected="selected"></option>
-                                ${ optionsCountries }
+                                <option value=""></option>
+                                ${ cachedCountries.map(country => `
+                                    <option value="${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
+                                        ${country.name}
+                                    </option>
+                                `).join('') }
                             </select>
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
-                        <!-- Teléfono -->
+                        <!-- Ciudad/Provincia -->
+                        <div class="col-12 col-md-3 mb-4">
+                            <label for="ciudad-experiencia_${this.experienceCount}" class="fs-6">Ciudad/Provincia:</label>
+                            <select id="ciudad-experiencia_${this.experienceCount}" name="ciudadExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
+                                <option value=""></option>
+                                ${ cachedStatesByCountry[
+                                    cachedCountries.find(c => c.name === 'Ecuador').id
+                                ].map(state => `
+                                    <option value="${state.id}">${state.name}</option>
+                                `).join('') }
+                            </select>
+                        </div>
+
+                        <!-- Teléfono (movido antes de Cargo desempeñado) -->
                         <div class="col-12 col-md-3 mb-4">
                             <label for="telefonos_${this.experienceCount}" class="fs-6">Teléfono: <span class="text-danger">*</span></label>
                             <input id="telefonos_${this.experienceCount}" type="text" name="telefonos_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
@@ -400,7 +402,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Campo obligatorio.</div>
                         </div>
 
-                        <!-- Nombre de su jefe directo -->
+                        <!-- Nombre de su jefe directo (movido antes de Cargo de su jefe directo) -->
                         <div class="col-12 col-md-3 mb-4">
                             <label for="jefe_${this.experienceCount}" class="fs-6">Nombre de su jefe directo: <span class="text-danger">*</span></label>
                             <input id="jefe_${this.experienceCount}" type="text" name="jefe_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
