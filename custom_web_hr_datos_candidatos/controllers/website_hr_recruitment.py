@@ -149,27 +149,19 @@ class WebsiteHRRecruitment(http.Controller):
                 applicant_values['family_ids'] = family_lines
 
             # ---------------- Funcion para parseo de localizacion Pais/Ciudad ----------------
-            # def parse_location(val):
-            #     if not val:
-            #         return None
-            #     val = str(val)
-            #     if val.startswith("country-"):
-            #         return f"res.country,{val[8:]}"
-            #     if val.startswith("state-"):
-            #         return f"res.country.state,{val[6:]}"
-            #     return None
 
             def parse_location(val):
                 if not val:
-                    return None
+                    return None, None
                 val = str(val)
                 if val.startswith("country-"):
-                    country = request.env['res.country'].sudo().browse(int(val[8:]))
-                    return country.name if country else None
+                    country_id = int(val[8:])
+                    return country_id, None
                 if val.startswith("state-"):
-                    state = request.env['res.country.state'].sudo().browse(int(val[6:]))
-                    return state.name if state else None
-                return None
+                    state_id = int(val[6:])
+                    state = request.env['res.country.state'].sudo().browse(state_id)
+                    return state.country_id.id if state else None, state_id
+                return None, None
 
             # ---------------- Formación Académica ----------------
             education_lines = []
@@ -180,9 +172,11 @@ class WebsiteHRRecruitment(http.Controller):
                 level_id = safe_int(kwargs.get(f'level_id_{i}'))
 
                 if titulo and level_id:
+                    country_id, state_id = parse_location(kwargs.get(f'paisEducacion_{i}'))
                     education_lines.append((0, 0, {
                         'level_id': level_id,
-                        'location_name': parse_location(kwargs.get(f'paisEducacion_{i}')),
+                        'country_id': country_id,
+                        'state_id': state_id,
                         'titulo': titulo,
                         'fecha_inicio': kwargs.get(f'inicioEstudio_{i}'),
                         'year_fin': kwargs.get(f'finEstudio_{i}'),
@@ -196,6 +190,7 @@ class WebsiteHRRecruitment(http.Controller):
                     }))
                 i += 1
 
+
             if education_lines:
                 applicant_values['education_ids'] = education_lines
 
@@ -208,10 +203,12 @@ class WebsiteHRRecruitment(http.Controller):
                 cargo = kwargs.get(f'cargo_{j}')
 
                 if cargo:
+                    country_id, state_id = parse_location(kwargs.get(f'paisExperiencia_{j}'))
                     experience_lines.append((0, 0, {
                         'name': cargo,
                         'empresa': kwargs.get(f'company_{j}'),
-                        'location_name': parse_location(kwargs.get(f'paisExperiencia_{j}')),
+                        'country_id': country_id,
+                        'state_id': state_id,
                         'fecha_inicio': kwargs.get(f'jobInicio_{j}'),
                         'year_fin': kwargs.get(f'jobFin_{j}'),
                         'tiempo_servicio': kwargs.get(f'tiempo_{j}'),

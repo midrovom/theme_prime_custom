@@ -10,8 +10,10 @@ class ApplicantEducation(models.Model):
     institucion = fields.Char(string="Institución Educativa", required=True)
     fecha_inicio = fields.Date(string="Fecha de inicio", required=True)
     year_fin = fields.Char(string="Año de finalización")
-    location_name = fields.Char(string="País/Ciudad", required=True)
 
+    country_id = fields.Many2one('res.country', string="País", required=True)
+    state_id = fields.Many2one('res.country.state', string="Ciudad/Provincia")
+ 
     # Nuevo campo para diferenciar
     titulo = fields.Char(string='Título Recibido')
     titulo_por_obtener = fields.Char(string='Tipo de formación')

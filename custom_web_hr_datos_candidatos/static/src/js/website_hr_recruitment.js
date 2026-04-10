@@ -303,7 +303,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     async _getExperienceBlock(isFirstBlock = false) {
-        await loadCountriesAndStates();  // asegura que ya están cargados
+        await loadCountriesAndStates(); 
 
         const separator = isFirstBlock ? '' : `
             <div class="row d-flex justify-content-center my-4">

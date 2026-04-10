@@ -78,7 +78,8 @@
                                 <field name="institucion"/>
                                 <field name="fecha_inicio"/>
                                 <field name="year_fin"/>
-                                <field name="location_name"/>
+                                <field name="country_id"/>
+                                <field name="state_id" />
                                 <field name="titulo"/>
                                 <field name="study_current"/>         
                                 <field name="titulo_por_obtener"/>  
@@ -95,7 +96,8 @@
                             <list>
                                 <field name="tiempo_servicio"/>
                                 <field name="empresa"/>
-                                <field name="location_name"/>
+                                <field name="country_id"/>
+                                <field name="state_id" />
                                 <field name="telefonos"/>
                                 <field name="name"/>
                                 <field name="ingreso_mensual"/>
