@@ -9,12 +9,17 @@ const optionsYears = YEARS.map(year => `<option value="${year}">${year}</option>
 
 let cachedCountries = null;
 let cachedStatesByCountry = {};
+let defaultCountry = null;
 
 async function loadCountriesAndStates() {
     if (!cachedCountries) {
         cachedCountries = await fetch("/api/countries").then(r => r.json());
         for (const country of cachedCountries) {
             cachedStatesByCountry[country.id] = await fetch(`/api/states/${country.id}`).then(r => r.json());
+        }
+        defaultCountry = cachedCountries.find(c => c.name.toLowerCase() === "ecuador");
+        if (defaultCountry) {
+            document.getElementById("countrySelect").value = defaultCountry.id;
         }
     }
 }
