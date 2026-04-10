@@ -60,7 +60,7 @@
 
                             <div class="col-12 col-md-4">
                                 <label class="fs-6">Institución: <span class="text-danger">*</span></label>
-                                <input type="text" name="institucion" class="form-control rounded-pill py-2" required="required"/>
+                                <input type="text" name="institucion_2" class="form-control rounded-pill py-2" required="required"/>
                                 <div class="invalid-feedback">Campo obligatorio.</div>
                             </div>
 

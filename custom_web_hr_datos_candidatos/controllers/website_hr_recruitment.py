@@ -149,15 +149,28 @@ class WebsiteHRRecruitment(http.Controller):
                 applicant_values['family_ids'] = family_lines
 
             # ---------------- Funcion para parseo de localizacion Pais/Ciudad ----------------
+            # def parse_location(val):
+            #     if not val:
+            #         return None
+            #     val = str(val)
+            #     if val.startswith("country-"):
+            #         return f"res.country,{val[8:]}"
+            #     if val.startswith("state-"):
+            #         return f"res.country.state,{val[6:]}"
+            #     return None
+
             def parse_location(val):
                 if not val:
                     return None
                 val = str(val)
                 if val.startswith("country-"):
-                    return f"res.country,{val[8:]}"
+                    country = request.env['res.country'].sudo().browse(int(val[8:]))
+                    return country.name if country else None
                 if val.startswith("state-"):
-                    return f"res.country.state,{val[6:]}"
+                    state = request.env['res.country.state'].sudo().browse(int(val[6:]))
+                    return state.name if state else None
                 return None
+
             # ---------------- Formación Académica ----------------
             education_lines = []
             i = 1
@@ -169,14 +182,14 @@ class WebsiteHRRecruitment(http.Controller):
                 if titulo and level_id:
                     education_lines.append((0, 0, {
                         'level_id': level_id,
-                        'location_id': parse_location(kwargs.get(f'paisEducacion_{i}')),
+                        'location_name': parse_location(kwargs.get(f'paisEducacion_{i}')),
                         'titulo': titulo,
                         'fecha_inicio': kwargs.get(f'inicioEstudio_{i}'),
                         'year_fin': kwargs.get(f'finEstudio_{i}'),
                         'institucion': kwargs.get(f'institucion_{i}'),
                         'titulo_por_obtener': kwargs.get('titulo_por_obtener') or '',
-                        'institucion_2': kwargs.get('institucion_2') or '',
-                        'nivel_actual': kwargs.get('nivel_actual') or '',
+                        'institucion_2': kwargs.get(f'institucion_2_{i}') or '',   
+                        'nivel_actual': kwargs.get(f'estado_{i}') or '',         
                         'horario': kwargs.get('horario') or '',
                         'carrera': kwargs.get('carrera') or '',
                         'estado': kwargs.get('estado') or '',
@@ -199,7 +212,7 @@ class WebsiteHRRecruitment(http.Controller):
                     experience_lines.append((0, 0, {
                         'name': cargo,
                         'empresa': kwargs.get(f'company_{j}'),
-                        'location_id': parse_location(kwargs.get(f'paisExperiencia_{j}')),
+                        'location_name': parse_location(kwargs.get(f'paisExperiencia_{j}')),
                         'fecha_inicio': kwargs.get(f'jobInicio_{j}'),
                         'year_fin': kwargs.get(f'jobFin_{j}'),
                         'tiempo_servicio': kwargs.get(f'tiempo_{j}'),
