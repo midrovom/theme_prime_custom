@@ -196,14 +196,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 </div>
             </div>
         `;
-
-        // const countries = await fetch("/api/countries").then(r => r.json());
-
-        // const optionsCountries = countries.map(
-        //     country => `<option value="${country.id}">${country.name}</option>`
-        // ).join('');
-
-        // Traer países
+        //Pais/Ciudad en apartado de experiencia laboral
         const countries = await fetch("/api/countries").then(r => r.json());
         let optionsCountries = "";
 
@@ -237,7 +230,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <!-- País -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País: <span class="text-danger">*</span></label>
+                            <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País/Ciudad: <span class="text-danger">*</span></label>
                             <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2" required>
                                 <option selected="selected"></option>
                                 ${ optionsCountries }
@@ -335,16 +328,23 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
-        const countries = await fetch("/api/countries").then(r => r.json());
+
         const studiesLevels = await fetch("/api/study_levels").then(r => r.json());
-
-        const optionsCountries = countries.map(
-            country => `<option value="${country.id}">${country.name}</option>`
-        ).join('');
-
         const optionsStudiesLevels = studiesLevels.map(
             studyLevel => `<option value="${studyLevel.id}">${studyLevel.name}</option>`
         ).join('');
+
+        // Países/Ciudad
+            const countries = await fetch("/api/countries").then(r => r.json());
+            let optionsCountries = "";
+
+            for (const country of countries) { optionsCountries += `<option value="country-${country.id}">${country.name}</option>`;
+                const states = await fetch(`/api/states/${country.id}`).then(r => r.json());
+                states.forEach(state => {
+                    optionsCountries += `<option value="state-${state.id}">${state.name}</option>`;
+                });
+            }
+            document.getElementById("hr-country").innerHTML = optionsCountries;
 
         return `
             <div class="row d-flex justify-content-center">
