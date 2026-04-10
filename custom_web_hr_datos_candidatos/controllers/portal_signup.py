@@ -1,12 +1,8 @@
 import random
-from werkzeug.urls import url_encode
-from odoo import http, tools, _
-from odoo.addons.auth_signup.models.res_users import SignupError
-from odoo.addons.web.controllers.home import ensure_db, Home, SIGN_UP_REQUEST_PARAMS, LOGIN_SUCCESSFUL_PARAMS
+from odoo import http, _
 from odoo.addons.auth_signup.controllers.main import AuthSignupHome
 from odoo.exceptions import UserError
 from odoo.http import request
-from markupsafe import Markup
 
 class AuthSignupHomeOTP(AuthSignupHome):
 
@@ -17,6 +13,12 @@ class AuthSignupHomeOTP(AuthSignupHome):
         if request.httprequest.method == 'POST' and not qcontext.get('error'):
             try:
                 email = qcontext.get('login')
+
+                # Validar que no exista ya un usuario con ese correo
+                existing_user = request.env['res.users'].sudo().search([('login', '=', email)], limit=1)
+                if existing_user:
+                    qcontext['error'] = "Ya existe una cuenta asociada a este correo."
+                    return request.render('auth_signup.signup', qcontext)
 
                 # Generar código OTP
                 code = str(random.randint(100000, 999999))

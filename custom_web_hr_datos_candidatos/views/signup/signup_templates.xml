@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="signup_verify_template" name="Verify Code">
         <t t-call="web.login_layout">
@@ -5,13 +6,11 @@
                 <div class="card shadow-sm p-4" style="max-width: 400px; width: 100%;">
                     <form method="post" class="text-center">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                            <div class="form-group mb-3">
-                                <label class="form-label">Ingrese el código enviado a su correo</label>
-                                <input type="text" name="code" class="form-control mx-auto" style="max-width: 250px;" required="required"/>
-                            </div>
-
-                            <p class="alert alert-danger" t-if="error"> <t t-esc="error"/></p>
-
+                        <div class="form-group mb-3">
+                            <label class="form-label">Ingrese el código enviado a su correo</label>
+                            <input type="text" name="code" class="form-control mx-auto" style="max-width: 250px;" required="required"/>
+                        </div>
+                        <p class="alert alert-danger" t-if="error"> <t t-esc="error"/></p>
                         <button type="submit" class="btn btn-primary mt-3" style="width: 150px;">Verificar</button>
                     </form>
                 </div>
