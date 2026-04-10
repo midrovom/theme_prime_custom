@@ -161,7 +161,7 @@ class WebsiteHRRecruitment(http.Controller):
                 if titulo and level_id:
                     education_lines.append((0, 0, {
                         'level_id': level_id,
-                        'pais_id': safe_int(kwargs.get(f'paisEducacion_{i}')),
+                        'location_id': safe_int(kwargs.get(f'paisEducacion_{i}')),
                         'titulo': titulo,
                         'fecha_inicio': kwargs.get(f'inicioEstudio_{i}'),
                         'year_fin': kwargs.get(f'finEstudio_{i}'),
@@ -194,7 +194,7 @@ class WebsiteHRRecruitment(http.Controller):
                     experience_lines.append((0, 0, {
                         'name': cargo,
                         'empresa': kwargs.get(f'company_{j}'),
-                        'pais_id': safe_int(kwargs.get(f'paisExperiencia_{j}')),
+                        'location_id': safe_int(kwargs.get(f'paisExperiencia_{j}')),
                         'fecha_inicio': kwargs.get(f'jobInicio_{j}'),
                         'year_fin': kwargs.get(f'jobFin_{j}'),
                         'tiempo_servicio': kwargs.get(f'tiempo_{j}'),

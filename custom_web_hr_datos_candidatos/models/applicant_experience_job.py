@@ -8,7 +8,8 @@ class ApplicantExperienceJob(models.Model):
 
     name = fields.Char(string="Cargo desempeñado")
     empresa = fields.Char(string="Nombre de la compañía")
-    pais_id = fields.Many2one('res.country', string="País")
+    location_id = fields.Reference( selection=[('res.country', 'País'), ('res.country.state', 'Ciudad/Provincia')], string="País/Ciudad", required=True)
+    #pais_id = fields.Many2one('res.country', string="País")
     fecha_inicio = fields.Date(string="Fecha de inicio")
     year_fin = fields.Char(string="Año de finalización")
 

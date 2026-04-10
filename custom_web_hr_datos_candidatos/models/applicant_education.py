@@ -10,7 +10,9 @@ class ApplicantEducation(models.Model):
     institucion = fields.Char(string="Institución", required=True)
     fecha_inicio = fields.Date(string="Fecha de inicio", required=True)
     year_fin = fields.Char(string="Año de finalización")
-    pais_id = fields.Many2one('res.country', string="País", required=True)
+    location_id = fields.Reference( selection=[('res.country', 'País'), ('res.country.state', 'Ciudad/Provincia')], string="País/Ciudad", required=True)
+
+    #pais_id = fields.Many2one('res.country', string="País", required=True)
 
     # Nuevo campo para diferenciar
     titulo = fields.Char(string='Título Recibido')
