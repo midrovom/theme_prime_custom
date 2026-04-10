@@ -293,10 +293,10 @@
                                 <td style="border:1px solid #000; text-align:center;" t-esc="exp.telefonos"/>
                             </tr>
                             <tr>
-                                <th style="border:1px solid #000;">Ingreso Mensual</th>
-                                <th style="border:1px solid #000;">Motivo de Separaciòn</th>
-                                <th style="border:1px solid #000;">Nombre de su jefe directo</th>
-                                <th style="border:1px solid #000;">Cargo de su jefe directo</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Ingreso Mensual</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Motivo de Separaciòn</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Nombre de su jefe directo</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Cargo de su jefe directo</th>
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="exp.ingreso_mensual"/>
@@ -305,9 +305,9 @@
                                 <td style="border:1px solid #000; text-align:center;" t-esc="exp.cargo_jefe_directo"/>
                             </tr>
                             <tr>
-                                <th style="border:1px solid #000;">Desde</th>
-                                <th style="border:1px solid #000;">Hasta</th>
-                                <th style="border:1px solid #000;">Ciudad/País</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Desde</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Hasta</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Ciudad/País</th>
                                 <th style="border:1px solid #000;"></th>
                             </tr>
                             <tr>
@@ -326,10 +326,10 @@
 
                         <t t-foreach="applicant.known_ids" t-as="kn">
                             <tr>
-                                <th style="border:1px solid #000;">Posee familiares o conocidos que trabajen para el grupo empresarial</th>
-                                    <th style="border:1px solid #000;">Nombre completo</th>
-                                            <th style="border:1px solid #000;">Relación</th>
-                                        <th style="border:1px solid #000;">Parentesco</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Posee familiares o conocidos que trabajen para el grupo empresarial</th>
+                                    <th style="border:1px solid #000; font-weight:bold;">Nombre completo</th>
+                                            <th style="border:1px solid #000; font-weight:bold;">Relación</th>
+                                        <th style="border:1px solid #000; font-weight:bold;">Parentesco</th>
                                     </tr>
                                     <tr>
                                         <td style="border:1px solid #000; text-align:center;">
@@ -350,10 +350,10 @@
 
                         <t t-foreach="applicant.reference_ids" t-as="ref">
                             <tr>
-                                <th style="border:1px solid #000;">Nombre</th>
-                                <th style="border:1px solid #000;">Domicilio</th>
-                                <th style="border:1px solid #000;">Teléfono</th>
-                                <th style="border:1px solid #000;">Ocupación</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Nombre</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Domicilio</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Teléfono</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Ocupación</th>
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="ref.nombre"/>
@@ -362,7 +362,7 @@
                                 <td style="border:1px solid #000; text-align:center;" t-esc="ref.ocupacion"/>
                             </tr>
                             <tr>
-                                <th style="border:1px solid #000;">Tiempo de conocerlo</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Tiempo de conocerlo</th>
                                 <th style="border:1px solid #000;"></th>
                                 <th style="border:1px solid #000;"></th>
                                 <th style="border:1px solid #000;"></th>
