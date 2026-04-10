@@ -255,9 +255,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
-                        <!-- País/Ciudad -->
+                        <!-- País -->
                         <div class="col-12 col-md-4 mb-4">
-                            <label for="pais-educacion_${this.educationCount}" class="fs-6">País/Ciudad: <span class="text-danger">*</span></label>
+                            <label for="pais-educacion_${this.educationCount}" class="fs-6">País: <span class="text-danger">*</span></label>
                             <select id="pais-educacion_${this.educationCount}" required name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2">
                                 <option selected="selected"></option>
                                 ${ optionsCountries }
@@ -265,7 +265,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
-                        <!-- Título -->
+                        <!-- Ciudad -->
+                        <div class="col-12 col-md-4 mb-4">
+                            <label for="ciudad_${this.educationCount}" class="fs-6">Ciudad: <span class="text-danger">*</span></label>
+                            <input type="text" required name="ciudad_${this.educationCount}" class="form-control rounded-pill py-2" id="ciudad_${this.educationCount}"/>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+                    </div>
+
+                    <!-- Título Recibido en nueva fila -->
+                    <div class="row d-flex justify-content-between">
                         <div class="col-12 col-md-4 mb-4">
                             <label for="titulo_${this.educationCount}" class="fs-6">Título Recibido: <span class="text-danger">*</span></label>
                             <input type="text" required name="titulo_${this.educationCount}" class="form-control rounded-pill py-2" id="titulo_${this.educationCount}"/>
@@ -275,6 +284,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 </div>
             </div>
         ` + separator;
+
     },
 
     async _getExperienceBlock(isFirstBlock = false) {
