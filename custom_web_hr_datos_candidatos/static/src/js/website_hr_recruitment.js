@@ -170,6 +170,114 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._checkEducationFieldsFilled();
     },
 
+    async _getFamilyBlock() {
+        return `
+            <div class="row d-flex justify-content-center family-block">
+                <div class="col-12 col-md-10">
+
+                    <div class="py-3 d-flex justify-content-start mb-3">
+                        <span class="fw-normal fs-4 text-info">
+                            ${this.familyCount === 1 ? 'Datos Familiares' : 'Familiar #' + this.familyCount}
+                        </span>
+                    </div>
+
+                    <div class="row g-3">
+
+                        <!-- Nombre -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Nombres completos <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famNombre_${this.familyCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+
+                        <!-- Cédula -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Cédula <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famCedula_${this.familyCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+
+                        <!-- Fecha -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Fecha nacimiento <span class="required-asterisk">*</span></label>
+                            <input type="date" name="famFecha_${this.familyCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+
+                        <!-- Teléfono -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Teléfono <span class="required-asterisk">*</span></label>
+                            <input type="tel" name="famTelefono_${this.familyCount}" class="form-control rounded-pill fam-telefono" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+
+                        <!-- Ocupación -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Ocupación y Empresa <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famOcupacion_${this.familyCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+
+                        <!-- Depende -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Depende económicamente <span class="required-asterisk">*</span></label>
+
+                            <div class="d-flex mt-2">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="radio"
+                                        name="famDepende_${this.familyCount}" value="si" required/>
+                                    <label class="form-check-label">Sí</label>
+                                </div>
+
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                        name="famDepende_${this.familyCount}" value="no" required/>
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+
+                            <div class="invalid-feedback d-block">Campo obligatorio</div>
+                        </div>
+
+                        <!-- Discapacidad -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Discapacidad <span class="required-asterisk">*</span></label>
+
+                            <div class="d-flex mt-2">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input fam-disc-radio" type="radio"
+                                        name="famDisc_${this.familyCount}" value="si" required/>
+                                    <label class="form-check-label">Sí</label>
+                                </div>
+
+                                <div class="form-check">
+                                    <input class="form-check-input fam-disc-radio" type="radio"
+                                        name="famDisc_${this.familyCount}" value="no" required/>
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+
+                            <div class="invalid-feedback d-block">Campo obligatorio</div>
+                        </div>
+
+                        <!-- Tipo discapacidad (CONDICIONAL) -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Tipo de discapacidad</label>
+                            <input type="text"
+                                name="famDiscTipo_${this.familyCount}"
+                                class="form-control rounded-pill fam-disc-tipo"
+                                disabled />
+
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        `;
+    },
+
     async _getEducationBlock(isFirstBlock = false) {
         await loadCountriesAndStates();
 
@@ -472,120 +580,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }, 0);
 
         return block;
-    },
-
-    async _getFamilyBlock() {
-        return `
-            <div class="row d-flex justify-content-center family-block">
-                <div class="col-12 col-md-10">
-
-                    <div class="py-3 d-flex justify-content-start mb-3">
-                        <span class="fw-normal fs-4 text-info">
-                            ${this.familyCount === 1 ? 'Datos Familiares' : 'Familiar #' + this.familyCount}
-                        </span>
-                    </div>
-
-                    <div class="row g-3">
-
-                        <!-- Nombre completo -->
-                        <div class="col-md-3">
-                            <label class="fs-6">
-                                Nombres completos <span class="required-asterisk">*</span>
-                            </label>
-                            <input type="text" name="famNombre_${this.familyCount}" class="form-control rounded-pill" required/>
-                            <span class="error-message">Campo obligatorio</span>
-                        </div>
-
-                        <!-- Cédula -->
-                        <div class="col-md-3">
-                            <label class="fs-6">
-                                Cédula <span class="required-asterisk">*</span>
-                            </label>
-                            <input type="text" name="famCedula_${this.familyCount}" class="form-control rounded-pill" required/>
-                            <span class="error-message">Campo obligatorio</span>
-                        </div>
-
-                        <!-- Fecha nacimiento -->
-                        <div class="col-md-3">
-                            <label class="fs-6">
-                                Fecha nacimiento <span class="required-asterisk">*</span>
-                            </label>
-                            <input type="date" name="famFecha_${this.familyCount}" class="form-control rounded-pill" required/>
-                            <span class="error-message">Campo obligatorio</span>
-                        </div>
-
-                        <!-- Teléfono -->
-                        <div class="col-md-3">
-                            <label class="fs-6">
-                                Teléfono <span class="required-asterisk">*</span>
-                            </label>
-                            <input type="tel" name="famTelefono_${this.familyCount}" class="form-control rounded-pill fam-telefono" required/>
-                            <span class="error-message">Campo obligatorio</span>
-                        </div>
-
-                        <!-- Ocupación y empresa -->
-                        <div class="col-md-3">
-                            <label class="fs-6">
-                                Ocupación y Empresa <span class="required-asterisk">*</span>
-                            </label>
-                            <input type="text" name="famOcupacion_${this.familyCount}" class="form-control rounded-pill" required/>
-                            <span class="error-message">Campo obligatorio</span>
-                        </div>
-
-                        <!-- Depende económicamente -->
-                        <div class="col-md-3">
-                            <label class="fs-6">
-                                Depende económicamente <span class="required-asterisk">*</span>
-                            </label>
-                            <div class="d-flex mt-2">
-                                <div class="form-check me-3">
-                                    <input class="form-check-input" type="radio"
-                                        name="famDepende_${this.familyCount}" value="si" required/>
-                                    <label class="form-check-label">Sí</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio"
-                                        name="famDepende_${this.familyCount}" value="no" required/>
-                                    <label class="form-check-label">No</label>
-                                </div>
-                            </div>
-                            <span class="error-message">Campo obligatorio</span>
-                        </div>
-
-                        <!-- Discapacidad -->
-                        <div class="col-md-3">
-                            <label class="fs-6">
-                                Discapacidad <span class="required-asterisk">*</span>
-                            </label>
-                            <div class="d-flex mt-2">
-                                <div class="form-check me-3">
-                                    <input class="form-check-input" type="radio"
-                                        name="famDisc_${this.familyCount}" value="si" required/>
-                                    <label class="form-check-label">Sí</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio"
-                                        name="famDisc_${this.familyCount}" value="no" required/>
-                                    <label class="form-check-label">No</label>
-                                </div>
-                            </div>
-                            <span class="error-message">Campo obligatorio</span>
-                        </div>
-
-                        <!-- Tipo discapacidad -->
-                        <div class="col-md-3">
-                            <label class="fs-6">
-                                Tipo de discapacidad
-                            </label>
-                            <input type="text" name="famDiscTipo_${this.familyCount}" class="form-control rounded-pill"/>
-                            <span class="error-message">Campo obligatorio</span>
-                        </div>
-
-                    </div>
-
-                </div>
-            </div>
-        `;
     },
 
     async _getReferenceBlock() {
@@ -1020,44 +1014,48 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         $radio.toggleClass('is-invalid', !selected);
     },
 
-    _validateFamilyFields(index) {
-        let isValid = true;
+    _validateFamilyFields(i) {
+        let valid = true;
 
         const fields = [
-            `input[name="famNombre_${index}"]`,
-            `input[name="famCedula_${index}"]`,
-            `input[name="famFecha_${index}"]`,
-            `input[name="famTelefono_${index}"]`,
-            `input[name="famOcupacion_${index}"]`
+            `famNombre_${i}`,
+            `famCedula_${i}`,
+            `famFecha_${i}`,
+            `famTelefono_${i}`,
+            `famOcupacion_${i}`,
+            `famDepende_${i}`,
+            `famDisc_${i}`
         ];
 
-        fields.forEach(selector => {
-            const $field = this.$(selector);
-            const valid = !!$field.val();
+        fields.forEach(name => {
+            const $el = this.$(`[name="${name}"]`);
+            const isRadio = $el.attr('type') === 'radio';
 
-            $field.toggleClass('is-invalid', !valid);
+            let ok = true;
 
-            if (!valid) isValid = false;
+            if (isRadio) {
+                ok = this.$(`input[name="${name}"]:checked`).length > 0;
+            } else {
+                ok = !!$el.val();
+            }
+
+            $el.toggleClass('is-invalid', !ok);
+
+            if (!ok) valid = false;
         });
 
-        const depende = this.$(`input[name="famDepende_${index}"]:checked`).val();
-        this.$(`input[name="famDepende_${index}"]`).toggleClass('is-invalid', !depende);
-        if (!depende) isValid = false;
+        const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
 
-        const disc = this.$(`input[name="famDisc_${index}"]:checked`).val();
-        this.$(`input[name="famDisc_${index}"]`).toggleClass('is-invalid', !disc);
-        if (!disc) isValid = false;
+        if (discValue === 'si') {
+            const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
+            const okTipo = !!$tipo.val();
 
-        const $tipo = this.$(`input[name="famDiscTipo_${index}"]`);
-        if (disc === 'si') {
-            const validTipo = !!$tipo.val();
-            $tipo.toggleClass('is-invalid', !validTipo);
-            if (!validTipo) isValid = false;
-        } else {
-            $tipo.removeClass('is-invalid');
+            $tipo.toggleClass('is-invalid', !okTipo);
+
+            if (!okTipo) valid = false;
         }
 
-        return isValid;
+        return valid;
     },
 
     _validateField(ev) {
