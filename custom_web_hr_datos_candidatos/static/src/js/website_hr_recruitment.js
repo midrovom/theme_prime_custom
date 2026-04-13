@@ -678,14 +678,50 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const medicacion = this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
         const enfermedadLaboral = this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
         const cirugia = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
-        
-        if (!enfermedad || !medicacion || !enfermedadLaboral || !cirugia) {
 
-            //alert("Complete correctamente la información médica");
+        const discapacidad = this._validateField('input[name="discapacidad"]');
+        const tipoSangre = this._validateTipoSangre({ currentTarget: this.$('input[name="tipo_sangre"]')[0] });
 
+        let discapacidadExtra = true;
+        const discValue = this.$('input[name="discapacidad"]:checked').val();
+
+        if (discValue === 'si') {
+            const tipo = this.$('input[name="tipo_discapacidad"]');
+            const porcentaje = this.$('input[name="porcentaje_discapacidad"]');
+
+            const tipoValid = !!tipo.val();
+            const porcentajeValid = !!porcentaje.val();
+
+            tipo.toggleClass('is-invalid', !tipoValid);
+            porcentaje.toggleClass('is-invalid', !porcentajeValid);
+
+            discapacidadExtra = tipoValid && porcentajeValid;
+        }
+
+        let familyValid = true;
+
+        for (let i = 1; i <= this.familyCount; i++) {
+            const valid = this._validateFamilyFields(i);
+            if (!valid) {
+                familyValid = false;
+            }
+        }
+
+        if (
+            !enfermedad ||
+            !medicacion ||
+            !enfermedadLaboral ||
+            !cirugia ||
+            !discapacidad ||
+            !tipoSangre ||
+            !discapacidadExtra ||
+            !familyValid 
+        ) {
+            this._showModalMessage("Por favor complete todos los campos requeridos correctamente");
             this._scrollToFirstError();
             return false;
         }
+
         return true;
     },
 
