@@ -235,8 +235,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                                     <label class="form-check-label">No</label>
                                 </div>
                             </div>
-
-                            <div class="invalid-feedback d-none fam-disc-error">Campo obligatorio</div>
                         </div>
 
                         <!-- Discapacidad -->
@@ -264,7 +262,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <div class="col-md-3">
                             <label class="fs-6">Tipo de discapacidad</label>
                                 <input type="text"name="famDiscTipo_${this.familyCount}" class="form-control rounded-pill fam-disc-tipo" disabled />
-                            <div class="invalid-feedback fam-disc-type-error d-none">Campo obligatorio</div>
                         </div>
 
                     </div>
