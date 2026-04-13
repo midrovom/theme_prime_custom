@@ -335,10 +335,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <!-- País Experiencia -->
                         <div class="col-12 col-md-3 mb-4">
                             <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País:</label>
-                                <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
-                                    <option value=""></option> ${ cachedCountries.map(country => `
-                                        <option value="country-${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
-                                            ${country.name}
+                            <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
+                                <option value=""></option> ${ cachedCountries.map(country => `
+                                    <option value="country-${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
+                                        ${country.name}
                                     </option>
                                 `).join('') }
                             </select>
@@ -347,22 +347,22 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <!-- Ciudad/Provincia Experiencia -->
                         <div class="col-12 col-md-3 mb-4">
                             <label for="ciudad-experiencia_${this.experienceCount}" class="fs-6">Ciudad/Provincia:</label>
-                                <select id="ciudad-experiencia_${this.experienceCount}" name="ciudadExperiencia_${this.experienceCount}" 
-                                    class="form-select rounded-pill py-2"> <option value=""></option> ${ cachedStatesByCountry[ cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
+                            <select id="ciudad-experiencia_${this.experienceCount}" name="ciudadExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
+                                <option value=""></option> ${ cachedStatesByCountry[ cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
                                     <option value="state-${state.id}">${state.name}</option>
                                 `).join('') }
                             </select>
                         </div>
 
-                        <!-- Teléfono (movido antes de Cargo desempeñado) -->
+                        <!-- Teléfono -->
                         <div class="col-12 col-md-3 mb-4">
-                                <label for="telefonos_${this.experienceCount}" class="fs-6">Teléfono:</label>
+                            <label for="telefonos_${this.experienceCount}" class="fs-6">Teléfono:</label>
                             <input id="telefonos_${this.experienceCount}" type="text" name="telefonos_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
                         <!-- Cargo desempeñado -->
                         <div class="col-12 col-md-3 mb-4">
-                                <label for="cargo_${this.experienceCount}" class="fs-6">Cargo desempeñado:</label>
+                            <label for="cargo_${this.experienceCount}" class="fs-6">Cargo desempeñado:</label>
                             <input id="cargo_${this.experienceCount}" type="text" name="cargo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
@@ -378,10 +378,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <input id="motivo_${this.experienceCount}" type="text" name="motivo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
-                        <!-- Nombre de su jefe directo (movido antes de Cargo de su jefe directo) -->
+                        <!-- Nombre de su jefe directo -->
                         <div class="col-12 col-md-3 mb-4">
                             <label for="jefe_${this.experienceCount}" class="fs-6">Nombre de su jefe directo:</label>
-                            <input id="jefe_${this.experienceCount}" type="text" name="jefe_${this.experienceCount}" class="form-control rounded-pill py-2" />
+                            <input id="jefe_${this.experienceCount}" type="text" name="jefe_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
                         <!-- Cargo de su jefe directo -->
@@ -404,7 +404,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                                 ${ optionsYears }
                                 <option value="presente">Presente</option>
                             </select>
-                            <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
                     </div>
