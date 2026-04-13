@@ -240,8 +240,8 @@
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="edu.titulo"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.country_id"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.state_id"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.country_id.name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="edu.state_id.name"/>
                                 <td style="border:1px solid #000; text-align:center;" 
                                     t-esc="dict(edu._fields['study_current'].selection).get(edu.study_current)"/>
                             </tr>
@@ -313,8 +313,8 @@
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="exp.fecha_inicio"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="exp.year_fin"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.country_id"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.state_id"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.country_id.name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.state_id.name"/>
                             </tr>
                         </t>
 
