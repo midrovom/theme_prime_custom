@@ -1359,6 +1359,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const value = this.$('input[name="discapacidad"]:checked').val();
         const tipo = this.$('input[name="tipo_discapacidad"]');
         const porcentaje = this.$('input[name="porcentaje_discapacidad"]');
+        const $radios = this.$('input[name="discapacidad"]');
+        
+        $radios.removeClass('is-invalid');
 
         if (value === 'no') {
             tipo.prop('disabled', true).val('');
