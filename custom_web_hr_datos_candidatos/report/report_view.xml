@@ -309,14 +309,14 @@
                             <tr>
                                 <th style="border:1px solid #000; font-weight:bold;">Desde</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Hasta</th>
-                                <th style="border:1px solid #000; font-weight:bold;">Ciudad/País</th>
-                                <th style="border:1px solid #000;"></th>
+                                <th style="border:1px solid #000; font-weight:bold;">País</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Ciudad</th>
                             </tr>
                             <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="exp.fecha_inicio"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="exp.year_fin"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.location_name"/>
-                                <td style="border:1px solid #000;"></td>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.country_id"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="exp.state_id"/>
                             </tr>
                         </t>
 
