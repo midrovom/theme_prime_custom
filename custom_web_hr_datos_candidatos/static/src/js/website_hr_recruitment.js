@@ -327,7 +327,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
-        return `
+        const block = `
             <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-10">
                     <div class="row d-flex justify-content-between">
@@ -413,8 +413,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <label for="job-fin_${this.experienceCount}" class="fs-6">Hasta:</label>
                             <select id="job-fin_${this.experienceCount}" name="jobFin_${this.experienceCount}" class="form-select rounded-pill py-2">
                                 <option selected="selected"></option>
-                                ${ optionsYears }
-                                <option value="presente">Presente</option>
                             </select>
                         </div>
 
@@ -422,6 +420,38 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 </div>
             </div>
         ` + separator;
+
+        setTimeout(() => {
+            const startId = `job-inicio_${this.experienceCount}`;
+            const endId = `job-fin_${this.experienceCount}`;
+            const startInput = document.getElementById(startId);
+            const endSelect = document.getElementById(endId);
+
+            if (startInput && endSelect) {
+                startInput.addEventListener("change", () => {
+                    const startDate = startInput.value;
+                    if (startDate) {
+                        const startYear = new Date(startDate).getFullYear();
+                        const currentYear = new Date().getFullYear();
+
+                        // reconstruir opciones
+                        endSelect.innerHTML = "<option value=''></option>";
+                        for (let year = startYear; year <= currentYear; year++) {
+                            const opt = document.createElement("option");
+                            opt.value = year;
+                            opt.textContent = year;
+                            endSelect.appendChild(opt);
+                        }
+                        const presentOpt = document.createElement("option");
+                        presentOpt.value = "presente";
+                        presentOpt.textContent = "Presente";
+                        endSelect.appendChild(presentOpt);
+                    }
+                });
+            }
+        }, 0);
+
+        return block;
     },
 
     async _getFamilyBlock() {
