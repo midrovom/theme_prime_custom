@@ -322,29 +322,26 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <!-- Tiempo que prestó su servicio -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="tiempo_${this.experienceCount}" class="fs-6">Tiempo que prestó su servicio: <span class="text-danger">*</span></label>
-                            <input id="tiempo_${this.experienceCount}" type="text" name="tiempo_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
+                            <label for="tiempo_${this.experienceCount}" class="fs-6">Tiempo que prestó su servicio:</label>
+                            <input id="tiempo_${this.experienceCount}" type="text" name="tiempo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
                         <!-- Nombre de la compañía -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="company_${this.experienceCount}" class="fs-6">Nombre de la compañía: <span class="text-danger">*</span></label>
-                            <input id="company_${this.experienceCount}" type="text" name="company_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
+                            <label for="company_${this.experienceCount}" class="fs-6">Nombre de la compañía:</label>
+                            <input id="company_${this.experienceCount}" type="text" name="company_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
                         <!-- País Experiencia -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País: <span class="text-danger">*</span></label>
-                                <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2" required>
+                            <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País:</label>
+                                <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
                                     <option value=""></option> ${ cachedCountries.map(country => `
                                         <option value="country-${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
                                             ${country.name}
                                     </option>
                                 `).join('') }
                             </select>
-                            <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
                         <!-- Ciudad/Provincia Experiencia -->
@@ -359,57 +356,50 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <!-- Teléfono (movido antes de Cargo desempeñado) -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="telefonos_${this.experienceCount}" class="fs-6">Teléfono: <span class="text-danger">*</span></label>
-                            <input id="telefonos_${this.experienceCount}" type="text" name="telefonos_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
+                                <label for="telefonos_${this.experienceCount}" class="fs-6">Teléfono:</label>
+                            <input id="telefonos_${this.experienceCount}" type="text" name="telefonos_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
                         <!-- Cargo desempeñado -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="cargo_${this.experienceCount}" class="fs-6">Cargo desempeñado: <span class="text-danger">*</span></label>
-                            <input id="cargo_${this.experienceCount}" type="text" name="cargo_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
+                                <label for="cargo_${this.experienceCount}" class="fs-6">Cargo desempeñado:</label>
+                            <input id="cargo_${this.experienceCount}" type="text" name="cargo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
                         <!-- Ingreso mensual -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="ingreso_${this.experienceCount}" class="fs-6">Ingreso mensual: <span class="text-danger">*</span></label>
-                            <input id="ingreso_${this.experienceCount}" type="number" name="ingreso_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
+                            <label for="ingreso_${this.experienceCount}" class="fs-6">Ingreso mensual:</label>
+                            <input id="ingreso_${this.experienceCount}" type="number" name="ingreso_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
                         <!-- Motivo de separación -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="motivo_${this.experienceCount}" class="fs-6">Motivo de separación: <span class="text-danger">*</span></label>
-                            <input id="motivo_${this.experienceCount}" type="text" name="motivo_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
+                            <label for="motivo_${this.experienceCount}" class="fs-6">Motivo de separación:</label>
+                            <input id="motivo_${this.experienceCount}" type="text" name="motivo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
                         <!-- Nombre de su jefe directo (movido antes de Cargo de su jefe directo) -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="jefe_${this.experienceCount}" class="fs-6">Nombre de su jefe directo: <span class="text-danger">*</span></label>
-                            <input id="jefe_${this.experienceCount}" type="text" name="jefe_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
+                            <label for="jefe_${this.experienceCount}" class="fs-6">Nombre de su jefe directo:</label>
+                            <input id="jefe_${this.experienceCount}" type="text" name="jefe_${this.experienceCount}" class="form-control rounded-pill py-2" />
                         </div>
 
                         <!-- Cargo de su jefe directo -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="cargo-jefe_${this.experienceCount}" class="fs-6">Cargo de su jefe directo: <span class="text-danger">*</span></label>
-                            <input id="cargo-jefe_${this.experienceCount}" type="text" name="cargoJefe_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
+                            <label for="cargo-jefe_${this.experienceCount}" class="fs-6">Cargo de su jefe directo:</label>
+                            <input id="cargo-jefe_${this.experienceCount}" type="text" name="cargoJefe_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
                         <!-- Fecha de inicio -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="job-inicio_${this.experienceCount}" class="fs-6">Desde: <span class="text-danger">*</span></label>
-                            <input id="job-inicio_${this.experienceCount}" type="date" name="jobInicio_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
+                            <label for="job-inicio_${this.experienceCount}" class="fs-6">Desde:</label>
+                            <input id="job-inicio_${this.experienceCount}" type="date" name="jobInicio_${this.experienceCount}" class="form-control rounded-pill py-2"/>
                         </div>
 
                         <!-- Año de finalización -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="job-fin_${this.experienceCount}" class="fs-6">Hasta: <span class="text-danger">*</span></label>
-                            <select id="job-fin_${this.experienceCount}" name="jobFin_${this.experienceCount}" class="form-select rounded-pill py-2" required>
+                            <label for="job-fin_${this.experienceCount}" class="fs-6">Hasta:</label>
+                            <select id="job-fin_${this.experienceCount}" name="jobFin_${this.experienceCount}" class="form-select rounded-pill py-2">
                                 <option selected="selected"></option>
                                 ${ optionsYears }
                                 <option value="presente">Presente</option>
@@ -689,35 +679,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     _validateCurrentStep3() {
 
         const isStudyValid = this._validateField('input[name="studyOptions"]');
-        const experienceValidation = this._validateExperienceBlocks();
         const educationValidation = this._validateEducationBlocks();
         const isFamilyOptionValid = this._validateField('input[name="familyOptions"]');
 
-        let isNombreValid = true;
-        let isRelationValid = true;
-        let isParentescoValid = true;
-
-        const familyOption = this.$('input[name="familyOptions"]:checked').val();
-
-        if (familyOption === 't') {
-            isNombreValid = this._validateField('#hr-nombre-completo');
-            isRelationValid = this._validateField('input[name="relationType"]');
-
-            const relation = this.$('input[name="relationType"]:checked').val();
-
-            if (relation === 'familiar') {
-                isParentescoValid = this._validateField('#hr-parentesco');
-            }
-        }
-
         if (
             !isStudyValid ||
-            !experienceValidation.isValid ||
             !educationValidation.isValid ||
-            !isFamilyOptionValid ||
-            !isNombreValid ||
-            !isRelationValid ||
-            !isParentescoValid
+            !isFamilyOptionValid
         ) {
             alert("Complete todos los campos obligatorios");
             return false;
@@ -734,6 +702,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             const $field = $(block);
 
             if (!$field.is(':visible') || $field.prop('disabled')) return;
+
+            const value = $field.val();
+
+            if (!value) {
+                $field.removeClass('is-invalid');
+                return;
+            }
 
             let fieldValid = true;
 
