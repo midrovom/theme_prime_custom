@@ -605,8 +605,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const isTipoViviendaValid = this._validateField('input[name="tipoVivienda"]');
         const isHijosValid = this._validateField('#hr-hijos');
 
-        const isDependientesValid = this._validateField('input[name="dependientes"]');
-
         const isEmailValid = this._validateEmail();
 
         const isDocTypeValid = this._validateField('#hr-type-doc');
@@ -633,7 +631,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isViveConValid ||
             !isTipoViviendaValid ||
             !isHijosValid ||
-            !isDependientesValid ||
             !isEmailValid ||
             !isDocTypeValid ||
             !isDocNumberValid ||
