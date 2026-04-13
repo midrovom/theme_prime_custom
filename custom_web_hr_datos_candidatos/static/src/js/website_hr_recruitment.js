@@ -900,6 +900,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     _validateImage: function(ev) {
         const input = ev ? ev.currentTarget : document.getElementById('hr-perfil');
         const errorDiv = document.getElementById('image-error');
+        const preview = document.getElementById('preview-img');
+        const textImg = document.getElementById('text-img');
 
         if (!input) return true;
 
@@ -909,12 +911,24 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             errorDiv.textContent = "Debe subir una foto de perfil.";
             errorDiv.style.display = "block";
             input.classList.add("is-invalid");
+
+            if (preview) preview.style.display = "none";
+            if (textImg) textImg.style.display = "block";
+
             return false;
         }
-
         errorDiv.textContent = "";
         errorDiv.style.display = "none";
         input.classList.remove("is-invalid");
+
+        if (preview) {
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = "block";
+        }
+
+        if (textImg) {
+            textImg.style.display = "none";
+        }
 
         return true; 
     },
