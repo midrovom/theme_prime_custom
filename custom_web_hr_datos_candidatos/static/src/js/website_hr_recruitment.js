@@ -553,7 +553,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <label class="fs-6">Nombre <span class="required-asterisk">*</span></label>
                             <input type="text" name="ref_nombre_${this.referenceCount}" 
                                 class="form-control rounded-pill py-2" required/>
-                            <span class="error-message">Campo obligatorio</span>
+                            <div class="invalid-feedback">
+                                Campo obligatorio
+                            </div>
                         </div>
 
                         <!-- Domicilio -->
@@ -561,7 +563,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <label class="fs-6">Domicilio <span class="required-asterisk">*</span></label>
                             <input type="text" name="ref_domicilio_${this.referenceCount}" 
                                 class="form-control rounded-pill py-2" required/>
-                            <span class="error-message">Campo obligatorio</span>
+                            <div class="invalid-feedback">
+                                Campo obligatorio
+                            </div>
                         </div>
 
                         <!-- Teléfono -->
@@ -569,7 +573,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <label class="fs-6">Teléfono <span class="required-asterisk">*</span></label>
                             <input type="text" name="ref_telefono_${this.referenceCount}" 
                                 class="form-control rounded-pill py-2 ref-telefono" required/>
-                            <span class="error-message">Campo obligatorio</span>
+                            <div class="invalid-feedback">
+                                Campo obligatorio
+                            </div>
                         </div>
 
                         <!-- Ocupación -->
@@ -577,7 +583,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <label class="fs-6">Ocupación <span class="required-asterisk">*</span></label>
                             <input type="text" name="ref_ocupacion_${this.referenceCount}" 
                                 class="form-control rounded-pill py-2" required/>
-                            <span class="error-message">Campo obligatorio</span>
+                            <div class="invalid-feedback">
+                                Campo obligatorio
+                            </div>
                         </div>
 
                         <!-- Tiempo de conocerlo -->
@@ -585,7 +593,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <label class="fs-6">Tiempo de conocerlo <span class="required-asterisk">*</span></label>
                             <input type="text" name="ref_tiempo_${this.referenceCount}" 
                                 class="form-control rounded-pill py-2" required/>
-                            <span class="error-message">Campo obligatorio</span>
+                            <div class="invalid-feedback">
+                                Campo obligatorio
+                            </div>
                         </div>
 
                     </div>
