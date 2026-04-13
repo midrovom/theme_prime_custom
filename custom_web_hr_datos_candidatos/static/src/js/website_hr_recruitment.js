@@ -42,7 +42,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'input input[name^="ref_telefono_"]': '_validateDynamicPhone',
 
 
-        'blur #hr-lastname-paterno, #hr-lastname-materno, #hr-name, #hr-age, #hr-address, #hr-parish, #hr-phone, #hr-hijos, #hr-nationality, #experience_container input, #experience_container textarea, #education_container input': '_validateField',
+        'blur #hr-lastname-paterno, #hr-lastname-materno, #hr-name, #hr-age, #hr-address, #hr-parish, #hr-hijos, #hr-nationality, #experience_container input, #experience_container textarea, #education_container input': '_validateField',
         'blur #hr-email': '_validateEmail',
         'blur #hr-number-doc': '_validateDocumentNumber',
         'blur #hr-cellphone': '_validatePhone',
