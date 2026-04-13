@@ -65,7 +65,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="discapacidad"]': '_toggleDisabilityFields',
         'change input[name="viveCon"]': '_validateField',
         'change input[name="tipoVivienda"]': '_validateField',
-        'change input[name="dependientes"]': '_validateField',
         'change input[name="estadoCivil"]': '_validateField',
         'change #education_container input, #education_container select': '_checkEducationFieldsFilled',
         'change input[name="knownPosee_1"]': '_toggleFamilyKnownFields',
