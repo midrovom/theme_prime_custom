@@ -2,7 +2,7 @@
 <odoo>
 
     <template id="recruitment_form_1" name="Formulario 1">
-        <div id="form-step-1" class="row justify-content-center my-5">
+        <div id="form-step-1" class=" row justify-content-center my-5">
             <div class="bg-light py-3 d-flex justify-content-start">
                 <div>
                     <span class="fw-normal fs-4 text-info"> 1. Datos Personales</span>
