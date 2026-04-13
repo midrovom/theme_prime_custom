@@ -46,7 +46,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'blur #hr-email': '_validateEmail',
         'blur #hr-number-doc': '_validateDocumentNumber',
         'blur #hr-cellphone': '_validatePhone',
-        'blur #hr-phone': '_validatePhoneHome',
         'blur input[name^="famTelefono_"]': '_validateDynamicPhone',
         'blur input[name^="telefonos_"]': '_validateDynamicPhone',
         'blur input[name^="ref_telefono_"]': '_validateDynamicPhone',
@@ -596,10 +595,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const isBirthCountryValid = this._validateField('#hr-country');
         const isProvinceValid = this._validateField('#hr-provincia');
 
-        const isPhoneValid = this._validateField('#hr-phone');
         const isCodeCellphoneValid = this._validateCodePhone();
         const isCellphoneValid = this._validatePhone();
-        const isPhomeHome = this._validatePhoneHome();
 
         const isViveConValid = this._validateField('input[name="viveCon"]');
         const isTipoViviendaValid = this._validateField('input[name="tipoVivienda"]');
@@ -988,24 +985,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
         
         $phone.toggleClass('is-invalid', !isValid);
-        return isValid;
-    },
-
-    _validatePhoneHome() {
-        const $phone = this.$('#hr-phone');
-        const phone = $phone.val();
-
-        // 👇 SI está vacío → válido
-        if (!phone) {
-            $phone.removeClass('is-invalid');
-            return true;
-        }
-
-        // 👇 Solo valida si el usuario escribe algo
-        const isValid = /^\d{7,10}$/.test(phone);
-
-        $phone.toggleClass('is-invalid', !isValid);
-
         return isValid;
     },
 
