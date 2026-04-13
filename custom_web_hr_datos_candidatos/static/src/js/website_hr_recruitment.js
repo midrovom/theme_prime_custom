@@ -744,9 +744,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const checked = radios.filter(':checked');
         const isValid = checked.length > 0;
 
-        radios.removeClass('is-invalid'); 
-
-        if (!isValid) {
+        if (isValid) {
+            radios.removeClass('is-invalid');
+        } else {
             radios.addClass('is-invalid');
         }
 
@@ -764,16 +764,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const value = $radios.filter(':checked').val();
         const $detail = this.$(`input[name="${detailName}"]`);
 
-        if (value) {
-            $radios.removeClass('is-invalid');
-        }
-
         if (value === 'si') {
             $detail.prop('disabled', false).prop('required', true);
 
             if (!$detail.val().trim()) {
                 $detail.addClass('is-invalid');
-                return false;
             } else {
                 $detail.removeClass('is-invalid');
             }
@@ -783,11 +778,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 .prop('required', false)
                 .val('')
                 .removeClass('is-invalid');
-
-        } else {
-            $radios.addClass('is-invalid');
-            return false;
         }
+
+        this._validateRadio(radioName);
 
         return true;
     },
