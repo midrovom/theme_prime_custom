@@ -1207,7 +1207,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         const fields = [
             'input[name="titulo_por_obtener"]',
-            'input[name="institucion"]',
+            'input[name="institucion_2"]',
             'input[name="horario"]',
             'input[name="carrera"]',
             'input[name="estado"]'
