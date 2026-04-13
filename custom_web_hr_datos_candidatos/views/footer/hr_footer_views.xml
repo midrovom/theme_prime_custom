@@ -2,12 +2,12 @@
 <odoo>
     <data>
 
-        <!-- Vista formulario Descripción -->
-        <record id="view_hr_footer_descripcion_form" model="ir.ui.view">
-            <field name="name">hr.footer.descripcion.form</field>
+        <!-- Vista formulario -->
+        <record id="view_hr_footer_form" model="ir.ui.view">
+            <field name="name">hr.footer.form</field>
             <field name="model">hr.footer</field>
             <field name="arch" type="xml">
-                <form string="Ley de Protección de Datos">
+                <form string="Footer">
                     <sheet>
                         <group>
                             <field name="descripcion"/>
@@ -17,88 +17,37 @@
             </field>
         </record>
 
-        <!-- Vista lista Descripción -->
-        <record id="view_hr_footer_descripcion_list" model="ir.ui.view">
-            <field name="name">hr.footer.descripcion.list</field>
+        <!-- Vista lista -->
+        <record id="view_hr_footer_list" model="ir.ui.view">
+            <field name="name">hr.footer.list</field>
             <field name="model">hr.footer</field>
             <field name="arch" type="xml">
-                <list string="Ley de Protección de Datos">
+                <list string="Footer">
                     <field name="descripcion"/>
                 </list>
             </field>
         </record>
 
-        <!-- Acción Descripción -->
-        <record id="action_hr_footer_descripcion" model="ir.actions.act_window">
-            <field name="name">Ley de Protección de Datos</field>
+        <!-- Acción de ventana -->
+        <record id="action_hr_footer" model="ir.actions.act_window">
+            <field name="name">Footer</field>
             <field name="res_model">hr.footer</field>
             <field name="view_mode">list,form</field>
-            <field name="view_id" ref="view_hr_footer_descripcion_list"/>
-        </record>
-
-        <!-- Vista formulario Reglamento Interno -->
-        <record id="view_hr_footer_reglamento_form" model="ir.ui.view">
-            <field name="name">hr.footer.reglamento.form</field>
-            <field name="model">hr.footer</field>
-            <field name="arch" type="xml">
-                <form string="Reglamento Interno">
-                    <sheet>
-                        <group>
-                            <field name="reglamento"/>
-                        </group>
-                    </sheet>
-                </form>
-            </field>
-        </record>
-
-        <!-- Vista lista Reglamento Interno -->
-        <record id="view_hr_footer_reglamento_list" model="ir.ui.view">
-            <field name="name">hr.footer.reglamento.list</field>
-            <field name="model">hr.footer</field>
-            <field name="arch" type="xml">
-                <list string="Reglamento Interno">
-                    <field name="reglamento"/>
-                </list>
-            </field>
-        </record>
-
-        <!-- Acción Descripción -->
-        <record id="action_hr_footer_descripcion" model="ir.actions.act_window">
-            <field name="name">Ley de Protección de Datos</field>
-            <field name="res_model">hr.footer</field>
-            <field name="view_mode">list,form</field>
-            <field name="view_id" ref="view_hr_footer_descripcion_list"/>
-        </record>
-
-        <!-- Acción Reglamento Interno -->
-        <record id="action_hr_footer_reglamento" model="ir.actions.act_window">
-            <field name="name">Reglamento Interno</field>
-            <field name="res_model">hr.footer</field>
-            <field name="view_mode">list,form</field>
-            <field name="view_id" ref="view_hr_footer_reglamento_list"/>
         </record>
 
         <!-- Menús -->
         <menuitem
-            id="menu_hr_footer"
+            id="menu_hr_recruitment_footer"
             name="Footer"
             parent="hr_recruitment.menu_hr_recruitment_config_applications"
             sequence="4"/>
 
         <menuitem
-            id="menu_applicant_footer_descripcion"
+            id="menu_applicant_footer"
             name="Ley de Protección de Datos"
-            parent="menu_hr_footer"
-            action="action_hr_footer_descripcion"
+            parent="menu_hr_recruitment_footer"
+            action="action_hr_footer"
             sequence="1"
-            groups="hr.group_hr_user"/>
-
-        <menuitem
-            id="menu_applicant_footer_reglamento"
-            name="Reglamento Interno"
-            parent="menu_hr_footer"
-            action="action_hr_footer_reglamento"
-            sequence="2"
             groups="hr.group_hr_user"/>
 
     </data>
