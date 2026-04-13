@@ -196,67 +196,98 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-10">
                     <div class="row d-flex justify-content-between">
+
                         <!-- Nivel educativo -->
                         <div class="col-12 col-md-4 mb-4">
-                            <label for="institucion-educativa_${this.educationCount}" class="fs-6">Nivel Educativo:</label>
-                            <select id="institucion-educativa_${this.educationCount}" name="level_id_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option selected="selected"></option>
-                                ${ optionsStudiesLevels }
+                            <label class="fs-6">Nivel Educativo:</label>
+                            <select id="institucion-educativa_${this.educationCount}" 
+                                name="level_id_${this.educationCount}" 
+                                class="form-select rounded-pill py-2">
+                                <option value=""></option>
+                                ${optionsStudiesLevels}
                             </select>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Institución -->
                         <div class="col-12 col-md-4 mb-4">
-                            <label for="institucion_${this.educationCount}" class="fs-6">Nombre de la institución:</label>
-                            <input type="text" name="institucion_${this.educationCount}" class="form-control rounded-pill py-2" id="institucion_${this.educationCount}"/>
+                            <label class="fs-6">Nombre de la institución:</label>
+                            <input type="text" 
+                                name="institucion_${this.educationCount}" 
+                                class="form-control rounded-pill py-2"
+                                id="institucion_${this.educationCount}"/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
-                        <!-- Fechas -->
+                        <!-- Desde -->
                         <div class="col-12 col-md-4 mb-4">
-                            <label for="estudio-inicio_${this.educationCount}" class="fs-6">Desde:</label>
-                            <input type="date" name="inicioEstudio_${this.educationCount}" class="form-control rounded-pill py-2" id="estudio-inicio_${this.educationCount}"/>
+                            <label class="fs-6">Desde:</label>
+                            <input type="date" 
+                                name="inicioEstudio_${this.educationCount}" 
+                                class="form-control rounded-pill py-2"
+                                id="estudio-inicio_${this.educationCount}"/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
+                        <!-- Hasta -->
                         <div class="col-12 col-md-4 mb-4">
-                            <label for="estudio-fin_${this.educationCount}" class="fs-6">Hasta:</label>
-                            <select id="estudio-fin_${this.educationCount}" name="finEstudio_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option selected="selected"></option>
+                            <label class="fs-6">Hasta:</label>
+                            <select id="estudio-fin_${this.educationCount}" 
+                                name="finEstudio_${this.educationCount}" 
+                                class="form-select rounded-pill py-2">
+                                <option value=""></option>
                             </select>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
-                        <!-- País Educación -->
+                        <!-- País -->
                         <div class="col-12 col-md-4 mb-4">
-                            <label for="pais-educacion_${this.educationCount}" class="fs-6">País:</label>
-                            <select id="pais-educacion_${this.educationCount}" name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option value=""></option> ${ cachedCountries.map(country => `
-                                    <option value="country-${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
+                            <label class="fs-6">País:</label>
+                            <select id="pais-educacion_${this.educationCount}" 
+                                name="paisEducacion_${this.educationCount}" 
+                                class="form-select rounded-pill py-2">
+                                <option value=""></option>
+                                ${cachedCountries.map(country => `
+                                    <option value="country-${country.id}" 
+                                        ${country.name === 'Ecuador' ? 'selected' : ''}>
                                         ${country.name}
                                     </option>
-                                `).join('') }
+                                `).join('')}
                             </select>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
-                        <!-- Ciudad/Provincia Educación -->
+                        <!-- Ciudad -->
                         <div class="col-12 col-md-4 mb-4">
-                            <label for="ciudad_${this.educationCount}" class="fs-6">Ciudad/Provincia:</label>
-                            <select id="ciudad_${this.educationCount}" name="ciudad_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option value=""></option> ${ cachedStatesByCountry[cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
-                                    <option value="state-${state.id}">${state.name}</option>
-                                `).join('') }
+                            <label class="fs-6">Ciudad/Provincia:</label>
+                            <select id="ciudad_${this.educationCount}" 
+                                name="ciudad_${this.educationCount}" 
+                                class="form-select rounded-pill py-2">
+                                <option value=""></option>
+                                ${cachedStatesByCountry[cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
+                                    <option value="state-${state.id}">
+                                        ${state.name}
+                                    </option>
+                                `).join('')}
                             </select>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Título -->
                         <div class="col-12 col-md-4 mb-4">
-                            <label for="titulo_${this.educationCount}" class="fs-6">Título Recibido:</label>
-                            <input type="text" name="titulo_${this.educationCount}" class="form-control rounded-pill py-2" id="titulo_${this.educationCount}"/>
+                            <label class="fs-6">Título Recibido:</label>
+                            <input type="text" 
+                                name="titulo_${this.educationCount}" 
+                                class="form-control rounded-pill py-2"
+                                id="titulo_${this.educationCount}"/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
+
                     </div>
                 </div>
             </div>
         ` + separator;
 
-        // Script para filtrar años en "Hasta"
         setTimeout(() => {
             const startId = `estudio-inicio_${this.educationCount}`;
             const endId = `estudio-fin_${this.educationCount}`;
@@ -270,7 +301,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         const startYear = new Date(startDate).getFullYear();
                         const currentYear = new Date().getFullYear();
 
-                        // reconstruir opciones
                         endSelect.innerHTML = "<option value=''></option>";
                         for (let year = startYear; year <= currentYear; year++) {
                             const opt = document.createElement("option");
@@ -278,6 +308,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             opt.textContent = year;
                             endSelect.appendChild(opt);
                         }
+
                         const presentOpt = document.createElement("option");
                         presentOpt.value = "presente";
                         presentOpt.textContent = "Presente";
@@ -445,7 +476,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     async _getFamilyBlock() {
         return `
-            <div class="row d-flex justify-content-center">
+            <div class="row d-flex justify-content-center family-block">
                 <div class="col-12 col-md-10">
 
                     <div class="py-3 d-flex justify-content-start mb-3">
@@ -458,51 +489,62 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <!-- Nombre completo -->
                         <div class="col-md-3">
-                            <label class="fs-6">Nombres completos <span class="required-asterisk">*</span></label>
-                                <input type="text" name="famNombre_${this.familyCount}" class="form-control rounded-pill" required/>
+                            <label class="fs-6">
+                                Nombres completos <span class="required-asterisk">*</span>
+                            </label>
+                            <input type="text" name="famNombre_${this.familyCount}" class="form-control rounded-pill" required/>
                             <span class="error-message">Campo obligatorio</span>
                         </div>
 
                         <!-- Cédula -->
                         <div class="col-md-3">
-                            <label class="fs-6">Cédula <span class="required-asterisk">*</span></label>
-                                <input type="text" name="famCedula_${this.familyCount}" class="form-control rounded-pill" required/>
+                            <label class="fs-6">
+                                Cédula <span class="required-asterisk">*</span>
+                            </label>
+                            <input type="text" name="famCedula_${this.familyCount}" class="form-control rounded-pill" required/>
                             <span class="error-message">Campo obligatorio</span>
                         </div>
 
                         <!-- Fecha nacimiento -->
                         <div class="col-md-3">
-                            <label class="fs-6">Fecha nacimiento <span class="required-asterisk">*</span></label>
-                                <input type="date" name="famFecha_${this.familyCount}" class="form-control rounded-pill" required/>
+                            <label class="fs-6">
+                                Fecha nacimiento <span class="required-asterisk">*</span>
+                            </label>
+                            <input type="date" name="famFecha_${this.familyCount}" class="form-control rounded-pill" required/>
                             <span class="error-message">Campo obligatorio</span>
                         </div>
 
                         <!-- Teléfono -->
                         <div class="col-md-3">
-                            <label class="fs-6">Teléfono <span class="required-asterisk">*</span></label>
-                                <input type="tel" name="famTelefono_${this.familyCount}" class="form-control rounded-pill fam-telefono" required/>
+                            <label class="fs-6">
+                                Teléfono <span class="required-asterisk">*</span>
+                            </label>
+                            <input type="tel" name="famTelefono_${this.familyCount}" class="form-control rounded-pill fam-telefono" required/>
                             <span class="error-message">Campo obligatorio</span>
                         </div>
 
                         <!-- Ocupación y empresa -->
                         <div class="col-md-3">
-                            <label class="fs-6">Ocupación y Empresa <span class="required-asterisk">*</span></label>
-                            <input type="text" name="famOcupacion_${this.familyCount}" 
-                                class="form-control rounded-pill" required/>
+                            <label class="fs-6">
+                                Ocupación y Empresa <span class="required-asterisk">*</span>
+                            </label>
+                            <input type="text" name="famOcupacion_${this.familyCount}" class="form-control rounded-pill" required/>
                             <span class="error-message">Campo obligatorio</span>
                         </div>
 
                         <!-- Depende económicamente -->
                         <div class="col-md-3">
-                            <label class="fs-6">Depende económicamente <span class="required-asterisk">*</span></label>
+                            <label class="fs-6">
+                                Depende económicamente <span class="required-asterisk">*</span>
+                            </label>
                             <div class="d-flex mt-2">
                                 <div class="form-check me-3">
-                                    <input class="form-check-input" type="radio" 
+                                    <input class="form-check-input" type="radio"
                                         name="famDepende_${this.familyCount}" value="si" required/>
                                     <label class="form-check-label">Sí</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" 
+                                    <input class="form-check-input" type="radio"
                                         name="famDepende_${this.familyCount}" value="no" required/>
                                     <label class="form-check-label">No</label>
                                 </div>
@@ -512,15 +554,17 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <!-- Discapacidad -->
                         <div class="col-md-3">
-                            <label class="fs-6">Discapacidad <span class="required-asterisk">*</span></label>
+                            <label class="fs-6">
+                                Discapacidad <span class="required-asterisk">*</span>
+                            </label>
                             <div class="d-flex mt-2">
                                 <div class="form-check me-3">
-                                    <input class="form-check-input" type="radio" 
+                                    <input class="form-check-input" type="radio"
                                         name="famDisc_${this.familyCount}" value="si" required/>
                                     <label class="form-check-label">Sí</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" 
+                                    <input class="form-check-input" type="radio"
                                         name="famDisc_${this.familyCount}" value="no" required/>
                                     <label class="form-check-label">No</label>
                                 </div>
@@ -530,9 +574,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <!-- Tipo discapacidad -->
                         <div class="col-md-3">
-                            <label class="fs-6">Tipo de discapacidad</label>
-                            <input type="text" name="famDiscTipo_${this.familyCount}" 
-                                class="form-control rounded-pill"/>
+                            <label class="fs-6">
+                                Tipo de discapacidad
+                            </label>
+                            <input type="text" name="famDiscTipo_${this.familyCount}" class="form-control rounded-pill"/>
+                            <span class="error-message">Campo obligatorio</span>
                         </div>
 
                     </div>
@@ -681,7 +727,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const medicacionDetalle = this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
         const enfermedadLaboralDetalle = this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
         const cirugiaDetalle = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
-        const tipoSangre = this._validateTipoSangre({currentTarget: this.$('input[name="tipo_sangre"]')[0]});
+
+        const tipoSangre = this._validateTipoSangre({
+            currentTarget: this.$('input[name="tipo_sangre"]')[0]
+        });
 
         let discapacidadExtra = true;
         const discValue = this.$('input[name="discapacidad"]:checked').val();
@@ -718,7 +767,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !medicacionDetalle ||
             !enfermedadLaboralDetalle ||
             !cirugiaDetalle ||
-            !tipoSangre 
+            !tipoSangre ||
+            !discapacidadExtra ||
+            !familyValid
         ) {
             this._scrollToFirstError();
             return false;
