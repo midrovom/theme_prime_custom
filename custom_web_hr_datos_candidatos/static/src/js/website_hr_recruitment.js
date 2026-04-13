@@ -740,13 +740,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _validateRadio(name) {
-        const checked = this.$(`input[name="${name}"]:checked`);
+        const radios = this.$(`input[name="${name}"]`);
+        const checked = radios.filter(':checked');
         const isValid = checked.length > 0;
 
+        radios.removeClass('is-invalid'); 
+
         if (!isValid) {
-            this.$(`input[name="${name}"]`).addClass('is-invalid');
-        } else {
-            this.$(`input[name="${name}"]`).removeClass('is-invalid');
+            radios.addClass('is-invalid');
         }
 
         return isValid;
@@ -759,24 +760,35 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _validateHealthGroup(radioName, detailName) {
-        const value = this.$(`input[name="${radioName}"]:checked`).val();
+        const $radios = this.$(`input[name="${radioName}"]`);
+        const value = $radios.filter(':checked').val();
         const $detail = this.$(`input[name="${detailName}"]`);
+
+        if (value) {
+            $radios.removeClass('is-invalid');
+        }
 
         if (value === 'si') {
             $detail.prop('disabled', false).prop('required', true);
+
             if (!$detail.val().trim()) {
                 $detail.addClass('is-invalid');
                 return false;
             } else {
                 $detail.removeClass('is-invalid');
             }
-        } else if (value === 'no') {
-            $detail.prop('disabled', true).prop('required', false).val('');
-            $detail.removeClass('is-invalid');
-        } else {
 
+        } else if (value === 'no') {
+            $detail.prop('disabled', true)
+                .prop('required', false)
+                .val('')
+                .removeClass('is-invalid');
+
+        } else {
+            $radios.addClass('is-invalid');
             return false;
         }
+
         return true;
     },
 
