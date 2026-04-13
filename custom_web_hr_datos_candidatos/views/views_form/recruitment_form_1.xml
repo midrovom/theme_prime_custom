@@ -130,8 +130,7 @@
                     <div class="col-12 col-md-3 mb-4">
                         <div>
                             <label for="hr-phone" class="fs-6">Teléfono: <span class="text-danger">*</span></label>
-                            <input type="text" name="phone" class="form-control rounded-pill py-2" id="hr-phone" required="required"/>
-                            <div class="invalid-feedback">Campo obligatorio.</div>
+                            <input type="text" name="phone" class="form-control rounded-pill py-2" id="hr-phone"/>
                         </div>
                     </div>
 

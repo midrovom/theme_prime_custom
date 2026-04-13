@@ -19,18 +19,6 @@ async function loadCountriesAndStates() {
     }
 }
 
-// const countrySelect = document.getElementById(`pais-educacion_${this.educationCount}`);
-// const citySelect = document.getElementById(`ciudad_${this.educationCount}`);
-
-// countrySelect.addEventListener('change', function() {
-//     const selectedCountryId = this.value;
-//     const states = cachedStatesByCountry[selectedCountryId] || [];
-
-//     citySelect.innerHTML = '<option value=""></option>' + 
-//         states.map(state => `<option value="${state.id}">${state.name}</option>`).join('');
-// });
-
-
 publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     selector: '#hr_job_recruitment_form',
     events: {
@@ -1005,11 +993,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         $phone.toggleClass('is-invalid', !isValid);
         return isValid;
     },
-
+    
     _validatePhoneHome() {
         const $phone = this.$('#hr-phone');
         const phone = $phone.val();
 
+        // 👇 SI está vacío → válido
+        if (!phone) {
+            $phone.removeClass('is-invalid');
+            return true;
+        }
+
+        // 👇 Solo valida si el usuario escribe algo
         const isValid = /^\d{7,10}$/.test(phone);
 
         $phone.toggleClass('is-invalid', !isValid);
