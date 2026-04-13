@@ -1204,7 +1204,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     _toggleStudyFields() {
         const value = this.$('input[name="studyOptions"]:checked').val();
-        const isStudying = value === 't';
 
         const fields = [
             'input[name="titulo_por_obtener"]',
@@ -1216,11 +1215,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         fields.forEach(selector => {
             const $field = this.$(selector);
+            const shouldDisable = value === 'f';
 
-            $field.prop('disabled', !isStudying);
-            $field.prop('required', isStudying);
+            $field.prop('disabled', shouldDisable);
+            $field.prop('required', false); 
 
-            if (!isStudying) {
+            if (shouldDisable) {
                 $field.val('');
             }
 
