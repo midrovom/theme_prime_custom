@@ -257,18 +257,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                                 </div>
                             </div>
 
-                            <div class="invalid-feedback d-block">Campo obligatorio</div>
+                            <div class="invalid-feedback d-none fam-disc-error">Campo obligatorio</div>
                         </div>
 
                         <!-- Tipo discapacidad (CONDICIONAL) -->
                         <div class="col-md-3">
                             <label class="fs-6">Tipo de discapacidad</label>
-                            <input type="text"
-                                name="famDiscTipo_${this.familyCount}"
-                                class="form-control rounded-pill fam-disc-tipo"
-                                disabled />
-
-                            <div class="invalid-feedback">Campo obligatorio</div>
+                                <input type="text"name="famDiscTipo_${this.familyCount}" class="form-control rounded-pill fam-disc-tipo" disabled />
+                            <div class="invalid-feedback fam-disc-type-error d-none">Campo obligatorio</div>
                         </div>
 
                     </div>
@@ -989,35 +985,44 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return isValid;
     },
 
-    _validateFamilyDisability(familyIndex) {
-        const $radio = this.$(`input[name="famDisc_${familyIndex}"]`);
-        const selected = $radio.filter(':checked').val();
-        const $detail = this.$(`input[name="famDiscTipo_${familyIndex}"]`);
+    _toggleFamilyDisability(i) {
+        const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
+        const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
+        const $errorTipo = $tipo.siblings('.fam-disc-type-error');
+        const $errorRadio = this.$(`input[name="famDisc_${i}"]`)
+            .closest('.col-md-3')
+            .find('.fam-disc-error');
 
-        if (selected === 'si') {
-            $detail.prop('disabled', false);
-            $detail.prop('required', true);
+        if (discValue === 'si') {
+            $tipo.prop('disabled', false);
 
-            if (!$detail.val()) {
-                $detail.addClass('is-invalid');
+
+            if (!$tipo.val().trim()) {
+                $tipo.addClass('is-invalid');
             } else {
-                $detail.removeClass('is-invalid');
+                $tipo.removeClass('is-invalid');
             }
 
-        } else {
-            $detail.prop('disabled', true);
-            $detail.prop('required', false);
-            $detail.val('');
-            $detail.removeClass('is-invalid');
+        } else if (discValue === 'no') {
+            $tipo.prop('disabled', true)
+                .val('')
+                .removeClass('is-invalid');
+
+            $errorTipo.addClass('d-none');
+            $errorRadio.addClass('d-none');
         }
 
-        $radio.toggleClass('is-invalid', !selected);
+        if (!discValue) {
+            $errorRadio.removeClass('d-none');
+        } else {
+            $errorRadio.addClass('d-none');
+        }
     },
 
     _validateFamilyFields(i) {
         let valid = true;
 
-        const fields = [
+        const requiredFields = [
             `famNombre_${i}`,
             `famCedula_${i}`,
             `famFecha_${i}`,
@@ -1027,32 +1032,34 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             `famDisc_${i}`
         ];
 
-        fields.forEach(name => {
+        requiredFields.forEach(name => {
             const $el = this.$(`[name="${name}"]`);
             const isRadio = $el.attr('type') === 'radio';
 
-            let ok = true;
+            let ok;
 
             if (isRadio) {
                 ok = this.$(`input[name="${name}"]:checked`).length > 0;
             } else {
-                ok = !!$el.val();
+                ok = !!$el.val()?.toString().trim();
             }
 
             $el.toggleClass('is-invalid', !ok);
-
             if (!ok) valid = false;
         });
 
         const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
 
+        const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
+
         if (discValue === 'si') {
-            const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
-            const okTipo = !!$tipo.val();
+            const okTipo = !!$tipo.val()?.trim();
 
             $tipo.toggleClass('is-invalid', !okTipo);
 
             if (!okTipo) valid = false;
+        } else {
+            $tipo.removeClass('is-invalid');
         }
 
         return valid;
