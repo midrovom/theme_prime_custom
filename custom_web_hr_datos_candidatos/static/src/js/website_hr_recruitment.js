@@ -267,24 +267,25 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
-                        <!-- País -->
+                        <!-- País Educación -->
                         <div class="col-12 col-md-4 mb-4">
                             <label for="pais-educacion_${this.educationCount}" class="fs-6"> País: <span class="text-danger">*</span> </label>
-                                <select id="pais-educacion_${this.educationCount}" name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2" aria-label="Seleccionar país" required>
-                                    <option value=""></option>${ cachedCountries.map(country => `
-                                        <option value="${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}> ${country.name}
+                                <select id="pais-educacion_${this.educationCount}" name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2" 
+                                    aria-label="Seleccionar país" required> <option value=""></option> ${ cachedCountries.map(country => `
+                                    <option value="country-${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
+                                        ${country.name}
                                     </option>
                                 `).join('') }
                             </select>
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
-                        <!-- Ciudad/Provincia -->
+                        <!-- Ciudad/Provincia Educación -->
                         <div class="col-12 col-md-4 mb-4">
                             <label for="ciudad_${this.educationCount}" class="fs-6">Ciudad/Provincia:</label>
-                                <select id="ciudad_${this.educationCount}" name="ciudad_${this.educationCount}" class="form-select rounded-pill py-2" aria-label="Seleccionar ciudad/provincia">
-                                    <option value=""></option> ${ cachedStatesByCountry[ cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
-                                        <option value="${state.id}">${state.name}</option>
+                                <select id="ciudad_${this.educationCount}" name="ciudad_${this.educationCount}" class="form-select rounded-pill py-2" 
+                                    aria-label="Seleccionar ciudad/provincia"> <option value=""></option> ${ cachedStatesByCountry[cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
+                                    <option value="state-${state.id}">${state.name}</option>
                                 `).join('') }
                             </select>
                         </div>
@@ -347,29 +348,25 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Campo obligatorio.</div>
                         </div>
 
-                        <!-- País -->
+                        <!-- País Experiencia -->
                         <div class="col-12 col-md-3 mb-4">
                             <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País: <span class="text-danger">*</span></label>
-                            <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2" required>
-                                <option value=""></option>
-                                ${ cachedCountries.map(country => `
-                                    <option value="${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
-                                        ${country.name}
+                                <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2" required>
+                                    <option value=""></option> ${ cachedCountries.map(country => `
+                                        <option value="country-${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
+                                            ${country.name}
                                     </option>
                                 `).join('') }
                             </select>
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
 
-                        <!-- Ciudad/Provincia -->
+                        <!-- Ciudad/Provincia Experiencia -->
                         <div class="col-12 col-md-3 mb-4">
                             <label for="ciudad-experiencia_${this.experienceCount}" class="fs-6">Ciudad/Provincia:</label>
-                            <select id="ciudad-experiencia_${this.experienceCount}" name="ciudadExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
-                                <option value=""></option>
-                                ${ cachedStatesByCountry[
-                                    cachedCountries.find(c => c.name === 'Ecuador').id
-                                ].map(state => `
-                                    <option value="${state.id}">${state.name}</option>
+                                <select id="ciudad-experiencia_${this.experienceCount}" name="ciudadExperiencia_${this.experienceCount}" 
+                                    class="form-select rounded-pill py-2"> <option value=""></option> ${ cachedStatesByCountry[ cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
+                                    <option value="state-${state.id}">${state.name}</option>
                                 `).join('') }
                             </select>
                         </div>
