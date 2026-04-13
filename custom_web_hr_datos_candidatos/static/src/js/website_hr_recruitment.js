@@ -862,11 +862,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         if (!$field.length) return true;
 
-        if ($field.attr('id') === 'hr-phone') {
-            $field.removeClass('is-invalid');
-            return true;
-        }
-
         if ($field.prop('disabled')) {
             $field.removeClass('is-invalid');
             return true;
