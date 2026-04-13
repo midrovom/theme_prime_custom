@@ -19,7 +19,7 @@
                     <field name="age"/>
                     <field name="birth_country_id"/>
                     <field name="provincia_id"/>
-                    <field name="nationality"/>
+                    <field name="nacionality"/>
                     <field name="vive_con"/>
                     <field name="tipo_vivienda"/>
                     <field name="num_hijos"/>
