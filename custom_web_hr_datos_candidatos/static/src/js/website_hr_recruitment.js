@@ -717,7 +717,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !discapacidadExtra ||
             !familyValid 
         ) {
-            this._showModalMessage("Por favor complete todos los campos requeridos correctamente");
+            // this._showModalMessage("Por favor complete todos los campos requeridos correctamente");
             this._scrollToFirstError();
             return false;
         }
