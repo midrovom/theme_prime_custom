@@ -236,7 +236,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                                 </div>
                             </div>
 
-                            <div class="invalid-feedback d-block">Campo obligatorio</div>
+                            <div class="invalid-feedback d-none fam-disc-error">Campo obligatorio</div>
                         </div>
 
                         <!-- Discapacidad -->
