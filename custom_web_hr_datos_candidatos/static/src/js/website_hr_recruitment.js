@@ -41,7 +41,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'input input[name^="famTelefono_"]': '_validateDynamicPhone',
         'input input[name^="telefonos_"]': '_validateDynamicPhone',
         'input input[name^="ref_telefono_"]': '_validateDynamicPhone',
-
+        'input input[name="titulo_por_obtener"], input[name="institucion_2"], input[name="horario"], input[name="carrera"], input[name="estado"]': '_validateStudyBlock',
 
         'blur #hr-lastname-paterno, #hr-lastname-materno, #hr-name, #hr-age, #hr-address, #hr-parish, #hr-hijos, #hr-nationality, #experience_container input, #experience_container textarea, #education_container input': '_validateField',
         'blur #hr-email': '_validateEmail',
@@ -61,6 +61,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'blur input[name^="famDisc_"]': '_validateReferenceField',
         'blur input[name^="famCedula_"]': '_validateFamilyCedula',
 
+        'change input[name="studyOptions"]': '_toggleStudyFields',
         'change #hr-type-doc, #hr-country, #hr-provincia, #curriculum-vitae, #experience_container select, #education_container select': '_validateField',
         'change #hr-country': '_onChangeCountry',
         'change input[name="discapacidad"]': '_toggleDisabilityFields',
@@ -777,17 +778,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     _validateCurrentStep3() {
 
         const isStudyValid = this._validateField('input[name="studyOptions"]');
+        const isStudyBlockValid = this._validateStudyBlock();
         const educationValidation = this._validateEducationBlocks();
-        const experienceValidation = this._validateExperienceBlocks();
         const isFamilyOptionValid = this._validateField('input[name="familyOptions"]');
 
-        const isValid =
-            isStudyValid &&
-            educationValidation.isValid &&
-            experienceValidation.isValid &&
-            isFamilyOptionValid;
-
-        if (!isValid) {
+        if (
+            !isStudyValid ||
+            !isStudyBlockValid ||
+            !educationValidation.isValid ||
+            !isFamilyOptionValid
+        ) {
             this._scrollToFirstError();
             return false;
         }
@@ -854,6 +854,41 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
 
         return { isValid: allValid };
+    },
+
+    _validateStudyBlock() {
+        const studyValue = this.$('input[name="studyOptions"]:checked').val();
+        let isValid = true;
+
+        const fields = [
+            'input[name="titulo_por_obtener"]',
+            'input[name="institucion_2"]',
+            'input[name="horario"]',
+            'input[name="carrera"]',
+            'input[name="estado"]',
+        ];
+
+        if (studyValue === 'f') {
+            fields.forEach(sel => {
+                const $f = this.$(sel);
+                $f.removeClass('is-invalid');
+            });
+            return true;
+        }
+
+        fields.forEach(sel => {
+            const $field = this.$(sel);
+
+            const valid = !!$field.val();
+
+            $field.toggleClass('is-invalid', !valid);
+
+            if (!valid) {
+                isValid = false;
+            }
+        });
+
+        return isValid;
     },
 
     _validateFamilyDisability(familyIndex) {
