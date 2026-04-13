@@ -42,6 +42,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'input input[name^="telefonos_"]': '_validateDynamicPhone',
         'input input[name^="ref_telefono_"]': '_validateDynamicPhone',
         'input input[name="titulo_por_obtener"], input[name="institucion_2"], input[name="horario"], input[name="carrera"], input[name="estado"]': '_validateStudyBlock',
+        'input input[name="detalle_enfermedad_persistente"]': function() {this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');},
+        'input input[name="detalle_medicacion_continua"]': function() {this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');},
+        'input input[name="detalle_enfermedad_laboral"]': function() {this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');},
+        'input input[name="detalle_cirugia_realizada"]': function() {this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');},
 
         'blur #hr-lastname-paterno, #hr-lastname-materno, #hr-name, #hr-age, #hr-address, #hr-parish, #hr-hijos, #hr-nationality, #experience_container input, #experience_container textarea, #education_container input': '_validateField',
         'blur #hr-email': '_validateEmail',
@@ -60,6 +64,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'blur input[name^="famDepende_"]': '_validateReferenceField',
         'blur input[name^="famDisc_"]': '_validateReferenceField',
         'blur input[name^="famCedula_"]': '_validateFamilyCedula',
+        'blur input[name^="inicioEstudio_"]': function(ev) { this._validateDateField(ev.currentTarget);},
+        'blur input[name^="jobInicio_"]': function(ev) {this._validateDateField(ev.currentTarget);},
+        'blur input[name="tipo_sangre"]': '_validateTipoSangre',
 
         'change input[name="studyOptions"]': '_toggleStudyFields',
         'change #hr-type-doc, #hr-country, #hr-provincia, #curriculum-vitae, #experience_container select, #education_container select': '_validateField',
@@ -77,32 +84,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="jobOptions"], input[name="discOptions"], #policy': '_validateField',
         'change input[name="studyOptions"]': '_toggleStudyFields',
         'change input[name="jobOptions"]': '_toggleJobDisabilityFields',
-        'change input[name="enfermedad_persistente"]': function() {
-            this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');
-        },
-        'change input[name="medicacion_continua"]': function() {
-            this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
-        },
-        'change input[name="enfermedad_laboral"]': function() {
-            this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
-        },
-        'change input[name="cirugia_realizada"]': function() {
-            this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
-        },
-        'input input[name="detalle_enfermedad_persistente"]': function() {
-            this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');
-        },
-
-        'input input[name="detalle_medicacion_continua"]': function() {
-            this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
-        },
-        'input input[name="detalle_enfermedad_laboral"]': function() {
-            this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
-        },
-        'input input[name="detalle_cirugia_realizada"]': function() {
-            this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
-        },
-
+        'change input[name="enfermedad_persistente"]': function() { this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');},
+        'change input[name="medicacion_continua"]': function() {this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');},
+        'change input[name="enfermedad_laboral"]': function() {this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');},
+        'change input[name="cirugia_realizada"]': function() {this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');},
         'change input[name^="famDisc_"]': function(ev) {
             const name = $(ev.currentTarget).attr('name'); 
             const index = name.split('_')[1];
@@ -113,22 +98,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             const index = name.split('_')[1];
             this._validateFamilyDisability(index);
         },
-
-        'blur input[name^="inicioEstudio_"]': function(ev) {
-            this._validateDateField(ev.currentTarget);
-        },
-        
-        'blur input[name^="jobInicio_"]': function(ev) {
-            this._validateDateField(ev.currentTarget);
-        },
-
-        'blur input[name="tipo_sangre"]': '_validateTipoSangre',
-
-
     },
     
-
-
     /**
      * @override
      */
@@ -157,8 +128,25 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._toggleFamilyKnownFields();
         this._toggleParentescoField();
         this._toggleJobDisabilityFields();
-
         this._onChangeCountry({ currentTarget: this.$('#hr-country') });
+        this.$('input[name="knownPosee_1"]').on('change', () => {
+            this._toggleFamilyKnownFields();
+        });
+
+        this.$('input[name="knownNombre_1"]').on('input', (ev) => {
+            const $f = $(ev.currentTarget);
+            $f.toggleClass('is-invalid', !$f.val().trim());
+        });
+
+        this.$('input[name="knownRelacion_1"]').on('change', () => {
+            this._toggleParentescoField();
+            this.$('input[name="knownRelacion_1"]').removeClass('is-invalid');
+        });
+
+        this.$('input[name="knownParentesco_1"]').on('input', (ev) => {
+            const $f = $(ev.currentTarget);
+            $f.toggleClass('is-invalid', !$f.val().trim());
+        });
 
         return this._super();
     },
@@ -781,12 +769,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const isStudyBlockValid = this._validateStudyBlock();
         const educationValidation = this._validateEducationBlocks();
         const isFamilyOptionValid = this._validateField('input[name="familyOptions"]');
+        const knownValid = this._validateKnownBlock();
 
         if (
             !isStudyValid ||
             !isStudyBlockValid ||
             !educationValidation.isValid ||
-            !isFamilyOptionValid
+            !isFamilyOptionValid ||
+            !knownValid
         ) {
             this._scrollToFirstError();
             return false;
@@ -827,6 +817,56 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return {
             isValid: allValid,
         };
+    },
+
+    _validateKnownBlock() {
+        const hasKnown = this.$('input[name="knownPosee_1"]:checked').val();
+        let isValid = true;
+
+        const $nombre = this.$('input[name="knownNombre_1"]');
+        const $relacion = this.$('input[name="knownRelacion_1"]');
+        const $parentesco = this.$('input[name="knownParentesco_1"]');
+        if (!hasKnown) {
+            this.$('input[name="knownPosee_1"]').addClass('is-invalid');
+            return false;
+        } else {
+            this.$('input[name="knownPosee_1"]').removeClass('is-invalid');
+        }
+
+        if (hasKnown === 'f') {
+            $nombre.removeClass('is-invalid');
+            $relacion.removeClass('is-invalid');
+            $parentesco.removeClass('is-invalid');
+            return true;
+        }
+
+        if (!$nombre.val().trim()) {
+            $nombre.addClass('is-invalid');
+            isValid = false;
+        } else {
+            $nombre.removeClass('is-invalid');
+        }
+
+        const relacionVal = this.$('input[name="knownRelacion_1"]:checked').val();
+        if (!relacionVal) {
+            this.$('input[name="knownRelacion_1"]').addClass('is-invalid');
+            isValid = false;
+        } else {
+            this.$('input[name="knownRelacion_1"]').removeClass('is-invalid');
+        }
+
+        if (relacionVal === 'familiar') {
+            if (!$parentesco.val().trim()) {
+                $parentesco.addClass('is-invalid');
+                isValid = false;
+            } else {
+                $parentesco.removeClass('is-invalid');
+            }
+        } else {
+            $parentesco.removeClass('is-invalid');
+        }
+
+        return isValid;
     },
     
     _validateEducationBlocks() {
@@ -955,8 +995,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         return isValid;
     },
-
-    // Métodos de validación individuales
 
     _validateField(ev) {
         const selector = ev && ev.currentTarget ? `#${ev.currentTarget.id}` : arguments[0];
@@ -1233,7 +1271,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return false;
         }
 
-        // Caso 2: formato inválido
         const regex = /^\d{4}-\d{2}-\d{2}$/;
         if (!regex.test(value)) {
             $field.addClass('is-invalid');
@@ -1349,24 +1386,37 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     }, 
     
-
     _toggleFamilyKnownFields() {
         const value = this.$('input[name="knownPosee_1"]:checked').val();
         const hasFamily = value === 't';
-
         const $nombre = this.$('input[name="knownNombre_1"]');
         const $relacion = this.$('input[name="knownRelacion_1"]');
         const $parentesco = this.$('input[name="knownParentesco_1"]');
 
         if (hasFamily) {
+
             $nombre.prop('disabled', false).prop('required', true);
             $relacion.prop('disabled', false).prop('required', true);
+
         } else {
-            $nombre.prop('disabled', true).prop('required', false).val('');
-            $relacion.prop('disabled', true).prop('required', false).prop('checked', false);
-            $parentesco.prop('disabled', true).prop('required', false).val('');
-            $parentesco.removeClass('is-invalid');
+
+            $nombre.prop('disabled', true)
+                .prop('required', false)
+                .val('')
+                .removeClass('is-invalid');
+
+            $relacion.prop('disabled', true)
+                .prop('required', false)
+                .prop('checked', false)
+                .removeClass('is-invalid');
+
+            $parentesco.prop('disabled', true)
+                .prop('required', false)
+                .val('')
+                .removeClass('is-invalid');
         }
+
+        this.$('input[name="knownPosee_1"]').removeClass('is-invalid');
     },
 
     _toggleParentescoField() {
@@ -1469,8 +1519,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-1').removeClass('d-none');
     },
 
-
-    // Método de envío actualizado
     _onSubmitForm(ev) {
         ev.preventDefault();
 
@@ -1514,8 +1562,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const newBlock = await this._getEducationBlock(false);
         this.$('#education_container').prepend(newBlock);
         this.$('#total_educations').val(this.educationCount);
-        
-        // Resetear validación
         this.$('#add-education').css({
             'opacity': '0.5',
             'pointer-events': 'none'
@@ -1555,8 +1601,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     async _addExperienceBlock() {
         const newBlock = await this._getExperienceBlock(true);
         this.$('#experience_container').append(newBlock);
-        
-        // Manejar el botón de eliminar
         this.$('#experience_container').find('.remove-experience').last().on('click', (ev) => {
             $(ev.target).closest('.education-block').remove();
             this._checkFieldsFilled();
@@ -1571,8 +1615,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const newBlock = await this._getExperienceBlock(false);
         this.$('#experience_container').prepend(newBlock);
         this.$('#total_experiences').val(this.experienceCount);
-        
-        // Resetear validación
         this.$('#add-experience').css({
             'opacity': '0.5',
             'pointer-events': 'none'
@@ -1581,22 +1623,17 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     async _addReferenceBlock() {
         this.referenceCount++;
-
-        // Si es el primer bloque, pasamos true como parámetro
         const newBlock = await this._getReferenceBlock(this.referenceCount === 1);
         this.$('#reference_container').append(newBlock);
 
-        // Actualizar contador en el input hidden
         this.$('#total_references').val(this.referenceCount);
 
-        // Validación de campos requeridos
         this.$('#reference_container')
             .find('.reference-block')
             .last()
             .find('input[required]')
             .on('blur', (ev) => this._validateReferenceField(ev));
 
-        // Acción para eliminar el bloque
         this.$('#reference_container')
             .find('.remove-reference')
             .last()
