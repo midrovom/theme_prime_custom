@@ -161,7 +161,15 @@ class WebsiteHRRecruitment(http.Controller):
                     state_id = int(val[6:])
                     state = request.env['res.country.state'].sudo().browse(state_id)
                     return state.country_id.id if state else None, state_id
-                return None, None
+                try:
+                    state_id = int(val)
+                    state = request.env['res.country.state'].sudo().browse(state_id)
+                    if state.exists():
+                        return state.country_id.id, state_id
+                    else:
+                        return int(val), None  
+                except ValueError:
+                    return None, None
 
             # ---------------- Formación Académica ----------------
             education_lines = []
