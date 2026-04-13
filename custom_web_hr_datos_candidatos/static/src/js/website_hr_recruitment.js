@@ -770,13 +770,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const educationValidation = this._validateEducationBlocks();
         const isFamilyOptionValid = this._validateField('input[name="familyOptions"]');
         const knownValid = this._validateKnownBlock();
+        const referenceValid = this._validateReferenceBlocks();
 
         if (
             !isStudyValid ||
             !isStudyBlockValid ||
             !educationValidation.isValid ||
             !isFamilyOptionValid ||
-            !knownValid
+            !knownValid ||
+            !referenceValid
+
         ) {
             this._scrollToFirstError();
             return false;
@@ -1319,6 +1322,36 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         $error.hide();
         $field.removeClass('is-invalid');
         return true;
+    },
+
+    _validateReferenceBlocks() {
+        let isValid = true;
+
+        const $container = this.$('#reference_container');
+        $container.find('.reference-block').each((index, block) => {
+
+            const $block = this.$(block);
+            const $name = $block.find('input[name^="ref_nombre_"]');
+            const $address = $block.find('input[name^="ref_domicilio_"]');
+            const $phone = $block.find('input[name^="ref_telefono_"]');
+            const $occupation = $block.find('input[name^="ref_ocupacion_"]');
+            const $time = $block.find('input[name^="ref_tiempo_"]');
+            const fields = [$name, $address, $phone, $occupation, $time];
+
+            fields.forEach($field => {
+                const value = $field.val();
+
+                if (!value || !value.trim()) {
+                    $field.addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $field.removeClass('is-invalid');
+                }
+            });
+
+        });
+
+        return isValid;
     },
 
     _validateTipoSangre: function(ev) {
