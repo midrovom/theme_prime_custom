@@ -180,7 +180,9 @@ class WebsiteHRRecruitment(http.Controller):
                 level_id = safe_int(kwargs.get(f'level_id_{i}'))
 
                 if titulo and level_id:
-                    country_id, state_id = parse_location(kwargs.get(f'paisEducacion_{i}'))
+                    country_id, _, _ = parse_location(kwargs.get(f'paisEducacion_{i}'))
+                    _, state_id, _ = parse_location(kwargs.get(f'ciudad_{i}'))
+
                     education_lines.append((0, 0, {
                         'level_id': level_id,
                         'country_id': country_id,
@@ -211,7 +213,9 @@ class WebsiteHRRecruitment(http.Controller):
                 cargo = kwargs.get(f'cargo_{j}')
 
                 if cargo:
-                    country_id, state_id = parse_location(kwargs.get(f'paisExperiencia_{j}'))
+                    country_id, _, _ = parse_location(kwargs.get(f'paisExperiencia_{j}'))
+                    _, state_id, _ = parse_location(kwargs.get(f'ciudadExperiencia_{j}'))
+
                     experience_lines.append((0, 0, {
                         'name': cargo,
                         'empresa': kwargs.get(f'company_{j}'),
