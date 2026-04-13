@@ -673,25 +673,17 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _validateCurrentStep2() {
-        // Validar radios (OBLIGATORIOS)
         const enfermedad = this._validateRadio('enfermedad_persistente');
         const medicacion = this._validateRadio('medicacion_continua');
         const enfermedadLaboral = this._validateRadio('enfermedad_laboral');
         const cirugia = this._validateRadio('cirugia_realizada');
         const discapacidad = this._validateRadio('discapacidad');
-
-        // Validar detalles (si selecciona "si")
         const enfermedadDetalle = this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');
         const medicacionDetalle = this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
         const enfermedadLaboralDetalle = this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
         const cirugiaDetalle = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
+        const tipoSangre = this._validateTipoSangre({currentTarget: this.$('input[name="tipo_sangre"]')[0]});
 
-        // Tipo de sangre
-        const tipoSangre = this._validateTipoSangre({
-            currentTarget: this.$('input[name="tipo_sangre"]')[0]
-        });
-
-        // Discapacidad extra
         let discapacidadExtra = true;
         const discValue = this.$('input[name="discapacidad"]:checked').val();
 
@@ -708,7 +700,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             discapacidadExtra = tipoValid && porcentajeValid;
         }
 
-        // Validar familiares dinámicos
         let familyValid = true;
 
         for (let i = 1; i <= this.familyCount; i++) {
@@ -718,7 +709,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             }
         }
 
-        // Validación final
         if (
             !enfermedad ||
             !medicacion ||
@@ -788,15 +778,17 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         const isStudyValid = this._validateField('input[name="studyOptions"]');
         const educationValidation = this._validateEducationBlocks();
+        const experienceValidation = this._validateExperienceBlocks();
         const isFamilyOptionValid = this._validateField('input[name="familyOptions"]');
 
-        if (
-            !isStudyValid ||
-            !educationValidation.isValid ||
-            !isFamilyOptionValid
-        ) {
-            //alert("Complete todos los campos obligatorios");
+        const isValid =
+            isStudyValid &&
+            educationValidation.isValid &&
+            experienceValidation.isValid &&
+            isFamilyOptionValid;
 
+        if (!isValid) {
+            this._scrollToFirstError();
             return false;
         }
 
@@ -838,30 +830,30 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
     
     _validateEducationBlocks() {
-        const educationBlocks = this.$('#education_container input, #education_container select');
+        const $fields = this.$('#education_container').find('input, select');
         let allValid = true;
 
-        educationBlocks.each((index, block) => {
-            const $field = $(block);
+        $fields.each((index, block) => {
+            const $field = this.$(block);
 
             if (!$field.is(':visible') || $field.prop('disabled')) return;
 
-            let fieldValid = true;
+            let valid = true;
 
-            if (block.type === 'date') {
-                fieldValid = this._validateDateField(`#${block.id}`);
+            if ($field.is('select')) {
+                valid = $field.val() && $field.val() !== "";
+            } else if ($field.attr('type') === 'date') {
+                valid = this._validateDateField($field);
             } else {
-                fieldValid = this._validateField(`#${block.id}`);
+                valid = !!$field.val();
             }
 
-            if (!fieldValid) {
-                allValid = false;
-            }
+            $field.toggleClass('is-invalid', !valid);
+
+            if (!valid) allValid = false;
         });
 
-        return {
-            isValid: allValid,
-        };
+        return { isValid: allValid };
     },
 
     _validateFamilyDisability(familyIndex) {
