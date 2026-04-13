@@ -74,7 +74,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="viveCon"], input[name="tipoVivienda"], input[name="dependientes"], input[name="estadoCivil"]': '_validateField',
         'change input[name="jobOptions"], input[name="discOptions"], #policy': '_validateField',
         'change input[name="studyOptions"]': '_toggleStudyFields',
-        'change input[name="jobOptions"]': '_toggleDisabilityFields',
+        'change input[name="jobOptions"]': '_toggleJobDisabilityFields',
         'change input[name="enfermedad_persistente"]': function() {
             this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');
         },
@@ -154,7 +154,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._toggleDisabilityFields();
         this._toggleFamilyKnownFields();
         this._toggleParentescoField();
-        this._toggleDisabilityFields();
+        this._toggleJobDisabilityFields();
 
         this._validateHealthQuestions();
         this._onChangeCountry({ currentTarget: this.$('#hr-country') });
@@ -909,7 +909,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             errorDiv.textContent = "Debe subir una foto de perfil.";
             errorDiv.style.display = "block";
             input.classList.add("is-invalid");
-            return;
+            return false;
         }
 
         if (file.size > 3 * 1024 * 1024) {
@@ -1218,7 +1218,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
-    _toggleDisabilityFields() {
+    _toggleJobDisabilityFields() {
 
         const value = this.$('input[name="jobOptions"]:checked').val();
 
