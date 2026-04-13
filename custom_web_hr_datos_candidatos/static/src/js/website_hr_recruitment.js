@@ -620,10 +620,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isBirthDateValid ||
             !isBirthCountryValid ||
             !isProvinceValid ||
-            !isPhoneValid ||
             !isCodeCellphoneValid ||
             !isCellphoneValid ||
-            !isPhomeHome ||
             !isViveConValid ||
             !isTipoViviendaValid ||
             !isHijosValid ||
