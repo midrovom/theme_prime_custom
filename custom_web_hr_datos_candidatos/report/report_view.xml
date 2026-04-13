@@ -15,8 +15,7 @@
                         </tr>
 
                         <tr>
-
-                            <td colspan="2" style="border:1px solid #000; width:75%; vertical-align:top; word-break:break-word; line-height:1.3;">
+                            <td colspan="2" style="border:1px solid #000; width:80%; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
                                 <b>Reglamento Interno</b><br/>
                                 <b>Art. 11</b><br/>
                                 La alteración o falsificación de documentos presentados por el aspirante o trabajador<br/><br/>
@@ -25,18 +24,17 @@
                                 <b>NOTA:</b> Toda información aquí proporcionada será tratada.
                             </td>
 
-                            <td style="border:1px solid #000; width:12%; text-align:center; vertical-align:middle;">
+                            <td style="border:1px solid #000; width:10%; text-align:center; vertical-align:middle;">
                                 <b>Fecha de solicitud</b><br/>
                                 <span t-field="applicant.create_date"/>
                             </td>
 
-                            <td style="border:1px solid #000; width:15%; text-align:center; vertical-align:middle;">
+                            <td style="border:1px solid #000; width:10%; text-align:center; vertical-align:middle;">
                                 <t t-if="applicant.image_1920">
                                     <img t-att-src="'/web/image/hr.applicant/%s/image_1920' % applicant.id"
                                         style="width:100px; height:130px; object-fit:cover; display:block; margin:0 auto;"/>
                                 </t>
                             </td>
-
                         </tr>
 
                         <tr>
