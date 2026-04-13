@@ -196,18 +196,13 @@
 
                 <div id="reference_container"></div>
 
-                <!-- Botones -->
                 <div class="row d-flex justify-content-center">
-                    <div class="col-12 col-md-5"></div>
+                    <div class="col-12 col-md-5">
+                        <button class="btn btn-info rounded-pill px-5 py-2" id="prev-button"  type="button"> Anterior </button>
+                    </div>
 
                     <div class="col-12 col-md-5 d-flex justify-content-end">
-                        <button id="prev-button" class="btn btn-outline-info rounded-pill px-3 py-2 w-100" type="button">
-                            Anterior
-                        </button>
-
-                        <button id="submit-form" class="btn btn-info rounded-pill ms-2 px-3 py-2 w-100" type="submit">
-                            Enviar postulación
-                        </button>
+                        <button class="btn btn-info rounded-pill px-5 py-2" id="submit-form" type="submit"> Enviar postulación </button>
                     </div>
                 </div>
 
