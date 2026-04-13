@@ -143,13 +143,10 @@
 
             <div class="row d-flex justify-content-center mt-2">
                 <div class="col-12 col-md-5">
-                        <button id="prev-button" class="btn btn-outline-info rounded-pill px-3 py-2 w-100" type="button">Anterior
-                    </button>
+                    <button class="btn btn-info rounded-pill px-5 py-2" id="prev-button-2" type="button">Anterior </button>
                 </div>
                 <div class="col-12 col-md-5 d-flex justify-content-end">
-                    <button class="btn btn-info rounded-pill px-5 py-2" id="next-button-step2" type="button">
-                        Siguiente
-                    </button>
+                    <button class="btn btn-info rounded-pill px-5 py-2" id="next-button-step2" type="button">Siguiente </button>
                 </div>
             </div>
 

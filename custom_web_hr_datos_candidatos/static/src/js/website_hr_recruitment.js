@@ -25,6 +25,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'click #next-button': '_onNextClick',
         'click #next-button-step2': '_onNextStep2',
         'click #prev-button': '_onPrevClick',
+        'click #prev-button-2': '_onPrevClickStep2',
         'submit': '_onSubmitForm',
         'click #add-experience': '_onAddExperience',
         'click #add-reference': '_onAddReference',
@@ -1363,6 +1364,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         this.$('#form-step-3').addClass('d-none');
         this.$('#form-step-2').removeClass('d-none');
+    },
+
+    _onPrevClickStep2(ev) {
+        ev.preventDefault();
+
+        this.$('#form-step-2').addClass('d-none');
+        this.$('#form-step-1').removeClass('d-none');
     },
 
 
