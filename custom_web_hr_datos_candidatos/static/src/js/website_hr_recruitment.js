@@ -901,7 +901,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const input = ev ? ev.currentTarget : document.getElementById('hr-perfil');
         const errorDiv = document.getElementById('image-error');
 
-        if (!input) return;
+        if (!input) return true;
 
         const file = input.files[0];
 
@@ -912,31 +912,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return false;
         }
 
-        if (file.size > 3 * 1024 * 1024) {
-            errorDiv.textContent = "La imagen no debe superar 3MB.";
-            errorDiv.style.display = "block";
-            input.classList.add("is-invalid");
-            return;
-        }
-
-        if (!["image/jpeg", "image/png"].includes(file.type)) {
-            errorDiv.textContent = "Formato inválido. Solo JPG o PNG.";
-            errorDiv.style.display = "block";
-            input.classList.add("is-invalid");
-            return;
-        }
-
-        // Si pasa todas las validaciones
         errorDiv.textContent = "";
         errorDiv.style.display = "none";
         input.classList.remove("is-invalid");
 
-        // Mostrar preview
-        const preview = document.getElementById('preview-img');
-        const textImg = document.getElementById('text-img');
-        preview.src = URL.createObjectURL(file);
-        preview.style.display = "block";
-        textImg.style.display = "none";
+        return true; 
     },
 
     _validateEmail() {
