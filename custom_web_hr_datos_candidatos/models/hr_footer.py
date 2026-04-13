@@ -5,5 +5,5 @@ class HrFooter(models.Model):
     _description = 'Footer'
 
     descripcion = fields.Html(string="Descripción")
-    # reglamento = fields.Html(string="Reglamento Interno")
+    reglamento = fields.Html(string="Reglamento Interno")
 
