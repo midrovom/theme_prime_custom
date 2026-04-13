@@ -39,6 +39,7 @@
         'views/error_template/error_templates.xml',
         'views/footer/hr_footer_views.xml',
         'views/signup/signup_templates.xml',
+        'views/error_template/modal_message.xml',
 
     ],
     'installable': True,

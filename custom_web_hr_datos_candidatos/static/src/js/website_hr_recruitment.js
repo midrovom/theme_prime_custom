@@ -181,6 +181,22 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._checkEducationFieldsFilled();
     },
 
+    _showModalMessage(message) {
+        const modalEl = document.getElementById('customAlertModal');
+        const messageEl = document.getElementById('customAlertMessage');
+
+        if (!modalEl || !messageEl) return;
+
+        messageEl.textContent = message;
+
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (!modal) {
+            modal = new bootstrap.Modal(modalEl);
+        }
+
+        modal.show();
+    },
+
     async _getEducationBlock(isFirstBlock = false) {
         await loadCountriesAndStates();
 
@@ -663,7 +679,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isEstadoCivilValid
         ) {
 
-            alert("Por favor complete todos los campos requeridos correctamente");
+            //alert("Por favor complete todos los campos requeridos correctamente");
+
+            this._showModalMessage("Por favor complete todos los campos requeridos correctamente");
 
             this._scrollToFirstError();
             return false;
@@ -680,7 +698,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         
         if (!enfermedad || !medicacion || !enfermedadLaboral || !cirugia) {
 
-            alert("Complete correctamente la información médica");
+            //alert("Complete correctamente la información médica");
+
+            this._showModalMessage("Por favor complete todos los campos requeridos correctamente");
 
             this._scrollToFirstError();
             return false;
@@ -728,7 +748,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !educationValidation.isValid ||
             !isFamilyOptionValid
         ) {
-            alert("Complete todos los campos obligatorios");
+            //alert("Complete todos los campos obligatorios");
+
+            this._showModalMessage("Por favor complete todos los campos requeridos correctamente");
+
             return false;
         }
 
