@@ -157,7 +157,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._toggleParentescoField();
         this._toggleJobDisabilityFields();
 
-        this._validateHealthQuestions();
         this._onChangeCountry({ currentTarget: this.$('#hr-country') });
 
         return this._super();
