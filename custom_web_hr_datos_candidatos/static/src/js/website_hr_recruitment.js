@@ -674,14 +674,25 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _validateCurrentStep2() {
-        const enfermedad = this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');
-        const medicacion = this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
-        const enfermedadLaboral = this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
-        const cirugia = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
+        // Validar radios (OBLIGATORIOS)
+        const enfermedad = this._validateRadio('enfermedad_persistente');
+        const medicacion = this._validateRadio('medicacion_continua');
+        const enfermedadLaboral = this._validateRadio('enfermedad_laboral');
+        const cirugia = this._validateRadio('cirugia_realizada');
+        const discapacidad = this._validateRadio('discapacidad');
 
-        const discapacidad = this._validateField('input[name="discapacidad"]');
-        const tipoSangre = this._validateTipoSangre({ currentTarget: this.$('input[name="tipo_sangre"]')[0] });
+        // Validar detalles (si selecciona "si")
+        const enfermedadDetalle = this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');
+        const medicacionDetalle = this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
+        const enfermedadLaboralDetalle = this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
+        const cirugiaDetalle = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
 
+        // Tipo de sangre
+        const tipoSangre = this._validateTipoSangre({
+            currentTarget: this.$('input[name="tipo_sangre"]')[0]
+        });
+
+        // Discapacidad extra
         let discapacidadExtra = true;
         const discValue = this.$('input[name="discapacidad"]:checked').val();
 
@@ -698,6 +709,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             discapacidadExtra = tipoValid && porcentajeValid;
         }
 
+        // Validar familiares dinámicos
         let familyValid = true;
 
         for (let i = 1; i <= this.familyCount; i++) {
@@ -707,17 +719,19 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             }
         }
 
+        // Validación final
         if (
             !enfermedad ||
             !medicacion ||
             !enfermedadLaboral ||
             !cirugia ||
             !discapacidad ||
-            !tipoSangre ||
-            !discapacidadExtra ||
-            !familyValid 
+            !enfermedadDetalle ||
+            !medicacionDetalle ||
+            !enfermedadLaboralDetalle ||
+            !cirugiaDetalle ||
+            !tipoSangre 
         ) {
-            // this._showModalMessage("Por favor complete todos los campos requeridos correctamente");
             this._scrollToFirstError();
             return false;
         }
@@ -725,6 +739,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return true;
     },
 
+    _validateRadio(name) {
+        const checked = this.$(`input[name="${name}"]:checked`);
+        const isValid = checked.length > 0;
+
+        if (!isValid) {
+            this.$(`input[name="${name}"]`).addClass('is-invalid');
+        } else {
+            this.$(`input[name="${name}"]`).removeClass('is-invalid');
+        }
+
+        return isValid;
+    },
     _validateHealthQuestions() {
         this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');
         this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
