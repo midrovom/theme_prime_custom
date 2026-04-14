@@ -88,16 +88,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="medicacion_continua"]': function() {this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');},
         'change input[name="enfermedad_laboral"]': function() {this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');},
         'change input[name="cirugia_realizada"]': function() {this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');},
-        'change input[name^="famDisc_"]': function(ev) {
-            const name = $(ev.currentTarget).attr('name'); 
-            const index = name.split('_')[1];
-            this._validateFamilyDisability(index);
-        },
-        'input input[name^="famDiscTipo_"]': function(ev) {
-            const name = $(ev.currentTarget).attr('name'); 
-            const index = name.split('_')[1];
-            this._validateFamilyDisability(index);
-        },
     },
     
     /**
