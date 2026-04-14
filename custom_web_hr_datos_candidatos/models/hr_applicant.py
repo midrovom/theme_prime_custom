@@ -19,8 +19,6 @@ class HrApplicant(models.Model):
     provincia_id = fields.Many2one('res.country.state', string='Provincia')
     medical_ids = fields.One2many('applicant.medical', 'applicant_id', string="Información Médica")
     candidate_id = fields.Many2one('hr.candidate', string="Candidato", ondelete='cascade')
-    reglamento_id = fields.Many2one('hr.reglamento', string="Reglamento")
-
 
     image_1920 = fields.Binary("Foto de perfil") 
     disability = fields.Boolean('Discapacidad', default=False)
