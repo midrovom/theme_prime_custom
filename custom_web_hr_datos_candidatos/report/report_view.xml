@@ -15,14 +15,18 @@
                         </tr>
 
                         <tr>
-                            <td colspan="2" style="border:1px solid #000; width:80%; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
+                            <td colspan="2" style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
+                                <t t-raw="hr.reglamento"/>
+                            </td>
+
+                            <!-- <td colspan="2" style="border:1px solid #000; width:80%; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
                                 <b>Reglamento Interno</b><br/>
                                 <b>Art. 11</b><br/>
                                 La alteración o falsificación de documentos presentados por el aspirante o trabajador<br/><br/>
                                 constituye falta grave que faculta al empleador a solicitar visto bueno ante el inspector del Trabajo competente:<br/><br/>
                                 sin perjuicio, de la obligatoria remisión de la información y documentos a las autoridades penales que corresponda.<br/><br/>
                                 <b>NOTA:</b> Toda información aquí proporcionada será tratada.
-                            </td>
+                            </td> -->
 
                             <td style="border:1px solid #000; width:10%; text-align:center; vertical-align:middle;">
                                 <b>Fecha de solicitud</b><br/>
@@ -374,11 +378,15 @@
                         </t>
 
                     <tr>
-                        <td colspan="3" style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
+                        <!-- <td colspan="3" style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
                             <b>Dejo en constancia de que la información detallada en el presente documento se apega estrictamente</b>
                             <b>a la verdad y declaro estar consciente de que la misma será verificada, tanto personal como</b>
                             <b>crediticia en cualquier momento, razón por lo que asumo la responsabilidad de la misma.</b>
+                        </td> -->
+                        <td colspan="3" style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
+                            <t t-raw="hr.reglamento"/>
                         </td>
+
 
                         <td style="border:1px solid #000; text-align:center; vertical-align:bottom; padding:10px;">
                             <div style="margin-bottom:25px;">
