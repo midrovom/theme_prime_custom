@@ -138,6 +138,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             $f.toggleClass('is-invalid', !$f.val().trim());
         });
 
+        this.$('input[name="studyOptions"]').on('change', () => {
+            this.$('input[name="studyOptions"]').removeClass('is-invalid');
+        });
+
         return this._super();
     },
 
@@ -803,7 +807,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     _validateCurrentStep3() {
 
-        const isStudyValid = this._validateField('input[name="studyOptions"]');
+        const isStudyValid = this._validateRadio('studyOptions');
         const isStudyBlockValid = this._validateStudyBlock();
         const educationValidation = this._validateEducationBlocks();
         const isFamilyOptionValid = this._validateField('input[name="familyOptions"]');
