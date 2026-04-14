@@ -2,12 +2,9 @@
 <odoo>
     <template id="report_applicant_test">
         <t t-call="web.basic_layout">
-            <t t-set="header" t-value="0"/>
-
             <t t-foreach="docs" t-as="applicant">
 
                 <div class="page" style="font-size:12px; font-family:'Times New Roman', Times, serif; ">
-
                     <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:12px;">
                         <tr>
                             <th colspan="4" style="border:1px solid #000; background:#e6e6e6;">

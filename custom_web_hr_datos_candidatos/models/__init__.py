@@ -9,4 +9,5 @@ from . import applicant_medical
 from . import generar_reporte
 from . import hr_footer
 from . import hr_reglamento
+from . import hr_report
 #from . import res_users
