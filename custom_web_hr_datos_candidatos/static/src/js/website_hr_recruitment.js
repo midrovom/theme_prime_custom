@@ -1637,9 +1637,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     async _addFamilyBlock() {
         this.familyCount++;
-
         const html = await this._getFamilyBlock();
         this.$('#family_container').append(html);
+
+        const i = this.familyCount;
+        this.$(`input[name="famDisc_${i}"]`).on('change', () => {
+            this._toggleFamilyDisability(i);
+        });
     },
 
     async _onAddEducation(ev) {
