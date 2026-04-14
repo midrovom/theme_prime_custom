@@ -1648,10 +1648,20 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.familyCount++;
         const html = await this._getFamilyBlock();
         this.$('#family_container').append(html);
-
         const i = this.familyCount;
+
         this.$(`input[name="famDisc_${i}"]`).on('change', () => {
             this._toggleFamilyDisability(i);
+        });
+
+        this.$(`input[name="famDepende_${i}"]`).on('change', (ev) => {
+            const name = $(ev.currentTarget).attr('name');
+            this.$(`input[name="${name}"]`).removeClass('is-invalid');
+        });
+
+        this.$(`input[name="famDisc_${i}"]`).on('change', (ev) => {
+            const name = $(ev.currentTarget).attr('name');
+            this.$(`input[name="${name}"]`).removeClass('is-invalid');
         });
     },
 
