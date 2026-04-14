@@ -10,7 +10,7 @@
                 <form string="reglamento">
                     <sheet>
                         <group>
-                            <field name="descripcion"/>
+                            <field name="reglamento"/>
                         </group>
                     </sheet>
                 </form>
