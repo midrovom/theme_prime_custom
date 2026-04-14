@@ -15,8 +15,8 @@
                         </tr>
 
                         <tr>
-                            <td colspan="2" style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
-                                <t t-raw="o.reglamento"/>
+                            <td colspan="" style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
+                                <t t-raw="applicant.reglamento_id.reglamento"/>
                             </td>
 
                             <!-- <td colspan="2" style="border:1px solid #000; width:80%; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
@@ -384,7 +384,7 @@
                             <b>crediticia en cualquier momento, razón por lo que asumo la responsabilidad de la misma.</b>
                         </td> -->
                         <td colspan="3" style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
-                            <t t-raw="hr.reglamento"/>
+                            <t t-raw="applicant.reglamento_id.reglamento"/>
                         </td>
 
 
@@ -406,7 +406,7 @@
                 <t t-set="footer" t-value="env['hr.footer'].search([], limit=1)"/>
                 <div style="width:100%; margin-top:20px; text-align:justify; font-family:'Times New Roman', Times, serif; padding-top:5px;">
                     <t t-if="footer">
-                        <t t-raw="o.reglamento"/>
+                        <span t-raw="footer.descripcion"/>
                     </t>
                 </div>
 
