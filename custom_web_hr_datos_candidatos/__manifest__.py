@@ -39,7 +39,7 @@
         'views/error_template/error_templates.xml',
         'views/footer/hr_footer_views.xml',
         'views/signup/signup_templates.xml',
-        'views/footer/hr_reglamento_interno.xml',
+        #'views/footer/hr_reglamento_interno.xml',
 
     ],
     'installable': True,
