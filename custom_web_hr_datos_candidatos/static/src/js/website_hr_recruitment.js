@@ -80,7 +80,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="knownRelacion_1"]': '_toggleParentescoField',
         'change #hr-code-cellphone': '_validateCodePhone',
         'change #hr-day, #hr-month, #hr-year': '_validateBirthDate',
-        'change input[name="viveCon"], input[name="tipoVivienda"], input[name="dependientes"], input[name="estadoCivil"]': '_validateField',
+        'change input[name="viveCon"], input[name="tipoVivienda"], input[name="estadoCivil"]': '_validateField',
         'change input[name="jobOptions"], input[name="discOptions"], #policy': '_validateField',
         'change input[name="studyOptions"]': '_toggleStudyFields',
         'change input[name="jobOptions"]': '_toggleJobDisabilityFields',
