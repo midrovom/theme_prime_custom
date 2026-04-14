@@ -1,8 +1,12 @@
-def action_print_zip(self):
-    import base64
-    import io
-    import zipfile
+import base64
+import io
+import zipfile
+from odoo import models
 
+class HrApplicant(models.Model):
+    _inherit = 'hr.applicant'
+
+def action_print_zip(self):
     zip_buffer = io.BytesIO()
 
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
