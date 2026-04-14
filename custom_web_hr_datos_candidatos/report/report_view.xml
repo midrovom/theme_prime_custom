@@ -330,8 +330,9 @@
                                             <t t-esc="dict(kn._fields['posee_familiares'].selection).get(kn.posee_familiares)"/>
                                         </td>
                                     <td style="border:1px solid #000; text-align:center;" t-esc="kn.nombre_completo"/>
-                                    <td style="border:1px solid #000;">
-                                    <t t-esc="dict(kn._fields['relacion'].selection).get(kn.relacion)"/></td>
+                                    <td style="border:1px solid #000; text-align:center;">
+                                        <t t-esc="dict(kn._fields['relacion'].selection).get(kn.relacion)"/>
+                                    </td>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="kn.parentesco"/>
                             </tr>                        
                         </t>
