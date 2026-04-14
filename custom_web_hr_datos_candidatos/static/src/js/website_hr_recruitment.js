@@ -830,39 +830,39 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return true;
     },
     
-    _validateExperienceBlocks() {
-        const experienceBlocks = this.$('#experience_container input, #experience_container select, #experience_container textarea');
-        let allValid = true;
+    // _validateExperienceBlocks() {
+    //     const experienceBlocks = this.$('#experience_container input, #experience_container select, #experience_container textarea');
+    //     let allValid = true;
 
-        experienceBlocks.each((index, block) => {
-            const $field = $(block);
+    //     experienceBlocks.each((index, block) => {
+    //         const $field = $(block);
 
-            if (!$field.is(':visible') || $field.prop('disabled')) return;
+    //         if (!$field.is(':visible') || $field.prop('disabled')) return;
 
-            const value = $field.val();
+    //         const value = $field.val();
 
-            if (!value) {
-                $field.removeClass('is-invalid');
-                return;
-            }
+    //         if (!value) {
+    //             $field.removeClass('is-invalid');
+    //             return;
+    //         }
 
-            let fieldValid = true;
+    //         let fieldValid = true;
 
-            if (block.type === 'date') {
-                fieldValid = this._validateDateField(`#${block.id}`);
-            } else {
-                fieldValid = this._validateField(`#${block.id}`);
-            }
+    //         if (block.type === 'date') {
+    //             fieldValid = this._validateDateField(`#${block.id}`);
+    //         } else {
+    //             fieldValid = this._validateField(`#${block.id}`);
+    //         }
 
-            if (!fieldValid) {
-                allValid = false;
-            }
-        });
+    //         if (!fieldValid) {
+    //             allValid = false;
+    //         }
+    //     });
 
-        return {
-            isValid: allValid,
-        };
-    },
+    //     return {
+    //         isValid: allValid,
+    //     };
+    // },
 
     _validateKnownBlock() {
         const hasKnown = this.$('input[name="knownPosee_1"]:checked').val();
