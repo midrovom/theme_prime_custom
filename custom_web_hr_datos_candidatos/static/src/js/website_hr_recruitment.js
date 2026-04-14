@@ -1020,23 +1020,32 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         ];
 
         requiredFields.forEach(name => {
-            const $el = this.$(`[name="${name}"]`);
-            const isRadio = $el.attr('type') === 'radio';
+
+            const $group = this.$(`input[name="${name}"]`);
+            const isRadio = $group.length && $group.first().attr('type') === 'radio';
 
             let ok;
 
             if (isRadio) {
-                ok = this.$(`input[name="${name}"]:checked`).length > 0;
-            } else {
-                ok = !!$el.val()?.toString().trim();
-            }
+                ok = $group.filter(':checked').length > 0;
+                $group.removeClass('is-invalid');
 
-            $el.toggleClass('is-invalid', !ok);
-            if (!ok) valid = false;
+                if (!ok) {
+                    $group.addClass('is-invalid');
+                    valid = false;
+                }
+
+            } else {
+                const $el = this.$(`[name="${name}"]`);
+                ok = !!$el.val()?.toString().trim();
+
+                $el.toggleClass('is-invalid', !ok);
+
+                if (!ok) valid = false;
+            }
         });
 
         const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
-
         const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
 
         if (discValue === 'si') {
