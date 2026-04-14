@@ -830,40 +830,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return true;
     },
     
-    // _validateExperienceBlocks() {
-    //     const experienceBlocks = this.$('#experience_container input, #experience_container select, #experience_container textarea');
-    //     let allValid = true;
-
-    //     experienceBlocks.each((index, block) => {
-    //         const $field = $(block);
-
-    //         if (!$field.is(':visible') || $field.prop('disabled')) return;
-
-    //         const value = $field.val();
-
-    //         if (!value) {
-    //             $field.removeClass('is-invalid');
-    //             return;
-    //         }
-
-    //         let fieldValid = true;
-
-    //         if (block.type === 'date') {
-    //             fieldValid = this._validateDateField(`#${block.id}`);
-    //         } else {
-    //             fieldValid = this._validateField(`#${block.id}`);
-    //         }
-
-    //         if (!fieldValid) {
-    //             allValid = false;
-    //         }
-    //     });
-
-    //     return {
-    //         isValid: allValid,
-    //     };
-    // },
-
     _validateKnownBlock() {
         const hasKnown = this.$('input[name="knownPosee_1"]:checked').val();
         let isValid = true;
@@ -1103,16 +1069,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return isValid;
         }
 
-        const isValid = !!$field.val();
+        const value = $field.val();
 
-        if (isValid && $field[0].files && $field[0].files.length > 0) {
-            const $curriculumName = this.$('#file-selected-message');
-            const curriculum = $field[0].files[0].name;
-            $curriculumName.text(_t(curriculum + ' ✓')).show();
+        if (!value || value.trim() === '') {
+            $field.removeClass('is-invalid');
+            return true; 
         }
-
+        const isValid = true; 
         $field.toggleClass('is-invalid', !isValid);
         return isValid;
+
     },
 
     _validateImage: function(ev) {
