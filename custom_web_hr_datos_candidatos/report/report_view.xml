@@ -389,7 +389,7 @@
                         <t t-set="reglamento" t-value="env['hr.reglamento'].search([], limit=1)"/>
                         <td colspan="3" style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
                             <t t-if="reglamento">
-                                <t t-raw="reglamento.reglamento"/>
+                                <t t-raw="reglamento.footer_reglamento"/>
                             </t>
                         </td>
 

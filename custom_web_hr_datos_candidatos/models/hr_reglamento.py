@@ -5,4 +5,4 @@ class HrFooter(models.Model):
     _description = 'Reglamento'
 
     reglamento = fields.Html(string="Reglamento Interno")
-
+    footer_reglamento = fields.Html(string="Footer Reglamento")
