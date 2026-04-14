@@ -16,7 +16,7 @@
 
                         <tr>
                             <td colspan="2" style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
-                                <t t-raw="hr.reglamento"/>
+                                <t t-raw="o.reglamento"/>
                             </td>
 
                             <!-- <td colspan="2" style="border:1px solid #000; width:80%; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
@@ -406,7 +406,7 @@
                 <t t-set="footer" t-value="env['hr.footer'].search([], limit=1)"/>
                 <div style="width:100%; margin-top:20px; text-align:justify; font-family:'Times New Roman', Times, serif; padding-top:5px;">
                     <t t-if="footer">
-                        <span t-raw="footer.descripcion"/>
+                        <t t-raw="o.reglamento"/>
                     </t>
                 </div>
 
