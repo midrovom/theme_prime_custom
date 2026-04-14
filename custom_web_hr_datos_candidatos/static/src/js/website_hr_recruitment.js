@@ -1065,6 +1065,57 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return valid;
     },
 
+    // _validateField(ev) {
+    //     const selector = ev && ev.currentTarget ? `#${ev.currentTarget.id}` : arguments[0];
+    //     const $field = this.$(selector);
+
+    //     if (!$field.length) return true;
+
+    //     if ($field.prop('disabled')) {
+    //         $field.removeClass('is-invalid');
+    //         return true;
+    //     }
+
+    //     if (!$field.is(':visible')) {
+    //         $field.removeClass('is-invalid');
+    //         return true;
+    //     }
+
+    //     if ($field.is('select')) {
+    //         const isValid = $field.val() !== "" && $field.val() !== null;
+    //         $field.toggleClass('is-invalid', !isValid);
+    //         return isValid;
+    //     }
+
+    //     if ($field.is('[type="radio"]')) {
+    //         const radioName = $field.attr('name');
+    //         const isRadioValid = !!this.$(`input[name="${radioName}"]:checked`).val();
+    //         this.$(`input[name="${radioName}"]`).toggleClass('is-invalid', !isRadioValid);
+    //         return isRadioValid;
+    //     }
+
+    //     if ($field.is('[type="checkbox"]')) {
+    //         const name = $field.attr('name');
+    //         const $group = this.$(`input[name="${name}"]`);
+    //         const isValid = $group.is(':checked');
+    //         $group.toggleClass('is-invalid', !isValid);
+
+    //         return isValid;
+    //     }
+
+    //     const isValid = !!$field.val();
+
+    //     if (isValid && $field[0].files && $field[0].files.length > 0) {
+    //         const $curriculumName = this.$('#file-selected-message');
+    //         const curriculum = $field[0].files[0].name;
+    //         $curriculumName.text(_t(curriculum + ' ✓')).show();
+    //     }
+
+    //     $field.toggleClass('is-invalid', !isValid);
+    //     return isValid;
+    // },
+
+
     _validateField(ev) {
         const selector = ev && ev.currentTarget ? `#${ev.currentTarget.id}` : arguments[0];
         const $field = this.$(selector);
@@ -1075,14 +1126,21 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             $field.removeClass('is-invalid');
             return true;
         }
-
+        
         if (!$field.is(':visible')) {
             $field.removeClass('is-invalid');
             return true;
         }
 
+        const value = $field.val();
+
+        if (!value || value.toString().trim() === '') {
+            $field.removeClass('is-invalid');
+            return true;
+        }
+
         if ($field.is('select')) {
-            const isValid = $field.val() !== "" && $field.val() !== null;
+            const isValid = value !== "" && value !== null;
             $field.toggleClass('is-invalid', !isValid);
             return isValid;
         }
@@ -1099,20 +1157,17 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             const $group = this.$(`input[name="${name}"]`);
             const isValid = $group.is(':checked');
             $group.toggleClass('is-invalid', !isValid);
-
             return isValid;
         }
 
-        const isValid = !!$field.val();
-
-        if (isValid && $field[0].files && $field[0].files.length > 0) {
+        if ($field[0].files && $field[0].files.length > 0) {
             const $curriculumName = this.$('#file-selected-message');
             const curriculum = $field[0].files[0].name;
             $curriculumName.text(_t(curriculum + ' ✓')).show();
         }
 
-        $field.toggleClass('is-invalid', !isValid);
-        return isValid;
+        $field.removeClass('is-invalid');
+        return true;
     },
 
     _validateImage: function(ev) {
