@@ -17,8 +17,11 @@
                         <tr>
                             <t t-set="reglamento" t-value="env['hr.reglamento'].search([], limit=1)"/>
                             <td colspan="2" style="border:1px solid #000; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
-                                <t t-raw="reglamento.reglamento"/>
+                                <t t-if="reglamento">
+                                    <t t-raw="reglamento.reglamento"/>
+                                </t>
                             </td>
+
 
                             <!-- <td colspan="2" style="border:1px solid #000; width:80%; vertical-align:top; word-break:break-word; line-height:1.3; padding:10px;">
                                 <b>Reglamento Interno</b><br/>
