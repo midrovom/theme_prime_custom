@@ -196,13 +196,17 @@
 
                 <div id="reference_container"></div>
 
-                <div class="row d-flex justify-content-center">
-                    <div class="col-12 col-md-5">
-                        <button class="btn btn-info rounded-pill px-5 py-2" id="prev-button"  type="button"> Anterior </button>
+                <div class="row d-flex justify-content-center" style="width: 100%;">
+                    <div class="col-12 col-md-5 mb-2 mb-md-0" style="display: flex; justify-content: center;">
+                        <button class="btn btn-info rounded-pill w-100" id="prev-button" type="button" style="font-size: clamp(0.9rem, 2vw, 1.2rem); padding: clamp(0.5rem, 1vw, 0.8rem) clamp(1rem, 3vw, 2rem);">
+                            Anterior
+                        </button>
                     </div>
 
                     <div class="col-12 col-md-5 d-flex justify-content-end">
-                        <button class="btn btn-info rounded-pill px-5 py-2" id="submit-form" type="submit"> Enviar postulación </button>
+                        <button class="btn btn-info rounded-pill w-100" id="submit-form" type="submit" style="font-size: clamp(0.9rem, 2vw, 1.2rem); padding: clamp(0.5rem, 1vw, 0.8rem) clamp(1rem, 3vw, 2rem);">
+                            Enviar postulación
+                        </button>
                     </div>
                 </div>
 
