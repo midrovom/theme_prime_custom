@@ -153,7 +153,7 @@
             sequence="1"/>
 
         <!-- Datos Personales -->
-        <menuitem
+        <!-- <menuitem
             id="menu_hr_recruitment_Datos_Personales"
             name="Datos Personales"
             parent="hr_recruitment.menu_hr_recruitment_config_applications"
@@ -173,7 +173,7 @@
             parent="menu_hr_recruitment_Datos_Personales"
             action="hr_applicant_medical_action"
             sequence="2"
-            groups="hr.group_hr_user"/>
+            groups="hr.group_hr_user"/> -->
 
         <!-- Experiencia Laboral -->
 
