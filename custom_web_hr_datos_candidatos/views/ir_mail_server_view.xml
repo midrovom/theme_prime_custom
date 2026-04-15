@@ -3,7 +3,7 @@
     <record id="view_mail_server_form_inherit_recruitment" model="ir.ui.view">
         <field name="name">ir.mail_server.form.inherit.recruitment</field>
         <field name="model">ir.mail_server</field>
-        <field name="inherit_id" ref="mail.ir_mail_server_view_form"/>
+        <field name="inherit_id" ref="base.ir_mail_server_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='smtp_authentication']" position="after">
                 <field name="is_recruitment_server"/>
@@ -11,4 +11,5 @@
         </field>
     </record>
 </odoo>
+
 
