@@ -5,7 +5,9 @@
         <t t-call="website.layout">
             <div id="wrap_container" class="container">
                 <header class="d-flex justify-content-center mt-4 mb-3">
-                    <h1 class="text-info fw-bold">ACTUALIZACIÒN DE DATOS PARA CANDIDATOS</h1>
+                    <h1 class="text-info fw-bold text-center fs-3 fs-md-2 fs-lg-1">
+                        ACTUALIZACIÓN DE DATOS PARA CANDIDATOS
+                    </h1>
                 </header>
             </div>
             <div id="jobs_apply" class="container">
