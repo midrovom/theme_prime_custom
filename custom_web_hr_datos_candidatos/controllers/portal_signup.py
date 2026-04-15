@@ -26,8 +26,11 @@ class AuthSignupHomeOTP(AuthSignupHome):
                 request.session['signup_data'] = qcontext
                 request.session['signup_code'] = code
 
-                # Buscar el servidor de correo configurado
-                mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+                # Buscar el servidor de correo marcado como reclutamiento
+                mail_server = request.env['ir.mail_server'].sudo().search([('is_recruitment_server', '=', True)], limit=1)
+                if not mail_server:
+                    raise Exception("No se ha configurado un servidor de correo de reclutamiento.")
+
                 smtp_user = mail_server.smtp_user
 
                 # Enviar correo directamente con el código
