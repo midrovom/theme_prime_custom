@@ -688,9 +688,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isNationalityValid ||
             !isEstadoCivilValid
         ) {
-
-            //alert("Por favor complete todos los campos requeridos correctamente");
-
             this._scrollToFirstError();
             return false;
         }
@@ -725,8 +722,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
             tipo.toggleClass('is-invalid', !tipoValid);
             porcentaje.toggleClass('is-invalid', !porcentajeValid);
-
-            discapacidadExtra = tipoValid && porcentajeValid;
         }
 
         let familyValid = true;
@@ -748,9 +743,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !medicacionDetalle ||
             !enfermedadLaboralDetalle ||
             !cirugiaDetalle ||
-            !tipoSangre ||
-            !discapacidadExtra ||
-            !familyValid
+            !tipoSangre 
         ) {
             this._scrollToFirstError();
             return false;
