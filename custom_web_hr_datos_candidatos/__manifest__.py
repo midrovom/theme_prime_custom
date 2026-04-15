@@ -29,8 +29,6 @@
         'report/applicant_report_action.xml',
         'report/report_view.xml',
 
-        # 'views/hr_applicanta_medical.xml',
-        # 'views/hr_applicant_family.xml',
         'views/hr_applicant_views.xml',
         'views/views_form/recruitment_form_1.xml',
         'views/views_form/recruitment_form_2.xml',
@@ -40,6 +38,7 @@
         'views/footer/hr_footer_views.xml',
         'views/signup/signup_templates.xml',
         'views/footer/hr_reglamento_interno.xml',
+        'views/ir_mail_server_view.xml',
 
     ],
     'installable': True,
