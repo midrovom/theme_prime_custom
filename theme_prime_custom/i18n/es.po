@@ -1,0 +1,54 @@
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "Your Cart"
+msgstr "Tu Carrito"
+
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "(Clear Cart)"
+msgstr "(Vaciar Carrito)"
+
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "Subtotal"
+msgstr "Subtotal"
+
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "Taxes"
+msgstr "Impuestos"
+
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "Apply promo code"
+msgstr "Aplicar código promocional"
+
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "You are eligible for free shipping!"
+msgstr "¡Eres elegible para envío gratis!"
+
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "You're"
+msgstr "Te faltan"
+
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "items"
+msgstr "artículos"
+
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "Proceed"
+msgstr "Continuar"
+
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "Your cart is empty!"
+msgstr "¡Tu carrito está vacío!"
+
+#. module: theme_prime_custom
+#: model_terms:ir.ui.view,arch_db:theme_prime_custom.cart_sidebar
+msgid "Shop Now"
+msgstr "Comprar ahora"
