@@ -25,7 +25,7 @@
 
   </template>
   
-  <template id="cart_sidebar_inherit" inherit_id="theme_prime.cart_sidebar" name="Theme Prime: Cart Sidebar Inherit">
+  <!-- <template id="cart_sidebar_inherit" inherit_id="theme_prime.cart_sidebar" name="Theme Prime: Cart Sidebar Inherit">
     <xpath expr="//h5[normalize-space(text())='Your Cart']/text()" position="replace">
       Tu Carrito
     </xpath>
@@ -75,7 +75,7 @@
       Comprar ahora
     </xpath>
 
-  </template>
+  </template> -->
 
 </odoo>
 
