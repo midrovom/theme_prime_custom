@@ -24,10 +24,60 @@
     </xpath>
 
   </template>
-
-
   
 </odoo>
 
 
+  <template id="cart_sidebar_inherit" inherit_id="theme_prime.cart_sidebar" name="Theme Prime: Cart Sidebar Inherit">
+    <xpath expr="//h5[normalize-space(text())='Your Cart']" position="replace">
+      <h5 class="mb-0">Tu Carrito</h5>
+    </xpath>
+
+    <xpath expr="//a[normalize-space(text())='(Clear Cart)']" position="replace">
+      <a t-if="order.website_order_line" href="#" class="text-muted small tp-clear-cart ms-2">(Vaciar Carrito)</a>
+    </xpath>
+
+    <xpath expr="//button[@title='Close']" position="attributes">
+      <attribute name="title">Cerrar</attribute>
+      <attribute name="aria-label">Cerrar</attribute>
+    </xpath>
+
+    <xpath expr="//h6[normalize-space(text())='Subtotal']" position="replace">
+      <h6 class="mb-0">Subtotal</h6>
+    </xpath>
+
+    <xpath expr="//h6[normalize-space(text())='Taxes']" position="replace">
+      <h6 class="mb-0">Impuestos</h6>
+    </xpath>
+
+    <xpath expr="//a[normalize-space(text())='Apply promo code']" position="replace">
+      <a href="#" class="show_coupon">Aplicar código promocional</a>
+    </xpath>
+
+    <xpath expr="//div[contains(text(),'You are eligible for')]" position="replace">
+      <div class="mb-1 text-success"><i class="fa fa-truck"/> ¡Eres elegible para <strong>envío gratis!</strong></div>
+    </xpath>
+
+    <xpath expr="//div[contains(text(),\"You're\")]" position="replace">
+      <div class="mb-1">Te faltan <strong class="text-primary" t-esc="free_delivery_details['remaining_amount']"
+           t-options="{'widget': 'monetary', 'display_currency': order.currency_id}"/> para <strong>envío gratis!</strong></div>
+    </xpath> 
+
+    <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
+      <span class="tp-total-cart-items"><t t-esc="order.cart_quantity"/> artículos</span>
+    </xpath>
+
+    <xpath expr="//small[normalize-space(text())='Proceed']" position="replace">
+      <small>Continuar <i class="fa fa-angle-right ms-1"/></small>
+    </xpath>
+
+    <xpath expr="//h5[normalize-space(text())='Your cart is empty!']" position="replace">
+      <h5 class="my-4">¡Tu carrito está vacío!</h5>
+    </xpath>
+
+    <xpath expr="//a[normalize-space(text())='Shop Now']" position="replace">
+      <a class="btn btn-primary" href="/shop">Comprar ahora</a>
+    </xpath>
+
+  </template>
 
