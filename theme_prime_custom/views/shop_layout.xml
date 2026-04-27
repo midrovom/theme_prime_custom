@@ -55,10 +55,15 @@
       <div class="mb-1 text-success"><i class="fa fa-truck"/> ¡Eres elegible para <strong>envío gratis!</strong></div>
     </xpath>
 
-    <xpath expr="//div[contains(text(),\"You're\")]" position="replace">
-      <div class="mb-1">Te faltan <strong class="text-primary" t-esc="free_delivery_details['remaining_amount']"
-           t-options="{'widget': 'monetary', 'display_currency': order.currency_id}"/> para <strong>envío gratis!</strong></div>
-    </xpath> 
+    <xpath expr="//div[contains(text(), 'You&#39;re')]" position="replace">
+        <div class="mb-1">
+            Te faltan
+            <strong class="text-primary"
+                    t-esc="free_delivery_details['remaining_amount']"
+                    t-options="{'widget': 'monetary', 'display_currency': order.currency_id}"/>
+            para <strong>envío gratis!</strong>
+        </div>
+    </xpath>
 
     <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
       <span class="tp-total-cart-items"><t t-esc="order.cart_quantity"/> artículos</span>
