@@ -34,9 +34,9 @@
       <a t-if="order.website_order_line" href="#" class="text-muted small tp-clear-cart ms-2">(Vaciar Carrito)</a>
     </xpath>
 
-    <xpath expr="//button[@title='Close']" position="attributes">
-      <attribute name="title">Cerrar</attribute>
-      <attribute name="aria-label">Cerrar</attribute>
+    <xpath expr="//button[contains(@class,'btn-close')]" position="attributes">
+        <attribute name="title">Cerrar</attribute>
+        <attribute name="aria-label">Cerrar</attribute>
     </xpath>
 
     <xpath expr="//h6[normalize-space(text())='Subtotal']" position="replace">
