@@ -21,7 +21,6 @@
 
         'views/snippet/advance/s_footer/s_footer.xml',
         'views/snippet/advance/s_header/s_header.xml',
-        'views/snippet/advance/s_header/s_header_7.xml',
 
         #Snippet Conedera
 
