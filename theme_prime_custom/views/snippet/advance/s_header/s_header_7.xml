@@ -1,0 +1,23 @@
+<odoo>
+
+    <data>
+
+        <record id="view_account_info_inherit" model="ir.ui.view">
+            <field name="name">theme_prime.account.info.inherit</field>
+            <field name="model">website</field>
+            <field name="inherit_id" ref="theme_prime.component_account_info"/>
+            <field name="arch" type="xml">
+                <xpath expr="//small[normalize-space(text())='Account']" position="replace">
+                    <small class="d-inline-block">Cuenta</small>
+                </xpath>
+                <xpath expr="//small[normalize-space(text())='My Cart']" position="replace">
+                    <small class="d-inline-block">Mi Carrito</small>
+                </xpath>
+
+            </field>
+
+        </record>
+    </data>
+
+</odoo>
+
