@@ -30,9 +30,9 @@
             <h5>Tu Carrito</h5>
         </xpath>
 
-        <!-- <xpath expr="//a[normalize-space(text())='(Clear Cart)']" position="replace">
+        <xpath expr="//a[normalize-space(text())='(Clear Cart)']" position="replace">
             <a>(Vaciar Carrito)</a>
-        </xpath> -->
+        </xpath>
 
         <!-- <xpath expr="//button[contains(@class,'btn-close')]" position="attributes">
             <attribute name="title">Cerrar</attribute>
