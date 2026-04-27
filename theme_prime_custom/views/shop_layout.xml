@@ -48,29 +48,29 @@
             <a>Aplicar código promocional</a>
         </xpath>
 
-        <xpath expr="//div[contains(text(),'You are eligible for')]" position="replace">
+        <!-- <xpath expr="//div[contains(text(),'You are eligible for')]" position="replace">
             <div>¡Eres elegible para envío gratis!</div>
         </xpath>
 
         <xpath expr="//div[contains(text(),'away from')]" position="replace">
-            <div>Te faltan</div>
+            <div>Te faltan</div> -->
         </xpath>
 
         <!-- <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
             <span>artículos</span>
         </xpath> -->
 
-        <xpath expr="//small[normalize-space(text())='Proceed']" position="replace">
+        <!-- <xpath expr="//small[normalize-space(text())='Proceed']" position="replace">
             <small>Continuar</small>
-        </xpath>
+        </xpath> -->
 
         <xpath expr="//h5[normalize-space(text())='Your cart is empty!']" position="replace">
             <h5>¡Tu carrito está vacío!</h5>
         </xpath>
 
-        <!-- <xpath expr="//a[normalize-space(text())='Shop Now']" position="replace">
+        <xpath expr="//a[normalize-space(text())='Shop Now']" position="replace">
             <a>Comprar ahora</a>
-        </xpath>    -->
+        </xpath>   
 
     </template>
 
