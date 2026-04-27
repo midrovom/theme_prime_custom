@@ -51,7 +51,7 @@
             <div>¡Eres elegible para envío gratis!</div>
         </xpath>
 
-        <xpath expr="//div[contains(.,'away from')]" position="replace">
+        <!-- <xpath expr="//div[contains(.,'away from')]" position="replace">
             <div class="mb-1">
                 Te faltan 
                 <strong class="text-primary"
@@ -59,7 +59,7 @@
                         t-options="{'widget': 'monetary', 'display_currency': order.currency_id}"/>
                 para <strong>envío gratis!</strong>
             </div>
-        </xpath>
+        </xpath> -->
 
         <!-- <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
             <span>artículos</span>
