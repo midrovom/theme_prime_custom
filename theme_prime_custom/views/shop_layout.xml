@@ -68,9 +68,9 @@
             <h5>¡Tu carrito está vacío!</h5>
         </xpath>
 
-        <xpath expr="//a[normalize-space(text())='Shop Now']" position="replace">
+        <!-- <xpath expr="//a[normalize-space(text())='Shop Now']" position="replace">
             <a>Comprar ahora</a>
-        </xpath>   
+        </xpath>    -->
 
     </template>
 
