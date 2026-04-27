@@ -44,7 +44,7 @@
             <h6>Impuestos</h6>
         </xpath>
 
-        <!-- <xpath expr="//a[normalize-space(text())='Apply promo code']" position="replace">
+        <xpath expr="//a[normalize-space(text())='Apply promo code']" position="replace">
             <a>Aplicar código promocional</a>
         </xpath>
 
@@ -52,7 +52,7 @@
             <div>¡Eres elegible para envío gratis!</div>
         </xpath>
 
-        <xpath expr="//div[contains(text(),'away from')]" position="replace">
+        <!-- <xpath expr="//div[contains(text(),'away from')]" position="replace">
             <div>Te faltan</div>
         </xpath>
 
@@ -70,7 +70,7 @@
 
         <xpath expr="//a[normalize-space(text())='Shop Now']" position="replace">
             <a>Comprar ahora</a>
-        </xpath>  -->
+        </xpath>   -->
 
     </template>
 
