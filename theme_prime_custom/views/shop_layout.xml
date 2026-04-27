@@ -60,9 +60,9 @@
             <span>artículos</span>
         </xpath> -->
 
-        <!-- <xpath expr="//small[normalize-space(text())='Proceed']" position="replace">
+        <xpath expr="//small[normalize-space(text())='Proceed']" position="replace">
             <small>Continuar</small>
-        </xpath> -->
+        </xpath>
 
         <xpath expr="//h5[normalize-space(text())='Your cart is empty!']" position="replace">
             <h5>¡Tu carrito está vacío!</h5>
