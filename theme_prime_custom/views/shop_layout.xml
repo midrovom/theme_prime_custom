@@ -2,7 +2,7 @@
 
     <data>
 
-        <record id="view_filter_price_inherit" model="ir.ui.view">
+        <!-- <record id="view_filter_price_inherit" model="ir.ui.view">
             <field name="name">theme_prime.filter.price.inherit</field>
             <field name="model">product.template</field>
             <field name="inherit_id" ref="theme_prime.view_filter_attributes"/>
@@ -11,7 +11,7 @@
                     <span>Precio</span>
                 </xpath>
             </field>
-        </record>
+        </record> -->
 
 
         <record id="component_account_info_inherit" model="ir.ui.view">
