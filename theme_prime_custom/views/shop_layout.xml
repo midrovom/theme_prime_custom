@@ -33,13 +33,13 @@
         <xpath expr="//a[normalize-space(text())='(Clear Cart)']" position="replace">
             <a>Vaciar Carrito</a>
         </xpath>
-<!-- 
+
         <xpath expr="//button[contains(@class,'btn-close')]" position="attributes">
             <attribute name="title">Cerrar</attribute>
             <attribute name="aria-label">Cerrar</attribute>
         </xpath>
 
-        <xpath expr="//h6[normalize-space(text())='Subtotal']" position="replace">
+        <!-- <xpath expr="//h6[normalize-space(text())='Subtotal']" position="replace">
             <h6>Subtotal</h6>
         </xpath>
 
