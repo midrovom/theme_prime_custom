@@ -52,13 +52,13 @@
             <div>¡Eres elegible para envío gratis!</div>
         </xpath>
 
-        <!-- <xpath expr="//div[contains(text(),'away from')]" position="replace">
+        <xpath expr="//div[contains(text(),'away from')]" position="replace">
             <div>Te faltan</div>
         </xpath>
 
-        <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
+        <!-- <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
             <span>artículos</span>
-        </xpath>
+        </xpath> -->
 
         <xpath expr="//small[normalize-space(text())='Proceed']" position="replace">
             <small>Continuar</small>
@@ -70,7 +70,7 @@
 
         <xpath expr="//a[normalize-space(text())='Shop Now']" position="replace">
             <a>Comprar ahora</a>
-        </xpath>   -->
+        </xpath>   
 
     </template>
 
