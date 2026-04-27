@@ -1,6 +1,8 @@
+<odoo>
 
+    <data>
 
-        <!-- <record id="view_filter_price_inherit" model="ir.ui.view">
+        <record id="view_filter_price_inherit" model="ir.ui.view">
             <field name="name">theme_prime.filter.price.inherit</field>
             <field name="model">product.template</field>
             <field name="inherit_id" ref="theme_prime.view_filter_attributes"/>
@@ -9,35 +11,38 @@
                     <span>Precio</span>
                 </xpath>
             </field>
-        </record> -->
+        </record>
 
-<odoo>
-    <template id="component_account_info_inherit" inherit_id="theme_prime.component_account_info" name="Component Account Info Inherit">
-        <!-- Cambiar Search -->
-        <xpath expr="//small[normalize-space(text())='Search']" position="replace">
-            <small class="d-inline-block">Buscar</small>
-        </xpath>
+        <record id="component_account_info_inherit" model="ir.ui.view">
+            <field name="name">component.account.info.inherit</field>
+            <field name="model">website</field>
+            <field name="inherit_id" ref="theme_prime.component_account_info"/>
+            <field name="arch" type="xml">
 
-        <!-- Cambiar Login -->
-        <xpath expr="//small//t[normalize-space(text())='Login']" position="replace">
-            <t>Iniciar Sesión</t>
-        </xpath>
+                <xpath expr="//small[normalize-space(text())='Login']" position="replace">
+                    <small class="d-inline-block">Iniciar Sesión</small>
+                </xpath>
 
-        <!-- Cambiar Account -->
-        <xpath expr="//small//t[normalize-space(text())='Account']" position="replace">
-            <t>Cuenta</t>
-        </xpath>
+                <xpath expr="//small[normalize-space(text())='Account']" position="replace">
+                    <small class="d-inline-block">Cuenta</small>
+                </xpath>
 
-        <!-- Cambiar Wishlist -->
-        <xpath expr="//small[normalize-space(text())='Wishlist']" position="replace">
-            <small class="d-inline-block">Lista de deseos</small>
-        </xpath>
+                <xpath expr="//small[normalize-space(text())='Wishlist']" position="replace">
+                    <small class="d-inline-block">Lista de deseos</small>
+                </xpath>
 
-        <!-- Cambiar My Cart -->
-        <xpath expr="//small[normalize-space(text())='My Cart']" position="replace">
-            <small class="d-inline-block">Mi Carrito</small>
-        </xpath>
-    </template>
+                <xpath expr="//small[normalize-space(text())='My Cart']" position="replace">
+                    <small class="d-inline-block">Mi Carrito</small>
+                </xpath>
+
+                <xpath expr="//small[normalize-space(text())='Search']" position="replace">
+                    <small class="d-inline-block">Buscar</small>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+    
 </odoo>
 
 
