@@ -25,13 +25,13 @@
 
   </template>
   
-  <!-- <template id="cart_sidebar_inherit" inherit_id="theme_prime.cart_sidebar" name="Theme Prime: Cart Sidebar Inherit">
+  <template id="cart_sidebar_inherit" inherit_id="theme_prime.cart_sidebar" name="Theme Prime: Cart Sidebar Inherit">
 
     <xpath expr="//h5[normalize-space(text())='Your Cart']/text()" position="replace">
       Tu Carrito
     </xpath>
 
-    <xpath expr="//a[normalize-space(text())='(Clear Cart)']/text()" position="replace">
+    <!-- <xpath expr="//a[normalize-space(text())='(Clear Cart)']/text()" position="replace">
       Vaciar Carrito
     </xpath>
 
@@ -74,58 +74,9 @@
 
     <xpath expr="//a[normalize-space(text())='Shop Now']/text()" position="replace">
       Comprar ahora
-    </xpath>
+    </xpath> -->
 
-  </template> -->
-
-    <template id="cart_sidebar_inherit" inherit_id="theme_prime.cart_sidebar" name="Theme Prime: Cart Sidebar Inherit">
-
-        <!-- Marcar el texto como traducible sin reemplazar el nodo -->
-        <xpath expr="//h5[@class='mb-0']" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-        <xpath expr="//a[@class='text-muted small tp-clear-cart ms-2']" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-        <xpath expr="//h6[normalize-space(text())='Subtotal']" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-        <xpath expr="//h6[normalize-space(text())='Taxes']" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-        <xpath expr="//a[@class='show_coupon']" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-        <xpath expr="//div[contains(text(),'You are eligible for')]" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-        <xpath expr="//div[contains(text(),'away from')]" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-        <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-        <xpath expr="//small[contains(text(),'Proceed')]" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-        <xpath expr="//h5[@class='my-4']" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-        <xpath expr="//a[@class='btn btn-primary' and normalize-space(text())='Shop Now']" position="attributes">
-            <attribute name="t-translate">yes</attribute>
-        </xpath>
-
-    </template>
+  </template>
 
 
 </odoo>
