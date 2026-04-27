@@ -13,13 +13,10 @@
 
 <odoo>
   <template id="component_account_info_inherit" inherit_id="theme_prime.component_account_info" name="Component Account Info Inherit">
-    <xpath expr="//small//t[normalize-space(text())='Login']" position="replace">
-      <t>Iniciar Sesión</t>
-    </xpath>
 
-    <!-- <xpath expr="//small//t[normalize-space(text())='Account']" position="replace">
+    <xpath expr="//small//t[normalize-space(text())='Account']" position="replace">
       <t>Cuenta</t>
-    </xpath> -->
+    </xpath>
 
     <xpath expr="//small[normalize-space(text())='Wishlist']" position="replace">
       <small class="d-inline-block">Lista de deseos</small>
@@ -35,7 +32,7 @@
     </xpath>
 
   </template>
-
+  
 </odoo>
 
 
