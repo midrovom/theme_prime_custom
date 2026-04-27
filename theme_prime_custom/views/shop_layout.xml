@@ -30,15 +30,14 @@
             <h5>Tu Carrito</h5>
         </xpath>
 
-        <xpath expr="//a[normalize-space(text())='(Clear Cart)']" position="replace">
+        <!-- <xpath expr="//a[normalize-space(text())='(Clear Cart)']" position="replace">
             <a>(Vaciar Carrito)</a>
-        </xpath>
+        </xpath> -->
 
         <!-- <xpath expr="//button[contains(@class,'btn-close')]" position="attributes">
             <attribute name="title">Cerrar</attribute>
             <attribute name="aria-label">Cerrar</attribute>
         </xpath> -->
-
 
         <xpath expr="//h6[normalize-space(text())='Taxes']" position="replace">
             <h6>Impuestos</h6>
@@ -56,9 +55,9 @@
             <div>Te faltan</div>
         </xpath> -->
 
-        <!-- <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
+        <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
             <span>artículos</span>
-        </xpath> -->
+        </xpath>
 
         <xpath expr="//small[normalize-space(text())='Proceed']" position="replace">
             <small>Continuar</small>
