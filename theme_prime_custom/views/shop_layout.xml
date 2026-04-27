@@ -51,13 +51,19 @@
             <div>¡Eres elegible para envío gratis!</div>
         </xpath>
 
-        <!-- <xpath expr="//div[contains(text(),'away from')]" position="replace">
-            <div>Te faltan</div>
-        </xpath> -->
-
-        <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
-            <span>artículos</span>
+        <xpath expr="//div[contains(.,'away from')]" position="replace">
+            <div class="mb-1">
+                Te faltan 
+                <strong class="text-primary"
+                        t-esc="free_delivery_details['remaining_amount']"
+                        t-options="{'widget': 'monetary', 'display_currency': order.currency_id}"/>
+                para <strong>envío gratis!</strong>
+            </div>
         </xpath>
+
+        <!-- <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
+            <span>artículos</span>
+        </xpath> -->
 
         <xpath expr="//small[normalize-space(text())='Proceed']" position="replace">
             <small>Continuar</small>
