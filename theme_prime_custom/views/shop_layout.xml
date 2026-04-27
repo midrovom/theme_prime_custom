@@ -25,14 +25,14 @@
 
   </template>
   
-  <template id="cart_sidebar_inherit" inherit_id="theme_prime.cart_sidebar" name="Theme Prime: Cart Sidebar Inherit">
+  <template id="cart_sidebar" inherit_id="theme_prime.cart_sidebar" name="Theme Prime: Cart Sidebar Inherit">
 
     <xpath expr="//h5[normalize-space(text())='Your Cart']/text()" position="replace">
       Tu Carrito
     </xpath>
 
     <xpath expr="//a[normalize-space(text())='(Clear Cart)']/text()" position="replace">
-      (Vaciar Carrito)
+      Vaciar Carrito
     </xpath>
 
     <xpath expr="//button[contains(@class,'btn-close')]" position="attributes">
