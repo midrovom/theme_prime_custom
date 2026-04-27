@@ -34,20 +34,17 @@
             <a>Vaciar Carrito</a>
         </xpath>
 
-        <xpath expr="//button[contains(@class,'btn-close')]" position="attributes">
+        <!-- <xpath expr="//button[contains(@class,'btn-close')]" position="attributes">
             <attribute name="title">Cerrar</attribute>
             <attribute name="aria-label">Cerrar</attribute>
-        </xpath>
+        </xpath> -->
 
-        <!-- <xpath expr="//h6[normalize-space(text())='Subtotal']" position="replace">
-            <h6>Subtotal</h6>
-        </xpath>
 
         <xpath expr="//h6[normalize-space(text())='Taxes']" position="replace">
             <h6>Impuestos</h6>
         </xpath>
 
-        <xpath expr="//a[normalize-space(text())='Apply promo code']" position="replace">
+        <!-- <xpath expr="//a[normalize-space(text())='Apply promo code']" position="replace">
             <a>Aplicar código promocional</a>
         </xpath>
 
@@ -73,7 +70,7 @@
 
         <xpath expr="//a[normalize-space(text())='Shop Now']" position="replace">
             <a>Comprar ahora</a>
-        </xpath> -->
+        </xpath>  -->
 
     </template>
 
