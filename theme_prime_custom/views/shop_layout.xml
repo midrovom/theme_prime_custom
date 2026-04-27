@@ -25,7 +25,8 @@
 
   </template>
   
-  <!-- <template id="cart_sidebar_inherit" inherit_id="theme_prime.cart_sidebar" name="Theme Prime: Cart Sidebar Inherit">
+  <template id="cart_sidebar_inherit" inherit_id="theme_prime.cart_sidebar" name="Theme Prime: Cart Sidebar Inherit">
+
     <xpath expr="//h5[normalize-space(text())='Your Cart']/text()" position="replace">
       Tu Carrito
     </xpath>
@@ -55,7 +56,7 @@
       ¡Eres elegible para envío gratis!
     </xpath>
 
-    <xpath expr="//div[contains(text(), 'You') and contains(text(),'away')]/text()" position="replace">
+    <xpath expr="//div[contains(text(),'away from')]/text()" position="replace">
       Te faltan
     </xpath>
 
@@ -75,7 +76,7 @@
       Comprar ahora
     </xpath>
 
-  </template> -->
+  </template>
 
 </odoo>
 
