@@ -53,8 +53,8 @@
         </xpath>
 
         <xpath expr="//div[contains(text(),'away from')]" position="replace">
-            <div>Te faltan</div> -->
-        </xpath>
+            <div>Te faltan</div>
+        </xpath> -->
 
         <!-- <xpath expr="//span[contains(@class,'tp-total-cart-items')]" position="replace">
             <span>artículos</span>
