@@ -13,40 +13,66 @@
                 
                 <!-- Slide #01 -->
                 <div class="carousel-item p-0 active" data-name="Slide">
-                    <div class="container-fluid px-0">
-                        <div class="row content g-0 align-items-center s_col_no_bgcolor s_nb_column_fixed">
-                            <div class="jumbotron rounded px-4 offset-lg-1 col-lg-5 pt32 pb32 o_cc o_cc1 border">
-                                <h3>New Arrivals</h3>
-                                <h2 class="display-4 fw-bold">Fresh Collection By Prime</h2>
-                                <p class="lead">
-                                    In hac habitasse platea dictumst. Praesent cursus congue felis, nec pellentesque nulla ornare sed.
-                                </p>
-                                <a href="/shop" class="btn btn-primary mt-2 rounded-circle">Discover More</a>
-                            </div>
-                            <div class="order-1 order-lg-2 offset-lg-1 col-lg-6">
-                                <img class="img img-fluid" src="/web/image/theme_prime.s_cover_3_1" alt="Cover Image 01"/>
-                            </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between"
+                         style="min-height:300px;">
+
+                        <!-- TEXTO -->
+                        <div style="flex:1; padding:40px;">
+                            <h3>New Arrivals</h3>
+                            <h2 class="display-4 fw-bold">Fresh Collection By Prime</h2>
+                            <p class="lead">
+                                In hac habitasse platea dictumst. Praesent cursus congue felis, nec pellentesque nulla ornare sed.
+                            </p>
+                            <a href="/shop" class="btn btn-primary mt-2 rounded-pill">
+                                Discover More
+                            </a>
                         </div>
+
+                        <!-- IMAGEN -->
+                        <div style="
+                            flex:1;
+                            height:300px;
+                            background-image:url('/web/image/theme_prime.s_cover_3_1');
+                            background-repeat:no-repeat;
+                            background-position:center;
+                            background-size:contain;">
+                        </div>
+
                     </div>
+
                 </div>
 
                 <!-- Slide #02 -->
                 <div class="carousel-item p-0" data-name="Slide">
-                    <div class="container-fluid px-0">
-                        <div class="row content g-0 align-items-center s_col_no_bgcolor s_nb_column_fixed">
-                            <div class="jumbotron rounded px-4 offset-lg-1 col-lg-5 pt32 pb32 o_cc o_cc1 border">
-                                <h3>Special Offer</h3>
-                                <h2 class="display-4 fw-bold">Exclusive Deals</h2>
-                                <p class="lead">
-                                    Get the best discounts on our premium products. Limited time only!
-                                </p>
-                                <a href="/shop" class="btn btn-primary mt-2 rounded-circle">Shop Now</a>
-                            </div>
-                            <div class="order-1 order-lg-2 offset-lg-1 col-lg-6">
-                                <img class="img img-fluid" src="/web/image/theme_prime.s_cover_3_2" alt="Cover Image 02"/>
-                            </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between"
+                         style="min-height:300px;">
+
+                        <!-- TEXTO -->
+                        <div style="flex:1; padding:40px;">
+                            <h3>Special Offer</h3>
+                            <h2 class="display-4 fw-bold">Exclusive Deals</h2>
+                            <p class="lead">
+                                Get the best discounts on our premium products. Limited time only!
+                            </p>
+                            <a href="/shop" class="btn btn-primary mt-2 rounded-pill">
+                                Shop Now
+                            </a>
                         </div>
+
+                        <!-- IMAGEN -->
+                        <div style="
+                            flex:1;
+                            height:300px;
+                            background-image:url('/web/image/theme_prime.s_cover_3_2');
+                            background-repeat:no-repeat;
+                            background-position:center;
+                            background-size:contain;">
+                        </div>
+
                     </div>
+
                 </div>
 
             </div>
@@ -74,4 +100,3 @@
     </section>
 </template>
 </odoo>
-    
