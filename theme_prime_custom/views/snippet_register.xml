@@ -31,7 +31,7 @@
         </xpath>
 
         <xpath expr="//t[@t-snippet='theme_prime.s_cover_4']" position="after">
-            <t t-snippet="theme_prime_custom.s_cover_custom" string="Cover - custom" group="theme_prime_cover">
+            <t t-snippet="theme_prime_custom.s_cover_3_carousel" string="Cover - custom" group="theme_prime_cover">
                 <keywords>clients, brands, logo, reference</keywords>
             </t>
         </xpath>
