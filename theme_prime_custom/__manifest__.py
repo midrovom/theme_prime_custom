@@ -15,6 +15,7 @@
         'views/snippet/advance/s_banner/s_banner_16.xml',
         'views/snippet/advance/s_banner/s_banner_17.xml',
         'views/snippet/advance/s_cover/s_cover_6.xml',
+        'views/snippet/advance/s_cover/s_cover_custom.xml',
         'views/snippet/advance/s_shop_offer/s_shop_offer_6.xml',
         'views/snippet/advance/s_shop_offer/s_shop_offer_7.xml',
         'views/snippet/advance/s_text/s_text.xml',

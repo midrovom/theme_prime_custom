@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="s_cover_3_carousel" name="Cover con Carousel">
+        <section class="s_cover_3 parallax s_parallax_is_fixed o_full_screen_height pt168 pb144 s_parallax_no_overflow_hidden" data-scroll-background-ratio="0">
+            <div id="myCarousel{{uniq}}" class="carousel slide" data-bs-ride="carousel">
+                
+                <!-- Items -->
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <span class="s_parallax_bg oe_img_bg o_bg_img_center" style="background-image: url('/web/image/theme_prime.s_cover_3_1'); background-position: 50% 0;"/>
+                        <div class="container tp-cover-container">
+                            <div class="row s_nb_column_fixed">
+                                <div class="jumbotron rounded pt32 pb32 col-lg-5" data-name="Box">
+                                    <h3>New Arrivals</h3>
+                                    <h2 class="display-4 fw-bold">Fresh Collection By Prime</h2>
+                                    <p class="lead"><font style="font-size: 20px;">In hac habitasse platea dictumst. Praesent cursus congue felis, nec pellentesque nulla ornare sed.</font></p>
+                                    <a href="/shop" class="btn btn-primary mt-2 rounded-circle">Discover More</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Aquí puedes añadir más <div class="carousel-item"> con otros covers -->
+                </div>
+
+                <!-- Controls -->
+                <button class="carousel-control-prev o_not_editable" contenteditable="false" t-attf-data-bs-target="#myCarousel{{uniq}}" data-bs-slide="prev" aria-label="Previous" title="Previous">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"/>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next o_not_editable" contenteditable="false" t-attf-data-bs-target="#myCarousel{{uniq}}" data-bs-slide="next" aria-label="Next" title="Next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"/>
+                    <span class="visually-hidden">Next</span>
+                </button>
+
+                <!-- Indicators -->
+                <div class="carousel-indicators o_not_editable">
+                    <button type="button" t-attf-data-bs-target="#myCarousel{{uniq}}" data-bs-slide-to="0" class="active"/>
+                    <button type="button" t-attf-data-bs-target="#myCarousel{{uniq}}" data-bs-slide-to="1"/>
+                </div>
+            </div>
+        </section>
+    </template>
+</odoo>
