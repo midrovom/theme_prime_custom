@@ -18,22 +18,29 @@
                         <div class="row g-0 align-items-center" style="min-height:300px;">
 
                             <!-- TEXTO -->
-                            <div class="col-12 col-lg-6 p-4">
-                                <div class="jumbotron rounded o_cc o_cc1 border p-4">
-                                    <h3>New Arrivals</h3>
-                                    <h2 class="display-4 fw-bold">Fresh Collection By Prime</h2>
-                                    <p class="lead">
+                            <div class="col-12 col-lg-6 p-4 o_editable">
+                                <div class="jumbotron rounded o_cc o_cc1 border p-4 oe_structure">
+                                    
+                                    <h3 class="o_default_snippet_text">New Arrivals</h3>
+                                    
+                                    <h2 class="display-4 fw-bold o_default_snippet_text">
+                                        Fresh Collection By Prime
+                                    </h2>
+                                    
+                                    <p class="lead o_default_snippet_text">
                                         In hac habitasse platea dictumst. Praesent cursus congue felis, nec pellentesque nulla ornare sed.
                                     </p>
+                                    
                                     <a href="/shop" class="btn btn-primary mt-2 rounded-pill">
                                         Discover More
                                     </a>
+
                                 </div>
                             </div>
 
                             <!-- IMAGEN -->
-                            <div class="col-12 col-lg-6 text-center">
-                                <img class="img-fluid"
+                            <div class="col-12 col-lg-6 text-center o_editable">
+                                <img class="img-fluid oe_img"
                                      style="max-height:300px; object-fit:contain;"
                                      src="/web/image/theme_prime.s_cover_3_1"
                                      alt="Cover Image 01"/>
@@ -51,22 +58,29 @@
                         <div class="row g-0 align-items-center" style="min-height:300px;">
 
                             <!-- TEXTO -->
-                            <div class="col-12 col-lg-6 p-4">
-                                <div class="jumbotron rounded o_cc o_cc1 border p-4">
-                                    <h3>Special Offer</h3>
-                                    <h2 class="display-4 fw-bold">Exclusive Deals</h2>
-                                    <p class="lead">
+                            <div class="col-12 col-lg-6 p-4 o_editable">
+                                <div class="jumbotron rounded o_cc o_cc1 border p-4 oe_structure">
+                                    
+                                    <h3 class="o_default_snippet_text">Special Offer</h3>
+                                    
+                                    <h2 class="display-4 fw-bold o_default_snippet_text">
+                                        Exclusive Deals
+                                    </h2>
+                                    
+                                    <p class="lead o_default_snippet_text">
                                         Get the best discounts on our premium products. Limited time only!
                                     </p>
+                                    
                                     <a href="/shop" class="btn btn-primary mt-2 rounded-pill">
                                         Shop Now
                                     </a>
+
                                 </div>
                             </div>
 
                             <!-- IMAGEN -->
-                            <div class="col-12 col-lg-6 text-center">
-                                <img class="img-fluid"
+                            <div class="col-12 col-lg-6 text-center o_editable">
+                                <img class="img-fluid oe_img"
                                      style="max-height:300px; object-fit:contain;"
                                      src="/web/image/theme_prime.s_cover_3_2"
                                      alt="Cover Image 02"/>
