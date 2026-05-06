@@ -315,7 +315,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:droggol_theme_common.selection__dr_snippet_records_collection__dr_res_model__product_attribute_value
 #: model_terms:ir.ui.view,arch_db:droggol_theme_common.dr_product_brand_values_view_form
 msgid "Brand"
-msgstr ""
+msgstr "Marca"
 
 #. module: droggol_theme_common
 #. odoo-javascript
@@ -337,7 +337,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:droggol_theme_common.dr_product_brand_values_view_search
 #: model_terms:ir.ui.view,arch_db:droggol_theme_common.dr_product_brand_values_view_tree
 msgid "Brands"
-msgstr ""
+msgstr "Marcas"
 
 #. module: droggol_theme_common
 #. odoo-javascript
@@ -396,7 +396,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:droggol_theme_common.field_dr_snippet_records_collection__category_ids
 #: model_terms:ir.ui.view,arch_db:droggol_theme_common.dr_search_report_view_search
 msgid "Category"
-msgstr ""
+msgstr "Categorias"
 
 #. module: droggol_theme_common
 #: model:ir.model.fields.selection,name:droggol_theme_common.selection__dr_search_report__clicked_type__category
@@ -1451,7 +1451,7 @@ msgstr ""
 #: code:addons/droggol_theme_common/models/website.py:0
 #: model:ir.model.fields,field_description:droggol_theme_common.field_dr_product_tags__dr_offer_ids
 msgid "Offers"
-msgstr ""
+msgstr "Ofertas"
 
 #. module: droggol_theme_common
 #: model:ir.model.fields.selection,name:droggol_theme_common.selection__website_menu__dr_menu_visible_on__desktop
@@ -1467,7 +1467,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/droggol_theme_common/models/website.py:0
 msgid "Orders"
-msgstr ""
+msgstr "Pedidos"
 
 #. module: droggol_theme_common
 #: model_terms:ir.ui.view,arch_db:droggol_theme_common.s_mega_menu_prime_1
