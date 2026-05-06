@@ -4754,12 +4754,12 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippets
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
 msgid "Products"
-msgstr ""
+msgstr "Productos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "Products Page"
-msgstr ""
+msgstr "Pagina de Productos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
