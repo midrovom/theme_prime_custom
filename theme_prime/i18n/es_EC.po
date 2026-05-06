@@ -1114,7 +1114,7 @@ msgstr "Cuenta"
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_2
 msgid "Account &amp; other info"
-msgstr ""
+msgstr "Cuenta &amp; otra información"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.component_account_info
@@ -1123,7 +1123,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_7
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_mobile_bottombar_component
 msgid "Account Info"
-msgstr ""
+msgstr "Información de la Cuenta"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -1135,12 +1135,12 @@ msgstr "Añadir"
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.xml:0
 msgid "Add New Rule"
-msgstr ""
+msgstr "Agregar nueva regla"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_13
 msgid "Add finishing touch to your outfit"
-msgstr ""
+msgstr "Agrega el toque final a tu atuendo"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.cart_sidebar
@@ -1148,7 +1148,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_product_quick_view
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_product_right_panel
 msgid "Add one"
-msgstr ""
+msgstr "Agregar uno"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_wishlist
