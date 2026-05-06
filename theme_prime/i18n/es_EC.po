@@ -610,7 +610,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_add_to_wishlist
 msgid "<i class=\"fa fa-share-alt me-2\" role=\"img\" aria-label=\"Share\"/>Share"
-msgstr ""
+msgstr "<i class=\"fa fa-share-alt me-2\" role=\"img\" aria-label=\"Share\"/>Compartir"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_options
@@ -1153,7 +1153,7 @@ msgstr "Agregar uno"
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_wishlist
 msgid "Add product to my cart but keep it in my wishlist"
-msgstr ""
+msgstr "Añadir el producto a mi carrito pero mantenerlo en mi lista de deseos"
 
 #. module: theme_prime
 #. odoo-javascript
