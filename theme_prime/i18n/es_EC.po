@@ -6666,7 +6666,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.cart_sidebar
 msgid "Your cart is empty!"
-msgstr ""
+msgstr "¡Tu carrito está vacío!"
 
 #. module: theme_prime
 #. odoo-javascript
