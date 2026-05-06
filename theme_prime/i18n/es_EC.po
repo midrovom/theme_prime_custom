@@ -6881,28 +6881,28 @@ msgstr ""
 #: code:addons/theme_prime/static/src/xml/frontend/hierarchical_category_templates.xml:0
 #: code:addons/theme_prime/static/src/xml/frontend/s_category.xml:0
 msgid "products"
-msgstr ""
+msgstr "productos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippets
 msgid "products, dynamic"
-msgstr ""
+msgstr "productos, dinámicos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "results"
-msgstr ""
+msgstr "resultados"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.xml:0
 msgid "set time"
-msgstr ""
+msgstr "establecer hora"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product
 msgid "sold in last"
-msgstr ""
+msgstr "vendido en los últimos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippets
