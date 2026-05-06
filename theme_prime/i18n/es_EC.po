@@ -3559,23 +3559,23 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_shop_offer_4
 msgid "Limited Collection"
-msgstr ""
+msgstr "Colección Limitada"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_heading_options
 msgid "Line Position"
-msgstr ""
+msgstr "Posición de la Línea"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_options
 msgid "Link"
-msgstr ""
+msgstr "Enlace"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/dialog/product_share_dialog.js:0
 msgid "Link copy failed due to permission denied!"
-msgstr ""
+msgstr "Error al copiar el enlace debido a permisos denegados"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -4334,17 +4334,17 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_5
 msgid "Payment"
-msgstr ""
+msgstr "Pago"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_pricing_4
 msgid "Per Month"
-msgstr ""
+msgstr "Por Mes"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_9
 msgid "Personal Care"
-msgstr ""
+msgstr "Cuidado Personal"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
@@ -4354,7 +4354,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_icon_block_6
 msgid "Phone Number"
-msgstr ""
+msgstr "Número de Teléfono"
 
 #. module: theme_prime
 #. odoo-javascript
