@@ -3631,13 +3631,13 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/mixins.js:0
 msgid "Log in"
-msgstr ""
+msgstr "Iniciar sesión"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/mixins.js:0
 msgid "Log in to place an order"
-msgstr ""
+msgstr "Inicia sesión para realizar un pedido"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.component_account_info
@@ -3646,7 +3646,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile_2
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_b2b_price_label
 msgid "Login"
-msgstr ""
+msgstr "Acceso"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
@@ -3661,7 +3661,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_8
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_9
 msgid "Logo of MyCompany"
-msgstr ""
+msgstr "Logotipo de Mi Empresa"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.page_sidebars
