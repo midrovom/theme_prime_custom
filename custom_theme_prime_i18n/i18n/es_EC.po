@@ -1164,12 +1164,12 @@ msgstr ""
 #: code:addons/theme_prime/static/src/xml/frontend/dynamic_snippets.xml:0
 #: code:addons/theme_prime/static/src/xml/listing_cards.xml:0
 msgid "Add to Cart"
-msgstr ""
+msgstr "Añadir al carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_item_actions
 msgid "Add to Compare"
-msgstr "Añadir al carrito"
+msgstr ""
 
 #. module: theme_prime
 #. odoo-javascript
