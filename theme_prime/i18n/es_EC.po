@@ -18,7 +18,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "\" category."
-msgstr ""
+msgstr "\" categoría."
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_testimonial_1
@@ -959,19 +959,19 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.all_brands
 msgid "<span>Brands</span>"
-msgstr ""
+msgstr "<span>Marcas</span>"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout_filters
 msgid "<span>Categories</span>"
-msgstr ""
+msgstr "<span>Categorías</span"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.selected_attributes
 msgid ""
 "<span>Clear Filters</span>\n"
 "                            <i class=\"dri dri-cross-l ms-1 tp-attribute-remove\"/>"
-msgstr ""
+msgstr "<span>Limpiar filtros</span>"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_testimonial_4
@@ -1371,7 +1371,7 @@ msgstr ""
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "Attributes"
-msgstr ""
+msgstr "Atributos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_testimonial_1
@@ -1702,7 +1702,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.all_brands
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
 msgid "Brands"
-msgstr ""
+msgstr "Marcas"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_pricing_3
@@ -1731,7 +1731,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "CATEGORY"
-msgstr ""
+msgstr "CATEGORÍA"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -2541,7 +2541,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile_2
 msgid "Explore All Categories"
-msgstr ""
+msgstr "Explorar todas las categorías"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_icon_block_3
@@ -3084,12 +3084,12 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_8
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_9
 msgid "Home"
-msgstr ""
+msgstr "Inicio"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.404
 msgid "Homepage"
-msgstr ""
+msgstr "Página principal"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_13
@@ -4291,22 +4291,22 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_6
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_7
 msgid "Order tracking"
-msgstr ""
+msgstr "Seguimiento de pedidos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_tabs
 msgid "Others"
-msgstr ""
+msgstr "Otros"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_heading_4
 msgid "Our Creative <font class=\"text-o-color-1\">Team</font>"
-msgstr ""
+msgstr "Nuestro <font class=\"text-o-color-1\">equipo</font> creativo"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_2
 msgid "Our Policy"
-msgstr ""
+msgstr "Nuestra política"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_2
@@ -4462,31 +4462,31 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "Price"
-msgstr ""
+msgstr "Precio"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "Price Filter"
-msgstr ""
+msgstr "Filtro de precio"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_mobile_bottombar_component
 msgid "Price:"
-msgstr ""
+msgstr "Precio:"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 msgid "Price: High to Low"
-msgstr ""
+msgstr "Precio: de mayor a menor"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 msgid "Price: Low to High"
-msgstr ""
+msgstr "Precio: de menor a mayor"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippets
@@ -4801,29 +4801,29 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_pricing_5
 msgid "Purchase"
-msgstr ""
+msgstr "Comprar"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_call_to_action_2
 msgid "Purchase Now"
-msgstr ""
+msgstr "Comprar ahora"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "QUICK VIEW"
-msgstr ""
+msgstr "Vista rápida"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_shop_offer_2
 msgid "Quality Product"
-msgstr ""
+msgstr "Producto de calidad"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_icon_block_11
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_2
 msgid "Quality Products"
-msgstr ""
+msgstr "Productos de calidad"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_cover_5
@@ -5024,22 +5024,22 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.404
 #: model_terms:theme.ir.ui.view,arch:theme_prime.component_account_info
 msgid "Search"
-msgstr ""
+msgstr "Buscar"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.all_brands
 msgid "Search brands..."
-msgstr ""
+msgstr "Buscar marcas..."
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_cover_5
 msgid "Search for products, brands and more ..."
-msgstr ""
+msgstr "Buscar productos, marcas y más..."
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.filter_attribute
 msgid "Search..."
-msgstr ""
+msgstr "Buscar..."
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_heading_options
@@ -5072,25 +5072,25 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/searchbar/searchbar.xml:0
 msgid "See all products"
-msgstr ""
+msgstr "Ver todos los productos"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/xml/frontend/dynamic_snippets.xml:0
 msgid "See more"
-msgstr ""
+msgstr "Ver más"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/dialog/pwa_prompt_dialog.xml:0
 msgid "Select Add to Home Screen"
-msgstr ""
+msgstr "Selecciona Añadir a la pantalla de inicio"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "Select any template and modify as per your need."
-msgstr ""
+msgstr "Selecciona cualquier plantilla y modifícala según tus necesidades."
 
 #. module: theme_prime
 #. odoo-javascript
@@ -6306,19 +6306,19 @@ msgstr "Ver Productos"
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_item_actions
 msgid "View Similar Products"
-msgstr ""
+msgstr "Ver productos similares"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_style_4
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_style_9
 msgid "View Wishlist"
-msgstr ""
+msgstr "Ver lista de deseos"
 
 #. module: theme_prime
 #. odoo-python
 #: code:addons/theme_prime/controllers/main.py:0
 msgid "View all products with"
-msgstr ""
+msgstr "Ver todos los productos con"
 
 #. module: theme_prime
 #. odoo-python
@@ -6386,38 +6386,38 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_coming_soon_1
 msgid "WE ARE LAUNCHING SOON!"
-msgstr ""
+msgstr "¡PRONTO ESTAREMOS LANZANDO!"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "WISHLIST"
-msgstr ""
+msgstr "LISTA DE DESEOS"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_heading_options
 msgid "Warning"
-msgstr ""
+msgstr "Advertencia"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
 msgid "Watch"
-msgstr ""
+msgstr "Reloj"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
 msgid "We Accept"
-msgstr ""
+msgstr "Aceptamos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_2
 msgid "We accept"
-msgstr ""
+msgstr "Aceptamos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_heading_3
 msgid "We add new products every day. Explore our great range of products."
-msgstr ""
+msgstr "Agregamos nuevos productos cada día. Explora nuestra gran variedad de productos."
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_6
@@ -6557,12 +6557,12 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.component_account_info
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_10
 msgid "Wishlist"
-msgstr ""
+msgstr "Lista de deseos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_shop_offer_2
 msgid "Within 48 hours get free delivery"
-msgstr ""
+msgstr "Recibe entrega gratuita dentro de 48 horas"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_4
@@ -6661,7 +6661,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_6
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_7
 msgid "Your account"
-msgstr ""
+msgstr "Tu cuenta"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.cart_sidebar
@@ -6672,13 +6672,13 @@ msgstr "¡Tu carrito está vacío!"
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/searchbar/searchbar.xml:0
 msgid "Your search:"
-msgstr ""
+msgstr "Tu búsqueda:"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 msgid "add Products From Child Categories"
-msgstr ""
+msgstr "agregar productos de categorías secundarias"
 
 #. module: theme_prime
 #. odoo-javascript
