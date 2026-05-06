@@ -5153,25 +5153,25 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_9
 msgid "Shirts, Jeans &amp; Waistcoats"
-msgstr ""
+msgstr "Camisas, Jeans y Chalecos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "Shop"
-msgstr ""
+msgstr "Tienda"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/frontend/dynamic_snippets.js:0
 msgid "Shop By Brands"
-msgstr ""
+msgstr "Comprar por Marcas"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/frontend/dynamic_snippets.js:0
 msgid "Shop By Categories"
-msgstr ""
+msgstr "Comprar por Categorías"
 
 #. module: theme_prime
 #. odoo-javascript
