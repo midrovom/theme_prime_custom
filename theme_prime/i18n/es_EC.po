@@ -782,12 +782,12 @@ msgstr "<span class="mx-1">/</span> Registrarse"
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.dynamic_filter_template_blog_post_prime_layout_1
 msgid "<span class=\"mx-1\">Posted by</span>"
-msgstr ""
+msgstr "<span class="mx-1">Publicado por</span>"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "<span class=\"mx-2 o_wsale_ppr_by\">by</span>"
-msgstr ""
+msgstr "<span class="mx-2 o_wsale_ppr_by">por</span>"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.dynamic_filter_template_blog_post_prime_layout_1
