@@ -4090,42 +4090,42 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/snippet_root_widget.js:0
 msgid "No products found!"
-msgstr ""
+msgstr "No se encontraron productos!"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/record_selection.xml:0
 msgid "No records are selected"
-msgstr ""
+msgstr "No se han seleccionado registros"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.xml:0
 msgid "No results found for"
-msgstr ""
+msgstr "No se encontraron resultados para"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/searchbar/searchbar.xml:0
 msgid "No results found for '"
-msgstr ""
+msgstr "No se encontraron resultados para '"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.xml:0
 msgid "No rules are added."
-msgstr ""
+msgstr "No se han añadido reglas."
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.similar_products_sidebar
 msgid "No similar products found!"
-msgstr ""
+msgstr "¡No se encontraron productos similares!"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/ui_component.xml:0
 msgid "No specific mobile configuration available for this snippet"
-msgstr ""
+msgstr "No hay una configuración móvil específica disponible para este fragmento"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -4137,14 +4137,14 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 msgid "No. of Products"
-msgstr ""
+msgstr "No. de Productos"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 msgid "No. of items"
-msgstr ""
+msgstr "No. de artículos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
