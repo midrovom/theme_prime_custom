@@ -1821,53 +1821,53 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_6
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_7
 msgid "Categories"
-msgstr ""
+msgstr "Categorías"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippets
 msgid "Categories & Brands"
-msgstr ""
+msgstr "Categorías y Marcas"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "Categories - Info"
-msgstr ""
+msgstr "Categorías - Información"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "Categories Listing"
-msgstr ""
+msgstr "Listado de Categorías"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/record_selection.js:0
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "Category"
-msgstr ""
+msgstr "Categoría"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "Category Best Seller"
-msgstr ""
+msgstr "Categoría Más Vendida"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "Category Discounted Best Seller"
-msgstr ""
+msgstr "Categoría Más Vendida con Descuento"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "Category Discounted Products"
-msgstr ""
+msgstr "Categoría de Productos con Descuento"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "Category New Arrival"
-msgstr ""
+msgstr "Categoría de Nuevas Llegadas"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.page_sidebars
@@ -1878,7 +1878,7 @@ msgstr "Cambiar contraseña"
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/mixins.js:0
 msgid "Check again later."
-msgstr ""
+msgstr "Vuelve a intentarlo más tarde."
 
 #. module: theme_prime
 #. odoo-javascript
