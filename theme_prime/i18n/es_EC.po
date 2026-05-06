@@ -161,7 +161,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/searchbar/searchbar.xml:0
 msgid "'. Showing results for '"
-msgstr "Mostrando resultados para"
+msgstr "'. Mostrando resultados para '"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -5403,44 +5403,44 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "Show/hide logo"
-msgstr ""
+msgstr "Mostrar/Ocultar logotipo"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "Show/hide sign in button"
-msgstr ""
+msgstr "Mostrar/Ocultar botón de inicio de sesión"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "Showing"
-msgstr ""
+msgstr "Mostrando"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/mixins.js:0
 msgid "Sign Up"
-msgstr ""
+msgstr "Registrarse"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_subscribe_3
 msgid ""
 "Sign up for all the news about our latest arrivals and get an exclusive "
 "early access shopping."
-msgstr ""
+msgstr "Regístrate para recibir todas las noticias sobre nuestras últimas novedades y obtén acceso exclusivo anticipado a las compras."
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/sidebar/sidebar.js:0
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product
 msgid "Similar Products"
-msgstr ""
+msgstr "Productos Similares"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 msgid "Slider"
-msgstr ""
+msgstr "Carrusel"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
@@ -5470,37 +5470,37 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/frontend/dynamic_snippets.js:0
 msgid "Sorry, We couldn't find any brands right now"
-msgstr ""
+msgstr "Lo sentimos, no pudimos encontrar ninguna marca en este momento"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/snippet_root_widget.js:0
 msgid "Sorry, We couldn't find any products"
-msgstr ""
+msgstr "Lo sentimos, no pudimos encontrar ningún producto"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/mixins.js:0
 msgid "Sorry, We couldn't find any products under this category"
-msgstr ""
+msgstr "Lo sentimos, no pudimos encontrar productos en esta categoría"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/frontend/dynamic_snippets.js:0
 msgid "Sorry, this product is not available right now"
-msgstr ""
+msgstr "Lo sentimos, este producto no está disponible en este momento"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "Sort By"
-msgstr ""
+msgstr "Ordenar por"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "Sort by"
-msgstr ""
+msgstr "Ordenar por"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
