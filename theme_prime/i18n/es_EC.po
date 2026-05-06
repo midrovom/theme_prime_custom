@@ -177,7 +177,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.cart_sidebar
 msgid "(Clear Cart)"
-msgstr ""
+msgstr "Limpiar Carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_6
@@ -1109,7 +1109,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.component_account_info
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_mobile_bottombar_component
 msgid "Account"
-msgstr ""
+msgstr "Cuenta"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_2
@@ -1345,7 +1345,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.cart_sidebar
 msgid "Apply promo code"
-msgstr ""
+msgstr "Aplicar código promocional"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_coming_soon_1
@@ -1872,7 +1872,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.page_sidebars
 msgid "Change Password"
-msgstr ""
+msgstr "Cambiar contraseña"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -3710,7 +3710,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.page_sidebars
 msgid "Manage Payment Methods"
-msgstr ""
+msgstr "Gestionar métodos de pago"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -3896,12 +3896,12 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_style_4
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_style_9
 msgid "My Cart"
-msgstr ""
+msgstr "Mi Carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.page_sidebars
 msgid "My Orders"
-msgstr ""
+msgstr "Mis pedidos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.page_sidebars
@@ -3911,12 +3911,12 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_style_4
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_style_9
 msgid "My Wishlist"
-msgstr ""
+msgstr "Lista de deseos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_2
 msgid "My account"
-msgstr ""
+msgstr "Mi cuenta"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
@@ -5197,7 +5197,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_shop_offer_1
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_shop_offer_4
 msgid "Shop Now"
-msgstr ""
+msgstr "Comprar ahora"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippets
@@ -5891,7 +5891,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.cart_sidebar
 msgid "Taxes"
-msgstr ""
+msgstr "Impuestos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_3
@@ -6786,7 +6786,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_wishlist
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "items"
-msgstr ""
+msgstr "Artículos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
