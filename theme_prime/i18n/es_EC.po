@@ -182,12 +182,12 @@ msgstr "(Vaciar Carrito)"
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_6
 msgid "+ Explore Now"
-msgstr ""
+msgstr "+ Explora Ahora"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_7
 msgid "+ Shop Now"
-msgstr ""
+msgstr "+ Compra Ahora"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
@@ -6791,19 +6791,19 @@ msgstr "Artículos"
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "items found."
-msgstr ""
+msgstr "artículos encontrados"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/dialog/cart_confirmation_dialog.xml:0
 msgid "items in your cart."
-msgstr ""
+msgstr "artículos en tu carrito."
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/record_selection.xml:0
 msgid "items."
-msgstr ""
+msgstr "artículos."
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_coming_soon_1
