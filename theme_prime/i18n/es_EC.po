@@ -4073,18 +4073,18 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/frontend/dynamic_snippets.js:0
 msgid "No categories found!"
-msgstr ""
+msgstr "¡No se encontraron categorías!"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "No product defined in category"
-msgstr ""
+msgstr "Ningún producto definido en la categoría"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/frontend/dynamic_snippets.js:0
 msgid "No product found"
-msgstr ""
+msgstr "No se encontró ningún producto"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -4155,7 +4155,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_tp_countdown_options
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "None"
-msgstr ""
+msgstr "Ninguno"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_heading_options
@@ -4165,68 +4165,68 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_subscribe_3
 msgid "OR"
-msgstr ""
+msgstr "O"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_label
 msgid "OUT OF STOCK"
-msgstr ""
+msgstr "AGOTADO"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_options
 msgid "On Click"
-msgstr ""
+msgstr "Al Hacer Clic"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 #: code:addons/theme_prime/static/src/js/frontend/dynamic_snippets.js:0
 msgid "On Sale"
-msgstr ""
+msgstr "En Oferta"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_8
 msgid "On order above $100"
-msgstr ""
+msgstr "En pedidos superiores a $100"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_8
 msgid "On order above $60"
-msgstr ""
+msgstr "En pedidos superiores a $60"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_8
 msgid "On order above $80"
-msgstr ""
+msgstr "En pedidos superiores a $80"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_info_block_6
 msgid "On the Ear"
-msgstr ""
+msgstr "Sobre la Oreja"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 msgid "Only Direct Child Categories"
-msgstr ""
+msgstr "Solo Categorías Hijas Directas"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_mobile_bottombar_component
 msgid "Open menu"
-msgstr ""
+msgstr "Abrir menú"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.xml:0
 msgid "Operators :"
-msgstr ""
+msgstr "Operadores "
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.xml:0
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_product_right_panel
 msgid "Options"
-msgstr ""
+msgstr "Opciones"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_icon_block_1
