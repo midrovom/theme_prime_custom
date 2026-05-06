@@ -6831,32 +6831,32 @@ msgstr ""
 #: code:addons/theme_prime/static/src/components/search_input.xml:0
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "of"
-msgstr ""
+msgstr "de"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippets
 msgid "offer"
-msgstr ""
+msgstr "oferta"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_tabs
 msgid "or"
-msgstr ""
+msgstr "o"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_call_to_action_2
 msgid "or give us a call"
-msgstr ""
+msgstr "o llámanos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_svg_404
 msgid "page not found"
-msgstr ""
+msgstr "página no encontrada"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product
 msgid "people are viewing this right now"
-msgstr ""
+msgstr "personas están viendo esto en este momento"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_pricing_5
