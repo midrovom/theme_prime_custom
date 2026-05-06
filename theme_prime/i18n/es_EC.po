@@ -756,7 +756,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_tabs
 msgid "<span class=\"fa fa-file-text-o me-1\"/> Description"
-msgstr ""
+msgstr "<span class="fa fa-file-text-o me-1"/> Descripción"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_team_2
@@ -766,18 +766,18 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_tabs
 msgid "<span class=\"fa fa-sliders me-1\"/> Specifications"
-msgstr ""
+msgstr "<span class=\"fa fa-sliders me-1\"/> Especificaciones"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "<span class=\"h6 me-1\">Pricelist :</span>"
-msgstr ""
+msgstr "<span class="h6 me-1">Lista de Precios :</span>"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile_2
 msgid "<span class=\"mx-1\">/</span> Signup"
-msgstr ""
+msgstr "<span class="mx-1">/</span> Registrarse"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.dynamic_filter_template_blog_post_prime_layout_1
@@ -994,7 +994,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_cover_4
 msgid "<span>Full battery in no time</span>"
-msgstr ""
+msgstr "<span>Batería completa en poco tiempo</span>"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_testimonial_1
@@ -1005,12 +1005,12 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_cover_4
 msgid "<span>More content</span>"
-msgstr ""
+msgstr "Más contenido"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_cover_4
 msgid "<span>Powerful Performance</span>"
-msgstr ""
+msgstr "<span>Rendimiento Potente</span>"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout_filters
@@ -2370,24 +2370,24 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_5
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_7
 msgid "Discover"
-msgstr ""
+msgstr "Descubrir"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_cover_3
 msgid "Discover More"
-msgstr ""
+msgstr "Descubrir Más"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_13
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_5
 msgid "Discover Now"
-msgstr ""
+msgstr "Descubrir Ahora"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/dialog/pwa_prompt_dialog.xml:0
 msgid "Dismiss"
-msgstr ""
+msgstr "Cerrar "
 
 #. module: theme_prime
 #. odoo-javascript
@@ -3519,25 +3519,25 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "Large"
-msgstr ""
+msgstr "Grande"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/ui_component.xml:0
 msgid "Layout"
-msgstr ""
+msgstr "Diseño"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_icon_block_3
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_icon_block_7
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_icon_block_8
 msgid "Learn More"
-msgstr ""
+msgstr "Aprender Más"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_banner_14
 msgid "Learn more"
-msgstr ""
+msgstr "Más Información"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_options
@@ -3603,24 +3603,24 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "List View"
-msgstr ""
+msgstr "Vista en Lista"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "Load more"
-msgstr ""
+msgstr "Cargar más"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/sidebar/sidebar.js:0
 msgid "Loading Categories..."
-msgstr ""
+msgstr "Cargando Categorías..."
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/xml/website_sale.xml:0
 msgid "Loading..."
-msgstr ""
+msgstr "Cargando..."
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_2
@@ -4056,12 +4056,12 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_icon_block_9
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_2
 msgid "No Questions Asked"
-msgstr ""
+msgstr "Sin Preguntas"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_tabs
 msgid "No Specifications"
-msgstr ""
+msgstr "Sin Especificaciones"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -4865,27 +4865,27 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "RATING"
-msgstr ""
+msgstr "CALIFICACIÓN"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_cover_2
 msgid "READ MORE"
-msgstr ""
+msgstr "LEER MÁS"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.pwa_offline_page
 msgid "RELOAD"
-msgstr ""
+msgstr "RECARGAR"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "RESET"
-msgstr ""
+msgstr "REINICIAR"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_shop_offer_2
 msgid "Receive 100% genuine products"
-msgstr ""
+msgstr "Recibe productos 100% genuinos"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -6283,25 +6283,25 @@ msgstr ""
 #: code:addons/theme_prime/static/src/xml/cards.xml:0
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "View"
-msgstr ""
+msgstr "Ver"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/dialog/cart_confirmation_dialog.xml:0
 msgid "View Cart"
-msgstr ""
+msgstr "Ver Carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_pricing_4
 msgid "View More"
-msgstr ""
+msgstr "Ver Más"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/xml/frontend/dynamic_snippets.xml:0
 #: code:addons/theme_prime/static/src/xml/frontend/s_category.xml:0
 msgid "View Products"
-msgstr ""
+msgstr "Ver Productos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_item_actions
