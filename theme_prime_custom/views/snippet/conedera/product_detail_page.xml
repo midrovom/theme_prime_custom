@@ -4,6 +4,11 @@
         <xpath expr="//li[@t-if='product_documents_ids']/a/span" position="replace">
             <span class="fa fa-file-pdf-o me-1"/> Descargar Ficha Técnica
         </xpath>
+
+        <xpath expr="//a[@href='#tp-product-specification-tab']/span" position="replace">
+            <span class="fa fa-sliders me-1"/> Especificaciones
+        </xpath>
+        
     </template>
 
     <!--Apartado para ocultar sección de item found-->
