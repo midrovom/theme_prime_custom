@@ -6649,7 +6649,7 @@ msgstr ""
 #: code:addons/theme_prime/static/src/js/sidebar/sidebar.js:0
 #: model_terms:theme.ir.ui.view,arch:theme_prime.cart_sidebar
 msgid "Your Cart"
-msgstr ""
+msgstr "Tu carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_2
