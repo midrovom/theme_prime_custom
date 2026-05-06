@@ -4928,22 +4928,22 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.xml:0
 msgid "Remove Background"
-msgstr ""
+msgstr "Quitar Fondo"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.cart_sidebar
 msgid "Remove from Cart"
-msgstr ""
+msgstr "Eliminar del Carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_compare
 msgid "Remove from comparison"
-msgstr ""
+msgstr "Eliminar de la Comparación"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_wishlist
 msgid "Remove from wishlist"
-msgstr ""
+msgstr "Eliminar de la Lista de Deseos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.cart_sidebar
@@ -4951,23 +4951,23 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_product_quick_view
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_product_right_panel
 msgid "Remove one"
-msgstr ""
+msgstr "Eliminar uno"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.404
 msgid "Return to homepage"
-msgstr ""
+msgstr "Volver a la Página Principal"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.d_rating_widget_stars_static
 msgid "Reviews)"
-msgstr ""
+msgstr "Reseñas)"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/dialog.xml:0
 msgid "SAVE"
-msgstr ""
+msgstr "GUARDAR"
 
 #. module: theme_prime
 #. odoo-javascript
