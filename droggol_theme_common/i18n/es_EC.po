@@ -1037,7 +1037,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/droggol_theme_common/models/website.py:0
 msgid "Home"
-msgstr ""
+msgstr "Inicio"
 
 #. module: droggol_theme_common
 #: model:ir.model.fields,field_description:droggol_theme_common.field_dr_category_synonyms__id
@@ -2575,7 +2575,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/droggol_theme_common/models/website.py:0
 msgid "Wishlist"
-msgstr ""
+msgstr "Lista de deseos"
 
 #. module: droggol_theme_common
 #. odoo-javascript
