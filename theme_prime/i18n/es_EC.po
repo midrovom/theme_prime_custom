@@ -1196,13 +1196,13 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/mixins.js:0
 msgid "Added to your cart."
-msgstr ""
+msgstr "Añadido a tu carrito"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/product_root_widget.js:0
 msgid "Added to your wishlist."
-msgstr ""
+msgstr "Añadido a tu lista de deseos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_icon_block_6
@@ -2481,7 +2481,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.page_sidebars
 msgid "Edit Profile"
-msgstr ""
+msgstr "Editar perfil"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
@@ -3886,7 +3886,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_style_4
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_style_9
 msgid "My Account"
-msgstr ""
+msgstr "Mi cuenta"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.component_account_info
