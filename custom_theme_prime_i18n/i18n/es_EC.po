@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-06 14:59+0000\n"
-"PO-Revision-Date: 2026-05-06 14:59+0000\n"
+"POT-Creation-Date: 2026-05-06 15:18+0000\n"
+"PO-Revision-Date: 2026-05-06 15:18+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -1063,7 +1063,7 @@ msgstr ""
 #: code:addons/theme_prime/static/src/xml/cards.xml:0
 #: code:addons/theme_prime/static/src/xml/frontend/2_col_deal.xml:0
 msgid "ADD TO CART"
-msgstr ""
+msgstr "Añadir al carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_10
@@ -1129,7 +1129,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/dialog/pwa_prompt_dialog.xml:0
 msgid "Add"
-msgstr ""
+msgstr "Añadir"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -1169,7 +1169,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_item_actions
 msgid "Add to Compare"
-msgstr ""
+msgstr "Añadir al carrito"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -1196,7 +1196,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/mixins.js:0
 msgid "Added to your cart."
-msgstr "Añadir al carrito"
+msgstr ""
 
 #. module: theme_prime
 #. odoo-javascript
