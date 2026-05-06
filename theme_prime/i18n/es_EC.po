@@ -1737,13 +1737,13 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/dialog.xml:0
 msgid "CLOSE"
-msgstr ""
+msgstr "CERRAR"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 msgid "COMPARE"
-msgstr ""
+msgstr "COMPARAR"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_call_to_action_5
@@ -4712,31 +4712,31 @@ msgstr "Producto"
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_10
 msgid "Product Compare"
-msgstr ""
+msgstr "Comparar Productos"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.js:0
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 msgid "Product Listing"
-msgstr ""
+msgstr "Listado de Productos"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_variant_selector_dialog
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_product_quick_view
 msgid "Product Name"
-msgstr ""
+msgstr "Nombre del Producto"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/ui_component.js:0
 msgid "Product Per Row"
-msgstr ""
+msgstr "Productos por Fila"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
 msgid "Product Tags Filter"
-msgstr ""
+msgstr "Filtro por Etiquetas de Producto"
 
 #. module: theme_prime
 #. odoo-javascript
