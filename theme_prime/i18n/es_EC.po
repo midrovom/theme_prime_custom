@@ -441,7 +441,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_product_quick_view
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_product_right_panel
 msgid "<i class=\"dri dri-cart me-1\"/> Add to Cart"
-msgstr ""
+msgstr "<i class=\"dri dri-cart me-1\"/> Añadir al carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_options
@@ -454,19 +454,19 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_item_list_1
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_mobile_bottombar_component
 msgid "<i class=\"dri dri-cart\"/> Add to Cart"
-msgstr ""
+msgstr "<i class=\"dri dri-cart me-1\"/> Añadir al carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_compare
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_wishlist
 msgid "<i class=\"dri dri-cart\"/> Add to cart"
-msgstr ""
+msgstr "<i class=\"dri dri-cart\"/> Añadir al carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile_2
 msgid "<i class=\"dri dri-user me-1\"/> My Account"
-msgstr ""
+msgstr "<i class=\"dri dri-user me-1\"/> Mi Cuenta"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product_item_actions
@@ -1015,7 +1015,7 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout_filters
 msgid "<span>Price</span>"
-msgstr ""
+msgstr "Precio"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout_filters
@@ -1063,7 +1063,7 @@ msgstr ""
 #: code:addons/theme_prime/static/src/xml/cards.xml:0
 #: code:addons/theme_prime/static/src/xml/frontend/2_col_deal.xml:0
 msgid "ADD TO CART"
-msgstr "Añadir al carrito"
+msgstr "AÑADIR AL CARRITO"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_10
@@ -1884,7 +1884,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/core/mixins.js:0
 msgid "Checkout"
-msgstr ""
+msgstr "Verificar"
 
 #. module: theme_prime
 #. odoo-javascript
@@ -2118,19 +2118,19 @@ msgstr ""
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.dynamic_filter_template_blog_post_prime_layout_1
 msgid "Continue Reading"
-msgstr ""
+msgstr "Seguir leyendo"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/dialog/cart_confirmation_dialog.xml:0
 msgid "Continue Shopping"
-msgstr ""
+msgstr "Seguir comprando"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/dialog/product_share_dialog.js:0
 msgid "Copy Link"
-msgstr ""
+msgstr "Copiar enlace"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_1
@@ -3668,7 +3668,7 @@ msgstr ""
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile_2
 msgid "Logout"
-msgstr ""
+msgstr "cerrar sesión"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.s_heading_options
