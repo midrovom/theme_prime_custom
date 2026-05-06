@@ -37,7 +37,6 @@
 
         # version mobil advance / conedera
         'views/header_mobil.xml',
-        # 'views/shop_layout.xml',
     ],
     'assets': {
         'web.assets_frontend': [
