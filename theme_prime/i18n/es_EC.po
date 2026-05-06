@@ -6113,18 +6113,18 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/xml/cards.xml:0
 msgid "To cart"
-msgstr ""
+msgstr "Al carrito"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_header_mobile_2
 msgid "Toggle navigation"
-msgstr ""
+msgstr "Alternar navegación"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_options
 msgid "Top"
-msgstr ""
+msgstr "Arriba"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.snippet_options
