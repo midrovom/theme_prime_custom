@@ -578,7 +578,8 @@ msgstr ""
 msgid ""
 "<i class=\"fa fa-filter text-primary\"/> <span class=\"text-body\"> Filters "
 "</span>"
-msgstr ""
+msgstr "<i class=\"fa fa-filter text-primary\"/> <span class=\"text-body\"> Filtros "
+"</span>"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.tp_options
@@ -727,11 +728,13 @@ msgid ""
 "filter\"/> </span> <strong class=\"d-inline-block ps-1 pe-2\">Show "
 "Filters</strong>"
 msgstr ""
+"<span class=\"d-inline-block text-bg-primary px-2 py-1\"><i class=\"fa fa-"
+"filter\"/> </span> <strong class=\"d-inline-block ps-1 pe-2\">Mostrar filtros</strong>"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.shop_layout
 msgid "<span class=\"d-none d-lg-inline h6 me-1\">Sort By :</span>"
-msgstr ""
+msgstr "<span class=\"d-none d-lg-inline h6 me-1\">Ordenar por :</span>"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.product
@@ -2643,13 +2646,13 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/search_input.xml:0
 msgid "Field :"
-msgstr ""
+msgstr "Campos"
 
 #. module: theme_prime
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/js/website_sale.js:0
 msgid "Filters"
-msgstr ""
+msgstr "Filtros"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_10
