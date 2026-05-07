@@ -40,6 +40,7 @@
         #Advance/Conedera
         'views/product_attribute_view.xml',
         'views/website_search_inherit.xml',
+        'views/website_config.xml',
 
     ],
     'assets': {
