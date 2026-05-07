@@ -2,8 +2,9 @@
 <odoo>
     <template id="s_cover_3_carousel" name="Cover con Carousel">
         <section class="s_cover_3 o_colored_level pt32 pb32" data-snippet="s_carousel" data-name="Carousel">
-            <div id="myCarouselTest" class="carousel slide s_carousel tp-custom-carousel" data-bs-ride="carousel"
-                 data-bs-interval="8000" so_content_addition_selector=".carousel-inner">
+            <t t-set="uniq" t-value="datetime.datetime.now().microsecond"/>
+            <div t-attf-id="myCarousel{{uniq}}" class="tp-custom-carousel s_carousel s_carousel_rounded carousel slide" data-bs-interval="10000">
+                <!-- Content -->
                 <div class="carousel-inner">
                     <div class="carousel-item active p-0" data-name="Slide">
                         <div class="container-fluid px-0">
