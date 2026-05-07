@@ -13,10 +13,10 @@
                             <div class="col-12 col-lg-6 p-4 o_editable">
                                 <div class="jumbotron rounded o_cc o_cc1 border p-4 oe_structure">
                                     <h3 class="o_default_snippet_text">New Arrivals</h3>
-                                    <h2 class="display-4 fw-bold o_default_snippet_text"> Fresh Collection By Prime </h2>
-                                    <p class="lead o_default_snippet_text">
-                                        In hac habitasse platea dictumst. Praesent cursus congue felis, nec pellentesque nulla ornare sed.
-                                    </p>
+                                            <h2 class="display-4 fw-bold o_default_snippet_text"> Fresh Collection By Prime </h2>
+                                        <p class="lead o_default_snippet_text">
+                                            In hac habitasse platea dictumst. Praesent cursus congue felis, nec pellentesque nulla ornare sed.
+                                        </p>
                                     <a href="/shop" class="btn btn-primary mt-2 rounded-pill">Discover More</a>
 
                                 </div>
