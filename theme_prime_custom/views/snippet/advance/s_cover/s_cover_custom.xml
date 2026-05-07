@@ -3,7 +3,7 @@
     <template id="s_cover_3_carousel" name="Cover - 1">
         <section class="s_cover_1">
             <t t-set="uniq" t-value="datetime.datetime.now().microsecond"/>
-            <div t-attf-id="myCarousel{{uniq}}" class="tp-custom-carousel s_carousel s_carousel_rounded carousel slide" data-bs-interval="10000">
+            <div t-attf-id="myCarousel{{uniq}}" class="tp-custom-carousel s_carousel s_carousel_rounded carousel slide" data-bs-ride="carousel" data-bs-interval="10000">
                 <!-- Content -->
                     <div class="carousel-inner">
                         <div class="carousel-item active p-0" data-name="Slide">
