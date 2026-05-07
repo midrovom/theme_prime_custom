@@ -35,13 +35,13 @@
             <div class="accordion mt-3" id="accordionProductDescription">
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingDescription">
-                        <button class="accordion-button collapsed titulo-naranja" type="button"
+                        <button class="accordion-button titulo-naranja" type="button"
                                 data-bs-toggle="collapse" data-bs-target="#collapseDescription"
-                                aria-expanded="false" aria-controls="collapseDescription">
+                                aria-expanded="true" aria-controls="collapseDescription">
                             Descripción del producto
                         </button>
                     </h2>
-                    <div id="collapseDescription" class="accordion-collapse collapse"
+                    <div id="collapseDescription" class="accordion-collapse collapse show"
                         aria-labelledby="headingDescription" data-bs-parent="#accordionProductDescription">
                         <div class="accordion-body">
                             <div t-field="product.description_ecommerce"/>
@@ -53,12 +53,14 @@
                 <div class="accordion mt-3" id="accordionCustomAttributes">
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingCustomAttrs">
-                            <button class="accordion-button collapsed titulo-naranja" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCustomAttrs" >
+                            <button class="accordion-button titulo-naranja" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#collapseCustomAttrs"
+                                    aria-expanded="true" aria-controls="collapseCustomAttrs">
                                 Características del producto
                             </button>
                         </h2>
                         <div id="collapseCustomAttrs"
-                            class="accordion-collapse collapse"
+                            class="accordion-collapse collapse show"
                             data-bs-parent="#accordionCustomAttributes">
                             <div class="accordion-body">
                                 <div class="row">
