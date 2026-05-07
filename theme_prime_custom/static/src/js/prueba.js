@@ -1,52 +1,78 @@
-/** JS para agregar dinámicamente slides a un carousel en Odoo **/
-odoo.define('theme_prime_custom.carousel_extend', function (require) {
-    "use strict";
+odoo.define('theme_prime_custom.carousel_options', function (require) {
+    'use strict';
 
-    const publicWidget = require('web.public.widget');
+    const options = require('web_editor.snippets.options');
 
-    publicWidget.registry.CarouselExtend = publicWidget.Widget.extend({
-        selector: '.tp-custom-carousel',   
-        events: {
-            'click .add-slide-btn': '_onAddSlide', 
-        },
+    options.registry.tp_custom_carousel = options.Class.extend({
 
         /**
-         * Agregar un nuevo slide dinámicamente
+         * Agregar Slide
          */
-        _onAddSlide: function (ev) {
-            ev.preventDefault();
-            const $carousel = this.$el;
+        async addSlide(previewMode, widgetValue, params) {
+
+            const $carousel = this.$target;
             const $inner = $carousel.find('.carousel-inner');
             const $indicators = $carousel.find('.carousel-indicators');
 
-            // contar cuántos slides hay
             const index = $inner.find('.carousel-item').length;
 
-            // crear nuevo slide
-            const $newSlide = $(`
-                <div class="carousel-item p-0" data-name="Slide">
+            const slide = `
+                <div class="carousel-item p-0"
+                     data-name="Slide">
+
                     <div class="container-fluid px-0">
-                        <div class="row content g-0 align-items-center">
-                            <div class="jumbotron rounded px-4 col-lg-5 pt32 pb32">
-                                <h3>Nuevo Slide ${index+1}</h3>
-                                <h2 class="display-4 fw-bold">Título dinámico</h2>
-                                <p class="lead">Este slide fue agregado con JS.</p>
-                                <a href="/shop" class="btn btn-primary mt-2">Ver más</a>
+
+                        <div class="row g-0 align-items-center"
+                             style="min-height:300px;">
+
+                            <div class="col-12 col-lg-6 p-4">
+
+                                <div class="jumbotron rounded border p-4">
+
+                                    <h3>
+                                        Nuevo Slide ${index + 1}
+                                    </h3>
+
+                                    <h2 class="display-4 fw-bold">
+                                        Título dinámico
+                                    </h2>
+
+                                    <p class="lead">
+                                        Este slide fue agregado dinámicamente.
+                                    </p>
+
+                                    <a href="/shop"
+                                       class="btn btn-primary mt-2">
+                                        Ver más
+                                    </a>
+
+                                </div>
+
                             </div>
-                            <div class="col-lg-6">
-                                <img class="img img-fluid" src="/web/image/theme_prime.s_cover_3_1" alt="Nuevo Slide"/>
+
+                            <div class="col-12 col-lg-6 text-center">
+
+                                <img class="img-fluid"
+                                     style="max-height:300px; object-fit:contain;"
+                                     src="/web/image/theme_prime.s_cover_3_1"/>
+
                             </div>
+
                         </div>
+
                     </div>
+
                 </div>
+            `;
+
+            $inner.append(slide);
+
+            $indicators.append(`
+                <button type="button"
+                        data-bs-target="#${$carousel.attr('id')}"
+                        data-bs-slide-to="${index}">
+                </button>
             `);
-
-            // añadir al carousel
-            $inner.append($newSlide);
-
-            // añadir indicador
-            const $newIndicator = $(`<button type="button" data-bs-target="#${$carousel.attr('id')}" data-bs-slide-to="${index}"></button>`);
-            $indicators.append($newIndicator);
         },
     });
 });
