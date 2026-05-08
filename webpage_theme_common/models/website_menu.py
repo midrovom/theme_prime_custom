@@ -27,6 +27,7 @@ class Website(models.Model):
         ('pulse', 'Pulso'),
         ('shake', 'Agitar'),
         ('tada', 'Tada'),
+        ('typing', 'Escritura'),
         # ('rotateX', 'Girar eje X'),
         # ('rotateY', 'Girar eje Y'),
     ], string="Efecto del texto", default='none')
