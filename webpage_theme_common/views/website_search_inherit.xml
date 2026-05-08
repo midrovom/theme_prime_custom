@@ -1,14 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="website_search_box_inherit" inherit_id="website.website_search_box">
-        <xpath expr="//input[@name='search']" position="attributes">
-            <attribute name="t-att-placeholder">website.search_placeholder or 'Buscar...'</attribute>
+        <xpath expr="//input[@name='search']" position="replace">
+            <div class="tp-search-wrapper position-relative">
+                <input type="search" name="search" class="form-control search-query" autocomplete="off"/>
+
+                <!-- Texto animado -->
+                <span t-if="website.search_placeholder"
+                      class="tp-search-placeholder"
+                      t-att-class="'tp-search-placeholder ' + (website.search_placeholder_effect or '')">
+
+                    <t t-esc="website.search_placeholder"/>
+                </span>
+
+            </div>
+
         </xpath>
 
-        <!-- Agregas un span con animación justo después del input -->
-        <xpath expr="//input[@name='search']" position="after">
-            <span class="search-text" t-att-class="website.search_placeholder_effect">
-                <t t-esc="website.search_placeholder or 'Buscar...'"/>
-            </span>
-        </xpath>
     </template>
 </odoo>
