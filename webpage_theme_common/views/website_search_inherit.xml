@@ -3,10 +3,12 @@
     <template id="website_search_box_inherit" inherit_id="website.website_search_box">
         <xpath expr="//input[@name='search']" position="attributes">
             <attribute name="t-att-placeholder">website.search_placeholder or 'Buscar...'</attribute>
-            <!-- <attribute name="t-att-class">website.search_placeholder_effect</attribute> -->
+        </xpath>
+
+        <xpath expr="//div[contains(@class,'o_search_box')]" position="inside">
+            <span t-attf-class="search-text {{ website.search_placeholder_effect }}">
+                <t t-esc="website.search_placeholder or 'Buscar...'" />
+            </span>
         </xpath>
     </template>
 </odoo>
-
-
-
