@@ -1,20 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
     <template id="website_search_box_inherit"
               inherit_id="website.website_search_box">
 
-        <!-- quitar placeholder real -->
+        <!-- eliminar placeholder original -->
         <xpath expr="//input[@name='search']"
                position="attributes">
 
-            <attribute name="placeholder"></attribute>
+            <attribute name="t-att-placeholder">''</attribute>
 
             <attribute name="class" add="tp-search-input"/>
 
         </xpath>
 
-        <!-- span flotante -->
+        <!-- texto animado -->
         <xpath expr="//input[@name='search']"
                position="after">
 
