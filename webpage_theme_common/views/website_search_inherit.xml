@@ -18,8 +18,7 @@
                     t-att-style="'--anim-duration: %ss;' % (website.search_placeholder_duration or 2)">
                     <t t-esc="website.search_placeholder"/>
                 </span>
-            </div>
+            <div class="tp-search-wrapper">
         </xpath>
-
     </template>
 </odoo>
