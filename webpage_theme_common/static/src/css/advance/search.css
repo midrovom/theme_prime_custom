@@ -1,30 +1,34 @@
-.tp-search-wrapper {
+/* CONTENEDOR DEL BUSCADOR */
+.o_searchbar_form,
+.tp-search-input {
     position: relative;
-    width: 100%;
 }
 
-.tp-search-wrapper input {
+/* INPUT */
+.tp-search-input {
     position: relative;
     z-index: 2;
     background: transparent;
 }
 
-/* Texto animado */
-.tp-search-placeholder {
+/* PLACEHOLDER FALSO */
+.tp-fake-placeholder {
     position: absolute;
+    left: 16px;
     top: 50%;
-    left: 15px;
     transform: translateY(-50%);
+    color: #777;
     pointer-events: none;
-    color: #999;
     z-index: 1;
-    transition: opacity 0.3s ease;
+    transition: opacity .3s ease;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Cuando escriben, ocultar */
-.tp-search-wrapper input:focus + .tp-search-placeholder,
-.tp-search-wrapper input:not(:placeholder-shown) + .tp-search-placeholder {
+/* ocultar al escribir */
+.tp-search-input:focus + .tp-fake-placeholder,
+.tp-search-input:not(:placeholder-shown) + .tp-fake-placeholder {
     opacity: 0;
 }
 
@@ -38,9 +42,17 @@
 }
 
 @keyframes upDown {
-    0% { transform: translateY(-60%); }
-    50% { transform: translateY(-40%); }
-    100% { transform: translateY(-60%); }
+    0% {
+        transform: translateY(calc(-50% - 3px));
+    }
+
+    50% {
+        transform: translateY(calc(-50% + 3px));
+    }
+
+    100% {
+        transform: translateY(calc(-50% - 3px));
+    }
 }
 
 /* Abajo-Arriba */
@@ -49,24 +61,37 @@
 }
 
 @keyframes downUp {
-    0% { transform: translateY(-40%); }
-    50% { transform: translateY(-60%); }
-    100% { transform: translateY(-40%); }
+    0% {
+        transform: translateY(calc(-50% + 3px));
+    }
+
+    50% {
+        transform: translateY(calc(-50% - 3px));
+    }
+
+    100% {
+        transform: translateY(calc(-50% + 3px));
+    }
 }
 
 /* Fade */
 .fade {
-    animation: fadeInOut 3s infinite;
+    animation: fadeAnim 2.5s infinite;
 }
 
-@keyframes fadeInOut {
-    0%,100% { opacity: 0.3; }
-    50% { opacity: 1; }
+@keyframes fadeAnim {
+    0%,100% {
+        opacity: .3;
+    }
+
+    50% {
+        opacity: 1;
+    }
 }
 
 /* Bounce */
 .bounce {
-    animation: bounceAnim 1.5s infinite;
+    animation: bounceAnim 1.4s infinite;
 }
 
 @keyframes bounceAnim {
@@ -75,10 +100,10 @@
     }
 
     40% {
-        transform: translateY(-65%);
+        transform: translateY(calc(-50% - 6px));
     }
 
     60% {
-        transform: translateY(-55%);
+        transform: translateY(calc(-50% - 3px));
     }
 }
