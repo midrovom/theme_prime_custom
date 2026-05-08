@@ -2,7 +2,6 @@
 <odoo>
     <template id="website_search_box_inherit" inherit_id="website.website_search_box">
         <xpath expr="//input[@name='search']" position="attributes">
-            <!-- Se protege la referencia a website -->
             <attribute name="t-att-placeholder">
                 "Buscar..." if not (website and website.search_placeholder) else ''
             </attribute>
@@ -10,9 +9,12 @@
         </xpath>
 
         <xpath expr="//input[@name='search']" position="after">
-            <!-- Se protege también el span -->
             <span t-if="website and website.search_placeholder"
-                  t-att-class="'tp-fake-placeholder ' + (website.search_placeholder_effect or '')">
+                  t-att-class="'tp-fake-placeholder ' 
+                               + (website.search_placeholder_effect or '') 
+                               + ' ' + (website.search_placeholder_direction or '') 
+                               + ' ' + (website.search_placeholder_activation or '')"
+                  t-att-style="'--anim-duration: %ss;' % (website.search_placeholder_duration or 2)">
                 <t t-esc="website.search_placeholder"/>
             </span>
         </xpath>

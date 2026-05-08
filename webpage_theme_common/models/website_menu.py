@@ -14,11 +14,38 @@ class Website(models.Model):
         help="Texto dinámico que se mostrará en el placeholder del buscador."
     )
 
-    search_placeholder_effect = fields.Selection([
-        ('none', 'Sin efecto'),
-        ('up_down', 'Arriba-Abajo'),
-        ('down_up', 'Abajo-Arriba'),
-        ('fade', 'Desvanecer'),
-        ('bounce', 'Rebotar'),
-    ], string="Efecto del texto", default='none')
+search_placeholder_effect = fields.Selection([
+    ('none', 'Sin efecto'),
+    ('fade', 'Desvanecer'),
+    ('bounce', 'Rebotar'),
+    ('slide', 'Deslizar'),
+    ('flip', 'Volteo'),
+    ('rotate', 'Rotar'),
+    ('shrink', 'Reducir'),
+    ('grow', 'Ampliar'),
+    ('flash', 'Flash'),
+    ('pulse', 'Pulso'),
+    ('shake', 'Agitar'),
+    ('tada', 'Tada'),
+    ('rotateX', 'Girar eje X'),
+    ('rotateY', 'Girar eje Y'),
+], string="Efecto del texto", default='none')
+
+search_placeholder_direction = fields.Selection([
+    ('none', 'Sin dirección'),
+    ('left', 'Desde la izquierda'),
+    ('right', 'Desde la derecha'),
+    ('up', 'Desde arriba'),
+    ('down', 'Desde abajo'),
+], string="Dirección", default='none')
+
+search_placeholder_activation = fields.Selection([
+    ('always', 'Siempre'),
+    ('once', 'Solo la primera vez'),
+], string="Activación", default='always')
+
+search_placeholder_duration = fields.Float(
+    string="Duración (segundos)", default=2.0
+)
+
 
