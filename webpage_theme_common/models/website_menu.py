@@ -31,13 +31,13 @@ class Website(models.Model):
         ('rotateY', 'Girar eje Y'),
     ], string="Efecto del texto", default='none')
 
-    # search_placeholder_direction = fields.Selection([
-    #     ('none', 'Sin dirección'),
-    #     ('left', 'Desde la izquierda'),
-    #     ('right', 'Desde la derecha'),
-    #     ('up', 'Desde arriba'),
-    #     ('down', 'Desde abajo'),
-    # ], string="Dirección", default='none')
+    search_placeholder_direction = fields.Selection([
+        ('none', 'Sin dirección'),
+        ('left', 'Desde la izquierda'),
+        ('right', 'Desde la derecha'),
+        ('up', 'Desde arriba'),
+        ('down', 'Desde abajo'),
+    ], string="Dirección", default='none')
 
     search_placeholder_activation = fields.Selection([
         ('always', 'Siempre'),
