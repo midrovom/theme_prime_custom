@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Vista heredada con el campo -->
     <record id="view_website_form_inherit_search_placeholder" model="ir.ui.view">
         <field name="name">website.form.inherit.search.placeholder</field>
         <field name="model">website</field>
@@ -13,4 +14,19 @@
         </field>
     </record>
 
+    <!-- Acción que abre la lista de sitios web -->
+    <record id="action_website_search_placeholder" model="ir.actions.act_window">
+        <field name="name">Configuración del buscador</field>
+        <field name="res_model">website</field>
+        <field name="view_mode">tree,form</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- Submenú debajo de Localidades -->
+    <menuitem id="menu_search_placeholder"
+              name="Buscador"
+              parent="menu_locations"
+              action="action_website_search_placeholder"
+              sequence="2"/>
 </odoo>
+
