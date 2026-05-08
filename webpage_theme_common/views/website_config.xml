@@ -13,18 +13,19 @@
         </field>
     </record>
 
-    <!-- Acción que abre el formulario del modelo Website -->
     <record id="action_website_search_placeholder" model="ir.actions.act_window">
         <field name="name">Configuración del buscador</field>
         <field name="res_model">website</field>
         <field name="view_mode">form</field>
         <field name="target">current</field>
+        <!-- Contexto dinámico: usa el sitio web activo -->
+        <field name="context">{'active_id': website_id}</field>
     </record>
 
-    <!-- Submenú debajo de Localidades -->
     <menuitem id="menu_search_placeholder"
               name="Buscador"
               parent="menu_locations"
               action="action_website_search_placeholder"
               sequence="2"/>
+
 </odoo>
