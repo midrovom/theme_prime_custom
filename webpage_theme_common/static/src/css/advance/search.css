@@ -1,0 +1,41 @@
+/* Sin efecto */
+.none {}
+
+/* Arriba-Abajo */
+.up_down {
+  animation: upDown 2s infinite;
+}
+@keyframes upDown {
+  0% { transform: translateY(-10px); }
+  50% { transform: translateY(10px); }
+  100% { transform: translateY(-10px); }
+}
+
+/* Abajo-Arriba */
+.down_up {
+  animation: downUp 2s infinite;
+}
+@keyframes downUp {
+  0% { transform: translateY(10px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(10px); }
+}
+
+/* Desvanecer */
+.fade {
+  animation: fadeInOut 3s infinite;
+}
+@keyframes fadeInOut {
+  0%,100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+/* Rebotar */
+.bounce {
+  animation: bounce 1s infinite;
+}
+@keyframes bounce {
+  0%,20%,50%,80%,100% { transform: translateY(0); }
+  40% { transform: translateY(-20px); }
+  60% { transform: translateY(-10px); }
+}
