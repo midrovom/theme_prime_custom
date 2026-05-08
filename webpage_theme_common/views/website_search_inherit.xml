@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="website_search_box_inherit" inherit_id="website.website_search_box">
+    <!-- <template id="website_search_box_inherit" inherit_id="website.website_search_box">
         <xpath expr="//input[@name='search']" position="attributes">
             <attribute name="t-att-data-search-type">search_type</attribute>
             <attribute name="t-att-data-limit">limit or '5'</attribute>
@@ -11,5 +11,16 @@
             <attribute name="t-att-data-order-by">order_by or 'name asc'</attribute>
             <attribute name="t-att-placeholder">website.search_placeholder or 'Buscar...'</attribute>
         </xpath>
+    </template> -->
+
+
+    <template id="website_search_box_inherit" inherit_id="website.website_search_box">
+        <xpath expr="//input[@name='search']" position="attributes">
+            <attribute name="t-att-placeholder">website.search_placeholder or 'Buscar...'</attribute>
+            <attribute name="t-att-class">website.search_placeholder_effect</attribute>
+        </xpath>
     </template>
 </odoo>
+
+
+
