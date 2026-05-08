@@ -170,14 +170,13 @@
         transform: scale(0.8) translateY(-50%);
     }
 }
-
+/* Escribir */
 .tp-fake-placeholder.typing {
     display: inline-block;
     overflow: hidden;
     white-space: nowrap;
     border-right: 2px solid var(--placeholder-color, #000);
-    animation: typingAnim var(--anim-duration, 3s) steps(30, end) infinite,
-               blinkCursor 0.7s step-end infinite;
+    animation: typingAnim var(--anim-duration, 5s) steps(30, end) infinite, blinkCursor 0.7s step-end infinite;
 }
 
 @keyframes typingAnim {
