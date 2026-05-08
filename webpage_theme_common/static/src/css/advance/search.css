@@ -1,20 +1,7 @@
 /* ========================= */
 /* CONTENEDOR DEL BUSCADOR */
 /* ========================= */
-.tp-search-wrapper .o_searchbar_form,
-.tp-search-wrapper .tp-search-input {
-    position: relative;
-}
-
-/* INPUT */
-.tp-search-wrapper .tp-search-input {
-    position: relative;
-    z-index: 2;
-    background: transparent;
-}
-
-/* PLACEHOLDER FALSO */
-.tp-search-wrapper .tp-fake-placeholder {
+.tp-search-placeholder.tp-fake-placeholder {
     position: absolute;
     left: 16px;
     top: 50%;
@@ -29,36 +16,43 @@
     --anim-duration: 2s; /* valor por defecto */
 }
 
+/* INPUT */
+.tp-search-input {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+}
+
 /* ocultar al escribir */
-.tp-search-wrapper .tp-search-input:focus + .tp-fake-placeholder,
-.tp-search-wrapper .tp-search-input:not(:placeholder-shown) + .tp-fake-placeholder {
+.tp-search-input:focus + .tp-search-placeholder,
+.tp-search-input:not(:placeholder-shown) + .tp-search-placeholder {
     opacity: 0;
 }
 
 /* ========================= */
 /* EFECTOS BÁSICOS */
 /* ========================= */
-.tp-search-wrapper .up_down { animation: upDown var(--anim-duration, 2s) infinite; }
+.tp-search-placeholder.up_down { animation: upDown var(--anim-duration, 2s) infinite; }
 @keyframes upDown {
     0% { transform: translateY(calc(-50% - 3px)); }
     50% { transform: translateY(calc(-50% + 3px)); }
     100% { transform: translateY(calc(-50% - 3px)); }
 }
 
-.tp-search-wrapper .down_up { animation: downUp var(--anim-duration, 2s) infinite; }
+.tp-search-placeholder.down_up { animation: downUp var(--anim-duration, 2s) infinite; }
 @keyframes downUp {
     0% { transform: translateY(calc(-50% + 3px)); }
     50% { transform: translateY(calc(-50% - 3px)); }
     100% { transform: translateY(calc(-50% + 3px)); }
 }
 
-.tp-search-wrapper .fade { animation: fadeAnim var(--anim-duration, 2.5s) infinite; }
+.tp-search-placeholder.fade { animation: fadeAnim var(--anim-duration, 2.5s) infinite; }
 @keyframes fadeAnim {
     0%,100% { opacity: .3; }
     50% { opacity: 1; }
 }
 
-.tp-search-wrapper .bounce { animation: bounceAnim var(--anim-duration, 1.4s) infinite; }
+.tp-search-placeholder.bounce { animation: bounceAnim var(--anim-duration, 1.4s) infinite; }
 @keyframes bounceAnim {
     0%,20%,50%,80%,100% { transform: translateY(-50%); }
     40% { transform: translateY(calc(-50% - 6px)); }
@@ -68,59 +62,59 @@
 /* ========================= */
 /* EFECTOS EXTRA */
 /* ========================= */
-.tp-search-wrapper .slide { animation: slideAnim var(--anim-duration, 2s) infinite; }
+.tp-search-placeholder.slide { animation: slideAnim var(--anim-duration, 2s) infinite; }
 @keyframes slideAnim {
     0% { transform: translateX(0) translateY(-50%); }
     50% { transform: translateX(10px) translateY(-50%); }
     100% { transform: translateX(0) translateY(-50%); }
 }
 
-.tp-search-wrapper .flip { animation: flipAnim var(--anim-duration, 2s) infinite; }
+.tp-search-placeholder.flip { animation: flipAnim var(--anim-duration, 2s) infinite; }
 @keyframes flipAnim {
     0% { transform: rotateY(0deg) translateY(-50%); }
     50% { transform: rotateY(180deg) translateY(-50%); }
     100% { transform: rotateY(0deg) translateY(-50%); }
 }
 
-.tp-search-wrapper .rotate { animation: rotateAnim var(--anim-duration, 2s) infinite linear; }
+.tp-search-placeholder.rotate { animation: rotateAnim var(--anim-duration, 2s) infinite linear; }
 @keyframes rotateAnim {
     0% { transform: rotate(0deg) translateY(-50%); }
     100% { transform: rotate(360deg) translateY(-50%); }
 }
 
-.tp-search-wrapper .shrink { animation: shrinkAnim var(--anim-duration, 2s) infinite; }
+.tp-search-placeholder.shrink { animation: shrinkAnim var(--anim-duration, 2s) infinite; }
 @keyframes shrinkAnim {
     0%,100% { transform: scale(1) translateY(-50%); }
     50% { transform: scale(0.8) translateY(-50%); }
 }
 
-.tp-search-wrapper .grow { animation: growAnim var(--anim-duration, 2s) infinite; }
+.tp-search-placeholder.grow { animation: growAnim var(--anim-duration, 2s) infinite; }
 @keyframes growAnim {
     0%,100% { transform: scale(1) translateY(-50%); }
     50% { transform: scale(1.2) translateY(-50%); }
 }
 
-.tp-search-wrapper .flash { animation: flashAnim var(--anim-duration, 1.5s) infinite; }
+.tp-search-placeholder.flash { animation: flashAnim var(--anim-duration, 1.5s) infinite; }
 @keyframes flashAnim {
     0%,50%,100% { opacity: 1; }
     25%,75% { opacity: 0.2; }
 }
 
-.tp-search-wrapper .pulse { animation: pulseAnim var(--anim-duration, 2s) infinite; }
+.tp-search-placeholder.pulse { animation: pulseAnim var(--anim-duration, 2s) infinite; }
 @keyframes pulseAnim {
     0% { transform: scale(1) translateY(-50%); }
     50% { transform: scale(1.1) translateY(-50%); }
     100% { transform: scale(1) translateY(-50%); }
 }
 
-.tp-search-wrapper .shake { animation: shakeAnim var(--anim-duration, 0.8s) infinite; }
+.tp-search-placeholder.shake { animation: shakeAnim var(--anim-duration, 0.8s) infinite; }
 @keyframes shakeAnim {
     0%,100% { transform: translateX(0) translateY(-50%); }
     25% { transform: translateX(-4px) translateY(-50%); }
     75% { transform: translateX(4px) translateY(-50%); }
 }
 
-.tp-search-wrapper .tada { animation: tadaAnim var(--anim-duration, 1.5s) infinite; }
+.tp-search-placeholder.tada { animation: tadaAnim var(--anim-duration, 1.5s) infinite; }
 @keyframes tadaAnim {
     0% { transform: scale(1) rotate(0deg) translateY(-50%); }
     10%,20% { transform: scale(0.9) rotate(-3deg) translateY(-50%); }
@@ -129,14 +123,14 @@
     100% { transform: scale(1) rotate(0deg) translateY(-50%); }
 }
 
-.tp-search-wrapper .rotateX { animation: rotateXAnim var(--anim-duration, 2s) infinite; }
+.tp-search-placeholder.rotateX { animation: rotateXAnim var(--anim-duration, 2s) infinite; }
 @keyframes rotateXAnim {
     0% { transform: rotateX(0deg) translateY(-50%); }
     50% { transform: rotateX(180deg) translateY(-50%); }
     100% { transform: rotateX(360deg) translateY(-50%); }
 }
 
-.tp-search-wrapper .rotateY { animation: rotateYAnim var(--anim-duration, 2s) infinite; }
+.tp-search-placeholder.rotateY { animation: rotateYAnim var(--anim-duration, 2s) infinite; }
 @keyframes rotateYAnim {
     0% { transform: rotateY(0deg) translateY(-50%); }
     50% { transform: rotateY(180deg) translateY(-50%); }
@@ -146,25 +140,25 @@
 /* ========================= */
 /* DIRECCIONES */
 /* ========================= */
-.tp-search-wrapper .from_left { animation: fromLeftAnim var(--anim-duration, 2s) ease; }
+.tp-search-placeholder.from_left { animation: fromLeftAnim var(--anim-duration, 2s) ease; }
 @keyframes fromLeftAnim {
     from { transform: translateX(-100%) translateY(-50%); opacity: 0; }
     to { transform: translateX(0) translateY(-50%); opacity: 1; }
 }
 
-.tp-search-wrapper .from_right { animation: fromRightAnim var(--anim-duration, 2s) ease; }
+.tp-search-placeholder.from_right { animation: fromRightAnim var(--anim-duration, 2s) ease; }
 @keyframes fromRightAnim {
     from { transform: translateX(100%) translateY(-50%); opacity: 0; }
     to { transform: translateX(0) translateY(-50%); opacity: 1; }
 }
 
-.tp-search-wrapper .from_top { animation: fromTopAnim var(--anim-duration, 2s) ease; }
+.tp-search-placeholder.from_top { animation: fromTopAnim var(--anim-duration, 2s) ease; }
 @keyframes fromTopAnim {
     from { transform: translateY(-150%) translateY(-50%); opacity: 0; }
     to { transform: translateY(-50%); opacity: 1; }
 }
 
-.tp-search-wrapper .from_bottom { animation: fromBottomAnim var(--anim-duration, 2s) ease; }
+.tp-search-placeholder.from_bottom { animation: fromBottomAnim var(--anim-duration, 2s) ease; }
 @keyframes fromBottomAnim {
     from { transform: translateY(50%) translateY(-50%); opacity: 0; }
     to { transform: translateY(-50%); opacity: 1; }
@@ -173,5 +167,5 @@
 /* ========================= */
 /* ACTIVACIÓN */
 /* ========================= */
-.tp-search-wrapper .always { animation-iteration-count: infinite !important; }
-.tp-search-wrapper .once { animation-iteration-count: 1 !important; }
+.tp-search-placeholder.always { animation-iteration-count: infinite !important; }
+.tp-search-placeholder.once { animation-iteration-count: 1 !important; }

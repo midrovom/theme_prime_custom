@@ -9,16 +9,14 @@
         </xpath>
 
         <xpath expr="//input[@name='search']" position="after">
-            <div class="tp-search-wrapper">
-                <span t-if="website and website.search_placeholder"
-                    t-att-class="'tp-fake-placeholder ' 
-                                + (website.search_placeholder_effect or '') 
-                                + ' ' + (website.search_placeholder_direction or '') 
-                                + ' ' + (website.search_placeholder_activation or '')"
-                    t-att-style="'--anim-duration: %ss;' % (website.search_placeholder_duration or 2)">
-                    <t t-esc="website.search_placeholder"/>
-                </span>
-            </div>
+            <span t-if="website and website.search_placeholder"
+                t-att-class="'tp-search-placeholder tp-fake-placeholder ' 
+                            + (website.search_placeholder_effect or '') 
+                            + ' ' + (website.search_placeholder_direction or '') 
+                            + ' ' + (website.search_placeholder_activation or '')"
+                t-att-style="'--anim-duration: %ss;' % (website.search_placeholder_duration or 2)">
+                <t t-esc="website.search_placeholder"/>
+            </span>
         </xpath>
 
     </template>
