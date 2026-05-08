@@ -9,7 +9,7 @@
             <xpath expr="//sheet" position="inside">
                 <group string="Configuración del buscador">
                     <field name="search_placeholder"/>
-                    <field name="search_placeholder_effect"/>
+                    <!-- <field name="search_placeholder_effect"/> -->
                 </group>
             </xpath>
         </field>
