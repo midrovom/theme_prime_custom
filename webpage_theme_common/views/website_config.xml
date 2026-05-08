@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
+    <!-- Vista heredada con el campo en el formulario -->
     <record id="view_website_form_inherit_search_placeholder" model="ir.ui.view">
         <field name="name">website.form.inherit.search.placeholder</field>
         <field name="model">website</field>
@@ -14,16 +14,16 @@
         </field>
     </record>
 
-    <!-- vista tree para listar sitios web -->
-    <record id="view_website_tree_custom" model="ir.ui.view">
-        <field name="name">website.tree.custom</field>
+    <!-- vista list para listar sitios web -->
+    <record id="view_website_list_custom" model="ir.ui.view">
+        <field name="name">website.list.custom</field>
         <field name="model">website</field>
         <field name="arch" type="xml">
-            <tree string="Sitios Web">
+            <list string="Sitios Web">
                 <field name="name"/>
                 <field name="domain"/>
                 <field name="search_placeholder"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -31,9 +31,9 @@
     <record id="action_website_search_placeholder" model="ir.actions.act_window">
         <field name="name">Configuración del buscador</field>
         <field name="res_model">website</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="target">current</field>
-        <field name="view_id" ref="view_website_tree_custom"/>
+        <field name="view_id" ref="view_website_list_custom"/>
     </record>
 
     <!-- Submenú debajo de Localidades -->
