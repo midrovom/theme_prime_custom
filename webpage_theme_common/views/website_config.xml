@@ -10,7 +10,7 @@
                 <group string="Configuración del buscador">
                     <field name="search_placeholder"/>
                     <field name="search_placeholder_effect"/>
-                    <field name="search_placeholder_direction"/>
+                    <!-- <field name="search_placeholder_direction"/> -->
                     <field name="search_placeholder_activation"/>
                     <field name="search_placeholder_duration"/>
                 </group>
