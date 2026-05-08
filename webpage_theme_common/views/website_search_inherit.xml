@@ -6,9 +6,12 @@
         </xpath>
 
         <xpath expr="//div[contains(@class,'o_search_box')]" position="inside">
+            <!-- Texto animado visible -->
             <span t-attf-class="search-text {{ website.search_placeholder_effect }}">
                 <t t-esc="website.search_placeholder or 'Buscar...'" />
             </span>
         </xpath>
     </template>
 </odoo>
+
+
