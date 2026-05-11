@@ -20,7 +20,6 @@ class Website(models.Model):
         ('bounce', 'Rebotar'),
         ('slide', 'Deslizar'),
         ('flip', 'Volteo'),
-        # ('rotate', 'Rotar'),
         ('shrink', 'Reducir'),
         ('grow', 'Ampliar'),
         ('flash', 'Flash'),
@@ -28,8 +27,6 @@ class Website(models.Model):
         ('shake', 'Agitar'),
         ('tada', 'Tada'),
         ('typing', 'Escritura'),
-        # ('rotateX', 'Girar eje X'),
-        # ('rotateY', 'Girar eje Y'),
     ], string="Efecto del texto", default='none')
 
     search_placeholder_direction = fields.Selection([
