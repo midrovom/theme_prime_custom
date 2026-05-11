@@ -29,8 +29,9 @@ class Website(models.Model):
         ('typing', 'Escritura'),
     ], string="Efecto del texto", default='none')
 
-    search_placeholder_duration = fields.Float(
-        string="Duración (segundos)", default=2.0
+    search_placeholder_duration = fields.Integer(
+        string="Duración (segundos)", default=2
     )
+
 
 
