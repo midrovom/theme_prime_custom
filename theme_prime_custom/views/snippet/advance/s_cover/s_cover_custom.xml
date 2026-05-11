@@ -10,7 +10,7 @@
                             <div class="container-fluid px-0">
                                 <div class="row g-0 align-items-center" style="min-height:300px;">
                                     <div class="col-12 col-lg-6 p-4 o_editable">
-                                        <div class="jumbotron rounded o_cc o_cc1 border p-4 oe_structure">
+                                        <div class="jumbotron rounded o_cc o_cc1 border p-4">
 
                                             <h3 class="o_default_snippet_text">
                                                 New Arrivals
@@ -46,7 +46,7 @@
                             <div class="container-fluid px-0">
                                 <div class="row g-0 align-items-center" style="min-height:300px;">
                                     <div class="col-12 col-lg-6 p-4 o_editable">
-                                        <div class="jumbotron rounded o_cc o_cc1 border p-4 oe_structure">
+                                        <div class="jumbotron rounded o_cc o_cc1 border p-4">
                                             <h3 class="o_default_snippet_text">
                                                 Special Offer
                                             </h3>
