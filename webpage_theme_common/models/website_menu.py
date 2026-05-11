@@ -29,19 +29,6 @@ class Website(models.Model):
         ('typing', 'Escritura'),
     ], string="Efecto del texto", default='none')
 
-    # search_placeholder_direction = fields.Selection([
-    #     ('none', 'Sin dirección'),
-    #     ('left', 'Desde la izquierda'),
-    #     ('right', 'Desde la derecha'),
-    #     ('up', 'Desde arriba'),
-    #     ('down', 'Desde abajo'),
-    # ], string="Dirección", default='none')
-
-    # search_placeholder_activation = fields.Selection([
-    #     ('always', 'Siempre'),
-    #     ('once', 'Solo la primera vez'),
-    # ], string="Activación", default='always')
-
     search_placeholder_duration = fields.Float(
         string="Duración (segundos)", default=2.0
     )
