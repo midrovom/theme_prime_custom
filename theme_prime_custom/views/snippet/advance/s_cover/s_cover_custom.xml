@@ -34,7 +34,7 @@
 
                                     </div>
 
-                                    <div class="col-12 col-lg-6 text-center o_editable">
+                                    <div class="col-12 col-lg-6 text-center ">
                                         <img class="img-fluid oe_img" style="max-height:300px; object-fit:contain;" src="/web/image/theme_prime.s_cover_3_1" alt="Cover Image 01"/>
                                     </div>
                                 </div>
@@ -67,7 +67,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-12 col-lg-6 text-center o_editable">
+                                    <div class="col-12 col-lg-6 text-center ">
                                         <img class="img-fluid oe_img" style="max-height:300px; object-fit:contain;" src="/web/image/theme_prime.s_cover_3_2" alt="Cover Image 02"/>
 
                                     </div>
