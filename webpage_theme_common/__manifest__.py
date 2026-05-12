@@ -49,6 +49,7 @@
             'webpage_theme_common/static/src/scss/advance/s_map/000.scss',
             'webpage_theme_common/static/src/snippet/advance/s_map/map_locations_card.js',
             'webpage_theme_common/static/src/scss/advance/s_map/map_locations_card.scss',
+            'webpage_theme_common/static/src/snippet/advance/s_search/search.js',
 
             #Advance
             'webpage_theme_common/static/src/scss/advance/s_cover/s_cover_6_.scss',
