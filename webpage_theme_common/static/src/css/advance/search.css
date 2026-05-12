@@ -149,7 +149,7 @@
 @keyframes typingAnim {
     0% { width: 0; }
     50% { width: 100%; }
-    100% { width: 0; } /* vuelve a cero para reiniciar */
+    100% { width: 0; }
 }
 
 @keyframes blinkCursor {

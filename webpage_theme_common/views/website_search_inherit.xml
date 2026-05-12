@@ -12,9 +12,11 @@
         <!-- Agregamos las frases dinámicas -->
         <xpath expr="//input[@name='search']" position="after">
             <t t-if="website and website.search_placeholder">
+                <!-- Definimos duración segura -->
+                <t t-set="duracion" t-value="website.search_placeholder_duration or 5"/>
                 <t t-foreach="website.search_placeholder.splitlines()" t-as="frase" t-foreach-index="i">
                     <span t-att-class="'tp-fake-placeholder ' + (website.search_placeholder_effect or '')"
-                          t-att-style="'--anim-duration:%ss;animation-delay:%ss' % (website.search_placeholder_duration or 5.0, i * (website.search_placeholder_duration or 5.0))">
+                          t-att-style="'--anim-duration:%ss;animation-delay:%ss' % (duracion, i * duracion)">
                         <t t-esc="frase"/>
                     </span>
                 </t>
@@ -22,3 +24,4 @@
         </xpath>
     </template>
 </odoo>
+
