@@ -138,6 +138,10 @@
 }
 
 /* Escribir */
+.tp-search-wrapper {
+    position: relative;
+}
+
 .tp-fake-placeholder {
     position: absolute;
     left: 15px;
@@ -146,16 +150,18 @@
     pointer-events: none;
     color: #777;
     font-size: 14px;
-    display: none;
-}
+    z-index: 2;
 
-/* SOLO la frase activa */
-.tp-fake-placeholder.active {
-    display: inline-block;
+    display: none;
     overflow: hidden;
     white-space: nowrap;
+}
+
+.tp-fake-placeholder.active {
+    display: inline-block;
     border-right: 2px solid var(--placeholder-color, #000);
     width: 0;
+
     animation:
         typingIn var(--anim-duration, 5s) steps(40, end) forwards,
         blinkCursor .7s step-end infinite;
