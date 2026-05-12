@@ -5,37 +5,47 @@ odoo.define('webpage_theme_common.search_placeholder', function (require) {
 
     publicWidget.registry.SearchPlaceholderTyping = publicWidget.Widget.extend({
         selector: '.tp-search-input',
+
         start: function () {
-            const frases = document.querySelectorAll(".tp-fake-placeholder.typing");
+            const frases = document.querySelectorAll('.tp-fake-placeholder');
+
             if (!frases.length) {
-                return;
+                return this._super.apply(this, arguments);
             }
+
             let index = 0;
 
-            // Duración en segundos desde el CSS variable
-            const duracion = parseInt(frases[0].style.getPropertyValue("--anim-duration") || 5, 10) * 1000;
-
             function mostrarFrase() {
-                // Ocultar todas
-                frases.forEach(f => f.style.display = "none");
 
-                // Mostrar solo la actual
-                frases[index].style.display = "inline-block";
+                // ocultar todas
+                frases.forEach(f => {
+                    f.classList.remove('active');
+                });
 
-                // Reiniciar animación
-                frases[index].classList.remove("typing");
-                void frases[index].offsetWidth; // forzar reflow
-                frases[index].classList.add("typing");
+                const actual = frases[index];
 
-                // Pasar a la siguiente
-                index = (index + 1) % frases.length;
+                // forzar reinicio animación
+                void actual.offsetWidth;
+
+                actual.classList.add('active');
+
+                // duración desde CSS variable
+                const duration =
+                    parseFloat(
+                        getComputedStyle(actual)
+                        .getPropertyValue('--anim-duration')
+                    ) * 1000;
+
+                // siguiente frase
+                setTimeout(() => {
+                    index = (index + 1) % frases.length;
+                    mostrarFrase();
+                }, duration + 1000); // pausa extra
             }
 
-            // Mostrar la primera inmediatamente
             mostrarFrase();
 
-            // Cambiar cada X segundos
-            setInterval(mostrarFrase, duracion);
+            return this._super.apply(this, arguments);
         },
     });
 });

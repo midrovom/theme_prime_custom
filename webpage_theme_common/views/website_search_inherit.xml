@@ -12,8 +12,8 @@
         <xpath expr="//input[@name='search']" position="after">
             <t t-if="website and website.search_placeholder">
                 <t t-foreach="website.search_placeholder.splitlines()" t-as="frase">
-                    <span t-att-class="'tp-fake-placeholder ' + (website.search_placeholder_effect or '')"
-                          t-att-style="'--anim-duration:%ss' % (website.search_placeholder_duration or 5)">
+                    <span class="tp-fake-placeholder"
+                        t-att-style="'--anim-duration:%ss' % (website.search_placeholder_duration or 5)">
                         <t t-esc="frase"/>
                     </span>
                 </t>
