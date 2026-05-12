@@ -1,3 +1,5 @@
+/** @odoo-module **/
+
 odoo.define('webpage_theme_common.search_placeholder', function (require) {
     "use strict";
 
