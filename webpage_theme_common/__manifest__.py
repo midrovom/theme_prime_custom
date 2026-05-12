@@ -49,7 +49,6 @@
             'webpage_theme_common/static/src/scss/advance/s_map/000.scss',
             'webpage_theme_common/static/src/snippet/advance/s_map/map_locations_card.js',
             'webpage_theme_common/static/src/scss/advance/s_map/map_locations_card.scss',
-            'webpage_theme_common/static/src/snippet/advance/s_search/search.js',
 
             #Advance
             'webpage_theme_common/static/src/scss/advance/s_cover/s_cover_6_.scss',
@@ -58,6 +57,7 @@
             'webpage_theme_common/static/src/scss/advance/s_banner/s_banner_16.scss',
             'webpage_theme_common/static/src/scss/advance/s_banner/s_banner_17.scss',
             'webpage_theme_common/static/src/css/advance/search.css',
+            'webpage_theme_common/static/src/snippet/advance/s_search/search.js',
 
             'webpage_theme_common/static/src/scss/advance/s_shop_offert/s_shop_offer_6.scss',
             'webpage_theme_common/static/src/scss/advance/s_shop_offert/shop_offert_7.scss',
