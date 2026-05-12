@@ -1,6 +1,7 @@
 /** @odoo-module **/
 
-odoo.define('webpage_theme_common.search_placeholder', function (require) {
+odoo.define('@webpage_theme_common/snippet/advance/s_search/search', function (require) {
+
     "use strict";
 
     const publicWidget = require('web.public.widget');
