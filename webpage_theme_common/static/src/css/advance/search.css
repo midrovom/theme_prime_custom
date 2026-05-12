@@ -158,6 +158,7 @@
 }
 
 
+
 /* Ampliar */
 .tp-fake-placeholder.grow {
     animation: growAnim var(--anim-duration, 2s) infinite;
