@@ -136,50 +136,24 @@
         transform: scale(0.8) translateY(-50%);
     }
 }
-
 /* Escribir */
-.tp-search-wrapper {
-    position: relative;
-}
-
-.tp-fake-placeholder {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    color: #777;
-    font-size: 14px;
-    z-index: 2;
-
-    display: none;
+.tp-fake-placeholder.typing {
+    display: inline-block;
     overflow: hidden;
     white-space: nowrap;
-}
-
-.tp-fake-placeholder.active {
-    display: inline-block;
     border-right: 2px solid var(--placeholder-color, #000);
-    width: 0;
-
-    animation:
-        typingIn var(--anim-duration, 5s) steps(40, end) forwards,
-        blinkCursor .7s step-end infinite;
+    animation: typingAnim var(--anim-duration, 5s) steps(30, end) infinite, blinkCursor 0.7s step-end infinite;
 }
 
-@keyframes typingIn {
-    from {
-        width: 0;
-    }
-    to {
-        width: 100%;
-    }
+@keyframes typingAnim {
+    0% { width: 0; }
+    50% { width: 100%; }
+    100% { width: 0; } /* vuelve a cero para reiniciar */
 }
 
 @keyframes blinkCursor {
-    50% {
-        border-color: transparent;
-    }
+    from, to { border-color: transparent; }
+    50% { border-color: var(--placeholder-color, #000); }
 }
 
 
