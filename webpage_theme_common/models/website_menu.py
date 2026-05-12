@@ -9,7 +9,7 @@ class WebsiteMenu(models.Model):
 class Website(models.Model):
     _inherit = "website"
 
-    search_placeholder = fields.Char(
+    search_placeholder = fields.Text(
         string="Texto del buscador",
         help="Texto dinámico que se mostrará en el placeholder del buscador."
     )
