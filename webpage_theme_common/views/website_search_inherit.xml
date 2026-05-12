@@ -11,11 +11,15 @@
 
         <!-- Agregamos el span con efecto y duración -->
         <xpath expr="//input[@name='search']" position="after">
-            <span t-if="website and website.search_placeholder"
-                  t-att-class="'tp-fake-placeholder ' + (website.search_placeholder_effect or '')"
-                  t-att-style="'--anim-duration: %ss' % (website.search_placeholder_duration or 2.0)">
-                <t t-esc="website.search_placeholder"/>
-            </span>
+            <t t-if="website and website.search_placeholder">
+                <t t-foreach="website.search_placeholder.split('\n')" t-as="frase">
+                    <span t-att-class="'tp-fake-placeholder ' + (website.search_placeholder_effect or '')"
+                        t-att-style="'--anim-duration: %ss' % (website.search_placeholder_duration or 2.0)">
+                        <t t-esc="frase"/>
+                    </span>
+                </t>
+            </t>
         </xpath>
+
     </template>
 </odoo>

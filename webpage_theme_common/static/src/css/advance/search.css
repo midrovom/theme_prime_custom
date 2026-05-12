@@ -156,6 +156,13 @@
     50% { border-color: var(--placeholder-color, #000); }
 }
 
+.tp-fake-placeholder {
+    display: none;
+}
+.tp-fake-placeholder.active {
+    display: inline-block;
+}
+
 
 /* Ampliar */
 .tp-fake-placeholder.grow {
