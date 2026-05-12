@@ -4,10 +4,10 @@ odoo.define('webpage_theme_common.search_placeholder', function (require) {
     const publicWidget = require('web.public.widget');
 
     publicWidget.registry.SearchPlaceholderTyping = publicWidget.Widget.extend({
-        selector: '.tp-search-input',
+        selector: '.tp-search-wrapper',
 
         start: function () {
-            const frases = document.querySelectorAll('.tp-fake-placeholder');
+            const frases = this.el.querySelectorAll('.tp-fake-placeholder');
 
             if (!frases.length) {
                 return this._super.apply(this, arguments);
@@ -15,33 +15,32 @@ odoo.define('webpage_theme_common.search_placeholder', function (require) {
 
             let index = 0;
 
-            function mostrarFrase() {
+            const mostrarFrase = () => {
 
-                // ocultar todas
                 frases.forEach(f => {
                     f.classList.remove('active');
                 });
 
                 const actual = frases[index];
 
-                // forzar reinicio animación
+                // reiniciar animación
+                actual.style.animation = 'none';
                 void actual.offsetWidth;
+                actual.style.animation = '';
 
                 actual.classList.add('active');
 
-                // duración desde CSS variable
                 const duration =
                     parseFloat(
                         getComputedStyle(actual)
                         .getPropertyValue('--anim-duration')
                     ) * 1000;
 
-                // siguiente frase
                 setTimeout(() => {
                     index = (index + 1) % frases.length;
                     mostrarFrase();
-                }, duration + 1000); // pausa extra
-            }
+                }, duration + 1000);
+            };
 
             mostrarFrase();
 

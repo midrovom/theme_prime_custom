@@ -1,23 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="website_search_box_inherit" inherit_id="website.website_search_box">
+
+    <template id="website_search_box_inherit"
+              inherit_id="website.website_search_box">
+
+        <!-- agregar wrapper -->
+        <xpath expr="//input[@name='search']" position="before">
+            <div class="tp-search-wrapper"/>
+        </xpath>
+
+        <xpath expr="//input[@name='search']" position="move">
+            <xpath expr="//div[@class='tp-search-wrapper']" position="inside"/>
+        </xpath>
+
+        <!-- quitar placeholder original -->
         <xpath expr="//input[@name='search']" position="attributes">
-            <attribute name="t-att-placeholder">
-                "Buscar..." if not (website and website.search_placeholder) else ''
-            </attribute>
+            <attribute name="placeholder"></attribute>
             <attribute name="class" add="tp-search-input"/>
         </xpath>
 
-        <!-- Agregamos las frases dinámicas -->
+        <!-- frases -->
         <xpath expr="//input[@name='search']" position="after">
             <t t-if="website and website.search_placeholder">
-                <t t-foreach="website.search_placeholder.splitlines()" t-as="frase">
-                    <span t-att-class="'tp-fake-placeholder ' + (website.search_placeholder_effect or '')"
+
+                <t t-foreach="website.search_placeholder.splitlines()"
+                   t-as="frase">
+
+                    <span class="tp-fake-placeholder"
                           t-att-style="'--anim-duration:%ss' % (website.search_placeholder_duration or 5)">
+
                         <t t-esc="frase"/>
+
                     </span>
+
                 </t>
+
             </t>
         </xpath>
+
     </template>
+
 </odoo>
