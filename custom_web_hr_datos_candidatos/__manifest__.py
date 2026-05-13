@@ -41,7 +41,7 @@
         'views/ir_mail_server_view.xml',
         'views/terminos_codiciones/hr_terminos_condiciones.xml',
         'views/terminos_codiciones/terminos_condiciones_view.xml',
-        # 'views/terminos_codiciones/user_view.xml',
+        'views/terminos_codiciones/user_view.xml',
 
     ],
     'installable': True,
