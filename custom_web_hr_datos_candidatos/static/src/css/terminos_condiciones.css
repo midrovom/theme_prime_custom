@@ -1,10 +1,7 @@
 /* Estilos exclusivos para la página de términos */
 .terminos-condiciones {
     max-width: 900px;
-    margin: 0 auto;
-    background-color: #ffffff; 
-    padding: 20px;
-    border-radius: 10px;
+    background-color: #f5f7fa; 
 }
 
 /* Justificar todo el texto */
@@ -30,7 +27,7 @@
 
 /* Tarjeta */
 .terminos-condiciones .card {
-    background-color: #f5f7fa;/* fondo amigable */
+    background-color: #ffff;/* fondo amigable */
     border-radius: 8px;
     border: 1px solid #e0e0e0;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);

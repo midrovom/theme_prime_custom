@@ -51,8 +51,6 @@
         </t>
     </template>
 
-
-
     <!-- Publicación de la página en la ruta /terminos-y-condiciones -->
     <record id="website_page_terminos_condiciones" model="website.page">
         <field name="name">Términos y Condiciones</field>
