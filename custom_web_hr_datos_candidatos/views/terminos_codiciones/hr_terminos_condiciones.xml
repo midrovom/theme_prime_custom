@@ -5,7 +5,7 @@
             <div class="form-check mt-2">
                 <input type="checkbox" class="form-check-input" id="accept_terms" name="accept_terms"/>
                 <label class="form-check-label" for="accept_terms">
-                     <a href="/terminos-y-condiciones" target="_blank">Acepto términos y condiciones</a>
+                    <a href="/terminos-y-condiciones" target="_blank">Acepto términos y condiciones</a>
                 </label>
             </div>
         </xpath>

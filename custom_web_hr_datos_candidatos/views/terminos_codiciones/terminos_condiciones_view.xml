@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Página de Términos y Condiciones -->
+    <template id="page_terminos_condiciones" name="Términos y Condiciones">
+        <t t-call="website.layout">
+            <div class="container mt-5 mb-5">
+                <h1 class="text-center mb-4">Términos y Condiciones</h1>
+                <div class="card shadow-sm p-4">
+                    <h3 class="mb-3">AVISO DE PRIVACIDAD PARA ASPIRANTES A EMPLEO</h3>
+                    <p><strong>Responsable del tratamiento:</strong><br/>
+                    CONEDERA S.A.<br/>
+                    Correo de contacto: correo@conedera.com</p>
+
+                    <h4>1. Finalidad del tratamiento</h4>
+                    <ul>
+                        <li>Gestionar procesos de reclutamiento, selección y contratación.</li>
+                        <li>Evaluar el perfil profesional, experiencia, referencias y competencias.</li>
+                        <li>Verificar la información proporcionada en hojas de vida, certificados o entrevistas.</li>
+                        <li>Mantener una base de datos de candidatos para futuras vacantes.</li>
+                        <li>Cumplir obligaciones legales y regulatorias aplicables.</li>
+                    </ul>
+
+                    <h4>2. Datos que se recopilan</h4>
+                    <ul>
+                        <li>Datos de identificación y contacto.</li>
+                        <li>Información académica y laboral.</li>
+                        <li>Referencias personales y profesionales.</li>
+                        <li>Información contenida en la hoja de vida.</li>
+                        <li>Resultados de entrevistas y evaluaciones psicométricas o técnicas.</li>
+                        <li>Datos sensibles únicamente cuando sean necesarios y autorizados.</li>
+                    </ul>
+
+                    <h4>3. Base de legitimación</h4>
+                    <ul>
+                        <li>Consentimiento del titular.</li>
+                        <li>Medidas precontractuales solicitadas por el aspirante.</li>
+                        <li>Cumplimiento de obligaciones legales.</li>
+                    </ul>
+
+                    <h4>4. Conservación de la información</h4>
+                    <p>Los datos serán conservados durante el proceso de selección y, de autorizarlo el titular, por un periodo adicional de hasta 2 años para futuras oportunidades laborales. Posteriormente serán eliminados o anonimizados.</p>
+
+                    <h4>5. Transferencias y encargados</h4>
+                    <p>Los datos podrán ser compartidos con empresas del mismo grupo empresarial, proveedores de servicios de reclutamiento o evaluación, y autoridades públicas cuando la ley lo exija, siempre bajo medidas de seguridad y confidencialidad.</p>
+
+                    <h4>6. Derechos del titular</h4>
+                    <p>El aspirante puede ejercer en cualquier momento sus derechos de Acceso, Rectificación, Eliminación, Oposición, Portabilidad y Suspensión del tratamiento mediante solicitud al correo: correo@conedera.com</p>
+
+                    <h4>7. Seguridad de la información</h4>
+                    <p>La empresa aplica medidas técnicas, organizativas y legales para proteger los datos personales contra pérdida, uso indebido, acceso no autorizado o divulgación.</p>
+
+                    <h4>8. Declaración de consentimiento</h4>
+                    <p>Declaro que la información proporcionada es veraz y autorizo libre, previa, informada e inequívocamente el tratamiento de mis datos personales para los fines descritos.</p>
+
+                    <p><strong>Nombre del aspirante:</strong> ____________________<br/>
+                    <strong>Firma:</strong> ____________________<br/>
+                    <strong>Fecha:</strong> ____________________</p>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Publicación de la página en la ruta /terminos-y-condiciones -->
+    <record id="website_page_terminos_condiciones" model="website.page">
+        <field name="name">Términos y Condiciones</field>
+        <field name="url">/terminos-y-condiciones</field>
+        <field name="view_id" ref="page_terminos_condiciones"/>
+    </record>
+</odoo>
