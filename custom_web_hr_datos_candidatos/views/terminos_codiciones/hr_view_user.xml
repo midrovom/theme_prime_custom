@@ -5,11 +5,9 @@
         <field name="model">res.users</field>
         <field name="inherit_id" ref="base.view_users_form"/>
         <field name="arch" type="xml">
-            <!-- Insertar después del bloque de tipo de usuario -->
-            <xpath expr="//div[@name='sel_groups_1_10_11']" position="after">
-                <div class="form-check mt-2">
-                    <field name="accept_terms"/>
-                </div>
+            <!-- Insertar después del campo groups_id (Tipo de usuario) -->
+            <xpath expr="//field[@name='groups_id']" position="after">
+                <field name="accept_terms"/>
             </xpath>
         </field>
     </record>
