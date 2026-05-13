@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="auth_signup.signup_inherit_terms" inherit_id="auth_signup.signup">
+    <template id="signup_inherit_terms" inherit_id="auth_signup.signup">
         <xpath expr="//a[@role='button' and contains(text(),'Already have an account?')]" position="after">
             <div class="form-check mt-2">
                 <input type="checkbox" class="form-check-input" id="accept_terms" name="accept_terms"/>
