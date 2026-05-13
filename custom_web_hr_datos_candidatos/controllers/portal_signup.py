@@ -55,7 +55,7 @@ class AuthSignupHomeOTP(AuthSignupHome):
                 qcontext['error'] = str(e)
 
         return request.render('auth_signup.signup', qcontext)
-    
+
     @http.route('/web/signup/verify', type='http', auth='public', website=True)
     def signup_verify(self, **post):
         error = None
@@ -68,8 +68,12 @@ class AuthSignupHomeOTP(AuthSignupHome):
                 qcontext = request.session.get('signup_data')
 
                 try:
-                    # Crear usuario ahora sí
-                    self.do_signup(qcontext)
+                    # Crear usuario
+                    user = self.do_signup(qcontext)
+
+                    # Guardar evidencia de aceptación de términos
+                    if user:
+                        user.sudo().write({'accept_terms': True})
 
                     # Limpiar sesión
                     request.session.pop('signup_code', None)
@@ -85,3 +89,35 @@ class AuthSignupHomeOTP(AuthSignupHome):
         return request.render('custom_web_hr_datos_candidatos.signup_verify_template', {
             'error': error
         })
+
+
+
+    # @http.route('/web/signup/verify', type='http', auth='public', website=True)
+    # def signup_verify(self, **post):
+    #     error = None
+
+    #     if request.httprequest.method == 'POST':
+    #         user_code = post.get('code')
+    #         real_code = request.session.get('signup_code')
+
+    #         if user_code == real_code:
+    #             qcontext = request.session.get('signup_data')
+
+    #             try:
+    #                 # Crear usuario ahora sí
+    #                 self.do_signup(qcontext)
+
+    #                 # Limpiar sesión
+    #                 request.session.pop('signup_code', None)
+    #                 request.session.pop('signup_data', None)
+
+    #                 return request.redirect('/web/login?account_created=1')
+
+    #             except Exception as e:
+    #                 error = str(e)
+    #         else:
+    #             error = "Código incorrecto"
+
+    #     return request.render('custom_web_hr_datos_candidatos.signup_verify_template', {
+    #         'error': error
+    #     })
