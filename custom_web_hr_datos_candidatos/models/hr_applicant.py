@@ -21,6 +21,7 @@ class HrApplicant(models.Model):
     candidate_id = fields.Many2one('hr.candidate', string="Candidato", ondelete='cascade')
 
     image_1920 = fields.Binary("Foto de perfil") 
+    accept_terms = fields.Boolean(string="Aceptó términos y condiciones", default=False)
     disability = fields.Boolean('Discapacidad', default=False)
     family_disability = fields.Boolean('Familiar con Discapacidad', default=False)
     secondary_studies = fields.Boolean('Estudios Secundarios', default=False)
