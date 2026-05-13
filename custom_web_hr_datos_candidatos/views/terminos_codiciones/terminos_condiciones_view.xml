@@ -2,8 +2,8 @@
 <odoo>
     <template id="page_terminos_condiciones" name="Términos y Condiciones">
         <t t-call="website.layout">
-            <div class="terminos-condiciones container mt-5 mb-5">
-                <h1 class="text-center mb-4">Términos y Condiciones</h1>
+            <div class="terminos-condiciones container mt-5 mb-5 background-color: #f5f7fa;">
+                <h1 class="text-center mb-4">Términos de uso y política de privacidad</h1>
                 <div class="card shadow-sm p-4">
                     <h3 class="mb-3">AVISO DE PRIVACIDAD PARA ASPIRANTES A EMPLEO</h3>
                     <h4>1. Finalidad del tratamiento</h4>
