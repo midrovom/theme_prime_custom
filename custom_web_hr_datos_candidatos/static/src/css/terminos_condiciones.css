@@ -7,17 +7,24 @@
     border-radius: 10px;
 }
 
+/* Justificar todo el texto */
+.terminos-condiciones p,
+.terminos-condiciones ul li {
+    text-align: justify;
+}
+
 /* Título principal */
 .terminos-condiciones h1 {
     font-weight: bold;
     color: #2c3e50;
+    text-align: center;
 }
 
 /* Subtítulos */
 .terminos-condiciones h3,
 .terminos-condiciones h4 {
     font-weight: bold;
-    color: #000; /* azul corporativo */
+    color: #000; 
     margin-top: 20px;
 }
 
@@ -38,15 +45,4 @@
 .terminos-condiciones ul {
     padding-left: 20px;
     margin-bottom: 15px;
-}
-
-.terminos-condiciones ul li {
-    margin-bottom: 8px;
-}
-
-/* Párrafos */
-.terminos-condiciones p {
-    line-height: 1.6;
-    margin-bottom: 15px;
-    color: #555;
 }
