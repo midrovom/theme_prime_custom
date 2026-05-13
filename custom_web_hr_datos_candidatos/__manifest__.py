@@ -39,6 +39,7 @@
         'views/signup/signup_templates.xml',
         'views/footer/hr_reglamento_interno.xml',
         'views/ir_mail_server_view.xml',
+        'views/hr_terminos_condiciones.xml',
 
     ],
     'installable': True,
