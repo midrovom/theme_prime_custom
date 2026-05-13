@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_inherit_accept_terms" model="ir.ui.view">
+        <field name="name">res.users.form.inherit.accept.terms</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <!-- Insertar después del bloque de tipo de usuario -->
+            <xpath expr="//div[@name='sel_groups_1_10_11']" position="after">
+                <div class="form-check mt-2">
+                    <field name="accept_terms"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
