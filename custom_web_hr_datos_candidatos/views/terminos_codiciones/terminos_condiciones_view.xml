@@ -65,5 +65,6 @@
         <field name="name">Términos y Condiciones</field>
         <field name="url">/terminos-y-condiciones</field>
         <field name="view_id" ref="page_terminos_condiciones"/>
+        <field name="is_published">True</field>
     </record>
 </odoo>
