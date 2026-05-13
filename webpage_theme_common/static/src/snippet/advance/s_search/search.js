@@ -1,4 +1,4 @@
-odoo.define('webpage_theme_common.search_placeholder', function (require) {
+odoo.define('webpage_theme_common.search', function (require) {
     "use strict";
 
     const publicWidget = require('web.public.widget');
