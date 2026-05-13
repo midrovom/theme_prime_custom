@@ -1,0 +1,52 @@
+/* Estilos exclusivos para la página de términos */
+.terminos-condiciones {
+    max-width: 900px;
+    margin: 0 auto;
+    background-color: #f5f7fa; /* fondo amigable */
+    padding: 20px;
+    border-radius: 10px;
+}
+
+/* Título principal */
+.terminos-condiciones h1 {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+/* Subtítulos */
+.terminos-condiciones h3,
+.terminos-condiciones h4 {
+    font-weight: bold;
+    color: #1a73e8; /* azul corporativo */
+    margin-top: 20px;
+}
+
+/* Tarjeta */
+.terminos-condiciones .card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.terminos-condiciones .card:hover {
+    transform: translateY(-3px);
+}
+
+/* Listas */
+.terminos-condiciones ul {
+    padding-left: 20px;
+    margin-bottom: 15px;
+}
+
+.terminos-condiciones ul li {
+    margin-bottom: 8px;
+}
+
+/* Párrafos */
+.terminos-condiciones p {
+    line-height: 1.6;
+    margin-bottom: 15px;
+    color: #555;
+}

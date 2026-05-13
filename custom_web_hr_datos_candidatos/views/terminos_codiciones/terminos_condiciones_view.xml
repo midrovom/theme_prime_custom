@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Página de Términos y Condiciones -->
     <template id="page_terminos_condiciones" name="Términos y Condiciones">
         <t t-call="website.layout">
-            <div class="container mt-5 mb-5">
+            <div class="terminos-condiciones container mt-5 mb-5">
                 <h1 class="text-center mb-4">Términos y Condiciones</h1>
                 <div class="card shadow-sm p-4">
                     <h3 class="mb-3">AVISO DE PRIVACIDAD PARA ASPIRANTES A EMPLEO</h3>
@@ -47,11 +46,11 @@
 
                     <h4>8. Declaración de consentimiento</h4>
                     <p>Declaro que la información proporcionada es veraz y autorizo libre, previa, informada e inequívocamente el tratamiento de mis datos personales para los fines descritos.</p>
-
                 </div>
             </div>
         </t>
     </template>
+
 
     <!-- Publicación de la página en la ruta /terminos-y-condiciones -->
     <record id="website_page_terminos_condiciones" model="website.page">

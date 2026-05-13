@@ -49,6 +49,7 @@
     'assets': {
         "web.assets_frontend":[
             "custom_web_hr_datos_candidatos/static/src/css/styles.css",
+            'custom_web_hr_datos_candidatos/static/src/css/terminos_condiciones.css',
             "custom_web_hr_datos_candidatos/static/src/js/website_hr_recruitment.js",
         ]
         
