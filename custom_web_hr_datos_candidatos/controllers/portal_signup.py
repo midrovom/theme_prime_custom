@@ -68,12 +68,24 @@ class AuthSignupHomeOTP(AuthSignupHome):
                 qcontext = request.session.get('signup_data')
 
                 try:
+                    # Capturar el valor del checkbox
+                    accept_terms = post.get('accept_terms')
+                    accepted = bool(accept_terms)
+
                     # Crear usuario
                     user = self.do_signup(qcontext)
 
-                    # Guardar evidencia de aceptación de términos
                     if user:
-                        user.sudo().write({'accept_terms': True})
+                        # Guardar en res.users
+                        user.sudo().write({'accept_terms': accepted})
+
+                        # Crear applicant vinculado al usuario
+                        request.env['hr.applicant'].sudo().create({
+                            'partner_name': user.name,
+                            'email_from': user.login,
+                            'accept_terms': accepted,
+                            # otros campos que quieras copiar
+                        })
 
                     # Limpiar sesión
                     request.session.pop('signup_code', None)
