@@ -4,22 +4,22 @@
         <!-- Modificamos el input -->
         <xpath expr="//input[@name='search']" position="attributes">
             <attribute name="t-att-placeholder">
-                "Buscar..." if not (website and website.search_placeholder) else ''
+                (website and website.search_placeholder.split('\n')[0]) or "Buscar..."
             </attribute>
             <attribute name="class" add="tp-search-input"/>
         </xpath>
 
-        <!-- Agregamos el span con efecto y duración -->
+        <!-- Agregamos los spans con efecto y duración -->
         <xpath expr="//input[@name='search']" position="after">
             <t t-if="website and website.search_placeholder">
                 <t t-foreach="website.search_placeholder.split('\n')" t-as="frase" t-foreach-index="i">
-                    <span t-att-class="'tp-fake-placeholder typing ' + (website.search_placeholder_effect or '') + (i == 0 and ' active' or '')"
-                        t-att-style="'--anim-duration: %ss' % (website.search_placeholder_duration or 2.0)">
+                    <span t-att-class="'tp-fake-placeholder typing ' + (i == 0 and 'active' or '')"
+                          t-att-style="'--anim-duration: %ss' % (website.search_placeholder_duration or 2.0)">
                         <t t-esc="frase"/>
                     </span>
                 </t>
             </t>
         </xpath>
-
     </template>
 </odoo>
+

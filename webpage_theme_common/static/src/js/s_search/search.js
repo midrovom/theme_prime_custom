@@ -18,7 +18,15 @@ publicWidget.registry.search = publicWidget.Widget.extend({
 
         const cambiarFrase = () => {
             input.setAttribute('placeholder', frases[index]);
-            spans.forEach(span => span.classList.remove('active'));
+
+            spans.forEach(span => {
+                span.classList.remove('active');
+                // Reinicia animación
+                span.style.animation = 'none';
+                span.offsetHeight; // fuerza reflow
+                span.style.animation = '';
+            });
+
             spans[index].classList.add('active');
             index = (index + 1) % frases.length;
         };
