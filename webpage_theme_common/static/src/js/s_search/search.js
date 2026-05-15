@@ -2,26 +2,48 @@
 
 import publicWidget from '@web/legacy/js/public/public_widget';
 
-publicWidget.registry.search = publicWidget.Widget.extend({
-    selector: '.tp-search-input',
+publicWidget.registry.searchPlaceholderRotator = publicWidget.Widget.extend({
+    selector: '.o_searchbar_form',
+
     start: function () {
-        const input = this.$el[0];
-        const spans = document.querySelectorAll('.tp-fake-placeholder');
-        if (!spans.length) return;
+
+        // Buscar únicamente los spans dentro de este buscador
+        const spans = this.el.querySelectorAll('.tp-fake-placeholder');
+
+        if (!spans.length) {
+            return;
+        }
 
         let index = 0;
-        const duracion = parseFloat(spans[0].style.getPropertyValue('--anim-duration')) * 1000 || 2000;
 
-        const cambiarFrase = () => {
-            input.setAttribute('placeholder', spans[index].textContent.trim());
+        // Leer duración desde CSS variable
+        const duration =
+            parseFloat(
+                getComputedStyle(spans[0])
+                    .getPropertyValue('--anim-duration')
+            ) * 1000 || 2000;
 
-            spans.forEach(span => span.classList.remove('active'));
+        // Ocultar todos
+        spans.forEach(span => {
+            span.classList.remove('active');
+        });
+
+        // Mostrar primero
+        spans[0].classList.add('active');
+
+        setInterval(() => {
+
+            // ocultar actual
+            spans[index].classList.remove('active');
+
+            // siguiente
+            index = (index + 1) % spans.length;
+
+            // mostrar siguiente
             spans[index].classList.add('active');
 
-            index = (index + 1) % spans.length;
-        };
+        }, duration);
 
-        cambiarFrase();
-        setInterval(cambiarFrase, duracion);
+        return this._super(...arguments);
     },
 });

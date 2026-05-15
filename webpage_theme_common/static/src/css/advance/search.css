@@ -149,9 +149,15 @@
     50% { border-color: var(--placeholder-color, #000); }
 }
 
-/* Ocultar todos los spans por defecto */
-.tp-fake-placeholder:not(.active) {
-    display: none;
+.tp-fake-placeholder {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .3s ease;
+}
+
+.tp-fake-placeholder.active {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Solo el activo se muestra con animación typing */
