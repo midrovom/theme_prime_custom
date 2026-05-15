@@ -57,7 +57,7 @@
             'webpage_theme_common/static/src/scss/advance/s_banner/s_banner_16.scss',
             'webpage_theme_common/static/src/scss/advance/s_banner/s_banner_17.scss',
             'webpage_theme_common/static/src/css/advance/search.css',
-            'webpage_theme_common/static/src/snippet/advance/s_search/search.js',
+            'webpage_theme_common/static/src/js/s_search/search.js',
 
             'webpage_theme_common/static/src/scss/advance/s_shop_offert/s_shop_offer_6.scss',
             'webpage_theme_common/static/src/scss/advance/s_shop_offert/shop_offert_7.scss',
