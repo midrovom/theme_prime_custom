@@ -17,7 +17,6 @@
                         t-att-style="'--anim-duration: %ss' % (website.search_placeholder_duration or 2)">
                         <t t-esc="frase"/>
                     </span>
-
                 </t>
             </t>
         </xpath>

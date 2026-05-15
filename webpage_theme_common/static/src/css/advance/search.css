@@ -150,7 +150,7 @@
 }
 
 /* Ocultar todos los spans por defecto */
-.tp-fake-placeholder {
+.tp-fake-placeholder:not(.active) {
     display: none;
 }
 

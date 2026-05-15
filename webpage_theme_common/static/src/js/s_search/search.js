@@ -13,18 +13,9 @@ publicWidget.registry.search = publicWidget.Widget.extend({
         const duracion = parseFloat(spans[0].style.getPropertyValue('--anim-duration')) * 1000 || 2000;
 
         const cambiarFrase = () => {
-            // Cambiar placeholder real
             input.setAttribute('placeholder', spans[index].textContent.trim());
 
-            // Resetear todos los spans
-            spans.forEach(span => {
-                span.classList.remove('active');
-                span.style.animation = 'none';
-                span.offsetHeight; // fuerza reflow
-                span.style.animation = '';
-            });
-
-            // Activar el span actual con su efecto
+            spans.forEach(span => span.classList.remove('active'));
             spans[index].classList.add('active');
 
             index = (index + 1) % spans.length;
@@ -34,4 +25,3 @@ publicWidget.registry.search = publicWidget.Widget.extend({
         setInterval(cambiarFrase, duracion);
     },
 });
-
