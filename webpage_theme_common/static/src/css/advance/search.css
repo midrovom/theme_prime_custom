@@ -150,9 +150,9 @@
 }
 
 /* Ocultar todos los spans por defecto */
-.tp-fake-placeholder {
+/* .tp-fake-placeholder {
     display: none;
-}
+} */
 
 /* Solo el activo se muestra con animación typing */
 .tp-fake-placeholder.typing.active {
