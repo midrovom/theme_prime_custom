@@ -19,17 +19,13 @@ odoo.define('webpage_theme_common.search_placeholder_effect', function (require)
             let index = 0;
             const duracion = parseInt(spans[0].style.getPropertyValue('--anim-duration')) * 1000 || 2000;
 
-            // Función para cambiar la frase
             const cambiarFrase = () => {
                 input.setAttribute('placeholder', frases[index]);
-                // Quitar y poner clase "active" en los spans para efectos visuales
                 spans.forEach(span => span.classList.remove('active'));
                 spans[index].classList.add('active');
-
                 index = (index + 1) % frases.length;
             };
 
-            // Inicializar
             cambiarFrase();
             setInterval(cambiarFrase, duracion);
         },
