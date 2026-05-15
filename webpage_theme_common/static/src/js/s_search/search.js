@@ -7,30 +7,31 @@ publicWidget.registry.search = publicWidget.Widget.extend({
     start: function () {
         const input = this.$el[0];
         const spans = document.querySelectorAll('.tp-fake-placeholder');
-        const frases = Array.from(spans).map(span => span.textContent.trim());
-
-        if (!frases.length) return;
+        if (!spans.length) return;
 
         let index = 0;
-        // Tomamos la duración desde el primer span
         const duracion = parseFloat(spans[0].style.getPropertyValue('--anim-duration')) * 1000 || 2000;
 
         const cambiarFrase = () => {
-            input.setAttribute('placeholder', frases[index]);
+            // Cambiar placeholder real
+            input.setAttribute('placeholder', spans[index].textContent.trim());
 
+            // Resetear todos los spans
             spans.forEach(span => {
                 span.classList.remove('active');
-                // Reinicia animación
                 span.style.animation = 'none';
                 span.offsetHeight; // fuerza reflow
                 span.style.animation = '';
             });
 
+            // Activar el span actual con su efecto
             spans[index].classList.add('active');
-            index = (index + 1) % frases.length;
+
+            index = (index + 1) % spans.length;
         };
 
         cambiarFrase();
         setInterval(cambiarFrase, duracion);
     },
 });
+
