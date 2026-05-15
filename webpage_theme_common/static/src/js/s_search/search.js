@@ -1,3 +1,7 @@
+/** @odoo-module **/
+
+import publicWidget from '@web/legacy/js/public/public_widget';
+
 odoo.define('webpage_theme_common.search', function (require) {
     "use strict";
     const publicWidget = require('web.public.widget');
