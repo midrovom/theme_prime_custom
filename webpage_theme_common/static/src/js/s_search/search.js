@@ -2,7 +2,7 @@
 
 import publicWidget from '@web/legacy/js/public/public_widget';
 
-publicWidget.registry.SearchPlaceholderEffect = publicWidget.Widget.extend({
+publicWidget.registry.search = publicWidget.Widget.extend({
     selector: '.tp-search-input',
     start: function () {
         const input = this.$el[0];
