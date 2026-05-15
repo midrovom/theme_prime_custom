@@ -89,7 +89,7 @@
 
             'webpage_theme_common/static/src/scss/conedera/snippets/header_mobile_custom/header_mobile.scss',
             'webpage_theme_common/static/src/snippet/dynamic_snippet_custom/dynamic_snippet_custom.js',
-            'webpage_theme_common/static/src/snippet/advance/s_search/search.js',
+            # 'webpage_theme_common/static/src/snippet/advance/s_search/search.js',
     ],
         'website.assets_wysiwyg': [
             'webpage_theme_common/static/src/scss/advance/snippets/s_dynamic_snippet_categories/option.js',
