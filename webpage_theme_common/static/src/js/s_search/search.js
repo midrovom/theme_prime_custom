@@ -1,6 +1,5 @@
 odoo.define('webpage_theme_common.search_placeholder_effect', function (require) {
     "use strict";
-
     const publicWidget = require('web.public.widget');
 
     publicWidget.registry.SearchPlaceholderEffect = publicWidget.Widget.extend({
@@ -12,9 +11,7 @@ odoo.define('webpage_theme_common.search_placeholder_effect', function (require)
 
             spans.forEach(span => frases.push(span.textContent.trim()));
 
-            if (frases.length === 0) {
-                return;
-            }
+            if (!frases.length) return;
 
             let index = 0;
             const duracion = parseInt(spans[0].style.getPropertyValue('--anim-duration')) * 1000 || 2000;
