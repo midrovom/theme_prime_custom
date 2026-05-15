@@ -1,24 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="website_search_box_inherit" inherit_id="website.website_search_box">
-        <!-- Modificamos el input -->
         <xpath expr="//input[@name='search']" position="attributes">
-            <attribute name="t-att-placeholder">
-                (website and website.search_placeholder.split('\n')[0]) or "Buscar..."
-            </attribute>
+            <attribute name="placeholder"></attribute>
             <attribute name="class" add="tp-search-input"/>
         </xpath>
 
-        <!-- Spans con efecto typing y duración -->
         <xpath expr="//input[@name='search']" position="after">
             <t t-if="website and website.search_placeholder">
                 <t t-foreach="website.search_placeholder.split('\n')" t-as="frase" t-foreach-index="i">
-                    <span t-att-class="'tp-fake-placeholder ' + website.search_placeholder_effect + ' ' + (i == 0 and 'active' or '')"
-                        t-att-style="'--anim-duration: %ss' % (website.search_placeholder_duration or 2)">
+                    <span t-att-class="'tp-fake-placeholder ' + (website.search_placeholder_effect or '') + ' ' + (i == 0 and 'active' or '')"
+                          t-att-style="'--anim-duration: %ss' % (website.search_placeholder_duration or 2)">
+
                         <t t-esc="frase"/>
                     </span>
                 </t>
             </t>
         </xpath>
+
     </template>
 </odoo>
