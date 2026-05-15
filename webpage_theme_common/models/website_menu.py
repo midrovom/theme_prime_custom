@@ -21,11 +21,11 @@ class Website(models.Model):
         ('slide', 'Deslizar'),
         ('flip', 'Volteo'),
         ('shrink', 'Reducir'),
-        ('grow', 'Ampliar'),
+        # ('grow', 'Ampliar'),
         ('flash', 'Flash'),
         ('pulse', 'Pulso'),
-        ('shake', 'Agitar'),
-        ('tada', 'Tada'),
+        # ('shake', 'Agitar'),
+        # ('tada', 'Tada'),
         ('typing', 'Escritura'),
     ], string="Efecto del texto", default='none')
 
