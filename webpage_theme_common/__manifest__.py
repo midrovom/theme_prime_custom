@@ -57,7 +57,6 @@
             'webpage_theme_common/static/src/scss/advance/s_banner/s_banner_16.scss',
             'webpage_theme_common/static/src/scss/advance/s_banner/s_banner_17.scss',
             'webpage_theme_common/static/src/css/advance/search.css',
-            'webpage_theme_common/static/src/snippet/advance/s_search/search.js',
 
             'webpage_theme_common/static/src/scss/advance/s_shop_offert/s_shop_offer_6.scss',
             'webpage_theme_common/static/src/scss/advance/s_shop_offert/shop_offert_7.scss',
@@ -90,6 +89,7 @@
 
             'webpage_theme_common/static/src/scss/conedera/snippets/header_mobile_custom/header_mobile.scss',
             'webpage_theme_common/static/src/snippet/dynamic_snippet_custom/dynamic_snippet_custom.js',
+            'webpage_theme_common/static/src/snippet/advance/s_search/search.js',
     ],
         'website.assets_wysiwyg': [
             'webpage_theme_common/static/src/scss/advance/snippets/s_dynamic_snippet_categories/option.js',
