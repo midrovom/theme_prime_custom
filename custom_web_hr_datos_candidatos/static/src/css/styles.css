@@ -116,3 +116,7 @@ input.form-check-input:focus {
     color: #dc3545;   
     font-weight: bold;
 }
+
+footer {
+    display: none !important;
+}
