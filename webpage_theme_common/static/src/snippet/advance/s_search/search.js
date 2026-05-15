@@ -1,51 +1,37 @@
-odoo.define('webpage_theme_common.search', function (require) {
+odoo.define('webpage_theme_common.search_placeholder_effect', function (require) {
     "use strict";
 
     const publicWidget = require('web.public.widget');
 
-    publicWidget.registry.SearchPlaceholderTyping = publicWidget.Widget.extend({
+    publicWidget.registry.SearchPlaceholderEffect = publicWidget.Widget.extend({
         selector: '.tp-search-input',
-
         start: function () {
-            const frases = document.querySelectorAll('.tp-fake-placeholder');
+            const input = this.$el[0];
+            const frases = [];
+            const spans = document.querySelectorAll('.tp-fake-placeholder');
 
-            if (!frases.length) {
-                return this._super.apply(this, arguments);
+            spans.forEach(span => frases.push(span.textContent.trim()));
+
+            if (frases.length === 0) {
+                return;
             }
 
             let index = 0;
+            const duracion = parseInt(spans[0].style.getPropertyValue('--anim-duration')) * 1000 || 2000;
 
-            function mostrarFrase() {
+            // Función para cambiar la frase
+            const cambiarFrase = () => {
+                input.setAttribute('placeholder', frases[index]);
+                // Quitar y poner clase "active" en los spans para efectos visuales
+                spans.forEach(span => span.classList.remove('active'));
+                spans[index].classList.add('active');
 
-                // ocultar todas
-                frases.forEach(f => {
-                    f.classList.remove('active');
-                });
+                index = (index + 1) % frases.length;
+            };
 
-                const actual = frases[index];
-
-                // forzar reinicio animación
-                void actual.offsetWidth;
-
-                actual.classList.add('active');
-
-                // duración desde CSS variable
-                const duration =
-                    parseFloat(
-                        getComputedStyle(actual)
-                        .getPropertyValue('--anim-duration')
-                    ) * 1000;
-
-                // siguiente frase
-                setTimeout(() => {
-                    index = (index + 1) % frases.length;
-                    mostrarFrase();
-                }, duration + 1000); // pausa extra
-            }
-
-            mostrarFrase();
-
-            return this._super.apply(this, arguments);
+            // Inicializar
+            cambiarFrase();
+            setInterval(cambiarFrase, duracion);
         },
     });
 });
