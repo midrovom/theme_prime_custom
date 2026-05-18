@@ -34,7 +34,7 @@
         'views/views_form/recruitment_form_2.xml',
         'views/views_form/recruitment_form_3.xml',
         'views/views_form/website_hr_recruitment.xml',
-        'views/error_template/error_templates.xml',
+        #'views/error_template/error_templates.xml',
         'views/footer/hr_footer_views.xml',
         'views/signup/signup_templates.xml',
         'views/footer/hr_reglamento_interno.xml',
