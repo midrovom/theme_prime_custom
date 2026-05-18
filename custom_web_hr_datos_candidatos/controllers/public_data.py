@@ -27,3 +27,15 @@ class PublicDataController(http.Controller):
         )
         return http.Response(json.dumps(states), content_type='application/json')
     
+class RecruitmentController(http.Controller):
+
+    @http.route('/jobs/recruitment/<string:job_slug>', type='http', auth="public", website=True)
+    def recruitment_form(self, job_slug, **kwargs):
+        if not request.session.uid:
+            # Usuario no logueado → redirigir al login con parámetro next
+            return request.redirect('/web/login?redirect=/jobs/recruitment/%s' % job_slug)
+        
+        # Si está logueado, mostrar el formulario normalmente
+        return request.render('custom_web_hr_datos_candidatos.recruitment_form_template', {
+            'job_slug': job_slug
+        })
