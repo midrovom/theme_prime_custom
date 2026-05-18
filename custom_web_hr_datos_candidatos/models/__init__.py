@@ -11,4 +11,4 @@ from . import hr_footer
 from . import hr_reglamento
 from . import hr_report
 from . import mail_server
-#from . import res_users
+from . import res_users
