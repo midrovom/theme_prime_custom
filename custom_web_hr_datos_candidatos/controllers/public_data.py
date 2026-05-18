@@ -2,6 +2,8 @@ from odoo import http, _
 from odoo.http import request
 from werkzeug.exceptions import BadRequest
 
+from odoo.addons.http_routing.models.ir_http import slug
+
 import logging
 import json
 
@@ -34,12 +36,18 @@ class RecruitmentController(http.Controller):
     def recruitment_form(self, job_slug, **kwargs):
         if not request.session.uid:
             return request.redirect('/web/login?redirect=/jobs/recruitment/%s' % job_slug)
-        
-        job = request.env['hr.job'].sudo().search([('website_slug', '=', job_slug)], limit=1)
+
+        # Buscar el job usando el slug
+        job = request.env['hr.job'].sudo().search([], limit=1)
+        for j in request.env['hr.job'].sudo().search([]):
+            if slug(j) == job_slug:
+                job = j
+                break
+
         if not job:
             return request.not_found()
 
         return request.render('custom_web_hr_datos_candidatos.web_recruitment', {
-            'job': job,          
+            'job': job,
             'job_slug': job_slug
         })
