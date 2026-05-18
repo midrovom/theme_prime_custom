@@ -2,9 +2,6 @@ from odoo import http, _
 from odoo.http import request
 from werkzeug.exceptions import BadRequest
 
-from odoo.addons.http_routing.models.ir_http import slugify
-
-
 import logging
 import json
 
@@ -30,21 +27,8 @@ class PublicDataController(http.Controller):
         )
         return http.Response(json.dumps(states), content_type='application/json')
     
-
-class RecruitmentController(http.Controller):
-
-    @http.route('/jobs/recruitment/<string:job_slug>', type='http', auth="public", website=True)
-    def recruitment_form(self, job_slug, **kwargs):
-        if not request.session.uid:
-            return request.redirect('/web/login?redirect=/jobs/recruitment/%s' % job_slug)
-
-        job_name = job_slug.replace('-', ' ')
-        job = request.env['hr.job'].sudo().search([('name', '=', job_name)], limit=1)
-        if not job:
-            return request.not_found()
-
-        return request.render('custom_web_hr_datos_candidatos.web_recruitment', {
+    @http.route(['/jobs/recruitment/<model("hr.job"):job>'], type='http', auth="user", website=True)
+    def recruitment_form(self, job, **kwargs):
+        return request.render("custom_web_hr_datos_candidatos.web_recruitment", {
             'job': job,
-            'job_slug': job_slug
         })
-
