@@ -27,9 +27,3 @@ class PublicDataController(http.Controller):
         )
         return http.Response(json.dumps(states), content_type='application/json')
     
-class HomeRedirectController(http.Controller):
-
-    @http.route('/', type='http', auth="public", website=True)
-    def redirect_home(self, **kw):
-        # Redirige siempre al login
-        return request.redirect('/web/login')
