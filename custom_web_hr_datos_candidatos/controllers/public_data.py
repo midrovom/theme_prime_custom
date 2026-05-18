@@ -27,13 +27,19 @@ class PublicDataController(http.Controller):
         )
         return http.Response(json.dumps(states), content_type='application/json')
     
+
 class RecruitmentController(http.Controller):
 
     @http.route('/jobs/recruitment/<string:job_slug>', type='http', auth="public", website=True)
     def recruitment_form(self, job_slug, **kwargs):
         if not request.session.uid:
             return request.redirect('/web/login?redirect=/jobs/recruitment/%s' % job_slug)
+        
+        job = request.env['hr.job'].sudo().search([('website_slug', '=', job_slug)], limit=1)
+        if not job:
+            return request.not_found()
 
         return request.render('custom_web_hr_datos_candidatos.web_recruitment', {
+            'job': job,          
             'job_slug': job_slug
         })
