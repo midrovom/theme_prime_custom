@@ -57,16 +57,4 @@
         </xpath>
     </template>
 
-
-    <!-- <template id="index" name="template_name" inherit_id="website_hr_recruitment.index">
-        <xpath expr="//a[@draggable='false']" position="attributes">
-            <attribute name="style">/jobs/recruitment/#{ slug(job) }</attribute>
-        </xpath>
-        <xpath expr="//div[@class='o_job_infos d-flex flex-column']" position="after">
-            <a t-attf-href="/jobs/recruitment/#{ slug(job) }"
-               t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
-               draggable="false">APLICAR</a>
-        </xpath>
-    </template> -->
-
 </odoo>
