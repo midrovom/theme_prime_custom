@@ -397,13 +397,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         const currentYear = new Date().getFullYear();
 
                         endSelect.innerHTML = "<option value=''></option>";
-                        for (let year = startYear; year <= currentYear; year++) {
+
+                        // Recorremos hasta el año anterior al actual
+                        for (let year = startYear + 1; year < currentYear; year++) {
                             const opt = document.createElement("option");
                             opt.value = year;
                             opt.textContent = year;
                             endSelect.appendChild(opt);
                         }
 
+                        // Agregamos solo "Presente" en lugar del año actual
                         const presentOpt = document.createElement("option");
                         presentOpt.value = "presente";
                         presentOpt.textContent = "Presente";
@@ -551,12 +554,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         // reconstruir opciones
                         endSelect.innerHTML = "<option value=''></option>";
-                        for (let year = startYear; year <= currentYear; year++) {
+
+                        // recorrer hasta el año anterior al actual
+                        for (let year = startYear; year < currentYear; year++) {
                             const opt = document.createElement("option");
                             opt.value = year;
                             opt.textContent = year;
                             endSelect.appendChild(opt);
                         }
+
+                        // agregar solo "Presente" en lugar del año actual
                         const presentOpt = document.createElement("option");
                         presentOpt.value = "presente";
                         presentOpt.textContent = "Presente";
@@ -565,6 +572,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 });
             }
         }, 0);
+
 
         return block;
     },
