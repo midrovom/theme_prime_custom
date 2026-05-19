@@ -9,7 +9,7 @@
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='partner_phone']" position="after">
                     <!-- Datos personales -->
-                    <field name="image_1920"/>
+                    <field name="image_1920" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="partner_mobile" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="document_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
@@ -41,18 +41,18 @@
                     <page string="Información Médica" name="page_medical">
                         <field name="medical_ids">
                             <list>
-                                <field name="enfermedad_persistente"/>
-                                <field name="detalle_enfermedad_persistente"/>
-                                <field name="medicacion_continua"/>
-                                <field name="detalle_medicacion_continua"/>
-                                <field name="enfermedad_laboral"/>
-                                <field name="detalle_enfermedad_laboral"/>
-                                <field name="cirugia_realizada"/>
-                                <field name="detalle_cirugia_realizada"/>
-                                <field name="discapacidad"/>
-                                <field name="tipo_discapacidad"/>
-                                <field name="porcentaje_discapacidad"/>
-                                <field name="tipo_sangre"/>
+                                <field name="enfermedad_persistente" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="detalle_enfermedad_persistente" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="medicacion_continua" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="detalle_medicacion_continua" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="enfermedad_laboral" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="detalle_enfermedad_laboral" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="cirugia_realizada" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="detalle_cirugia_realizada" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="discapacidad" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="tipo_discapacidad" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="porcentaje_discapacidad" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="tipo_sangre" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             </list>
                         </field>
                     </page>
@@ -60,14 +60,14 @@
                     <page string="Datos Familiares" name="page_family">
                         <field name="family_ids">
                             <list>
-                                <field name="name"/>
-                                <field name="cedula"/>
-                                <field name="birthdate"/>
-                                <field name="phone"/>
-                                <field name="occupation"/>
-                                <field name="economically_dependent"/>
-                                <field name="disability"/>
-                                <field name="disability_type"/>
+                                <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="birthdate" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="phone" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="occupation" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="economically_dependent" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="disability" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="disability_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             </list>
                         </field>
                     </page>
@@ -75,19 +75,19 @@
                     <page string="Formación Académica" name="page_education">
                         <field name="education_ids">
                             <list>
-                                <field name="level_id"/>
-                                <field name="institucion"/>
-                                <field name="fecha_inicio"/>
-                                <field name="year_fin"/>
-                                <field name="country_id"/>
-                                <field name="state_id" />
-                                <field name="titulo"/>
-                                <field name="study_current"/>         
-                                <field name="titulo_por_obtener"/>  
-                                <field name="institucion_2"/> 
-                                <field name="horario"/>              
-                                <field name="carrera"/>  
-                                <field name="estado"/>             
+                                <field name="level_id" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="institucion" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="fecha_inicio" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="year_fin" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="country_id" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="state_id" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="titulo" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="study_current" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>         
+                                <field name="titulo_por_obtener" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>  
+                                <field name="institucion_2" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/> 
+                                <field name="horario" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>              
+                                <field name="carrera" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>  
+                                <field name="estado" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>             
                             </list>
                         </field>
                     </page>
@@ -95,18 +95,18 @@
                     <page string="Experiencia Laboral" name="page_experience">
                         <field name="experience_job_ids">
                             <list>
-                                <field name="tiempo_servicio"/>
-                                <field name="empresa"/>
-                                <field name="country_id"/>
-                                <field name="state_id" />
-                                <field name="telefonos"/>
-                                <field name="name"/>
-                                <field name="ingreso_mensual"/>
-                                <field name="motivo_separacion"/>
-                                <field name="jefe_directo"/>
-                                <field name="cargo_jefe_directo"/>
-                                <field name="fecha_inicio"/>
-                                <field name="year_fin"/>
+                                <field name="tiempo_servicio" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="empresa" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="country_id" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="state_id" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="telefonos" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="ingreso_mensual" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="motivo_separacion" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="jefe_directo" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="cargo_jefe_directo" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="fecha_inicio" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="year_fin" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             </list>
                         </field>
                     </page>
@@ -115,10 +115,10 @@
                     <page string="Familiares o Conocidos del Grupo Empresarial" name="page_known">
                         <field name="known_ids">
                             <list>
-                                <field name="posee_familiares"/>
-                                <field name="nombre_completo"/>
-                                <field name="relacion"/>
-                                <field name="parentesco"/>
+                                <field name="posee_familiares" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="nombre_completo" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="relacion" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="parentesco" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             </list>
                         </field>
                     </page>
@@ -126,11 +126,11 @@
                     <page string="Referencias Personales" name="page_reference">
                         <field name="reference_ids">
                             <list>
-                                <field name="nombre"/>
-                                <field name="domicilio"/>
-                                <field name="telefono"/>
-                                <field name="ocupacion"/>
-                                <field name="tiempo_conocerlo"/>
+                                <field name="nombre" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="domicilio" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="telefono" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="ocupacion" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="tiempo_conocerlo" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             </list>
                         </field>
                     </page>
