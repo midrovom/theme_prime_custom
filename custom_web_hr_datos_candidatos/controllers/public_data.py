@@ -29,11 +29,18 @@ class PublicDataController(http.Controller):
     
     @http.route(['/jobs/recruitment/<model("hr.job"):job>'], type='http', auth="user", website=True)
     def recruitment_form(self, job, **kwargs):
+        # Validación de cuenta: si el usuario no tiene partner o algún dato obligatorio
         user = request.env.user
-        partner = user.partner_id
-        return request.render("custom_web_hr_datos_candidatos.web_recruitment", {
+        if not user.partner_id:
+            return request.redirect('/web/signup')  # o a donde quieras validar
+
+        # En lugar de renderizar tu template directamente,
+        # llama al template original y pásale tu extra si quieres
+        values = {
             'job': job,
             'user': user,
-            'partner': partner,
-        })
+            'partner': user.partner_id,
+        }
+        return request.render("website_hr_recruitment.apply", values)
+
 
