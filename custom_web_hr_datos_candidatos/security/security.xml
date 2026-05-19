@@ -1,81 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- hr.applicant (modelo estándar de Odoo) -->
-    <record id="rule_applicant_readonly" model="ir.rule">
-        <field name="name">Hr Applicant Readonly</field>
-        <field name="model_id" ref="hr.model_hr_applicant"/>
-        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
-        <field name="domain_force">[(1,'=',1)]</field>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_write" eval="0"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
-    </record>
+    <data>
 
-    <!-- Modelos personalizados -->
-    <record id="rule_applicant_education_readonly" model="ir.rule">
-        <field name="name">Applicant Education Readonly</field>
-        <field name="model_id" ref="model_applicant_education"/>
-        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
-        <field name="domain_force">[(1,'=',1)]</field>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_write" eval="0"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
-    </record>
+        <!-- Record Rule: usuarios internos solo pueden leer -->
+        <record id="rule_applicant_readonly" model="ir.rule">
+            <field name="name">Applicant readonly for HR internal users</field>
+            <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+            <field name="groups" eval="[(4, ref('hr.group_hr_user'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="0"/>
+            <field name="perm_create" eval="0"/>
+            <field name="perm_unlink" eval="0"/>
+            <field name="domain_force">[(1,'=',1)]</field>
+        </record>
 
-    <record id="rule_applicant_family_readonly" model="ir.rule">
-        <field name="name">Applicant Family Readonly</field>
-        <field name="model_id" ref="model_applicant_family"/>
-        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
-        <field name="domain_force">[(1,'=',1)]</field>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_write" eval="0"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
-    </record>
-
-    <record id="rule_applicant_known_readonly" model="ir.rule">
-        <field name="name">Applicant Known Readonly</field>
-        <field name="model_id" ref="model_applicant_known"/>
-        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
-        <field name="domain_force">[(1,'=',1)]</field>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_write" eval="0"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
-    </record>
-
-    <record id="rule_applicant_experience_job_readonly" model="ir.rule">
-        <field name="name">Applicant Experience Job Readonly</field>
-        <field name="model_id" ref="model_applicant_experience_job"/>
-        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
-        <field name="domain_force">[(1,'=',1)]</field>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_write" eval="0"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
-    </record>
-
-    <record id="rule_applicant_reference_readonly" model="ir.rule">
-        <field name="name">Applicant Reference Readonly</field>
-        <field name="model_id" ref="model_applicant_reference"/>
-        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
-        <field name="domain_force">[(1,'=',1)]</field>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_write" eval="0"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
-    </record>
-
-    <record id="rule_applicant_medical_readonly" model="ir.rule">
-        <field name="name">Applicant Medical Readonly</field>
-        <field name="model_id" ref="model_applicant_medical"/>
-        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
-        <field name="domain_force">[(1,'=',1)]</field>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_write" eval="0"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
-    </record>
+    </data>
 </odoo>
