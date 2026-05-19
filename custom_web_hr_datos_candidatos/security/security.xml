@@ -1,15 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Grupo de seguridad -->
-    <record id="group_hr_recruitment_readonly" model="res.groups">
-        <field name="name">Reclutamiento - Solo Lectura</field>
-        <field name="category_id" ref="base.module_category_human_resources"/>
-    </record>
-
-    <!-- Regla de acceso: solo lectura sobre hr.applicant -->
-    <record id="rule_hr_applicant_readonly" model="ir.rule">
-        <field name="name">Postulantes solo lectura</field>
-        <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
-        <field name="groups" eval="[(4, ref('group_hr_recruitment_readonly'))]"/>
+    <!-- Reglas de solo lectura para todos los modelos del postulante -->
+    <record id="rule_applicant_readonly" model="ir.rule">
+        <field name="name">Hr Applicant Readonly</field>
+        <field name="model_id" ref="hr.model_hr_applicant"/>
+        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
         <field name="domain_force">[(1,'=',1)]</field>
         <field name="perm_read" eval="1"/>
         <field name="perm_write" eval="0"/>
@@ -17,15 +12,69 @@
         <field name="perm_unlink" eval="0"/>
     </record>
 
-    <!-- Vista heredada: todos los campos readonly -->
-    <record id="view_applicant_form_readonly" model="ir.ui.view">
-        <field name="name">hr.applicant.form.readonly</field>
-        <field name="model">hr.applicant</field>
-        <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//field" position="attributes">
-                <attribute name="readonly">1</attribute>
-            </xpath>
-        </field>
+    <record id="rule_applicant_education_readonly" model="ir.rule">
+        <field name="name">Applicant Education Readonly</field>
+        <field name="model_id" ref="model_applicant_education"/>
+        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
+        <field name="domain_force">[(1,'=',1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="rule_applicant_family_readonly" model="ir.rule">
+        <field name="name">Applicant Family Readonly</field>
+        <field name="model_id" ref="model_applicant_family"/>
+        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
+        <field name="domain_force">[(1,'=',1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="rule_applicant_known_readonly" model="ir.rule">
+        <field name="name">Applicant Known Readonly</field>
+        <field name="model_id" ref="model_applicant_known"/>
+        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
+        <field name="domain_force">[(1,'=',1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="rule_applicant_experience_job_readonly" model="ir.rule">
+        <field name="name">Applicant Experience Job Readonly</field>
+        <field name="model_id" ref="model_applicant_experience_job"/>
+        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
+        <field name="domain_force">[(1,'=',1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="rule_applicant_reference_readonly" model="ir.rule">
+        <field name="name">Applicant Reference Readonly</field>
+        <field name="model_id" ref="model_applicant_reference"/>
+        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
+        <field name="domain_force">[(1,'=',1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="rule_applicant_medical_readonly" model="ir.rule">
+        <field name="name">Applicant Medical Readonly</field>
+        <field name="model_id" ref="model_applicant_medical"/>
+        <field name="groups" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
+        <field name="domain_force">[(1,'=',1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
     </record>
 </odoo>
