@@ -39,7 +39,7 @@
 
                 <xpath expr="//notebook" position="inside">
                     <page string="Información Médica" name="page_medical">
-                        <field name="medical_ids">
+                        <field name="medical_ids" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
                             <list>
                                 <field name="enfermedad_persistente" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                                 <field name="detalle_enfermedad_persistente" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
