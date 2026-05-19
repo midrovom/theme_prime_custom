@@ -27,8 +27,13 @@ class PublicDataController(http.Controller):
         )
         return http.Response(json.dumps(states), content_type='application/json')
     
-    # @http.route(['/jobs/recruitment/<model("hr.job"):job>'], type='http', auth="user", website=True)
-    # def recruitment_form(self, job, **kwargs):
-    #     return request.render("custom_web_hr_datos_candidatos.web_recruitment", {
-    #         'job': job,
-    #     })
+    @http.route(['/jobs/recruitment/<model("hr.job"):job>'], type='http', auth="user", website=True)
+    def recruitment_form(self, job, **kwargs):
+        user = request.env.user
+        partner = user.partner_id
+        return request.render("custom_web_hr_datos_candidatos.web_recruitment", {
+            'job': job,
+            'user': user,
+            'partner': partner,
+        })
+
