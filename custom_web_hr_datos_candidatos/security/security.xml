@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Grupo de seguridad -->
     <record id="group_hr_recruitment_readonly" model="res.groups">
