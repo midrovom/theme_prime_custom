@@ -58,7 +58,7 @@
                     </page>
 
                     <page string="Datos Familiares" name="page_family">
-                        <field name="family_ids">
+                        <field name="family_ids" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
                             <list>
                                 <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                                 <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
@@ -73,7 +73,7 @@
                     </page>
 
                     <page string="Formación Académica" name="page_education">
-                        <field name="education_ids">
+                        <field name="education_ids" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
                             <list>
                                 <field name="level_id" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                                 <field name="institucion" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
@@ -93,7 +93,7 @@
                     </page>
 
                     <page string="Experiencia Laboral" name="page_experience">
-                        <field name="experience_job_ids">
+                        <field name="experience_job_ids" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
                             <list>
                                 <field name="tiempo_servicio" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                                 <field name="empresa" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
@@ -113,7 +113,7 @@
 
 
                     <page string="Familiares o Conocidos del Grupo Empresarial" name="page_known">
-                        <field name="known_ids">
+                        <field name="known_ids" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
                             <list>
                                 <field name="posee_familiares" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                                 <field name="nombre_completo" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
@@ -124,7 +124,7 @@
                     </page>
 
                     <page string="Referencias Personales" name="page_reference">
-                        <field name="reference_ids">
+                        <field name="reference_ids" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
                             <list>
                                 <field name="nombre" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                                 <field name="domicilio" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
