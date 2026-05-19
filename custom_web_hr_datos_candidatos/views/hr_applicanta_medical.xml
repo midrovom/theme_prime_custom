@@ -7,14 +7,14 @@
             <field name="model">applicant.medical</field>
             <field name="arch" type="xml">
                 <list string="Información Médica">
-                    <field name="enfermedad_persistente"/>
-                    <field name="detalle_enfermedad_persistente"/>
-                    <field name="medicacion_continua"/>
-                    <field name="detalle_medicacion_continua"/>
-                    <field name="enfermedad_laboral"/>
-                    <field name="detalle_enfermedad_laboral"/>
-                    <field name="cirugia_realizada"/>
-                    <field name="detalle_cirugia_realizada"/>
+                    <field name="enfermedad_persistente" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="detalle_enfermedad_persistente" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="medicacion_continua" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="detalle_medicacion_continua" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="enfermedad_laboral" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="detalle_enfermedad_laboral" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="cirugia_realizada" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="detalle_cirugia_realizada" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                 </list>
             </field>
         </record>

@@ -7,14 +7,14 @@
             <field name="model">applicant.family</field>
             <field name="arch" type="xml">
                 <list string="Familiares">
-                    <field name="name"/>
-                    <field name="cedula"/>
-                    <field name="birthdate"/>
-                    <field name="phone"/>
-                    <field name="occupation"/>
-                    <field name="economically_dependent"/>
-                    <field name="disability"/>
-                    <field name="disability_type"/>
+                    <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="birthdate" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="phone" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="occupation" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="economically_dependent" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="disability" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="disability_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                 </list>
             </field>
         </record>
@@ -30,14 +30,14 @@
                         </group>
 
                         <group string="Información personal">
-                            <field name="name"/>
-                            <field name="cedula"/>
-                            <field name="birthdate"/>
-                            <field name="phone"/>
-                            <field name="occupation"/>
-                            <field name="economically_dependent"/>
-                            <field name="disability"/>
-                            <field name="disability_type"/>
+                            <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="birthdate" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="phone" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="occupation" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="economically_dependent" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="disability" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="disability_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                         </group>
                     </sheet>
                 </form>
