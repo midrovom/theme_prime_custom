@@ -1,18 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
-
-        <!-- Record Rule: usuarios internos solo pueden leer -->
-        <record id="rule_applicant_readonly" model="ir.rule">
-            <field name="name">Applicant readonly for HR internal users</field>
-            <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
-            <field name="groups" eval="[(4, ref('hr.group_hr_user'))]"/>
-            <field name="perm_read" eval="1"/>
-            <field name="perm_write" eval="0"/>
-            <field name="perm_create" eval="0"/>
-            <field name="perm_unlink" eval="0"/>
-            <field name="domain_force">[(1,'=',1)]</field>
+    <data noupdate="1">
+        <record id="group_applicant_readonly" model="res.groups">
+            <field name="name">Solicitantes Solo Lectura</field>
+            <field name="category_id" ref="base.module_category_human_resources"/>
         </record>
-
     </data>
 </odoo>

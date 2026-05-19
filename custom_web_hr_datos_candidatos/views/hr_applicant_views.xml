@@ -10,21 +10,21 @@
                 <xpath expr="//field[@name='partner_phone']" position="after">
                     <!-- Datos personales -->
                     <field name="image_1920"/>
-                    <field name="partner_mobile" />
-                    <field name="document_type"/>
-                    <field name="cedula"/>
-                    <field name="address"/>
-                    <field name="parish"/>
-                    <field name="birthdate"/>
-                    <field name="age"/>
-                    <field name="birth_country_id"/>
-                    <field name="provincia_id"/>
-                    <field name="nacionality"/>
-                    <field name="vive_con"/>
-                    <field name="tipo_vivienda"/>
-                    <field name="num_hijos"/>
-                    <field name="dependientes"/>
-                    <field name="estado_civil"/>
+                    <field name="partner_mobile" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="document_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="address" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="parish" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="birthdate" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="age" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="birth_country_id" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="provincia_id" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="nacionality" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="vive_con" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="tipo_vivienda" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="num_hijos" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="dependientes" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="estado_civil" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
 
                 </xpath>
 
