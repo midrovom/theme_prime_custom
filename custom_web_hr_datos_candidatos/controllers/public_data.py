@@ -26,20 +26,6 @@ class PublicDataController(http.Controller):
             ['id', 'name']
         )
         return http.Response(json.dumps(states), content_type='application/json')
-    
-    @http.route(['/jobs/recruitment/<model("hr.job"):job>'], type='http', auth="user", website=True)
-    def recruitment_form(self, job, **kwargs):
-        user = request.env.user
 
-        # Si el usuario es público (no logueado), redirige a login
-        if not user or user._is_public():
-            return request.redirect('/web/login')
-
-        # Si ya está logueado, renderiza tu formulario personalizado
-        return request.render("custom_web_hr_datos_candidatos.web_recruitment", {
-            'job': job,
-            'user': user,
-            'partner': user.partner_id,
-        })
 
 

@@ -41,6 +41,24 @@
     </template>
 
     <template id="index" name="template_name" inherit_id="website_hr_recruitment.index">
+        <xpath expr="//div[@class='o_job_infos d-flex flex-column']" position="after">
+            <t t-if="request.env.user.id != request.website.user_id.id">
+                <!-- Usuario logueado -->
+                <a t-attf-href="/jobs/recruitment/#{ slug(job) }"
+                t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
+                draggable="false">APLICAR</a>
+            </t>
+            <t t-else="">
+                <!-- Usuario no logueado -->
+                <a t-attf-href="/web/login?redirect=/jobs/recruitment/#{ slug(job) }"
+                t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
+                draggable="false">APLICAR</a>
+            </t>
+        </xpath>
+    </template>
+
+
+    <!-- <template id="index" name="template_name" inherit_id="website_hr_recruitment.index">
         <xpath expr="//a[@draggable='false']" position="attributes">
             <attribute name="style">/jobs/recruitment/#{ slug(job) }</attribute>
         </xpath>
@@ -49,6 +67,6 @@
                t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
                draggable="false">APLICAR</a>
         </xpath>
-    </template>
+    </template> -->
 
 </odoo>
