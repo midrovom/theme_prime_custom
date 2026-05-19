@@ -7,6 +7,22 @@
             <field name="model">hr.applicant</field>
             <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
             <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='partner_phone']" position="attributes">
+                <attribute name="groups">custom_web_hr_datos_candidatos.group_applicant_readonly</attribute>
+                <attribute name="readonly">1</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='email_from']" position="attributes">
+                <attribute name="groups">custom_web_hr_datos_candidatos.group_applicant_readonly</attribute>
+                <attribute name="readonly">1</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='candidate_id']" position="attributes">
+                <attribute name="groups">custom_web_hr_datos_candidatos.group_applicant_readonly</attribute>
+                <attribute name="readonly">1</attribute>
+            </xpath>
+
                 <xpath expr="//field[@name='partner_phone']" position="after">
                     <!-- Datos personales -->
                     <field name="image_1920" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
