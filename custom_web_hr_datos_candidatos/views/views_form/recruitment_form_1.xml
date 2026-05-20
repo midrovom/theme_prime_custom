@@ -318,6 +318,24 @@
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
                     </div>
+
+                    <div class="row d-flex justify-content-center mb-4">
+                        <div class="col-12 col-md-10">
+                            <div class="row">
+                                <span class="fs-5">
+                                    Adjuntar documento: <span class="text-danger">*</span>
+                                </span>
+                                <div class="my-2 border border-1 border-gray"></div>
+                                <input class="d-none" id="curriculum-vitae" name="curriculumVitae" type="file" accept=".pdf"/> 
+                                <label for="curriculum-vitae" class="text-info fs-5">
+                                    + adjuntar archivo formato PDF
+                                </label>
+                                <span id="file-selected-message" class="text-success fs-5 mt-2 ms-2"></span>
+                                <div class="invalid-feedback">Seleccione el documento.</div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
                 <div class="row d-flex justify-content-center mt-2">
                     <div class="col-12 col-md-5"></div>

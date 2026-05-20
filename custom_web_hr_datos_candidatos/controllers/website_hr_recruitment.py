@@ -66,6 +66,10 @@ class WebsiteHRRecruitment(http.Controller):
 
             dependientes_list = request.httprequest.form.getlist('dependientes')
             dependientes = ', '.join(dependientes_list) if dependientes_list else ''
+            
+            # Apartado de documento
+            file = request.httprequest.files.get('curriculumVitae')
+            documento_b64 = base64.b64encode(file.read()) if file else False
 
             # Crear Candidate con los campos separados
             candidate_vals = {
@@ -78,7 +82,6 @@ class WebsiteHRRecruitment(http.Controller):
             # Crear Applicant relacionado con Candidate
             applicant_values = {
                 'job_id': safe_int(kwargs.get('jobId')),
-                #'name': f"{candidate.name} - {kwargs.get('jobName')}",  # usa el nombre completo computado del Candidate
                 'partner_name': candidate.name,
                 'candidate_id': candidate.id,
                 'dependientes': dependientes,
@@ -102,6 +105,7 @@ class WebsiteHRRecruitment(http.Controller):
                 'document_type': kwargs.get('documentType'),
                 'provincia_id': safe_int(kwargs.get('provincia')),
                 'image_1920': imagen_b64,
+                'documento': documento_b64,
             }
 
             # ---------------- Información Médica ----------------
