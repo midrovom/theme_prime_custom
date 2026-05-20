@@ -103,23 +103,16 @@ class WebsiteHRRecruitment(http.Controller):
                 'image_1920': imagen_b64,
             }
 
-            # Crear el applicant UNA sola vez
-            applicant = request.env['hr.applicant'].sudo().create(applicant_values)
+            # ---------------- Documentos ----------------
+            document_lines = []
+            for file in kwargs.get('curriculumVitae', []):
+                document_lines.append((0, 0, {
+                    'file': file.read(),   # binario del archivo
+                    'filename': file.filename,
+                }))
 
-            # Obtener lista de archivos
-            files = request.httprequest.files.getlist('curriculumVitae')
+            applicant_values['document_ids'] = document_lines
 
-            # Crear registros en applicant.document asociados al mismo applicant
-            for f in files:
-                if f:
-                    f.seek(0)  # Reinicia el puntero por seguridad
-                    file_content = f.read()
-                    if file_content:
-                        request.env['applicant.document'].sudo().create({
-                            'applicant_id': applicant.id,
-                            'filename': f.filename,
-                            'file': base64.b64encode(file_content),
-                        })
 
             # ---------------- Información Médica ----------------
             medical_lines = [(0, 0, {
