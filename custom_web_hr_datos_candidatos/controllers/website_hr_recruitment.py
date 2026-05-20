@@ -108,7 +108,7 @@ class WebsiteHRRecruitment(http.Controller):
                 'document_type': kwargs.get('documentType'),
                 'provincia_id': safe_int(kwargs.get('provincia')),
                 'image_1920': imagen_b64,
-                'documento': documento_b64,
+                'documento': documentos[0] if documentos else False,
             }
 
             # ---------------- Información Médica ----------------
