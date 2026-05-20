@@ -45,11 +45,11 @@
                 </xpath>
 
                 <xpath expr="//field[@name='image_1920']" position="after">
-                    <field name="documento_ids" nolabel="1">
-                        <tree editable="bottom">
+                    <field name="documento_ids" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
+                        <list>
                             <field name="filename"/>
                             <field name="file" filename="filename"/>
-                        </tree>
+                        </list>
                     </field>
                 </xpath>
 
