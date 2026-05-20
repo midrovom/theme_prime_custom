@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="ChatToCompany_footer12" name="Chat With Company Footer 12" inherit_id="theme_prime_custom.template_footer_style_12_custom">
+    <template id="ChatToCompany_footer12" name="Chat With Company Footer 12" inherit_id="website.template_footer_style_12_custom">
         <xpath expr="//div[hasclass('s_social_media')]" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                 class="cy_whatsapp_web" target="_blank">
