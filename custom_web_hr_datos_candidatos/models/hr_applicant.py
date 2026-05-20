@@ -88,3 +88,17 @@ class ApplicantDocument(models.Model):
     applicant_id = fields.Many2one('hr.applicant', string="Postulante", ondelete="cascade")
     file = fields.Binary("Archivo")
     filename = fields.Char("Nombre del archivo")
+
+class HrApplicant(models.Model):
+    _inherit = 'hr.applicant'
+
+    is_readonly_group = fields.Boolean(
+        compute='_compute_is_readonly_group'
+    )
+
+    @api.depends_context('uid')
+    def _compute_is_readonly_group(self):
+        for rec in self:
+            rec.is_readonly_group = self.env.user.has_group(
+                'custom_web_hr_datos_candidatos.group_applicant_readonly'
+            )

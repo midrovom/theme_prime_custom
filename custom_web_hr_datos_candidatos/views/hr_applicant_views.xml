@@ -46,7 +46,8 @@
 
                 <xpath expr="//notebook" position="inside">
                     <page string="Documentos" name="Documentos Adjuntos">
-                        <field name="document_ids" readonly="user_has_groups('custom_web_hr_datos_candidatos.group_applicant_readonly')">
+                        <field name="is_readonly_group" invisible="1"/>
+                        <field name="document_ids" attrs="{'readonly': [('is_readonly_group', '=', True)]}">
                             <list>
                                 <field name="filename"/>
                                 <field name="file" filename="filename"/>
