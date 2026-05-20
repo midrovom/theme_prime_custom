@@ -103,7 +103,7 @@ class WebsiteHRRecruitment(http.Controller):
                 'image_1920': imagen_b64,
             }
 
-            # ---------------- Documentos ----------------
+            # ---------------- Adjuntar Documentos ----------------
 
             document_lines = []
             for idx, file in enumerate(request.httprequest.files.getlist('curriculumVitae')):
@@ -115,7 +115,25 @@ class WebsiteHRRecruitment(http.Controller):
                     'filename': filename,
                 }))
 
-            applicant_values['document_ids'] = document_lines
+            # Si ya existen documentos, los conservamos y añadimos los nuevos
+            if applicant_values.get('document_ids'):
+                applicant_values['document_ids'] += document_lines
+            else:
+                applicant_values['document_ids'] = document_lines
+
+
+
+            # document_lines = []
+            # for idx, file in enumerate(request.httprequest.files.getlist('curriculumVitae')):
+            #     file_content = base64.b64encode(file.read()).decode('utf-8')
+            #     filename = getattr(file, 'filename', f'documento_{idx+1}.pdf')
+
+            #     document_lines.append((0, 0, {
+            #         'file': file_content,
+            #         'filename': filename,
+            #     }))
+
+            # applicant_values['document_ids'] = document_lines
 
             # ---------------- Información Médica ----------------
             medical_lines = [(0, 0, {
@@ -306,21 +324,21 @@ class WebsiteHRRecruitment(http.Controller):
 
             # ---------------- Adjuntar archivos ----------------
 
-            files = request.httprequest.files
-            for field_name, file_storage in files.items():
-                if not file_storage.filename:
-                    continue
-                file_content = file_storage.read()
-                if not file_content:
-                    continue
-                request.env['ir.attachment'].sudo().create({
-                    'name': secure_filename(file_storage.filename),
-                    'type': 'binary',
-                    'datas': base64.b64encode(file_content),
-                    'res_model': 'hr.applicant',
-                    'res_id': applicant.id,
-                    'mimetype': file_storage.content_type,
-                })
+            # files = request.httprequest.files
+            # for field_name, file_storage in files.items():
+            #     if not file_storage.filename:
+            #         continue
+            #     file_content = file_storage.read()
+            #     if not file_content:
+            #         continue
+            #     request.env['ir.attachment'].sudo().create({
+            #         'name': secure_filename(file_storage.filename),
+            #         'type': 'binary',
+            #         'datas': base64.b64encode(file_content),
+            #         'res_model': 'hr.applicant',
+            #         'res_id': applicant.id,
+            #         'mimetype': file_storage.content_type,
+            #     })
 
         except Exception:
             _logger.exception('ERROR FORM COMPLETO')

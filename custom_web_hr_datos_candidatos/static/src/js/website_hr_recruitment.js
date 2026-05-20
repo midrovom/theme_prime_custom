@@ -641,7 +641,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         `;
     },
 
-    // Nueva función para mostrar archivos seleccionados
+    // función para mostrar archivos seleccionados
     _onFileSelected: function(ev) {
         const input = ev.currentTarget;
         const files = input.files;
