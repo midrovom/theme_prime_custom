@@ -319,7 +319,7 @@
                         </div>
                     </div>
 
-                    <div class="row d-flex justify-content-center mb-4">
+                    <!-- <div class="row d-flex justify-content-center mb-4">
                         <div class="col-12 col-md-10">
                             <div class="row">
                                 <span class="fs-5">
@@ -334,7 +334,7 @@
                                 <div class="invalid-feedback">Seleccione el documento.</div>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
                 </div>
                 <div class="row d-flex justify-content-center mt-2">
