@@ -22,8 +22,6 @@
 
         'views/snippet/advance/s_footer/s_footer.xml',
         'views/snippet/advance/s_header/s_header.xml',
-        'views/portal_whatsapp_view.xml',
-
         #Snippet Conedera
 
         'views/snippet/conedera/s_cover_1/s_cover_1.xml',
