@@ -646,10 +646,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const input = ev.currentTarget;
         const files = input.files;
         const messageContainer = document.getElementById("file-selected-message");
+        let uploadedFiles = [];
 
-        if (files.length > 0) {
-            // Crear lista de nombres de archivos
-            const fileNames = Array.from(files).map(file => file.name).join(", ");
+            uploadedFiles = uploadedFiles.concat(files);
+
+        if (uploadedFiles.length > 0) {
+            // Crear lista de nombres de archivos acumulados
+            const fileNames = uploadedFiles.map(file => file.name).join(", ");
             messageContainer.textContent = `Archivos cargados: ${fileNames}`;
             messageContainer.classList.remove("text-danger");
             messageContainer.classList.add("text-success");
@@ -658,6 +661,20 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             messageContainer.classList.remove("text-success");
             messageContainer.classList.add("text-danger");
         }
+
+        input.value = "";
+
+        // if (files.length > 0) {
+        //     // Crear lista de nombres de archivos
+        //     const fileNames = Array.from(files).map(file => file.name).join(", ");
+        //     messageContainer.textContent = `Archivos cargados: ${fileNames}`;
+        //     messageContainer.classList.remove("text-danger");
+        //     messageContainer.classList.add("text-success");
+        // } else {
+        //     messageContainer.textContent = "No se seleccionó ningún archivo.";
+        //     messageContainer.classList.remove("text-success");
+        //     messageContainer.classList.add("text-danger");
+        // }
     },
 
     //----------------------------------------------------------------------
