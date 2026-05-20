@@ -67,13 +67,6 @@ class WebsiteHRRecruitment(http.Controller):
             dependientes_list = request.httprequest.form.getlist('dependientes')
             dependientes = ', '.join(dependientes_list) if dependientes_list else ''
             
-            # Apartado de documento
-            files = request.httprequest.files.getlist('curriculumVitae')
-            documentos = []
-            for f in files:
-                if f:
-                    documentos.append(base64.b64encode(f.read()))
-
             # Crear Candidate con los campos separados
             candidate_vals = {
                 'firstname': kwargs.get('firstname'),
@@ -108,8 +101,18 @@ class WebsiteHRRecruitment(http.Controller):
                 'document_type': kwargs.get('documentType'),
                 'provincia_id': safe_int(kwargs.get('provincia')),
                 'image_1920': imagen_b64,
-                'documento': documentos[0] if documentos else False,
             }
+
+            applicant = request.env['hr.applicant'].sudo().create(applicant_values)
+
+            # Crear registros en applicant.document
+            for f in files:
+                if f:
+                    request.env['applicant.document'].sudo().create({
+                        'applicant_id': applicant.id,
+                        'filename': f.filename,
+                        'file': base64.b64encode(f.read()),
+                    })
 
             # ---------------- Información Médica ----------------
             medical_lines = [(0, 0, {
