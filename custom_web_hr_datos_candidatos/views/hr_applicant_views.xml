@@ -46,8 +46,7 @@
 
                 <xpath expr="//notebook" position="inside">
                     <page string="Documentos" name="Documentos Adjuntos">
-                        <field name="document_ids"
-                            attrs="{'readonly': [('user_has_group', 'custom_web_hr_datos_candidatos.group_applicant_readonly')]}">
+                        <field name="document_ids">
                             <list>
                                 <field name="filename"/>
                                 <field name="file" filename="filename"/>
@@ -55,7 +54,6 @@
                         </field>
                     </page>
                 </xpath>
-
 
                 <!-- campos ocultos -->
                 <xpath expr="//field[@name='linkedin_profile']" position="attributes">
