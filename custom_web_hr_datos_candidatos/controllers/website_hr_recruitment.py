@@ -107,12 +107,11 @@ class WebsiteHRRecruitment(http.Controller):
             document_lines = []
             for file in kwargs.get('curriculumVitae', []):
                 document_lines.append((0, 0, {
-                    'file': file.read(),   # binario del archivo
-                    'filename': file.filename,
+                    'file': file if isinstance(file, (bytes, bytearray)) else file.read(),
+                    'filename': getattr(file, 'filename', 'documento.pdf'),
                 }))
 
             applicant_values['document_ids'] = document_lines
-
 
             # ---------------- Información Médica ----------------
             medical_lines = [(0, 0, {
