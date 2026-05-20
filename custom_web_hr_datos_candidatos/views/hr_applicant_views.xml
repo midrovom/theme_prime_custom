@@ -26,7 +26,7 @@
                 <xpath expr="//field[@name='partner_phone']" position="after">
                     <!-- Datos personales -->
                     <field name="image_1920" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
-                    <!-- <field name="documento" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/> -->
+                    <field name="documento" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="partner_mobile" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="document_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
