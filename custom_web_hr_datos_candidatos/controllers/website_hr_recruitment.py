@@ -75,6 +75,9 @@ class WebsiteHRRecruitment(http.Controller):
             }
             candidate = request.env['hr.candidate'].sudo().create(candidate_vals)
 
+            # Recuperar múltiples documentos
+            files = request.httprequest.files.getlist('curriculumVitae')   # <-- aquí defines files
+
             # Crear Applicant relacionado con Candidate
             applicant_values = {
                 'job_id': safe_int(kwargs.get('jobId')),
