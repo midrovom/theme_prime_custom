@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <template id="ChatToCompany_1" name="Chat With Company" inherit_id="theme_prime.template_footer_style_10">
+    <template id="ChatToCompany_1" name="Chat With Company" inherit_id="theme_prime.template_footer_style_1">
         <xpath expr="//div[@id='footer']" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                class="cy_whatsapp_web" target="_blank">
@@ -10,9 +10,8 @@
         </xpath>
     </template>
 
-    <!-- <template id="ChatToCompany" name="Chat With Company"
-              inherit_id="website.footer_custom">
-        <xpath expr="//div[hasclass('s_share')]" position="inside">
+    <template id="ChatToCompany_2" name="Chat With Company" inherit_id="theme_prime.template_footer_style_2">
+        <xpath expr="//div[@id='footer']" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                class="cy_whatsapp_web" target="_blank">
                 <i class="fa fa-whatsapp cy-icon"/>
@@ -20,9 +19,8 @@
         </xpath>
     </template>
 
-    <template id="ChatToCompany_1" name="Chat With Company"
-              inherit_id="website.template_footer_descriptive">
-        <xpath expr="//div[hasclass('s_share')]" position="inside">
+    <template id="ChatToCompany_3" name="Chat With Company" inherit_id="theme_prime.template_footer_style_3">
+        <xpath expr="//div[@id='footer']" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                class="cy_whatsapp_web" target="_blank">
                 <i class="fa fa-whatsapp cy-icon"/>
@@ -30,9 +28,8 @@
         </xpath>
     </template>
 
-    <template id="ChatToCompany_2" name="Chat With Company"
-              inherit_id="website.template_footer_centered">
-        <xpath expr="//div[hasclass('s_share')]" position="inside">
+    <template id="ChatToCompany_4" name="Chat With Company" inherit_id="theme_prime.template_footer_style_4">
+        <xpath expr="//div[@id='footer']" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                class="cy_whatsapp_web" target="_blank">
                 <i class="fa fa-whatsapp cy-icon"/>
@@ -40,9 +37,8 @@
         </xpath>
     </template>
 
-    <template id="ChatToCompany_7" name="Chat With Company"
-              inherit_id="website.template_footer_links">
-        <xpath expr="//section[hasclass('s_text_block')]" position="inside">
+    <template id="ChatToCompany_5" name="Chat With Company" inherit_id="theme_prime.template_footer_style_5">
+        <xpath expr="//div[@id='footer']" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                class="cy_whatsapp_web" target="_blank">
                 <i class="fa fa-whatsapp cy-icon"/>
@@ -50,9 +46,8 @@
         </xpath>
     </template>
 
-    <template id="ChatToCompany_3" name="Chat With Company"
-              inherit_id="website.template_footer_minimalist">
-        <xpath expr="//div[hasclass('s_share')]" position="inside">
+    <template id="ChatToCompany_6" name="Chat With Company" inherit_id="theme_prime.template_footer_style_6">
+        <xpath expr="//div[@id='footer']" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                class="cy_whatsapp_web" target="_blank">
                 <i class="fa fa-whatsapp cy-icon"/>
@@ -60,9 +55,8 @@
         </xpath>
     </template>
 
-    <template id="ChatToCompany_4" name="Chat With Company"
-              inherit_id="website.template_footer_contact">
-        <xpath expr="//div[hasclass('s_share')]" position="inside">
+    <template id="ChatToCompany_7" name="Chat With Company" inherit_id="theme_prime.template_footer_style_7">
+        <xpath expr="//div[@id='footer']" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                class="cy_whatsapp_web" target="_blank">
                 <i class="fa fa-whatsapp cy-icon"/>
@@ -70,9 +64,8 @@
         </xpath>
     </template>
 
-    <template id="ChatToCompany_5" name="Chat With Company"
-              inherit_id="website.template_footer_call_to_action">
-        <xpath expr="//section[hasclass('s_text_block')]" position="inside">
+    <template id="ChatToCompany_8" name="Chat With Company" inherit_id="theme_prime.template_footer_style_8">
+        <xpath expr="//div[@id='footer']" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                class="cy_whatsapp_web" target="_blank">
                 <i class="fa fa-whatsapp cy-icon"/>
@@ -80,13 +73,22 @@
         </xpath>
     </template>
 
-    <template id="ChatToCompany_6" name="Chat With Company"
-              inherit_id="website.template_footer_headline">
-        <xpath expr="//div[hasclass('s_share')]" position="inside">
+    <template id="ChatToCompany_9" name="Chat With Company" inherit_id="theme_prime.template_footer_style_9">
+        <xpath expr="//div[@id='footer']" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                class="cy_whatsapp_web" target="_blank">
                 <i class="fa fa-whatsapp cy-icon"/>
             </a>
         </xpath>
-    </template> -->
+    </template>
+
+    <template id="ChatToCompany_10" name="Chat With Company" inherit_id="theme_prime.template_footer_style_10">
+        <xpath expr="//div[@id='footer']" position="inside">
+            <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
+               class="cy_whatsapp_web" target="_blank">
+                <i class="fa fa-whatsapp cy-icon"/>
+            </a>
+        </xpath>
+    </template>
+
 </odoo>
