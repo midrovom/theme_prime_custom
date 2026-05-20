@@ -47,7 +47,7 @@
                 <xpath expr="//notebook" position="inside">
                     <page string="Documentos" name="Documentos Adjuntos">
                         <field name="is_readonly_group" invisible="1"/>
-                        <field name="document_ids" attrs="{'readonly': [('is_readonly_group', '=', True)]}">
+                        <field name="document_ids" readonly="is_readonly_group">
                             <list>
                                 <field name="filename"/>
                                 <field name="file" filename="filename"/>
