@@ -88,6 +88,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="medicacion_continua"]': function() {this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');},
         'change input[name="enfermedad_laboral"]': function() {this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');},
         'change input[name="cirugia_realizada"]': function() {this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');},
+        'change #curriculum-vitae': '_onFileSelected',
     },
     
     /**
@@ -638,6 +639,25 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 </div>
             </div>
         `;
+    },
+
+    // Nueva función para mostrar archivos seleccionados
+    _onFileSelected: function(ev) {
+        const input = ev.currentTarget;
+        const files = input.files;
+        const messageContainer = document.getElementById("file-selected-message");
+
+        if (files.length > 0) {
+            // Crear lista de nombres de archivos
+            const fileNames = Array.from(files).map(file => file.name).join(", ");
+            messageContainer.textContent = `Archivos cargados: ${fileNames}`;
+            messageContainer.classList.remove("text-danger");
+            messageContainer.classList.add("text-success");
+        } else {
+            messageContainer.textContent = "No se seleccionó ningún archivo.";
+            messageContainer.classList.remove("text-success");
+            messageContainer.classList.add("text-danger");
+        }
     },
 
     //----------------------------------------------------------------------
@@ -1759,6 +1779,5 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             'pointer-events': allFilled ? 'auto' : 'none'
         });
     }
-
 
 });
