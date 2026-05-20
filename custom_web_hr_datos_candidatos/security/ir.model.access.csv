@@ -9,5 +9,3 @@ access_applicant_medical,applicant.medical,model_applicant_medical,,1,1,1,1
 access_hr_footer,access_hr_footer,model_hr_footer,base.group_user,1,1,1,1
 access_hr_reglamento,access_hr_reglamento,model_hr_reglamento,base.group_user,1,1,1,1
 access_applicant_document_user,access_applicant_document_user,model_applicant_document,,1,1,1,1
-
-applicant_document_readonly,applicant.document.readonly,model_applicant_document,custom_web_hr_datos_candidatos.group_applicant_readonly,1,0,0,0

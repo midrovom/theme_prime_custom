@@ -46,10 +46,12 @@
 
                 <xpath expr="//notebook" position="inside">
                     <page string="Documentos" name="Documentos Adjuntos">
-                        <field name="document_ids">
+                        <field name="document_ids" readonly="0">
                             <list>
-                                <field name="filename"/>
-                                <field name="file" filename="filename"/>
+                                <field name="filename" readonly="0"
+                                    attrs="{'readonly':[('user_has_group','custom_web_hr_datos_candidatos.group_applicant_readonly')]}"/>
+                                <field name="file" filename="filename" readonly="0"
+                                    attrs="{'readonly':[('user_has_group','custom_web_hr_datos_candidatos.group_applicant_readonly')]}"/>
                             </list>
                         </field>
                     </page>
