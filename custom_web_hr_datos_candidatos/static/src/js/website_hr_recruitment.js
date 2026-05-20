@@ -674,6 +674,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         const isEstadoCivilValid = this._validateField('input[name="estadoCivil"]');
 
+        // Validar hoja de vida
+        const isCurriculumValid = this._validateField('#curriculum-vitae');
+
         if (
             !isImageValid ||
             !isLastnamePaternoValid ||
@@ -694,6 +697,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isDocTypeValid ||
             !isDocNumberValid ||
             !isNationalityValid ||
+            !isCurriculumValid || 
             !isEstadoCivilValid
         ) {
             this._scrollToFirstError();
