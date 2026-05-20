@@ -145,6 +145,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return this._super();
     },
 
+
     //----------------------------------------------------------------------
     // Private
     //----------------------------------------------------------------------
@@ -643,6 +644,70 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Validations
     //----------------------------------------------------------------------
 
+    // _validateCurrentStep1() {
+    //     const isImageValid = this._validateImage();
+
+    //     const isLastnamePaternoValid = this._validateField('#hr-lastname-paterno');
+    //     const isLastnameMaternoValid = this._validateField('#hr-lastname-materno');
+    //     const isNameValid = this._validateField('#hr-name');
+    //     const isAgeValid = this._validateField('#hr-age');
+
+    //     const isAddressValid = this._validateField('#hr-address');
+    //     const isParishValid = this._validateField('#hr-parish');
+
+    //     const isBirthDateValid = this._validateBirthDate();
+
+    //     const isBirthCountryValid = this._validateField('#hr-country');
+    //     const isProvinceValid = this._validateField('#hr-provincia');
+
+    //     const isCodeCellphoneValid = this._validateCodePhone();
+    //     const isCellphoneValid = this._validatePhone();
+
+    //     const isViveConValid = this._validateField('input[name="viveCon"]');
+    //     const isTipoViviendaValid = this._validateField('input[name="tipoVivienda"]');
+    //     const isHijosValid = this._validateField('#hr-hijos');
+
+    //     const isEmailValid = this._validateEmail();
+
+    //     const isDocTypeValid = this._validateField('#hr-type-doc');
+    //     const isDocNumberValid = this._validateDocumentNumber();
+    //     const isNationalityValid = this._validateField('#hr-nationality');
+
+    //     const isEstadoCivilValid = this._validateField('input[name="estadoCivil"]');
+
+    //     // Validar hoja de vida
+    //     const isCurriculumValid = this._validateField('#curriculum-vitae');
+
+    //     if (
+    //         !isImageValid ||
+    //         !isLastnamePaternoValid ||
+    //         !isLastnameMaternoValid ||
+    //         !isNameValid ||
+    //         !isAgeValid ||
+    //         !isAddressValid ||
+    //         !isParishValid ||
+    //         !isBirthDateValid ||
+    //         !isBirthCountryValid ||
+    //         !isProvinceValid ||
+    //         !isCodeCellphoneValid ||
+    //         !isCellphoneValid ||
+    //         !isViveConValid ||
+    //         !isTipoViviendaValid ||
+    //         !isHijosValid ||
+    //         !isEmailValid ||
+    //         !isDocTypeValid ||
+    //         !isDocNumberValid ||
+    //         !isNationalityValid ||
+    //         !isCurriculumValid || 
+    //         !isEstadoCivilValid
+    //     ) {
+    //         this._scrollToFirstError();
+    //         return false;
+    //     }
+
+    //     return true;
+    // },
+
     _validateCurrentStep1() {
         const isImageValid = this._validateImage();
 
@@ -677,6 +742,23 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         // Validar hoja de vida
         const isCurriculumValid = this._validateField('#curriculum-vitae');
 
+        // ➡️ Mostrar documentos cargados
+        const inputFile = this.el.querySelector('#curriculum-vitae');
+        const messageDiv = this.el.querySelector('#file-selected-message');
+        if (inputFile && inputFile.files.length > 0) {
+            let html = "<ul>";
+            Array.from(inputFile.files).forEach(file => {
+                const sizeKB = (file.size / 1024).toFixed(2);
+                const sizeMB = (file.size / (1024*1024)).toFixed(2);
+                const sizeText = sizeMB >= 1 ? `${sizeMB} MB` : `${sizeKB} KB`;
+                html += `<li>📄 ${file.name} (${sizeText})</li>`;
+            });
+            html += "</ul>";
+            messageDiv.innerHTML = html;
+        } else {
+            messageDiv.innerHTML = "";
+        }
+
         if (
             !isImageValid ||
             !isLastnamePaternoValid ||
@@ -697,7 +779,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isDocTypeValid ||
             !isDocNumberValid ||
             !isNationalityValid ||
-            !isCurriculumValid || 
+            !isCurriculumValid ||
             !isEstadoCivilValid
         ) {
             this._scrollToFirstError();
@@ -706,6 +788,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         return true;
     },
+
 
     _validateCurrentStep2() {
         const enfermedad = this._validateRadio('enfermedad_persistente');
