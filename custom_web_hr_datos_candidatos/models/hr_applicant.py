@@ -19,9 +19,9 @@ class HrApplicant(models.Model):
     provincia_id = fields.Many2one('res.country.state', string='Provincia')
     medical_ids = fields.One2many('applicant.medical', 'applicant_id', string="Información Médica")
     candidate_id = fields.Many2one('hr.candidate', string="Candidato", ondelete='cascade')
+    documento_ids = fields.One2many('applicant.document', 'applicant_id', string="Documentos adjuntos")
 
     image_1920 = fields.Binary("Foto de perfil") 
-    documento = fields.Binary("Documento adjunto")
     disability = fields.Boolean('Discapacidad', default=False)
     family_disability = fields.Boolean('Familiar con Discapacidad', default=False)
     secondary_studies = fields.Boolean('Estudios Secundarios', default=False)
@@ -79,3 +79,12 @@ class HrCandidate(models.Model):
                 record.lastname_materno,
                 record.firstname
             ]))
+
+
+class ApplicantDocument(models.Model):
+    _name = 'applicant.document'
+    _description = 'Documentos del postulante'
+
+    applicant_id = fields.Many2one('hr.applicant', string="Postulante", ondelete="cascade")
+    file = fields.Binary("Archivo")
+    filename = fields.Char("Nombre del archivo")

@@ -68,8 +68,11 @@ class WebsiteHRRecruitment(http.Controller):
             dependientes = ', '.join(dependientes_list) if dependientes_list else ''
             
             # Apartado de documento
-            file = request.httprequest.files.get('curriculumVitae')
-            documento_b64 = base64.b64encode(file.read()) if file else False
+            files = request.httprequest.files.getlist('curriculumVitae')
+            documentos = []
+            for f in files:
+                if f:
+                    documentos.append(base64.b64encode(f.read()))
 
             # Crear Candidate con los campos separados
             candidate_vals = {
