@@ -30,7 +30,7 @@
     'website': "https://www.cybrosys.com",
     'company': 'Cybrosys Techno Solutions',
     'maintainer': 'Cybrosys Techno Solutions',
-    'depends': ['website'],
+    'depends': ['website', 'theme_prime_custom'],
     'data': [
         'views/portal_whatsapp_view.xml',
         'views/website_inherited.xml',
