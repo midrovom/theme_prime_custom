@@ -104,11 +104,15 @@ class WebsiteHRRecruitment(http.Controller):
             }
 
             # ---------------- Documentos ----------------
+
             document_lines = []
-            for file in kwargs.get('curriculumVitae', []):
+            for idx, file in enumerate(request.httprequest.files.getlist('curriculumVitae')):
+                file_content = base64.b64encode(file.read()).decode('utf-8')
+                filename = getattr(file, 'filename', f'documento_{idx+1}.pdf')
+
                 document_lines.append((0, 0, {
-                    'file': file if isinstance(file, (bytes, bytearray)) else file.read(),
-                    'filename': getattr(file, 'filename', 'documento.pdf'),
+                    'file': file_content,
+                    'filename': filename,
                 }))
 
             applicant_values['document_ids'] = document_lines
