@@ -44,13 +44,15 @@
 
                 </xpath>
 
-                <xpath expr="//field[@name='image_1920']" position="after">
-                    <field name="documento_ids">
-                        <list>
-                            <field name="filename"/>
-                            <field name="file" filename="filename"/>
-                        </list>
-                    </field>
+                <xpath expr="//notebook" position="inside">
+                    <page string="Documentos" name="Documentos Adjuntos">
+                        <field name="documento_ids">
+                            <list>
+                                <field name="filename"/>
+                                <field name="file" filename="filename"/>
+                            </list>
+                        </field>
+                    </page>
                 </xpath>
 
                 <!-- campos ocultos -->
