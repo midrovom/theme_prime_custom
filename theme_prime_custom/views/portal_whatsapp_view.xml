@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="ChatToCompany" name="Chat With Company"
-              inherit_id="website.footer_custom">
-        <xpath expr="//div[hasclass('s_share')]" position="inside">
+    <template id="ChatToCompany_footer12" name="Chat With Company Footer 12" inherit_id="website.template_footer_style_12_custom">
+        <xpath expr="//div[hasclass('s_social_media')]" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
-               class="cy_whatsapp_web" target="_blank">
+                class="cy_whatsapp_web" target="_blank">
                 <i class="fa fa-whatsapp cy-icon"/>
             </a>
         </xpath>
     </template>
 
-    <template id="ChatToCompany_1" name="Chat With Company"
-              inherit_id="website.template_footer_descriptive">
+
+    <!-- <template id="ChatToCompany_1" name="Chat With Company" inherit_id="website.template_footer_descriptive">
         <xpath expr="//div[hasclass('s_share')]" position="inside">
             <a t-attf-href="https://api.whatsapp.com/send?phone=#{website.mobile_number}&amp;text="
                class="cy_whatsapp_web" target="_blank">
@@ -78,5 +77,5 @@
                 <i class="fa fa-whatsapp cy-icon"/>
             </a>
         </xpath>
-    </template>
+    </template> -->
 </odoo>
