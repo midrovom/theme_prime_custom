@@ -44,14 +44,14 @@
 
                 </xpath>
 
-                <xpath expr="//field[@name='image_1920']" position="after">
+                <!-- <xpath expr="//field[@name='image_1920']" position="after">
                     <field name="documento_ids" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
                         <list>
-                            <field name="filename"/>
-                            <field name="file" filename="filename"/>
+                            <field name="filename" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="file" filename="filename" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                         </list>
                     </field>
-                </xpath>
+                </xpath> -->
 
                 <!-- campos ocultos -->
                 <xpath expr="//field[@name='linkedin_profile']" position="attributes">
