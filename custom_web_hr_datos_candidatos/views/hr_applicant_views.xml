@@ -46,10 +46,10 @@
 
                 <xpath expr="//notebook" position="inside">
                     <page string="Documentos" name="Documentos Adjuntos">
-                        <field name="documento_ids">
+                        <field name="documento_ids" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
                             <list>
-                                <field name="filename"/>
-                                <field name="file" filename="filename"/>
+                                <field name="filename" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                                <field name="file" filename="filename" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             </list>
                         </field>
                     </page>
