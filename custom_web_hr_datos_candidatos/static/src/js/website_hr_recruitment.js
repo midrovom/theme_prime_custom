@@ -689,7 +689,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         if (this.uploadedFiles.length === 0) {
 
             container.innerHTML = `
-                <div class="text-danger fs-6">
+                <div class="text-danger custom-message fs-6">
                     No se seleccionó ningún archivo
                 </div>
             `;
