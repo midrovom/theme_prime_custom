@@ -10,6 +10,8 @@ const optionsYears = YEARS.map(year => `<option value="${year}">${year}</option>
 let cachedCountries = null;
 let cachedStatesByCountry = {};
 
+let uploadedFiles = [];
+
 async function loadCountriesAndStates() {
     if (!cachedCountries) {
         cachedCountries = await fetch("/api/countries").then(r => r.json());
@@ -642,40 +644,29 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     // función para mostrar archivos seleccionados
-    _onFileSelected: function(ev) {
-        const input = ev.currentTarget;
-        const files = input.files;
-        const messageContainer = document.getElementById("file-selected-message");
-        let uploadedFiles = [];
 
+        _onFileSelected: function(ev) {
+            const input = ev.currentTarget;
+            const files = Array.from(input.files);
+            const messageContainer = document.getElementById("file-selected-message");
+
+            // Acumular archivos seleccionados
             uploadedFiles = uploadedFiles.concat(files);
 
-        if (uploadedFiles.length > 0) {
-            // Crear lista de nombres de archivos acumulados
-            const fileNames = uploadedFiles.map(file => file.name).join(", ");
-            messageContainer.textContent = `Archivos cargados: ${fileNames}`;
-            messageContainer.classList.remove("text-danger");
-            messageContainer.classList.add("text-success");
-        } else {
-            messageContainer.textContent = "No se seleccionó ningún archivo.";
-            messageContainer.classList.remove("text-success");
-            messageContainer.classList.add("text-danger");
-        }
+            if (uploadedFiles.length > 0) {
+                const fileNames = uploadedFiles.map(file => file.name).join(", ");
+                messageContainer.textContent = `Archivos cargados: ${fileNames}`;
+                messageContainer.classList.remove("text-danger");
+                messageContainer.classList.add("text-success");
+            } else {
+                messageContainer.textContent = "No se seleccionó ningún archivo.";
+                messageContainer.classList.remove("text-success");
+                messageContainer.classList.add("text-danger");
+            }
 
-        input.value = "";
-
-        // if (files.length > 0) {
-        //     // Crear lista de nombres de archivos
-        //     const fileNames = Array.from(files).map(file => file.name).join(", ");
-        //     messageContainer.textContent = `Archivos cargados: ${fileNames}`;
-        //     messageContainer.classList.remove("text-danger");
-        //     messageContainer.classList.add("text-success");
-        // } else {
-        //     messageContainer.textContent = "No se seleccionó ningún archivo.";
-        //     messageContainer.classList.remove("text-success");
-        //     messageContainer.classList.add("text-danger");
-        // }
-    },
+            // No limpiar el input aquí, para que el usuario pueda seguir seleccionando
+            // input.value = "";
+        },
 
     //----------------------------------------------------------------------
     // Validations
@@ -1627,7 +1618,23 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-1').removeClass('d-none');
     },
 
-    _onSubmitForm(ev) {
+    // _onSubmitForm(ev) {
+    //     ev.preventDefault();
+
+    //     if (!this._validateCurrentStep3()) return;
+
+    //     this.$('#submit-form')
+    //         .prop('disabled', true)
+    //         .text('Enviando...');
+
+    //     this.el.submit();
+    // },
+
+    //----------------------------------------------------------------------
+    // Methods education
+    //----------------------------------------------------------------------
+
+    _onSubmitForm: function(ev) {
         ev.preventDefault();
 
         if (!this._validateCurrentStep3()) return;
@@ -1636,12 +1643,32 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             .prop('disabled', true)
             .text('Enviando...');
 
-        this.el.submit();
-    },
+        // Crear FormData con todos los campos del formulario
+        const formData = new FormData(ev.currentTarget);
 
-    //----------------------------------------------------------------------
-    // Methods education
-    //----------------------------------------------------------------------
+        // Agregar todos los archivos acumulados
+        uploadedFiles.forEach(file => {
+            formData.append("curriculumVitae", file);
+        });
+
+        // Enviar vía fetch al controlador
+        fetch('/tu/controlador', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Respuesta del servidor:", data);
+            // Aquí puedes manejar redirección, mensaje de éxito, etc.
+        })
+        .catch(error => {
+            console.error("Error al enviar:", error);
+            this.$('#submit-form')
+                .prop('disabled', false)
+                .text('Enviar');
+        });
+    }, 
+
 
     async _addEducationBlock() {
         const newBlock = await this._getEducationBlock(true);
