@@ -643,53 +643,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     // función para mostrar archivos seleccionados
-    // _onFileSelected: function(ev) {
-    //     const input = ev.currentTarget;
-    //     const newFiles = Array.from(input.files);
-    //     const messageContainer = document.getElementById("file-selected-message");
-
-    //     // Agregar nuevos archivos al arreglo acumulado
-    //     this.uploadedFiles = this.uploadedFiles.concat(newFiles);
-
-    //     // Evitar duplicados por nombre
-    //     this.uploadedFiles = this.uploadedFiles.filter(
-    //         (file, index, self) =>
-    //             index === self.findIndex(f => f.name === file.name)
-    //     );
-
-    //     // Reconstruir FileList
-    //     const dataTransfer = new DataTransfer();
-
-    //     this.uploadedFiles.forEach(file => {
-    //         dataTransfer.items.add(file);
-    //     });
-
-    //     // Asignar TODOS los archivos al input
-    //     input.files = dataTransfer.files;
-
-    //     // Mostrar nombres
-    //     if (this.uploadedFiles.length > 0) {
-
-    //         const fileNames = this.uploadedFiles
-    //             .map(file => file.name)
-    //             .join(", ");
-
-    //         messageContainer.textContent =
-    //             `Archivos cargados: ${fileNames}`;
-
-    //         messageContainer.classList.remove("text-danger");
-    //         messageContainer.classList.add("text-success");
-
-    //     } else {
-
-    //         messageContainer.textContent =
-    //             "No se seleccionó ningún archivo.";
-
-    //         messageContainer.classList.remove("text-success");
-    //         messageContainer.classList.add("text-danger");
-    //     }
-    // },
-
 
     _onFileSelected: function(ev) {
 
