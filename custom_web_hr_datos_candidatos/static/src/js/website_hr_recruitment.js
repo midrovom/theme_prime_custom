@@ -643,52 +643,148 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     // función para mostrar archivos seleccionados
+    // _onFileSelected: function(ev) {
+    //     const input = ev.currentTarget;
+    //     const newFiles = Array.from(input.files);
+    //     const messageContainer = document.getElementById("file-selected-message");
+
+    //     // Agregar nuevos archivos al arreglo acumulado
+    //     this.uploadedFiles = this.uploadedFiles.concat(newFiles);
+
+    //     // Evitar duplicados por nombre
+    //     this.uploadedFiles = this.uploadedFiles.filter(
+    //         (file, index, self) =>
+    //             index === self.findIndex(f => f.name === file.name)
+    //     );
+
+    //     // Reconstruir FileList
+    //     const dataTransfer = new DataTransfer();
+
+    //     this.uploadedFiles.forEach(file => {
+    //         dataTransfer.items.add(file);
+    //     });
+
+    //     // Asignar TODOS los archivos al input
+    //     input.files = dataTransfer.files;
+
+    //     // Mostrar nombres
+    //     if (this.uploadedFiles.length > 0) {
+
+    //         const fileNames = this.uploadedFiles
+    //             .map(file => file.name)
+    //             .join(", ");
+
+    //         messageContainer.textContent =
+    //             `Archivos cargados: ${fileNames}`;
+
+    //         messageContainer.classList.remove("text-danger");
+    //         messageContainer.classList.add("text-success");
+
+    //     } else {
+
+    //         messageContainer.textContent =
+    //             "No se seleccionó ningún archivo.";
+
+    //         messageContainer.classList.remove("text-success");
+    //         messageContainer.classList.add("text-danger");
+    //     }
+    // },
+
+
     _onFileSelected: function(ev) {
+
         const input = ev.currentTarget;
         const newFiles = Array.from(input.files);
-        const messageContainer = document.getElementById("file-selected-message");
+        const container = document.getElementById("file-selected-message");
 
-        // Agregar nuevos archivos al arreglo acumulado
+        // Inicializar arreglo
+        if (!this.uploadedFiles) {
+            this.uploadedFiles = [];
+        }
+
+        // Agregar archivos nuevos
         this.uploadedFiles = this.uploadedFiles.concat(newFiles);
 
-        // Evitar duplicados por nombre
+        // Evitar duplicados
         this.uploadedFiles = this.uploadedFiles.filter(
             (file, index, self) =>
                 index === self.findIndex(f => f.name === file.name)
         );
 
         // Reconstruir FileList
+        this._refreshFileInput(input);
+
+        // Renderizar lista
+        this._renderFileList(container, input);
+    },
+
+    _refreshFileInput: function(input) {
+
         const dataTransfer = new DataTransfer();
 
         this.uploadedFiles.forEach(file => {
             dataTransfer.items.add(file);
         });
 
-        // Asignar TODOS los archivos al input
         input.files = dataTransfer.files;
-
-        // Mostrar nombres
-        if (this.uploadedFiles.length > 0) {
-
-            const fileNames = this.uploadedFiles
-                .map(file => file.name)
-                .join(", ");
-
-            messageContainer.textContent =
-                `Archivos cargados: ${fileNames}`;
-
-            messageContainer.classList.remove("text-danger");
-            messageContainer.classList.add("text-success");
-
-        } else {
-
-            messageContainer.textContent =
-                "No se seleccionó ningún archivo.";
-
-            messageContainer.classList.remove("text-success");
-            messageContainer.classList.add("text-danger");
-        }
     },
+
+    _renderFileList: function(container, input) {
+
+        container.innerHTML = "";
+
+        if (this.uploadedFiles.length === 0) {
+
+            container.innerHTML = `
+                <div class="text-danger fs-6">
+                    No se seleccionó ningún archivo
+                </div>
+            `;
+
+            return;
+        }
+
+        this.uploadedFiles.forEach((file, index) => {
+
+            const fileItem = document.createElement("div");
+
+            fileItem.className =
+                "d-flex align-items-center justify-content-between border rounded-pill px-3 py-2 mb-2";
+
+            fileItem.innerHTML = `
+                <span class="text-success">
+                    ${file.name}
+                </span>
+
+                <button type="button"
+                        class="btn btn-sm btn-danger remove-file"
+                        data-index="${index}">
+                    ×
+                </button>
+            `;
+
+            container.appendChild(fileItem);
+        });
+
+        // Eventos eliminar
+        container.querySelectorAll(".remove-file").forEach(button => {
+
+            button.addEventListener("click", (e) => {
+
+                const index = parseInt(e.currentTarget.dataset.index);
+
+                // Eliminar archivo
+                this.uploadedFiles.splice(index, 1);
+
+                // Reconstruir input
+                this._refreshFileInput(input);
+
+                // Re-renderizar
+                this._renderFileList(container, input);
+            });
+        });
+    },
+
 
     //----------------------------------------------------------------------
     // Validations
