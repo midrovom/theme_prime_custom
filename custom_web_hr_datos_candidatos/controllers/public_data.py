@@ -1,6 +1,8 @@
 from odoo import http, _
 from odoo.http import request
 from werkzeug.exceptions import BadRequest
+import base64
+import json
 
 import logging
 import json
@@ -27,5 +29,20 @@ class PublicDataController(http.Controller):
         )
         return http.Response(json.dumps(states), content_type='application/json')
 
+    @http.route('/jobs/recruitment/apply', type='http', auth='public', methods=['POST'], csrf=False)
+    def apply_job(self, **kwargs):
+        document_lines = []
+        for idx, file in enumerate(request.httprequest.files.getlist('curriculumVitae')):
+            file_content = base64.b64encode(file.read()).decode('utf-8')
+            filename = getattr(file, 'filename', f'documento_{idx+1}.pdf')
+            document_lines.append((0, 0, {
+                'file': file_content,
+                'filename': filename,
+            }))
+
+        return request.make_response(
+            json.dumps({'status': 'ok', 'files': [d[2]['filename'] for d in document_lines]}),
+            headers=[('Content-Type', 'application/json')]
+        )
 
 
