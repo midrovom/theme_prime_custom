@@ -117,6 +117,14 @@ input.form-check-input:focus {
     font-weight: bold;
 }
 
-/* footer {
+footer {
     display: none !important;
-} */
+}
+
+.text-success {
+    font-size: 12px !important;
+}
+
+.text-info{
+    font-size: 13px !important;
+}
