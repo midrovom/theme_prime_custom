@@ -121,10 +121,10 @@ input.form-check-input:focus {
     display: none !important;
 } */
 
-.text-success-custom {
+.custom_vitae {
     font-size: 12px !important;
 }
 
-.text-info-custom {
+.custom-message {
     font-size: 13px !important;
 }
