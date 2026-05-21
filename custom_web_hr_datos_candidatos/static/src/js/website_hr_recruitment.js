@@ -10,7 +10,6 @@ const optionsYears = YEARS.map(year => `<option value="${year}">${year}</option>
 let cachedCountries = null;
 let cachedStatesByCountry = {};
 
-
 async function loadCountriesAndStates() {
     if (!cachedCountries) {
         cachedCountries = await fetch("/api/countries").then(r => r.json());
@@ -91,8 +90,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="cirugia_realizada"]': function() {this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');},
         'change #curriculum-vitae': '_onFileSelected',
     },
-
-    uploadedFiles: [],
     
     /**
      * @override
@@ -103,6 +100,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.experienceCount = 1;
         this.familyCount = 0;
         this.referenceCount = 0;
+        this.uploadedFiles = [];
     },
 
     /**
@@ -645,46 +643,52 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     // función para mostrar archivos seleccionados
+    _onFileSelected: function(ev) {
+        const input = ev.currentTarget;
+        const newFiles = Array.from(input.files);
+        const messageContainer = document.getElementById("file-selected-message");
 
-        _onFileSelected: function (ev) {
-            const input = ev.currentTarget;
-            const files = Array.from(input.files);
-            const messageContainer = document.getElementById("file-selected-message");
+        // Agregar nuevos archivos al arreglo acumulado
+        this.uploadedFiles = this.uploadedFiles.concat(newFiles);
 
-            // Acumular archivos seleccionados
-            this.uploadedFiles = this.uploadedFiles.concat(files);
+        // Evitar duplicados por nombre
+        this.uploadedFiles = this.uploadedFiles.filter(
+            (file, index, self) =>
+                index === self.findIndex(f => f.name === file.name)
+        );
 
-            if (this.uploadedFiles.length > 0) {
-                const fileNames = this.uploadedFiles.map(file => file.name).join(", ");
-                messageContainer.textContent = `Archivos cargados: ${fileNames}`;
-                messageContainer.classList.remove("text-danger");
-                messageContainer.classList.add("text-success");
-            } else {
-                messageContainer.textContent = "No se seleccionó ningún archivo.";
-                messageContainer.classList.remove("text-success");
-                messageContainer.classList.add("text-danger");
-            }
-        },
-    
-        // _onFileSelected: function(ev) {
-        //     const input = ev.currentTarget;
-        //     const files = Array.from(input.files);
-        //     const messageContainer = document.getElementById("file-selected-message");
+        // Reconstruir FileList
+        const dataTransfer = new DataTransfer();
 
-        //     // Acumular archivos seleccionados
-        //     uploadedFiles = uploadedFiles.concat(files);
+        this.uploadedFiles.forEach(file => {
+            dataTransfer.items.add(file);
+        });
 
-        //     if (uploadedFiles.length > 0) {
-        //         const fileNames = uploadedFiles.map(file => file.name).join(", ");
-        //         messageContainer.textContent = `Archivos cargados: ${fileNames}`;
-        //         messageContainer.classList.remove("text-danger");
-        //         messageContainer.classList.add("text-success");
-        //     } else {
-        //         messageContainer.textContent = "No se seleccionó ningún archivo.";
-        //         messageContainer.classList.remove("text-success");
-        //         messageContainer.classList.add("text-danger");
-        //     }
-        // },
+        // Asignar TODOS los archivos al input
+        input.files = dataTransfer.files;
+
+        // Mostrar nombres
+        if (this.uploadedFiles.length > 0) {
+
+            const fileNames = this.uploadedFiles
+                .map(file => file.name)
+                .join(", ");
+
+            messageContainer.textContent =
+                `Archivos cargados: ${fileNames}`;
+
+            messageContainer.classList.remove("text-danger");
+            messageContainer.classList.add("text-success");
+
+        } else {
+
+            messageContainer.textContent =
+                "No se seleccionó ningún archivo.";
+
+            messageContainer.classList.remove("text-success");
+            messageContainer.classList.add("text-danger");
+        }
+    },
 
     //----------------------------------------------------------------------
     // Validations
@@ -1636,59 +1640,21 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-1').removeClass('d-none');
     },
 
-    // _onSubmitForm(ev) {
-    //     ev.preventDefault();
+    _onSubmitForm(ev) {
+        ev.preventDefault();
 
-    //     if (!this._validateCurrentStep3()) return;
+        if (!this._validateCurrentStep3()) return;
 
-    //     this.$('#submit-form')
-    //         .prop('disabled', true)
-    //         .text('Enviando...');
+        this.$('#submit-form')
+            .prop('disabled', true)
+            .text('Enviando...');
 
-    //     this.el.submit();
-    // },
+        this.el.submit();
+    },
 
-        _onSubmitForm: function (ev) {
-            ev.preventDefault();
-
-            if (!this._validateCurrentStep3()) return;
-
-            const form = this.el.querySelector("form");
-            const submitBtn = this.$('#submit-form');
-
-            submitBtn.prop('disabled', true).text('Enviando...');
-
-            // Construir FormData manualmente
-            const formData = new FormData(form);
-
-            // Agregar todos los archivos acumulados
-            this.uploadedFiles.forEach(file => {
-                formData.append("curriculumVitae", file);
-            });
-
-            // Enviar con fetch
-            fetch(form.action, {
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.text())
-            .then(data => {
-                console.log("Respuesta:", data);
-                submitBtn.text('Enviado');
-                // Resetear archivos después de envío exitoso
-                this.uploadedFiles = [];
-                document.getElementById("file-selected-message").textContent = "";
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                submitBtn.prop('disabled', false).text('Enviar');
-            });
-        },
-
-    // ----------------------------------------------------------------------
+    //----------------------------------------------------------------------
     // Methods education
-    // ----------------------------------------------------------------------
-
+    //----------------------------------------------------------------------
 
     async _addEducationBlock() {
         const newBlock = await this._getEducationBlock(true);
