@@ -1643,6 +1643,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             .prop('disabled', true)
             .text('Enviando...');
 
+        // Crear FormData con todos los campos del formulario
         const formData = new FormData(this.el);
 
         // Agregar todos los archivos acumulados
@@ -1650,13 +1651,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             formData.append("curriculumVitae", file);
         });
 
-        fetch('/hr/job/apply', {
+        // Enviar vía fetch al controlador correcto
+        fetch('/jobs/recruitment/apply', {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            // Si el controlador devuelve JSON
+            return response.json();
+        })
         .then(data => {
             console.log("Respuesta del servidor:", data);
+            // Aquí puedes manejar redirección, mensaje de éxito, etc.
         })
         .catch(error => {
             console.error("Error al enviar:", error);
@@ -1665,7 +1671,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 .text('Enviar');
         });
     },
-
 
 
     async _addEducationBlock() {
