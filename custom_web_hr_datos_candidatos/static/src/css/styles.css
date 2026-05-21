@@ -121,10 +121,10 @@ input.form-check-input:focus {
     display: none !important;
 } */
 
-.text-success {
+.text-success-custom {
     font-size: 12px !important;
 }
 
-.text-info{
+.text-info-custom {
     font-size: 13px !important;
 }
