@@ -644,18 +644,63 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     // función para mostrar archivos seleccionados
 
+    // _onFileSelected: function(ev) {
+
+    //     const input = ev.currentTarget;
+    //     const newFiles = Array.from(input.files);
+    //     const container = document.getElementById("file-selected-message");
+
+    //     // Inicializar arreglo
+    //     if (!this.uploadedFiles) {
+    //         this.uploadedFiles = [];
+    //     }
+
+    //     // Agregar archivos nuevos
+    //     this.uploadedFiles = this.uploadedFiles.concat(newFiles);
+
+    //     // Evitar duplicados
+    //     this.uploadedFiles = this.uploadedFiles.filter(
+    //         (file, index, self) =>
+    //             index === self.findIndex(f => f.name === file.name)
+    //     );
+
+    //     // Reconstruir FileList
+    //     this._refreshFileInput(input);
+
+    //     // Renderizar lista
+    //     this._renderFileList(container, input);
+    // },
+
     _onFileSelected: function(ev) {
 
         const input = ev.currentTarget;
         const newFiles = Array.from(input.files);
         const container = document.getElementById("file-selected-message");
 
-        // Inicializar arreglo
         if (!this.uploadedFiles) {
             this.uploadedFiles = [];
         }
 
-        // Agregar archivos nuevos
+        // VALIDAR PDFs
+        const invalidFiles = newFiles.filter(file => {
+            return file.type !== "application/pdf" &&
+                !file.name.toLowerCase().endsWith(".pdf");
+        });
+
+        // Si hay archivos inválidos
+        if (invalidFiles.length > 0) {
+
+            container.innerHTML = `
+                <div class="text-danger fs-6">
+                    Solo se permiten archivos PDF.
+                </div>
+            `;
+
+            input.value = "";
+            return;
+        }
+
+        // Agregar archivos válidos
         this.uploadedFiles = this.uploadedFiles.concat(newFiles);
 
         // Evitar duplicados
@@ -664,10 +709,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 index === self.findIndex(f => f.name === file.name)
         );
 
-        // Reconstruir FileList
         this._refreshFileInput(input);
 
-        // Renderizar lista
         this._renderFileList(container, input);
     },
 
