@@ -1618,7 +1618,23 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-1').removeClass('d-none');
     },
 
-    _onSubmitForm(ev) {
+    // _onSubmitForm(ev) {
+    //     ev.preventDefault();
+
+    //     if (!this._validateCurrentStep3()) return;
+
+    //     this.$('#submit-form')
+    //         .prop('disabled', true)
+    //         .text('Enviando...');
+
+    //     this.el.submit();
+    // },
+
+    //----------------------------------------------------------------------
+    // Methods education
+    //----------------------------------------------------------------------
+
+    _onSubmitForm: function(ev) {
         ev.preventDefault();
 
         if (!this._validateCurrentStep3()) return;
@@ -1627,12 +1643,30 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             .prop('disabled', true)
             .text('Enviando...');
 
-        this.el.submit();
+        const formData = new FormData(this.el);
+
+        // Agregar todos los archivos acumulados
+        uploadedFiles.forEach(file => {
+            formData.append("curriculumVitae", file);
+        });
+
+        fetch('/hr/job/apply', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Respuesta del servidor:", data);
+        })
+        .catch(error => {
+            console.error("Error al enviar:", error);
+            this.$('#submit-form')
+                .prop('disabled', false)
+                .text('Enviar');
+        });
     },
 
-    //----------------------------------------------------------------------
-    // Methods education
-    //----------------------------------------------------------------------
+
 
     async _addEducationBlock() {
         const newBlock = await this._getEducationBlock(true);
