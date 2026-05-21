@@ -663,9 +663,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 messageContainer.classList.remove("text-success");
                 messageContainer.classList.add("text-danger");
             }
-
-            // No limpiar el input aquí, para que el usuario pueda seguir seleccionando
-            // input.value = "";
         },
 
     //----------------------------------------------------------------------
@@ -1630,47 +1627,29 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     //     this.el.submit();
     // },
 
-    //----------------------------------------------------------------------
-    // Methods education
-    //----------------------------------------------------------------------
 
-    _onSubmitForm: function(ev) {
+
+    _onSubmitForm(ev) {
         ev.preventDefault();
 
         if (!this._validateCurrentStep3()) return;
 
-        this.$('#submit-form')
-            .prop('disabled', true)
-            .text('Enviando...');
-
-        // Crear FormData con todos los campos del formulario
         const formData = new FormData(this.el);
-
-        // Agregar todos los archivos acumulados
         uploadedFiles.forEach(file => {
-            formData.append("curriculumVitae", file);
+            formData.append('curriculumVitae', file);
         });
 
-        // Enviar vía fetch al controlador correcto
-        fetch('/jobs/recruitment/apply', {
+        fetch(this.el.action, {
             method: 'POST',
             body: formData
-        })
-        .then(response => {
-            // Si el controlador devuelve JSON
-            return response.json();
-        })
-        .then(data => {
-            console.log("Respuesta del servidor:", data);
-            // Aquí puedes manejar redirección, mensaje de éxito, etc.
-        })
-        .catch(error => {
-            console.error("Error al enviar:", error);
-            this.$('#submit-form')
-                .prop('disabled', false)
-                .text('Enviar');
+        }).then(response => {
+            // manejar respuesta
         });
     },
+
+    // ----------------------------------------------------------------------
+    // Methods education
+    // ----------------------------------------------------------------------
 
 
     async _addEducationBlock() {
