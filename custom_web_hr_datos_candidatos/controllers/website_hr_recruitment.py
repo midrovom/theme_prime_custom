@@ -121,20 +121,6 @@ class WebsiteHRRecruitment(http.Controller):
             else:
                 applicant_values['document_ids'] = document_lines
 
-
-
-            # document_lines = []
-            # for idx, file in enumerate(request.httprequest.files.getlist('curriculumVitae')):
-            #     file_content = base64.b64encode(file.read()).decode('utf-8')
-            #     filename = getattr(file, 'filename', f'documento_{idx+1}.pdf')
-
-            #     document_lines.append((0, 0, {
-            #         'file': file_content,
-            #         'filename': filename,
-            #     }))
-
-            # applicant_values['document_ids'] = document_lines
-
             # ---------------- Información Médica ----------------
             medical_lines = [(0, 0, {
                 'enfermedad_persistente': kwargs.get('enfermedad_persistente') or 'no',
