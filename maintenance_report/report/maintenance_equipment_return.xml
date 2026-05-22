@@ -17,10 +17,6 @@
                     A través de la presente, el Señor(a) <strong><span t-out="docs[0].employee_id.name"/></strong>, con C.I. N° 
                     <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, en calidad de colaborador de la empresa <strong><span t-out="docs[0].partner_id.name"/></strong>, 
                     procede a realizar la devolución de los siguientes equipos previamente entregados.
-                    <!-- por el Departamento de 
-                    <strong><span t-out="docs[0].entregado_por_id.department_id.name"/></strong>, representado por 
-                    <strong><span t-out="docs[0].entregado_por_id.name"/></strong>, con C.I. N° 
-                    <strong><span t-out="docs[0].entregado_por_id.identification_id"/></strong>. -->
                 </p>
 
                 <!-- Tabla de equipos -->
@@ -44,12 +40,6 @@
                         </t>
                     </tbody>
                 </table>
-
-                <!-- Compromiso del colaborador -->
-                <!-- <p style="margin-top:25px; text-align:justify;">
-                    El señor(a) declara haber devuelto los equipos en buen estado, salvo el desgaste normal por uso, 
-                    quedando la empresa en conformidad con la recepción de los mismos.
-                </p> -->
 
                 <!-- Firmas -->
                 <div style="margin-top:50px; text-align:center;">
