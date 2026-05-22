@@ -1,58 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data noupdate="1">
-
-        <!-- Grupo especial con permisos completos -->
-        <record id="group_attachment_admin" model="res.groups">
-            <field name="name">Administrador de Documentos</field>
-            <field name="category_id" ref="base.module_category_human_resources"/>
+        <record id="group_attachment_readonly" model="res.groups">
+            <field name="name">Adjuntos docuemntos user</field>
         </record>
 
-        <!-- Acceso completo para el grupo Administrador -->
-        <record id="access_attachment_admin" model="ir.model.access">
-            <field name="name">ir.attachment full access</field>
+        <record id="attachment_readonly_rule" model="ir.rule">
+            <field name="name">Adjuntos solo lectura</field>
             <field name="model_id" ref="base.model_ir_attachment"/>
-            <field name="group_id" ref="group_attachment_admin"/>
-            <field name="perm_read" eval="1"/>
-            <field name="perm_write" eval="1"/>
-            <field name="perm_create" eval="1"/>
-            <field name="perm_unlink" eval="1"/>
-        </record>
-
-        <!-- Acceso solo lectura para todos los demás usuarios -->
-        <record id="access_attachment_user" model="ir.model.access">
-            <field name="name">ir.attachment read only</field>
-            <field name="model_id" ref="base.model_ir_attachment"/>
-            <field name="group_id" ref="base.group_user"/>
+            <field name="groups" eval="[(4, ref('mi_modulo_adjuntos_readonly.group_attachment_readonly'))]"/>
             <field name="perm_read" eval="1"/>
             <field name="perm_write" eval="0"/>
             <field name="perm_create" eval="0"/>
             <field name="perm_unlink" eval="0"/>
-        </record>
-
-        <!-- Regla: solo los administradores pueden modificar/crear/eliminar -->
-        <record id="rule_attachment_admin" model="ir.rule">
-            <field name="name">Adjuntos - Administradores</field>
-            <field name="model_id" ref="base.model_ir_attachment"/>
-            <field name="groups" eval="[(4, ref('maintenance_report.group_attachment_admin'))]"/>
             <field name="domain_force">[(1,'=',1)]</field>
-            <field name="perm_read" eval="1"/>
-            <field name="perm_write" eval="1"/>
-            <field name="perm_create" eval="1"/>
-            <field name="perm_unlink" eval="1"/>
         </record>
-
-        <!-- Regla: usuarios estándar solo lectura -->
-        <record id="rule_attachment_users" model="ir.rule">
-            <field name="name">Adjuntos - Usuarios solo lectura</field>
-            <field name="model_id" ref="base.model_ir_attachment"/>
-            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-            <field name="domain_force">[(1,'=',1)]</field>
-            <field name="perm_read" eval="1"/>
-            <field name="perm_write" eval="0"/>
-            <field name="perm_create" eval="0"/>
-            <field name="perm_unlink" eval="0"/>
-        </record>
-
     </data>
 </odoo>

@@ -1,21 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="maintenance_report_attachment_inherit" inherit_id="mail.AttachmentBoxView" name="Restricción de adjuntos en chatter">
-        <xpath expr="//button[contains(@class,'o-mail-AttachmentCard-unlink')]" position="replace">
-            <t t-if="user_has_group('maintenance_report.group_attachment_admin')">
-                <button class="o-mail-AttachmentCard-unlink btn" title="Eliminar">
-                    <i class="fa fa-trash" role="img" aria-label="Eliminar"/>
-                </button>
-            </t>
+    <template id="attachment_card_readonly" inherit_id="mail.attachment_card">
+        <!-- Botón eliminar -->
+        <xpath expr="//button[contains(@class,'o-mail-AttachmentCard-unlink')]" position="attributes">
+            <attribute name="groups">base.group_user,!mi_modulo_adjuntos_readonly.group_attachment_readonly</attribute>
         </xpath>
-        <xpath expr="//button[contains(@class,'btn-link') and contains(.,'Adjuntar archivos')]" position="replace">
-            <t t-if="user_has_group('maintenance_report.group_attachment_admin')">
-                <button class="btn btn-link" type="button">
-                    <i class="fa fa-plus-square"/> Adjuntar archivos
-                </button>
-            </t>
+
+        <!-- Botón descargar -->
+        <xpath expr="//button[contains(@title,'Descargar')]" position="attributes">
+            <attribute name="groups">base.group_user,!mi_modulo_adjuntos_readonly.group_attachment_readonly</attribute>
         </xpath>
     </template>
-
 </odoo>
+
 

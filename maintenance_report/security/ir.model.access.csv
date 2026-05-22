@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_attachment_readonly,access_attachment_readonly,base.model_ir_attachment,mi_modulo_adjuntos_readonly.group_attachment_readonly,1,0,0,0
