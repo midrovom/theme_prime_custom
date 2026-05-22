@@ -2,13 +2,16 @@
 
 <templates xml:space="preserve">
 
-    <t t-inherit="mail.Chatter" t-inherit-mode="extension">
+    <t t-inherit="mail.Chatter"
+       t-inherit-mode="extension">
 
         <!-- SEND MESSAGE -->
         <xpath expr="//button[contains(@class,'o-mail-Chatter-sendMessage')]"
                position="attributes">
 
-            <attribute name="t-if">!isReadonlyChatter</attribute>
+            <attribute name="t-if">
+                !this.isReadonlyChatter
+            </attribute>
 
         </xpath>
 
@@ -16,7 +19,9 @@
         <xpath expr="//button[contains(@class,'o-mail-Chatter-logNote')]"
                position="attributes">
 
-            <attribute name="t-if">!isReadonlyChatter</attribute>
+            <attribute name="t-if">
+                !this.isReadonlyChatter
+            </attribute>
 
         </xpath>
 
@@ -24,7 +29,9 @@
         <xpath expr="//button[contains(@class,'o-mail-Chatter-activity')]"
                position="attributes">
 
-            <attribute name="t-if">!isReadonlyChatter</attribute>
+            <attribute name="t-if">
+                !this.isReadonlyChatter
+            </attribute>
 
         </xpath>
 
@@ -32,7 +39,9 @@
         <xpath expr="//FileUploader[1]"
                position="attributes">
 
-            <attribute name="t-if">!isReadonlyChatter</attribute>
+            <attribute name="t-if">
+                !this.isReadonlyChatter
+            </attribute>
 
         </xpath>
 
@@ -40,7 +49,9 @@
         <xpath expr="//div[contains(@class,'o-mail-AttachmentBox')]//FileUploader"
                position="attributes">
 
-            <attribute name="t-if">!isReadonlyChatter</attribute>
+            <attribute name="t-if">
+                !this.isReadonlyChatter
+            </attribute>
 
         </xpath>
 
@@ -48,7 +59,9 @@
         <xpath expr="//Composer"
                position="attributes">
 
-            <attribute name="t-if">!isReadonlyChatter</attribute>
+            <attribute name="t-if">
+                !this.isReadonlyChatter
+            </attribute>
 
         </xpath>
 
