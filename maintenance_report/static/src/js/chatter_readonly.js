@@ -1,27 +1,23 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
-import { Chatter } from "@mail/chatter/web/chatter";
-import { onWillStart } from "@odoo/owl";
-import { useService } from "@web/core/utils/hooks";
+import { AttachmentCard } from "@mail/core/web/attachment_card";
 
-patch(Chatter.prototype, {
-
+patch(AttachmentCard.prototype, "RestrictAttachmentActions", {
     setup() {
-        super.setup();
-
-        this.userService = useService("user");
-
-        this.isReadonlyChatter = false;
-
-        onWillStart(async () => {
-
-            this.isReadonlyChatter =
-                await this.userService.hasGroup(
-                    "maintenance_report.group_chatter_readonly"
-                );
-
-        });
+        this._super(...arguments);
+        // Verifica si el usuario pertenece al grupo
+        this.userHasGroup = this.env.services.user.hasGroup("tu_modulo.nombre_del_grupo");
     },
 
+    get canUnlink() {
+        // Solo permite eliminar si el usuario pertenece al grupo
+        return this.userHasGroup;
+    },
+
+    get canUpload() {
+        // Solo permite subir si el usuario pertenece al grupo
+        return this.userHasGroup;
+    },
 });
+
