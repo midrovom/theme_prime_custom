@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="maintenance_report_attachment_inherit" inherit_id="mail.attachment_box" name="Restricción de adjuntos en chatter">
-        <!-- Botón Eliminar solo visible para grupo -->
+    <template id="maintenance_report_attachment_inherit" inherit_id="mail.AttachmentBoxView" name="Restricción de adjuntos en chatter">
         <xpath expr="//button[contains(@class,'o-mail-AttachmentCard-unlink')]" position="replace">
             <t t-if="user_has_group('maintenance_report.group_attachment_admin')">
-                <button class="o-mail-AttachmentCard-unlink btn top-0 align-items-center justify-content-center d-flex w-100 h-100 rounded-0 border-0 bg-300" title="Eliminar">
+                <button class="o-mail-AttachmentCard-unlink btn" title="Eliminar">
                     <i class="fa fa-trash" role="img" aria-label="Eliminar"/>
                 </button>
             </t>
         </xpath>
-
-        <!-- Botón Adjuntar solo visible para grupo -->
         <xpath expr="//button[contains(@class,'btn-link') and contains(.,'Adjuntar archivos')]" position="replace">
             <t t-if="user_has_group('maintenance_report.group_attachment_admin')">
                 <button class="btn btn-link" type="button">
@@ -19,5 +16,6 @@
             </t>
         </xpath>
     </template>
+
 </odoo>
 
