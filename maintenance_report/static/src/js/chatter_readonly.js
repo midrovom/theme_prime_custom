@@ -11,10 +11,10 @@ patch(Chatter.prototype, {
 
         this.user = useService("user");
 
-        this.checkReadonlyGroup();
+        this.initReadonlyChatter();
     },
 
-    async checkReadonlyGroup() {
+    async initReadonlyChatter() {
 
         const hasGroup = await this.user.hasGroup(
             "maintenance_report.group_chatter_readonly"
@@ -24,43 +24,92 @@ patch(Chatter.prototype, {
             return;
         }
 
-        setTimeout(() => {
+        const applyReadonly = () => {
 
-            // upload
+            // =========================
+            // BOTON ADJUNTAR
+            // =========================
+
             document.querySelectorAll(
-                ".o-mail-Chatter-fileUploader"
+                ".o-mail-Chatter-attachment button, .o-mail-Chatter-fileUploader"
             ).forEach(el => {
-                el.closest("span")?.remove();
                 el.remove();
             });
 
-            // eliminar adjunto
+            // =========================
+            // INPUT FILE
+            // =========================
+
+            document.querySelectorAll(
+                "input.o-mail-Chatter-fileUploader"
+            ).forEach(el => {
+                el.disabled = true;
+                el.remove();
+            });
+
+            // =========================
+            // ELIMINAR ADJUNTO
+            // =========================
+
             document.querySelectorAll(
                 ".o-mail-AttachmentCard-unlink"
-            ).forEach(el => el.remove());
+            ).forEach(el => {
+                el.remove();
+            });
 
-            // descargar
+            // =========================
+            // DESCARGAR
+            // =========================
+
             document.querySelectorAll(
                 ".o-mail-AttachmentCard button[title='Descargar']"
-            ).forEach(el => el.remove());
+            ).forEach(el => {
+                el.remove();
+            });
 
-            // composer
+            // =========================
+            // COMPOSER
+            // =========================
+
             document.querySelectorAll(
                 ".o-mail-Composer"
-            ).forEach(el => el.remove());
+            ).forEach(el => {
+                el.remove();
+            });
 
-            // actividades
+            // =========================
+            // ACTIVIDADES
+            // =========================
+
             document.querySelectorAll(
                 ".o-mail-Activity"
-            ).forEach(el => el.remove());
+            ).forEach(el => {
+                el.remove();
+            });
 
-            // acciones mensajes
+            // =========================
+            // ACCIONES MENSAJE
+            // =========================
+
             document.querySelectorAll(
                 ".o-mail-Message-actions"
             ).forEach(el => {
-                el.style.display = "none";
+                el.remove();
             });
 
-        }, 500);
+        };
+
+        // primera ejecución
+        applyReadonly();
+
+        // observar cambios OWL
+        const observer = new MutationObserver(() => {
+            applyReadonly();
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
     },
 });
