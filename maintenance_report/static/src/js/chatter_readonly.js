@@ -7,7 +7,7 @@ patch(AttachmentCard.prototype, "RestrictAttachmentActions", {
     setup() {
         this._super(...arguments);
         // Verifica si el usuario pertenece al grupo
-        this.userHasGroup = this.env.services.user.hasGroup("tu_modulo.nombre_del_grupo");
+        this.userHasGroup = this.env.services.user.hasGroup("maintenance_report.group_attachment_manager");
     },
 
     get canUnlink() {

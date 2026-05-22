@@ -26,6 +26,6 @@ class IrAttachment(models.Model):
     @api.depends()
     def _compute_user_has_group(self):
         for record in self:
-            record.user_has_group = self.env.user.has_group('tu_modulo.nombre_del_grupo')
+            record.user_has_group = self.env.user.has_group('maintenance_report.group_attachment_manager')
 
 
