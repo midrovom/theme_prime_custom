@@ -11,8 +11,8 @@
     'author': 'Ing. Bolivar Rodriguez',
     'depends': ['maintenance','hr', 'mail'],
     'data': [
-        'security/security.xml',
-        'security/ir.model.access.csv',
+        # 'security/security.xml',
+        # 'security/ir.model.access.csv',
 
         'report/maintenance_report.xml',
         'report/maintenance_report_templates.xml',
@@ -22,8 +22,8 @@
     ],
     'assets': {
         'web.assets_frontend': [
-            'maintenance_report/static/src/js/chatter_readonly.js',
-            'maintenance_report/static/src/xml/chatter_readonly.xml',
+            # 'maintenance_report/static/src/js/chatter_readonly.js',
+            # 'maintenance_report/static/src/xml/chatter_readonly.xml',
         ],
     },
 
