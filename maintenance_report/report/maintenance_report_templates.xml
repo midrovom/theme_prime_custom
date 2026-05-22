@@ -14,11 +14,9 @@
 
                 <!-- Texto inicial -->
                 <p style="margin-top:15px; text-align:justify;">
-                    A través de la presente, yo <strong><span t-out="docs[0].entregado_por_id.name"/></strong>, con C.I. N° 
-                    <strong><span t-out="docs[0].entregado_por_id.identification_id"/></strong>, en calidad de representante del 
-                     Departamento de <strong><span t-out="docs[0].entregado_por_id.department_id.name"/></strong>, procedo a realizar la entrega de los siguientes equipos al Señor(a)  
+                    <strong><span t-out="docs[0].equipment_id.partner_id.name"/></strong> en calidad de patrono hace entrega al Señor(a)  
                     <strong><span t-out="docs[0].employee_id.name"/></strong>, con cédula de identidad N° 
-                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>.
+                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong> de los siguientes equipos: 
                 </p>
 
                 <!-- Tabla de equipos -->
@@ -45,8 +43,8 @@
 
                 <!-- Compromiso del colaborador -->
                 <p style="margin-top:25px; text-align:justify;">
-                    El señor(a) declara haber recibido los equipos en buen estado y se compromete a darles un uso responsable, exclusivamente laboral, 
-                    y a devolverlos cuando la empresa lo requiera o al finalizar la relación laboral, salvo el desgaste normal por uso.
+                    El uso inadecuado de los equipos como: robo, caída humedad, perdida; serán motivo de descuento del equipo de mi rol de pago. En 
+                    caso de dejar de formar parte de la empresa es de mi conocimiento que debo entregar a mi Supervisor/a el equipo completo, su cargador original.
                 </p>
 
                 <!-- Firmas -->
