@@ -2,7 +2,7 @@
 <odoo>
 
     <record id="group_chatter_readonly" model="res.groups">
-        <field name="name">Empleado User</field>
+        <field name="name">Empleado User ff</field>
         <field name="category_id" ref="base.module_category_hidden"/>
     </record>
 
