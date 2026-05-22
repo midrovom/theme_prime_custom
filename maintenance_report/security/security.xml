@@ -8,7 +8,7 @@
         <record id="attachment_readonly_rule" model="ir.rule">
             <field name="name">Adjuntos solo lectura</field>
             <field name="model_id" ref="base.model_ir_attachment"/>
-            <field name="groups" eval="[(4, ref('mi_modulo_adjuntos_readonly.group_attachment_readonly'))]"/>
+            <field name="groups" eval="[(4, ref('maintenance_report.group_attachment_readonly'))]"/>
             <field name="perm_read" eval="1"/>
             <field name="perm_write" eval="0"/>
             <field name="perm_create" eval="0"/>
