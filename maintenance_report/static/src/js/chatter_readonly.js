@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
-import { Chatter } from "@mail/chatter/web_portal/chatter";
+import { Chatter } from "@mail/chatter/web/chatter";
 import { useService } from "@web/core/utils/hooks";
 
 patch(Chatter.prototype, {
@@ -11,57 +11,56 @@ patch(Chatter.prototype, {
 
         this.user = useService("user");
 
-        this.isChatterReadonly = false;
-
         this.checkReadonlyGroup();
     },
 
     async checkReadonlyGroup() {
 
-        this.isChatterReadonly = await this.user.hasGroup(
+        const hasGroup = await this.user.hasGroup(
             "maintenance_report.group_chatter_readonly"
         );
 
-        if (this.isChatterReadonly) {
-
-            setTimeout(() => {
-
-                // ocultar adjuntar archivos
-                document.querySelectorAll(
-                    ".o-mail-Chatter-fileUploader"
-                ).forEach(el => {
-                    el.closest("span")?.remove();
-                    el.remove();
-                });
-
-                // ocultar eliminar
-                document.querySelectorAll(
-                    ".o-mail-AttachmentCard-unlink"
-                ).forEach(el => el.remove());
-
-                // ocultar descargar
-                document.querySelectorAll(
-                    ".o-mail-AttachmentCard button[title='Descargar']"
-                ).forEach(el => el.remove());
-
-                // ocultar composer
-                document.querySelectorAll(
-                    ".o-mail-Composer"
-                ).forEach(el => el.remove());
-
-                // ocultar actividades
-                document.querySelectorAll(
-                    ".o-mail-Activity"
-                ).forEach(el => el.remove());
-
-                // desactivar botones chatter
-                document.querySelectorAll(
-                    ".o-mail-Message-actions"
-                ).forEach(el => {
-                    el.style.display = "none";
-                });
-
-            }, 500);
+        if (!hasGroup) {
+            return;
         }
+
+        setTimeout(() => {
+
+            // upload
+            document.querySelectorAll(
+                ".o-mail-Chatter-fileUploader"
+            ).forEach(el => {
+                el.closest("span")?.remove();
+                el.remove();
+            });
+
+            // eliminar adjunto
+            document.querySelectorAll(
+                ".o-mail-AttachmentCard-unlink"
+            ).forEach(el => el.remove());
+
+            // descargar
+            document.querySelectorAll(
+                ".o-mail-AttachmentCard button[title='Descargar']"
+            ).forEach(el => el.remove());
+
+            // composer
+            document.querySelectorAll(
+                ".o-mail-Composer"
+            ).forEach(el => el.remove());
+
+            // actividades
+            document.querySelectorAll(
+                ".o-mail-Activity"
+            ).forEach(el => el.remove());
+
+            // acciones mensajes
+            document.querySelectorAll(
+                ".o-mail-Message-actions"
+            ).forEach(el => {
+                el.style.display = "none";
+            });
+
+        }, 500);
     },
 });
