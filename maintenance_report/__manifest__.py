@@ -9,7 +9,7 @@
         Este módulo permite generar Acta de entrega de equipos.
     """,
     'author': 'Ing. Bolivar Rodriguez',
-    'depends': ['maintenance','hr'],
+    'depends': ['maintenance','hr', 'mail'],
     'data': [
         'security/security.xml',
         'security/ir.model.access.csv',
