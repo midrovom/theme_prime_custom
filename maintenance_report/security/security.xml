@@ -1,9 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="view_attachment_form_custom" model="ir.ui.view">
+        <field name="name">ir.attachment.form.custom</field>
+        <field name="model">ir.attachment</field>
+        <field name="inherit_id" ref="mail.view_attachment_form"/>
+        <field name="arch" type="xml">
 
-    <record id="group_chatter_readonly" model="res.groups">
-        <field name="name">Empleado User ff</field>
-        <field name="category_id" ref="base.module_category_hidden"/>
+            <!-- Botón de Adjuntar archivos -->
+            <xpath expr="//button[contains(@class,'btn-link')]" position="attributes">
+                <attribute name="attrs">{'invisible': [('user_has_group','=',False)]}</attribute>
+            </xpath>
+
+            <!-- Botón de Eliminar dentro de la tarjeta de adjunto -->
+            <xpath expr="//button[contains(@class,'o-mail-AttachmentCard-unlink')]" position="attributes">
+                <attribute name="attrs">{'invisible': [('user_has_group','=',False)]}</attribute>
+            </xpath>
+
+        </field>
     </record>
-
 </odoo>
