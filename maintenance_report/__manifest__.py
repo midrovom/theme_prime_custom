@@ -12,7 +12,7 @@
     'depends': ['maintenance','hr', 'mail'],
     'data': [
         # 'security/security.xml',
-        # 'security/ir.model.access.csv',
+        'security/ir.model.access.csv',
 
         'report/maintenance_report.xml',
         'report/maintenance_report_templates.xml',
