@@ -1,23 +1,23 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
-import { AttachmentCard } from "@mail/core/web/attachment_card";
+import { Chatter } from "@mail/chatter/chatter";
+import { useService } from "@web/core/utils/hooks";
 
-patch(AttachmentCard.prototype, "RestrictAttachmentActions", {
+patch(Chatter.prototype, "hr_chatter_restriction", {
     setup() {
-        this._super(...arguments);
-        // Verifica si el usuario pertenece al grupo
-        this.userHasGroup = this.env.services.user.hasGroup("maintenance_report.group_attachment_manager");
+        this._super();
+        this.user = useService("user");
     },
 
-    get canUnlink() {
-        // Solo permite eliminar si el usuario pertenece al grupo
-        return this.userHasGroup;
-    },
-
-    get canUpload() {
-        // Solo permite subir si el usuario pertenece al grupo
-        return this.userHasGroup;
+    get showAttachButton() {
+        // Si el usuario pertenece al grupo de solo lectura, ocultar botón
+        const groups = this.user.context.user_groups || "";
+        const readonlyGroup = "hr_chatter_restriction.group_attachment_hr_readonly";
+        if (groups.includes(readonlyGroup) && this.props.record.model === "hr.employee") {
+            return false;
+        }
+        return this._super ? this._super() : true;
     },
 });
 

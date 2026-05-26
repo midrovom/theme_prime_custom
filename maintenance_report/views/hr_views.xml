@@ -11,18 +11,6 @@
             </xpath>
         </field>
     </record>
-    
-    <record id="view_employee_form_inherit_chatter" model="ir.ui.view">
-        <field name="name">hr.employee.form.inherit.chatter</field>
-        <field name="model">hr.employee</field>
-        <field name="inherit_id" ref="hr.view_employee_form"/>
-        <field name="arch" type="xml">
-            <!-- Oculta el chatter entero para el grupo -->
-            <xpath expr="//div[@class='oe_chatter']" position="replace">
-                <div groups="!maintenance_report.group_attachment_hr_readonly" class="oe_chatter"/>
-            </xpath>
-        </field>
-    </record>
 
 </odoo>
 

@@ -22,7 +22,7 @@
     ],
     'assets': {
         'web.assets_frontend': [
-            #'maintenance_report/static/src/js/chatter_readonly.js',
+            'maintenance_report/static/src/js/chatter_readonly.js',
         ],
     },
 
