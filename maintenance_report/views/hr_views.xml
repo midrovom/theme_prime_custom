@@ -12,8 +12,18 @@
         </field>
     </record>
 
-
+    <record id="view_employee_form_inherit_attachment" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.attachment</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+                <!-- Localiza el botón de adjuntar en el chatter -->
+            <xpath expr="//button[contains(@class,'o-mail-Chatter-attachFiles')]" position="attributes">
+                    <!-- Solo mostrar si el usuario NO está en el grupo de solo lectura -->
+                <attribute name="groups">!maintenance_report.group_attachment_hr_readonly</attribute>
+            </xpath>
+        </field>
+    </record>
 
 
 </odoo>
-

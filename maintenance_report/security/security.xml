@@ -1,8 +1,9 @@
+
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <data noupdate="0">
 
-        <!-- Grupo de seguridad -->
+        <!-- Grupo de seguridad: Adjuntos empleados solo lectura -->
         <record id="group_attachment_hr_readonly" model="res.groups">
             <field name="name">Adjuntos empleados: Solo lectura</field>
             <field name="category_id" ref="base.module_category_hidden"/>
@@ -24,4 +25,3 @@
 
     </data>
 </odoo>
-
