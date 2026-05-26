@@ -8,23 +8,14 @@
             <field name="category_id" ref="base.module_category_hidden"/>
         </record>
 
-        <!-- ACL -->
-        <record id="access_attachment_view_download" model="ir.model.access">
-            <field name="name">attachment.view.download</field>
-            <field name="model_id" ref="base.model_ir_attachment"/>
-            <field name="group_id" ref="maintenance_report.group_attachment_view_download"/>
-            <field name="perm_read" eval="True"/>
-            <field name="perm_write" eval="False"/>
-            <field name="perm_create" eval="False"/>
-            <field name="perm_unlink" eval="False"/>
-        </record>
-
-        <!-- Record Rule -->
+        <!-- Record Rule: restringe acciones si el usuario está en este grupo -->
         <record id="rule_attachment_view_download" model="ir.rule">
             <field name="name">Attachment view/download only</field>
             <field name="model_id" ref="base.model_ir_attachment"/>
             <field name="groups" eval="[(4, ref('maintenance_report.group_attachment_view_download'))]"/>
+            <!-- dominio: todos los adjuntos son visibles -->
             <field name="domain_force">[(1,'=',1)]</field>
+            <!-- permisos: solo lectura -->
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
             <field name="perm_create" eval="False"/>
@@ -33,4 +24,3 @@
 
     </data>
 </odoo>
-
