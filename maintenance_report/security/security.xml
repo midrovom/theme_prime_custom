@@ -12,7 +12,7 @@
         <record id="rule_attachment_hr_readonly_custom" model="ir.rule">
             <field name="name">HR Attachments Readonly Custom</field>
             <field name="model_id" ref="base.model_ir_attachment"/>
-            <field name="groups" eval="[(4, ref('tu_modulo.group_attachment_hr_readonly_custom'))]"/>
+            <field name="groups" eval="[(4, ref('maintenance_report.group_attachment_hr_readonly_custom'))]"/>
             <!-- dominio: solo adjuntos vinculados al modelo hr.employee -->
             <field name="domain_force">[('res_model','=','hr.employee')]</field>
             <!-- permisos: solo lectura -->
