@@ -18,8 +18,11 @@
             <field name="model">hr.employee</field>
             <field name="inherit_id" ref="hr.view_employee_form"/>
             <field name="arch" type="xml">
-                <!-- Oculta el chatter completo para el grupo de solo lectura -->
-                <xpath expr="//div[@class='oe_chatter']" position="attributes">
+                <!-- Oculta los campos del chatter para el grupo de solo lectura -->
+                <xpath expr="//field[@name='message_follower_ids']" position="attributes">
+                    <attribute name="groups">!maintenance_report.group_attachment_hr_readonly</attribute>
+                </xpath>
+                <xpath expr="//field[@name='message_ids']" position="attributes">
                     <attribute name="groups">!maintenance_report.group_attachment_hr_readonly</attribute>
                 </xpath>
             </field>
