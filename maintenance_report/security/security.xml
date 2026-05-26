@@ -3,29 +3,19 @@
     <data noupdate="0">
 
         <!-- Grupo de seguridad -->
-        <record id="group_attachment_view_download" model="res.groups">
-            <field name="name">Adjuntos empleados: Solo ver y descargar</field>
+        <record id="group_attachment_hr_readonly" model="res.groups">
+            <field name="name">Adjuntos empleados: Solo lectura</field>
             <field name="category_id" ref="base.module_category_hidden"/>
         </record>
 
-        <!-- ACL: lectura básica -->
-        <record id="access_attachment_view_download" model="ir.model.access">
-            <field name="name">attachment.view.download</field>
+        <!-- Record Rule: restringe acciones solo en adjuntos ligados a empleados -->
+        <record id="rule_attachment_hr_readonly" model="ir.rule">
+            <field name="name">HR Attachments Readonly</field>
             <field name="model_id" ref="base.model_ir_attachment"/>
-            <field name="group_id" ref="maintenance_report.group_attachment_view_download"/>
-            <field name="perm_read" eval="True"/>
-            <field name="perm_write" eval="False"/>
-            <field name="perm_create" eval="False"/>
-            <field name="perm_unlink" eval="False"/>
-        </record>
-
-        <!-- Record Rule: solo aplica a adjuntos de empleados -->
-        <record id="rule_attachment_hr_view_download" model="ir.rule">
-            <field name="name">Attachment HR view/download only</field>
-            <field name="model_id" ref="base.model_ir_attachment"/>
-            <field name="groups" eval="[(4, ref('maintenance_report.group_attachment_view_download'))]"/>
-            <!-- dominio: solo adjuntos ligados al modelo hr.employee -->
+            <field name="groups" eval="[(4, ref('your_module.group_attachment_hr_readonly'))]"/>
+            <!-- dominio: solo adjuntos vinculados al modelo hr.employee -->
             <field name="domain_force">[('res_model','=','hr.employee')]</field>
+            <!-- permisos: solo lectura -->
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
             <field name="perm_create" eval="False"/>
