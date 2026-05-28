@@ -46,8 +46,8 @@
                     <div style="display:inline-block; width:45%; vertical-align:top;">
                         <strong>RECIBI CONFORME:</strong><br/><br/><br/>
                         ___________________________<br/>
-                        <span t-out="docs[0].entregado_por_id.name"/><br/>
-                        C.I. <span t-out="docs[0].entregado_por_id.identification_id"/>
+                        <span t-out="data.get('entregado_por_name')"/><br/>
+                        C.I. <span t-out="data.get('entregado_por_ci')"/>
                     </div>
 
                     <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
