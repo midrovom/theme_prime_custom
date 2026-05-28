@@ -5,10 +5,7 @@ class MaintenanceReportWizard(models.TransientModel):
     _name = 'maintenance.report.wizard'
     _description = 'Wizard Acta Entrega/Devolucion'
 
-    entregado_por_id = fields.Many2one(
-        'hr.employee',
-        string='Encargado de entrega/recepción',
-        required=True,
+    entregado_por_id = fields.Many2one('hr.employee', string='Encargado de entrega/recepción', required=True, 
         domain="[('department_id.responsable_entrega_equipo','=',True)]"
     )
 
@@ -21,8 +18,6 @@ class MaintenanceReportWizard(models.TransientModel):
 
         equipment_ids = self.env.context.get('active_ids')
         equipments = self.env['maintenance.equipment'].browse(equipment_ids)
-
-        # guardar el responsable en los equipos
         equipments.write({
             'entregado_por_id': self.entregado_por_id.id
         })
