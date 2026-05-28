@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
     <data>
 
         <record id="view_hr_employee_form_inherit_documents" model="ir.ui.view">
@@ -10,15 +9,16 @@
             <field name="arch" type="xml">
                 <xpath expr="//sheet/notebook" position="inside">
                     <page string="Documentos" name="documents">
-                        <field name="document_ids">
+                        <field name="is_readonly_group" invisible="1"/>
+                        <field name="document_ids" readonly="is_readonly_group">
                             <list>
-                                <field name="name" groups="group_attachment_hr_readonly_custom" readonly="1"/>
-                                <field name="file" groups="group_attachment_hr_readonly_custom" readonly="1"/>
+                                <field name="name"/>
+                                <field name="file"/>
                             </list>
                             <form>
                                 <group>
-                                    <field name="name" groups="group_attachment_hr_readonly_custom" readonly="1"/>
-                                    <field name="file" groups="group_attachment_hr_readonly_custom" readonly="1"/>
+                                    <field name="name"/>
+                                    <field name="file"/>
                                 </group>
                             </form>
                         </field>
@@ -27,9 +27,6 @@
             </field>
         </record>
 
-
     </data>
-
 </odoo>
-
 
