@@ -9,7 +9,7 @@
 
                 <!-- Fecha y lugar -->
                 <p style="margin-top:25px; text-align:justify;">
-                    <strong>Guayaquil, <span t-esc="datetime.date.today().strftime('%d/%m/%Y')"/>
+                    <strong>Guayaquil, <span t-esc="datetime.date.today().strftime('%d/%m/%Y')"/></strong>
                 </p>
 
                 <!-- Texto inicial -->
