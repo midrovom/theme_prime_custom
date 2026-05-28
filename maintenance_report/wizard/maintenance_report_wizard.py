@@ -13,7 +13,7 @@ class MaintenanceReportWizard(models.TransientModel):
 
     entregado_por_id = fields.Many2one(
         'hr.employee',
-        string='Encargado de entrega/recepción',
+        string='Encargado de entrega/recepción de equipos',
         required=True,
         domain="[('department_id.responsable_entrega_equipo','=',True)]"
     )
