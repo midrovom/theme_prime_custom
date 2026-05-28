@@ -1,9 +1,9 @@
 from odoo import models, fields, api
 
-class MaintenanceEquipment(models.Model):
-    _inherit = 'maintenance.equipment'
+# class MaintenanceEquipment(models.Model):
+#     _inherit = 'maintenance.equipment'
 
-    entregado_por_id = fields.Many2one('hr.employee', string='Encargado de entrega/recepción de quipos', tracking=True)
+#     entregado_por_id = fields.Many2one('hr.employee', string='Encargado de entrega/recepción de quipos', tracking=True)
 
 class Department(models.Model):
     _inherit = "hr.department"
