@@ -1,35 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
     <data>
 
         <record id="view_hr_employee_form_inherit_documents" model="ir.ui.view">
         <field name="name">hr.employee.form.inherit.documents</field>
         <field name="model">hr.employee</field>
         <field name="inherit_id" ref="hr.view_employee_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//sheet/notebook" position="inside">
-                <page string="Documentos" name="documents">
-                    <field name="document_ids">
-                        <list>
-                            <field name="name" groups="group_attachment_hr_readonly_custom" readonly="1"/>
-                            <field name="file" groups="group_attachment_hr_readonly_custom" readonly="1"/>
-                        </list>
-                        <form>
-                            <group>
-                                <field name="name" groups="group_attachment_hr_readonly_custom" readonly="1"/>
-                                <field name="file" groups="group_attachment_hr_readonly_custom" readonly="1"/>
-                            </group>
-                        </form>
-                    </field>
-                </page>
-            </xpath>
-        </field>
+            <field name="arch" type="xml">
+                <xpath expr="//sheet/notebook" position="inside">
+                    <page string="Documentos" name="documents">
+                        <field name="document_ids">
+                            <list>
+                                <field name="name"/>
+                                <field name="file"/>
+                            </list>
+                            <form>
+                                <group>
+                                    <field name="name"/>
+                                    <field name="file"/>
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
         </record>
 
+        <!-- Vista readonly para el grupo -->
+        <record id="view_hr_employee_form_inherit_documents_readonly" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.documents.readonly</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="groups_id" eval="[(4, ref('group_attachment_hr_readonly_custom'))]"/>
+            <field name="arch" type="xml">
+                <xpath expr="//sheet/notebook" position="inside">
+                    <page string="Documentos" name="documents">
+                        <field name="document_ids">
+                            <list>
+                                <field name="name" readonly="1"/>
+                                <field name="file" readonly="1"/>
+                            </list>
+                            <form>
+                                <group>
+                                    <field name="name" readonly="1"/>
+                                    <field name="file" readonly="1"/>
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
+        </record>
 
     </data>
-
 </odoo>
+
 
 
