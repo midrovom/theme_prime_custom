@@ -17,11 +17,7 @@ class Department(models.Model):
 class IrAttachment(models.Model):
     _inherit = 'ir.attachment'
 
-    user_has_group = fields.Boolean(
-        string="Usuario autorizado",
-        compute="_compute_user_has_group",
-        store=False
-    )
+    user_has_group = fields.Boolean( string="Usuario autorizado", compute="_compute_user_has_group", store=False)
 
     @api.depends()
     def _compute_user_has_group(self):

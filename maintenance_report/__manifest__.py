@@ -17,7 +17,7 @@
         'report/maintenance_report.xml',
         'report/maintenance_report_templates.xml',
         'report/maintenance_equipment_return.xml',
-        'views/hr_views.xml',
+        # 'views/hr_views.xml',
         'views/hr_department_views.xml',
         'views/hr_employee_views.xml',
     ],
