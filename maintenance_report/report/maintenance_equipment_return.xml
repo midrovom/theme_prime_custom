@@ -15,8 +15,8 @@
 
                 <!-- Texto inicial -->
                 <p style="margin-top:15px; text-align:justify;">
-                    A través de la presente, el Señor(a) <strong><span t-out="docs[0].employee_id.name"/></strong>, con C.I. N° 
-                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, en calidad de colaborador de la empresa <strong><span t-out="docs[0].partner_id.name"/></strong>, 
+                    A través de la presente, el Señor(a) <strong><span t-out="equipment.employee_id.name"/></strong>, con C.I. N° 
+                    <strong><span t-out="equipment.employee_id.identification_id"/></strong>, en calidad de colaborador de la empresa <strong><span t-out="equipment.partner_id.name"/></strong>, 
                     procede a realizar la devolución de los siguientes equipos previamente entregados.
                 </p>
 
@@ -31,12 +31,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <t t-foreach="docs" t-as="equipment">
+                        <t t-foreach="docs" t-as="equipment_line">
                             <tr>
-                                <td style="padding:5px;"><span t-out="equipment.name"/></td>
-                                <td style="padding:5px;"><span t-out="equipment.model or ''"/></td>
-                                <td style="padding:5px;"><span t-out="equipment.serial_no or ''"/></td>
-                                <td style="padding:5px;"><span t-out="equipment.note or ''"/></td>
+                                <td style="padding:5px;"><span t-out="equipment_line.name"/></td>
+                                <td style="padding:5px;"><span t-out="equipment_line.model or ''"/></td>
+                                <td style="padding:5px;"><span t-out="equipment_line.serial_no or ''"/></td>
+                                <td style="padding:5px;"><span t-out="equipment_line.note or ''"/></td>
                             </tr>
                         </t>
                     </tbody>
