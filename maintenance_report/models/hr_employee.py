@@ -10,7 +10,7 @@ class HrEmployee(models.Model):
     def _compute_is_readonly_group(self):
         for rec in self:
             rec.is_readonly_group = self.env.user.has_group(
-                'tu_modulo.group_attachment_hr_readonly_custom'
+                'maintenance_report.group_attachment_hr_readonly_custom'
             )
 
 class HrEmployeeDocument(models.Model):
