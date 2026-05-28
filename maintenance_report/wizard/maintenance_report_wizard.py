@@ -6,6 +6,11 @@ class MaintenanceReportWizard(models.TransientModel):
     _name = 'maintenance.report.wizard'
     _description = 'Wizard Acta Entrega/Devolucion'
 
+    equipment_ids = fields.Many2many(
+        'maintenance.equipment',
+        string='Equipos'
+    )
+
     entregado_por_id = fields.Many2one(
         'hr.employee',
         string='Encargado de entrega/recepción',
@@ -20,26 +25,13 @@ class MaintenanceReportWizard(models.TransientModel):
 
     def action_generate_report(self):
 
-        equipment_ids = (
-            self.env.context.get('active_ids')
-            or self.env.context.get('active_id')
-        )
+        equipments = self.equipment_ids
 
-        # cuando viene un solo id
-        if isinstance(equipment_ids, int):
-            equipment_ids = [equipment_ids]
-
-        # validación
-        if not equipment_ids:
+        if not equipments:
             raise UserError(
                 "Debe seleccionar al menos un equipo."
             )
 
-        equipments = self.env['maintenance.equipment'].browse(
-            equipment_ids
-        )
-
-        # guardar encargado en equipos
         equipments.write({
             'entregado_por_id': self.entregado_por_id.id
         })
@@ -53,10 +45,4 @@ class MaintenanceReportWizard(models.TransientModel):
                 'maintenance_report.maintenance_equipment_return_report'
             )
 
-        return report.report_action(
-            equipments,
-            data={
-                'entregado_por_name': self.entregado_por_id.name,
-                'entregado_por_ci': self.entregado_por_id.identification_id,
-            }
-        )
+        return report.report_action(equipments)

@@ -36,7 +36,7 @@ action = {
     'view_mode': 'form',
     'target': 'new',
     'context': {
-        'active_ids': records.ids,
+        'default_equipment_ids': [(6, 0, records.ids)],
         'default_report_type': 'delivery',
     }
 }
@@ -60,7 +60,7 @@ action = {
     'view_mode': 'form',
     'target': 'new',
     'context': {
-        'active_ids': records.ids,
+        'default_equipment_ids': [(6, 0, records.ids)],
         'default_report_type': 'return',
     }
 }
