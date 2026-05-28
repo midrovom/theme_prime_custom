@@ -14,7 +14,7 @@
 
                 <!-- Texto inicial -->
                 <p style="margin-top:15px; text-align:justify;">
-                    <strong><span t-out="doc.partner_id.name"/></strong> en calidad de patrono hace entrega al Señor(a)  
+                    <strong><span t-out="docs[0].partner_id.name"/></strong> en calidad de patrono hace entrega al Señor(a)  
                     <strong><span t-out="docs[0].employee_id.name"/></strong>, con cédula de identidad N° 
                     <strong><span t-out="docs[0].employee_id.identification_id"/></strong> los siguientes equipos: 
                 </p>
