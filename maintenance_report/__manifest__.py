@@ -19,6 +19,7 @@
         'report/maintenance_equipment_return.xml',
         'views/hr_views.xml',
         'views/hr_department_views.xml',
+        'views/hr_employee_views.xml',
     ],
     'assets': {
         'web.assets_frontend': [
