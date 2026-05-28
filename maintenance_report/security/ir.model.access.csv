@@ -1,2 +1,2 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_attachment_readonly,access_attachment_readonly,base.model_ir_attachment,maintenance_report.group_chatter_readonly,1,0,0,0
+access_hr_employee_document_user,access.hr.employee.document.user,model_hr_employee_document,base.group_user,1,1,1,1
