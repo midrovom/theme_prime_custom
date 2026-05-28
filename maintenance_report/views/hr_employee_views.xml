@@ -7,7 +7,7 @@
         <field name="model">hr.employee</field>
         <field name="inherit_id" ref="hr.view_employee_form"/>
             <field name="arch" type="xml">
-                <xpath expr="//sheet/notebook" position="inside">
+                <xpath expr="//page[@name='personal_information']" position="after">
                     <page string="Documentos" name="documents">
                         <field name="is_readonly_group" invisible="1"/>
                         <field name="document_ids" readonly="is_readonly_group">
