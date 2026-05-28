@@ -1,10 +1,16 @@
 from odoo import models, fields
 
+
 class MaintenanceReportWizard(models.TransientModel):
     _name = 'maintenance.report.wizard'
     _description = 'Wizard Acta Entrega/Devolucion'
 
-    entregado_por_id = fields.Many2one( 'hr.employee', string='Encargado de entrega/recepción', required=True)
+    entregado_por_id = fields.Many2one(
+        'hr.employee',
+        string='Encargado de entrega/recepción',
+        required=True,
+        domain="[('department_id.responsable_entrega_equipo','=',True)]"
+    )
 
     report_type = fields.Selection([
         ('delivery', 'Entrega'),
