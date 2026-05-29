@@ -43,14 +43,14 @@
 
                 <!-- Firmas -->
                 <div style="margin-top:50px; text-align:center;">
-                
-                    <div style="display:inline-block; width:35%; vertical-align:top; text-align:left; margin-right:8%;">
+
+                    <div style="display:inline-block; vertical-align:top; margin-right:80px;">
 
                         <div style="text-align:center;">
                             ___________________________
                         </div>
 
-                        <div style="margin-top:5px;">
+                        <div style="display:inline-block; text-align:left; margin-top:5px;">
                             <strong>RECIBI CONFORME:</strong><br/>
                             <span t-out="docs[0].entregado_por_id.name"/><br/>
                             C.I. <span t-out="docs[0].entregado_por_id.identification_id"/>
@@ -58,13 +58,13 @@
 
                     </div>
 
-                    <div style="display:inline-block; width:35%; vertical-align:top; text-align:left;">
+                    <div style="display:inline-block; vertical-align:top;">
 
                         <div style="text-align:center;">
                             ___________________________
                         </div>
 
-                        <div style="margin-top:5px;">
+                        <div style="display:inline-block; text-align:left; margin-top:5px;">
                             <strong>ENTREGUE CONFORME:</strong><br/>
                             <span t-out="docs[0].employee_id.name"/><br/>
                             C.I. <span t-out="docs[0].employee_id.identification_id"/>
