@@ -14,9 +14,9 @@
 
                 <!-- Texto inicial -->
                 <p style="margin-top:15px; text-align:justify;">
-                    A través de la presente, el Señor(a) <strong><span t-out="docs[0].employee_id.name"/></strong>, con C.I. N° 
-                    <strong><span t-out="docs[0].employee_id.identification_id"/></strong>, en calidad de colaborador de la empresa <strong><span t-out="docs[0].partner_id.name"/></strong>, 
+                    A través de la presente, el Señor(a) <strong><span t-out="docs[0].employee_id.name"/></strong>, en calidad de colaborador de la empresa <strong><span t-out="docs[0].partner_id.name"/></strong>, 
                     procede a realizar la devolución de los siguientes equipos previamente entregados.
+                    <!-- con C.I. N° <strong><span t-out="docs[0].employee_id.identification_id"/></strong>,  -->
                 </p>
 
                 <!-- Tabla de equipos -->
@@ -47,15 +47,33 @@
                         <strong>RECIBI CONFORME:</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].entregado_por_id.name"/><br/>
-                        C.I. <span t-out="docs[0].entregado_por_id.identification_id or ''"/>
+                        C.I. <span t-out="docs[0].entregado_por_id.identification_id"/>
                     </div>
 
-                    <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
+                    <!-- <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
                         <strong>ENTREGUE CONFORME:</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].employee_id.name"/><br/>
-                        C.I. <span t-out="docs[0].employee_id.identification_id or ''"/>
+                        C.I. <span t-out="docs[0].employee_id.identification_id"/>
+                    </div> -->
+
+                    <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
+                        <strong>RECIBI CONFORME:</strong><br/><br/><br/>
+                        ___________________________<br/>
+                        <span t-out="docs[0].employee_id.name"/><br/>
+                        
+                        <span>
+                            C.I.
+                            <t t-if="docs[0].employee_id.identification_id">
+                                <span t-out="docs[0].employee_id.identification_id"/>
+                            </t>
+                            <t t-else="">
+                                &nbsp;
+                            </t>
+                        </span>
                     </div>
+
+
                 </div>
 
             </div>
