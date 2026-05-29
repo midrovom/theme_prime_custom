@@ -60,8 +60,11 @@
                         <strong>RECIBI CONFORME:</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].employee_id.name"/><br/>
-                        C.I. <span t-out="docs[0].employee_id.identification_id"/>
+                        <div style="text-align:left; width:100%;">
+                            C.I. <span t-out="docs[0].employee_id.identification_id or ''"/>
+                        </div>
                     </div>
+
                 </div>
 
             </div>
