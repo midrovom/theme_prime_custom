@@ -57,22 +57,12 @@
                         C.I. <span t-out="docs[0].employee_id.identification_id"/>
                     </div> -->
 
-                    <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
+                    <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%; text-align:left;">
                         <strong>RECIBI CONFORME:</strong><br/><br/><br/>
                         ___________________________<br/>
                         <span t-out="docs[0].employee_id.name"/><br/>
-                        
-                        <span>
-                            C.I.
-                            <t t-if="docs[0].employee_id.identification_id">
-                                <span t-out="docs[0].employee_id.identification_id"/>
-                            </t>
-                            <t t-else="">
-                                &nbsp;
-                            </t>
-                        </span>
+                        C.I. <span t-out="docs[0].employee_id.identification_id"/>
                     </div>
-
 
                 </div>
 
