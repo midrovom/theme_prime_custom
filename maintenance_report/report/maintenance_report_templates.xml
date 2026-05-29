@@ -59,20 +59,9 @@
                     <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
                         <strong>RECIBI CONFORME:</strong><br/><br/><br/>
                         ___________________________<br/>
-                        <span style="display:block; text-align:left;">
-                            <span t-out="docs[0].employee_id.name"/>
-                        </span>
-                        <span style="display:block; text-align:left;">
-                            C.I. <span t-out="docs[0].employee_id.identification_id or ''"/>
-                        </span>
-                    </div>
-
-                    <!-- <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%;">
-                        <strong>RECIBI CONFORME:</strong><br/><br/><br/>
-                        ___________________________<br/>
                         <span t-out="docs[0].employee_id.name"/><br/>
                         C.I. <span t-out="docs[0].employee_id.identification_id"/>
-                    </div> -->
+                    </div>
                 </div>
 
             </div>
