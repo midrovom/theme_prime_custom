@@ -15,7 +15,7 @@
                 <!-- Texto inicial -->
                 <p style="margin-top:15px; text-align:justify;">
                     A través de la presente, el Señor(a) <strong><span t-out="docs[0].employee_id.name"/></strong>, en calidad de colaborador de la empresa <strong><span t-out="docs[0].partner_id.name"/></strong>, 
-                    procede a realizar la devolución de los siguientes equipos previamente entregados.
+                    procede a realizar la devolución de los siguientes equipos previamente asignados.
                     <!-- con C.I. N° <strong><span t-out="docs[0].employee_id.identification_id"/></strong>,  -->
                 </p>
 
