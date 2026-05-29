@@ -58,8 +58,8 @@
                     </div> -->
 
                     <div style="display:inline-block; width:45%; vertical-align:top; margin-left:5%; text-align:left;">
-                        <strong>RECIBI CONFORME:</strong><br/><br/><br/>
                         ___________________________<br/>
+                        <strong>RECIBI CONFORME:</strong><br/>
                         <span t-out="docs[0].employee_id.name"/><br/>
                         C.I. <span t-out="docs[0].employee_id.identification_id"/>
                     </div>
