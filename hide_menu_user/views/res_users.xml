@@ -25,9 +25,9 @@
             <field name="arch" type="xml">
                 <xpath expr="//notebook" position="inside">
                     <page string="Restrict users" name="restrict_users">
-                        <tree>
+                        <list>
                             <field name="restrict_user_ids"/>
-                        </tree>
+                        </list>
                     </page>
                 </xpath>
             </field>
