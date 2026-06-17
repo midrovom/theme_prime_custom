@@ -132,7 +132,7 @@
                             <page string="Calendario de pagos"
                                   attrs="{'invisible': [('state', '=', 'draft')]}">
                                 <field name="repayment_lines_ids" readonly="1">
-                                    <tree string="tree" create="false">
+                                    <list string="tree" create="false">
                                         <field name="name"/>
                                         <field name="date"/>
                                         <field name="amount" invisible="1"/>
@@ -152,7 +152,7 @@
                                                 class="oe_highlight"
                                                 string="Pagar"
                                                 type="object"/>
-                                    </tree>
+                                    </list>
                                 </field>
                             </page>
                             <page string="Documentos">
