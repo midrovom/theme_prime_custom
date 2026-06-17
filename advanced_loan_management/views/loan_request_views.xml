@@ -140,14 +140,14 @@
                                         <field name="amount" invisible="1"/>
                                         <field name="interest_amount" invisible="1"/>
                                         <field name="total_amount"/>
-                                        <field name="state
+                                        <field name="state"
                                             column_invisible="parent.state != 'disbursed'"
                                             widget="badge"
                                             optional="show"
                                             decoration-danger="state == 'unpaid'"
                                             decoration-info="state == 'invoiced'"
                                             decoration-success="state == 'paid'"
-                                            decoration-warning="state == 'disbursed'/>
+                                            decoration-warning="state == 'disbursed'"/>
                                         <field name="invoice" invisible="1"/>
                                         <button name="action_pay_emi"
                                                 class="oe_highlight"
