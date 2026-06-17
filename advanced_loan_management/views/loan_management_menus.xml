@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+        <!--        Loan Management Menu Items-->
+        <menuitem id="loan_management_menu_root" name="Gestión de planes"
+        web_icon="advanced_loan_management,static/description/icon.png"/>
+        <menuitem id="loan_management_loan" name="Plan" sequence="10"
+                  parent="loan_management_menu_root"/>
+        <menuitem id="loan_management_request" name="Solicitudes de plan"
+                  parent="loan_management_loan" action="loan_request_action"/>
+        <menuitem id="loan_management_type" name="Tipos de plan"
+                  parent="loan_management_loan" action="loan_type_action"
+                  groups="advanced_loan_management.loan_management_group_manager"/>
+        <menuitem id="loan_management_lines" name="Control de Planes"
+                  parent="loan_management_loan" action="repayment_line_action"
+                  groups="advanced_loan_management.loan_management_group_manager"/>
+        <menuitem id="loan_management_certificates" name="Documentos" sequence="15"
+                  parent="loan_management_menu_root"
+                  groups="advanced_loan_management.loan_management_group_manager"/>
+        <menuitem id="loan_management_proofs" name="Documentos habilitantes"
+                  parent="loan_management_certificates" action="loan_documents_action"/>
+        <menuitem id="loan_management_conf" name="Configuración" sequence="20"
+                  parent="loan_management_menu_root"
+                  groups="advanced_loan_management.loan_management_group_manager"/>
+        <menuitem id="loan_management_settings" name="Ajustes"
+                  parent="loan_management_conf" action="res_config_settings_action"/>
+        <menuitem id="loan_management_report" name="Reporte del plan" sequence="20"
+                  parent="loan_management_menu_root"/>
+</odoo>
