@@ -32,7 +32,7 @@
     'website': "https://www.callphone.com.ec",
     'images': ['static/description/banner.png'],
     'company': "Callphone",
-    'depends': ['mail', 'account', 'base', 'l10n_generic_coa','product'],
+    'depends': ['mail', 'account', 'base','product'],
     'demo': ['data/loan_journal_data.xml'],
     'data': [
         'security/loan_management_groups.xml',
