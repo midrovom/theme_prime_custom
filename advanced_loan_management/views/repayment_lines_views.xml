@@ -47,17 +47,17 @@
                 <form string="Repayment Line" create="false">
                     <header>
                         <field name="state" widget="statusbar"
-                               statusbar_visible="unpaid,paid"/>
-                        <button attrs="{'invisible': ['|', ('invoice', '=', True), ('state', '!=', 'unpaid')]}"
-                                name="action_pay_emi"
+                            statusbar_visible="unpaid,paid"/>
+                        <button name="action_pay_emi"
                                 class="oe_highlight"
                                 string="Pagar"
-                                type="object"/>
+                                type="object"
+                                invisible="invoice or state != 'unpaid'"/>
                     </header>
                     <sheet>
                         <div class="oe_title">
                             <h1>
-                                <field name="name" style="width: 50%%;"/>
+                                <field name="name" style="width: 50%;"/>
                             </h1>
                         </div>
                         <group>
@@ -93,4 +93,5 @@
                 </form>
             </field>
         </record>
+
 </odoo>

@@ -43,94 +43,96 @@
                 <form string="Loan Request" delete="false">
                     <header>
                         <div class="alert alert-info" role="alert"
-                             style="height: 40px; margin-bottom:0px;"
-                             modifiers="{'invisible':[('state', 'not in', 'waiting for approval')]}"
-                             groups="advanced_loan_management.loan_management_group_user">
+                            style="height: 40px; margin-bottom:0px;"
+                            invisible="state not in ['waiting for approval']"
+                            groups="advanced_loan_management.loan_management_group_user">
                             Waiting for approval from the manager
                         </div>
                         <div class="alert alert-info" role="alert"
-                             style="height: 40px; margin-bottom:0px;"
-                             modifiers="{'invisible':[('state', 'not in', 'approved')]}">
-                             Debe ingresar el EMEI del dispositivo
+                            style="height: 40px; margin-bottom:0px;"
+                            invisible="state not in ['approved']">
+                            Debe ingresar el EMEI del dispositivo
                         </div>
 
                         <field name="state" widget="statusbar"
-                               statusbar_visible="draft,confirmed,approved"/>
+                            statusbar_visible="draft,confirmed,approved"/>
                         <button name="action_loan_request" class="oe_highlight"
-                                states="draft" string="Confirm"
-                                type="object"/>
+                                string="Confirm"
+                                type="object"
+                                invisible="state != 'draft'"/>
                         <button name="action_compute_repayment" class="oe_highlight"
-                                states="confirmed"
                                 string="Calcular pagos"
-                                type="object"/>
+                                type="object"
+                                invisible="state != 'confirmed'"/>
                         <button name="action_request_for_loan" class="oe_highlight"
-                                states="confirmed" string="Solicitud"
-                                type="object"/>
+                                string="Solicitud"
+                                type="object"
+                                invisible="state != 'confirmed'"/>
                         <button name="action_loan_approved" class="oe_highlight"
-                                states="waiting for approval" string="Aprobar"
+                                string="Aprobar"
                                 type="object"
-                                groups="advanced_loan_management.loan_management_group_manager"/>
+                                groups="advanced_loan_management.loan_management_group_manager"
+                                invisible="state != 'waiting for approval'"/>
                         <button name="action_loan_rejected" class="oe_highlight"
-                                states="waiting for approval" string="Rechazar"
+                                string="Rechazar"
                                 type="object"
-                                groups="advanced_loan_management.loan_management_group_manager"/>
+                                groups="advanced_loan_management.loan_management_group_manager"
+                                invisible="state != 'waiting for approval'"/>
                         <button name="action_disburse_loan" class="oe_highlight"
                                 string="Otorgar Plan"
-                                type="object" states="approved"/>
+                                type="object"
+                                invisible="state != 'approved'"/>
                         <button name="action_close_loan" class="oe_highlight"
                                 string="Cerrar"
                                 type="object"
-                                states="disbursed"/>
+                                invisible="state != 'disbursed'"/>
                     </header>
                     <sheet>
                         <div class="oe_title">
                             <h1>
-                                <field name="name" style="width: 50%%;"
-                                       placeholder="Loan Type"/>
+                                <field name="name" style="width: 50%;" placeholder="Loan Type"/>
                             </h1>
                         </div>
-                       
+                    
                         <group>
-                            
                             <group>
-                                <field name="partner_id"
-                                       modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="partner_id" readonly="state != 'draft'"/>
                                 <field name="loan_type_id"
-                                       options="{'no_open':True, 'no_create': True}"
-                                       modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
+                                    options="{'no_open':True, 'no_create': True}"
+                                    readonly="state != 'draft'"/>
                                 <field name="product_id" 
-                                       options="{'no_open':True, 'no_create': True}"
-                                       modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
+                                    options="{'no_open':True, 'no_create': True}"
+                                    readonly="state != 'draft'"/>
                             </group>
                             <group>
                                 <div class="product-image-container">
                                     <field name="product_image" widget="image" readonly="1"/>
                                 </div>
                             </group>
-                             <group>
+                            <group>
                                 <field name="suggested_loan_amount"/>
-                                <field name="loan_amount"  />
-                                <field name="interest_rate" widget="percentage" />
-                                <field name="entry_rate" widget="percentage" modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="entry_amount" />
-                                <field name="loan_amount_total" />
+                                <field name="loan_amount"/>
+                                <field name="interest_rate" widget="percentage"/>
+                                <field name="entry_rate" widget="percentage" readonly="state != 'draft'"/>
+                                <field name="entry_amount"/>
+                                <field name="loan_amount_total"/>
                                 <field name="company_id"/>
                             </group>
                             <group>
-                                <field name="disbursal_amount" />
+                                <field name="disbursal_amount"/>
                                 <field name="tenure"/>
                                 <field name="payment_value"/>
-                                <field name="currency_id" modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="date_concesion" />
-                                <field name="date" modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="imei" modifiers="{'invisible': [('state', 'not in', ['approved', 'disbursed', 'closed'] )] ,'readonly': [('state', '!=', 'approved')] }"/>
+                                <field name="currency_id" readonly="state != 'draft'"/>
+                                <field name="date_concesion"/>
+                                <field name="date" readonly="state != 'draft'"/>
+                                <field name="imei" invisible="state not in ['approved','disbursed','closed']"
+                                    readonly="state != 'approved'"/>
                                 <field name="request" invisible="1"/>
                             </group>
-                           
                         </group>
+
                         <notebook>
-                            <page string="Calendario de pagos"
-                                  modifiers="{'invisible': [('state', '=', 'draft')]}">
+                            <page string="Calendario de pagos" invisible="state == 'draft'">
                                 <field name="repayment_lines_ids" readonly="1">
                                     <list string="tree" create="false">
                                         <field name="name"/>
@@ -138,46 +140,40 @@
                                         <field name="amount" invisible="1"/>
                                         <field name="interest_amount" invisible="1"/>
                                         <field name="total_amount"/>
-                                        <field name="state"
-                                               modifiers="{'column_invisible': [('parent.state', '!=', 'disbursed')]}"
-                                               widget="badge"
-                                               optional="show"
-                                               decoration-danger="state == 'unpaid'"
-                                               decoration-info="state == 'invoiced'"
-                                               decoration-success="state == 'paid'"
-                                               decoration-warning="state == 'disbursed'"/>
+                                        <field name="state
+                                            column_invisible="parent.state != 'disbursed'"
+                                            widget="badge"
+                                            optional="show"
+                                            decoration-danger="state == 'unpaid'"
+                                            decoration-info="state == 'invoiced'"
+                                            decoration-success="state == 'paid'"
+                                            decoration-warning="state == 'disbursed'/>
                                         <field name="invoice" invisible="1"/>
-                                        <button modifiers="{'invisible': ['|','|',('invoice', '=', True),('state', '=', 'paid'),('parent.state', '!=', 'disbursed')]}"
-                                                name="action_pay_emi"
+                                        <button name="action_pay_emi"
                                                 class="oe_highlight"
                                                 string="Pagar"
-                                                type="object"/>
+                                                type="object"
+                                                invisible="invoice or state == 'paid' or parent.state != 'disbursed'"/>
                                     </list>
                                 </field>
                             </page>
                             <page string="Documentos">
                                 <group>
-                                    <field name="documents_ids"
-                                           widget="many2many_tags"/>
-                                    <field name="img_attachment_ids"
-                                           widget="many2many_binary"/>
+                                    <field name="documents_ids" widget="many2many_tags"/>
+                                    <field name="img_attachment_ids" widget="many2many_binary"/>
                                 </group>
                             </page>
-                            <page string="Loan rejection" states="rejected">
+                            <page string="Loan rejection" invisible="state != 'rejected'">
                                 <field name="reject_reason" readonly="1"/>
                             </page>
-                            <page string="Contabilidad"
-                                  modifiers="{'invisible': True }">
+                            <page string="Contabilidad" invisible="True">
                                 <group>
                                     <group>
-                                        <field name="journal_id"
-                                               modifiers=" {'readonly': [('state', '=', 'disbursed')]}"/>
+                                        <field name="journal_id" readonly="state == 'disbursed'"/>
                                     </group>
                                     <group>
-                                        <field name="debit_account_id"
-                                               modifiers="{ 'readonly': [('state', '=', 'disbursed')]}"/>
-                                        <field name="credit_account_id"
-                                               modifiers="{ 'readonly': [('state', '=', 'disbursed')]}"/>
+                                        <field name="debit_account_id" readonly="state == 'disbursed'"/>
+                                        <field name="credit_account_id" readonly="state == 'disbursed'"/>
                                     </group>
                                 </group>
                             </page>
