@@ -44,13 +44,13 @@
                     <header>
                         <div class="alert alert-info" role="alert"
                              style="height: 40px; margin-bottom:0px;"
-                             attrs="{'invisible':[('state', 'not in', 'waiting for approval')]}"
+                             modifiers="{'invisible':[('state', 'not in', 'waiting for approval')]}"
                              groups="advanced_loan_management.loan_management_group_user">
                             Waiting for approval from the manager
                         </div>
                         <div class="alert alert-info" role="alert"
                              style="height: 40px; margin-bottom:0px;"
-                             attrs="{'invisible':[('state', 'not in', 'approved')]}">
+                             modifiers="{'invisible':[('state', 'not in', 'approved')]}">
                              Debe ingresar el EMEI del dispositivo
                         </div>
 
@@ -94,13 +94,13 @@
                             
                             <group>
                                 <field name="partner_id"
-                                       attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                       modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
                                 <field name="loan_type_id"
                                        options="{'no_open':True, 'no_create': True}"
-                                       attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                       modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
                                 <field name="product_id" 
                                        options="{'no_open':True, 'no_create': True}"
-                                       attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                       modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
                             </group>
                             <group>
                                 <div class="product-image-container">
@@ -111,7 +111,7 @@
                                 <field name="suggested_loan_amount"/>
                                 <field name="loan_amount"  />
                                 <field name="interest_rate" widget="percentage" />
-                                <field name="entry_rate" widget="percentage" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="entry_rate" widget="percentage" modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
                                 <field name="entry_amount" />
                                 <field name="loan_amount_total" />
                                 <field name="company_id"/>
@@ -120,17 +120,17 @@
                                 <field name="disbursal_amount" />
                                 <field name="tenure"/>
                                 <field name="payment_value"/>
-                                <field name="currency_id" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="currency_id" modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
                                 <field name="date_concesion" />
-                                <field name="date" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="imei" attrs="{'invisible': [('state', 'not in', ['approved', 'disbursed', 'closed'] )] ,'readonly': [('state', '!=', 'approved')] }"/>
+                                <field name="date" modifiers="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="imei" modifiers="{'invisible': [('state', 'not in', ['approved', 'disbursed', 'closed'] )] ,'readonly': [('state', '!=', 'approved')] }"/>
                                 <field name="request" invisible="1"/>
                             </group>
                            
                         </group>
                         <notebook>
                             <page string="Calendario de pagos"
-                                  attrs="{'invisible': [('state', '=', 'draft')]}">
+                                  modifiers="{'invisible': [('state', '=', 'draft')]}">
                                 <field name="repayment_lines_ids" readonly="1">
                                     <list string="tree" create="false">
                                         <field name="name"/>
@@ -139,7 +139,7 @@
                                         <field name="interest_amount" invisible="1"/>
                                         <field name="total_amount"/>
                                         <field name="state"
-                                               attrs="{'column_invisible': [('parent.state', '!=', 'disbursed')]}"
+                                               modifiers="{'column_invisible': [('parent.state', '!=', 'disbursed')]}"
                                                widget="badge"
                                                optional="show"
                                                decoration-danger="state == 'unpaid'"
@@ -147,7 +147,7 @@
                                                decoration-success="state == 'paid'"
                                                decoration-warning="state == 'disbursed'"/>
                                         <field name="invoice" invisible="1"/>
-                                        <button attrs="{'invisible': ['|','|',('invoice', '=', True),('state', '=', 'paid'),('parent.state', '!=', 'disbursed')]}"
+                                        <button modifiers="{'invisible': ['|','|',('invoice', '=', True),('state', '=', 'paid'),('parent.state', '!=', 'disbursed')]}"
                                                 name="action_pay_emi"
                                                 class="oe_highlight"
                                                 string="Pagar"
@@ -167,17 +167,17 @@
                                 <field name="reject_reason" readonly="1"/>
                             </page>
                             <page string="Contabilidad"
-                                  attrs="{'invisible': True }">
+                                  modifiers="{'invisible': True }">
                                 <group>
                                     <group>
                                         <field name="journal_id"
-                                               attrs=" {'readonly': [('state', '=', 'disbursed')]}"/>
+                                               modifiers=" {'readonly': [('state', '=', 'disbursed')]}"/>
                                     </group>
                                     <group>
                                         <field name="debit_account_id"
-                                               attrs="{ 'readonly': [('state', '=', 'disbursed')]}"/>
+                                               modifiers="{ 'readonly': [('state', '=', 'disbursed')]}"/>
                                         <field name="credit_account_id"
-                                               attrs="{ 'readonly': [('state', '=', 'disbursed')]}"/>
+                                               modifiers="{ 'readonly': [('state', '=', 'disbursed')]}"/>
                                     </group>
                                 </group>
                             </page>
