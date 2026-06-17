@@ -7,15 +7,16 @@
         <field name="view_mode">tree,form</field>
     </record>
     <!--        Loan Documents Tree View -->
-    <record id="loan_documents_view_tree" model="ir.ui.view">
-        <field name="name">loan.documents.view.tree</field>
+    <record id="loan_documents_view_list" model="ir.ui.view">
+        <field name="name">loan.documents.view.list</field>
         <field name="model">loan.documents</field>
         <field name="priority" eval="8"/>
         <field name="arch" type="xml">
-            <tree string="Loan Documents" editable="bottom">
+            <list string="Loan Documents" editable="bottom">
                 <field name="loan_proofs"/>
                 <field name="company_id"/>
-            </tree>
+            </list>
         </field>
     </record>
+
 </odoo>

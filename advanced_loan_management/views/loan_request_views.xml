@@ -8,12 +8,12 @@
         </record>
 
         <!--        Loan Request Tree View-->
-        <record id="loan_request_view_tree" model="ir.ui.view">
-            <field name="name">loan.request.view.tree</field>
+        <record id="loan_request_view_list" model="ir.ui.view">
+            <field name="name">loan.request.view.list</field>
             <field name="model">loan.request</field>
             <field name="priority" eval="8"/>
             <field name="arch" type="xml">
-                <tree string="Loan Request">
+                <list string="Loan Request">
                     <field name="name"/>
                     <field name="partner_id"/>
                     <field name="loan_amount"/>
@@ -22,7 +22,7 @@
                     <field name="tenure"/>
                     <field name="company_id"/>
                     <field name="state"/>
-                </tree>
+                </list>
             </field>
         </record>
 

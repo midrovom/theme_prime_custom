@@ -21,12 +21,12 @@
         </record>
 
         <!--        Repayment Line Tree View-->
-        <record id="repayment_line_view_tree" model="ir.ui.view">
-            <field name="name">repayment.line.view.tree</field>
+        <record id="repayment_line_view_list" model="ir.ui.view">
+            <field name="name">repayment.line.view.list</field>
             <field name="model">repayment.line</field>
             <field name="priority" eval="8"/>
             <field name="arch" type="xml">
-                <tree string="Loan Request" create="false">
+                <list string="Loan Request" create="false">
                     <field name="name"/>
                     <field name="partner_id"/>
                     <field name="loan_id"/>
@@ -34,7 +34,7 @@
                     <field name="total_amount"/>
                     <field name="company_id"/>
                     <field name="state"/>
-                </tree>
+                </list>
             </field>
         </record>
 
