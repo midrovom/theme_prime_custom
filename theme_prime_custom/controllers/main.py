@@ -62,7 +62,7 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
     def _get_computed_product_price(self, product, product_data, price_public_visibility, visibility_label, currency_id):
         res = super()._get_computed_product_price( product, product_data, price_public_visibility, visibility_label, currency_id)
 
-        # Precio final que se está mostrando (según la lista activa en el sitio web)
+        
         final_price = product_data.get('price')
 
         # Obtener la lista de precios pública configurada en el sitio web
