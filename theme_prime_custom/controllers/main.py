@@ -36,16 +36,46 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
         return result
 
     # Función para mostrar precio tachado
+    # def _get_computed_product_price(self, product, product_data, price_public_visibility, visibility_label, currency_id):
+    #     res = super()._get_computed_product_price(
+    #         product, product_data, price_public_visibility, visibility_label, currency_id
+    #     )
+    #     base_price = product.list_price if product._name == 'product.template' else product.product_tmpl_id.list_price
+    #     final_price = product_data.get('price', base_price)
+    #     # formatLang para obtener el valor como string plano
+    #     formatted_price = formatLang(request.env, base_price, currency_obj=currency_id, monetary=True)
+    #     # solo mostrar si el precio final es distinto al base
+    #     if price_public_visibility and final_price != base_price:
+    #         res.update({
+    #             'list_price_base_raw': base_price,
+    #             'list_price_base': formatted_price
+    #         })
+    #     else:
+    #         res.update({
+    #             'list_price_base_raw': ' ',
+    #             'list_price_base': ' '
+    #         })
+
+    #     return res
+
+
     def _get_computed_product_price(self, product, product_data, price_public_visibility, visibility_label, currency_id):
-        res = super()._get_computed_product_price(
-            product, product_data, price_public_visibility, visibility_label, currency_id
-        )
-        base_price = product.list_price if product._name == 'product.template' else product.product_tmpl_id.list_price
-        final_price = product_data.get('price', base_price)
-        # formatLang para obtener el valor como string plano
+        res = super()._get_computed_product_price( product, product_data, price_public_visibility, visibility_label, currency_id)
+
+        # Precio final que se está mostrando (según la lista activa en el sitio web)
+        final_price = product_data.get('price')
+
+        # Obtener la lista de precios pública configurada en el sitio web
+        website_pricelist = request.website.get_current_pricelist()
+
+        # Calcular el precio base desde esa lista
+        base_price = website_pricelist.get_product_price(product, 1.0, request.env.user.partner_id)
+
+        # Formatear para mostrar como string
         formatted_price = formatLang(request.env, base_price, currency_obj=currency_id, monetary=True)
-        # solo mostrar si el precio final es distinto al base
-        if price_public_visibility and final_price != base_price:
+
+        # Lógica: solo mostrar tachado si el precio final es menor que el base
+        if price_public_visibility and final_price < base_price:
             res.update({
                 'list_price_base_raw': base_price,
                 'list_price_base': formatted_price
@@ -57,6 +87,7 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
             })
 
         return res
+
 
 #conedera
 class ThemePrimeMainClassExtendeds(ThemePrimeMainClass):
