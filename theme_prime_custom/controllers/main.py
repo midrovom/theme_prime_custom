@@ -60,21 +60,14 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
 
 
     def _get_computed_product_price(self, product, product_data, price_public_visibility, visibility_label, currency_id):
-        res = super()._get_computed_product_price( product, product_data, price_public_visibility, visibility_label, currency_id)
+        res = super()._get_computed_product_price(
+            product, product_data, price_public_visibility, visibility_label, currency_id
+        )
 
-        
         final_price = product_data.get('price')
-
-        # Obtener la lista de precios pública configurada en el sitio web
-        website_pricelist = request.website.get_current_pricelist()
-
-        # Calcular el precio base desde esa lista
+        website_pricelist = request.website.pricelist_id
         base_price = website_pricelist.get_product_price(product, 1.0, request.env.user.partner_id)
-
-        # Formatear para mostrar como string
         formatted_price = formatLang(request.env, base_price, currency_obj=currency_id, monetary=True)
-
-        # Lógica: solo mostrar tachado si el precio final es menor que el base
         if price_public_visibility and final_price < base_price:
             res.update({
                 'list_price_base_raw': base_price,
