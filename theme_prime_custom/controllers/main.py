@@ -63,11 +63,10 @@ class ThemePrimeMainClassExtended(ThemePrimeMainClass):
         res = super()._get_computed_product_price(
             product, product_data, price_public_visibility, visibility_label, currency_id
         )
-
-        final_price = product_data.get('price')
-        website_pricelist = request.website.pricelist_id
-        base_price = website_pricelist.get_product_price(product, 1.0, request.env.user.partner_id)
+        base_price = product.list_price if product._name == 'product.template' else product.product_tmpl_id.list_price
+        final_price = product_data.get('price', base_price)
         formatted_price = formatLang(request.env, base_price, currency_obj=currency_id, monetary=True)
+
         if price_public_visibility and final_price < base_price:
             res.update({
                 'list_price_base_raw': base_price,
