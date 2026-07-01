@@ -1,6 +1,6 @@
 {
     'name': 'custom_hide_footer',
-    'version': '18.0.1.0.0',
+    'version': '16.0.1.0.0',
     'category': 'website',
     'summary': 'Modulo para ocultar footers',
     'website': 'https://callphoneecuador.com',
