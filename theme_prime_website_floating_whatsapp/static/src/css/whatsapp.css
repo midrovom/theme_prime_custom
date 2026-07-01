@@ -27,7 +27,7 @@
         position: fixed;
         width: 60px;
         height: 60px;
-        bottom: 20px;   /* más cómodo en móvil */
+        bottom: 6%;   /* más cómodo en móvil */
         right: 20px;
         background-color: #25d366;
         color: #FFF;
