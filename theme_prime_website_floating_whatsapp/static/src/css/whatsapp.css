@@ -20,3 +20,29 @@
 .fa-whatsapp {
     color:#FFF;
 }
+
+/* Solo para pantallas pequeñas y medianas */
+@media only screen and (max-width: 991px) {
+    .cy_whatsapp_web {
+        position: fixed;
+        width: 60px;
+        height: 60px;
+        bottom: 20px;   /* más cómodo en móvil */
+        right: 20px;
+        background-color: #25d366;
+        color: #FFF;
+        border-radius: 50px;
+        text-align: center;
+        font-size: 30px;
+        z-index: 9999;  /* aseguramos que quede encima */
+    }
+
+    .cy-icon {
+        margin-top: 16px;
+        color: white;
+    }
+
+    .fa-whatsapp {
+        color: #FFF;
+    }
+}
