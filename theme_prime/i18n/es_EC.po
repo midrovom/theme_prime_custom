@@ -4332,7 +4332,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/theme_prime/static/src/components/record_selection.xml:0
 msgid "Out Of Stock"
-msgstr ""
+msgstr "AGOTADO"
 
 #. module: theme_prime
 #: model_terms:theme.ir.ui.view,arch:theme_prime.template_footer_style_5
