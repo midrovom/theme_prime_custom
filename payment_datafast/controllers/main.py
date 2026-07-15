@@ -1,10 +1,8 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import logging
-import logging
 import pprint
-
-from odoo.addons.website_sale.controllers import main
+from odoo.addons.payment.controllers.portal import PaymentPortal
 from odoo import http
 from odoo.exceptions import ValidationError
 from odoo.http import request
@@ -32,7 +30,7 @@ class DatafastController(http.Controller):
         # Construir la URL absoluta
         callback_url = f"{base_url}/payment/datafast/callback"
 
-            # LOG PARA VERIFICAR LA URL QUE SE ENVIARÁ A DATAFAST
+        # LOG PARA VERIFICAR LA URL QUE SE ENVIARÁ A DATAFAST
         _logger.warning("===============================================")
         _logger.warning("DATAFAST CALLBACK URL: %s", callback_url)
         _logger.warning("WEB.BASE.URL: %s", base_url)
@@ -85,7 +83,8 @@ class DatafastController(http.Controller):
             return request.redirect('/payment/status?error=unexpected')
 
         return request.redirect('/payment/status')
-    
+
+
     @http.route(_return_url, type='http', methods=['GET'], auth='public')
     def datafast_return_from_checkout(self, **data):
         """ Process the notification data sent by DataFast after redirection from checkout.
@@ -134,9 +133,7 @@ class DatafastController(http.Controller):
                 _logger.exception("Unable to handle the notification data; skipping to acknowledge")
         return ''  # Acknowledge the notification.
 
-
-
-class PaymentPortalDatafast(main.PaymentPortal):
+class PaymentPortalDatafast(PaymentPortal):
     @http.route(
         '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
     )
@@ -150,4 +147,4 @@ class PaymentPortalDatafast(main.PaymentPortal):
 
         return result
     
-    
+   
