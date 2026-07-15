@@ -1,13 +1,14 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import logging
+import logging
 import pprint
-from odoo.addons.payment.controllers.portal import PaymentPortal
+
+from odoo.addons.website_sale.controllers import main
 from odoo import http
 from odoo.exceptions import ValidationError
 from odoo.http import request
 from werkzeug.exceptions import NotFound
-
 
 _logger = logging.getLogger(__name__)
 
