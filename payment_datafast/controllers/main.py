@@ -22,13 +22,33 @@ class DatafastController(http.Controller):
         checkout_id = request.session.get('checkout_id')
         if not checkout_id:
             raise NotFound("Missing checkout_id in session.")
-        
-        _logger.info(f'MOSTRANDO EL CHECKOUT ID >>> { checkout_id }')
+
+        _logger.info(f'MOSTRANDO EL CHECKOUT ID >>> {checkout_id}')
+
+        # Obtener la URL base configurada en Odoo
+        base_url = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
+
+        # Construir la URL absoluta
+        callback_url = f"{base_url}/payment/datafast/callback"
+
+            # LOG PARA VERIFICAR LA URL QUE SE ENVIARÁ A DATAFAST
+        _logger.warning("===============================================")
+        _logger.warning("DATAFAST CALLBACK URL: %s", callback_url)
+        _logger.warning("WEB.BASE.URL: %s", base_url)
+        _logger.warning("===============================================")
+
+        # se agrego para buscar el provider
+        provider = request.env['payment.provider'].sudo().search(
+            [('code', '=', 'datafast')],
+            limit=1
+        )
 
         return request.render('payment_datafast.redirect_form', {
             'checkout_id': checkout_id,
+            'callback_url': f'{base_url}/payment/datafast/callback',
+            'datafast_url': provider.datafast_url,   # <-- aquí envías el valor del campo para url dinamica
         })
-    
+
     @http.route('/payment/datafast/callback', type='http', auth='public', website=True)
     def payment_datafast_callback(self, **kwargs):
         _logger.info(f'MOSTRANDO RESOURCE PATH >> { kwargs }')
@@ -64,8 +84,7 @@ class DatafastController(http.Controller):
             return request.redirect('/payment/status?error=unexpected')
 
         return request.redirect('/payment/status')
-
-
+    
     @http.route(_return_url, type='http', methods=['GET'], auth='public')
     def datafast_return_from_checkout(self, **data):
         """ Process the notification data sent by DataFast after redirection from checkout.
@@ -114,7 +133,9 @@ class DatafastController(http.Controller):
                 _logger.exception("Unable to handle the notification data; skipping to acknowledge")
         return ''  # Acknowledge the notification.
 
-class PaymentPortalDatafast(PaymentPortal):
+
+
+class PaymentPortalDatafast(main.PaymentPortal):
     @http.route(
         '/shop/payment/transaction/<int:order_id>', type='json', auth='public', website=True
     )
@@ -128,4 +149,4 @@ class PaymentPortalDatafast(PaymentPortal):
 
         return result
     
-   
+    

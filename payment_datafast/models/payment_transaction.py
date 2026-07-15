@@ -13,6 +13,10 @@ from odoo.addons.payment_datafast.controllers.main import DatafastController
 
 _logger = logging.getLogger(__name__)
 
+# Valores fijos que para validacion de identificacion 
+DATAFAST_SHOPPER_ECI = "0103910"
+DATAFAST_SHOPPER_PSERV = "17913101"
+
 class PaymentTransaction(models.Model):
     _inherit = 'payment.transaction'
 
@@ -100,12 +104,12 @@ class PaymentTransaction(models.Model):
             "billing.country": self.partner_country_id.code.upper(),
             "shipping.street1": self.partner_address, # cambiar aqui es direccion de envio
             "shipping.country": self.partner_country_id.code.upper(), #cambiar aqui es pais de envio
-            "customParameters[SHOPPER_ECI]": "0103910",
-            "customParameters[SHOPPER_PSERV]": "17913101",
+            "customParameters[SHOPPER_ECI]": DATAFAST_SHOPPER_ECI,
+            "customParameters[SHOPPER_PSERV]": DATAFAST_SHOPPER_PSERV,
             "customParameters[SHOPPER_VAL_BASE0]": "{:.2f}".format(sale_order.shopper_val_base0),
             "customParameters[SHOPPER_VAL_BASEIMP]": "{:.2f}".format(sale_order.shopper_val_baseimp),#formato 2 decimales para datafast
             "customParameters[SHOPPER_VAL_IVA]": f"{ sale_order.shopper_val_iva }",
-            "risk.parameters[USER_DATA2]": "DATAFAST",
+            "risk.parameters[USER_DATA2]": self.company_id.name,
             "customParameters[SHOPPER_VERSIONDF]": "2",
         }
 

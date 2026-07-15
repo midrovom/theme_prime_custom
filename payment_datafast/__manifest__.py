@@ -2,7 +2,7 @@
     'name': 'DataFast Payment',
     'version': '18.0.1.0.0',
     'description': '''
-        Modulo desarrollado en Odoo 16 Community
+        Modulo desarrollado en Odoo 18 Community
         Especificaciones:
             - Integración de pasarela de pagos DataFast
             - Botón de pagos en el sitio web
