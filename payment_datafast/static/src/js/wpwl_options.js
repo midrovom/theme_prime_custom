@@ -4,6 +4,34 @@ const URL_IMAGE_DATAFAST = "https://www.datafast.com.ec/images/verified.png";
 
 const wpwlOptions = {
     onReady() {
+
+        console.log("====================================");
+        console.log("DataFast onReady ejecutado");
+        console.log("Formulario card:", $("form.wpwl-form-card").length);
+        console.log("Formulario registrations:", $("form.wpwl-form-registrations").length);
+        console.log("Botón card:", $("form.wpwl-form-card .wpwl-button").length);
+        console.log("Botón registrations:", $("form.wpwl-form-registrations .wpwl-button").length);
+        console.log("====================================");
+            
+        // Este bloque busca el formulario con clase "wpwl-form-card".
+        // Si no existe, no hace nada. 
+        // Si ya fue inicializado antes (datafastInitialized = true), evita volver a ejecutar la lógica.
+        // En caso contrario, marca el formulario como inicializado para que la configuración de DataFast
+        // solo se ejecute una vez y no se duplique.
+
+        const form = $("form.wpwl-form-card");
+
+        if (!form.length) {
+            return;
+        }
+
+        if (form.data("datafastInitialized")) {
+            console.log("DataFast ya inicializado");
+            return;
+        }
+
+        form.data("datafastInitialized", true);
+
         // Selector de tipo de crédito
         const tipocredito = `
             <div class="wpwl-label wpwl-label-brand" style="display:inline-block; margin: 3px 0;">Tipo de crédito:</div>

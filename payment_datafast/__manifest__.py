@@ -35,6 +35,7 @@
         'web.assets_frontend': [
             'payment_datafast/static/src/js/payment_form.js',
             'payment_datafast/static/src/js/wpwl_options.js',
+            'payment_datafast/static/src/js/wpwl_init.js',
             'payment_datafast/static/src/css/style_datafast.css',
         ],
     },
