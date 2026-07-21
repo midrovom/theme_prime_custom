@@ -20,8 +20,7 @@
 
     ],
     'license': 'AGPL-3',
-    'post_load': '',
     "installable": True,
-    'auto_install': True,
-    'application': True,
+    'auto_install': False,
+    'application': False,
 }
