@@ -27,7 +27,7 @@ class ProductInherit(models.Model):
                 default_product_tmpl_id=self.id
             )
 
-            # Nueva lógica: marcar agotado o disponible según stock
+            # Nueva lógica: marcar agotado o disponible en la plantilla
             available_qty = self.qty_available
             if available_qty <= 0:
                 self.product_tmpl_id.write({
