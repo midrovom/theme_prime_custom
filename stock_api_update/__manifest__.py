@@ -18,7 +18,7 @@
     'website': "https://www.callphone.com.ec",
     'images': ['static/description/banner.png'],
     "category": "Warehouse",
-    "depends": ['stock', 'product'],
+    "depends": ['stock', 'website_sale'],
     "license": "AGPL-3",
     'data': [
 
