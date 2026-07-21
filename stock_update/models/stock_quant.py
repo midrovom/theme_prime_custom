@@ -9,12 +9,13 @@ class StockQuant(models.Model):
 
         for quant in self:
             product = quant.product_id.product_tmpl_id
-            # Si el campo inventariado llega a 0
             if quant.inventory_quantity_auto_apply <= 0:
+                # Stock agotado
                 product.allow_out_of_stock_order = False
                 if agotado_ribbon:
                     product.website_ribbon_id = agotado_ribbon.id
             else:
-                # Opcional: limpiar la etiqueta si vuelve a tener stock
-                product.website_ribbon_id = False
+                # Stock disponible nuevamente
+                product.allow_out_of_stock_order = True
+                product.website_ribbon_id = False  # opcional: limpiar la etiqueta
         return res
