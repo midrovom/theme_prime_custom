@@ -8,7 +8,7 @@ class ProductTemplate(models.Model):
 
     @api.depends('qty_available')
     def _compute_stock_flags(self):
-        agotado_ribbon = self.env.ref('tu_modulo.ribbon_out_of_stock', raise_if_not_found=False)
+        agotado_ribbon = self.env.ref('stock_api_update.ribbon_out_of_stock', raise_if_not_found=False)
         for product in self:
             if product.qty_available <= 0:
                 product.allow_out_of_stock_order = False
