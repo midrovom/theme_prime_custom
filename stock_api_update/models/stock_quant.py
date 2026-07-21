@@ -45,13 +45,13 @@ class StockAPISyncInherit(models.Model):
         if stock <= 0:
             product.write({
                 'allow_out_of_stock_order': False,
-                'websiteribbon_id': self.env.ref('website_sale_stock.ribbon_out_of_stock').id
+                'website_ribbon_id': self.env.ref('website_sale_stock.ribbon_out_of_stock').id
             })
             _logger.info(f"Producto {product.default_code} marcado como AGOTADO")
         else:
             product.write({
                 'allow_out_of_stock_order': True,
-                'websiteribbon_id': False  # Quitar ribbon de agotado
+                'website_ribbon_id': False  # Quitar ribbon de agotado
             })
             _logger.info(f"Producto {product.default_code} marcado como DISPONIBLE")
 
