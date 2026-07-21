@@ -9,7 +9,7 @@ class ProductTemplate(models.Model):
         - Desactiva el check 'allow_out_of_stock_order'
         - Asigna la etiqueta 'Agotado' en website_ribbon_id
         """
-        agotado_ribbon = self.env.ref('theme_prime_custom.ribbon_out_of_stock', raise_if_not_found=False)
+        agotado_ribbon = self.env.ref('stock_update.ribbon_out_of_stock', raise_if_not_found=False)
         for product in self:
             if product.qty_available <= 0:
                 product.allow_out_of_stock_order = False
