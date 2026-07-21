@@ -1,57 +1,45 @@
+from odoo import models
 import logging
-import requests
-from datetime import datetime
-from odoo import models, api, fields
 
 _logger = logging.getLogger(__name__)
 
-class StockAPISyncInherit(models.Model):
-    _inherit = 'stock.api.sync'   
+class ProductInherit(models.Model):
+    _inherit = "product.product"
 
-    def _update_stock(self, product, stock, warehouse):
-        # Obtener la ubicación de stock de la bodega
-        stock_location = warehouse.lot_stock_id
-        if not stock_location:
-            _logger.warning(f"La bodega {warehouse.name} no tiene una ubicación de stock configurada.")
-            return
-
-        # Verificar que el producto tenga una variante
-        product_variant = product.product_variant_id
-        if not product_variant:
-            _logger.warning(f"El producto {product.default_code} no tiene una variante asociada.")
-            return
-
-        # Buscar el registro de stock.quant
-        quant = self.env['stock.quant'].search([
-            ('product_id', '=', product_variant.id),
-            ('location_id', '=', stock_location.id),
-        ], limit=1)
-
-        if quant:
-            # Actualizar el stock existente
-            quant.sudo().write({'quantity': stock, 'check_update': True})
+    def action_update_quantity_on_hand(self):
+        # Mantener la lógica original
+        advanced_option_groups = [
+            'stock.group_stock_multi_locations',
+            'stock.group_tracking_owner',
+            'stock.group_tracking_lot'
+        ]
+        if any(self.env.user.has_group(g) for g in advanced_option_groups) or self.tracking != 'none':
+            return self.action_open_quants()
         else:
-            # Crear un nuevo registro de stock
-            self.env['stock.quant'].sudo().create({
-                'product_id': product_variant.id,
-                'location_id': stock_location.id,
-                'quantity': stock,
-                'check_update': True,
-            })
+            default_product_id = self.env.context.get(
+                'default_product_id',
+                len(self.product_variant_ids) == 1 and self.product_variant_id.id
+            )
+            action = self.env["ir.actions.actions"]._for_xml_id("stock.action_change_product_quantity")
+            action['context'] = dict(
+                self.env.context,
+                default_product_id=default_product_id,
+                default_product_tmpl_id=self.id
+            )
 
-        _logger.info(f"Stock actualizado para el producto {product.default_code} en la bodega {warehouse.name}: {stock}")
+            # Nueva lógica: marcar agotado o disponible según stock
+            available_qty = self.qty_available
+            if available_qty <= 0:
+                self.product_tmpl_id.write({
+                    'allow_out_of_stock_order': False,
+                    'website_ribbon_id': self.env.ref('website_sale_stock.ribbon_out_of_stock').id
+                })
+                _logger.info(f"Producto {self.default_code} marcado como AGOTADO")
+            else:
+                self.product_tmpl_id.write({
+                    'allow_out_of_stock_order': True,
+                    'website_ribbon_id': False  # Quitar ribbon de agotado
+                })
+                _logger.info(f"Producto {self.default_code} marcado como DISPONIBLE")
 
-        # Nueva lógica: marcar agotado o disponible
-        if stock <= 0:
-            product.write({
-                'allow_out_of_stock_order': False,
-                'website_ribbon_id': self.env.ref('website_sale_stock.ribbon_out_of_stock').id
-            })
-            _logger.info(f"Producto {product.default_code} marcado como AGOTADO")
-        else:
-            product.write({
-                'allow_out_of_stock_order': True,
-                'website_ribbon_id': False  # Quitar ribbon de agotado
-            })
-            _logger.info(f"Producto {product.default_code} marcado como DISPONIBLE")
-
+            return action
