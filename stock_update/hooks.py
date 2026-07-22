@@ -1,9 +1,6 @@
+from odoo import api, SUPERUSER_ID
 
-def post_init_hook(cr, registry):
-
-    from odoo import api, SUPERUSER_ID
-    env = api.Environment(cr, SUPERUSER_ID, {})
-    
+def post_init_hook(env):
     agotado_ribbon = env['product.ribbon'].browse(2)  # tu cinta "Agotado"
 
     products = env['product.template'].search([])
