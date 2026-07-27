@@ -283,7 +283,7 @@ class LoyaltyWalletTransaction(models.Model):
     )
     description = fields.Char(string="Descripción", required=True)
     reference = fields.Char(
-        string="Referencia externa",
+        string="Referencia externa", required=True,
         help="Ejemplo: cuota, comprobante, ticket o número de autorización.",
     )
     state = fields.Selection(
