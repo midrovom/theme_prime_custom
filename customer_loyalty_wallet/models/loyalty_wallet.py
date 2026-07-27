@@ -43,7 +43,7 @@ class LoyaltyWallet(models.Model):
     currency_id = fields.Many2one(
         "res.currency",
         string="Moneda",
-        related="wallet_id.currency_id",
+        related="company_id.currency_id",
         store=True,
         readonly=True,
         default=lambda self: self.env.company.currency_id.id
