@@ -244,6 +244,7 @@ class LoyaltyWalletTransaction(models.Model):
         related="wallet_id.currency_id",
         store=True,
         readonly=True,
+        default=lambda self: self.env.company.currency_id.id
     )
     date = fields.Datetime(
         string="Fecha", required=True, default=fields.Datetime.now, index=True
@@ -275,7 +276,7 @@ class LoyaltyWalletTransaction(models.Model):
         required=True,
         currency_field="currency_id",
     )
-    signed_amount = fields.float(
+    signed_amount = fields.Monetary(
         string="Valor con signo",
         currency_field="currency_id",
         compute="_compute_signed_amount",
