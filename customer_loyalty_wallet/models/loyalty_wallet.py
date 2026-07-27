@@ -385,11 +385,21 @@ class LoyaltyWalletTransaction(models.Model):
                 )
         return super().write(vals)
 
+    # def unlink(self):
+    #     if self.filtered(lambda tx: tx.state == "confirmed"):
+    #         raise UserError(
+    #             _("Los movimientos confirmados no pueden eliminarse. Deben reversarse.")
+    #         )
+    #     return super().unlink()
+
     def unlink(self):
-        if self.filtered(lambda tx: tx.state == "confirmed"):
-            raise UserError(
-                _("Los movimientos confirmados no pueden eliminarse. Deben reversarse.")
-            )
+        confirmed = self.filtered(lambda tx: tx.state == "confirmed")
+        if confirmed:
+            # Solo permitir si el usuario es administrador de billetera
+            if not self.env.user.has_group("customer_loyalty_wallet.group_wallet_manager"):
+                raise UserError(
+                    _("Los movimientos confirmados no pueden eliminarse. Deben reversarse.")
+                )
         return super().unlink()
 
     def action_confirm(self):
