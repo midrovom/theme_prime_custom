@@ -32,23 +32,13 @@ class LoyaltyWallet(models.Model):
         default=lambda self: self.env.company,
         index=True,
     )
-    # currency_id = fields.Many2one(
-    #     "res.currency",
-    #     string="Moneda",
-    #     related="company_id.currency_id",
-    #     store=True,
-    #     readonly=True,
-    # )
-
     currency_id = fields.Many2one(
         "res.currency",
         string="Moneda",
         related="company_id.currency_id",
         store=True,
         readonly=True,
-        default=lambda self: self.env.company.currency_id.id
     )
-
     status = fields.Selection(
         [
             ("active", "Activa"),
