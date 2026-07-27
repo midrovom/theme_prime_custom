@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_ec_onboarding_package_list" model="ir.ui.view">
+        <field name="name">hr.ec.onboarding.package.list</field>
+        <field name="model">hr.ec.onboarding.package</field>
+        <field name="arch" type="xml">
+            <list string="Paquetes de contratación" decoration-danger="state == 'error'" decoration-success="state == 'ready'">
+                <field name="name"/>
+                <field name="applicant_id"/>
+                <field name="employee_id" widget="many2one_avatar_employee"/>
+                <field name="contract_id"/>
+                <field name="email_to" optional="show"/>
+                <field name="document_count"/>
+                <field name="generated_at"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'ready'" decoration-primary="state == 'sent'" decoration-danger="state == 'error'"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_ec_onboarding_package_form" model="ir.ui.view">
+        <field name="name">hr.ec.onboarding.package.form</field>
+        <field name="model">hr.ec.onboarding.package</field>
+        <field name="arch" type="xml">
+            <form string="Paquete de contratación">
+                <header>
+                    <button name="action_generate_documents" type="object" string="Generar / regenerar documentos" class="btn-secondary"/>
+                    <button name="action_send_email" type="object" string="Enviar correo" class="btn-primary" invisible="state != 'ready'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,ready,sent,error"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_employee" type="object" class="oe_stat_button" icon="fa-id-card">
+                            <div class="o_stat_info"><span class="o_stat_text">Empleado</span></div>
+                        </button>
+                        <button name="action_open_contract" type="object" class="oe_stat_button" icon="fa-file-text-o" invisible="not contract_id">
+                            <div class="o_stat_info"><span class="o_stat_text">Contrato</span></div>
+                        </button>
+                        <button name="action_open_requests" type="object" class="oe_stat_button" icon="fa-files-o">
+                            <field name="document_count" widget="statinfo" string="Archivos"/>
+                        </button>
+                    </div>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="applicant_id"/>
+                            <field name="employee_id"/>
+                            <field name="contract_id" readonly="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="contract_template_id"/>
+                            <field name="employee_file_template_id"/>
+                            <field name="generated_at" readonly="1"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-danger" role="alert" invisible="state != 'error'">
+                        <field name="generation_message" nolabel="1" readonly="1"/>
+                    </div>
+                    <notebook>
+                        <page string="Borrador de correo">
+                            <group>
+                                <field name="email_to" widget="email"/>
+                                <field name="email_subject"/>
+                            </group>
+                            <field name="email_body_html" widget="html" nolabel="1"/>
+                            <group>
+                                <field name="attachment_ids" widget="many2many_binary" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Solicitudes de décimos">
+                            <field name="benefit_request_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="benefit_type"/>
+                                    <field name="year"/>
+                                    <field name="request_date"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="attachment_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Ficha generada">
+                            <field name="employee_file_html" widget="html" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_ec_onboarding_package" model="ir.actions.act_window">
+        <field name="name">Paquetes de contratación</field>
+        <field name="res_model">hr.ec.onboarding.package</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_loyalty_wallet_user,loyalty.wallet user,model_loyalty_wallet,customer_loyalty_wallet.group_wallet_user,1,1,1,0
+access_loyalty_wallet_manager,loyalty.wallet manager,model_loyalty_wallet,customer_loyalty_wallet.group_wallet_manager,1,1,1,1
+access_loyalty_wallet_transaction_user,loyalty.wallet.transaction user,model_loyalty_wallet_transaction,customer_loyalty_wallet.group_wallet_user,1,1,1,0
+access_loyalty_wallet_transaction_manager,loyalty.wallet.transaction manager,model_loyalty_wallet_transaction,customer_loyalty_wallet.group_wallet_manager,1,1,1,1

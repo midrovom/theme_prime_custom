@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="contract_type_general_ec" model="hr.contract.type">
+        <field name="name">Contrato laboral general EC</field>
+    </record>
+
+    <record id="template_contract_general" model="hr.ec.document.template">
+        <field name="name">Contrato laboral general</field>
+        <field name="document_type">contract</field>
+        <field name="contract_type_id" ref="contract_type_general_ec"/>
+        <field name="is_default" eval="True"/>
+        <field name="sequence">10</field>
+        <field name="body_html" type="html">
+            <div>
+                <h2 style="text-align:center;">CONTRATO DE TRABAJO</h2>
+                <p>Comparecen la compañía <strong><t t-out="object.company_id.name"/></strong> y el/la trabajador/a <strong><t t-out="object.employee_id.name"/></strong>, con identificación <strong><t t-out="object.employee_id.identification_id"/></strong>.</p>
+                <p>El/la trabajador/a prestará sus servicios en el cargo de <strong><t t-out="object.job_id.name"/></strong>, desde el <strong><t t-out="object.date_start"/></strong>, con una remuneración mensual de <strong><t t-out="object.wage"/></strong>.</p>
+                <p>Las funciones, jornada, obligaciones, beneficios y demás condiciones se sujetarán a la normativa aplicable, a las políticas internas vigentes y a los acuerdos válidamente incorporados en este documento.</p>
+                <p>Este texto es una plantilla editable. Debe ser revisado y adaptado por la empresa antes de utilizarse como documento definitivo.</p>
+                <br/>
+                <table style="width:100%; margin-top:45px;">
+                    <tr>
+                        <td style="width:45%; text-align:center; border-top:1px solid #000;">EMPLEADOR</td>
+                        <td style="width:10%;"></td>
+                        <td style="width:45%; text-align:center; border-top:1px solid #000;">TRABAJADOR/A</td>
+                    </tr>
+                </table>
+            </div>
+        </field>
+        <field name="email_subject">Documentos de contratación - {{ object.employee_id.name }}</field>
+        <field name="email_body_html" type="html">
+            <div>
+                <p>Estimado/a <t t-out="object.employee_id.name"/>,</p>
+                <p>Adjuntamos por separado su contrato, las solicitudes de acumulación de décimos y su ficha de empleado para revisión y firma.</p>
+                <p>Saludos cordiales.</p>
+            </div>
+        </field>
+    </record>
+
+    <record id="template_thirteenth_accumulation" model="hr.ec.document.template">
+        <field name="name">Acumulación de décimo tercero</field>
+        <field name="document_type">thirteenth</field>
+        <field name="is_default" eval="True"/>
+        <field name="sequence">20</field>
+        <field name="body_html" type="html">
+            <div>
+                <h2 style="text-align:center;">SOLICITUD DE ACUMULACIÓN DEL DÉCIMO TERCER SUELDO</h2>
+                <p>Yo, <strong><t t-out="object.employee_id.name"/></strong>, con identificación <strong><t t-out="object.employee_id.identification_id"/></strong>, solicito a <strong><t t-out="object.company_id.name"/></strong> que el décimo tercer sueldo correspondiente al año <strong><t t-out="object.year"/></strong> sea pagado de forma acumulada.</p>
+                <p>Declaro que esta solicitud expresa mi decisión y autorizo su registro para los fines administrativos correspondientes.</p>
+                <p>Fecha: <t t-out="object.request_date"/></p>
+                <br/><br/>
+                <p style="text-align:center;">____________________________________<br/>Firma del trabajador/a</p>
+            </div>
+        </field>
+    </record>
+
+    <record id="template_fourteenth_accumulation" model="hr.ec.document.template">
+        <field name="name">Acumulación de décimo cuarto</field>
+        <field name="document_type">fourteenth</field>
+        <field name="is_default" eval="True"/>
+        <field name="sequence">30</field>
+        <field name="body_html" type="html">
+            <div>
+                <h2 style="text-align:center;">SOLICITUD DE ACUMULACIÓN DEL DÉCIMO CUARTO SUELDO</h2>
+                <p>Yo, <strong><t t-out="object.employee_id.name"/></strong>, con identificación <strong><t t-out="object.employee_id.identification_id"/></strong>, solicito a <strong><t t-out="object.company_id.name"/></strong> que el décimo cuarto sueldo correspondiente al año <strong><t t-out="object.year"/></strong> sea pagado de forma acumulada.</p>
+                <p>Declaro que esta solicitud expresa mi decisión y autorizo su registro para los fines administrativos correspondientes.</p>
+                <p>Fecha: <t t-out="object.request_date"/></p>
+                <br/><br/>
+                <p style="text-align:center;">____________________________________<br/>Firma del trabajador/a</p>
+            </div>
+        </field>
+    </record>
+
+    <record id="template_employee_file" model="hr.ec.document.template">
+        <field name="name">Ficha individual del empleado</field>
+        <field name="document_type">employee_file</field>
+        <field name="is_default" eval="True"/>
+        <field name="sequence">40</field>
+        <field name="body_html" type="html">
+            <div>
+                <h2 style="text-align:center;">FICHA INDIVIDUAL DEL EMPLEADO</h2>
+                <table class="table table-sm table-bordered" style="width:100%;">
+                    <tr><th>Nombre completo</th><td><t t-out="object.name"/></td></tr>
+                    <tr><th>Identificación</th><td><t t-out="object.identification_id"/></td></tr>
+                    <tr><th>Correo personal</th><td><t t-out="object.private_email"/></td></tr>
+                    <tr><th>Teléfono personal</th><td><t t-out="object.private_phone"/></td></tr>
+                    <tr><th>Fecha de nacimiento</th><td><t t-out="object.birthday"/></td></tr>
+                    <tr><th>Nacionalidad</th><td><t t-out="object.country_id.name"/></td></tr>
+                    <tr><th>Compañía</th><td><t t-out="object.company_id.name"/></td></tr>
+                    <tr><th>Departamento</th><td><t t-out="object.department_id.name"/></td></tr>
+                    <tr><th>Cargo</th><td><t t-out="object.job_id.name"/></td></tr>
+                    <tr><th>Correo de trabajo</th><td><t t-out="object.work_email"/></td></tr>
+                    <tr><th>Teléfono de trabajo</th><td><t t-out="object.work_phone"/></td></tr>
+                </table>
+                <br/><br/>
+                <p style="text-align:center;">____________________________________<br/>Firma del trabajador/a</p>
+            </div>
+        </field>
+    </record>
+</odoo>

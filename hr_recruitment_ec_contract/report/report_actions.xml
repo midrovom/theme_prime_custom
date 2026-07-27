@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_ec_contract" model="ir.actions.report">
+        <field name="name">Contrato EC</field>
+        <field name="model">hr.contract</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_recruitment_ec_contract.report_ec_contract</field>
+        <field name="report_file">hr_recruitment_ec_contract.report_ec_contract</field>
+        <field name="binding_model_id" ref="hr_contract.model_hr_contract"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Contrato_%s' % (object.employee_id.name or '')</field>
+    </record>
+
+    <record id="action_report_ec_benefit_request" model="ir.actions.report">
+        <field name="name">Solicitud de décimos</field>
+        <field name="model">hr.ec.benefit.request</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_recruitment_ec_contract.report_ec_benefit_request</field>
+        <field name="report_file">hr_recruitment_ec_contract.report_ec_benefit_request</field>
+        <field name="binding_model_id" ref="model_hr_ec_benefit_request"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Solicitud_Decimos_%s' % (object.employee_id.name or '')</field>
+    </record>
+
+    <record id="action_report_ec_employee_file" model="ir.actions.report">
+        <field name="name">Ficha del empleado</field>
+        <field name="model">hr.ec.onboarding.package</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_recruitment_ec_contract.report_ec_employee_file</field>
+        <field name="report_file">hr_recruitment_ec_contract.report_ec_employee_file</field>
+        <field name="binding_model_id" ref="model_hr_ec_onboarding_package"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Ficha_%s' % (object.employee_id.name or '')</field>
+    </record>
+</odoo>

@@ -1,0 +1,122 @@
+.o_reward_wallet_portal {
+    max-width: 960px;
+    margin: 0 auto;
+
+    .o_wallet_balance_card {
+        position: relative;
+        overflow: hidden;
+        padding: 1.5rem;
+        border-radius: 1.25rem;
+        color: #fff;
+        background: linear-gradient(135deg, #171b2d 0%, #343b70 55%, #5b63d3 100%);
+        box-shadow: 0 1rem 2.5rem rgba(30, 37, 83, 0.24);
+    }
+
+    .o_wallet_balance_card::after {
+        content: "";
+        position: absolute;
+        width: 13rem;
+        height: 13rem;
+        right: -5rem;
+        bottom: -7rem;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .o_wallet_eyebrow {
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .14em;
+        opacity: .75;
+    }
+
+    .o_wallet_balance {
+        margin-top: .25rem;
+        font-size: clamp(2rem, 8vw, 3.25rem);
+        font-weight: 800;
+        line-height: 1.05;
+    }
+
+    .o_wallet_owner {
+        opacity: .85;
+    }
+
+    .o_wallet_icon {
+        display: grid;
+        place-items: center;
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 1rem;
+        font-size: 1.5rem;
+        background: rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(8px);
+    }
+
+    .o_wallet_metric {
+        display: flex;
+        flex-direction: column;
+        gap: .15rem;
+        min-height: 4rem;
+        padding: .75rem;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: .85rem;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .o_wallet_metric small {
+        opacity: .72;
+    }
+
+    .o_wallet_metric strong {
+        font-size: 1.05rem;
+    }
+
+    .o_wallet_movement_card {
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .o_wallet_movement_card:last-child {
+        border-bottom: 0;
+    }
+
+    .o_wallet_movement_badge {
+        display: grid;
+        flex: 0 0 auto;
+        place-items: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: .85rem;
+    }
+
+    .o_wallet_movement_badge.is-credit {
+        color: #13795b;
+        background: rgba(25, 135, 84, .12);
+    }
+
+    .o_wallet_movement_badge.is-debit {
+        color: #b02a37;
+        background: rgba(220, 53, 69, .12);
+    }
+
+    .min-w-0 {
+        min-width: 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .o_reward_wallet_portal {
+        .o_wallet_balance_card {
+            padding: 1.15rem;
+            border-radius: 1rem;
+        }
+
+        .btn-group {
+            width: 100%;
+        }
+
+        .btn-group .btn {
+            flex: 1 1 auto;
+        }
+    }
+}

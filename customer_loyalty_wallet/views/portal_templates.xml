@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_wallet" inherit_id="portal.portal_my_home" name="Billetera en portal">
+        <xpath expr="//div[@id='portal_common_category']" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/customer_loyalty_wallet/static/description/icon.png'"/>
+                <t t-set="title">Mi billetera</t>
+                <t t-set="text">Consulta tu saldo acumulado y todos tus movimientos</t>
+                <t t-set="url" t-value="'/my/wallet'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_breadcrumbs_wallet" inherit_id="portal.portal_breadcrumbs" name="Ruta de billetera">
+        <xpath expr="//ol" position="inside">
+            <li t-if="page_name == 'reward_wallet'" class="breadcrumb-item active">Mi billetera</li>
+        </xpath>
+    </template>
+
+    <template id="portal_my_wallet" name="Mi billetera de recompensas">
+        <t t-call="portal.portal_layout">
+            <div class="o_reward_wallet_portal">
+                <div t-if="wallet" class="o_wallet_balance_card mb-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <div class="o_wallet_eyebrow">SALDO DISPONIBLE</div>
+                            <div class="o_wallet_balance">
+                                <span t-field="wallet.balance" t-options="{'widget': 'monetary', 'display_currency': wallet.currency_id}"/>
+                            </div>
+                            <div class="o_wallet_owner mt-2">
+                                <i class="fa fa-user-circle me-1"/>
+                                <span t-field="wallet.partner_id.name"/>
+                            </div>
+                        </div>
+                        <div class="o_wallet_icon"><i class="fa fa-money"/></div>
+                    </div>
+                    <div class="row g-2 mt-3">
+                        <div class="col-6">
+                            <div class="o_wallet_metric">
+                                <small>Total acumulado</small>
+                                <strong t-field="wallet.total_credited" t-options="{'widget': 'monetary', 'display_currency': wallet.currency_id}"/>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="o_wallet_metric">
+                                <small>Total utilizado</small>
+                                <strong t-field="wallet.total_debited" t-options="{'widget': 'monetary', 'display_currency': wallet.currency_id}"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div t-if="wallet and wallet.status == 'blocked'" class="alert alert-warning d-flex align-items-center" role="alert">
+                    <i class="fa fa-lock me-2"/>
+                    <div>Tu billetera está temporalmente bloqueada. El saldo y el historial siguen disponibles para consulta.</div>
+                </div>
+
+                <div t-if="wallet" class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <h3 class="m-0">Movimientos</h3>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Filtrar movimientos">
+                        <a t-foreach="filters.items()" t-as="filter_item"
+                           t-att-href="'/my/wallet?filterby=%s' % filter_item[0]"
+                           t-attf-class="btn #{'btn-primary' if filterby == filter_item[0] else 'btn-outline-secondary'}">
+                            <t t-out="filter_item[1]"/>
+                        </a>
+                    </div>
+                </div>
+
+                <div t-if="wallet and transactions" class="o_wallet_mobile_movements d-md-none">
+                    <div t-foreach="transactions" t-as="tx" class="o_wallet_movement_card">
+                        <div class="d-flex align-items-center gap-3">
+                            <div t-attf-class="o_wallet_movement_badge #{'is-credit' if tx.transaction_type == 'credit' else 'is-debit'}">
+                                <i t-attf-class="fa #{'fa-arrow-down' if tx.transaction_type == 'credit' else 'fa-arrow-up'}"/>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="fw-semibold text-truncate" t-out="tx.description"/>
+                                <div class="small text-muted">
+                                    <span t-field="tx.date" t-options="{'widget': 'date'}"/>
+                                    <span t-if="tx.reference"> · <t t-out="tx.reference"/></span>
+                                </div>
+                            </div>
+                            <div t-attf-class="fw-bold text-nowrap #{'text-success' if tx.transaction_type == 'credit' else 'text-danger'}">
+                                <t t-if="tx.transaction_type == 'credit'">+</t><t t-else="">−</t>
+                                <span t-field="tx.amount" t-options="{'widget': 'monetary', 'display_currency': tx.currency_id}"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div t-if="wallet and transactions" class="table-responsive d-none d-md-block border rounded">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Detalle</th>
+                                <th>Motivo</th>
+                                <th class="text-end">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="transactions" t-as="tx">
+                                <td class="text-nowrap"><span t-field="tx.date" t-options="{'widget': 'date'}"/></td>
+                                <td>
+                                    <div class="fw-semibold" t-out="tx.description"/>
+                                    <small t-if="tx.reference" class="text-muted" t-out="tx.reference"/>
+                                </td>
+                                <td><span t-field="tx.reason"/></td>
+                                <td t-attf-class="text-end fw-bold #{'text-success' if tx.transaction_type == 'credit' else 'text-danger'}">
+                                    <t t-if="tx.transaction_type == 'credit'">+</t><t t-else="">−</t>
+                                    <span t-field="tx.amount" t-options="{'widget': 'monetary', 'display_currency': tx.currency_id}"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div t-if="wallet and not transactions" class="o_wallet_empty text-center py-5 border rounded bg-light">
+                    <i class="fa fa-list-alt fa-3x text-muted mb-3"/>
+                    <h5>No hay movimientos para mostrar</h5>
+                    <p class="text-muted mb-0">Cuando se registre un abono o consumo aparecerá aquí.</p>
+                </div>
+
+                <div t-if="not wallet" class="o_wallet_empty text-center py-5 border rounded bg-light">
+                    <i class="fa fa-money fa-3x text-muted mb-3"/>
+                    <h4>Aún no tienes una billetera activa</h4>
+                    <p class="text-muted mb-0">Comunícate con un asesor para activar tu programa de recompensas.</p>
+                </div>
+
+                <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="d-flex justify-content-center mt-4">
+                    <t t-call="portal.pager"/>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

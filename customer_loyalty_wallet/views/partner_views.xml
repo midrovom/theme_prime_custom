@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_wallet" model="ir.ui.view">
+        <field name="name">res.partner.form.wallet</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_wallet" type="object" class="oe_stat_button" icon="fa-money" groups="customer_loyalty_wallet.group_wallet_user">
+                    <field name="wallet_balance" widget="statinfo" string="Billetera"/>
+                    <field name="wallet_count" invisible="1"/>
+                    <field name="company_currency_id" invisible="1"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

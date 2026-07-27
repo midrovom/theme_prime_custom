@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_loyalty_wallet_search" model="ir.ui.view">
+        <field name="name">loyalty.wallet.search</field>
+        <field name="model">loyalty.wallet</field>
+        <field name="arch" type="xml">
+            <search string="Buscar billeteras">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="status"/>
+                <filter name="active_wallets" string="Activas" domain="[('status', '=', 'active')]"/>
+                <filter name="blocked_wallets" string="Bloqueadas" domain="[('status', '=', 'blocked')]"/>
+                <filter name="portal_visible" string="Visibles en portal" domain="[('portal_enabled', '=', True)]"/>
+                <separator/>
+                <filter name="group_partner" string="Cliente" context="{'group_by': 'partner_id'}"/>
+                <filter name="group_status" string="Estado" context="{'group_by': 'status'}"/>
+                <filter name="group_company" string="Compañía" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_loyalty_wallet_list" model="ir.ui.view">
+        <field name="name">loyalty.wallet.list</field>
+        <field name="model">loyalty.wallet</field>
+        <field name="arch" type="xml">
+            <list string="Billeteras" decoration-muted="status == 'closed'" decoration-warning="status == 'blocked'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="balance" sum="Saldo total"/>
+                <field name="total_credited" optional="show" sum="Total acumulado"/>
+                <field name="total_debited" optional="show" sum="Total utilizado"/>
+                <field name="last_movement_date" optional="show"/>
+                <field name="portal_enabled" optional="show"/>
+                <field name="status" widget="badge" decoration-success="status == 'active'" decoration-warning="status == 'blocked'" decoration-muted="status == 'closed'"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_loyalty_wallet_form" model="ir.ui.view">
+        <field name="name">loyalty.wallet.form</field>
+        <field name="model">loyalty.wallet</field>
+        <field name="arch" type="xml">
+            <form string="Billetera de recompensas">
+                <header>
+                    <button name="action_credit" type="object" string="Registrar abono" class="btn-primary" invisible="status != 'active'"/>
+                    <button name="action_debit" type="object" string="Registrar consumo" invisible="status != 'active'"/>
+                    <button name="action_block" type="object" string="Bloquear" invisible="status != 'active'"/>
+                    <button name="action_activate" type="object" string="Activar" invisible="status == 'active' or status == 'closed'"/>
+                    <button name="action_close" type="object" string="Cerrar" invisible="status == 'closed'" groups="customer_loyalty_wallet.group_wallet_manager" confirm="La billetera solo podrá cerrarse si su saldo es cero. ¿Continuar?"/>
+                    <field name="status" widget="statusbar" statusbar_visible="active,blocked,closed" readonly="1"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_transactions" icon="fa-exchange">
+                            <field name="transaction_count" widget="statinfo" string="Movimientos"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Bloqueada" bg_color="text-bg-warning" invisible="status != 'blocked'"/>
+                    <widget name="web_ribbon" title="Cerrada" bg_color="text-bg-secondary" invisible="status != 'closed'"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id" readonly="status == 'closed'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="transaction_count &gt; 0"/>
+                            <field name="portal_enabled"/>
+                            <field name="last_movement_date" readonly="1"/>
+                        </group>
+                        <group class="oe_subtotal_footer">
+                            <field name="total_credited" readonly="1"/>
+                            <field name="total_debited" readonly="1"/>
+                            <field name="balance" readonly="1" class="oe_inline"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Movimientos" name="transactions">
+                            <field name="transaction_ids" readonly="1">
+                                <list decoration-success="transaction_type == 'credit' and state == 'confirmed'" decoration-danger="transaction_type == 'debit' and state == 'confirmed'" decoration-muted="state == 'cancelled'">
+                                    <field name="date"/>
+                                    <field name="name"/>
+                                    <field name="transaction_type" widget="badge"/>
+                                    <field name="reason"/>
+                                    <field name="description"/>
+                                    <field name="reference" optional="show"/>
+                                    <field name="signed_amount" sum="Neto"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Observaciones">
+                            <field name="note" placeholder="Condiciones, notas internas o aclaraciones sobre la billetera..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_loyalty_wallet" model="ir.actions.act_window">
+        <field name="name">Billeteras</field>
+        <field name="res_model">loyalty.wallet</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_loyalty_wallet_search"/>
+        <field name="context">{'search_default_active_wallets': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Cree la primera billetera de un cliente</p>
+            <p>La billetera funciona de forma independiente de Contabilidad y mantiene un historial auditable de cada movimiento.</p>
+        </field>
+    </record>
+
+    <record id="view_loyalty_wallet_transaction_search" model="ir.ui.view">
+        <field name="name">loyalty.wallet.transaction.search</field>
+        <field name="model">loyalty.wallet.transaction</field>
+        <field name="arch" type="xml">
+            <search string="Buscar movimientos">
+                <field name="name"/>
+                <field name="wallet_id"/>
+                <field name="partner_id"/>
+                <field name="reference"/>
+                <field name="description"/>
+                <filter name="credits" string="Abonos" domain="[('transaction_type', '=', 'credit')]"/>
+                <filter name="debits" string="Consumos" domain="[('transaction_type', '=', 'debit')]"/>
+                <filter name="confirmed" string="Confirmados" domain="[('state', '=', 'confirmed')]"/>
+                <filter name="draft" string="Borradores" domain="[('state', '=', 'draft')]"/>
+                <separator/>
+                <filter name="group_wallet" string="Billetera" context="{'group_by': 'wallet_id'}"/>
+                <filter name="group_partner" string="Cliente" context="{'group_by': 'partner_id'}"/>
+                <filter name="group_reason" string="Motivo" context="{'group_by': 'reason'}"/>
+                <filter name="group_month" string="Mes" context="{'group_by': 'date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_loyalty_wallet_transaction_list" model="ir.ui.view">
+        <field name="name">loyalty.wallet.transaction.list</field>
+        <field name="model">loyalty.wallet.transaction</field>
+        <field name="arch" type="xml">
+            <list string="Movimientos" decoration-success="transaction_type == 'credit' and state == 'confirmed'" decoration-danger="transaction_type == 'debit' and state == 'confirmed'" decoration-muted="state == 'cancelled'">
+                <field name="date"/>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="wallet_id" optional="show"/>
+                <field name="transaction_type" widget="badge"/>
+                <field name="reason"/>
+                <field name="description"/>
+                <field name="reference" optional="show"/>
+                <field name="signed_amount" sum="Neto"/>
+                <field name="state" widget="badge" decoration-success="state == 'confirmed'" decoration-info="state == 'draft'" decoration-muted="state == 'cancelled'"/>
+                <field name="confirmed_by_id" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_loyalty_wallet_transaction_form" model="ir.ui.view">
+        <field name="name">loyalty.wallet.transaction.form</field>
+        <field name="model">loyalty.wallet.transaction</field>
+        <field name="arch" type="xml">
+            <form string="Movimiento de billetera">
+                <header>
+                    <button name="action_confirm" type="object" string="Confirmar" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancelar" invisible="state != 'draft'"/>
+                    <button name="action_reset_to_draft" type="object" string="Volver a borrador" invisible="state != 'cancelled'"/>
+                    <button name="action_reverse" type="object" string="Reversar" invisible="state != 'confirmed' or reversal_id" groups="customer_loyalty_wallet.group_wallet_manager" confirm="Se creará un movimiento opuesto para mantener la auditoría. ¿Continuar?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,cancelled" readonly="1"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Reversado" bg_color="text-bg-secondary" invisible="not reversal_id"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="wallet_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="partner_id" readonly="1"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="transaction_type" readonly="state != 'draft'"/>
+                            <field name="reason" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="signed_amount" readonly="1"/>
+                            <field name="reference" readonly="state != 'draft'"/>
+                            <field name="confirmed_by_id" invisible="state != 'confirmed'"/>
+                            <field name="confirmed_at" invisible="state != 'confirmed'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description" readonly="state != 'draft'" placeholder="Ejemplo: Recompensa por pago puntual de la semana 12"/>
+                    </group>
+                    <group string="Auditoría de reverso" invisible="not reversal_of_id and not reversal_id">
+                        <field name="reversal_of_id" readonly="1"/>
+                        <field name="reversal_id" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_loyalty_wallet_transaction" model="ir.actions.act_window">
+        <field name="name">Movimientos</field>
+        <field name="res_model">loyalty.wallet.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_loyalty_wallet_transaction_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Registre un abono o consumo</p>
+            <p>Los movimientos confirmados no se eliminan ni editan; se reversan para conservar la trazabilidad.</p>
+        </field>
+    </record>
+</odoo>

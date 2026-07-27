@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_loyalty_wallet_root" name="Billetera" sequence="45" groups="customer_loyalty_wallet.group_wallet_user" web_icon="customer_loyalty_wallet,static/description/icon.png"/>
+    <menuitem id="menu_loyalty_wallet" name="Billeteras" parent="menu_loyalty_wallet_root" action="action_loyalty_wallet" sequence="10"/>
+    <menuitem id="menu_loyalty_wallet_transaction" name="Movimientos" parent="menu_loyalty_wallet_root" action="action_loyalty_wallet_transaction" sequence="20"/>
+</odoo>
