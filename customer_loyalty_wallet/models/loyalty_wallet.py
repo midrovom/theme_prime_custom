@@ -59,20 +59,20 @@ class LoyaltyWallet(models.Model):
     transaction_ids = fields.One2many(
         "loyalty.wallet.transaction", "wallet_id", string="Movimientos"
     )
-    balance = fields.Monetary(
+    balance = fields.Float(
         string="Saldo disponible",
         currency_field="currency_id",
         compute="_compute_totals",
         store=True,
         tracking=True,
     )
-    total_credited = fields.Monetary(
+    total_credited = fields.Float(
         string="Total acumulado",
         currency_field="currency_id",
         compute="_compute_totals",
         store=True,
     )
-    total_debited = fields.Monetary(
+    total_debited = fields.Float(
         string="Total utilizado",
         currency_field="currency_id",
         compute="_compute_totals",
