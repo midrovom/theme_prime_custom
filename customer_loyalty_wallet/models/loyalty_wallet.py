@@ -244,7 +244,6 @@ class LoyaltyWalletTransaction(models.Model):
         related="wallet_id.currency_id",
         store=True,
         readonly=True,
-        default=lambda self: self.env.company.currency_id.id
     )
     date = fields.Datetime(
         string="Fecha", required=True, default=fields.Datetime.now, index=True
