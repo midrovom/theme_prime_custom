@@ -275,7 +275,7 @@ class LoyaltyWalletTransaction(models.Model):
         required=True,
         currency_field="currency_id",
     )
-    signed_amount = fields.Monetary(
+    signed_amount = fields.float(
         string="Valor con signo",
         currency_field="currency_id",
         compute="_compute_signed_amount",
