@@ -327,10 +327,16 @@ class LoyaltyWalletTransaction(models.Model):
         ),
     ]
 
+    # @api.depends("amount", "transaction_type")
+    # def _compute_signed_amount(self):
+    #     for tx in self:
+    #         tx.signed_amount = tx.amount if tx.transaction_type == "credit" else -tx.amount
+
     @api.depends("amount", "transaction_type")
     def _compute_signed_amount(self):
         for tx in self:
-            tx.signed_amount = tx.amount if tx.transaction_type == "credit" else -tx.amount
+            amount = tx.amount or 0.0
+            tx.signed_amount = amount if tx.transaction_type == "credit" else -amount
 
     def _compute_reversal_id(self):
         reversals = self.search([("reversal_of_id", "in", self.ids)])
