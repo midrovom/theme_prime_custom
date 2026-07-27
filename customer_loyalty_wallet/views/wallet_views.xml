@@ -86,8 +86,7 @@
                                     <field name="reason"/>
                                     <field name="description"/>
                                     <field name="reference" optional="show"/>
-                                    <!-- <field name="signed_amount" sum="Neto"/> -->
-                                    <field name="signed_amount" />
+                                    <field name="signed_amount" sum="Neto"/>
                                     <field name="state" widget="badge"/>
                                 </list>
                             </field>
