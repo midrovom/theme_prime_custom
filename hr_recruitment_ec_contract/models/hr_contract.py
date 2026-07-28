@@ -13,8 +13,12 @@ class HrContract(models.Model):
     )
     company_config_id = fields.Many2one(
         "company.config",
-        string="Empresa Configurada"
+        string="Empresa Configurada",
+        related="contract_id.company_config_id",
+        store=True,
+        readonly=False,
     )
+
     ec_package_id = fields.Many2one(
         "hr.ec.onboarding.package",
         string="Paquete de contratación",
