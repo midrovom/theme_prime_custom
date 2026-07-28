@@ -44,7 +44,7 @@ class HrEcOnboardingPackage(models.Model):
     #     readonly=True,
     # )
 
-    company_id = fields.Many2one(
+    company_config_id = fields.Many2one(
         "company.config",
         string="Empresa",
         required=True
