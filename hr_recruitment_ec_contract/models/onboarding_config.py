@@ -13,6 +13,13 @@ class HrEcOnboardingConfig(models.Model):
         default=lambda self: self.env.company,
         ondelete="cascade",
     )
+    company_config_id = fields.Many2one(
+        "company.config",
+        string="Empresa",
+        related="contract_id.company_config_id",
+        store=True,
+        readonly=True,
+    )
     auto_create_employee = fields.Boolean(
         string="Crear empleado automáticamente",
         default=True,
