@@ -6,4 +6,4 @@ access_hr_ec_onboarding_package_user,hr.ec.onboarding.package user,model_hr_ec_o
 access_hr_ec_onboarding_package_manager,hr.ec.onboarding.package manager,model_hr_ec_onboarding_package,hr.group_hr_manager,1,1,1,1
 access_hr_ec_benefit_request_user,hr.ec.benefit.request user,model_hr_ec_benefit_request,hr.group_hr_user,1,1,1,0
 access_hr_ec_benefit_request_manager,hr.ec.benefit.request manager,model_hr_ec_benefit_request,hr.group_hr_manager,1,1,1,1
-access_company_config_manager,access.company.config.manager,model_company_config,base.group_hr_manager,1,1,1,1
+access_company_config_manager,access.company.config.manager,model_company_config,base.group_system,1,1,1,1
