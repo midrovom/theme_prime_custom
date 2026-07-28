@@ -43,17 +43,17 @@ class HrEcOnboardingPackage(models.Model):
         store=True,
         readonly=True,
     )
-
-    company_config_id = fields.Many2one(
-        "company.config",
-        string="Empresa"
-    )
-
+    contract_id = fields.Many2one("hr.contract", string="Contrato", copy=False, readonly=True)
     benefit_request_ids = fields.One2many(
         "hr.ec.benefit.request",
         "package_id",
         string="Solicitudes de décimos",
     )
+    company_config_id = fields.Many2one(
+        "company.config",
+        string="Empresa"
+    )
+
     contract_template_id = fields.Many2one(
         "hr.ec.document.template",
         string="Plantilla de contrato",
@@ -186,7 +186,7 @@ class HrEcOnboardingPackage(models.Model):
             "name": _("Contrato - %(employee)s", employee=self.employee_id.name),
             "employee_id": self.employee_id.id,
             "company_id": self.company_id.id,
-            "company_config_id": self.company_config_id.id, #nuevo
+            "company_config_id": self.company_config_id.id,
             "job_id": applicant.job_id.id,
             "department_id": applicant.department_id.id,
             "date_start": date_start,
