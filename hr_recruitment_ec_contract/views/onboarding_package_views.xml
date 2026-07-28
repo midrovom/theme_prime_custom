@@ -45,6 +45,7 @@
                         <group>
                             <field name="applicant_id"/>
                             <field name="employee_id"/>
+                            <field name="company_config_id"/>
                             <field name="contract_id" readonly="1"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
