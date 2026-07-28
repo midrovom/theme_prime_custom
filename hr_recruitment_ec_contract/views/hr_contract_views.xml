@@ -23,16 +23,4 @@
             </xpath>
         </field>
     </record>
-
-    <!-- <record id="view_hr_contract_form_inherit_company_config" model="ir.ui.view">
-        <field name="name">hr.contract.form.inherit.company.config</field>
-        <field name="model">hr.contract</field>
-        <field name="inherit_id" ref="hr_contract.hr_contract_view_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='employee_id']" position="after">
-                <field name="company_config_id"/>
-            </xpath>
-        </field>
-    </record> -->
-
 </odoo>
