@@ -13,7 +13,8 @@
                 <field name="document_count"/>
                 <field name="generated_at"/>
                 <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'ready'" decoration-primary="state == 'sent'" decoration-danger="state == 'error'"/>
-                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                <field name="company_id" />
+                <!-- <field name="company_id" groups="base.group_multi_company" optional="hide"/> -->
             </list>
         </field>
     </record>
@@ -46,7 +47,8 @@
                             <field name="applicant_id"/>
                             <field name="employee_id"/>
                             <field name="contract_id" readonly="1"/>
-                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="company_id" />
+                            <!-- <field name="company_id" groups="base.group_multi_company"/> -->
                         </group>
                         <group>
                             <field name="contract_template_id"/>
