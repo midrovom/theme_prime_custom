@@ -37,16 +37,16 @@ class HrEcOnboardingPackage(models.Model):
         ondelete="cascade",
         tracking=True,
     )
-    # company_id = fields.Many2one(
-    #     "res.company",
-    #     related="employee_id.company_id",
-    #     store=True,
-    #     readonly=True,
-    # )
+    company_id = fields.Many2one(
+        "res.company",
+        related="employee_id.company_id",
+        store=True,
+        readonly=True,
+    )
 
     company_config_id = fields.Many2one(
         "company.config",
-        string="Empresa",
+        string="Empresa Configurada",
         required=True
     )
 
