@@ -246,6 +246,7 @@ class HrEcOnboardingPackage(models.Model):
             "request_date": fields.Date.today(),
             "accumulate": True,
             "template_id": template.id,
+            "company_config_id": self.company_config_id.id,
         }
         if request:
             request.write(vals)
