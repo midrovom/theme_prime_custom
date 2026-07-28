@@ -28,10 +28,6 @@ class HrContract(models.Model):
         copy=False,
         readonly=True,
     )
-    company_config_id = fields.Many2one(
-        "company.config",
-        string="Empresa"
-    )
 
     _sql_constraints = [
         (
