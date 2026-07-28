@@ -44,6 +44,7 @@ class HrEcOnboardingPackage(models.Model):
         readonly=True,
     )
 
+    company_config_id = fields.Many2one("company.config", string="Empresa")
 
     contract_id = fields.Many2one("hr.contract", string="Contrato", copy=False, readonly=True)
     benefit_request_ids = fields.One2many(
