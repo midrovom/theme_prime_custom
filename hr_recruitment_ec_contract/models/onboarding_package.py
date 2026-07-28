@@ -184,6 +184,7 @@ class HrEcOnboardingPackage(models.Model):
             "name": _("Contrato - %(employee)s", employee=self.employee_id.name),
             "employee_id": self.employee_id.id,
             "company_id": self.company_id.id,
+            "company_config_id": self.company_config_id.id, #nuevo
             "job_id": applicant.job_id.id,
             "department_id": applicant.department_id.id,
             "date_start": date_start,
