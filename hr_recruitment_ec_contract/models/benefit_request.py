@@ -54,6 +54,8 @@ class HrEcBenefitRequest(models.Model):
     template_id = fields.Many2one("hr.ec.document.template", string="Plantilla")
     rendered_text = fields.Html(string="Texto generado", sanitize=False)
     attachment_id = fields.Many2one("ir.attachment", string="PDF generado", copy=False, readonly=True)
+
+    contract_id = fields.Many2one("hr.contract", string="Contrato", copy=False, readonly=True)
     company_config_id = fields.Many2one(
         "company.config",
         string="Empresa",
