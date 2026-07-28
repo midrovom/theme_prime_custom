@@ -21,6 +21,7 @@
         "views/onboarding_package_views.xml",
         "views/hr_applicant_views.xml",
         "views/hr_contract_views.xml",
+        'views/company_views.xml',
         "report/report_actions.xml",
         "report/report_templates.xml",
         "views/menu_views.xml",
