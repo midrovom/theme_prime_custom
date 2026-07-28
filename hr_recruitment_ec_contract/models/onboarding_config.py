@@ -13,6 +13,7 @@ class HrEcOnboardingConfig(models.Model):
         default=lambda self: self.env.company,
         ondelete="cascade",
     )
+    contract_id = fields.Many2one("hr.contract", string="Contrato")
     company_config_id = fields.Many2one(
         "company.config",
         string="Empresa",
