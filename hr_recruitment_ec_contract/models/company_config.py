@@ -1,21 +1,26 @@
 from odoo import models, fields
 
-class HrEcOnboardingConfig(models.Model):
-    _name = 'company.config'
-    _description = 'Configuración de Empresas'
+# class HrEcOnboardingConfig(models.Model):
+#     _name = 'company.config'
+#     _description = 'Configuración de Empresas'
 
-    name = fields.Char(string='Nombre de la Empresa', required=True)
-    activo = fields.Boolean(string='Activo', default=True)
-    ruc_empresa = fields.Char(string='RUC de la Empresa', required=True)
-    representante_legal = fields.Char(string='Nombre del Representante Legal')
-    ruc_representante = fields.Char(string='RUC del Representante Legal')
-    correo_representante = fields.Char(string='Correo del Representante Legal')
+#     name = fields.Char(string='Nombre de la Empresa', required=True)
+#     activo = fields.Boolean(string='Activo', default=True)
+#     ruc_empresa = fields.Char(string='RUC de la Empresa', required=True)
+#     representante_legal = fields.Char(string='Nombre del Representante Legal')
+#     ruc_representante = fields.Char(string='RUC del Representante Legal')
+#     correo_representante = fields.Char(string='Correo del Representante Legal')
 
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
+    # company_config_id = fields.Many2one(
+    #     "company.config",
+    #     string="Empresa Afiliada",
+    # )
+
     company_config_id = fields.Many2one(
-        "company.config",
+        "res.partner",
         string="Empresa Afiliada",
     )
 
