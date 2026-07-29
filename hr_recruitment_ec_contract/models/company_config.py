@@ -1,4 +1,4 @@
-from odoo import models, fields
+from odoo import models, fields, api
 
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
@@ -40,3 +40,7 @@ class HrEmployee(models.Model):
                             automatic_onboarding_generation=True
                         ).action_generate_documents()
         return res
+
+    @api.onchange('company_config_id')
+    def _onchange_company_config_id(self):
+            self.sucursal_id = False
