@@ -13,7 +13,7 @@
         <field name="body_html" type="html">
             <div>
                 <h2 style="text-align:center;">CONTRATO DE TRABAJO</h2>
-                <p>Comparecen la compañía <strong><t t-out="object.compcompany_config_idany_id.name"/></strong> y el/la trabajador/a <strong><t t-out="object.employee_id.name"/></strong>, con identificación <strong><t t-out="object.employee_id.identification_id"/></strong>.</p>
+                <p>Comparecen la compañía <strong><t t-out="object.company_config_id.name"/></strong> y el/la trabajador/a <strong><t t-out="object.employee_id.name"/></strong>, con identificación <strong><t t-out="object.employee_id.identification_id"/></strong>.</p>
                 <p>El/la trabajador/a prestará sus servicios en el cargo de <strong><t t-out="object.job_id.name"/></strong>, desde el <strong><t t-out="object.date_start"/></strong>, con una remuneración mensual de <strong><t t-out="object.wage"/></strong>.</p>
                 <p>Las funciones, jornada, obligaciones, beneficios y demás condiciones se sujetarán a la normativa aplicable, a las políticas internas vigentes y a los acuerdos válidamente incorporados en este documento.</p>
                 <p>Este texto es una plantilla editable. Debe ser revisado y adaptado por la empresa antes de utilizarse como documento definitivo.</p>
