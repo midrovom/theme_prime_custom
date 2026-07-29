@@ -393,15 +393,3 @@ class HrEcOnboardingPackage(models.Model):
             "context": {"default_package_id": self.id, "default_employee_id": self.employee_id.id},
         }
 
-    def write(self, vals):
-        regenerate = "company_config_id" in vals
-
-        res = super().write(vals)
-
-        if regenerate:
-            for package in self:
-                package._ensure_contract()
-                package._ensure_benefit_request("thirteenth")
-                package._ensure_benefit_request("fourteenth")
-
-        return res
