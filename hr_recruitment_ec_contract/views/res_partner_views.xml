@@ -5,10 +5,12 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='mobile']" position="inside">
-                <field name="representante_legal" invisible="company_type != 'company'"/>
-                <field name="ruc_representante" invisible="company_type != 'company'"/>
-                <field name="correo_representante" invisible="company_type != 'company'"/>
+            <xpath expr="//group/field[@name='email']" position="after">
+                <group invisible="company_type != 'company'">
+                    <field name="representante_legal"/>
+                    <field name="ruc_representante"/>
+                    <field name="correo_representante"/>
+                </group>
             </xpath>
         </field>
     </record>
