@@ -16,28 +16,29 @@ class HrEmployee(models.Model):
     )
 
     def write(self, vals):
-            old_company_config = {
-                employee.id: employee.company_config_id.id
-                for employee in self
-            }
+        old_company_config = {
+            employee.id: employee.company_config_id.id
+            for employee in self
+        }
 
-            res = super().write(vals)
-            if "company_config_id" in vals:
+        res = super().write(vals)
 
-                employees_to_update = self.filtered(lambda e: old_company_config.get(e.id)
-                    != e.company_config_id.id
-                    and e.company_config_id
-                )
+        if "company_config_id" in vals:
+            for employee in self:
+                old_value = old_company_config.get(employee.id)
+                new_value = employee.company_config_id.id
+                if old_value != new_value and new_value:
 
-                if employees_to_update:
-                    def generate_documents():
-                        packages = self.env["hr.ec.onboarding.package"].sudo().search([
-                            ("employee_id", "in", employees_to_update.ids),
-                        ])
-                        if packages:
-                            packages.with_context(
-                                automatic_onboarding_generation=True,
-                                skip_employee_company_generation=True,
-                            ).action_generate_documents()
-                    self.env.cr.postcommit.add(generate_documents)
-            return res
+                    packages = self.env[
+                        "hr.ec.onboarding.package"
+                    ].sudo().search([
+                        ("employee_id", "=", employee.id),
+                    ])
+
+                    if packages:
+
+                        packages.with_context(
+                            automatic_onboarding_generation=True
+                        ).action_generate_documents()
+        return res
+    
