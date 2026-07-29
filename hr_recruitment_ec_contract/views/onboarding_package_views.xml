@@ -85,6 +85,9 @@
                         <page string="Ficha generada">
                             <field name="employee_file_html" widget="html" nolabel="1"/>
                         </page>
+                        <page string="Autorizaciòn correo">
+                            <!-- <field name="employee_file_html" widget="html" nolabel="1"/> -->
+                        </page>
                     </notebook>
                 </sheet>
                 <chatter/>
