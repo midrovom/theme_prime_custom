@@ -32,7 +32,7 @@ class HrEcOnboardingPackage(models.Model):
     )
 
     company_config_id = fields.Many2one(
-        "res.partner",
+        "empresa.empresa",
         related="employee_id.company_config_id",
         string="Empresa Afiliada",
         store=True,
