@@ -31,18 +31,11 @@ class HrEcBenefitRequest(models.Model):
     company_config_id = fields.Many2one(
         "company.config",
         related="employee_id.company_config_id",
-        string="Empresa Configurada",
+        string="Empresa Afiliada",
         store=True,
         readonly=True,
     )
 
-    # company_config_id = fields.Many2one(
-    #     "company.config",
-    #     related="package_id.company_config_id",
-    #     string="Empresa Configurada",
-    #     store=True,
-    #     readonly=True,
-    # )
     applicant_id = fields.Many2one("hr.applicant", string="Candidato", ondelete="set null")
     package_id = fields.Many2one("hr.ec.onboarding.package", string="Paquete", ondelete="set null")
     benefit_type = fields.Selection(

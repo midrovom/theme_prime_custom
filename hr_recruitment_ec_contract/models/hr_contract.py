@@ -15,7 +15,7 @@ class HrContract(models.Model):
     company_config_id = fields.Many2one(
         "company.config",
         related="employee_id.company_config_id",
-        string="Empresa Configurada",
+        string="Empresa Afiliada",
         store=True,
         readonly=True,
     )
