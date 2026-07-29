@@ -5,6 +5,10 @@ class HrEcOnboardingConfig(models.Model):
     _description = 'Configuración de Empresas'
 
     name = fields.Char(string='Nombre de la Empresa', required=True)
+    ruc_empresa = fields.Char(string='RUC de la Empresa', required=True)
+    representante_legal = fields.Char(string='Nombre del Representante Legal')
+    ruc_representante = fields.Char(string='RUC del Representante Legal')
+    correo_representante = fields.Char(string='Correo del Representante Legal')
     activo = fields.Boolean(string='Activo', default=True)
 
 class HrEmployee(models.Model):
