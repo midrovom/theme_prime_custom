@@ -23,6 +23,7 @@
         "views/hr_contract_views.xml",
         # 'views/company_views.xml',
         'views/employee_views.xml',
+        'views/res_partner_views.xml',
         "report/report_actions.xml",
         "report/report_templates.xml",
         "views/menu_views.xml",

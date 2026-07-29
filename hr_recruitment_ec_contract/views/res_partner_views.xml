@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_inherit_company" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.company</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='is_company']" position="after">
+                <group attrs="{'invisible': [('is_company','=',False)]}">
+                    <field name="representante_legal"/>
+                    <field name="ruc_representante"/>
+                    <field name="correo_representante"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
