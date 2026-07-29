@@ -169,154 +169,25 @@ class HrEcOnboardingPackage(models.Model):
             return current_attachment
         return self.env["ir.attachment"].sudo().create(vals)
 
-    # def _ensure_contract(self):
-    #     self.ensure_one()
-    #     applicant = self.applicant_id
-    #     template = self.contract_template_id
-    #     if not template:
-    #         raise ValidationError(_("Debe configurar una plantilla de contrato para la compañía o el candidato."))
-
-    #     date_start = applicant.ec_contract_date_start or applicant.availability or fields.Date.today()
-    #     wage = applicant.ec_contract_wage or applicant.salary_proposed or template.default_wage or 0.0
-    #     date_end = applicant.ec_contract_date_end
-    #     if not date_end and template.duration_months:
-    #         date_end = date_start + relativedelta(months=template.duration_months, days=-1)
-    #     trial_date_end = date_start + timedelta(days=template.trial_days) if template.trial_days else False
-
-    #     contract = self.contract_id or self.env["hr.contract"].sudo().search(
-    #         [("ec_applicant_id", "=", applicant.id)], limit=1
-    #     )
-    #     vals = {
-    #         "name": _("Contrato - %(employee)s", employee=self.employee_id.name),
-    #         "employee_id": self.employee_id.id,
-    #         "company_id": self.company_id.id,
-    #         "job_id": applicant.job_id.id,
-    #         "department_id": applicant.department_id.id,
-    #         "date_start": date_start,
-    #         "date_end": date_end,
-    #         "trial_date_end": trial_date_end,
-    #         "wage": wage,
-    #         "contract_type_id": template.contract_type_id.id,
-    #         "ec_applicant_id": applicant.id,
-    #         "ec_package_id": self.id,
-    #         "ec_document_template_id": template.id,
-    #     }
-    #     if contract:
-    #         contract.write(vals)
-    #     else:
-    #         contract = self.env["hr.contract"].sudo().create(vals)
-    #     _logger.info("Contrato %s - ec_package_id=%s - company_config=%s", contract.id,
-    #         contract.ec_package_id.id, contract.company_config_id.name,)
-    #     contract.ec_rendered_text = template.render_document(contract)
-    #     attachment_name = "%s.pdf" % self._safe_filename(_("Contrato_%s", self.employee_id.name))
-    #     attachment = self._upsert_pdf_attachment(
-    #         contract.ec_attachment_id,
-    #         attachment_name,
-    #         "hr_recruitment_ec_contract.action_report_ec_contract",
-    #         contract,
-    #     )
-    #     contract.ec_attachment_id = attachment.id
-    #     self.contract_id = contract.id
-    #     return attachment
-
-    # def _ensure_benefit_request(self, benefit_type):
-    #     self.ensure_one()
-    #     config = self.env["hr.ec.onboarding.config"].get_company_config(self.company_id)
-    #     enabled = (
-    #         config.generate_thirteenth_request
-    #         if benefit_type == "thirteenth"
-    #         else config.generate_fourteenth_request
-    #     )
-    #     if not enabled:
-    #         return self.env["ir.attachment"]
-
-    #     template = self._get_template(benefit_type)
-    #     if not template:
-    #         raise ValidationError(_("No existe una plantilla activa para %(type)s.", type=benefit_type))
-    #     year = (self.contract_id.date_start or fields.Date.today()).year
-    #     request = self.env["hr.ec.benefit.request"].sudo().search([
-    #         ("employee_id", "=", self.employee_id.id),
-    #         ("year", "=", year),
-    #         ("benefit_type", "=", benefit_type),
-    #     ], limit=1)
-    #     vals = {
-    #         "employee_id": self.employee_id.id,
-    #         "applicant_id": self.applicant_id.id,
-    #         "package_id": self.id,
-    #         "benefit_type": benefit_type,
-    #         "year": year,
-    #         "request_date": fields.Date.today(),
-    #         "accumulate": True,
-    #         "template_id": template.id,
-    #     }
-    #     if request:
-    #         request.write(vals)
-    #     else:
-    #         request = self.env["hr.ec.benefit.request"].sudo().create(vals)
-    #     request.rendered_text = template.render_document(request)
-    #     label = "Decimo_Tercero" if benefit_type == "thirteenth" else "Decimo_Cuarto"
-    #     attachment_name = "%s.pdf" % self._safe_filename("%s_%s" % (label, self.employee_id.name))
-    #     attachment = self._upsert_pdf_attachment(
-    #         request.attachment_id,
-    #         attachment_name,
-    #         "hr_recruitment_ec_contract.action_report_ec_benefit_request",
-    #         request,
-    #     )
-    #     request.attachment_id = attachment.id
-    #     return attachment
-
     def _ensure_contract(self):
         self.ensure_one()
-
-        if not self.employee_id.company_config_id:
-            raise ValidationError(
-                _("El empleado no tiene una Empresa Afiliada configurada.")
-            )
-
         applicant = self.applicant_id
         template = self.contract_template_id
-
         if not template:
-            raise ValidationError(
-                _("Debe configurar una plantilla de contrato para la compañía o el candidato.")
-            )
+            raise ValidationError(_("Debe configurar una plantilla de contrato para la compañía o el candidato."))
 
-        date_start = (
-            applicant.ec_contract_date_start
-            or applicant.availability
-            or fields.Date.today()
-        )
-
-        wage = (
-            applicant.ec_contract_wage
-            or applicant.salary_proposed
-            or template.default_wage
-            or 0.0
-        )
-
+        date_start = applicant.ec_contract_date_start or applicant.availability or fields.Date.today()
+        wage = applicant.ec_contract_wage or applicant.salary_proposed or template.default_wage or 0.0
         date_end = applicant.ec_contract_date_end
-
         if not date_end and template.duration_months:
-            date_end = date_start + relativedelta(
-                months=template.duration_months,
-                days=-1,
-            )
-
-        trial_date_end = (
-            date_start + timedelta(days=template.trial_days)
-            if template.trial_days
-            else False
-        )
+            date_end = date_start + relativedelta(months=template.duration_months, days=-1)
+        trial_date_end = date_start + timedelta(days=template.trial_days) if template.trial_days else False
 
         contract = self.contract_id or self.env["hr.contract"].sudo().search(
-            [
-                ("ec_applicant_id", "=", applicant.id)
-            ],
-            limit=1,
+            [("ec_applicant_id", "=", applicant.id)], limit=1
         )
-
         vals = {
-            "name": _("Contrato - %(employee)s", employee=self.employee_id.name,),
+            "name": _("Contrato - %(employee)s", employee=self.employee_id.name),
             "employee_id": self.employee_id.id,
             "company_id": self.company_id.id,
             "job_id": applicant.job_id.id,
@@ -330,74 +201,44 @@ class HrEcOnboardingPackage(models.Model):
             "ec_package_id": self.id,
             "ec_document_template_id": template.id,
         }
-
         if contract:
             contract.write(vals)
         else:
             contract = self.env["hr.contract"].sudo().create(vals)
+        _logger.info("Contrato %s - ec_package_id=%s - company_config=%s", contract.id,
+            contract.ec_package_id.id, contract.company_config_id.name,)
         contract.ec_rendered_text = template.render_document(contract)
-        attachment_name = "%s.pdf" % self._safe_filename(
-            _("Contrato_%s", self.employee_id.name)
-        )
-
+        attachment_name = "%s.pdf" % self._safe_filename(_("Contrato_%s", self.employee_id.name))
         attachment = self._upsert_pdf_attachment(
             contract.ec_attachment_id,
             attachment_name,
             "hr_recruitment_ec_contract.action_report_ec_contract",
             contract,
         )
-
         contract.ec_attachment_id = attachment.id
         self.contract_id = contract.id
         return attachment
 
-
     def _ensure_benefit_request(self, benefit_type):
         self.ensure_one()
-
-        if not self.employee_id.company_config_id:
-            raise ValidationError(
-                _("El empleado no tiene una Empresa Afiliada configurada.")
-            )
-
-        config = self.env["hr.ec.onboarding.config"].get_company_config(
-            self.company_id
-        )
-
+        config = self.env["hr.ec.onboarding.config"].get_company_config(self.company_id)
         enabled = (
             config.generate_thirteenth_request
             if benefit_type == "thirteenth"
             else config.generate_fourteenth_request
         )
-
         if not enabled:
             return self.env["ir.attachment"]
 
         template = self._get_template(benefit_type)
-
         if not template:
-            raise ValidationError(
-                _(
-                    "No existe una plantilla activa para %(type)s.",
-                    type=benefit_type,
-                )
-            )
-
-        year = (
-            self.contract_id.date_start.year
-            if self.contract_id and self.contract_id.date_start
-            else fields.Date.today().year
-        )
-
-        request = self.env["hr.ec.benefit.request"].sudo().search(
-            [
-                ("employee_id", "=", self.employee_id.id),
-                ("year", "=", year),
-                ("benefit_type", "=", benefit_type),
-            ],
-            limit=1,
-        )
-
+            raise ValidationError(_("No existe una plantilla activa para %(type)s.", type=benefit_type))
+        year = (self.contract_id.date_start or fields.Date.today()).year
+        request = self.env["hr.ec.benefit.request"].sudo().search([
+            ("employee_id", "=", self.employee_id.id),
+            ("year", "=", year),
+            ("benefit_type", "=", benefit_type),
+        ], limit=1)
         vals = {
             "employee_id": self.employee_id.id,
             "applicant_id": self.applicant_id.id,
@@ -408,25 +249,13 @@ class HrEcOnboardingPackage(models.Model):
             "accumulate": True,
             "template_id": template.id,
         }
-
         if request:
             request.write(vals)
         else:
             request = self.env["hr.ec.benefit.request"].sudo().create(vals)
-
         request.rendered_text = template.render_document(request)
-
-        label = (
-            "Decimo_Tercero"
-            if benefit_type == "thirteenth"
-            else "Decimo_Cuarto"
-        )
-        attachment_name = "%s.pdf" % self._safe_filename(
-            "%s_%s" % (
-                label,
-                self.employee_id.name,
-            )
-        )
+        label = "Decimo_Tercero" if benefit_type == "thirteenth" else "Decimo_Cuarto"
+        attachment_name = "%s.pdf" % self._safe_filename("%s_%s" % (label, self.employee_id.name))
         attachment = self._upsert_pdf_attachment(
             request.attachment_id,
             attachment_name,
