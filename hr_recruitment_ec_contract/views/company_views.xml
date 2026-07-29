@@ -14,7 +14,7 @@
                 <field name="representante_legal"/>
                 <field name="ruc_representante"/>
                 <field name="correo_representante"/>
-            </list>
+            </list> 
         </field> 
     </record>
 
@@ -37,11 +37,18 @@
                     <notebook>
                         <page string="Sucursales">
                             <field name="sucursal_ids">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field name="name"/>
                                     <field name="direccion"/>
                                     <field name="ciudad"/>
-                                </tree>
+                                </list>
+                                <form>
+                                    <group>
+                                        <field name="name"/>
+                                        <field name="direccion"/>
+                                        <field name="ciudad"/>
+                                    </group>
+                                </form>
                             </field>
                         </page>
                     </notebook>
@@ -49,6 +56,7 @@
             </form>
         </field>
     </record>
+
 
     <record id="action_company_config" model="ir.actions.act_window">
         <field name="name">Configuración de Empresas</field>

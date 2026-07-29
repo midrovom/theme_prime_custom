@@ -20,7 +20,7 @@ class Empresa(models.Model):
     ruc_representante = fields.Char(string="RUC Representante")
     correo_representante = fields.Char(string="Correo Representante")
 
-    sucursal_ids = fields.One2many(
+    sucursal_ids = fields.One2many( 
         'empresa.sucursal',
         'empresa_id',
         string="Sucursales"
