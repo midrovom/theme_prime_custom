@@ -19,7 +19,7 @@
         <field name="arch" type="xml">
             <xpath expr="//group//field[@name='category_ids']" position="after">
                 <field name="company_config_id"/>
-                <field name="sucursal_id"/>
+                <!-- <field name="sucursal_id"/> -->
             </xpath>
         </field>
     </record>
