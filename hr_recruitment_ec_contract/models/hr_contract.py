@@ -12,12 +12,17 @@ class HrContract(models.Model):
         index=True,
     )
 
+    # company_config_id = fields.Many2one(
+    #     "company.config",
+    #     related="ec_package_id.company_config_id",
+    #     string="Empresa",
+    #     store=True,
+    #     readonly=True,
+    # )
+
     company_config_id = fields.Many2one(
         "company.config",
-        related="ec_package_id.company_config_id",
         string="Empresa",
-        store=True,
-        readonly=True,
     )
 
     ec_package_id = fields.Many2one(

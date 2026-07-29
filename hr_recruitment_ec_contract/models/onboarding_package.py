@@ -187,6 +187,7 @@ class HrEcOnboardingPackage(models.Model):
             "name": _("Contrato - %(employee)s", employee=self.employee_id.name),
             "employee_id": self.employee_id.id,
             "company_id": self.company_id.id,
+            "company_config_id": self.company_config_id.id,
             "job_id": applicant.job_id.id,
             "department_id": applicant.department_id.id,
             "date_start": date_start,
@@ -240,6 +241,7 @@ class HrEcOnboardingPackage(models.Model):
             "employee_id": self.employee_id.id,
             "applicant_id": self.applicant_id.id,
             "package_id": self.id,
+            "company_config_id": self.company_config_id.id,
             "benefit_type": benefit_type,
             "year": year,
             "request_date": fields.Date.today(),
@@ -250,9 +252,6 @@ class HrEcOnboardingPackage(models.Model):
             request.write(vals)
         else:
             request = self.env["hr.ec.benefit.request"].sudo().create(vals)
-            _logger.info("Solicitud %s - package=%s - company_config=%s", request.id,
-                request.package_id.id, request.company_config_id.name,
-            )
         request.rendered_text = template.render_document(request)
         label = "Decimo_Tercero" if benefit_type == "thirteenth" else "Decimo_Cuarto"
         attachment_name = "%s.pdf" % self._safe_filename("%s_%s" % (label, self.employee_id.name))
@@ -392,3 +391,30 @@ class HrEcOnboardingPackage(models.Model):
             "context": {"default_package_id": self.id, "default_employee_id": self.employee_id.id},
         }
 
+    def write(self, vals):
+        res = super().write(vals)
+
+        if "company_config_id" in vals:
+            for package in self:
+                # Actualizar contrato
+                if package.contract_id:
+                    package.contract_id.write({
+                        "company_config_id": package.company_config_id.id,
+                    })
+
+                # Actualizar solicitudes de beneficios
+                if package.benefit_request_ids:
+                    package.benefit_request_ids.write({
+                        "company_config_id": package.company_config_id.id,
+                    })
+
+                # Actualizar empleado (si agregaste el campo)
+                if hasattr(package.employee_id, "company_config_id"):
+                    package.employee_id.write({
+                        "company_config_id": package.company_config_id.id,
+                    })
+
+                # Regenerar documentos y PDFs
+                package.action_generate_documents()
+
+        return res
