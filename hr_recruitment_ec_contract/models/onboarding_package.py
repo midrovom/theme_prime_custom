@@ -203,6 +203,8 @@ class HrEcOnboardingPackage(models.Model):
             contract.write(vals)
         else:
             contract = self.env["hr.contract"].sudo().create(vals)
+        _logger.info("Contrato %s - ec_package_id=%s - company_config=%s", contract.id,
+            contract.ec_package_id.id, contract.company_config_id.name,)
         contract.ec_rendered_text = template.render_document(contract)
         attachment_name = "%s.pdf" % self._safe_filename(_("Contrato_%s", self.employee_id.name))
         attachment = self._upsert_pdf_attachment(
@@ -249,6 +251,9 @@ class HrEcOnboardingPackage(models.Model):
             request.write(vals)
         else:
             request = self.env["hr.ec.benefit.request"].sudo().create(vals)
+            _logger.info("Solicitud %s - package=%s - company_config=%s", request.id,
+                request.package_id.id, request.company_config_id.name,
+            )
         request.rendered_text = template.render_document(request)
         label = "Decimo_Tercero" if benefit_type == "thirteenth" else "Decimo_Cuarto"
         attachment_name = "%s.pdf" % self._safe_filename("%s_%s" % (label, self.employee_id.name))
@@ -387,3 +392,16 @@ class HrEcOnboardingPackage(models.Model):
             "domain": [("package_id", "=", self.id)],
             "context": {"default_package_id": self.id, "default_employee_id": self.employee_id.id},
         }
+
+    def write(self, vals):
+        regenerate = "company_config_id" in vals
+
+        res = super().write(vals)
+
+        if regenerate:
+            for package in self:
+                package._ensure_contract()
+                package._ensure_benefit_request("thirteenth")
+                package._ensure_benefit_request("fourteenth")
+
+        return res
