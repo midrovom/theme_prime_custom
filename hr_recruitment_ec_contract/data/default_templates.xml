@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<odoo>
     <record id="contract_type_general_ec" model="hr.contract.type">
         <field name="name">Contrato laboral general EC</field>
     </record>
