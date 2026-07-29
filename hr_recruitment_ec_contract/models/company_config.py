@@ -14,13 +14,3 @@ class HrEmployee(models.Model):
         "company.config",
         string="Empresa Afiliada",
     )
-
-    def write(self, vals):
-        res = super().write(vals)
-
-        if "company_config_id" in vals:
-            for package in self:
-                if package.employee_id:
-                    package.employee_id.company_config_id = package.company_config_id.id
-
-        return res
