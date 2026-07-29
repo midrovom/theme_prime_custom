@@ -12,9 +12,7 @@ class HrEmployee(models.Model):
 
     company_config_id = fields.Many2one(
         "company.config",
-        string="Empresa Configurada",
-        ondelete="set null",
-        copy=False,
+        string="Empresa Afiliada",
     )
 
     def write(self, vals):

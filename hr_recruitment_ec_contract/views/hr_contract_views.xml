@@ -29,7 +29,7 @@
         <field name="model">hr.employee</field>
         <field name="inherit_id" ref="hr.view_employee_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='company_id']" position="after">
+            <xpath expr="//group//field[@name='category_ids']" position="after">
                 <field name="company_config_id"/>
             </xpath>
         </field>
