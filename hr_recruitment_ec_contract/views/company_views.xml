@@ -8,12 +8,14 @@
         <field name="arch" type="xml">
             <list string="Empresa">
                 <field name="name"/>
-                <field name="ruc_empresa"/>
+                <field name="ruc"/>
+                <field name="correo"/>
+                <field name="direccion" />
                 <field name="representante_legal"/>
                 <field name="ruc_representante"/>
-                <field name="correo_representante "/>
+                <field name="correo_representante"/>
             </list>
-        </field>
+        </field> 
     </record>
 
     <!-- Vista Form -->
@@ -25,16 +27,18 @@
                 <sheet>
                     <group>
                         <field name="name"/>
-                        <field name="ruc_empresa"/>
+                        <field name="ruc"/>
+                        <field name="correo"/>
+                        <field name="direccion"/>
                         <field name="representante_legal"/>
                         <field name="ruc_representante"/>
-                        <field name="correo_representante "/>
-                    </group>
+                        <field name="correo_representante"/>
+                    </group> 
                     <notebook>
                         <page string="Sucursales">
                             <field name="sucursal_ids">
                                 <tree editable="bottom">
-                                    <field name="nombre"/>
+                                    <field name="name"/>
                                     <field name="direccion"/>
                                     <field name="ciudad"/>
                                 </tree>

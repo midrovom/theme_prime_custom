@@ -11,9 +11,9 @@ class Empresa(models.Model):
     _name = 'empresa.empresa'
     _description = 'Empresa'
 
-    nombre = fields.Char(string="Nombre de la empresa", required=True)
+    name = fields.Char(string="Nombre de la empresa", required=True)
     ruc = fields.Char(string="RUC", required=True)
-    correo = fields.Char(string="Correo")
+    correo = fields.Char(string="Correo") 
     direccion = fields.Char(string="Dirección")
 
     representante_legal = fields.Char(string="Representante Legal")
@@ -25,12 +25,12 @@ class Empresa(models.Model):
         'empresa_id',
         string="Sucursales"
     )
-
+ 
 class Sucursal(models.Model):
     _name = 'empresa.sucursal'
     _description = 'Sucursal'
 
-    nombre = fields.Char(string="Nombre de la sucursal", required=True)
+    name = fields.Char(string="Nombre de la sucursal", required=True)
     direccion = fields.Char(string="Dirección")
     ciudad = fields.Char(string="Ciudad")
 
