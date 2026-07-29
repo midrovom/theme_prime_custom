@@ -8,6 +8,12 @@ class HrEmployee(models.Model):
         string="Empresa Afiliada",
     )
 
+    sucursal_id = fields.Many2one(
+        "empresa.sucursal",
+        string="Sucursal",
+        domain="[('empresa_id', '=', company_config_id)]"
+    )
+
     def write(self, vals):
         old_company_config = {
             employee.id: employee.company_config_id.id
