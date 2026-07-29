@@ -47,7 +47,7 @@
                             <field name="employee_id"/>
                             <field name="company_config_id" readonly="1"/>
                             <field name="contract_id" readonly="1"/>
-                            <field name="sucursal_id"/>
+                            <field name="sucursal_id" readonly="1"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                         <group>
