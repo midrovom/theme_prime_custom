@@ -33,7 +33,7 @@ class HrEcOnboardingPackage(models.Model):
 
     company_config_id = fields.Many2one(
         "company.config",
-        string="Empresa Configurada",
+        string="Empresa",
         required=True,
     )
 
