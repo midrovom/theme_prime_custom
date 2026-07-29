@@ -46,6 +46,12 @@ class HrEcOnboardingPackage(models.Model):
         ondelete="cascade",
         tracking=True,
     )
+    sucursal_id = fields.Many2one(
+        related="employee_id.sucursal_id",
+        string="Sucursal",
+        store=True,
+        readonly=False
+    )
     company_id = fields.Many2one(
         "res.company",
         related="employee_id.company_id",
