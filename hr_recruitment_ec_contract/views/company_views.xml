@@ -57,7 +57,6 @@
         </field>
     </record>
 
-
     <record id="action_company_config" model="ir.actions.act_window">
         <field name="name">Configuración de Empresas</field>
         <field name="res_model">empresa.empresa</field>
