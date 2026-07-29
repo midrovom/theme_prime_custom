@@ -24,15 +24,4 @@
         </field>
     </record>
 
-    <record id="view_employee_form_inherit_company_config" model="ir.ui.view">
-        <field name="name">hr.employee.form.inherit.company.config</field>
-        <field name="model">hr.employee</field>
-        <field name="inherit_id" ref="hr.view_employee_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//group//field[@name='category_ids']" position="after">
-                <field name="company_config_id"/>
-            </xpath>
-        </field>
-    </record>
-
 </odoo>
