@@ -30,7 +30,10 @@ class HrEcBenefitRequest(models.Model):
 
     company_config_id = fields.Many2one(
         "company.config",
+        related="employee_id.company_config_id",
         string="Empresa Configurada",
+        store=True,
+        readonly=True,
     )
 
     # company_config_id = fields.Many2one(

@@ -12,8 +12,17 @@ class HrEmployee(models.Model):
 
     company_config_id = fields.Many2one(
         "company.config",
-        related="contract_id.company_config_id",
         string="Empresa Configurada",
-        readonly=True,
-        store=True,
+        ondelete="set null",
+        copy=False,
     )
+
+    def write(self, vals):
+        res = super().write(vals)
+
+        if "company_config_id" in vals:
+            for package in self:
+                if package.employee_id:
+                    package.employee_id.company_config_id = package.company_config_id.id
+
+        return res

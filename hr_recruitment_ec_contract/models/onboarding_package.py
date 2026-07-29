@@ -187,7 +187,6 @@ class HrEcOnboardingPackage(models.Model):
             "name": _("Contrato - %(employee)s", employee=self.employee_id.name),
             "employee_id": self.employee_id.id,
             "company_id": self.company_id.id,
-            "company_config_id": self.company_config_id.id,
             "job_id": applicant.job_id.id,
             "department_id": applicant.department_id.id,
             "date_start": date_start,
@@ -241,7 +240,6 @@ class HrEcOnboardingPackage(models.Model):
             "employee_id": self.employee_id.id,
             "applicant_id": self.applicant_id.id,
             "package_id": self.id,
-            "company_config_id": self.company_config_id.id,
             "benefit_type": benefit_type,
             "year": year,
             "request_date": fields.Date.today(),
@@ -396,25 +394,7 @@ class HrEcOnboardingPackage(models.Model):
 
         if "company_config_id" in vals:
             for package in self:
-                # Actualizar contrato
-                if package.contract_id:
-                    package.contract_id.write({
-                        "company_config_id": package.company_config_id.id,
-                    })
-
-                # Actualizar solicitudes de beneficios
-                if package.benefit_request_ids:
-                    package.benefit_request_ids.write({
-                        "company_config_id": package.company_config_id.id,
-                    })
-
-                # Actualizar empleado (si agregaste el campo)
-                if hasattr(package.employee_id, "company_config_id"):
-                    package.employee_id.write({
-                        "company_config_id": package.company_config_id.id,
-                    })
-
-                # Regenerar documentos y PDFs
-                package.action_generate_documents()
+                if package.employee_id:
+                    package.employee_id.company_config_id = package.company_config_id.id
 
         return res
