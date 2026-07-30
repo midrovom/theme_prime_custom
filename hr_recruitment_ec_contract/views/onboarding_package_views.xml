@@ -70,6 +70,9 @@
                                 <field name="attachment_ids" widget="many2many_binary" readonly="1"/>
                             </group>
                         </page>
+                        <page string="Ficha generada">
+                            <field name="employee_file_html" widget="html" nolabel="1"/>
+                        </page>
                         <page string="Solicitudes de décimos">
                             <field name="benefit_request_ids" readonly="1">
                                 <list>
@@ -81,9 +84,6 @@
                                     <field name="attachment_id"/>
                                 </list>
                             </field>
-                        </page>
-                        <page string="Ficha generada">
-                            <field name="employee_file_html" widget="html" nolabel="1"/>
                         </page>
                         <page string="Autorizaciòn rol de pago">
                             <field name="payroll_authorization_ids" readonly="1">
