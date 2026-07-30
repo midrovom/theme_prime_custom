@@ -39,7 +39,6 @@ class HrEcPayrollAuthorization(models.Model):
         default=fields.Date.today
     )
 
-
     applicant_id = fields.Many2one("hr.applicant", string="Candidato", ondelete="set null")
     package_id = fields.Many2one("hr.ec.onboarding.package", string="Paquete", ondelete="set null")
     template_id = fields.Many2one("hr.ec.document.template", string="Plantilla")
