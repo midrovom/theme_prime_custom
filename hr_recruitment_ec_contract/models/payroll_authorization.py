@@ -52,3 +52,8 @@ class HrEcPayrollAuthorization(models.Model):
                 if vals.get("name", _("Nuevo")) == _("Nuevo"):
                     vals["name"] = sequence.next_by_code("hr.ec.payroll.authorization") or _("Nuevo")
             return super().create(vals_list)
+
+    def action_print_request(self):
+        self.ensure_one()
+        return self.env.ref("hr_recruitment_ec_contract.action_report_payroll_email_authorization").report_action(self)
+
