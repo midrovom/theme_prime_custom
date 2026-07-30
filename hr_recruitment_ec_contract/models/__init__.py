@@ -7,3 +7,4 @@ from . import hr_applicant
 from . import company_config
 from . import res_partner
 from . import payroll_authorization
+from . import reglamento_interno

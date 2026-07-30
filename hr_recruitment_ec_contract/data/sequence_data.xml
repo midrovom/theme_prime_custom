@@ -23,4 +23,12 @@
         <field name="company_id" eval="False"/>
     </record>
 
+    <record id="seq_hr_ec_reglamento_interno" model="ir.sequence">
+        <field name="name">Acta Reglamento Interno</field>
+        <field name="code">hr.ec.reglamento.interno</field>
+        <field name="prefix">REG-</field>
+        <field name="padding">5</field>
+    </record>
+
+
 </odoo>

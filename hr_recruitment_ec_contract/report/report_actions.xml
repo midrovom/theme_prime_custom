@@ -43,4 +43,15 @@
         <field name="binding_type">report</field>
         <field name="print_report_name">'Autorizacion_RolPago_%s' % (object.employee_id.name or '')</field>
     </record>
+
+    <record id="action_report_reglamento_interno" model="ir.actions.report">
+        <field name="name">Reglamento Interno</field>
+        <field name="model">hr.ec.reglamento.interno</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_recruitment_ec_contract.report_reglamento_interno</field>
+        <field name="report_file">hr_recruitment_ec_contract.report_reglamento_interno</field>
+        <field name="binding_model_id" ref="model_hr_ec_reglamento_interno"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'ReglamentoInterno_%s' % (object.employee_id.name or '')</field>
+    </record>
 </odoo>
