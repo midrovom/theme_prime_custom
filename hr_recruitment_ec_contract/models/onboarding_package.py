@@ -316,7 +316,7 @@ class HrEcOnboardingPackage(models.Model):
         if not body:
             body = (config.email_body_html or "").replace("{{ employee_name }}", employee_name)
         self.write({
-            "email_to": self.employee_id.private_email or self.applicant_id.email_from or self.employee_id.work_email,
+            "email_to": self.company_config_id.correo,
             "email_subject": subject,
             "email_body_html": body,
         })
