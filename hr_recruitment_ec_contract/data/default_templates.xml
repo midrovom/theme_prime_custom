@@ -142,9 +142,16 @@
                 <br/><br/>
                 <table style="width:100%; margin-top:45px;">
                     <tr>
-                        <td style="width:45%; text-align:center; border-top:1px solid #000;">RECIBIDO POR:</td>
+                        <td style="width:45%; text-align:center; border-top:1px solid #000;">
+                            RECIBIDO POR:<br/>
+                            <strong><t t-out="object.employee_id.name"/></strong><br/>
+                            <t t-out="object.employee_id.identification_id"/>
+                        </td>
                         <td style="width:10%;"></td>
-                        <td style="width:45%; text-align:center; border-top:1px solid #000;">ENTREGADO POR:</td>
+                        <td style="width:45%; text-align:center; border-top:1px solid #000;">
+                            ENTREGADO POR:<br/>
+                            <strong>TALENTO HUMANO</strong>
+                        </td>
                     </tr>
                 </table>
             </div>
