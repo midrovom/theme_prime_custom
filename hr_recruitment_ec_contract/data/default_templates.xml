@@ -105,8 +105,7 @@
         <field name="sequence">50</field>
         <field name="body_html" type="html">
             <div>
-                <h2 style="text-align:center;">AUTORIZACIÓN PARA ENVÍO DE ROL DE PAGO</h2>
-                <p><strong>FECHA:</strong> <t t-out="object.request_date"/></p>
+                <p style="text-align:right;"><strong>FECHA:</strong> <t t-out="object.request_date"/></p>
                 <p><strong>Empresa:</strong> <t t-out="object.company_config_id.name"/></p>
                 <br/>
                 <p>
