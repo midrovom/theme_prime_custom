@@ -23,6 +23,8 @@ class HrEcDocumentTemplate(models.Model):
             ("fourteenth", "Solicitud de acumulación de décimo cuarto"),
             ("employee_file", "Ficha del empleado"),
             ("payroll_email", "Autorización envío rol de pago"),
+            ("reglamento_interno", "Acta Reglamento Interno"),  # NUEVO
+
         ],
         string="Tipo de documento",
         required=True,
@@ -79,6 +81,7 @@ class HrEcDocumentTemplate(models.Model):
             "fourteenth": "hr.ec.benefit.request",
             "employee_file": "hr.employee",
             "payroll_email": "hr.ec.payroll.authorization",
+            "reglamento_interno": "hr.ec.reglamento.interno",  # NUEVO
         }
         for template in self:
             template.render_model = model_by_type.get(template.document_type)

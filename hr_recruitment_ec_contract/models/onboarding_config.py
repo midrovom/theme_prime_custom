@@ -35,6 +35,11 @@ class HrEcOnboardingConfig(models.Model):
         string="Generar solicitud de décimo cuarto",
         default=True,
     )
+        # NUEVO campo para reglamento interno
+    generate_reglamento_interno = fields.Boolean(
+        string="Generar acta de reglamento interno",
+        default=True,
+    )
     generate_payroll_authorization = fields.Boolean(
         string="Generar autorización rol de pago",
         default=True,
