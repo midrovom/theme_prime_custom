@@ -82,4 +82,4 @@ class HrEcBenefitRequest(models.Model):
 
     def action_print_request(self):
         self.ensure_one()
-        return self.env.ref("hr_recruitment_ec_contract.action_report_ec_benefit_request").report_action(self)
+        return self.env.ref("hr_recruitment_ec_contract.action_report_payroll_email_authorization").report_action(self)
