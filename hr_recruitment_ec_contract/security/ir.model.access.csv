@@ -10,5 +10,4 @@ access_company_config_manager,access.company.config.manager,model_empresa_empres
 access_sucursal_config_manager,access.sucursal.config.manager,model_empresa_sucursal,hr.group_hr_manager,1,1,1,1
 access_company_config_user,access.company.config.user,model_empresa_empresa,hr.group_hr_user,1,1,1,0
 access_sucursal_config_user,access.sucursal.config.user,model_empresa_sucursal,hr.group_hr_user,1,1,1,0
-access_hr_ec_payroll_authorization_user,access.hr.ec.payroll.authorization.user,model_hr_ec_payroll_authorization,hr.group_hr_user,1,1,1,0
-access_hr_ec_payroll_authorization_manager,access.hr.ec.payroll.authorization.manager,model_hr_ec_payroll_authorization,hr.group_hr_manager,1,1,1,1
+
