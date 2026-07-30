@@ -32,4 +32,15 @@
         <field name="binding_type">report</field>
         <field name="print_report_name">'Ficha_%s' % (object.employee_id.name or '')</field>
     </record>
+
+    <record id="action_report_payroll_email_authorization" model="ir.actions.report">
+        <field name="name">Autorización envío rol de pago</field>
+        <field name="model">hr.ec.payroll.authorization</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_recruitment_ec_contract.report_payroll_email_authorization</field>
+        <field name="report_file">hr_recruitment_ec_contract.report_payroll_email_authorization</field>
+        <field name="binding_model_id" ref="model_hr_ec_payroll_authorization"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Autorizacion_RolPago_%s' % (object.employee_id.name or '')</field>
+    </record>
 </odoo>
