@@ -35,6 +35,10 @@ class HrEcOnboardingConfig(models.Model):
         string="Generar solicitud de décimo cuarto",
         default=True,
     )
+    generate_payroll_authorization = fields.Boolean(
+        string="Generar autorización rol de pago",
+        default=True,
+    )
     email_subject = fields.Char(
         string="Asunto predeterminado",
         default="Documentos de contratación - {{ employee_name }}",

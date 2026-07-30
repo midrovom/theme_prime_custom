@@ -27,6 +27,7 @@
                             <field name="default_contract_template_id"/>
                             <field name="generate_thirteenth_request"/>
                             <field name="generate_fourteenth_request"/>
+                            <field name="generate_payroll_authorization"/>
                         </group>
                     </group>
                     <notebook>
