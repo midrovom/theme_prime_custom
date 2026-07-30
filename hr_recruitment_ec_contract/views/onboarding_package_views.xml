@@ -94,6 +94,15 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="Reglamento Interno">
+                            <field name="reglamento_interno_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="request_date"/>
+                                    <field name="attachment_id"/>
+                                </list>
+                            </field>
+                        </page>
                     </notebook>
                 </sheet>
                 <chatter/>

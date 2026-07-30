@@ -69,6 +69,11 @@ class HrEcOnboardingPackage(models.Model):
         "package_id",
         string="Autorizacion rol de pago",
     )
+    reglamento_interno_ids = fields.One2many(
+        "hr.ec.reglamento.interno",
+        "package_id",
+        string="Actas de reglamento interno",
+    )
     rendered_text  = fields.Html(string="Autorizaciòn correo", sanitize=False)
     contract_template_id = fields.Many2one(
         "hr.ec.document.template",
