@@ -131,7 +131,8 @@
         <field name="sequence">60</field>
         <field name="body_html" type="html">
             <div>
-                <h2 style="text-align:center;">ACTA DE RECEPCIÓN DEL REGLAMENTO INTERNO DE TRABAJO Y REGLAMENTO DE SEGURIDAD Y SALUD EN EL TRABAJO</h2>
+                <h1 style="text-align:center;">ACTA DE RECEPCIÓN</h1>
+                <h2 style="text-align:center;">DEL REGLAMENTO INTERNO DE TRABAJO Y REGLAMENTO DE SEGURIDAD Y SALUD EN EL TRABAJO</h2>
                 <p>Yo, <strong><t t-out="object.employee_id.name"/></strong>, con cédula N.: <strong><t t-out="object.employee_id.identification_id"/></strong>, declaro haber recibido el código QR para descargar el Reglamento Interno de trabajo y el Reglamento de Seguridad y Salud en el trabajo de la empresa <strong><t t-out="object.company_config_id.name"/></strong>. , en</p>
                 <p>acatamiento a lo que dispone el Art. 64 del Código de Trabajo <strong><t t-out="object.company_config_id.name"/></strong> procede a elaborar el presente Reglamento Interno de Trabajo, teniendo como objetivo crear el presente para mantener las mejores relaciones con el personal, dentro de un</p>
                 <p>adecuado marco de justicia y productividad, luego de aprobado este Reglamento por el Director Regional del Trabajo de Litoral las reformas entran en vigencia, luego de lo cual surtirán pleno efecto las disposiciones legales pertinentes especialmente la de los siguientes artículos del Código de Trabajo: (42) numeral 12 “Sujetarse al Reglamento</p>
