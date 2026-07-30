@@ -89,7 +89,6 @@
                             <field name="payroll_authorization_ids" readonly="1">
                                 <list>
                                     <field name="name"/>
-                                    <field name="request_date"/>
                                     <field name="attachment_id"/>
                                 </list>
                             </field>
