@@ -22,7 +22,6 @@
         "views/hr_applicant_views.xml",
         "views/hr_contract_views.xml",
         'views/employee_views.xml',
-        # 'views/res_partner_views.xml',
         'views/company_views.xml',
         "report/report_actions.xml",
         "report/report_templates.xml",

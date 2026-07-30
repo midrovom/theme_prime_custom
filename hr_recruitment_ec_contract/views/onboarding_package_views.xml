@@ -85,8 +85,17 @@
                         <page string="Ficha generada">
                             <field name="employee_file_html" widget="html" nolabel="1"/>
                         </page>
-                        <page string="Autorizaciòn correo">
-                            <!-- <field name="employee_file_html" widget="html" nolabel="1"/> -->
+                        <page string="Autorizaciòn rol de pago">
+                            <field name="payroll_authorization_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="request_date"/>
+                                    <field name="attachment_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Autorización generada">
+                            <field name="rendered_text" widget="html" nolabel="1"/>
                         </page>
                     </notebook>
                 </sheet>

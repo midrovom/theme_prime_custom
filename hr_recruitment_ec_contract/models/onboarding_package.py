@@ -63,6 +63,11 @@ class HrEcOnboardingPackage(models.Model):
         "hr.ec.benefit.request",
         "package_id",
         string="Solicitudes de décimos",
+    ) 
+    payroll_authorization_ids= fields.One2many(
+        "hr.ec.payroll.authorization",
+        "package_id",
+        string="Autorizacion rol de pago",
     )
     contract_template_id = fields.Many2one(
         "hr.ec.document.template",
