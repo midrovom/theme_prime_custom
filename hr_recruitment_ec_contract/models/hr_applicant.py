@@ -112,6 +112,8 @@ class HrApplicant(models.Model):
                 vals["private_email"] = self.email_from
             if self.partner_phone and not employee.private_phone:
                 vals["private_phone"] = self.partner_phone
+            if self.cedula and not employee.identification_id:
+                vals["identification_id"] = self.cedula
             if vals:
                 employee.sudo().write(vals)
         return employee
