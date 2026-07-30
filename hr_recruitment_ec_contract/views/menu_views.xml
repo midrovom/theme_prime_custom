@@ -3,6 +3,7 @@
     <menuitem id="menu_hr_ec_root" name="Contratación EC" sequence="85" groups="hr.group_hr_user" web_icon="hr_recruitment_ec_contract,static/description/icon.png"/>
     <menuitem id="menu_hr_ec_packages" name="Paquetes de contratación" parent="menu_hr_ec_root" action="action_hr_ec_onboarding_package" sequence="10"/>
     <menuitem id="menu_hr_ec_benefit_requests" name="Solicitudes de décimos" parent="menu_hr_ec_root" action="action_hr_ec_benefit_request" sequence="20"/>
+    <menuitem id="menu_hr_ec_benefit_requests" name="Autorizacion Rol de Pago" parent="menu_hr_ec_root" action="action_hr_ec_payroll_authorization" sequence="30"/>
     <menuitem id="menu_hr_ec_configuration" name="Configuración" parent="menu_hr_ec_root" sequence="90" groups="hr.group_hr_manager"/>
     <menuitem id="menu_hr_ec_templates" name="Plantillas" parent="menu_hr_ec_configuration" action="action_hr_ec_document_template" sequence="10"/>
     <menuitem id="menu_hr_ec_settings" name="Automatización" parent="menu_hr_ec_configuration" action="action_hr_ec_onboarding_config" sequence="20"/>
