@@ -9,8 +9,8 @@ class Empresa(models.Model):
     correo = fields.Char(string="Correo") 
     direccion = fields.Char(string="Dirección")
 
-    representante_legal = fields.Char(string="Representante Legal")
-    ruc_representante = fields.Char(string="RUC Representante")
+    representante_legal = fields.Char(string="Representante Legal", required=True)
+    ruc_representante = fields.Char(string="RUC Representante", required=True)
     correo_representante = fields.Char(string="Correo Representante")
 
     sucursal_ids = fields.One2many( 
