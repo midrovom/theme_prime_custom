@@ -14,4 +14,13 @@
         <field name="padding">5</field>
         <field name="company_id" eval="False"/>
     </record>
+
+    <record id="seq_hr_ec_payroll_authorization" model="ir.sequence">
+        <field name="name">Autorización rol de pago</field>
+        <field name="code">hr.ec.payroll.authorization</field>
+        <field name="prefix">AUT-</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
 </odoo>

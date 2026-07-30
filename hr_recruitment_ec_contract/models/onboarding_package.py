@@ -316,6 +316,47 @@ class HrEcOnboardingPackage(models.Model):
             "email_body_html": body,
         })
 
+    # Nueva Funcion para rol de pago
+    def _ensure_payroll_authorization(self):
+        self.ensure_one()
+        config = self.env["hr.ec.onboarding.config"].get_company_config(self.company_id)
+        if not config.generate_payroll_authorization:
+            return self.env["ir.attachment"]
+
+        template = self._get_template("payroll_email")
+        if not template:
+            raise ValidationError(_("No existe una plantilla activa para autorización de rol de pago."))
+
+        authorization = self.env["hr.ec.payroll.authorization"].sudo().search([
+            ("employee_id", "=", self.employee_id.id),
+            ("package_id", "=", self.id),
+        ], limit=1)
+
+        vals = {
+            "employee_id": self.employee_id.id,
+            "applicant_id": self.applicant_id.id,
+            "package_id": self.id,
+            "request_date": fields.Date.today(),
+            "template_id": template.id,
+        }
+
+        if authorization:
+            authorization.write(vals)
+        else:
+            authorization = self.env["hr.ec.payroll.authorization"].sudo().create(vals)
+
+        authorization.rendered_text = template.render_document(authorization)
+
+        attachment_name = "%s.pdf" % self._safe_filename("Autorizacion_RolPago_%s" % self.employee_id.name)
+        attachment = self._upsert_pdf_attachment(
+            authorization.attachment_id,
+            attachment_name,
+            "hr_recruitment_ec_contract.action_report_payroll_email_authorization",
+            authorization,
+        )
+        authorization.attachment_id = attachment.id
+        return attachment
+
     def action_generate_documents(self):
         for package in self:
             package.write({"state": "draft", "generation_message": False})
@@ -331,6 +372,12 @@ class HrEcOnboardingPackage(models.Model):
                 employee_attachment = package._ensure_employee_file()
                 if employee_attachment:
                     attachments |= employee_attachment
+
+                # NUEVO: autorización rol de pago
+                payroll_attachment = package._ensure_payroll_authorization()
+                if payroll_attachment:
+                    attachments |= payroll_attachment
+
                 package.attachment_ids = [(6, 0, attachments.ids)]
                 package._prepare_email_draft()
                 package.write({
