@@ -109,20 +109,18 @@
                 <p><strong>FECHA:</strong> <t t-out="object.request_date"/></p>
                 <p><strong>Empresa:</strong> <t t-out="object.company_config_id.name"/></p>
                 <br/>
-                    <p>
-                        Yo, <strong><t t-out="object.employee_id.name"/></strong>, portador/a de la cédula de ciudadanía 
-                        <strong><t t-out="object.employee_id.identification_id"/></strong>, autorizo a 
-                        <strong><t t-out="object.company_config_id.name"/></strong> a enviar mi rol de pago mensual a mi correo personal: 
-                        <strong><t t-out="object.employee_id.work_email"/></strong>.
-                    </p>
+                <p>
+                    Yo, <strong><t t-out="object.employee_id.name"/></strong>, portador/a de la cédula de ciudadanía 
+                    <strong><t t-out="object.employee_id.identification_id"/></strong>, autorizo a 
+                    <strong><t t-out="object.company_config_id.name"/></strong> a enviar mi rol de pago mensual a mi correo personal: 
+                    <strong><t t-out="object.employee_id.work_email"/></strong>.
+                </p>
                 <p>
                     En caso de cambiar el correo, me comprometo a comunicarlo oportunamente al departamento de recursos humanos.
                 </p>
                 <br/><br/>
                 <p style="text-align:center;">____________________________________<br/>Firma del trabajador/a</p>
             </div>
-
         </field>
     </record>
-
 </odoo>
