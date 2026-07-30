@@ -69,6 +69,7 @@ class HrEcOnboardingPackage(models.Model):
         "package_id",
         string="Autorizacion rol de pago",
     )
+    rendered_text  = fields.Html(string="Autorizaciòn correo", sanitize=False)
     contract_template_id = fields.Many2one(
         "hr.ec.document.template",
         string="Plantilla de contrato",
