@@ -14,6 +14,14 @@ class HrApplicant(models.Model):
         tracking=True,
         help="El módulo selecciona automáticamente una plantilla configurada para este tipo de contrato.",
     )
+    salario = fields.Float(string="Salario")
+    horario_trabajo = fields.Char(string="Horario de Trabajo")
+    contract_type_id = fields.Many2one(
+        'hr.contract.type',
+        string="Tipo de Contrato",
+        related='job_id.contract_type_id',
+        store=True
+    )
     ec_contract_template_id = fields.Many2one(
         "hr.ec.document.template",
         string="Plantilla de contrato",

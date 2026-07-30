@@ -25,4 +25,18 @@
             </xpath>
         </field>
     </record>
+
+    <record id="view_hr_applicant_form_inherit" model="ir.ui.view">
+        <field name="name">hr.applicant.form.inherit</field>
+        <field name="model">hr.applicant</field>
+        <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='categ_ids']" position="after">
+                <field name="salario"/>
+                <field name="horario_trabajo"/>
+                <field name="contract_type_id"/>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>
