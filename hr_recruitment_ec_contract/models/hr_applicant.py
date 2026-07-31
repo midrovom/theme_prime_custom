@@ -19,7 +19,14 @@ class HrApplicant(models.Model):
         string="Contrato",
         ondelete="set null"
     )
-    wage = fields.Monetary(string="Salario")
+    currency_id = fields.Many2one(
+        "res.currency",
+        default=lambda self: self.env.company.currency_id.id,
+    )
+    wage = fields.Monetary(
+        string="Salario",
+        currency_field="currency_id",
+    )
     date_start = fields.Date(string="Fecha de inicio")
     date_end = fields.Date(string="Fecha fin")
     resource_calendar_id = fields.Many2one("resource.calendar")
