@@ -152,8 +152,24 @@ class HrEcOnboardingPackage(models.Model):
         value = re.sub(r"[^A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ._-]+", "_", value)
         return value.strip("._") or "documento"
 
-    def _get_template(self, document_type):
+    # def _get_template(self, document_type):
+    #     self.ensure_one()
+    #     domain = [
+    #         ("document_type", "=", document_type),
+    #         ("active", "=", True),
+    #         "|",
+    #         ("company_id", "=", self.company_id.id),
+    #         ("company_id", "=", False),
+    #     ]
+    #     return self.env["hr.ec.document.template"].sudo().search(
+    #         domain,
+    #         order="company_id desc, is_default desc, sequence, id",
+    #         limit=1,
+    #     )
+
+    def _get_template(self, document_type, contract_type=False):
         self.ensure_one()
+
         domain = [
             ("document_type", "=", document_type),
             ("active", "=", True),
@@ -161,6 +177,10 @@ class HrEcOnboardingPackage(models.Model):
             ("company_id", "=", self.company_id.id),
             ("company_id", "=", False),
         ]
+
+        if document_type == "contract" and contract_type:
+            domain.append(("contract_type_id", "=", contract_type.id))
+
         return self.env["hr.ec.document.template"].sudo().search(
             domain,
             order="company_id desc, is_default desc, sequence, id",
@@ -189,13 +209,14 @@ class HrEcOnboardingPackage(models.Model):
     def _ensure_contract(self):
         self.ensure_one()
         applicant = self.applicant_id
-        template = self.contract_template_id
+        template = self.contract_template_id or self._get_template( "contract", applicant.ec_contract_type_id,)
         if not template:
             raise ValidationError(_("Debe configurar una plantilla de contrato para la compañía o el candidato."))
 
-        date_start = applicant.ec_contract_date_start or applicant.availability or fields.Date.today()
-        wage = applicant.ec_contract_wage or applicant.salary_proposed or template.default_wage or 0.0
-        date_end = applicant.ec_contract_date_end
+        self.contract_template_id = template
+        date_start = applicant.date_start or applicant.ec_contract_date_start or applicant.availability or fields.Date.today()
+        wage = applicant.wage or applicant.ec_contract_wage or applicant.salary_proposed or template.default_wage or 0.0
+        date_end = applicant.date_end
         if not date_end and template.duration_months:
             date_end = date_start + relativedelta(months=template.duration_months, days=-1)
         trial_date_end = date_start + timedelta(days=template.trial_days) if template.trial_days else False
@@ -214,6 +235,7 @@ class HrEcOnboardingPackage(models.Model):
             "trial_date_end": trial_date_end,
             "wage": wage,
             "contract_type_id": template.contract_type_id.id,
+            "resource_calendar_id": applicant.resource_calendar_id.id,
             "ec_applicant_id": applicant.id,
             "ec_package_id": self.id,
             "ec_document_template_id": template.id,

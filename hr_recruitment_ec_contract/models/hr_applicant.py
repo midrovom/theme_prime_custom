@@ -19,39 +19,10 @@ class HrApplicant(models.Model):
         string="Contrato",
         ondelete="set null"
     )
-    wage = fields.Monetary(
-        string="Salario",
-        related="contract_id.wage",
-        store=True,
-        readonly=False,
-        currency_field='currency_id'
-    )
-
-    currency_id = fields.Many2one(
-        'res.currency',
-        string="Moneda",
-        related="contract_id.currency_id",
-        store=True,
-        readonly=True
-    )
-    date_start = fields.Date(string="Fecha de Inicio del Contrato",
-        related="contract_id.date_start",
-        store=True,
-        readonly=False
-    )
-    date_end = fields.Date(string="Fecha de Finalización del Contrato",
-        related="contract_id.date_end",
-        store=True,
-        readonly=False
-    )
-    resource_calendar_id = fields.Many2one(
-        'resource.calendar',
-        string="Horario de Trabajo",
-    )
-    contract_type_id = fields.Many2one(
-        'hr.contract.type',
-        string="Tipo de Contrato"
-    )
+    wage = fields.Monetary(string="Salario")
+    date_start = fields.Date(string="Fecha de inicio")
+    date_end = fields.Date(string="Fecha fin")
+    resource_calendar_id = fields.Many2one("resource.calendar")
     ec_contract_template_id = fields.Many2one(
         "hr.ec.document.template",
         string="Plantilla de contrato",

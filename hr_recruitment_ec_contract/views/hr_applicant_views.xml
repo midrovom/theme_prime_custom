@@ -36,7 +36,7 @@
                 <field name="resource_calendar_id"/>
                 <field name="date_start"/>
                 <field name="date_end"/>
-                <field name="contract_type_id"/>
+                <field name="ec_contract_type_id"/>
             </xpath>
         </field>
     </record>
