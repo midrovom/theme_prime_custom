@@ -156,12 +156,9 @@ class HrEcDocumentTemplate(models.Model):
 
     @api.depends()
     def _compute_variable_ids(self):
-
-        variables = self.env[
-            "hr.ec.document.variable"
-        ].search([
+        variables = self.env["hr.ec.document.variable"].search([
             ("active", "=", True)
         ])
 
-        for template in self:
-            template.variable_ids = variables
+        for record in self:
+            record.variable_ids = variables

@@ -51,8 +51,8 @@
                             <group>
                                 <separator string="Variables disponibles"/>
                                 <field name="variable_ids" nolabel="1" readonly="1"/>
-                                    <list>
-                                        <field name="name"/>
+                                    <list string="Variables disponibles">
+                                        <field name="name" string="Nombre"/>
                                     </list>
                             </group>
                         </page>
