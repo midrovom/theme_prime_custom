@@ -15,8 +15,16 @@ class HrApplicant(models.Model):
         help="El módulo selecciona automáticamente una plantilla configurada para este tipo de contrato.",
     )
     salario = fields.Float(string="Salario")
-    fecha_inicio_contrato = fields.Date(string="Fecha de Inicio del Contrato",)
-    fecha_fin_contrato = fields.Date(string="Fecha de Finalización del Contrato",)
+    date_start = fields.Date(string="Fecha de Inicio del Contrato",
+        related="contract_id.date_start",
+        store=True,
+        readonly=False
+    )
+    date_end = fields.Date(string="Fecha de Finalización del Contrato",
+        related="contract_id.date_end",
+        store=True,
+        readonly=False
+    )
     resource_calendar_id = fields.Many2one(
         'resource.calendar',
         string="Horario de Trabajo",
