@@ -3,9 +3,16 @@
 import { registry } from "@web/core/registry";
 import { Component, onWillStart } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
+import { standardFieldProps } from "@web/views/fields/standard_field_props";
 
 
-class VariableDragWidget extends Component {
+export class VariableDragWidget extends Component {
+
+    static template = "hr_recruitment_ec_contract.VariableDragWidget";
+    static props = {
+        ...standardFieldProps,
+    };
+
 
     setup() {
 
@@ -14,41 +21,41 @@ class VariableDragWidget extends Component {
 
         onWillStart(async () => {
             const ids = this.props.record.data.variable_ids?.resIds || [];
-
             if (ids.length) {
-                const records = await this.orm.searchRead(
+
+                this.variables = await this.orm.searchRead(
                     "hr.ec.document.variable",
                     [
                         ["id", "in", ids]
                     ],
                     [
                         "name",
+                        "key",
                         "expression"
                     ]
                 );
 
-                this.variables = records;
             }
 
         });
 
     }
 
-
-
     onDragStart(ev, variable) {
 
         ev.dataTransfer.setData(
             "text/plain",
-            variable.expression
+            "{{" + variable.key + "}}"
         );
 
     }
 
 }
 
-VariableDragWidget.template = "hr_recruitment_ec_contract.VariableDragWidget";
+
 registry.category("fields").add(
     "variable_drag",
-    VariableDragWidget
+    {
+        component: VariableDragWidget,
+    }
 );
