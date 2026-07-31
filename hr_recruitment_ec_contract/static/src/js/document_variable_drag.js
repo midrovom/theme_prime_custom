@@ -9,7 +9,7 @@ class VariableDragWidget extends Component {
     }
 
     onDragStart(ev, variable) {
-        ev.dataTransfer.setData("text/plain", variable.data.expression);
+        ev.dataTransfer.setData("text/plain", variable.expression);
     }
 }
 
