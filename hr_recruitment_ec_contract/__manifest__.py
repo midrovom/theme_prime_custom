@@ -9,6 +9,9 @@
         "hr_recruitment",
         "hr_contract",
         "mail",
+        'web',
+        'web_editor',
+
     ],
     "data": [
         "security/security.xml",
