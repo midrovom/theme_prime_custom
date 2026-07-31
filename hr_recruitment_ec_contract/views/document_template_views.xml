@@ -51,6 +51,9 @@
                             <group>
                                 <separator string="Variables disponibles"/>
                                 <field name="variable_ids" nolabel="1" readonly="1"/>
+                                    <list>
+                                        <field name="name"/>
+                                    </list>
                             </group>
                         </page>
                         <page string="Correo" invisible="document_type != 'contract'">
