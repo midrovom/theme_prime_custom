@@ -26,6 +26,14 @@ class HrApplicant(models.Model):
         readonly=False,
         currency_field='currency_id'
     )
+
+    currency_id = fields.Many2one(
+        'res.currency',
+        string="Moneda",
+        related="contract_id.currency_id",
+        store=True,
+        readonly=True
+    )
     date_start = fields.Date(string="Fecha de Inicio del Contrato",
         related="contract_id.date_start",
         store=True,
