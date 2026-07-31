@@ -33,8 +33,8 @@
     ],
     "assets": {
         "web.assets_backend": [
-            "hr_recruitment_ec_contract/static/js/document_variable_drag.js",
-            "hr_recruitment_ec_contract/static/xml/document_variable_drag.xml",
+            "hr_recruitment_ec_contract/static/src/js/document_variable_drag.js",
+            "hr_recruitment_ec_contract/static/src/xml/document_variable_drag.xml",
         ],
     },
     "application": True,
