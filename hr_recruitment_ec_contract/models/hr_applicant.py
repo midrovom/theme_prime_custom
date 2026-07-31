@@ -16,6 +16,8 @@ class HrApplicant(models.Model):
     )
     salario = fields.Float(string="Salario")
     horario_trabajo = fields.Char(string="Horario de Trabajo")
+    fecha_inicio_contrato = fields.Date(string="Fecha de Inicio del Contrato",)
+    fecha_fin_contrato = fields.Date(string="Fecha de Finalización del Contrato",)
     contract_type_id = fields.Many2one(
         'hr.contract.type',
         string="Tipo de Contrato"
