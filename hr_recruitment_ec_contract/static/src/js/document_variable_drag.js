@@ -43,6 +43,8 @@ export class VariableDragWidget extends Component {
 
     onDragStart(ev, variable) {
 
+        ev.dataTransfer.effectAllowed = "copy";
+
         ev.dataTransfer.setData(
             "text/plain",
             "{{" + variable.key + "}}"
