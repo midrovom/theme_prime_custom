@@ -19,11 +19,12 @@ class HrApplicant(models.Model):
         string="Contrato",
         ondelete="set null"
     )
-    wage = fields.Float(
+    wage = fields.Monetary(
         string="Salario",
         related="contract_id.wage",
         store=True,
-        readonly=False
+        readonly=False,
+        currency_field='currency_id'
     )
     date_start = fields.Date(string="Fecha de Inicio del Contrato",
         related="contract_id.date_start",
