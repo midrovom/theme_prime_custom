@@ -1,6 +1,6 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
-
+from datetime import datetime
 
 class HrEcDocumentTemplate(models.Model):
     _name = "hr.ec.document.template"
@@ -107,7 +107,19 @@ class HrEcDocumentTemplate(models.Model):
                 _("La plantilla %(template)s requiere un registro del modelo %(model)s.",
                   template=self.display_name, model=self.render_model)
             )
-        return self._render_field("body_html", [record.id]).get(record.id, "")
+        
+        today = datetime.now()
+        values = {
+                "object": record,
+                "today": today,
+                "day": today.strftime("%d"),
+                "month": today.strftime("%B").upper(),
+                "year": today.strftime("%Y"),
+            }
+        
+        return self.env["ir.qweb"]._render(self.body_html, values,)
+    
+        # return self._render_field("body_html", [record.id]).get(record.id, "")
 
     def render_email_subject(self, record):
         self.ensure_one()
