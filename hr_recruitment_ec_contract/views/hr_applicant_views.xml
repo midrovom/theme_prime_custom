@@ -33,7 +33,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='categ_ids']" position="after">
                 <field name="salario"/>
-                <field name="horario_trabajo"/>
+                <field name="resource_calendar_id"/>
                 <field name="fecha_inicio_contrato"/>
                 <field name="fecha_fin_contrato"/>
                 <field name="contract_type_id"/>
