@@ -147,18 +147,20 @@ class HrEcDocumentTemplate(models.Model):
             )
 
         html = self.body_html or ""
+
+        _logger.warning("======== BODY HTML ORIGINAL ========")
+        _logger.warning(html)
+        _logger.warning("====================================")
+
         html = self._replace_dynamic_variables(html)
 
-        try:
-            template = etree.fromstring(
-                "<t>" + html + "</t>"
-            )
+        _logger.warning("======== BODY HTML QWEB ========")
+        _logger.warning(html)
+        _logger.warning("================================")
 
-        except Exception as e:
-            _logger.error("Error procesando plantilla %s: %s\nHTML recibido:\n%s", self.name, e, html)
-            raise ValidationError(
-                _("La plantilla contiene un HTML inválido: %s") % e
-            )
+        template = etree.fromstring(
+            "<t>" + html + "</t>"
+        )
 
         rendered = self.env["ir.qweb"]._render(
             template,
@@ -167,10 +169,8 @@ class HrEcDocumentTemplate(models.Model):
             }
         )
 
-        if isinstance(rendered, bytes):
-            rendered = rendered.decode("utf-8")
+        return rendered.decode() if isinstance(rendered, bytes) else rendered
 
-        return rendered
 
     # def render_document(self, record):
     #     self.ensure_one()
