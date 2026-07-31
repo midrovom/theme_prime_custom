@@ -147,16 +147,13 @@ class HrEcDocumentTemplate(models.Model):
             )
 
         html = self.body_html or ""
-
-        _logger.warning("======== BODY HTML ORIGINAL ========")
-        _logger.warning(html)
-        _logger.warning("====================================")
-
         html = self._replace_dynamic_variables(html)
 
-        _logger.warning("======== BODY HTML QWEB ========")
-        _logger.warning(html)
-        _logger.warning("================================")
+        _logger.warning("========== TEMPLATE ID ==========")
+        _logger.warning(self.id)
+        _logger.warning("========== HTML RAW ==========")
+        _logger.warning(repr(html))
+        _logger.warning("========== END HTML ==========")
 
         template = etree.fromstring(
             "<t>" + html + "</t>"
