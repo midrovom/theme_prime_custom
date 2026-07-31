@@ -14,7 +14,17 @@ class HrApplicant(models.Model):
         tracking=True,
         help="El módulo selecciona automáticamente una plantilla configurada para este tipo de contrato.",
     )
-    salario = fields.Float(string="Salario")
+    contract_id = fields.Many2one(
+        'hr.contract',
+        string="Contrato",
+        ondelete="set null"
+    )
+    wage = fields.Float(
+        string="Salario",
+        related="contract_id.wage",
+        store=True,
+        readonly=False
+    )
     date_start = fields.Date(string="Fecha de Inicio del Contrato",
         related="contract_id.date_start",
         store=True,
