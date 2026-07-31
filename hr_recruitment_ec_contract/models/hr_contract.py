@@ -1,5 +1,5 @@
 from odoo import fields, models
-
+from datetime import datetime
 
 class HrContract(models.Model):
     _inherit = "hr.contract"
@@ -38,6 +38,10 @@ class HrContract(models.Model):
         readonly=True,
     )
 
+    current_day = fields.Char(compute="_compute_current_date", store=False)
+    current_month = fields.Char(compute="_compute_current_date", store=False)
+    current_year = fields.Char(compute="_compute_current_date", store=False)
+
     _sql_constraints = [
         (
             "ec_applicant_unique",
@@ -49,3 +53,10 @@ class HrContract(models.Model):
     def action_print_ec_contract(self):
         self.ensure_one()
         return self.env.ref("hr_recruitment_ec_contract.action_report_ec_contract").report_action(self)
+
+    def _compute_current_date(self):
+        now = datetime.now()
+        for rec in self:
+            rec.current_day = now.strftime("%d")
+            rec.current_month = now.strftime("%B").upper()
+            rec.current_year = now.strftime("%Y")
