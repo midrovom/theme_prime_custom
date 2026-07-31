@@ -109,29 +109,49 @@ class HrEcDocumentTemplate(models.Model):
                 raise ValidationError(_("La duración y los días de prueba no pueden ser negativos."))
 
     # CONVERSION VARIABLES USUARIO -> QWEB
-    def _replace_dynamic_variables(self, html):
-        """
-        Convierte:
-        {{DIA_ACTUAL}}
-        en:
-        <t t-out="object.current_day"/>
-        """
-        if not html:
-            return html
-        variables = self.env[
-            "hr.ec.document.variable"
-        ].search(
-            [
-                ("active", "=", True)
-            ]
-        )
-        for variable in variables:
+    # def _replace_dynamic_variables(self, html):
+    #     """
+    #     Convierte:
+    #     {{DIA_ACTUAL}}
+    #     en:
+    #     <t t-out="object.current_day"/>
+    #     """
+    #     if not html:
+    #         return html
+    #     variables = self.env[
+    #         "hr.ec.document.variable"
+    #     ].search(
+    #         [
+    #             ("active", "=", True)
+    #         ]
+    #     )
+    #     for variable in variables:
 
-            html = html.replace(
-                "{{%s}}" % variable.key,
-                '<t t-out="%s"/>' % variable.expression
+    #         html = html.replace(
+    #             "{{%s}}" % variable.key,
+    #             '<t t-out="%s"/>' % variable.expression
+    #         )
+    #     return html
+
+    def render_document(self, record):
+        self.ensure_one()
+
+        if not record or record._name != self.render_model:
+            raise ValidationError(
+                _("La plantilla %(template)s requiere un registro del modelo %(model)s.",
+                template=self.display_name,
+                model=self.render_model)
             )
-        return html
+
+        html = self._replace_dynamic_variables(
+            self.body_html
+        )
+
+        return self.env["mail.render.mixin"]._render_template(
+            html,
+            record._name,
+            [record.id],
+        ).get(record.id, "")
 
     def render_document(self, record):
         self.ensure_one()
