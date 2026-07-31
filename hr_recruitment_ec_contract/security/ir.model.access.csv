@@ -14,3 +14,5 @@ access_hr_ec_payroll_authorization_user,access.hr.ec.payroll.authorization.user,
 access_hr_ec_payroll_authorization_manager,access.hr.ec.payroll.authorization.manager,model_hr_ec_payroll_authorization,hr.group_hr_manager,1,1,1,1
 access_hr_ec_reglamento_interno_user,access.hr.ec.reglamento.interno.user,model_hr_ec_reglamento_interno,hr.group_hr_user,1,1,1,0
 access_hr_ec_reglamento_interno_manager,access.hr.ec.reglamento.interno.manager,model_hr_ec_reglamento_interno,hr.group_hr_manager,1,1,1,1
+access_hr_ec_document_variable_manager,access.hr.ec.document.variable.manager,model_hr_ec_document_variable,hr.group_hr_manager,1,1,1,1
+access_hr_ec_document_variable_user,access.hr.ec.document.variable.user,model_hr_ec_document_variable,hr.group_hr_user,1,1,1,0
