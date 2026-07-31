@@ -155,7 +155,6 @@ class HrEcDocumentTemplate(models.Model):
     #         [record.id],
     #     ).get(record.id, "")
 
-
     def render_document(self, record):
         self.ensure_one()
 
@@ -166,22 +165,28 @@ class HrEcDocumentTemplate(models.Model):
                 model=self.render_model)
             )
 
-        html = self.body_html or ""
+        html = str(self.body_html or "")
 
-        # Convertir variables personalizadas {{VARIABLE}}
         html = self._replace_dynamic_variables(html)
 
-        # DEBUG
         _logger.warning("========== HTML ANTES QWEB ==========")
-        _logger.warning(repr(html))
+        _logger.warning(html)
         _logger.warning("========== FIN HTML ==========")
 
+        # corregir html inválido para XML
+        html = html.replace("<td style=\"width:10%;\"/>",
+                            "<td style=\"width:10%;\"></td>")
+
         try:
+            xml = "<t>" + html + "</t>"
+
             template = etree.fromstring(
-                ("<t>" + html + "</t>").encode("utf-8")
+                xml.encode("utf-8"),
+                parser=etree.XMLParser(recover=True)
             )
+
         except Exception as e:
-            _logger.error("HTML INVALIDO:")
+            _logger.error("HTML XML INVALIDO")
             _logger.error(html)
             raise ValidationError(
                 _("La plantilla contiene HTML inválido: %s") % e
