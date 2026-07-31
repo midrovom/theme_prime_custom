@@ -136,6 +136,26 @@ class HrEcDocumentTemplate(models.Model):
             )
         return html
 
+    # def render_document(self, record):
+    #     self.ensure_one()
+
+    #     if not record or record._name != self.render_model:
+    #         raise ValidationError(
+    #             _("La plantilla %(template)s requiere un registro del modelo %(model)s.",
+    #             template=self.display_name,
+    #             model=self.render_model)
+    #         )
+
+    #     html = self.body_html or ""
+    #     html = self._replace_dynamic_variables(html)
+
+    #     return self.env["mail.render.mixin"]._render_template(
+    #         html,
+    #         record._name,
+    #         [record.id],
+    #     ).get(record.id, "")
+
+
     def render_document(self, record):
         self.ensure_one()
 
@@ -147,13 +167,34 @@ class HrEcDocumentTemplate(models.Model):
             )
 
         html = self.body_html or ""
+
+        # Convertir variables personalizadas {{VARIABLE}}
         html = self._replace_dynamic_variables(html)
 
-        return self.env["mail.render.mixin"]._render_template(
-            html,
-            record._name,
-            [record.id],
-        ).get(record.id, "")
+        # DEBUG
+        _logger.warning("========== HTML ANTES QWEB ==========")
+        _logger.warning(repr(html))
+        _logger.warning("========== FIN HTML ==========")
+
+        try:
+            template = etree.fromstring(
+                ("<t>" + html + "</t>").encode("utf-8")
+            )
+        except Exception as e:
+            _logger.error("HTML INVALIDO:")
+            _logger.error(html)
+            raise ValidationError(
+                _("La plantilla contiene HTML inválido: %s") % e
+            )
+
+        rendered = self.env["ir.qweb"]._render(
+            template,
+            {
+                "object": record,
+            }
+        )
+
+        return rendered.decode("utf-8") if isinstance(rendered, bytes) else rendered
 
     # def render_document(self, record):
     #     self.ensure_one()
