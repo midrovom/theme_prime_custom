@@ -5,6 +5,7 @@ import { Component, onWillStart } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
 
+
 export class VariableDragWidget extends Component {
 
     static template = "hr_recruitment_ec_contract.VariableDragWidget";
@@ -12,6 +13,7 @@ export class VariableDragWidget extends Component {
     static props = {
         ...standardFieldProps,
     };
+
 
     setup() {
 
@@ -22,31 +24,88 @@ export class VariableDragWidget extends Component {
 
             const ids = this.props.record.data.variable_ids?.resIds || [];
 
-            if (!ids.length) {
-                return;
+            if (ids.length) {
+
+                this.variables = await this.orm.searchRead(
+                    "hr.ec.document.variable",
+                    [
+                        ["id", "in", ids]
+                    ],
+                    [
+                        "name",
+                        "key",
+                        "expression"
+                    ]
+                );
+
             }
 
-            this.variables = await this.orm.searchRead(
-                "hr.ec.document.variable",
-                [["id", "in", ids]],
-                ["name", "key", "expression"]
-            );
-
         });
+
     }
+
 
     insertVariable(variable) {
 
-        const value = `{{${variable.key}}}`;
+        const text = "{{" + variable.key + "}}";
 
-        window.dispatchEvent(
-            new CustomEvent("ec_insert_variable", {
-                detail: value,
-            })
+        const editor = document.querySelector(
+            ".odoo-editor-editable"
         );
+
+        if (!editor) {
+            console.warn("Editor HTML no encontrado");
+            return;
+        }
+
+
+        editor.focus();
+
+
+        const selection = window.getSelection();
+
+        if (!selection.rangeCount) {
+            return;
+        }
+
+
+        const range = selection.getRangeAt(0);
+
+        range.deleteContents();
+
+
+        const node = document.createTextNode(text);
+
+        range.insertNode(node);
+
+
+        range.setStartAfter(node);
+        range.setEndAfter(node);
+
+
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+
+        editor.dispatchEvent(
+            new InputEvent(
+                "input",
+                {
+                    bubbles:true,
+                    inputType:"insertText",
+                    data:text
+                }
+            )
+        );
+
     }
+
 }
 
-registry.category("fields").add("variable_drag", {
-    component: VariableDragWidget,
-});
+
+registry.category("fields").add(
+    "variable_drag",
+    {
+        component: VariableDragWidget,
+    }
+);
