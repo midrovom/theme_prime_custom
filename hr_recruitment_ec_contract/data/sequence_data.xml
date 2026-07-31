@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<odoo>
     <record id="seq_hr_ec_onboarding_package" model="ir.sequence">
         <field name="name">Paquete de contratación EC</field>
         <field name="code">hr.ec.onboarding.package</field>
