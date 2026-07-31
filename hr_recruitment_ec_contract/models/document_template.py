@@ -133,6 +133,7 @@ class HrEcDocumentTemplate(models.Model):
             )
         return html
 
+
     def render_document(self, record):
         self.ensure_one()
 
@@ -143,16 +144,19 @@ class HrEcDocumentTemplate(models.Model):
                 model=self.render_model)
             )
 
-        html = self.body_html
+        html = self.body_html or ""
         html = self._replace_dynamic_variables(html)
 
-        rendered = self.env["mail.render.mixin"]._render_template(
-            html,
-            record._name,
-            [record.id],
+        result = self.env["ir.qweb"]._render(
+            etree.fromstring(
+                "<t>" + html + "</t>"
+            ),
+            {
+                "object": record,
+            }
         )
 
-        return rendered.get(record.id, "")
+        return result.decode() if isinstance(result, bytes) else result
 
     # def render_document(self, record):
     #     self.ensure_one()
