@@ -1,6 +1,7 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 from lxml import etree
+from html import unescape
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -155,6 +156,7 @@ class HrEcDocumentTemplate(models.Model):
         _logger.warning(repr(html))
         _logger.warning("========== END HTML ==========")
 
+        html = unescape(html)
         template = etree.fromstring(
             "<t>" + html + "</t>"
         )
