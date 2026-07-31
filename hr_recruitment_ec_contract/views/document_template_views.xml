@@ -48,16 +48,16 @@
                                 Use expresiones simples como <code>&lt;t t-out="object.employee_id.name"/&gt;</code>. El modelo disponible depende del tipo de documento.
                             </div>
                             <field name="body_html" widget="html" nolabel="1"/>
+                            <group>
+                                <separator string="Variables disponibles"/>
+                                <field name="variable_ids" widget="variable_drag" nolabel="1" readonly="1"/>
+                            </group>
                         </page>
                         <page string="Correo" invisible="document_type != 'contract'">
                             <group>
                                 <field name="email_subject"/>
                             </group>
                             <field name="email_body_html" widget="html" nolabel="1"/>
-                            <group>
-                                <separator string="Variables disponibles"/>
-                                <field name="variable_ids" widget="variable_drag" nolabel="1" readonly="1"/>
-                            </group>
                         </page>
                     </notebook>
                 </sheet>

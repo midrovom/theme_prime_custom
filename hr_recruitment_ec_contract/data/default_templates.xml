@@ -13,6 +13,59 @@
         <field name="body_html" type="html">
             <div>
                 <h2 style="text-align:center;">CONTRATO DE TRABAJO</h2>
+                <p>En la ciudad de GUAYAQUIL a los xx días del mes de xx del año xxxx, suscriben el presente Contrato, por una parte XXXXXXXXXXXXXX representante legal de XXXXXXXXXXXXXX con ruc XXXXXXXXXXXXXX, a la cual en adelante se la denominará como
+                   EMPLEADOR; y, por otra, el/la señor/a/ita , XXXXXXXXXXXXXX con cédula de ciudadanía No.XXXXXXXXXXXX a quien en adelante y para fines de este Contrato se le denominará EL/LA TRABAJADOR/A; las partes acuerdan suscribir el presente CONTRATO
+                   ESPECIAL PARA EL SECTOR PRODUCTIVO, al tenor de las cláusulas que a continuación se detallan:
+                </p>
+                <br/>
+                <h2>PRIMERA: ANTECEDENTES:</h2>
+                <p> - Con fecha 30 de octubre de 2020 el Ministerio de Trabajo emitió el Acuerdo Ministerial MDT-2020-0220, en el cual se expide la norma que regula la modalidad contractual especial para el sector productivo.</p>
+                <p> - De conformidad a la actividad propia del EMPLEADOR y por sus necesidades económicas, requiere la contratación de los servicios lícitos y personales del Trabajador, quien declara contar con todo el conocimiento y documentos habilitantes para el efecto.</p>
+                <h2>SEGUNDA: OBJETO DEL CONTRATO:</h2>
+                <p>La parte Trabajadora se compromete con el Empleador a prestar sus servicios lícitos y personales para el cargo de VENDEDOR/A</p>
+                <h2>TERCERA: JORNADA DE TRABAJO:</h2>
+                <p>El horario diario del Trabajador será el comprendido desde las 09:00 hasta las 18:00 con 60 (minutos) de descanso.</p>
+                <h2>CUARTA.- REMUNERACIÓN:</h2>
+                <p>El EMPLEADOR pagará a la parte Trabajadora por la ejecución de su labor la remuneración de USD <t t-out="object.wage"/> (QUINIENTOS CINCUENTA DÓLARES AMERICANOS DE LOS ESTADOS UNIDOS, 00/100), mediante Transferencia bancaria.</p>
+                <p>De forma adicional también recibirá la parte Trabajadora los beneficios sociales, como décima tercera, décimo cuarta remuneraciones y vacaciones que conforme a la Ley tuviere derecho.</p>
+                <h2>QUINTA.- DE LA DURACIÓN DEL CONTRATO ESPECIAL PRODUCTIVO:</h2>
+                <p>Las Partes acuerdan que la duración del presente contrato es de 362 días, es decir empieza el 22 de julio del 2026 y TERMINA EL 19 días del mes de JULIO del año 2027.</p>
+                <p>EL/LA TRABAJADOR/A inicialmente ingresará a un periodo de prueba de 90 días.</p>
+                <p>La duración del contrato especial productivo, en forma continua o discontinua, no podrá ser superior a un (1) año dentro del cual se podrá acordar un periodo de prueba de hasta noventa
+                   (90) días, tiempo en el que cualquiera de las partes lo puede dar por terminado. Si la actividad,
+                   labor o servicio contratado así lo requiere, el contrato podrá renovarse por una única ocasión, hasta por el plazo de un (1) año adicional.</p>
+                <p>Una vez concluido el plazo, la labor, servicio o actividad para la cual fue contratado el trabajador y de no ser renovado el contrato, terminará la relación laboral.</p>
+                <p>Si al cumplirse este plazo las partes acuerdan continuar con la relación laboral, se entenderá a partir de ese momento, para todos los efectos legales, como un contrato indefinido que mantendrá las condiciones establecidas en los términos de la contratación inicial.</p>
+
+                <br/>
+                <table style="width:100%; margin-top:45px;">
+                    <tr>
+                        <td style="width:45%; text-align:center; border-top:1px solid #000;">EMPLEADOR</td>
+                        <td style="width:10%;"></td>
+                        <td style="width:45%; text-align:center; border-top:1px solid #000;">TRABAJADOR/A</td>
+                    </tr>
+                </table>
+            </div>
+        </field>
+        <field name="email_subject">Documentos de contratación - {{ object.employee_id.name }}</field>
+        <field name="email_body_html" type="html">
+            <div>
+                <p>Estimado/a <t t-out="object.employee_id.name"/>,</p>
+                <p>Adjuntamos por separado su contrato, las solicitudes de acumulación de décimos y su ficha de empleado para revisión y firma.</p>
+                <p>Saludos cordiales.</p>
+            </div>
+        </field>
+    </record>
+
+    <!-- <record id="template_contract_general" model="hr.ec.document.template">
+        <field name="name">Contrato laboral general</field>
+        <field name="document_type">contract</field>
+        <field name="contract_type_id" ref="contract_type_general_ec"/>
+        <field name="is_default" eval="True"/>
+        <field name="sequence">10</field>
+        <field name="body_html" type="html">
+            <div>
+                <h2 style="text-align:center;">CONTRATO DE TRABAJO</h2>
                 <p>En la ciudad de GUAYAQUIL a los <t t-out="object.current_day"/> días del mes de <t t-out="object.current_month"/> del año <t t-out="object.current_year"/>, suscriben el presente 
                    Contrato, por una parte <strong><t t-out="object.company_config_id.representante_legal"/></strong> representante legal de <strong><t t-out="object.company_config_id.name"/></strong> con ruc <strong><t t-out="object.company_config_id.ruc"/></strong>, a la cual en adelante se la denominará como
                    EMPLEADOR; y, por otra, el/la señor/a/ita , <strong><t t-out="object.employee_id.name"/></strong> con cédula de ciudadanía No.<strong><t t-out="object.employee_id.identification_id"/></strong> a quien en adelante y para fines de este Contrato se le denominará EL/LA TRABAJADOR/A; las partes acuerdan suscribir el presente CONTRATO
@@ -56,7 +109,7 @@
                 <p>Saludos cordiales.</p>
             </div>
         </field>
-    </record>
+    </record> -->
 
     <record id="template_thirteenth_accumulation" model="hr.ec.document.template">
         <field name="name">Acumulación de décimo tercero</field>
