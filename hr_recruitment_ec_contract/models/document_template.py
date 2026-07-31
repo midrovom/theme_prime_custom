@@ -1,6 +1,9 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 from lxml import etree
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class HrEcDocumentTemplate(models.Model):
     _name = "hr.ec.document.template"
@@ -52,7 +55,7 @@ class HrEcDocumentTemplate(models.Model):
         required=True,
         render_engine="qweb",
         render_options={"post_process": False},
-        sanitize="email_outgoing",
+        sanitize="False",
         translate=True,
     )
     email_subject = fields.Char(
@@ -133,7 +136,6 @@ class HrEcDocumentTemplate(models.Model):
             )
         return html
 
-
     def render_document(self, record):
         self.ensure_one()
 
@@ -147,16 +149,28 @@ class HrEcDocumentTemplate(models.Model):
         html = self.body_html or ""
         html = self._replace_dynamic_variables(html)
 
-        result = self.env["ir.qweb"]._render(
-            etree.fromstring(
+        try:
+            template = etree.fromstring(
                 "<t>" + html + "</t>"
-            ),
+            )
+
+        except Exception as e:
+            _logger.error("Error procesando plantilla %s: %s\nHTML recibido:\n%s", self.name, e, html)
+            raise ValidationError(
+                _("La plantilla contiene un HTML inválido: %s") % e
+            )
+
+        rendered = self.env["ir.qweb"]._render(
+            template,
             {
                 "object": record,
             }
         )
 
-        return result.decode() if isinstance(result, bytes) else result
+        if isinstance(rendered, bytes):
+            rendered = rendered.decode("utf-8")
+
+        return rendered
 
     # def render_document(self, record):
     #     self.ensure_one()
