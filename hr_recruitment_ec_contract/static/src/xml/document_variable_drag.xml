@@ -1,7 +1,7 @@
-<t t-name="hr_ec_document.VariableDragWidget" owl="1">
+<t t-name="hr_recruitment_ec_contract.VariableDragWidget" owl="1">
     <div class="o_variable_drag_list">
         <t t-foreach="variables" t-as="variable">
-            <span class="badge bg-info m-1" draggable="true" t-on-dragstart="(ev) => onDragStart(ev, variable)">
+            <span class="badge bg-info m-1" draggable="true"  t-on-dragstart="(ev) => onDragStart(ev, variable)">
                 <t t-esc="variable.name"/>
             </span>
         </t>
