@@ -13,10 +13,14 @@
         <field name="body_html" type="html">
             <div>
                 <h2 style="text-align:center;">CONTRATO DE TRABAJO</h2>
-                <p>Comparecen la compañía <strong><t t-out="object.company_config_id.name"/></strong> y el/la trabajador/a <strong><t t-out="object.employee_id.name"/></strong>, con identificación <strong><t t-out="object.employee_id.identification_id"/></strong>.</p>
-                <p>El/la trabajador/a prestará sus servicios en el cargo de <strong><t t-out="object.job_id.name"/></strong>, desde el <strong><t t-out="object.date_start"/></strong>, con una remuneración mensual de <strong><t t-out="object.wage"/></strong>.</p>
-                <p>Las funciones, jornada, obligaciones, beneficios y demás condiciones se sujetarán a la normativa aplicable, a las políticas internas vigentes y a los acuerdos válidamente incorporados en este documento.</p>
-                <p>Este texto es una plantilla editable. Debe ser revisado y adaptado por la empresa antes de utilizarse como documento definitivo.</p>
+                <p>En la ciudad de GUAYAQUIL a los <t t-esc="datetime.now().strftime('%d')"/> días del mes de <t t-esc="datetime.now().strftime('%B').upper()"/> del año <t t-esc="datetime.now().strftime('%Y')"/>, suscriben el presente</p>
+                <p>Contrato, por una parte <strong><t t-out="object.company_config_id.representante_legal"/></strong> representante legal de <strong><t t-out="object.company_config_id.name"/></strong> con ruc <strong><t t-out="object.company_config_id.ruc"/></strong>, a la cual en adelante se la denominará como</p>
+                <p>EMPLEADOR; y, por otra, el/la señor/a/ita , <strong><t t-out="object.employee_id.name"/></strong> con cédula de ciudadanía No.<strong><t t-out="object.employee_id.identification_id"/></strong> a quien en adelante y para fines de este Contrato se le denominará EL/LA TRABAJADOR/A; las partes acuerdan suscribir el presente CONTRATO</p>
+                <p>ESPECIAL , al tenor de las cláusulas que a continuación se detallan:</p>
+                <br/><br/>
+                <h2>PRIMERA: ANTECEDENTES:</h2>
+                <p> - Con fecha 30 de octubre de 2020 el Ministerio de Trabajo emitió el Acuerdo Ministerial MDT-2020-0220, en el cual se expide la norma que regula la modalidad contractual especial para el sector productivo.</p>
+                <p> - De conformidad a la actividad propia del EMPLEADOR y por sus necesidades económicas, requiere la contratación de los servicios lícitos y personales del Trabajador, quien declara contar con todo el conocimiento y documentos habilitantes para el efecto.</p>
                 <br/>
                 <table style="width:100%; margin-top:45px;">
                     <tr>
