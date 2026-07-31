@@ -1,64 +1,18 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
-import { HtmlField } from "@web/views/fields/html/html_field";
+import { Wysiwyg } from "@web_editor/js/wysiwyg/wysiwyg";
 
-patch(HtmlField.prototype, {
+patch(Wysiwyg.prototype, {
 
-    setup() {
-        super.setup();
+    async startEdition() {
+        const res = await super.startEdition(...arguments);
 
-        this.onDropVariable = (ev) => {
+        console.log("Wysiwyg:", this);
+        console.log("OdooEditor:", this.odooEditor);
+        console.log("Métodos:", Object.keys(this.odooEditor));
 
-            const text = ev.dataTransfer.getData("text/plain");
-
-            if (!text) {
-                return;
-            }
-
-            ev.preventDefault();
-
-            const editor = this.el.querySelector(".odoo-editor-editable");
-
-            if (editor) {
-                editor.focus();
-
-                document.execCommand(
-                    "insertText",
-                    false,
-                    text
-                );
-            }
-        };
+        return res;
     },
-
-
-    mounted() {
-        super.mounted();
-
-        const editor = this.el.querySelector(".odoo-editor-editable");
-
-        if (editor) {
-            editor.addEventListener(
-                "drop",
-                this.onDropVariable
-            );
-        }
-    },
-
-
-    willUnmount() {
-
-        const editor = this.el.querySelector(".odoo-editor-editable");
-
-        if (editor) {
-            editor.removeEventListener(
-                "drop",
-                this.onDropVariable
-            );
-        }
-
-        super.willUnmount();
-    }
 
 });
