@@ -50,7 +50,7 @@
                             <field name="body_html" widget="html" nolabel="1"/>
                             <group>
                                 <separator string="Variables disponibles"/>
-                                <field name="available_variables" nolabel="1" readonly="1"/>
+                                <field name="variable_ids" nolabel="1" readonly="1"/>
                             </group>
                         </page>
                         <page string="Correo" invisible="document_type != 'contract'">
