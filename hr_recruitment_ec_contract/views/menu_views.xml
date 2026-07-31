@@ -9,4 +9,5 @@
     <menuitem id="menu_hr_ec_templates" name="Plantillas" parent="menu_hr_ec_configuration" action="action_hr_ec_document_template" sequence="10"/>
     <menuitem id="menu_hr_ec_settings" name="Automatización" parent="menu_hr_ec_configuration" action="action_hr_ec_onboarding_config" sequence="20"/>
     <menuitem id="menu_hr_ec_config" name="Empresas" parent="menu_hr_ec_configuration" action="action_company_config" sequence="30"/>
+    <menuitem id="menu_hr_ec_document_variable" name="Variables dinámicas" parent="menu_hr_ec_configuration" action="action_hr_ec_document_variable" sequence="40"/>
 </odoo>

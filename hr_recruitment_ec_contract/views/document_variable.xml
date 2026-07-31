@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <odoo>
-
 
     <record id="document_variable_day" model="hr.ec.document.variable">
         <field name="name">Día actual</field>
@@ -9,13 +7,11 @@
         <field name="expression">object.current_day</field>
     </record>
 
-
     <record id="document_variable_month" model="hr.ec.document.variable">
         <field name="name">Mes actual</field>
         <field name="key">MES_ACTUAL</field>
         <field name="expression">object.current_month</field>
     </record>
-
 
     <record id="document_variable_year" model="hr.ec.document.variable">
         <field name="name">Año actual</field>
@@ -23,20 +19,17 @@
         <field name="expression">object.current_year</field>
     </record>
 
-
     <record id="document_variable_company_name" model="hr.ec.document.variable">
         <field name="name">Nombre empresa</field>
         <field name="key">EMPRESA_NOMBRE</field>
         <field name="expression">object.company_config_id.name</field>
     </record>
 
-
     <record id="document_variable_company_ruc" model="hr.ec.document.variable">
         <field name="name">RUC empresa</field>
         <field name="key">EMPRESA_RUC</field>
         <field name="expression">object.company_config_id.ruc</field>
     </record>
-
 
     <record id="document_variable_representante" model="hr.ec.document.variable">
         <field name="name">Representante legal</field>
@@ -46,7 +39,6 @@
         </field>
     </record>
 
-
     <record id="document_variable_employee_name" model="hr.ec.document.variable">
         <field name="name">Nombre empleado</field>
         <field name="key">EMPLEADO_NOMBRE</field>
@@ -54,7 +46,6 @@
             object.employee_id.name
         </field>
     </record>
-
 
     <record id="document_variable_employee_identification" model="hr.ec.document.variable">
         <field name="name">Cédula empleado</field>
@@ -64,7 +55,6 @@
         </field>
     </record>
 
-
     <record id="document_variable_contract_type" model="hr.ec.document.variable">
         <field name="name">Tipo contrato</field>
         <field name="key">TIPO_CONTRATO</field>
@@ -73,7 +63,6 @@
         </field>
     </record>
 
-
     <record id="document_variable_salary" model="hr.ec.document.variable">
         <field name="name">Salario</field>
         <field name="key">SALARIO</field>
@@ -81,6 +70,5 @@
             object.wage
         </field>
     </record>
-
 
 </odoo>

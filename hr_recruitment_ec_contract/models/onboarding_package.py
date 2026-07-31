@@ -152,21 +152,6 @@ class HrEcOnboardingPackage(models.Model):
         value = re.sub(r"[^A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ._-]+", "_", value)
         return value.strip("._") or "documento"
 
-    # def _get_template(self, document_type):
-    #     self.ensure_one()
-    #     domain = [
-    #         ("document_type", "=", document_type),
-    #         ("active", "=", True),
-    #         "|",
-    #         ("company_id", "=", self.company_id.id),
-    #         ("company_id", "=", False),
-    #     ]
-    #     return self.env["hr.ec.document.template"].sudo().search(
-    #         domain,
-    #         order="company_id desc, is_default desc, sequence, id",
-    #         limit=1,
-    #     )
-
     def _get_template(self, document_type, contract_type=False):
         self.ensure_one()
 

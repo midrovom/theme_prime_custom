@@ -20,11 +20,8 @@ class HrEcDocumentTemplate(models.Model):
     variable_ids = fields.Many2many(
         "hr.ec.document.variable",
         string="Variables disponibles",
+        compute="_compute_variable_ids",
         readonly=True,
-        default=lambda self:
-            self.env["hr.ec.document.variable"].search(
-                [("active", "=", True)]
-            )
     )
 
     document_type = fields.Selection(
@@ -156,3 +153,15 @@ class HrEcDocumentTemplate(models.Model):
         if not self.email_body_html:
             return ""
         return self._render_field("email_body_html", [record.id]).get(record.id, "")
+
+    @api.depends()
+    def _compute_variable_ids(self):
+
+        variables = self.env[
+            "hr.ec.document.variable"
+        ].search([
+            ("active", "=", True)
+        ])
+
+        for template in self:
+            template.variable_ids = variables
