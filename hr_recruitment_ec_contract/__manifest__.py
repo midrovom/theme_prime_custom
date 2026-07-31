@@ -31,7 +31,12 @@
         "report/report_templates.xml",
         "views/menu_views.xml",
     ],
-    "assets": {},
+    "assets": {
+        "web.assets_backend": [
+            "hr_recruitment_ec_contract/static/js/document_variable_drag.js",
+            "hr_recruitment_ec_contract/static/xml/document_variable_drag.xml",
+        ],
+    },
     "application": True,
     "installable": True,
     "auto_install": False,
