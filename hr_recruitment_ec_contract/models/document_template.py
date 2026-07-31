@@ -21,18 +21,18 @@ class HrEcDocumentTemplate(models.Model):
         string="Variables disponibles",
         readonly=True,
         default="""
-            <t t-out="object.current_day"/>
-            <t t-out="object.current_month"/>
-            <t t-out="object.current_year"/>
-            <t t-out="object.company_config_id.representante_legal"/>
-            <t t-out="object.company_config_id.name"/>
-            <t t-out="object.company_config_id.ruc"/>
-            <t t-out="object.employee_id.name"/>
-            <t t-out="object.employee_id.identification_id"/>
-            <t t-out="object.ec_contract_type_id.name"/>
-            <t t-out="object.wage"/>
-            <t t-out="object.year"/>
-            <t t-out="object.request_date"/>
+            Día actual → <t t-out="object.current_day"/>
+            Mes actual → <t t-out="object.current_month"/>
+            Año actual → <t t-out="object.current_year"/>
+            Representante legal → <t t-out="object.company_config_id.representante_legal"/>
+            Nombre de la empresa → <t t-out="object.company_config_id.name"/>
+            RUC de la empresa → <t t-out="object.company_config_id.ruc"/>
+            Nombre del empleado → <t t-out="object.employee_id.name"/>
+            Cédula del empleado → <t t-out="object.employee_id.identification_id"/>
+            Tipo de contrato → <t t-out="object.ec_contract_type_id.name"/>
+            Salario → <t t-out="object.wage"/>
+            Año (campo auxiliar) → <t t-out="object.year"/>
+            Fecha de solicitud → <t t-out="object.request_date"/>
         """
     )
     
