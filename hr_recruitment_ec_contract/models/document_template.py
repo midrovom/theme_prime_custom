@@ -143,14 +143,23 @@ class HrEcDocumentTemplate(models.Model):
                 model=self.render_model)
             )
 
-        html = self.body_html
+        html = self.body_html or ""
         html = self._replace_dynamic_variables(html)
-        template = etree.fromstring(
-            "<t>" + html + "</t>"
-        )
+
+        if not html.strip():
+            return ""
+
+        try:
+            qweb_template = etree.fromstring(
+                ("<t>%s</t>" % html).encode("utf-8")
+            )
+        except Exception as e:
+            raise ValidationError(
+                _("Error procesando la plantilla HTML: %s") % e
+            )
 
         return self.env["ir.qweb"]._render(
-            template,
+            qweb_template,
             {
                 "object": record,
             }
