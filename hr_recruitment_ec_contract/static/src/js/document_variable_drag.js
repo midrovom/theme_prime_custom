@@ -9,11 +9,9 @@ import { standardFieldProps } from "@web/views/fields/standard_field_props";
 export class VariableDragWidget extends Component {
 
     static template = "hr_recruitment_ec_contract.VariableDragWidget";
-
     static props = {
         ...standardFieldProps,
     };
-
 
     setup() {
 
@@ -48,7 +46,6 @@ export class VariableDragWidget extends Component {
     insertVariable(variable) {
 
         const text = "{{" + variable.key + "}}";
-
         const editor = document.querySelector(
             ".odoo-editor-editable"
         );
@@ -58,10 +55,7 @@ export class VariableDragWidget extends Component {
             return;
         }
 
-
         editor.focus();
-
-
         const selection = window.getSelection();
 
         if (!selection.rangeCount) {
@@ -70,22 +64,14 @@ export class VariableDragWidget extends Component {
 
 
         const range = selection.getRangeAt(0);
-
         range.deleteContents();
 
-
         const node = document.createTextNode(text);
-
         range.insertNode(node);
-
-
         range.setStartAfter(node);
         range.setEndAfter(node);
-
-
         selection.removeAllRanges();
         selection.addRange(range);
-
 
         editor.dispatchEvent(
             new InputEvent(
