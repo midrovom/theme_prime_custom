@@ -1,6 +1,6 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
-
+from lxml import etree
 
 class HrEcDocumentTemplate(models.Model):
     _name = "hr.ec.document.template"
@@ -145,15 +145,16 @@ class HrEcDocumentTemplate(models.Model):
 
         html = self.body_html
         html = self._replace_dynamic_variables(html)
-
-        rendered = self.env["ir.qweb"]._render(
-            html,
-            {
-                "object": record,
-            },
+        template = etree.fromstring(
+            "<t>" + html + "</t>"
         )
 
-        return rendered.decode("utf-8") if isinstance(rendered, bytes) else rendered
+        return self.env["ir.qweb"]._render(
+            template,
+            {
+                "object": record,
+            }
+        )
 
     # def render_document(self, record):
     #     self.ensure_one()
