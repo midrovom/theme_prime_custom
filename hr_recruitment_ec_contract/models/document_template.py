@@ -16,6 +16,26 @@ class HrEcDocumentTemplate(models.Model):
         string="Compañía",
         help="Déjelo vacío para que la plantilla pueda utilizarse en todas las compañías.",
     )
+
+    available_variables = fields.Text(
+        string="Variables disponibles",
+        readonly=True,
+        default="""
+            <t t-out="object.current_day"/>
+            <t t-out="object.current_month"/>
+            <t t-out="object.current_year"/>
+            <t t-out="object.company_config_id.representante_legal"/>
+            <t t-out="object.company_config_id.name"/>
+            <t t-out="object.company_config_id.ruc"/>
+            <t t-out="object.employee_id.name"/>
+            <t t-out="object.employee_id.identification_id"/>
+            <t t-out="object.ec_contract_type_id.name"/>
+            <t t-out="object.wage"/>
+            <t t-out="object.year"/>
+            <t t-out="object.request_date"/>
+        """
+    )
+    
     document_type = fields.Selection(
         [
             ("contract", "Contrato"),
