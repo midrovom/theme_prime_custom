@@ -25,6 +25,7 @@
         'views/company_views.xml',
         'views/payroll_authorization.xml',
         'views/reglamento_interno_views.xml',
+        'views/document.variable.xml',
         "report/report_actions.xml",
         "report/report_templates.xml",
         "views/menu_views.xml",

@@ -17,25 +17,16 @@ class HrEcDocumentTemplate(models.Model):
         help="Déjelo vacío para que la plantilla pueda utilizarse en todas las compañías.",
     )
 
-    available_variables = fields.Text(
+    variable_ids = fields.Many2many(
+        "hr.ec.document.variable",
         string="Variables disponibles",
         readonly=True,
-        default="""
-            Día actual → <t t-out="object.current_day"/>
-            Mes actual → <t t-out="object.current_month"/>
-            Año actual → <t t-out="object.current_year"/>
-            Representante legal → <t t-out="object.company_config_id.representante_legal"/>
-            Nombre de la empresa → <t t-out="object.company_config_id.name"/>
-            RUC de la empresa → <t t-out="object.company_config_id.ruc"/>
-            Nombre del empleado → <t t-out="object.employee_id.name"/>
-            Cédula del empleado → <t t-out="object.employee_id.identification_id"/>
-            Tipo de contrato → <t t-out="object.ec_contract_type_id.name"/>
-            Salario → <t t-out="object.wage"/>
-            Año (campo auxiliar) → <t t-out="object.year"/>
-            Fecha de solicitud → <t t-out="object.request_date"/>
-        """
+        default=lambda self:
+            self.env["hr.ec.document.variable"].search(
+                [("active", "=", True)]
+            )
     )
-    
+
     document_type = fields.Selection(
         [
             ("contract", "Contrato"),
@@ -119,6 +110,31 @@ class HrEcDocumentTemplate(models.Model):
         for template in self:
             if template.duration_months < 0 or template.trial_days < 0:
                 raise ValidationError(_("La duración y los días de prueba no pueden ser negativos."))
+
+    # CONVERSION VARIABLES USUARIO -> QWEB
+    def _replace_dynamic_variables(self, html):
+        """
+        Convierte:
+        {{DIA_ACTUAL}}
+        en:
+        <t t-out="object.current_day"/>
+        """
+        if not html:
+            return html
+        variables = self.env[
+            "hr.ec.document.variable"
+        ].search(
+            [
+                ("active", "=", True)
+            ]
+        )
+        for variable in variables:
+
+            html = html.replace(
+                "{{%s}}" % variable.key,
+                '<t t-out="%s"/>' % variable.expression
+            )
+        return html
 
     def render_document(self, record):
         self.ensure_one()
