@@ -1,7 +1,6 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 from lxml import etree
-from html import unescape
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -56,7 +55,7 @@ class HrEcDocumentTemplate(models.Model):
         required=True,
         render_engine="qweb",
         render_options={"post_process": False},
-        sanitize="False",
+        sanitize="email_outgoing",
         translate=True,
     )
     email_subject = fields.Char(
@@ -150,26 +149,11 @@ class HrEcDocumentTemplate(models.Model):
         html = self.body_html or ""
         html = self._replace_dynamic_variables(html)
 
-        _logger.warning("========== TEMPLATE ID ==========")
-        _logger.warning(self.id)
-        _logger.warning("========== HTML RAW ==========")
-        _logger.warning(repr(html))
-        _logger.warning("========== END HTML ==========")
-
-        html = unescape(html)
-        template = etree.fromstring(
-            "<t>" + html + "</t>"
-        )
-
-        rendered = self.env["ir.qweb"]._render(
-            template,
-            {
-                "object": record,
-            }
-        )
-
-        return rendered.decode() if isinstance(rendered, bytes) else rendered
-
+        return self.env["mail.render.mixin"]._render_template(
+            html,
+            record._name,
+            [record.id],
+        ).get(record.id, "")
 
     # def render_document(self, record):
     #     self.ensure_one()
