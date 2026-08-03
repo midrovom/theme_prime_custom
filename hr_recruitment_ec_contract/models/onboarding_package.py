@@ -191,64 +191,10 @@ class HrEcOnboardingPackage(models.Model):
             return current_attachment
         return self.env["ir.attachment"].sudo().create(vals)
 
-    # def _ensure_contract(self):
-    #     self.ensure_one()
-    #     applicant = self.applicant_id
-    #     template = self.contract_template_id or self._get_template( "contract", applicant.ec_contract_type_id,)
-    #     if not template:
-    #         raise ValidationError(_("Debe configurar una plantilla de contrato para la compañía o el candidato."))
-
-    #     self.contract_template_id = template
-    #     date_start = applicant.date_start or applicant.ec_contract_date_start or applicant.availability or fields.Date.today()
-    #     wage = applicant.wage or applicant.ec_contract_wage or applicant.salary_proposed or template.default_wage or 0.0
-    #     date_end = applicant.date_end
-    #     if not date_end and template.duration_months:
-    #         date_end = date_start + relativedelta(months=template.duration_months, days=-1)
-    #     trial_date_end = date_start + timedelta(days=template.trial_days) if template.trial_days else False
-
-    #     contract = self.contract_id or self.env["hr.contract"].sudo().search(
-    #         [("ec_applicant_id", "=", applicant.id)], limit=1
-    #     )
-    #     vals = {
-    #         "name": _("Contrato - %(employee)s", employee=self.employee_id.name),
-    #         "employee_id": self.employee_id.id,
-    #         "company_id": self.company_id.id,
-    #         "job_id": applicant.job_id.id,
-    #         "department_id": applicant.department_id.id,
-    #         "date_start": date_start,
-    #         "date_end": date_end,
-    #         "trial_date_end": trial_date_end,
-    #         "wage": wage,
-    #         "contract_type_id": template.contract_type_id.id,
-    #         "resource_calendar_id": applicant.resource_calendar_id.id,
-    #         "ec_applicant_id": applicant.id,
-    #         "ec_package_id": self.id,
-    #         "ec_document_template_id": template.id,
-    #     }
-    #     if contract:
-    #         contract.write(vals)
-    #     else:
-    #         contract = self.env["hr.contract"].sudo().create(vals)
-    #     _logger.info("Contrato %s - ec_package_id=%s - company_config=%s", contract.id,
-    #         contract.ec_package_id.id, contract.company_config_id.name,)
-    #     contract.ec_rendered_text = template.render_document(contract)
-    #     attachment_name = "%s.pdf" % self._safe_filename(_("Contrato_%s", self.employee_id.name))
-    #     attachment = self._upsert_pdf_attachment(
-    #         contract.ec_attachment_id,
-    #         attachment_name,
-    #         "hr_recruitment_ec_contract.action_report_ec_contract",
-    #         contract,
-    #     )
-    #     contract.ec_attachment_id = attachment.id
-    #     self.contract_id = contract.id
-    #     return attachment
-
     def _ensure_contract(self):
         self.ensure_one()
         applicant = self.applicant_id
-        template = self.contract_template_id or self._get_template(
-            "contract", applicant.ec_contract_type_id,
-        )
+        template = self.contract_template_id or self._get_template( "contract", applicant.ec_contract_type_id,)
         if not template:
             raise ValidationError(_("Debe configurar una plantilla de contrato para la compañía o el candidato."))
 
@@ -260,15 +206,9 @@ class HrEcOnboardingPackage(models.Model):
             date_end = date_start + relativedelta(months=template.duration_months, days=-1)
         trial_date_end = date_start + timedelta(days=template.trial_days) if template.trial_days else False
 
-        # Buscar contrato existente por applicant y paquete
         contract = self.contract_id or self.env["hr.contract"].sudo().search(
-            [
-                ("ec_applicant_id", "=", applicant.id),
-                ("ec_package_id", "=", self.id),
-            ],
-            limit=1
+            [("ec_applicant_id", "=", applicant.id)], limit=1
         )
-
         vals = {
             "name": _("Contrato - %(employee)s", employee=self.employee_id.name),
             "employee_id": self.employee_id.id,
@@ -285,23 +225,13 @@ class HrEcOnboardingPackage(models.Model):
             "ec_package_id": self.id,
             "ec_document_template_id": template.id,
         }
-
         if contract:
             contract.write(vals)
         else:
             contract = self.env["hr.contract"].sudo().create(vals)
-
-        _logger.info(
-            "Contrato %s - ec_package_id=%s - company_config=%s",
-            contract.id,
-            contract.ec_package_id.id,
-            contract.company_config_id.name,
-        )
-
-        # Renderizar texto del contrato
+        _logger.info("Contrato %s - ec_package_id=%s - company_config=%s", contract.id,
+            contract.ec_package_id.id, contract.company_config_id.name,)
         contract.ec_rendered_text = template.render_document(contract)
-
-        # Generar/actualizar adjunto PDF
         attachment_name = "%s.pdf" % self._safe_filename(_("Contrato_%s", self.employee_id.name))
         attachment = self._upsert_pdf_attachment(
             contract.ec_attachment_id,
@@ -310,11 +240,8 @@ class HrEcOnboardingPackage(models.Model):
             contract,
         )
         contract.ec_attachment_id = attachment.id
-
-        # Vincular contrato al paquete
         self.contract_id = contract.id
         return attachment
-
 
     def _ensure_benefit_request(self, benefit_type):
         self.ensure_one()
