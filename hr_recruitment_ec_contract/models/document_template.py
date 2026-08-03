@@ -110,23 +110,16 @@ class HrEcDocumentTemplate(models.Model):
             if template.duration_months < 0 or template.trial_days < 0:
                 raise ValidationError(_("La duración y los días de prueba no pueden ser negativos."))
 
-    # CONVERSION VARIABLES USUARIO -> QWEB
-    def _replace_dynamic_variables(self, html):
-        """
-        Convierte:
-        {{DIA_ACTUAL}}
-        en:
-        ${object.current_day}
-        """
+    def _replace_dynamic_variables(self, html, record):
         if not html:
             return html
         variables = self.env["hr.ec.document.variable"].search([("active", "=", True)])
         for variable in variables:
-            expression = variable.expression.strip()
-            html = html.replace(
-                "{{%s}}" % variable.key,
-                "${%s}" % expression
-            )
+            try:
+                value = eval(variable.expression, {"object": record})
+            except Exception:
+                value = ""
+            html = html.replace("{{%s}}" % variable.key, str(value or ""))
         return html
 
     def render_document(self, record):
@@ -140,14 +133,9 @@ class HrEcDocumentTemplate(models.Model):
             )
 
         html = self.body_html
-        html = self._replace_dynamic_variables(html)
-        rendered = self.env["mail.render.mixin"]._render_template(
-            html,
-            record._name,
-            [record.id],
-        )
+        html = self._replace_dynamic_variables(html, record)
 
-        return rendered.get(record.id, "")
+        return html
 
     def render_email_subject(self, record):
         self.ensure_one()
