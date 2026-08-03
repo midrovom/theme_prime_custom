@@ -83,5 +83,14 @@
         <field name="expression">object.employee_id.work_email</field>
     </record>
 
+    <record id="document_variable_start_date" model="hr.ec.document.variable">
+        <field name="name">Fecha inicio contrato</field>
+        <field name="key">FECHA_INICIO</field>
+        <field name="expression">
+            object.date_start.strftime("%d de %B del %Y") if object.date_start else ""
+        </field>
+    </record>
+
+
 
 </odoo>
