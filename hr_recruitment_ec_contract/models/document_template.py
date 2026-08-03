@@ -116,11 +116,15 @@ class HrEcDocumentTemplate(models.Model):
         variables = self.env["hr.ec.document.variable"].search([("active", "=", True)])
         for variable in variables:
             try:
-                value = eval(variable.expression, {"object": record})
-            except Exception:
+                value = eval(variable.expression.strip(), {"object": record})
+                if value is None:
+                    value = ""
+            except Exception as e:
+                _logger.warning("Error evaluando variable %s: %s", variable.key, e)
                 value = ""
-            html = html.replace("{{%s}}" % variable.key, str(value or ""))
+            html = html.replace("{{%s}}" % variable.key, str(value))
         return html
+
 
     def render_document(self, record):
         self.ensure_one()
