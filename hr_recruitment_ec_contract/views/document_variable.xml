@@ -77,4 +77,11 @@
         <field name="expression">object.request_date</field>
     </record>
 
+    <record id="document_variable_work_email" model="hr.ec.document.variable">
+        <field name="name">Correo Empleado</field>
+        <field name="key">CORREO_TRABAJO</field>
+        <field name="expression">object.work_email</field>
+    </record>
+
+
 </odoo>
