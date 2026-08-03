@@ -122,9 +122,10 @@ class HrEcDocumentTemplate(models.Model):
             return html
         variables = self.env["hr.ec.document.variable"].search([("active", "=", True)])
         for variable in variables:
+            expression = variable.expression.strip()
             html = html.replace(
                 "{{%s}}" % variable.key,
-                "${%s}" % variable.expression
+                "${%s}" % expression
             )
         return html
 
@@ -139,10 +140,7 @@ class HrEcDocumentTemplate(models.Model):
             )
 
         html = self.body_html
-
-        # Convierte {{VARIABLE}} a t-out
         html = self._replace_dynamic_variables(html)
-
         rendered = self.env["mail.render.mixin"]._render_template(
             html,
             record._name,
@@ -150,16 +148,6 @@ class HrEcDocumentTemplate(models.Model):
         )
 
         return rendered.get(record.id, "")
-
-
-    # def render_document(self, record):
-    #     self.ensure_one()
-    #     if not record or record._name != self.render_model:
-    #         raise ValidationError(
-    #             _("La plantilla %(template)s requiere un registro del modelo %(model)s.",
-    #               template=self.display_name, model=self.render_model)
-    #         )
-    #     return self._render_field("body_html", [record.id]).get(record.id, "")
 
     def render_email_subject(self, record):
         self.ensure_one()
