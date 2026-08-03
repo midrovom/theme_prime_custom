@@ -136,25 +136,6 @@ class HrEcDocumentTemplate(models.Model):
             )
         return html
 
-    # def render_document(self, record):
-    #     self.ensure_one()
-
-    #     if not record or record._name != self.render_model:
-    #         raise ValidationError(
-    #             _("La plantilla %(template)s requiere un registro del modelo %(model)s.",
-    #             template=self.display_name,
-    #             model=self.render_model)
-    #         )
-
-    #     html = self.body_html or ""
-    #     html = self._replace_dynamic_variables(html)
-
-    #     return self.env["mail.render.mixin"]._render_template(
-    #         html,
-    #         record._name,
-    #         [record.id],
-    #     ).get(record.id, "")
-
     def render_document(self, record):
         self.ensure_one()
 
@@ -165,41 +146,19 @@ class HrEcDocumentTemplate(models.Model):
                 model=self.render_model)
             )
 
-        html = str(self.body_html or "")
+        html = self.body_html
 
+        # Convierte {{VARIABLE}} a t-out
         html = self._replace_dynamic_variables(html)
 
-        _logger.warning("========== HTML ANTES QWEB ==========")
-        _logger.warning(html)
-        _logger.warning("========== FIN HTML ==========")
-
-        # corregir html inválido para XML
-        html = html.replace("<td style=\"width:10%;\"/>",
-                            "<td style=\"width:10%;\"></td>")
-
-        try:
-            xml = "<t>" + html + "</t>"
-
-            template = etree.fromstring(
-                xml.encode("utf-8"),
-                parser=etree.XMLParser(recover=True)
-            )
-
-        except Exception as e:
-            _logger.error("HTML XML INVALIDO")
-            _logger.error(html)
-            raise ValidationError(
-                _("La plantilla contiene HTML inválido: %s") % e
-            )
-
-        rendered = self.env["ir.qweb"]._render(
-            template,
-            {
-                "object": record,
-            }
+        rendered = self.env["mail.render.mixin"]._render_template(
+            html,
+            record._name,
+            [record.id],
         )
 
-        return rendered.decode("utf-8") if isinstance(rendered, bytes) else rendered
+        return rendered.get(record.id, "")
+
 
     # def render_document(self, record):
     #     self.ensure_one()
