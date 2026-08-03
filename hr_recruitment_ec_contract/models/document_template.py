@@ -49,14 +49,21 @@ class HrEcDocumentTemplate(models.Model):
         string="Predeterminada",
         help="Cuando no se selecciona otra plantilla, se utiliza la predeterminada compatible con la compañía.",
     )
+    # body_html = fields.Html(
+    #     string="Texto del documento",
+    #     required=True,
+    #     render_engine="qweb",
+    #     render_options={"post_process": False},
+    #     sanitize="email_outgoing",
+    #     translate=True,
+    # )
     body_html = fields.Html(
         string="Texto del documento",
         required=True,
-        render_engine="qweb",
-        render_options={"post_process": False},
         sanitize="email_outgoing",
         translate=True,
     )
+
     email_subject = fields.Char(
         string="Asunto sugerido del correo",
         render_engine="inline_template",
