@@ -87,7 +87,7 @@
         <field name="name">Fecha inicio contrato</field>
         <field name="key">FECHA_INICIO</field>
         <field name="expression">
-            object.date_start.strftime("%d de %B del %Y") if object.date_start else ""
+            fields.Date.from_string(object.date_start).strftime("%d de %B del %Y") if object.date_start else ""
         </field>
     </record>
 
