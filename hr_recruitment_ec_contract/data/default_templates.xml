@@ -125,7 +125,7 @@
         <field name="sequence">50</field>
         <field name="body_html" type="html">
             <div>
-                <p style="text-align:right;"><strong>FECHA:XX/XX/XXXX</p>
+                <p style="text-align:right;"><strong>FECHA:</strong>XX/XX/XXXX</p>
                 <p><strong>Empresa:</strong> XXXXXXXXXXXX</p>
                 <br/>
                 <p>
