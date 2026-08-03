@@ -27,8 +27,8 @@ class HrEcDocumentVariableMixin(models.AbstractModel):
 class HrContract(models.Model):
     _inherit = "hr.contract"
 
-# class HrEmployee(models.Model):
-#     _inherit = "hr.employee"
+class HrEmployee(models.Model):
+    _inherit = "hr.employee"
 
 class HrEcBenefitRequest(models.Model):
     _inherit = "hr.ec.benefit.request"
