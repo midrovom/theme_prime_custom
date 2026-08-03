@@ -16,7 +16,7 @@
     <record id="document_variable_year" model="hr.ec.document.variable">
         <field name="name">Año</field>
         <field name="key">ANIO_ACTUAL</field>
-        <field name="expression">object.current_year</field>
+        <field name="expression">getattr(object, 'year', getattr(object, 'current_year', ''))</field>
     </record>
 
     <record id="document_variable_company_name" model="hr.ec.document.variable">
