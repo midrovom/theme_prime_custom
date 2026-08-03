@@ -31,34 +31,24 @@ class HrEcDocumentVariableMixin(models.AbstractModel):
 # Extensiones de modelos concretos
 class HrContract(models.Model):
     _inherit = "hr.contract"
-    _name = "hr.contract"  # mantiene el mismo nombre
-    _description = "Contrato con variables dinámicas"
-    _inherit = "hr.ec.document.variable.mixin"
+    # Los campos del mixin se añaden automáticamente
 
 
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
-    _name = "hr.employee"
-    _description = "Empleado con variables dinámicas"
-    _inherit = "hr.ec.document.variable.mixin"
+    # Los campos del mixin se añaden automáticamente
 
 
 class HrEcBenefitRequest(models.Model):
     _inherit = "hr.ec.benefit.request"
-    _name = "hr.ec.benefit.request"
-    _description = "Solicitud de acumulación de décimos con variables dinámicas"
-    _inherit = "hr.ec.document.variable.mixin"
+    # Los campos del mixin se añaden automáticamente
 
 
 class HrEcPayrollAuthorization(models.Model):
     _inherit = "hr.ec.payroll.authorization"
-    _name = "hr.ec.payroll.authorization"
-    _description = "Autorización de envío de rol de pago con variables dinámicas"
-    _inherit = "hr.ec.document.variable.mixin"
+    # Los campos del mixin se añaden automáticamente
 
 
 class HrEcReglamentoInterno(models.Model):
     _inherit = "hr.ec.reglamento.interno"
-    _name = "hr.ec.reglamento.interno"
-    _description = "Acta de recepción del reglamento interno con variables dinámicas"
-    _inherit = "hr.ec.document.variable.mixin"
+    # Los campos del mixin se añaden automáticamente
