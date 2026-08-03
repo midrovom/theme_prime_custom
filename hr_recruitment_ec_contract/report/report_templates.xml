@@ -17,7 +17,7 @@
             <t t-foreach="docs" t-as="o">
                 <t t-call="web.external_layout">
                     <div class="page">
-                        <div t-field="o.rendered_text"/>
+                        <div t-raw="o.rendered_text"/>
                     </div>
                 </t>
             </t>
@@ -29,7 +29,7 @@
             <t t-foreach="docs" t-as="o">
                 <t t-call="web.external_layout">
                     <div class="page">
-                        <div t-field="o.employee_file_html"/>
+                        <div t-raw="o.employee_file_html"/>
                     </div>
                 </t>
             </t>
@@ -41,7 +41,7 @@
             <t t-foreach="docs" t-as="o">
                 <t t-call="web.external_layout">
                     <div class="page">
-                        <div t-field="o.rendered_text"/>
+                        <div t-raw="o.rendered_text"/>
                     </div>
                 </t>
             </t>
@@ -53,7 +53,7 @@
             <t t-foreach="docs" t-as="o">
                 <t t-call="web.external_layout">
                     <div class="page">
-                        <div t-field="o.rendered_text"/>
+                        <div t-raw="o.rendered_text"/>
                     </div>
                 </t>
             </t>

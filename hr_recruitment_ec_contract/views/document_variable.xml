@@ -2,25 +2,25 @@
 <odoo>
 
     <record id="document_variable_day" model="hr.ec.document.variable">
-        <field name="name">Día actual</field>
+        <field name="name">Día</field>
         <field name="key">DIA_ACTUAL</field>
         <field name="expression">object.current_day</field>
     </record>
 
     <record id="document_variable_month" model="hr.ec.document.variable">
-        <field name="name">Mes actual</field>
+        <field name="name">Mes</field>
         <field name="key">MES_ACTUAL</field>
         <field name="expression">object.current_month</field>
     </record>
 
     <record id="document_variable_year" model="hr.ec.document.variable">
-        <field name="name">Año actual</field>
+        <field name="name">Año</field>
         <field name="key">ANIO_ACTUAL</field>
         <field name="expression">object.current_year</field>
     </record>
 
     <record id="document_variable_company_name" model="hr.ec.document.variable">
-        <field name="name">Nombre empresa</field>
+        <field name="name">empresa</field>
         <field name="key">EMPRESA_NOMBRE</field>
         <field name="expression">object.company_config_id.name</field>
     </record>
@@ -69,6 +69,12 @@
         <field name="expression">
             object.wage
         </field>
+    </record>
+
+    <record id="document_variable_request_date" model="hr.ec.document.variable">
+        <field name="name">Fecha de solicitud</field>
+        <field name="key">FECHA_SOLICITUD</field>
+        <field name="expression">object.request_date</field>
     </record>
 
 </odoo>
