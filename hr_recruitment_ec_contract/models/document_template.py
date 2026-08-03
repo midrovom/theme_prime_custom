@@ -49,21 +49,14 @@ class HrEcDocumentTemplate(models.Model):
         string="Predeterminada",
         help="Cuando no se selecciona otra plantilla, se utiliza la predeterminada compatible con la compañía.",
     )
-    # body_html = fields.Html(
-    #     string="Texto del documento",
-    #     required=True,
-    #     render_engine="qweb",
-    #     render_options={"post_process": False},
-    #     sanitize="email_outgoing",
-    #     translate=True,
-    # )
     body_html = fields.Html(
         string="Texto del documento",
         required=True,
+        render_engine="qweb",
+        render_options={"post_process": False},
         sanitize="email_outgoing",
         translate=True,
     )
-
     email_subject = fields.Char(
         string="Asunto sugerido del correo",
         render_engine="inline_template",
@@ -123,22 +116,15 @@ class HrEcDocumentTemplate(models.Model):
         Convierte:
         {{DIA_ACTUAL}}
         en:
-        <t t-out="object.current_day"/>
+        ${object.current_day}
         """
         if not html:
             return html
-        variables = self.env[
-            "hr.ec.document.variable"
-        ].search(
-            [
-                ("active", "=", True)
-            ]
-        )
+        variables = self.env["hr.ec.document.variable"].search([("active", "=", True)])
         for variable in variables:
-
             html = html.replace(
                 "{{%s}}" % variable.key,
-                '<t t-out="%s"/>' % variable.expression
+                "${%s}" % variable.expression
             )
         return html
 
