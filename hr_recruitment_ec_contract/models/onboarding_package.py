@@ -463,9 +463,9 @@ class HrEcOnboardingPackage(models.Model):
                     benefit_attachment = package._ensure_benefit_request(benefit_type)
                     if benefit_attachment:
                         attachments |= benefit_attachment
-                employee_attachment = package._ensure_employee_file()
-                if employee_attachment:
-                    attachments |= employee_attachment
+                # employee_attachment = package._ensure_employee_file()
+                # if employee_attachment:
+                #     attachments |= employee_attachment
 
                 # NUEVO: autorización rol de pago
                 payroll_attachment = package._ensure_payroll_authorization()

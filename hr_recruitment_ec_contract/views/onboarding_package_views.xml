@@ -70,9 +70,9 @@
                                 <field name="attachment_ids" widget="many2many_binary" readonly="1"/>
                             </group>
                         </page>
-                        <page string="Ficha generada">
+                        <!-- <page string="Ficha generada">
                             <field name="employee_file_html" widget="html" nolabel="1"/>
-                        </page>
+                        </page> -->
                         <page string="Solicitudes de décimos">
                             <field name="benefit_request_ids" readonly="1">
                                 <list>
