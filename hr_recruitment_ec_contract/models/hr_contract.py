@@ -38,6 +38,17 @@ class HrContract(models.Model):
         readonly=True,
     )
 
+    calendar_entry_hour = fields.Char(
+        string="Horario de entrada",
+        compute="_compute_calendar_hours",
+        store=False,
+    )
+    calendar_exit_hour = fields.Char(
+        string="Horario de salida",
+        compute="_compute_calendar_hours",
+        store=False,
+    )
+
     current_day = fields.Char(compute="_compute_current_date", store=False)
     current_month = fields.Char(compute="_compute_current_date", store=False)
     current_year = fields.Char(compute="_compute_current_date", store=False)
@@ -60,3 +71,16 @@ class HrContract(models.Model):
             rec.current_day = now.strftime("%d")
             rec.current_month = now.strftime("%B").upper()
             rec.current_year = now.strftime("%Y")
+
+    def _compute_calendar_hours(self):
+        for rec in self:
+            entry = ""
+            exit = ""
+            if rec.resource_calendar_id and rec.resource_calendar_id.attendance_ids:
+                attendances = rec.resource_calendar_id.attendance_ids
+                entry_hour = min(attendances.mapped("hour_from"))
+                exit_hour = max(attendances.mapped("hour_to"))
+                entry = f"{entry_hour:02.0f}:00"
+                exit = f"{exit_hour:02.0f}:00"
+            rec.calendar_entry_hour = entry
+            rec.calendar_exit_hour = exit
