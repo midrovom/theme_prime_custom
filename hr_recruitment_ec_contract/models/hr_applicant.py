@@ -23,6 +23,15 @@ class HrApplicant(models.Model):
         "res.currency",
         default=lambda self: self.env.company.currency_id.id,
     )
+    company_config_id = fields.Many2one(
+        "empresa.empresa",
+        string="Empresa Afiliada",
+    )
+    sucursal_id = fields.Many2one(
+        "empresa.sucursal",
+        string="Sucursal",
+        domain="[('empresa_id', '=', company_config_id)]"
+    )
     wage = fields.Monetary(
         string="Salario",
         currency_field="currency_id",
@@ -141,6 +150,10 @@ class HrApplicant(models.Model):
                 vals["private_phone"] = self.partner_phone
             if self.cedula and not employee.identification_id:
                 vals["identification_id"] = self.cedula
+            if self.company_config_id and not employee.company_config_id:
+                vals["company_config_id"] = self.company_config_id.id
+            if self.sucursal_id and not employee.sucursal_id:
+                vals["sucursal_id"] = self.sucursal_id.id
             if vals:
                 employee.sudo().write(vals)
         return employee
@@ -211,3 +224,7 @@ class HrApplicant(models.Model):
                     exit = f"{exit_hour:02.0f}:00"
                 applicant.calendar_entry_hour = entry
                 applicant.calendar_exit_hour = exit
+
+    @api.onchange('company_config_id')
+    def _onchange_company_config_id(self):
+            self.sucursal_id = False
