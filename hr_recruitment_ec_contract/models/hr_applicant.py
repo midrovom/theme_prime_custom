@@ -30,6 +30,17 @@ class HrApplicant(models.Model):
     date_start = fields.Date(string="Fecha de inicio")
     date_end = fields.Date(string="Fecha fin")
     resource_calendar_id = fields.Many2one("resource.calendar")
+    calendar_entry_hour = fields.Char(
+            string="Horario de entrada",
+            compute="_compute_calendar_hours",
+            store=False,
+        )
+    calendar_exit_hour = fields.Char(
+        string="Horario de salida",
+        compute="_compute_calendar_hours",
+        store=False,
+    )
+
     ec_contract_template_id = fields.Many2one(
         "hr.ec.document.template",
         string="Plantilla de contrato",
@@ -187,3 +198,16 @@ class HrApplicant(models.Model):
         self.ensure_one()
         self._ec_trigger_hired_generation(force=True)
         return self.action_open_ec_onboarding_package()
+
+    def _compute_calendar_hours(self):
+            for applicant in self:
+                entry = ""
+                exit = ""
+                if applicant.resource_calendar_id and applicant.resource_calendar_id.attendance_ids:
+                    attendances = applicant.resource_calendar_id.attendance_ids
+                    entry_hour = min(attendances.mapped("hour_from"))
+                    exit_hour = max(attendances.mapped("hour_to"))
+                    entry = f"{entry_hour:02.0f}:00"
+                    exit = f"{exit_hour:02.0f}:00"
+                applicant.calendar_entry_hour = entry
+                applicant.calendar_exit_hour = exit

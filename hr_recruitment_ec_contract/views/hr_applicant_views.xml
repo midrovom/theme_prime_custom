@@ -34,6 +34,8 @@
             <xpath expr="//field[@name='categ_ids']" position="after">
                 <field name="wage"/>
                 <field name="resource_calendar_id"/>
+                <field name="calendar_entry_hour" readonly="1"/>
+                <field name="calendar_exit_hour" readonly="1"/>
                 <field name="date_start"/>
                 <field name="date_end"/>
                 <field name="ec_contract_type_id"/>

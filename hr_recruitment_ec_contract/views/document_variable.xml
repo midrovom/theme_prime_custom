@@ -83,12 +83,17 @@
         <field name="expression">object.employee_id.work_email</field>
     </record>
 
-    <!-- <record id="document_variable_start_date" model="hr.ec.document.variable">
-        <field name="name">Fecha inicio contrato</field>
-        <field name="key">FECHA_INICIO</field>
-        <field name="expression">
-            fields.Date.from_string(object.applicant_id.date_start).strftime("%d de %B del %Y") if object.applicant_id.date_start else ""
-        </field>
-    </record> -->
+    <record id="document_variable_entry_hour" model="hr.ec.document.variable">
+        <field name="name">Horario de entrada</field>
+        <field name="key">HORARIO_ENTRADA</field>
+        <field name="expression">object.calendar_entry_hour</field>
+    </record>
+
+    <record id="document_variable_exit_hour" model="hr.ec.document.variable">
+        <field name="name">Horario de salida</field>
+        <field name="key">HORARIO_SALIDA</field>
+        <field name="expression">object.calendar_exit_hour</field>
+    </record>
+
 
 </odoo>
