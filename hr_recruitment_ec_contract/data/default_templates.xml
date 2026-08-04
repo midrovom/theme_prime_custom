@@ -91,7 +91,7 @@
         </field>
     </record>
 
-    <record id="template_employee_file" model="hr.ec.document.template">
+    <!-- <record id="template_employee_file" model="hr.ec.document.template">
         <field name="name">Ficha individual del empleado</field>
         <field name="document_type">employee_file</field>
         <field name="is_default" eval="True"/>
@@ -116,7 +116,7 @@
                 <p style="text-align:center;">____________________________________<br/>Firma del trabajador/a</p>
             </div>
         </field>
-    </record>
+    </record> -->
 
     <record id="template_payroll_email_authorization" model="hr.ec.document.template">
         <field name="name">Autorización envío rol de pago</field>
