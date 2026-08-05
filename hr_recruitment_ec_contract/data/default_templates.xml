@@ -122,13 +122,13 @@
     </record>
 
     <record id="template_thirteenth_accumulation" model="hr.ec.document.template">
-        <field name="name">Acumulación de décimo tercero</field>
+        <field name="name">Acumulación de décimos</field>
         <field name="document_type">thirteenth</field>
         <field name="is_default" eval="True"/>
         <field name="sequence">20</field>
         <field name="body_html" type="html">
             <div>
-                <h2 style="text-align:center;">SOLICITUD DE ACUMULACIÓN DEL DÉCIMO TERCER SUELDO</h2>
+                <h2 style="text-align:center;">SOLICITUD DE ACUMULACIÓN DEL DÉCIMO TERCER Y CUARTO SUELDO</h2>
                 <p style="text-align:right;"><strong>FECHA:</strong>XXXXXXXXXXXX</p>
                 <p><strong>Empresa:</strong> XXXXXXXXXXXX</p>
                 <br/>

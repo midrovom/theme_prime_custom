@@ -459,7 +459,7 @@ class HrEcOnboardingPackage(models.Model):
                 contract_attachment = package._ensure_contract()
                 if contract_attachment:
                     attachments |= contract_attachment
-                for benefit_type in ("thirteenth"):
+                for benefit_type in ("thirteenth",):
                     benefit_attachment = package._ensure_benefit_request(benefit_type)
                     if benefit_attachment:
                         attachments |= benefit_attachment
