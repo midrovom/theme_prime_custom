@@ -45,6 +45,7 @@ class HrApplicant(models.Model):
         compute="_compute_calendar_hours",
         store=False,
     )
+    package_id = fields.Many2one("hr.ec.onboarding.package", string="Paquete de documentos",)
 
     ec_contract_template_id = fields.Many2one(
         "hr.ec.document.template",
