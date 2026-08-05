@@ -27,6 +27,7 @@
         'views/reglamento_interno_views.xml',
         'views/document_variable.xml',
         'views/hr_ec_document_variable_views.xml',
+        'views/resource_calendar_views.xml',
         "report/report_actions.xml",
         "report/report_templates.xml",
         "views/menu_views.xml",

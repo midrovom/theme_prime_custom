@@ -40,6 +40,11 @@ class HrApplicant(models.Model):
             compute="_compute_calendar_hours",
             store=False,
         )
+    calendar_entry_hour = fields.Char(
+        string="Horario de entrada",
+        compute="_compute_calendar_hours",
+        store=False,
+    )
     calendar_exit_hour = fields.Char(
         string="Horario de salida",
         compute="_compute_calendar_hours",
@@ -216,12 +221,12 @@ class HrApplicant(models.Model):
             for applicant in self:
                 entry = ""
                 exit = ""
-                if applicant.resource_calendar_id and applicant.resource_calendar_id.attendance_ids:
-                    attendances = applicant.resource_calendar_id.attendance_ids
-                    entry_hour = min(attendances.mapped("hour_from"))
-                    exit_hour = max(attendances.mapped("hour_to"))
-                    entry = f"{entry_hour:02.0f}:00"
-                    exit = f"{exit_hour:02.0f}:00"
+                calendar = applicant.resource_calendar_id
+                if calendar:
+                    if calendar.hora_entrada:
+                        entry = f"{int(calendar.hora_entrada):02d}:00"
+                    if calendar.hora_salida:
+                        exit = f"{int(calendar.hora_salida):02d}:00"
                 applicant.calendar_entry_hour = entry
                 applicant.calendar_exit_hour = exit
 
@@ -229,26 +234,26 @@ class HrApplicant(models.Model):
     def _onchange_company_config_id(self):
             self.sucursal_id = False
 
-    def write(self, vals):
-            res = super(HrApplicant, self).write(vals)
-            campos_clave = {
-                "company_config_id",
-                "wage",
-                "date_start",
-                "date_end",
-                "resource_calendar_id",
-                "sucursal_id",
-                "ec_contract_template_id",
-                "ec_contract_date_start",
-            }
+    # def write(self, vals):
+    #         res = super(HrApplicant, self).write(vals)
+    #         campos_clave = {
+    #             "company_config_id",
+    #             "wage",
+    #             "date_start",
+    #             "date_end",
+    #             "resource_calendar_id",
+    #             "sucursal_id",
+    #             "ec_contract_template_id",
+    #             "ec_contract_date_start",
+    #         }
 
-            if any(campo in vals for campo in campos_clave):
-                for applicant in self:
-                    if applicant.package_id:  # Solo si ya existe paquete
-                        try:
-                            applicant.package_id.action_generate_documents()
-                            _logger.info( "Documentos regenerados automáticamente para paquete %s (postulante %s)", applicant.package_id.id, applicant.id,)
-                        except Exception as e:
-                            _logger.warning("Error regenerando documentos para paquete %s (postulante %s): %s", applicant.package_id.id, applicant.id, e,)
+    #         if any(campo in vals for campo in campos_clave):
+    #             for applicant in self:
+    #                 if applicant.package_id:  # Solo si ya existe paquete
+    #                     try:
+    #                         applicant.package_id.action_generate_documents()
+    #                         _logger.info( "Documentos regenerados automáticamente para paquete %s (postulante %s)", applicant.package_id.id, applicant.id,)
+    #                     except Exception as e:
+    #                         _logger.warning("Error regenerando documentos para paquete %s (postulante %s): %s", applicant.package_id.id, applicant.id, e,)
 
-            return res
+    #         return res

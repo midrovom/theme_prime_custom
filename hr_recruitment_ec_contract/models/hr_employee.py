@@ -13,3 +13,9 @@ class HrEmployee(models.Model):
         string="Sucursal",
         domain="[('empresa_id', '=', company_config_id)]"
     )
+
+class ResourceCalendar(models.Model):
+    _inherit = "resource.calendar"
+
+    hora_entrada = fields.Float(string="Hora de entrada")
+    hora_salida = fields.Float(string="Hora de salida")
