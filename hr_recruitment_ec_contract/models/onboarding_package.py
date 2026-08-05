@@ -538,6 +538,7 @@ class HrEcOnboardingPackage(models.Model):
             mail.send(raise_exception=True)
             package.write({"mail_id": mail.id, "state": "sent"})
             package.message_post(body=_("Correo enviado a %(email)s.", email=package.email_to))
+            package.action_send_employee_email() # Enviar automáticamente el correo al empleado
         return True
 
     def action_send_employee_email(self):
