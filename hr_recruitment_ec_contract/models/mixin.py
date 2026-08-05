@@ -10,12 +10,26 @@ class HrEcDocumentVariableMixin(models.AbstractModel):
     current_year = fields.Char(compute="_compute_current_date", store=False)
 
     def _compute_current_date(self):
-        now = datetime.now()
-        for rec in self:
-            rec.current_day = now.strftime("%d")
-            rec.current_month = now.strftime("%B").upper()
-            rec.current_year = now.strftime("%Y")
-
+            meses_es = {
+                "January": "ENERO",
+                "February": "FEBRERO",
+                "March": "MARZO",
+                "April": "ABRIL",
+                "May": "MAYO",
+                "June": "JUNIO",
+                "July": "JULIO",
+                "August": "AGOSTO",
+                "September": "SEPTIEMBRE",
+                "October": "OCTUBRE",
+                "November": "NOVIEMBRE",
+                "December": "DICIEMBRE",
+            }
+            now = datetime.now()
+            for rec in self:
+                rec.current_day = now.strftime("%d")
+                month_en = now.strftime("%B")
+                rec.current_month = meses_es.get(month_en, month_en).upper()
+                rec.current_year = now.strftime("%Y")
 
     company_config_id = fields.Many2one("empresa.empresa", string="Empresa Afiliada", readonly=True)
     employee_id = fields.Many2one("hr.employee", string="Empleado", readonly=True)
