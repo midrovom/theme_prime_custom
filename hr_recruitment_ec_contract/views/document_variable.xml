@@ -83,20 +83,20 @@
         </field>
     </record>
 
-    <record id="document_variable_entry_hour" model="hr.ec.document.variable">
-        <field name="name">HORARIO ENTRADA</field>
-        <field name="key">HORARIO_ENTRADA</field>
-        <field name="expression">object.calendar_entry_hour</field>
-    </record>
-
     <record id="document_variable_calendar_name" model="hr.ec.document.variable">
-        <field name="name">JORNADA LABORAL</field>
+        <field name="name">HORARIO ASIGNADO</field>
         <field name="key">CALENDARIO_NOMBRE</field>
         <field name="expression">object.calendar_name</field>
     </record>
 
+    <record id="document_variable_entry_hour" model="hr.ec.document.variable">
+        <field name="name">HORA ENTRADA</field>
+        <field name="key">HORARIO_ENTRADA</field>
+        <field name="expression">object.calendar_entry_hour</field>
+    </record>
+
     <record id="document_variable_exit_hour" model="hr.ec.document.variable">
-        <field name="name">HORARIO SALIDA</field>
+        <field name="name">HORA SALIDA</field>
         <field name="key">HORARIO_SALIDA</field>
         <field name="expression">object.calendar_exit_hour</field>
     </record>
@@ -108,7 +108,7 @@
     </record>
 
     <record id="document_variable_date_start_text" model="hr.ec.document.variable">
-        <field name="name">FECHA INICIO CONTRATO</field>
+        <field name="name">FECHA DE CONTRATACIÒN</field>
         <field name="key">FECHA_INICIO_TEXTO</field>
         <field name="expression">object.date_start_text</field>
     </record>
