@@ -213,20 +213,21 @@
             <div>
                 <h1 style="text-align:center;">ACTA DE RECEPCIÓN</h1>
                 <h2 style="text-align:center;">DEL REGLAMENTO INTERNO DE TRABAJO Y REGLAMENTO DE SEGURIDAD Y SALUD EN EL TRABAJO</h2>
-                <p>Yo, XXXXXXXXXXXX, con cédula N.: XXXXXXXXXXXX, declaro haber recibido el código QR para descargar el Reglamento Interno de trabajo y el Reglamento de Seguridad y Salud en el trabajo de la empresa XXXXXXXXXXXX. , en</p>
-                <p>acatamiento a lo que dispone el Art. 64 del Código de Trabajo XXXXXXXXXXXX procede a elaborar el presente Reglamento Interno de Trabajo, teniendo como objetivo crear el presente para mantener las mejores relaciones con el personal, dentro de un</p>
-                <p>adecuado marco de justicia y productividad, luego de aprobado este Reglamento por el Director Regional del Trabajo de Litoral las reformas entran en vigencia, luego de lo cual surtirán pleno efecto las disposiciones legales pertinentes especialmente la de los siguientes artículos del Código de Trabajo: (42) numeral 12 “Sujetarse al Reglamento</p>
-                <p>Interno Legalmente Aprobado” , (45) literal e “Cumplir las disposiciones del reglamento interno expedido en forma legal”, (172) “Causas por las que el Empleador puede dar por terminado el Contrato numeral 2 “Por indisciplina o desobediencia graves a los reglamentos internos legalmente aprobados”, y más disposiciones que para su</p>
-                <p>efectividad requieran de la exigencia del Reglamento Interno de Trabajo legalmente aprobado.</p>
-                <p>Declaro que es mi responsabilidad dar cumplimiento a las obligaciones, prohibiciones y normas que en él están escritas, así como a las disposiciones posteriores que se emitan y formen parte integral de este.</p>
+                <p>Yo, XXXXXXXXXXXX, con cédula N.: XXXXXXXXXXXX, declaro haber recibido el código QR para descargar el Reglamento Interno de trabajo y el Reglamento de Seguridad y Salud en el trabajo de la empresa XXXXXXXXXXXX. , en
+                    acatamiento a lo que dispone el Art. 64 del Código de Trabajo XXXXXXXXXXXX procede a elaborar el presente Reglamento Interno de Trabajo, teniendo como objetivo crear el presente para mantener las mejores relaciones con el personal, dentro de un
+                    adecuado marco de justicia y productividad, luego de aprobado este Reglamento por el Director Regional del Trabajo de Litoral las reformas entran en vigencia, luego de lo cual surtirán pleno efecto las disposiciones legales pertinentes especialmente la de los siguientes artículos del Código de Trabajo: (42) numeral 12 “Sujetarse al Reglamento
+                    Interno Legalmente Aprobado” , (45) literal e “Cumplir las disposiciones del reglamento interno expedido en forma legal”, (172) “Causas por las que el Empleador puede dar por terminado el Contrato numeral 2 “Por indisciplina o desobediencia graves a los reglamentos internos legalmente aprobados”, y más disposiciones que para su
+                    efectividad requieran de la exigencia del Reglamento Interno de Trabajo legalmente aprobado.
+                </p>
+                <p>Declaro que es mi responsabilidad dar cumplimiento a las obligaciones, prohibiciones y normas que en él están escritas, así como a las disposiciones posteriores que se emitan y/o se modifiquen y que formen
+                    parte integral de este.
+                </p>
                 <p>En caso de no acatar el Reglamento Interno de Trabajo, me sujetaré a las sanciones respectivas que aplique el empleador.</p>
                 <br/><br/>
                 <table style="width:100%; margin-top:45px;">
                     <tr>
                         <td style="width:45%; text-align:center; border-top:1px solid #000;">
                             RECIBIDO POR:<br/>
-                            <!-- <strong><t t-out="object.employee_id.name"/></strong><br/>
-                            <t t-out="object.employee_id.identification_id"/> -->
                         </td>
                         <td style="width:10%;"></td>
                         <td style="width:45%; text-align:center; border-top:1px solid #000;">
