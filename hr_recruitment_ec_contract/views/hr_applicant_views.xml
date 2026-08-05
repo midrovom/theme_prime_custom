@@ -40,7 +40,7 @@
                 <field name="date_end"/>
                 <field name="ec_contract_type_id"/>
                 <field name="company_config_id"/>
-                <field name="sucursal_id "/>
+                <field name="sucursal_id"/>
             </xpath>
         </field>
     </record>
