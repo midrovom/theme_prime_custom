@@ -115,7 +115,7 @@
         <field name="email_body_html" type="html">
             <div>
                 <p>Estimados,</p>
-                <p>Adjuntamos el contrato de <t t-out="object.employee_id.name"/>, junto con las solicitudes de acumulación de décimos y su ficha de empleado, para su revisión y firma.</p>
+                <p>Se Adjunta el contrato de <t t-out="object.employee_id.name"/>, junto con las solicitudes de acumulación de décimos y su ficha de empleado, para su revisión y firma.</p>
                 <p>Saludos cordiales,</p>
             </div>
         </field>
