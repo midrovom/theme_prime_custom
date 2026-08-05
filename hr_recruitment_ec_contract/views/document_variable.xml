@@ -89,6 +89,12 @@
         <field name="expression">object.calendar_entry_hour</field>
     </record>
 
+    <record id="document_variable_calendar_name" model="hr.ec.document.variable">
+        <field name="name">JORNADA LABORAL</field>
+        <field name="key">CALENDARIO_NOMBRE</field>
+        <field name="expression">object.calendar_name</field>
+    </record>
+
     <record id="document_variable_exit_hour" model="hr.ec.document.variable">
         <field name="name">HORARIO SALIDA</field>
         <field name="key">HORARIO_SALIDA</field>

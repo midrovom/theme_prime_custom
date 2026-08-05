@@ -37,7 +37,11 @@ class HrContract(models.Model):
         copy=False,
         readonly=True,
     )
-
+    calendar_name = fields.Char(
+        string="Nombre del calendario",
+        compute="_compute_calendar_name",
+        store=False,
+    )
     calendar_entry_hour = fields.Char(
         string="Horario de entrada",
         compute="_compute_calendar_hours",
@@ -138,3 +142,12 @@ class HrContract(models.Model):
                 rec.date_start_text = f"{fecha.day:02d} de {meses_es[fecha.month]} de {fecha.year}"
             else:
                 rec.date_start_text = ""
+
+    def _compute_calendar_name(self):
+        for rec in self:
+            if rec.ec_applicant_id and rec.ec_applicant_id.resource_calendar_id:
+                rec.calendar_name = rec.ec_applicant_id.resource_calendar_id.name
+            elif rec.resource_calendar_id:
+                rec.calendar_name = rec.resource_calendar_id.name
+            else:
+                rec.calendar_name = ""
