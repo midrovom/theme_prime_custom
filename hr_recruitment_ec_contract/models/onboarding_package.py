@@ -334,14 +334,19 @@ class HrEcOnboardingPackage(models.Model):
 
     def _prepare_employee_email_draft(self):
         self.ensure_one()
+
         reglamento = self.reglamento_interno_ids[:1]
         template = self._get_template("reglamento_interno")
+
         subject = ""
         body = ""
 
         if template and reglamento:
-            subject = template.render_email_subject(reglamento)
-            body = template.render_email_body(reglamento)
+            subject = " ".join(
+                (template.render_email_subject(reglamento) or "").split()
+            )
+            body = (template.render_email_body(reglamento) or "").strip()
+
         self.write({
             "employee_email_to": self.employee_id.work_email or self.employee_id.private_email,
             "employee_email_subject": subject,

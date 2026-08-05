@@ -198,9 +198,7 @@
                 </table>
             </div>
         </field>
-        <field name="email_subject">
-            Reglamento Interno - {{ object.employee_id.name }}
-        </field>
+        <field name="email_subject">Reglamento Interno - {{ object.employee_id.name }}</field>
         <field name="email_body_html" type="html">
             <div>
                 <p>Estimado/a <t t-out="object.employee_id.name"/>,</p>
