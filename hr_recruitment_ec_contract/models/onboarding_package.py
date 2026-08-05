@@ -514,6 +514,31 @@ class HrEcOnboardingPackage(models.Model):
             package.message_post(body=_("Correo enviado a %(email)s.", email=package.email_to))
         return True
 
+    def action_send_employee_email(self):
+        for package in self:
+            email_to = package.employee_id.work_email or package.employee_id.private_email
+            if not email_to:
+                raise ValidationError(_("El empleado no tiene un correo electrónico configurado."))
+            reglamento = package.reglamento_interno_ids[:1]
+            if not reglamento or not reglamento.attachment_id:
+                raise ValidationError(_("No existe el documento de Reglamento Interno para enviar."))
+            email_from = package.company_id.partner_id.email_formatted or self.env.user.email_formatted
+            if not email_from:
+                raise ValidationError(_("Configure un correo remitente en la compañía o en el usuario actual."))
+            mail = self.env["mail.mail"].sudo().create({
+                "subject": _("Reglamento Interno"),
+                "email_to": email_to,
+                "email_from": email_from,
+                "attachment_ids": [(6, 0, [reglamento.attachment_id.id])],
+                "auto_delete": False,
+            })
+            mail.send(raise_exception=True)
+            package.message_post(
+                body=_("Reglamento interno enviado a %(email)s.", email=email_to)
+            )
+
+        return True
+
     def action_open_contract(self):
         self.ensure_one()
         if not self.contract_id:
