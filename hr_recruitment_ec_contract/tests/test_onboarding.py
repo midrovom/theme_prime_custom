@@ -6,4 +6,4 @@ from odoo.tests.common import TransactionCase
 class TestEcOnboarding(TransactionCase):
     def test_default_templates_exist(self):
         document_types = set(self.env["hr.ec.document.template"].search([]).mapped("document_type"))
-        self.assertTrue({"contract", "thirteenth", "fourteenth", "employee_file"}.issubset(document_types))
+        self.assertTrue({"contract", "thirteenth", "employee_file"}.issubset(document_types))

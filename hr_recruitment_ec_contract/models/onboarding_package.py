@@ -245,24 +245,24 @@ class HrEcOnboardingPackage(models.Model):
 
     def _ensure_benefit_request(self, benefit_type):
         self.ensure_one()
+        if benefit_type != "thirteenth":
+            return self.env["ir.attachment"]
+
         config = self.env["hr.ec.onboarding.config"].get_company_config(self.company_id)
-        enabled = (
-            config.generate_thirteenth_request
-            if benefit_type == "thirteenth"
-            else config.generate_fourteenth_request
-        )
-        if not enabled:
+        if not config.generate_thirteenth_request:
             return self.env["ir.attachment"]
 
         template = self._get_template(benefit_type)
         if not template:
             raise ValidationError(_("No existe una plantilla activa para %(type)s.", type=benefit_type))
+
         year = (self.contract_id.date_start or fields.Date.today()).year
         request = self.env["hr.ec.benefit.request"].sudo().search([
             ("employee_id", "=", self.employee_id.id),
             ("year", "=", year),
             ("benefit_type", "=", benefit_type),
         ], limit=1)
+
         vals = {
             "employee_id": self.employee_id.id,
             "applicant_id": self.applicant_id.id,
@@ -277,9 +277,9 @@ class HrEcOnboardingPackage(models.Model):
             request.write(vals)
         else:
             request = self.env["hr.ec.benefit.request"].sudo().create(vals)
+
         request.rendered_text = template.render_document(request)
-        label = "Decimo_Tercero" if benefit_type == "thirteenth" else "Decimo_Cuarto"
-        attachment_name = "%s.pdf" % self._safe_filename("%s_%s" % (label, self.employee_id.name))
+        attachment_name = "%s.pdf" % self._safe_filename("Decimo_Tercero_%s" % self.employee_id.name)
         attachment = self._upsert_pdf_attachment(
             request.attachment_id,
             attachment_name,
@@ -459,7 +459,7 @@ class HrEcOnboardingPackage(models.Model):
                 contract_attachment = package._ensure_contract()
                 if contract_attachment:
                     attachments |= contract_attachment
-                for benefit_type in ("thirteenth", "fourteenth"):
+                for benefit_type in ("thirteenth"):
                     benefit_attachment = package._ensure_benefit_request(benefit_type)
                     if benefit_attachment:
                         attachments |= benefit_attachment

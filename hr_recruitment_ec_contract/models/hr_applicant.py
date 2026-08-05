@@ -233,27 +233,3 @@ class HrApplicant(models.Model):
     @api.onchange('company_config_id')
     def _onchange_company_config_id(self):
             self.sucursal_id = False
-
-    # def write(self, vals):
-    #         res = super(HrApplicant, self).write(vals)
-    #         campos_clave = {
-    #             "company_config_id",
-    #             "wage",
-    #             "date_start",
-    #             "date_end",
-    #             "resource_calendar_id",
-    #             "sucursal_id",
-    #             "ec_contract_template_id",
-    #             "ec_contract_date_start",
-    #         }
-
-    #         if any(campo in vals for campo in campos_clave):
-    #             for applicant in self:
-    #                 if applicant.package_id:  # Solo si ya existe paquete
-    #                     try:
-    #                         applicant.package_id.action_generate_documents()
-    #                         _logger.info( "Documentos regenerados automáticamente para paquete %s (postulante %s)", applicant.package_id.id, applicant.id,)
-    #                     except Exception as e:
-    #                         _logger.warning("Error regenerando documentos para paquete %s (postulante %s): %s", applicant.package_id.id, applicant.id, e,)
-
-    #         return res

@@ -30,7 +30,6 @@ class HrEcDocumentTemplate(models.Model):
         [
             ("contract", "Contrato"),
             ("thirteenth", "Solicitud de acumulación de décimo tercero"),
-            ("fourteenth", "Solicitud de acumulación de décimo cuarto"),
             ("employee_file", "Ficha del empleado"),
             ("payroll_email", "Autorización envío rol de pago"),
             ("reglamento_interno", "Acta Reglamento Interno"),  # NUEVO
@@ -88,7 +87,6 @@ class HrEcDocumentTemplate(models.Model):
         model_by_type = {
             "contract": "hr.contract",
             "thirteenth": "hr.ec.benefit.request",
-            "fourteenth": "hr.ec.benefit.request",
             "employee_file": "hr.employee",
             "payroll_email": "hr.ec.payroll.authorization",
             "reglamento_interno": "hr.ec.reglamento.interno",  # NUEVO

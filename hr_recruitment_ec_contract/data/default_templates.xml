@@ -138,50 +138,6 @@
         </field>
     </record>
 
-    <record id="template_fourteenth_accumulation" model="hr.ec.document.template">
-        <field name="name">Acumulación de décimo cuarto</field>
-        <field name="document_type">fourteenth</field>
-        <field name="is_default" eval="True"/>
-        <field name="sequence">30</field>
-        <field name="body_html" type="html">
-            <div>
-                <h2 style="text-align:center;">SOLICITUD DE ACUMULACIÓN DEL DÉCIMO CUARTO SUELDO</h2>
-                <p>Yo,XXXXXXXXXXXX, con identificación XXXXXXXXXXXX, solicito a que el décimo cuarto sueldo correspondiente al año XXXXXXXXXXXX sea pagado de forma acumulada.</p>
-                <p>Declaro que esta solicitud expresa mi decisión y autorizo su registro para los fines administrativos correspondientes.</p>
-                <p>Fecha:XXXXXXXXXXXX</p>
-                <br/><br/>
-                <p style="text-align:center;">____________________________________<br/>Firma del trabajador/a</p>
-            </div>
-        </field>
-    </record>
-
-    <!-- <record id="template_employee_file" model="hr.ec.document.template">
-        <field name="name">Ficha individual del empleado</field>
-        <field name="document_type">employee_file</field>
-        <field name="is_default" eval="True"/>
-        <field name="sequence">40</field>
-        <field name="body_html" type="html">
-            <div>
-                <h2 style="text-align:center;">FICHA INDIVIDUAL DEL EMPLEADO</h2>
-                <table class="table table-sm table-bordered" style="width:100%;">
-                    <tr><th>Nombre completo</th><td><t t-out="object.name"/></td></tr>
-                    <tr><th>Identificación</th><td><t t-out="object.identification_id"/></td></tr>
-                    <tr><th>Correo personal</th><td><t t-out="object.private_email"/></td></tr>
-                    <tr><th>Teléfono personal</th><td><t t-out="object.private_phone"/></td></tr>
-                    <tr><th>Fecha de nacimiento</th><td><t t-out="object.birthday"/></td></tr>
-                    <tr><th>Nacionalidad</th><td><t t-out="object.country_id.name"/></td></tr>
-                    <tr><th>Compañía</th><td><t t-out="object.company_config_id.name"/></td></tr>
-                    <tr><th>Departamento</th><td><t t-out="object.department_id.name"/></td></tr>
-                    <tr><th>Cargo</th><td><t t-out="object.job_id.name"/></td></tr>
-                    <tr><th>Correo de trabajo</th><td><t t-out="object.work_email"/></td></tr>
-                    <tr><th>Teléfono de trabajo</th><td><t t-out="object.work_phone"/></td></tr>
-                </table>
-                <br/><br/>
-                <p style="text-align:center;">____________________________________<br/>Firma del trabajador/a</p>
-            </div>
-        </field>
-    </record> -->
-
     <record id="template_payroll_email_authorization" model="hr.ec.document.template">
         <field name="name">Autorización envío rol de pago</field>
         <field name="document_type">payroll_email</field>

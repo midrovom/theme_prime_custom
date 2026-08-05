@@ -31,10 +31,6 @@ class HrEcOnboardingConfig(models.Model):
         string="Generar solicitud de décimo tercero",
         default=True,
     )
-    generate_fourteenth_request = fields.Boolean(
-        string="Generar solicitud de décimo cuarto",
-        default=True,
-    )
         # NUEVO campo para reglamento interno
     generate_reglamento_interno = fields.Boolean(
         string="Generar acta de reglamento interno",

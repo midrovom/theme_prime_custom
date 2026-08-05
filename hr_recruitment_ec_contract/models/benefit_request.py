@@ -41,7 +41,7 @@ class HrEcBenefitRequest(models.Model):
     benefit_type = fields.Selection(
         [
             ("thirteenth", "Décimo tercero"),
-            ("fourteenth", "Décimo cuarto"),
+            # ("fourteenth", "Décimo cuarto"),
         ],
         string="Beneficio",
         required=True,
