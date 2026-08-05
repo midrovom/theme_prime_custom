@@ -337,7 +337,6 @@ class HrEcOnboardingPackage(models.Model):
 
         reglamento = self.reglamento_interno_ids[:1]
         template = self._get_template("reglamento_interno")
-
         subject = ""
         body = ""
 
