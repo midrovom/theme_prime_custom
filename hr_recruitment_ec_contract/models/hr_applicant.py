@@ -229,34 +229,25 @@ class HrApplicant(models.Model):
             self.sucursal_id = False
 
     def write(self, vals):
-        res = super(HrApplicant, self).write(vals)
+            res = super(HrApplicant, self).write(vals)
+            campos_clave = {
+                "company_config_id",
+                "wage",
+                "date_start",
+                "date_end",
+                "resource_calendar_id",
+                "sucursal_id",
+                "ec_contract_template_id",
+                "ec_contract_date_start",
+            }
 
-        campos_clave = {
-            "company_config_id",
-            "wage",
-            "date_start",
-            "date_end",
-            "resource_calendar_id",
-            "sucursal_id",
-            "ec_contract_template_id",
-            "ec_contract_date_start",
-        }
+            if any(campo in vals for campo in campos_clave):
+                for applicant in self:
+                    if applicant.package_id:  # Solo si ya existe paquete
+                        try:
+                            applicant.package_id.action_generate_documents()
+                            _logger.info( "Documentos regenerados automáticamente para paquete %s (postulante %s)", applicant.package_id.id, applicant.id,)
+                        except Exception as e:
+                            _logger.warning("Error regenerando documentos para paquete %s (postulante %s): %s", applicant.package_id.id, applicant.id, e,)
 
-        if any(campo in vals for campo in campos_clave):
-            for applicant in self:
-                if applicant.ec_contract_template_id:
-                    try:
-                        html = applicant.ec_contract_template_id.render_document(applicant)
-                        # Guardar el documento regenerado en un campo del applicant
-                        applicant.document_html = html
-                        _logger.info("Documento regenerado para postulante %s", applicant.id)
-                    except Exception as e:
-                        _logger.warning("Error regenerando documento para postulante %s: %s", applicant.id, e)
-
-        return res
-
-    document_html = fields.Html(
-        string="Documento generado",
-        readonly=True,
-        help="Documento generado automáticamente a partir de la plantilla y los datos del postulante."
-    )
+            return res
