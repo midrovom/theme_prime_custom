@@ -204,7 +204,7 @@
         <field name="email_body_html" type="html">
             <div>
                 <p>Estimado/a <t t-out="object.employee_id.name"/>,</p>
-                <p>Adjuntamos el Reglamento Interno de la empresa para su conocimiento y revisión.</p>
+                <p>Se adjunta el Reglamento Interno de la empresa para su conocimiento y revisión.</p>
                 <p>Saludos cordiales,</p>
             </div>
         </field>
