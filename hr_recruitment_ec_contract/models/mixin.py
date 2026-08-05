@@ -36,7 +36,6 @@ class HrEcDocumentVariableMixin(models.AbstractModel):
     ec_contract_type_id = fields.Many2one("hr.contract.type", string="Tipo de contrato", readonly=True)
     wage = fields.Float(string="Salario", readonly=True)
 
-
 # Extensiones de modelos concretos para replicar variables 
 class HrContract(models.Model):
     _inherit = "hr.contract"
