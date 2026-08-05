@@ -1,5 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_hr_ec_document_template_user,hr.ec.document.template user,model_hr_ec_document_template,hr.group_hr_user,1,0,0,0
+access_hr_ec_document_template_user,hr.ec.document.template user,model_hr_ec_document_template,hr.group_hr_user,1,1,1,0
 access_hr_ec_document_template_manager,hr.ec.document.template manager,model_hr_ec_document_template,hr.group_hr_manager,1,1,1,1
 access_hr_ec_onboarding_config_manager,hr.ec.onboarding.config manager,model_hr_ec_onboarding_config,hr.group_hr_manager,1,1,1,1
 access_hr_ec_onboarding_package_user,hr.ec.onboarding.package user,model_hr_ec_onboarding_package,hr.group_hr_user,1,1,1,0
