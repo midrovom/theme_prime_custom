@@ -30,7 +30,6 @@ class HrEcOnboardingPackage(models.Model):
         ondelete="cascade",
         tracking=True,
     )
-
     company_config_id = fields.Many2one(
         "empresa.empresa",
         related="employee_id.company_config_id",
@@ -38,7 +37,6 @@ class HrEcOnboardingPackage(models.Model):
         store=True,
         readonly=True,
     )
-
     employee_id = fields.Many2one(
         "hr.employee",
         string="Empleado",

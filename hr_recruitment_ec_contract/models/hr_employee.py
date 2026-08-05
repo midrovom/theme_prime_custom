@@ -7,7 +7,6 @@ class HrEmployee(models.Model):
         "empresa.empresa",
         string="Empresa Afiliada",
     )
-
     sucursal_id = fields.Many2one(
         "empresa.sucursal",
         string="Sucursal",

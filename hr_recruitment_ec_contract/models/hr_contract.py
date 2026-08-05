@@ -63,7 +63,6 @@ class HrContract(models.Model):
         compute="_compute_date_start_text",
         store=False,
     )
-
     current_day = fields.Char(compute="_compute_current_date", store=False)
     current_month = fields.Char(compute="_compute_current_date", store=False)
     current_year = fields.Char(compute="_compute_current_date", store=False)
