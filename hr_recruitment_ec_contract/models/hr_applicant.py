@@ -227,3 +227,36 @@ class HrApplicant(models.Model):
     @api.onchange('company_config_id')
     def _onchange_company_config_id(self):
             self.sucursal_id = False
+
+    def write(self, vals):
+        res = super(HrApplicant, self).write(vals)
+
+        campos_clave = {
+            "company_config_id",
+            "wage",
+            "date_start",
+            "date_end",
+            "resource_calendar_id",
+            "sucursal_id",
+            "ec_contract_template_id",
+            "ec_contract_date_start",
+        }
+
+        if any(campo in vals for campo in campos_clave):
+            for applicant in self:
+                if applicant.ec_contract_template_id:
+                    try:
+                        html = applicant.ec_contract_template_id.render_document(applicant)
+                        # Guardar el documento regenerado en un campo del applicant
+                        applicant.document_html = html
+                        _logger.info("Documento regenerado para postulante %s", applicant.id)
+                    except Exception as e:
+                        _logger.warning("Error regenerando documento para postulante %s: %s", applicant.id, e)
+
+        return res
+
+    document_html = fields.Html(
+        string="Documento generado",
+        readonly=True,
+        help="Documento generado automáticamente a partir de la plantilla y los datos del postulante."
+    )
