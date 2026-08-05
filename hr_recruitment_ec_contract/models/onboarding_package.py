@@ -332,6 +332,15 @@ class HrEcOnboardingPackage(models.Model):
             "email_body_html": body,
         })
 
+    def _prepare_employee_email_draft(self):
+        self.ensure_one()
+        reglamento = self.reglamento_interno_ids[:1]
+        self.write({
+            "employee_email_to": self.employee_id.work_email or self.employee_id.private_email,
+            "employee_email_subject": _("Reglamento Interno"),
+            "employee_attachment_ids": [(6, 0, [reglamento.attachment_id.id])] if reglamento and reglamento.attachment_id else [(5, 0, 0)],
+        })
+
     # Nueva Funcion para rol de pago
     def _ensure_payroll_authorization(self):
         self.ensure_one()
@@ -480,6 +489,7 @@ class HrEcOnboardingPackage(models.Model):
 
                 package.attachment_ids = [(6, 0, attachments.ids)]
                 package._prepare_email_draft()
+                package._prepare_employee_email_draft()
                 package.write({
                     "state": "ready",
                     "generated_at": fields.Datetime.now(),
