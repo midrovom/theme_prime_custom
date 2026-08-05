@@ -114,9 +114,9 @@
         <field name="email_subject">Documentos de contratación - {{ object.employee_id.name }}</field>
         <field name="email_body_html" type="html">
             <div>
-                <p>Estimado/a <t t-out="object.employee_id.name"/>,</p>
-                <p>Adjuntamos por separado su contrato, las solicitudes de acumulación de décimos y su ficha de empleado para revisión y firma.</p>
-                <p>Saludos cordiales.</p>
+                <p>Estimados,</p>
+                <p>Adjuntamos el contrato de <t t-out="object.employee_id.name"/>, junto con las solicitudes de acumulación de décimos y su ficha de empleado, para su revisión y firma.</p>
+                <p>Saludos cordiales,</p>
             </div>
         </field>
     </record>
@@ -203,8 +203,8 @@
         </field>
         <field name="email_body_html" type="html">
             <div>
-                <p>Estimados,</p>
-                <p>Adjuntamos el contrato de<t t-out="object.employee_id.name"/>, junto con las solicitudes de acumulación de décimos y su ficha de empleado, para su revisión y firma.</p>
+                <p>Estimado/a <t t-out="object.employee_id.name"/>,</p>
+                <p>Adjuntamos el Reglamento Interno de la empresa para su conocimiento y revisión.</p>
                 <p>Saludos cordiales,</p>
             </div>
         </field>
