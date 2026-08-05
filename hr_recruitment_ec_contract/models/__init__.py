@@ -3,10 +3,10 @@ from . import onboarding_config
 from . import benefit_request
 from . import hr_contract
 from . import onboarding_package
+from . import hr_applicant
 from . import company_config
 from . import res_partner
 from . import payroll_authorization
 from . import reglamento_interno
 from . import document_variable
 from . import mixin
-from . import hr_applicant
