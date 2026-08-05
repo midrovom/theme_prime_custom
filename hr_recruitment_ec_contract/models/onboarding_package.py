@@ -102,6 +102,12 @@ class HrEcOnboardingPackage(models.Model):
     email_subject = fields.Char(string="Asunto", tracking=True)
     email_body_html = fields.Html(string="Cuerpo del correo", sanitize="email_outgoing")
     mail_id = fields.Many2one("mail.mail", string="Correo enviado", readonly=True, copy=False)
+    employee_email_subject = fields.Char(string="Asunto")
+    employee_email_body_html = fields.Html(string="Cuerpo", sanitize="email_outgoing",)
+    employee_email_to = fields.Char(string="Correo del empleado", related="employee_id.work_email", readonly=True,)
+    employee_attachment_ids = fields.Many2many("ir.attachment", "hr_ec_package_employee_attachment_rel",
+    "package_id", "attachment_id", string="Adjuntos empleado", copy=False,)
+
     state = fields.Selection(
         [
             ("draft", "Borrador"),
@@ -516,25 +522,26 @@ class HrEcOnboardingPackage(models.Model):
 
     def action_send_employee_email(self):
         for package in self:
-            email_to = package.employee_id.work_email or package.employee_id.private_email
-            if not email_to:
-                raise ValidationError(_("El empleado no tiene un correo electrónico configurado."))
-            reglamento = package.reglamento_interno_ids[:1]
-            if not reglamento or not reglamento.attachment_id:
-                raise ValidationError(_("No existe el documento de Reglamento Interno para enviar."))
+            if not package.employee_email_to:
+                raise ValidationError(_("Ingrese un correo del empleado antes de enviar."))
+            if not package.employee_attachment_ids:
+                raise ValidationError(_("El borrador del empleado no tiene documentos adjuntos."))
             email_from = package.company_id.partner_id.email_formatted or self.env.user.email_formatted
             if not email_from:
                 raise ValidationError(_("Configure un correo remitente en la compañía o en el usuario actual."))
             mail = self.env["mail.mail"].sudo().create({
-                "subject": _("Reglamento Interno"),
-                "email_to": email_to,
+                "subject": package.employee_email_subject or _("Reglamento Interno"),
+                "email_to": package.employee_email_to,
                 "email_from": email_from,
-                "attachment_ids": [(6, 0, [reglamento.attachment_id.id])],
+                "attachment_ids": [(6, 0, package.employee_attachment_ids.ids)],
                 "auto_delete": False,
             })
             mail.send(raise_exception=True)
+            package.write({
+                "employee_mail_id": mail.id,
+            })
             package.message_post(
-                body=_("Reglamento interno enviado a %(email)s.", email=email_to)
+                body=_("Correo enviado al empleado %(email)s.", email=package.employee_email_to)
             )
 
         return True

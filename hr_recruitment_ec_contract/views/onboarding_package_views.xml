@@ -72,12 +72,12 @@
                         </page>
                         <page string="Borrador de correo empleado">
                             <group>
-                                <field name="email_to" widget="email"/>
-                                <field name="email_subject"/>
+                                <field name="employee_email_to" widget="email"/>
+                                <field name="employee_email_subject"/>
                             </group>
-                            <field name="email_body_html" widget="html" nolabel="1"/>
+                            <field name="employee_email_body_html" widget="html" nolabel="1"/>
                             <group>
-                                <field name="attachment_ids" widget="many2many_binary" readonly="1"/>
+                                <field name="employee_attachment_ids" widget="many2many_binary" readonly="1"/>
                             </group>
                         </page>
                         <page string="Solicitud de décimo Tercer y Cuarto Sueldo">
