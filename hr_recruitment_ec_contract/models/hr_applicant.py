@@ -27,11 +27,6 @@ class HrApplicant(models.Model):
         "empresa.empresa",
         string="Empresa Afiliada",
     )
-    sucursal_id = fields.Many2one(
-        "empresa.sucursal",
-        string="Sucursal",
-        domain="[('empresa_id', '=', company_config_id)]"
-    )
     wage = fields.Monetary(
         string="Salario",
         currency_field="currency_id",
@@ -68,6 +63,9 @@ class HrApplicant(models.Model):
     )
     ec_generation_state = fields.Selection(related="ec_onboarding_package_id.state", string="Estado documental")
     ec_generation_message = fields.Text(related="ec_onboarding_package_id.generation_message", string="Detalle")
+    sucursal_id = fields.Many2one("empresa.sucursal", string="Sucursal",
+        domain="[('empresa_id', '=', company_config_id)]"
+    )
 
     @api.model_create_multi
     def create(self, vals_list):
