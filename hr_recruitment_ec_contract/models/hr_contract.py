@@ -53,6 +53,12 @@ class HrContract(models.Model):
         compute="_compute_calendar_hours",
         store=False,
     )
+    date_start = fields.Date(string="Fecha de inicio")
+    date_start_text = fields.Char(
+        string="Fecha de inicio (texto)",
+        compute="_compute_date_start_text",
+        store=False,
+    )
 
     current_day = fields.Char(compute="_compute_current_date", store=False)
     current_month = fields.Char(compute="_compute_current_date", store=False)
@@ -91,7 +97,7 @@ class HrContract(models.Model):
                 month_en = now.strftime("%B")
                 rec.current_month = meses_es.get(month_en, month_en).upper()
                 rec.current_year = now.strftime("%Y")
-                
+
     def _compute_calendar_hours(self):
             for rec in self:
                 entry = ""
@@ -110,3 +116,25 @@ class HrContract(models.Model):
                 rec.calendar_entry_hour = entry
                 rec.calendar_exit_hour = exit
                 rec.calendar_required_hours = required_hours
+
+    def _compute_date_start_text(self):
+        meses_es = {
+            1: "Enero",
+            2: "Febrero",
+            3: "Marzo",
+            4: "Abril",
+            5: "Mayo",
+            6: "Junio",
+            7: "Julio",
+            8: "Agosto",
+            9: "Septiembre",
+            10: "Octubre",
+            11: "Noviembre",
+            12: "Diciembre",
+        }
+        for rec in self:
+            if rec.date_start:
+                fecha = fields.Date.from_string(rec.date_start)
+                rec.date_start_text = f"{fecha.day:02d} de {meses_es[fecha.month]} de {fecha.year}"
+            else:
+                rec.date_start_text = ""

@@ -101,4 +101,10 @@
         <field name="expression">object.calendar_required_hours</field>
     </record>
 
+    <record id="document_variable_date_start_text" model="hr.ec.document.variable">
+        <field name="name">FECHA INICIO CONTRATO</field>
+        <field name="key">FECHA_INICIO_TEXTO</field>
+        <field name="expression">object.date_start_text</field>
+    </record>
+
 </odoo>
