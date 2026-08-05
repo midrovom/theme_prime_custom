@@ -129,9 +129,13 @@
         <field name="body_html" type="html">
             <div>
                 <h2 style="text-align:center;">SOLICITUD DE ACUMULACIÓN DEL DÉCIMO TERCER SUELDO</h2>
-                <p>Yo,XXXXXXXXXXXX, con identificación XXXXXXXXXXXX, solicito a que el décimo tercer sueldo correspondiente al año XXXXXXXXXXXX sea pagado de forma acumulada.</p>
-                <p>Declaro que esta solicitud expresa mi decisión y autorizo su registro para los fines administrativos correspondientes.</p>
-                <p>Fecha: XXXXXXXXXXXX</p>
+                <p style="text-align:right;"><strong>FECHA:</strong>XX/XX/XXXX</p>
+                <p><strong>Empresa:</strong> XXXXXXXXXXXX</p>
+                <br/>
+                <p>Yo,XXXXXXXXXXXX, portador/a de la cédula de ciudadanía No. XXXXXXXXXXXX, solicito a usted ___________________ (Acumulación o Mensualización) de mi
+                    decimotercera y decimocuarta remuneración, de conformidad al acuerdo Ministerial No.MDN2015-0087 del 23 de abril de 2015.</p>
+                <br/><br/>
+                <p>Atentamente,</p>
                 <br/><br/>
                 <p style="text-align:center;">____________________________________<br/>Firma del trabajador/a</p>
             </div>
