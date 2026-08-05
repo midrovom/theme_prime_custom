@@ -335,10 +335,20 @@ class HrEcOnboardingPackage(models.Model):
     def _prepare_employee_email_draft(self):
         self.ensure_one()
         reglamento = self.reglamento_interno_ids[:1]
+        template = self._get_template("reglamento_interno")
+        subject = ""
+        body = ""
+
+        if template and reglamento:
+            subject = template.render_email_subject(reglamento)
+            body = template.render_email_body(reglamento)
         self.write({
             "employee_email_to": self.employee_id.work_email or self.employee_id.private_email,
-            "employee_email_subject": _("Reglamento Interno"),
-            "employee_attachment_ids": [(6, 0, [reglamento.attachment_id.id])] if reglamento and reglamento.attachment_id else [(5, 0, 0)],
+            "employee_email_subject": subject,
+            "employee_email_body_html": body,
+            "employee_attachment_ids": [
+                (6, 0, [reglamento.attachment_id.id])
+            ] if reglamento and reglamento.attachment_id else [(5, 0, 0)],
         })
 
     # Nueva Funcion para rol de pago
@@ -540,7 +550,8 @@ class HrEcOnboardingPackage(models.Model):
             if not email_from:
                 raise ValidationError(_("Configure un correo remitente en la compañía o en el usuario actual."))
             mail = self.env["mail.mail"].sudo().create({
-                "subject": package.employee_email_subject or _("Reglamento Interno"),
+                "subject": package.employee_email_subject or package.name,
+                "body_html": package.employee_email_body_html or "",
                 "email_to": package.employee_email_to,
                 "email_from": email_from,
                 "attachment_ids": [(6, 0, package.employee_attachment_ids.ids)],
