@@ -48,7 +48,7 @@ class HrContract(models.Model):
         compute="_compute_calendar_hours",
         store=False,
     )
-    calendar_required_hours = fields.Float(
+    calendar_required_hours = fields.Integer(
         string="Horas requeridas",
         compute="_compute_calendar_hours",
         store=False,
@@ -95,17 +95,3 @@ class HrContract(models.Model):
                 rec.calendar_entry_hour = entry
                 rec.calendar_exit_hour = exit
                 rec.calendar_required_hours = required_hours
-
-    # def _compute_calendar_hours(self):
-    #     for rec in self:
-    #         entry = ""
-    #         exit = ""
-    #         if rec.resource_calendar_id and rec.resource_calendar_id.attendance_ids:
-    #             attendances = rec.resource_calendar_id.attendance_ids
-    #             entry_hour = min(attendances.mapped("hour_from"))
-    #             exit_hour = max(attendances.mapped("hour_to"))
-    #             entry = f"{entry_hour:02.0f}:00"
-    #             exit = f"{exit_hour:02.0f}:00"
-                
-    #         rec.calendar_entry_hour = entry
-    #         rec.calendar_exit_hour = exit

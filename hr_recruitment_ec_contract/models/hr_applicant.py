@@ -30,6 +30,7 @@ class HrApplicant(models.Model):
     wage = fields.Monetary(
         string="Salario",
         currency_field="currency_id",
+        digits=(16, 2)
     )
     date_start = fields.Date(string="Fecha de inicio")
     date_end = fields.Date(string="Fecha fin")
