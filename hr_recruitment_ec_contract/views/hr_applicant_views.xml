@@ -38,7 +38,7 @@
                         string="Finalizar Proceso"
                         class="btn-primary"
                         groups="hr_recruitment.group_hr_recruitment_user,hr_recruitment.group_hr_recruitment_manager"
-                        modifiers="{'invisible': [('process_finalized','=',True)]}"/>
+                        modifiers="{'readonly': [('process_finalized','=',True)]}"/>
             </xpath>
 
             <xpath expr="//field[@name='categ_ids']" position="after">
