@@ -33,12 +33,12 @@
         <field name="priority">20</field>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
+                <field name="process_finalized" invisible="1"/>
                 <button name="action_finalize_process"
                         type="object"
                         string="Finalizar Proceso"
                         class="btn-primary"
-                        groups="hr_recruitment.group_hr_recruitment_user,hr_recruitment.group_hr_recruitment_manager"
-                        modifiers="{'readonly': [('process_finalized','=',True)]}"/>
+                        modifiers="{'invisible': [('process_finalized','=',True)]}"/>
             </xpath>
 
             <xpath expr="//field[@name='categ_ids']" position="after">

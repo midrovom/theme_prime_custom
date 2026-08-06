@@ -74,7 +74,7 @@ class HrApplicant(models.Model):
     sucursal_id = fields.Many2one("empresa.sucursal", string="Sucursal",
         domain="[('empresa_id', '=', company_config_id)]"
     )
-    process_finalized = fields.Boolean(string="Proceso finalizado", default=False, readonly=True)
+    process_finalized = fields.Boolean(string="Proceso finalizado", default=False)
 
     @api.model_create_multi
     def create(self, vals_list):
