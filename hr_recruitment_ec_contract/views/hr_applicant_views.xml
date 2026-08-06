@@ -26,37 +26,7 @@
         </field>
     </record>
 
-    <record id="view_hr_applicant_form_inherit_finalize" model="ir.ui.view">
-        <field name="name">hr.applicant.form.inherit.finalize</field>
-        <field name="model">hr.applicant</field>
-        <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
-        <field name="priority">20</field>
-        <field name="arch" type="xml">
-            <xpath expr="//header" position="inside">
-                <field name="readonly_fields" invisible="1"/>
-                <button name="action_finalize_process"
-                        type="object"
-                        string="Finalizar Proceso"
-                        class="btn-primary"
-                        modifiers="{'invisible': [('readonly_fields','=',True)]}"/>
-            </xpath>
-
-            <xpath expr="//field[@name='categ_ids']" position="after">
-                <field name="wage" modifiers="{'readonly':[('readonly_fields','=',True)]}"/>
-                <field name="resource_calendar_id" modifiers="{'readonly':[('readonly_fields','=',True)]}"/>
-                <field name="calendar_entry_hour" readonly="1"/>
-                <field name="calendar_exit_hour" readonly="1"/>
-                <field name="date_start" modifiers="{'readonly':[('readonly_fields','=',True)]}"/>
-                <field name="date_end" modifiers="{'readonly':[('readonly_fields','=',True)]}"/>
-                <field name="ec_contract_type_id" modifiers="{'readonly':[('readonly_fields','=',True)]}"/>
-                <field name="company_config_id" modifiers="{'readonly':[('readonly_fields','=',True)]}"/>
-                <field name="sucursal_id" modifiers="{'readonly':[('readonly_fields','=',True)]}"/>
-            </xpath>
-        </field>
-    </record>
-
-
-    <!-- <record id="view_hr_applicant_form_inherit" model="ir.ui.view">
+    <record id="view_hr_applicant_form_inherit" model="ir.ui.view">
         <field name="name">hr.applicant.form.inherit</field>
         <field name="model">hr.applicant</field>
         <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
@@ -73,6 +43,6 @@
                 <field name="sucursal_id"/>
             </xpath>
         </field>
-    </record> -->
+    </record>
 
 </odoo>
