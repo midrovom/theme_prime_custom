@@ -10,7 +10,7 @@ class HrApplicant(models.Model):
     def _compute_is_readonly_finalize(self):
         for rec in self:
             rec.is_readonly_finalize = self.env.user.has_group(
-                'custom_hr_recruitment_finalize.group_applicant_readonly'
+                'custom_web_hr_datos_candidatos.group_applicant_readonly'
             )
 
     def action_finalize_process(self):
