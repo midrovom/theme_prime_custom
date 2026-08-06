@@ -234,8 +234,16 @@ class HrApplicant(models.Model):
     @api.onchange('company_config_id')
     def _onchange_company_config_id(self):
             self.sucursal_id = False
-            
+
     def action_finalize_process(self):
         for applicant in self:
             applicant.process_finalized = True
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'hr.applicant',
+            'view_mode': 'form',
+            'res_id': self.id,
+            'target': 'current',
+        }
+
 
