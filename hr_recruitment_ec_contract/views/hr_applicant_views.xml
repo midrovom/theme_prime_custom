@@ -41,16 +41,16 @@
                         modifiers="{'readonly': [('process_finalized','=',True)]}"/>
             </xpath>
 
-            <xpath expr="//field[@name='categ_ids']" position="after">
-                <field name="wage" groups="hr_recruitment_ec_contract.group_applicant_readonly" readonly="1"/>
-                <field name="resource_calendar_id" groups="hr_recruitment_ec_contract.group_applicant_readonly" readonly="1"/>
+             <xpath expr="//field[@name='categ_ids']" position="after">
+                <field name="wage"/>
+                <field name="resource_calendar_id"/>
                 <field name="calendar_entry_hour" readonly="1"/>
                 <field name="calendar_exit_hour" readonly="1"/>
-                <field name="date_start" groups="hr_recruitment_ec_contract.group_applicant_readonly" readonly="1"/>
-                <field name="date_end" groups="hr_recruitment_ec_contract.group_applicant_readonly" readonly="1"/>
-                <field name="ec_contract_type_id" groups="hr_recruitment_ec_contract.group_applicant_readonly" readonly="1"/>
-                <field name="company_config_id" groups="hr_recruitment_ec_contract.group_applicant_readonly" readonly="1"/>
-                <field name="sucursal_id" groups="hr_recruitment_ec_contract.group_applicant_readonly" readonly="1"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="ec_contract_type_id"/>
+                <field name="company_config_id"/>
+                <field name="sucursal_id"/>
             </xpath>
         </field>
     </record>
