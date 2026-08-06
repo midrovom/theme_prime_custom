@@ -102,6 +102,7 @@ class HrEcOnboardingPackage(models.Model):
     email_subject = fields.Char(string="Asunto", tracking=True)
     email_body_html = fields.Html(string="Cuerpo del correo", sanitize="email_outgoing")
     mail_id = fields.Many2one("mail.mail", string="Correo enviado", readonly=True, copy=False)
+    employee_mail_id = fields.Many2one("mail.mail", string="Correo enviado al empleado", readonly=True, copy=False,)
     employee_email_subject = fields.Char(string="Asunto")
     employee_email_body_html = fields.Html(string="Cuerpo", sanitize="email_outgoing",)
     employee_email_to = fields.Char(string="Correo del empleado", related="employee_id.work_email", readonly=True,)
