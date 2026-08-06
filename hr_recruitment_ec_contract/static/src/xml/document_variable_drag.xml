@@ -1,0 +1,9 @@
+<t t-name="hr_recruitment_ec_contract.VariableDragWidget" owl="1">
+    <div class="o_variable_drag_list">
+        <t t-foreach="variables" t-as="variable" t-key="variable.id">
+            <span class="badge bg-info m-1" style="cursor:pointer" t-on-click="() => insertVariable(variable)">
+                <t t-esc="variable.name"/>
+            </span>
+        </t>
+    </div>
+</t>

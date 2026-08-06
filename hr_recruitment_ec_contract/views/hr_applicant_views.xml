@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_applicant_form_ec_contract" model="ir.ui.view">
+        <field name="name">hr.applicant.form.ec.contract</field>
+        <field name="model">hr.applicant</field>
+        <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_ec_onboarding_package" type="object" class="oe_stat_button" icon="fa-folder-open" invisible="not ec_onboarding_package_id" groups="hr.group_hr_user">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value"><field name="ec_generation_state"/></span>
+                        <span class="o_stat_text">Documentos</span>
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//group[@name='recruitment_contract']" position="inside">
+                <separator string="Contratación automática"/>
+                <field name="ec_contract_type_id"/>
+                <field name="ec_contract_template_id"/>
+                <field name="ec_contract_date_start"/>
+                <field name="ec_contract_date_end"/>
+                <field name="ec_contract_wage"/>
+                <field name="ec_onboarding_package_id" invisible="1"/>
+                <button name="action_generate_ec_onboarding_package" type="object" string="Generar documentos" class="btn-secondary" invisible="not stage_id or not date_closed"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_hr_applicant_form_inherit" model="ir.ui.view">
+        <field name="name">hr.applicant.form.inherit</field>
+        <field name="model">hr.applicant</field>
+        <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='categ_ids']" position="after">
+                <field name="wage"/>
+                <field name="resource_calendar_id"/>
+                <field name="calendar_entry_hour" readonly="1"/>
+                <field name="calendar_exit_hour" readonly="1"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="ec_contract_type_id"/>
+                <field name="company_config_id"/>
+                <field name="sucursal_id"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

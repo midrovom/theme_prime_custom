@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_ec_onboarding_config_list" model="ir.ui.view">
+        <field name="name">hr.ec.onboarding.config.list</field>
+        <field name="model">hr.ec.onboarding.config</field>
+        <field name="arch" type="xml">
+            <list string="Configuración de contratación">
+                <field name="company_id"/>
+                <field name="auto_create_employee"/>
+                <field name="auto_generate_documents"/>
+                <field name="default_contract_template_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_ec_onboarding_config_form" model="ir.ui.view">
+        <field name="name">hr.ec.onboarding.config.form</field>
+        <field name="model">hr.ec.onboarding.config</field>
+        <field name="arch" type="xml">
+            <form string="Configuración de contratación">
+                <sheet>
+                    <div class="oe_title"><h1><field name="company_id"/></h1></div>
+                    <group>
+                        <group string="Automatización">
+                            <field name="auto_create_employee"/>
+                            <field name="auto_generate_documents"/>
+                            <field name="default_contract_template_id"/>
+                            <field name="generate_thirteenth_request"/>
+                            <field name="generate_payroll_authorization"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Correo predeterminado">
+                            <group><field name="email_subject"/></group>
+                            <field name="email_body_html" widget="html" nolabel="1"/>
+                            <div class="text-muted">Puede usar el marcador {{ employee_name }}.</div>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_ec_onboarding_config" model="ir.actions.act_window">
+        <field name="name">Configuración</field>
+        <field name="res_model">hr.ec.onboarding.config</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

@@ -1,0 +1,18 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_ec_document_template_user,hr.ec.document.template user,model_hr_ec_document_template,hr.group_hr_user,1,1,1,0
+access_hr_ec_document_template_manager,hr.ec.document.template manager,model_hr_ec_document_template,hr.group_hr_manager,1,1,1,1
+access_hr_ec_onboarding_config_manager,hr.ec.onboarding.config manager,model_hr_ec_onboarding_config,hr.group_hr_manager,1,1,1,1
+access_hr_ec_onboarding_package_user,hr.ec.onboarding.package user,model_hr_ec_onboarding_package,hr.group_hr_user,1,1,1,0
+access_hr_ec_onboarding_package_manager,hr.ec.onboarding.package manager,model_hr_ec_onboarding_package,hr.group_hr_manager,1,1,1,1
+access_hr_ec_benefit_request_user,hr.ec.benefit.request user,model_hr_ec_benefit_request,hr.group_hr_user,1,1,1,0
+access_hr_ec_benefit_request_manager,hr.ec.benefit.request manager,model_hr_ec_benefit_request,hr.group_hr_manager,1,1,1,1
+access_company_config_manager,access.company.config.manager,model_empresa_empresa,hr.group_hr_manager,1,1,1,1
+access_sucursal_config_manager,access.sucursal.config.manager,model_empresa_sucursal,hr.group_hr_manager,1,1,1,1
+access_company_config_user,access.company.config.user,model_empresa_empresa,hr.group_hr_user,1,1,1,0
+access_sucursal_config_user,access.sucursal.config.user,model_empresa_sucursal,hr.group_hr_user,1,1,1,0
+access_hr_ec_payroll_authorization_user,access.hr.ec.payroll.authorization.user,model_hr_ec_payroll_authorization,hr.group_hr_user,1,1,1,0
+access_hr_ec_payroll_authorization_manager,access.hr.ec.payroll.authorization.manager,model_hr_ec_payroll_authorization,hr.group_hr_manager,1,1,1,1
+access_hr_ec_reglamento_interno_user,access.hr.ec.reglamento.interno.user,model_hr_ec_reglamento_interno,hr.group_hr_user,1,1,1,0
+access_hr_ec_reglamento_interno_manager,access.hr.ec.reglamento.interno.manager,model_hr_ec_reglamento_interno,hr.group_hr_manager,1,1,1,1
+access_hr_ec_document_variable_manager,access.hr.ec.document.variable.manager,model_hr_ec_document_variable,hr.group_hr_manager,1,1,1,1
+access_hr_ec_document_variable_user,access.hr.ec.document.variable.user,model_hr_ec_document_variable,hr.group_hr_user,1,1,1,0

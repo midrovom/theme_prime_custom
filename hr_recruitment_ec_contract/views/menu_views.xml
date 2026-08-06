@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_hr_ec_root" name="Contratación EC" sequence="85" groups="hr.group_hr_user" web_icon="hr_recruitment_ec_contract,static/description/icon.png"/>
+    <menuitem id="menu_hr_ec_packages" name="Paquetes de contratación" parent="menu_hr_ec_root" action="action_hr_ec_onboarding_package" sequence="10"/>
+    <menuitem id="menu_hr_ec_benefit_requests" name="Solicitudes de décimos" parent="menu_hr_ec_root" action="action_hr_ec_benefit_request" sequence="20"/>
+    <menuitem id="menu_hr_ec_payroll_authorization" name="Autorizacion Rol de Pago" parent="menu_hr_ec_root" action="action_hr_ec_payroll_authorization" sequence="30"/>
+    <menuitem id="menu_hr_ec_reglamento_interno" name="Reglamento Interno" parent="menu_hr_ec_root" action="action_hr_ec_reglamento_interno" sequence="40"/>
+    <menuitem id="menu_hr_ec_templates" name="Plantillas" parent="menu_hr_ec_root" action="action_hr_ec_document_template" sequence="50"/>
+    <menuitem id="menu_hr_ec_configuration" name="Configuración" parent="menu_hr_ec_root" sequence="90" groups="hr.group_hr_manager"/>
+    <menuitem id="menu_hr_ec_settings" name="Automatización" parent="menu_hr_ec_configuration" action="action_hr_ec_onboarding_config" sequence="20"/>
+    <menuitem id="menu_hr_ec_config" name="Empresas" parent="menu_hr_ec_configuration" action="action_company_config" sequence="30"/>
+    <menuitem id="menu_hr_ec_document_variable" name="Variables dinámicas" parent="menu_hr_ec_configuration" action="action_hr_ec_document_variable" sequence="40"/>
+</odoo>

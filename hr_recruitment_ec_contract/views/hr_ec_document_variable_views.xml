@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_hr_ec_document_variable_list" model="ir.ui.view">
+        <field name="name"> hr.ec.document.variable.list </field>
+        <field name="model">hr.ec.document.variable</field>
+        <field name="arch" type="xml">
+            <list string="Variables dinámicas">
+                <field name="name"/>
+                <field name="key"/>
+                <field name="expression"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_ec_document_variable_form" model="ir.ui.view">
+        <field name="name">hr.ec.document.variable.form</field>
+        <field name="model">hr.ec.document.variable</field>
+        <field name="arch" type="xml">
+            <form string="Variable dinámica">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="key"/>
+                        <field name="expression"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_ec_document_variable" model="ir.actions.act_window">
+        <field name="name">Variables dinámicas</field>
+        <field name="res_model">hr.ec.document.variable</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

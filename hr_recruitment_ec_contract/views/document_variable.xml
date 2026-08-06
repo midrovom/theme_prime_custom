@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="document_variable_day" model="hr.ec.document.variable">
+        <field name="name">DIA</field>
+        <field name="key">DIA_ACTUAL</field>
+        <field name="expression">object.current_day</field>
+    </record>
+
+    <record id="document_variable_month" model="hr.ec.document.variable">
+        <field name="name">MES</field>
+        <field name="key">MES_ACTUAL</field>
+        <field name="expression">object.current_month</field>
+    </record>
+
+    <record id="document_variable_year" model="hr.ec.document.variable">
+        <field name="name">AÑO</field>
+        <field name="key">ANIO_ACTUAL</field>
+        <field name="expression">getattr(object, 'year', getattr(object, 'current_year', ''))</field>
+    </record>
+
+    <record id="document_variable_request_date" model="hr.ec.document.variable">
+        <field name="name">Fecha DE SOLICITUD</field>
+        <field name="key">FECHA_SOLICITUD</field>
+        <field name="expression">object.request_date</field>
+    </record>
+
+    <record id="document_variable_company_name" model="hr.ec.document.variable">
+        <field name="name">EMPRESA</field>
+        <field name="key">EMPRESA_NOMBRE</field>
+        <field name="expression">object.company_config_id.name</field>
+    </record>
+
+    <record id="document_variable_company_ruc" model="hr.ec.document.variable">
+        <field name="name">RUC EMPRESA</field>
+        <field name="key">EMPRESA_RUC</field>
+        <field name="expression">object.company_config_id.ruc</field>
+    </record>
+
+    <record id="document_variable_representante" model="hr.ec.document.variable">
+        <field name="name">REPRESENTANTE LEGAL</field>
+        <field name="key">REPRESENTANTE_LEGAL</field>
+        <field name="expression">
+            object.company_config_id.representante_legal
+        </field>
+    </record>
+
+    <record id="document_variable_employee_name" model="hr.ec.document.variable">
+        <field name="name">NOMBRE EMPLEADO</field>
+        <field name="key">EMPLEADO_NOMBRE</field>
+        <field name="expression">
+            object.employee_id.name
+        </field>
+    </record>
+
+    <record id="document_variable_employee_identification" model="hr.ec.document.variable">
+        <field name="name">CEDULA EMPLEADO</field>
+        <field name="key">EMPLEADO_CEDULA</field>
+        <field name="expression">
+            object.employee_id.identification_id
+        </field>
+    </record>
+
+    <record id="document_variable_work_email" model="hr.ec.document.variable">
+        <field name="name">EMAIL EMPLEADO</field>
+        <field name="key">CORREO_TRABAJO</field>
+        <field name="expression">object.employee_id.work_email</field>
+    </record>
+
+    <record id="document_variable_contract_type" model="hr.ec.document.variable">
+        <field name="name">TIPO CONTRATO</field>
+        <field name="key">TIPO_CONTRATO</field>
+        <field name="expression">
+            object.ec_contract_type_id.name
+        </field>
+    </record>
+
+    <record id="document_variable_salary" model="hr.ec.document.variable">
+        <field name="name">SALARIO</field>
+        <field name="key">SALARIO</field>
+        <field name="expression">
+            object.wage
+        </field>
+    </record>
+
+    <record id="document_variable_calendar_name" model="hr.ec.document.variable">
+        <field name="name">HORARIO ASIGNADO</field>
+        <field name="key">CALENDARIO_NOMBRE</field>
+        <field name="expression">object.calendar_name</field>
+    </record>
+
+    <record id="document_variable_entry_hour" model="hr.ec.document.variable">
+        <field name="name">HORA ENTRADA</field>
+        <field name="key">HORARIO_ENTRADA</field>
+        <field name="expression">object.calendar_entry_hour</field>
+    </record>
+
+    <record id="document_variable_exit_hour" model="hr.ec.document.variable">
+        <field name="name">HORA SALIDA</field>
+        <field name="key">HORARIO_SALIDA</field>
+        <field name="expression">object.calendar_exit_hour</field>
+    </record>
+
+    <record id="document_variable_required_hours" model="hr.ec.document.variable">
+        <field name="name">TIEMPO COMPLETO</field>
+        <field name="key">HORAS_REQUERIDAS</field>
+        <field name="expression">object.calendar_required_hours</field>
+    </record>
+
+    <record id="document_variable_date_start_text" model="hr.ec.document.variable">
+        <field name="name">FECHA DE CONTRATACIÒN</field>
+        <field name="key">FECHA_INICIO_TEXTO</field>
+        <field name="expression">object.date_start_text</field>
+    </record>
+
+</odoo>
