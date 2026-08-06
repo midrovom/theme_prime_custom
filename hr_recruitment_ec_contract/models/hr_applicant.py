@@ -74,7 +74,7 @@ class HrApplicant(models.Model):
     sucursal_id = fields.Many2one("empresa.sucursal", string="Sucursal",
         domain="[('empresa_id', '=', company_config_id)]"
     )
-    process_finalized = fields.Boolean(string="Proceso finalizado", default=False)
+    readonly_fields = fields.Boolean(compute='_compute_readonly_fields', store=False)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -236,14 +236,8 @@ class HrApplicant(models.Model):
     def _onchange_company_config_id(self):
             self.sucursal_id = False
 
-    def action_finalize_process(self):
-        self.ensure_one()
-        self.process_finalized = True
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'hr.applicant',
-            'view_mode': 'form',
-            'res_id': self.id,
-            'target': 'current',
-        }
+    @api.depends('process_finalized', 'is_readonly_group')
+    def _compute_readonly_fields(self):
+            for rec in self:
+                rec.readonly_fields = rec.process_finalized or rec.is_readonly_group
 
