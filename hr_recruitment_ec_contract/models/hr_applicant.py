@@ -75,10 +75,7 @@ class HrApplicant(models.Model):
         domain="[('empresa_id', '=', company_config_id)]"
     )
     readonly_fields = fields.Boolean(compute='_compute_readonly_fields', store=False)
-    process_finalized = fields.Boolean(
-        string="Proceso Finalizado",
-        default=False
-    )
+    process_finalized = fields.Boolean(string="Proceso Finalizado", default=False)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -242,8 +239,8 @@ class HrApplicant(models.Model):
 
     @api.depends('process_finalized', 'is_readonly_group')
     def _compute_readonly_fields(self):
-            for rec in self:
-                rec.readonly_fields = rec.process_finalized or rec.is_readonly_group
+        for rec in self:
+            rec.readonly_fields = rec.process_finalized or rec.is_readonly_group
 
     def action_finalize_process(self):
         self.ensure_one()
