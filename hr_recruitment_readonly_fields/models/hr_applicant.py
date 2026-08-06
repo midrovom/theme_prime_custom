@@ -1,0 +1,23 @@
+from odoo import models, fields, api
+
+class HrApplicant(models.Model):
+    _inherit = 'hr.applicant'
+
+    process_finalized = fields.Boolean(string="Proceso Finalizado", default=False)
+
+    is_readonly_group = fields.Boolean(
+        compute='_compute_is_readonly_group',
+        store=False
+    )
+
+    @api.depends_context('uid')
+    def _compute_is_readonly_group(self):
+        for rec in self:
+            rec.is_readonly_group = self.env.user.has_group(
+                'custom_hr_recruitment_finalize.group_applicant_readonly'
+            )
+
+    def action_finalize_process(self):
+        self.ensure_one()
+        self.process_finalized = True
+        return True
