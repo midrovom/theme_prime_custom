@@ -41,16 +41,16 @@
                         modifiers="{'readonly': [('process_finalized','=',True)]}"/>
             </xpath>
 
-             <xpath expr="//field[@name='categ_ids']" position="after">
-                <field name="wage"/>
-                <field name="resource_calendar_id"/>
+            <xpath expr="//field[@name='categ_ids']" position="after">
+                <field name="wage" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="resource_calendar_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
                 <field name="calendar_entry_hour" readonly="1"/>
                 <field name="calendar_exit_hour" readonly="1"/>
-                <field name="date_start"/>
-                <field name="date_end"/>
-                <field name="ec_contract_type_id"/>
-                <field name="company_config_id"/>
-                <field name="sucursal_id"/>
+                <field name="date_start" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="date_end" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="ec_contract_type_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="company_config_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="sucursal_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
             </xpath>
         </field>
     </record>
