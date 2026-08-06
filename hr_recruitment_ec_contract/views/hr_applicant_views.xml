@@ -36,19 +36,19 @@
                         type="object"
                         string="Finalizar Proceso"
                         class="btn-primary"
-                        attrs="{'invisible': [('process_finalized','=',True)]}"/>
+                        modifiers="{'invisible': [('process_finalized','=',True)]}"/>
             </xpath>
 
             <xpath expr="//field[@name='categ_ids']" position="after">
-                <field name="wage" attrs="{'readonly':[('process_finalized','=',True)]}"/>
-                <field name="resource_calendar_id" attrs="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="wage" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="resource_calendar_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
                 <field name="calendar_entry_hour" readonly="1"/>
                 <field name="calendar_exit_hour" readonly="1"/>
-                <field name="date_start" attrs="{'readonly':[('process_finalized','=',True)]}"/>
-                <field name="date_end" attrs="{'readonly':[('process_finalized','=',True)]}"/>
-                <field name="ec_contract_type_id" attrs="{'readonly':[('process_finalized','=',True)]}"/>
-                <field name="company_config_id" attrs="{'readonly':[('process_finalized','=',True)]}"/>
-                <field name="sucursal_id" attrs="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="date_start" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="date_end" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="ec_contract_type_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="company_config_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="sucursal_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
             </xpath>
         </field>
     </record>
