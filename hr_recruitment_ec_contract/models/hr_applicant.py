@@ -236,32 +236,7 @@ class HrApplicant(models.Model):
     def _onchange_company_config_id(self):
             self.sucursal_id = False
 
-    def write(self, vals):
-        protected_fields = {
-            "wage",
-            "resource_calendar_id",
-            "date_start",
-            "date_end",
-            "ec_contract_type_id",
-            "company_config_id",
-            "sucursal_id",
-        }
-
-        if protected_fields.intersection(vals):
-            # Bloquear si el usuario pertenece al grupo de solo lectura
-            if self.env.user.has_group("custom_web_hr_datos_candidatos.group_applicant_readonly"):
-                raise UserError(_("No tiene permisos para modificar estos campos, es solo lectura."))
-
-            # (Opcional) Mantener la lógica de bloqueo si el proceso está finalizado
-            if self.filtered("process_finalized") and not self.env.user.has_group("hr_recruitment.group_hr_recruitment_manager"):
-                raise UserError(_("El proceso ya fue finalizado. Solo un Recruitment Manager puede modificar estos campos."))
-
-        return super().write(vals)
-
     def action_finalize_process(self):
-        if self.env.user.has_group("custom_web_hr_datos_candidatos.group_applicant_readonly"):
-            raise UserError(_("No tiene permisos para modificar estos campos, es solo lectura."))
-
         self.write({"process_finalized": True})
         return {
             'type': 'ir.actions.act_window',
@@ -270,4 +245,3 @@ class HrApplicant(models.Model):
             'res_id': self.id,
             'target': 'current',
         }
-
