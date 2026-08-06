@@ -17,25 +17,25 @@
             </xpath>
 
             <xpath expr="//field[@name='wage']" position="attributes">
-                <attribute name="modifiers">{'readonly':[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
+                <attribute name="modifiers">{"readonly":[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
             </xpath>
             <xpath expr="//field[@name='resource_calendar_id']" position="attributes">
-                <attribute name="modifiers">{'readonly':[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
+                <attribute name="modifiers">{"readonly":[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
             </xpath>
             <xpath expr="//field[@name='date_start']" position="attributes">
-                <attribute name="modifiers">{'readonly':[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
+                <attribute name="modifiers">{"readonly":[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
             </xpath>
             <xpath expr="//field[@name='date_end']" position="attributes">
-                <attribute name="modifiers">{'readonly':[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
+                <attribute name="modifiers">{"readonly":[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
             </xpath>
             <xpath expr="//field[@name='ec_contract_type_id']" position="attributes">
-                <attribute name="modifiers">{'readonly':[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
+                <attribute name="modifiers">{"readonly":[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
             </xpath>
             <xpath expr="//field[@name='company_config_id']" position="attributes">
-                <attribute name="modifiers">{'readonly':[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
+                <attribute name="modifiers">{"readonly":[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
             </xpath>
             <xpath expr="//field[@name='sucursal_id']" position="attributes">
-                <attribute name="modifiers">{'readonly':[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
+                <attribute name="modifiers">{"readonly":[('process_finalized','=',True),('is_readonly_finalize','=',True)]}</attribute>
             </xpath>
         </field>
     </record>
