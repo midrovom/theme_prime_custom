@@ -237,7 +237,8 @@ class HrApplicant(models.Model):
             self.sucursal_id = False
 
     def action_finalize_process(self):
-        self.write({"process_finalized": True})
+        self.ensure_one()
+        self.process_finalized = True
         return {
             'type': 'ir.actions.act_window',
             'res_model': 'hr.applicant',
@@ -245,3 +246,4 @@ class HrApplicant(models.Model):
             'res_id': self.id,
             'target': 'current',
         }
+
