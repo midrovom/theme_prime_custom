@@ -15,6 +15,7 @@
         "security/ir.model.access.csv",
         "data/sequence_data.xml",
         "data/default_templates.xml",
+        'data/send_mail_ready.xml',
         "views/document_template_views.xml",
         "views/onboarding_config_views.xml",
         "views/benefit_request_views.xml",

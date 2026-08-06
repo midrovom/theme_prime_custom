@@ -623,5 +623,13 @@ class HrEcOnboardingPackage(models.Model):
             "context": {"default_package_id": self.id, "default_employee_id": self.employee_id.id},
         }
 
-
+    @api.model
+    def cron_send_ready_packages(self):
+            packages = self.search([("state", "=", "ready")])
+            _logger.info("Cron onboarding: %s paquetes listos para enviar.", len(packages))
+            for package in packages:
+                try:
+                    package.action_send_email()
+                except Exception:
+                    _logger.exception("Error enviando el paquete de contratación %s", package.name,)
     
