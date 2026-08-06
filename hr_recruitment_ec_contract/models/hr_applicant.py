@@ -237,13 +237,25 @@ class HrApplicant(models.Model):
             self.sucursal_id = False
 
     def action_finalize_process(self):
-        self.ensure_one()
-        self.process_finalized = True
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'hr.applicant',
-            'view_mode': 'form',
-            'res_id': self.id,
-            'target': 'current',
-        }
+            self.ensure_one()
+            if self.env.user.has_group(
+                'custom_web_hr_datos_candidatos.group_applicant_readonly'
+            ):
+                self.process_finalized = True
+                return {
+                    'type': 'ir.actions.act_window',
+                    'res_model': 'hr.applicant',
+                    'view_mode': 'form',
+                    'res_id': self.id,
+                    'target': 'current',
+                }
+
+            self.process_finalized = True
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'hr.applicant',
+                'view_mode': 'form',
+                'res_id': self.id,
+                'target': 'current',
+            }
 
