@@ -1,7 +1,7 @@
 <odoo>
     <record id="ir_cron_send_onboarding_packages" model="ir.cron">
         <field name="name">Enviar paquetes de contratación</field>
-        <field name="model_id" ref="model_hr_ec_onboarding_package"/>
+        <field name="model_id" ref="hr_recruitment_ec_contract.model_hr_ec_onboarding_package"/>
         <field name="state">code</field>
         <field name="code">model.cron_send_ready_packages()</field>
         <field name="interval_number">5</field>
