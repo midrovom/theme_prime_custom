@@ -73,6 +73,7 @@ class HrApplicant(models.Model):
     sucursal_id = fields.Many2one("empresa.sucursal", string="Sucursal",
         domain="[('empresa_id', '=', company_config_id)]"
     )
+    process_finalized = fields.Boolean(string="Proceso finalizado", default=False, readonly=True)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -233,3 +234,8 @@ class HrApplicant(models.Model):
     @api.onchange('company_config_id')
     def _onchange_company_config_id(self):
             self.sucursal_id = False
+            
+    def action_finalize_process(self):
+        for applicant in self:
+            applicant.process_finalized = True
+
