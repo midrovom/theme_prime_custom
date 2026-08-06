@@ -552,17 +552,22 @@ class HrEcOnboardingPackage(models.Model):
                 raise ValidationError(_("Ingrese un correo del empleado antes de enviar."))
             if not package.employee_attachment_ids:
                 raise ValidationError(_("El borrador del empleado no tiene documentos adjuntos."))
-            email_from = package.company_id.partner_id.email_formatted or self.env.user.email_formatted
-            if not email_from:
-                raise ValidationError(_("Configure un correo remitente en la compañía o en el usuario actual."))
+            mail_server = self.env["ir.mail_server"].sudo().search(
+                [("is_recruitment_server", "=", True)],
+                limit=1,
+            )
+            if not mail_server:
+                raise ValidationError(_("No existe un servidor de correo de reclutamiento configurado."))
             mail = self.env["mail.mail"].sudo().create({
                 "subject": package.employee_email_subject or package.name,
                 "body_html": package.employee_email_body_html or "",
-                "email_to": package.employee_email_to,
-                "email_from": email_from,
+                "email_to": package.employee_email_to,          # Sigue siendo el empleado
+                "email_from": mail_server.smtp_user,            # Remitente del servidor SMTP
+                "mail_server_id": mail_server.id,               # Fuerza el uso de ese servidor
                 "attachment_ids": [(6, 0, package.employee_attachment_ids.ids)],
                 "auto_delete": False,
             })
+
             mail.send(raise_exception=True)
             package.write({
                 "employee_mail_id": mail.id,
