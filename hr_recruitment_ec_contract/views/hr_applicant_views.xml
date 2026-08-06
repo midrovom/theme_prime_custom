@@ -26,64 +26,45 @@
         </field>
     </record>
 
-    <record id="view_hr_applicant_form_inherit_finalize_user" model="ir.ui.view">
-        <field name="name">hr.applicant.form.inherit.finalize.user</field>
+    <record id="view_hr_applicant_form_inherit_finalize" model="ir.ui.view">
+        <field name="name">hr.applicant.form.inherit.finalize</field>
         <field name="model">hr.applicant</field>
         <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
         <field name="priority">20</field>
-        <field name="groups_id" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
                 <button name="action_finalize_process"
                         type="object"
                         string="Finalizar Proceso"
                         class="btn-primary"
+                        groups="hr_recruitment.group_hr_recruitment_user,hr_recruitment.group_hr_recruitment_manager"
                         modifiers="{'invisible': [('process_finalized','=',True)]}"/>
             </xpath>
 
             <xpath expr="//field[@name='categ_ids']" position="after">
-                <field name="wage" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
-                <field name="resource_calendar_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="wage"
+                    groups="hr_recruitment.group_hr_recruitment_user"
+                    modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="resource_calendar_id"
+                    groups="hr_recruitment.group_hr_recruitment_user"
+                    modifiers="{'readonly':[('process_finalized','=',True)]}"/>
                 <field name="calendar_entry_hour" readonly="1"/>
                 <field name="calendar_exit_hour" readonly="1"/>
-                <field name="date_start" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
-                <field name="date_end" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
-                <field name="ec_contract_type_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
-                <field name="company_config_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
-                <field name="sucursal_id" modifiers="{'readonly':[('process_finalized','=',True)]}"/>
-            </xpath>
-
-        </field>
-    </record>
-
-    <record id="view_hr_applicant_form_inherit_finalize_manager" model="ir.ui.view">
-        <field name="name">hr.applicant.form.inherit.finalize.manager</field>
-        <field name="model">hr.applicant</field>
-        <field name="inherit_id" ref="view_hr_applicant_form_inherit_finalize_user"/>
-        <field name="priority">30</field>
-        <field name="groups_id" eval="[(4, ref('hr_recruitment.group_hr_recruitment_manager'))]"/>
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='wage']" position="attributes">
-                <attribute name="modifiers">{}</attribute>
-            </xpath>
-            <xpath expr="//field[@name='resource_calendar_id']" position="attributes">
-                <attribute name="modifiers">{}</attribute>
-            </xpath>
-            <xpath expr="//field[@name='date_start']" position="attributes">
-                <attribute name="modifiers">{}</attribute>
-            </xpath>
-            <xpath expr="//field[@name='date_end']" position="attributes">
-                <attribute name="modifiers">{}</attribute>
-            </xpath>
-
-            <xpath expr="//field[@name='ec_contract_type_id']" position="attributes">
-                <attribute name="modifiers">{}</attribute>
-            </xpath>
-            <xpath expr="//field[@name='company_config_id']" position="attributes">
-                <attribute name="modifiers">{}</attribute>
-            </xpath>
-            <xpath expr="//field[@name='sucursal_id']" position="attributes">
-                <attribute name="modifiers">{}</attribute>
+                <field name="date_start"
+                    groups="hr_recruitment.group_hr_recruitment_user"
+                    modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="date_end"
+                    groups="hr_recruitment.group_hr_recruitment_user"
+                    modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="ec_contract_type_id"
+                    groups="hr_recruitment.group_hr_recruitment_user"
+                    modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="company_config_id"
+                    groups="hr_recruitment.group_hr_recruitment_user"
+                    modifiers="{'readonly':[('process_finalized','=',True)]}"/>
+                <field name="sucursal_id"
+                    groups="hr_recruitment.group_hr_recruitment_user"
+                    modifiers="{'readonly':[('process_finalized','=',True)]}"/>
             </xpath>
         </field>
     </record>
