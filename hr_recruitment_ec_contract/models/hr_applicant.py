@@ -1,6 +1,7 @@
 import logging
 
 from odoo import api, fields, models, _
+from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -235,15 +236,35 @@ class HrApplicant(models.Model):
     def _onchange_company_config_id(self):
             self.sucursal_id = False
 
-    def action_finalize_process(self):
-        for applicant in self:
-            applicant.process_finalized = True
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'hr.applicant',
-            'view_mode': 'form',
-            'res_id': self.id,
-            'target': 'current',
+    def write(self, vals):
+        protected_fields = {
+            "wage",
+            "resource_calendar_id",
+            "date_start",
+            "date_end",
+            "ec_contract_type_id",
+            "company_config_id",
+            "sucursal_id",
         }
 
+        if (
+            protected_fields.intersection(vals)
+            and not self.env.user.has_group("hr_recruitment.group_hr_recruitment_manager")
+        ):
+            finalized = self.filtered("process_finalized")
+            if finalized:
+                raise UserError(
+                    _("El proceso ya fue finalizado. Solo un Recruitment Manager puede modificar estos campos.")
+                )
 
+        return super().write(vals)
+
+    def action_finalize_process(self):
+        if not ( self.env.user.has_group("hr_recruitment.group_hr_recruitment_user")
+            or self.env.user.has_group("hr_recruitment.group_hr_recruitment_manager")
+        ):
+            raise UserError(_("No tiene permisos para finalizar el proceso."))
+
+        self.write({"process_finalized": True,})
+
+        return True
