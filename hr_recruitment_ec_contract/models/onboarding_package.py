@@ -523,29 +523,6 @@ class HrEcOnboardingPackage(models.Model):
                     raise
         return True
 
-    # def action_send_email(self):
-        for package in self:
-            if not package.email_to:
-                raise ValidationError(_("Ingrese un correo de destinatario antes de enviar."))
-            if not package.attachment_ids:
-                raise ValidationError(_("El borrador no tiene documentos adjuntos."))
-            email_from = package.company_id.partner_id.email_formatted or self.env.user.email_formatted
-            if not email_from:
-                raise ValidationError(_("Configure un correo remitente en la compañía o en el usuario actual."))
-            mail = self.env["mail.mail"].sudo().create({
-                "subject": package.email_subject or package.name,
-                "body_html": package.email_body_html or "",
-                "email_to": package.email_to,
-                "email_from": email_from,
-                "attachment_ids": [(6, 0, package.attachment_ids.ids)],
-                "auto_delete": False,
-            })
-            mail.send(raise_exception=True)
-            package.write({"mail_id": mail.id, "state": "sent"})
-            package.message_post(body=_("Correo enviado a %(email)s.", email=package.email_to))
-            package.action_send_employee_email() # Enviar automáticamente el correo al empleado
-        return True
-
     def action_send_email(self):
         for package in self:
             if not package.email_to:
