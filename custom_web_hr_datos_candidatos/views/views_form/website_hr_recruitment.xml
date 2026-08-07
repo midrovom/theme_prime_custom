@@ -43,13 +43,11 @@
     <template id="index" name="template_name" inherit_id="website_hr_recruitment.index">
         <xpath expr="//div[@class='o_job_infos d-flex flex-column']" position="after">
             <t t-if="request.env.user.id != request.website.user_id.id">
-                <a t-attf-href="/jobs/recruitment/#{ slug(job) }"
-                t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
+                <a t-attf-href="/jobs/recruitment/#{ slug(job) }" t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
                 draggable="false">APLICAR</a>
             </t>
             <t t-else="">
-                <a t-attf-href="/web/login?redirect=/jobs/recruitment/#{ slug(job) }"
-                t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
+                <a t-attf-href="/web/login?redirect=/jobs/recruitment/#{ slug(job) }" t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
                 draggable="false">APLICAR</a>
             </t>
         </xpath>
@@ -58,17 +56,16 @@
     <template id="job_detail_apply" name="Job Detail Apply Button" inherit_id="website_hr_recruitment.detail">
         <xpath expr="//section[@class='pb32']//div[@class='text-center']/a" position="replace">
             <t t-if="request.env.user.id != request.website.user_id.id">
-                <a role="button" class="btn btn-primary btn-lg" t-attf-href="/jobs/apply/#{ slug(job) }">
+                <a role="button" class="btn btn-primary btn-lg" t-attf-href="/jobs/recruitment/#{ slug(job) }">
                     ¡Solicitar ahora!
                 </a>
             </t>
             <t t-else="">
-                <a role="button" class="btn btn-primary btn-lg" t-attf-href="/web/login?redirect=/jobs/apply/#{ slug(job) }">
+                <a role="button" class="btn btn-primary btn-lg" t-attf-href="/web/login?redirect=/jobs/recruitment/#{ slug(job) }">
                     ¡Solicitar ahora!
                 </a>
             </t>
         </xpath>
     </template>
-
 
 </odoo>
