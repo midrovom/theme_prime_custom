@@ -1,5 +1,5 @@
 <odoo>
-    <template id="recruitment_form_1_documents" inherit_id="tu_modulo.recruitment_form_1" name="Recruitment Form 1 - Documentos">
+    <template id="recruitment_form_1_documents" inherit_id="custom_web_hr_datos_candidatos.recruitment_form_1" name="Recruitment Form 1 - Documentos">
         <xpath expr="//input[@id='curriculum-vitae']/ancestor::div[contains(@class, 'col-12') and contains(@class, 'col-md-6')][1]" position="after">
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
