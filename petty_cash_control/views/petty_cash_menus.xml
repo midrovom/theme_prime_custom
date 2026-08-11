@@ -1,0 +1,13 @@
+<odoo>
+  <menuitem id="menu_petty_cash_root" name="Caja chica" sequence="30" groups="petty_cash_control.group_petty_cash_user"/>
+  <menuitem id="menu_petty_cash_operations" name="Operaciones" parent="menu_petty_cash_root" sequence="10"/>
+  <menuitem id="menu_funds" name="Fondos y reposiciones" parent="menu_petty_cash_operations" action="action_fund" sequence="10"/>
+  <menuitem id="menu_expenses" name="Gastos" parent="menu_petty_cash_operations" action="action_expense" sequence="20"/>
+  <menuitem id="menu_settlements" name="Liquidaciones" parent="menu_petty_cash_operations" action="action_settlement" sequence="30"/>
+  <menuitem id="menu_petty_cash_reports" name="Reportes" parent="menu_petty_cash_root" sequence="20"/>
+  <menuitem id="menu_analysis" name="Análisis de gastos" parent="menu_petty_cash_reports" action="action_expense_analysis" sequence="10"/>
+  <menuitem id="menu_report_wizard" name="Reporte por fechas" parent="menu_petty_cash_reports" action="action_report_wizard" sequence="20"/>
+  <menuitem id="menu_petty_cash_config" name="Configuración" parent="menu_petty_cash_root" sequence="30" groups="petty_cash_control.group_petty_cash_manager"/>
+  <menuitem id="menu_boxes" name="Cajas" parent="menu_petty_cash_config" action="action_box" sequence="10"/>
+  <menuitem id="menu_categories" name="Categorías" parent="menu_petty_cash_config" action="action_category" sequence="20"/>
+</odoo>

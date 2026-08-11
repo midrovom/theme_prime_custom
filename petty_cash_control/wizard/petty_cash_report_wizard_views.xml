@@ -1,0 +1,4 @@
+<odoo>
+  <record id="view_report_wizard_form" model="ir.ui.view"><field name="name">petty.cash.report.wizard.form</field><field name="model">petty.cash.report.wizard</field><field name="arch" type="xml"><form string="Reporte de gastos"><group><field name="date_from"/><field name="date_to"/><field name="box_ids" widget="many2many_tags"/><field name="category_ids" widget="many2many_tags"/><field name="state"/></group><footer><button name="action_print" type="object" string="Generar PDF" class="btn-primary"/><button string="Cancelar" special="cancel"/></footer></form></field></record>
+  <record id="action_report_wizard" model="ir.actions.act_window"><field name="name">Reporte por fechas</field><field name="res_model">petty.cash.report.wizard</field><field name="view_mode">form</field><field name="target">new</field></record>
+</odoo>
