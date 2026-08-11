@@ -30,7 +30,7 @@ class HrApplicant(models.Model):
             "tag": "reload",
         }
 
-    def action_ropen_porcess(self):
+    def action_reopen_process(self):
         self.ensure_one()
 
         if not self.env.user.has.group(
