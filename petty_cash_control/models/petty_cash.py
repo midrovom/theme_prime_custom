@@ -67,7 +67,7 @@ class PettyCashFund(models.Model):
 
     name = fields.Char(default="Nuevo", readonly=True, copy=False)
     date = fields.Date(default=fields.Date.context_today, required=True, tracking=True)
-    box_id = fields.Many2one("petty.cash.box", required=True, tracking=True, check_company=False)
+    box_id = fields.Many2one("petty.cash.box", required=True, tracking=True, check_company=True)
     responsible_id = fields.Many2one(related="box_id.responsible_id", store=True)
     fund_type = fields.Selection([("initial", "Entrega inicial"), ("replenishment", "Reposición")], default="replenishment", required=True, tracking=True)
     amount = fields.Monetary(required=True, tracking=True)
