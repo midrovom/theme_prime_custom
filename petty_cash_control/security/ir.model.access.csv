@@ -1,7 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_category_user,category user,model_petty_cash_category,petty_cash_control.group_petty_cash_user,1,0,0,0
 access_category_manager,category manager,model_petty_cash_category,petty_cash_control.group_petty_cash_manager,1,1,1,1
-access_box_user,box user,model_petty_cash_box,petty_cash_control.group_petty_cash_user,1,1,0,0
+access_box_user,box user,model_petty_cash_box,petty_cash_control.group_petty_cash_user,1,0,0,0
 access_box_manager,box manager,model_petty_cash_box,petty_cash_control.group_petty_cash_manager,1,1,1,1
 access_fund_user,fund user,model_petty_cash_fund,petty_cash_control.group_petty_cash_user,1,1,1,0
 access_fund_approver,fund approver,model_petty_cash_fund,petty_cash_control.group_petty_cash_approver,1,1,1,0
