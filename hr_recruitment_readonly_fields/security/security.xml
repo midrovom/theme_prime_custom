@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+
+        <record id="group_hr_admin" model="res.groups">
+            <field name="name">Administrador RRHH</field>
+            <field name="category_id" ref="base.module_category_human_resources"/>
+        </record>
+
+    </data>
+
+</odoo>
+

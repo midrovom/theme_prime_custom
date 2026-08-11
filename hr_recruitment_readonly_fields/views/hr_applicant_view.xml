@@ -20,7 +20,7 @@
                         type="object" string="Habilitar Edición" 
                         class="btn-secondary" 
                         invisible="not process_finalized" 
-                        groups="hr_recruitment.group_hr_recruitment_manager"/>
+                        groups="hr_recruitment_readonly_fields.group_hr_admin"/>
             </xpath>
 
             <xpath expr="//field[@name='wage']" position="attributes">

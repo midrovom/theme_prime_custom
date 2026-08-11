@@ -35,7 +35,8 @@ class HrApplicant(models.Model):
         self.ensure_one()
 
         if not self.env.user.has_group(
-            "hr_recruitment.group_hr_recruitment_manager"
+            "hr_recruitment_readonly_fields.group_hr_admin"
+            # "hr_recruitment.group_hr_recruitment_manager"
         ):
             raise AccessError(
                 "Solo un Manager de Reclutamiento puede reabrir el proceso."
