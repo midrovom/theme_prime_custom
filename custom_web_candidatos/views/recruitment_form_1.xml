@@ -1,0 +1,446 @@
+<odoo>
+    <template id="recruitment_form_1_documents" inherit_id="tu_modulo.recruitment_form_1" name="Recruitment Form 1 - Documentos">
+        <xpath expr="//input[@id='curriculum-vitae']/ancestor::div[contains(@class, 'col-12') and contains(@class, 'col-md-6')][1]" position="after">
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6"> 1. Fotografía actualizada a color tamaño carnet: </span>
+                        <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="fotografia"
+                        name="fotografia"
+                        type="file"
+                        accept="image/*"
+                    />
+
+                    <label
+                        for="fotografia"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar fotografía
+                    </label>
+
+                    <div
+                        id="file-selected-fotografia"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 2. Cédula y certificado de votación -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        2. Cédula de identidad y certificado de votación 2024:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="cedula-votacion"
+                        name="cedulaVotacion"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                        multiple="multiple"
+                    />
+
+                    <label
+                        for="cedula-votacion"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar cédula y certificado de votación
+                    </label>
+
+                    <div
+                        id="file-selected-cedula-votacion"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 3. Historia laboral IESS -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        3. Historia laboral extraída de la página web del IESS:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="historia-laboral-iess"
+                        name="historiaLaboralIess"
+                        type="file"
+                        accept="application/pdf,.pdf"
+                    />
+
+                    <label
+                        for="historia-laboral-iess"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar historia laboral
+                    </label>
+
+                    <div
+                        id="file-selected-historia-laboral-iess"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 4. Acta de matrimonio -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        4. Acta de matrimonio ORIGINAL / Registro de unión de hecho:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="acta-matrimonio"
+                        name="actaMatrimonio"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                    />
+
+                    <label
+                        for="acta-matrimonio"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar acta de matrimonio
+                    </label>
+
+                    <div
+                        id="file-selected-acta-matrimonio"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 5. Hijos menores de 18 años -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        5. Hijos menores de 18 años - partida de nacimiento y/o cédula:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="hijos-menores"
+                        name="hijosMenores"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                        multiple="multiple"
+                    />
+
+                    <label
+                        for="hijos-menores"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar documentos de hijos
+                    </label>
+
+                    <div
+                        id="file-selected-hijos-menores"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 6. Estudios / SENECYT -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        6. Certificado del último año de estudios / Título certificado por SENECYT:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="estudios-senecyt"
+                        name="estudiosSenecyt"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                        multiple="multiple"
+                    />
+
+                    <label
+                        for="estudios-senecyt"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar certificado o título
+                    </label>
+
+                    <div
+                        id="file-selected-estudios-senecyt"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 7. Cursos realizados -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        7. Certificados de todos los cursos realizados:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="cursos-realizados"
+                        name="cursosRealizados"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                        multiple="multiple"
+                    />
+
+                    <label
+                        for="cursos-realizados"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar certificados de cursos
+                    </label>
+
+                    <div
+                        id="file-selected-cursos-realizados"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 8. Recomendaciones -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        8. Recomendaciones originales y actualizadas (mínimo 2):
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="recomendaciones"
+                        name="recomendaciones"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                        multiple="multiple"
+                    />
+
+                    <label
+                        for="recomendaciones"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar recomendaciones
+                    </label>
+
+                    <div
+                        id="file-selected-recomendaciones"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 9. Certificados de trabajos anteriores -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        9. Certificados de trabajos anteriores:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="certificados-trabajo"
+                        name="certificadosTrabajo"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                        multiple="multiple"
+                    />
+
+                    <label
+                        for="certificados-trabajo"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar certificados de trabajo
+                    </label>
+
+                    <div
+                        id="file-selected-certificados-trabajo"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 10. Planilla de servicios básicos -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        10. Planilla de servicios básicos del lugar de residencia:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="planilla-servicios"
+                        name="planillaServicios"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                    />
+
+                    <label
+                        for="planilla-servicios"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar planilla
+                    </label>
+
+                    <div
+                        id="file-selected-planilla-servicios"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 11. Croquis del domicilio -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        11. Croquis del domicilio:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="croquis-domicilio"
+                        name="croquisDomicilio"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                    />
+
+                    <label
+                        for="croquis-domicilio"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar croquis
+                    </label>
+
+                    <div
+                        id="file-selected-croquis-domicilio"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 12. Formulario 107 -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        12. Formulario No. 107 del SRI:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="formulario-107"
+                        name="formulario107"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                    />
+
+                    <label
+                        for="formulario-107"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar Formulario 107
+                    </label>
+
+                    <div
+                        id="file-selected-formulario-107"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 13. Cuenta Banco Internacional -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        13. Copia de cuenta de ahorros del Banco Internacional:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="cuenta-banco-internacional"
+                        name="cuentaBancoInternacional"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                    />
+
+                    <label
+                        for="cuenta-banco-internacional"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar cuenta bancaria
+                    </label>
+
+                    <div
+                        id="file-selected-cuenta-banco-internacional"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+
+            <!-- 14. Certificado de salud -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="row">
+                    <span class="fs-6">
+                        14. Certificado de salud del Ministerio de Salud Pública
+                        con detalle de tipo de sangre:
+                    </span>
+                    <div class="my-2 border border-1 border-gray"></div>
+
+                    <input
+                        class="d-none"
+                        id="certificado-salud"
+                        name="certificadoSalud"
+                        type="file"
+                        accept="application/pdf,.pdf,image/*"
+                    />
+
+                    <label
+                        for="certificado-salud"
+                        class="text-info custom_vitae fs-5"
+                    >
+                        + adjuntar certificado de salud
+                    </label>
+
+                    <div
+                        id="file-selected-certificado-salud"
+                        class="text-success custom-message fs-5 mt-2 ms-2"
+                    ></div>
+                </div>
+            </div>
+
+        </xpath>
+
+    </template>
+
+</odoo>
+
