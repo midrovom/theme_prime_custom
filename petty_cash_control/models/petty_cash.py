@@ -27,7 +27,7 @@ class PettyCashBox(models.Model):
     code = fields.Char(required=True, tracking=True)
     responsible_id = fields.Many2one("res.users", required=True, tracking=True)
     backup_responsible_ids = fields.Many2many("res.users", string="Responsables alternos")
-    company_id = fields.Many2one("res.company", default=lambda self: self.env.company, required=False)
+    company_id = fields.Many2one("res.company", default=lambda self: self.env.company, required=True)
     currency_id = fields.Many2one(related="company_id.currency_id", store=True)
     maximum_amount = fields.Monetary(string="Fondo máximo", required=True, tracking=True)
     active = fields.Boolean(default=True)
@@ -67,7 +67,7 @@ class PettyCashFund(models.Model):
 
     name = fields.Char(default="Nuevo", readonly=True, copy=False)
     date = fields.Date(default=fields.Date.context_today, required=True, tracking=True)
-    box_id = fields.Many2one("petty.cash.box", required=True, tracking=True, check_company=True)
+    box_id = fields.Many2one("petty.cash.box", required=True, tracking=True, check_company=False)
     responsible_id = fields.Many2one(related="box_id.responsible_id", store=True)
     fund_type = fields.Selection([("initial", "Entrega inicial"), ("replenishment", "Reposición")], default="replenishment", required=True, tracking=True)
     amount = fields.Monetary(required=True, tracking=True)
@@ -125,7 +125,7 @@ class PettyCashExpense(models.Model):
 
     name = fields.Char(default="Nuevo", readonly=True, copy=False)
     date = fields.Date(default=fields.Date.context_today, required=True, tracking=True)
-    box_id = fields.Many2one("petty.cash.box", required=True, tracking=True, check_company=True)
+    box_id = fields.Many2one("petty.cash.box", required=True, tracking=True, check_company=False)
     responsible_id = fields.Many2one(related="box_id.responsible_id", store=True)
     category_id = fields.Many2one("petty.cash.category", required=True, tracking=True)
     supplier_name = fields.Char(string="Proveedor", required=True)
@@ -196,7 +196,7 @@ class PettyCashSettlement(models.Model):
 
     name = fields.Char(default="Nuevo", readonly=True, copy=False)
     date = fields.Date(default=fields.Date.context_today, required=True, tracking=True)
-    box_id = fields.Many2one("petty.cash.box", required=True, tracking=True, check_company=True)
+    box_id = fields.Many2one("petty.cash.box", required=True, tracking=True, check_company=False)
     responsible_id = fields.Many2one(related="box_id.responsible_id", store=True)
     expense_ids = fields.One2many("petty.cash.expense", "settlement_id", string="Gastos")
     expense_total = fields.Monetary(compute="_compute_totals", store=True)
