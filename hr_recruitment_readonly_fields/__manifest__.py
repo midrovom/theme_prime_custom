@@ -6,10 +6,10 @@
     "author": "Custom Development",
     "license": "LGPL-3",
     "depends": [
-        'security/security.xml',
         "hr_recruitment_ec_contract",
     ],
     "data": [
+        'security/security.xml',
         "views/hr_applicant_view.xml",
     ],
     "assets": {
