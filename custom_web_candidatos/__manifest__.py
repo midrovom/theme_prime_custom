@@ -16,6 +16,7 @@
     ],
     'data': [
         'views/website_hr_recruitment.xml',
+        'views/recruitment_form_1.xml',
 
     ],
     'installable': True,
