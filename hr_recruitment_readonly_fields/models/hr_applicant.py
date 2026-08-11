@@ -1,4 +1,5 @@
 import logging
+
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
 
@@ -33,10 +34,12 @@ class HrApplicant(models.Model):
     def action_reopen_process(self):
         self.ensure_one()
 
-        if not self.env.user.has.group(
+        if not self.env.user.has_group(
             "hr_recruitment.group_hr_recruitment_manager"
         ):
-            raise AccessError("Solo el Administrador puede reabirir el proceso.")
+            raise AccessError(
+                "Solo un Manager de Reclutamiento puede reabrir el proceso."
+            )
 
         self.process_finalized = False
 
@@ -44,6 +47,5 @@ class HrApplicant(models.Model):
             "type": "ir.actions.client",
             "tag": "reload",
         }
-
 
 
