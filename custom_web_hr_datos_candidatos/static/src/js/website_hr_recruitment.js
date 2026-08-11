@@ -790,8 +790,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         // const isCurriculumValid = this._validateField('#curriculum-vitae');
         const isCurriculumValid = this._validateCurriculum();
 
-
-
         if (
             !isImageValid ||
             !isLastnamePaternoValid ||

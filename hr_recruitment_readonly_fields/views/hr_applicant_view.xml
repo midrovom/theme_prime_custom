@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+
     <record id="view_hr_applicant_form_inherit_finalize" model="ir.ui.view">
         <field name="name">hr.applicant.form.inherit.finalize</field>
         <field name="model">hr.applicant</field>
@@ -13,40 +14,39 @@
                         type="object"
                         string="Finalizar Proceso"
                         class="btn-primary"
-                        modifiers="{'invisible': [('process_finalized','=',True)]}"/>
+                        invisible="process_finalized"/>
             </xpath>
 
             <xpath expr="//field[@name='wage']" position="attributes">
-                <attribute name="modifiers">{"readonly":[["process_finalized","=",true],["is_readonly_finalize","=",true]]}</attribute>
+                <attribute name="readonly">process_finalized and is_readonly_finalize</attribute>
             </xpath>
 
             <xpath expr="//field[@name='resource_calendar_id']" position="attributes">
-                <attribute name="modifiers">{"readonly":[["process_finalized","=",true],["is_readonly_finalize","=",true]]}</attribute>
+                <attribute name="readonly">process_finalized and is_readonly_finalize</attribute>
             </xpath>
 
             <xpath expr="//field[@name='date_start']" position="attributes">
-                <attribute name="modifiers">{"readonly":[["process_finalized","=",true],["is_readonly_finalize","=",true]]}</attribute>
+                <attribute name="readonly">process_finalized and is_readonly_finalize</attribute>
             </xpath>
 
             <xpath expr="//field[@name='date_end']" position="attributes">
-                <attribute name="modifiers">{"readonly":[["process_finalized","=",true],["is_readonly_finalize","=",true]]}</attribute>
+                <attribute name="readonly">process_finalized and is_readonly_finalize</attribute>
             </xpath>
 
             <xpath expr="//field[@name='ec_contract_type_id']" position="attributes">
-                <attribute name="modifiers">{"readonly":[["process_finalized","=",true],["is_readonly_finalize","=",true]]}</attribute>
+                <attribute name="readonly">process_finalized and is_readonly_finalize</attribute>
             </xpath>
 
             <xpath expr="//field[@name='company_config_id']" position="attributes">
-                <attribute name="modifiers">{"readonly":[["process_finalized","=",true],["is_readonly_finalize","=",true]]}</attribute>
+                <attribute name="readonly">process_finalized and is_readonly_finalize</attribute>
             </xpath>
 
             <xpath expr="//field[@name='sucursal_id']" position="attributes">
-                <attribute name="modifiers">{"readonly":[["process_finalized","=",true],["is_readonly_finalize","=",true]]}</attribute>
+                <attribute name="readonly">process_finalized and is_readonly_finalize</attribute>
             </xpath>
 
         </field>
     </record>
+
 </odoo>
-
-
 
