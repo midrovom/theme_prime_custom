@@ -15,6 +15,12 @@
                         string="Finalizar Proceso"
                         class="btn-primary"
                         invisible="process_finalized"/>
+
+                <button name="action_reopen_process" 
+                        type="object" string="Habilitar Edición" 
+                        class="btn-secondary" 
+                        invisible="not process_finalized" 
+                        groups="hr_recruitment.group_hr_recruitment_manager"/>
             </xpath>
 
             <xpath expr="//field[@name='wage']" position="attributes">

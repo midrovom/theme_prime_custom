@@ -1,12 +1,13 @@
 import logging
 from odoo import api, fields, models
+from odoo.exceptions import AccessError
 
 class HrApplicant(models.Model):
     _inherit = "hr.applicant"
 
     process_finalized = fields.Boolean(string="Proceso Finalizado", default=False,)
     is_readonly_finalize = fields.Boolean(string="Usuario con readonly", compute="_compute_is_readonly_finalize",
-store=False,
+        store=False,
     )
 
     @api.depends_context("uid")
@@ -28,4 +29,21 @@ store=False,
             "type": "ir.actions.client",
             "tag": "reload",
         }
+
+    def action_ropen_porcess(self):
+        self.ensure_one()
+
+        if not self.env.user.has.group(
+            "hr_recruitment.group_hr_recruitment_manager"
+        ):
+            raise AccessError("Solo el Administrador puede reabirir el proceso.")
+
+        self.process_finalized = False
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "reload",
+        }
+
+
 
