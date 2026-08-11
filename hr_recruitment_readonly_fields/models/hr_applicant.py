@@ -4,15 +4,9 @@ from odoo import api, fields, models
 class HrApplicant(models.Model):
     _inherit = "hr.applicant"
 
-    process_finalized = fields.Boolean(
-        string="Proceso Finalizado",
-        default=False,
-    )
-
-    is_readonly_finalize = fields.Boolean(
-        string="Usuario con readonly",
-        compute="_compute_is_readonly_finalize",
-        store=False,
+    process_finalized = fields.Boolean(string="Proceso Finalizado", default=False,)
+    is_readonly_finalize = fields.Boolean(string="Usuario con readonly", compute="_compute_is_readonly_finalize",
+store=False,
     )
 
     @api.depends_context("uid")
