@@ -787,7 +787,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const isEstadoCivilValid = this._validateField('input[name="estadoCivil"]');
 
         // Validar hoja de vida
-        const isCurriculumValid = this._validateField('#curriculum-vitae');
+        // const isCurriculumValid = this._validateField('#curriculum-vitae');
+        const isCurriculumValid = this._validateCurriculum();
+
+
 
         if (
             !isImageValid ||
@@ -1232,6 +1235,48 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
 
         return true; 
+    },
+
+    // Nuevo metodo para obligar a llenar la informacion dentro del campo
+    _validateCurriculum() {
+        const $input = this.$('#curriculum-vitae');
+        const $container = this.$('#file-selected-message');
+
+        const hasFiles = this.uploadedFiles && this.uploadedFiles.length > 0;
+
+        if (!hasFiles) {
+            $input.addClass('is-invalid');
+
+            $container.html(`
+                <div class="text-danger custom-message fs-6">
+                    Campo obligatorio. Debe seleccionar al menos un archivo PDF.
+                </div>
+            `);
+
+            return false;
+        }
+
+        $input.removeClass('is-invalid');
+
+        // Verificar que todos los archivos sean PDF
+        const invalidFiles = this.uploadedFiles.filter(file => {
+            return file.type !== "application/pdf" &&
+                !file.name.toLowerCase().endsWith(".pdf");
+        });
+
+        if (invalidFiles.length > 0) {
+            $input.addClass('is-invalid');
+
+            $container.html(`
+                <div class="text-danger custom-message fs-6">
+                    Solo se permiten archivos PDF.
+                </div>
+            `);
+
+            return false;
+        }
+
+        return true;
     },
 
     _validateEmail() {
