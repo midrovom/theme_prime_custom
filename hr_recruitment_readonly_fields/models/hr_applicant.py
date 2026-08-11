@@ -1,14 +1,17 @@
 import logging
 from odoo import api, fields, models
 
-_logger = logging.getLogger(__name__)
-
-
 class HrApplicant(models.Model):
     _inherit = "hr.applicant"
 
-    process_finalized = fields.Boolean(string="Proceso Finalizado", default=False,)
-    is_readonly_finalize = fields.Boolean(string="Usuario readonly después de finalizar", compute="_compute_is_readonly_finalize",
+    process_finalized = fields.Boolean(
+        string="Proceso Finalizado",
+        default=False,
+    )
+
+    is_readonly_finalize = fields.Boolean(
+        string="Usuario con readonly",
+        compute="_compute_is_readonly_finalize",
         store=False,
     )
 
@@ -18,12 +21,11 @@ class HrApplicant(models.Model):
             "custom_web_hr_datos_candidatos.group_applicant_readonly"
         )
 
-        for rec in self:
-            rec.is_readonly_finalize = has_group
+        for record in self:
+            record.is_readonly_finalize = has_group
 
     def action_finalize_process(self):
         self.ensure_one()
-
         self.write({
             "process_finalized": True,
         })

@@ -17,50 +17,58 @@
                         invisible="process_finalized"/>
             </xpath>
 
-
             <xpath expr="//field[@name='wage']" position="attributes">
                 <attribute name="readonly">
                     process_finalized and is_readonly_finalize
                 </attribute>
             </xpath>
 
-
-            <xpath expr="//field[@name='resource_calendar_id']" position="attributes">
-                <attribute name="readonly"> process_finalized and is_readonly_finalize </attribute>
-            </xpath>
-
-            <xpath expr="//field[@name='date_start']" position="attributes">
-                <attribute name="readonly"> process_finalized and is_readonly_finalize </attribute>
-            </xpath>
-
-
-            <xpath expr="//field[@name='date_end']" position="attributes">
+            <xpath expr="//field[@name='resource_calendar_id']"
+                   position="attributes">
                 <attribute name="readonly">
                     process_finalized and is_readonly_finalize
                 </attribute>
             </xpath>
 
-            <xpath expr="//field[@name='ec_contract_type_id']" position="attributes">
+            <xpath expr="//field[@name='date_start']"
+                   position="attributes">
                 <attribute name="readonly">
                     process_finalized and is_readonly_finalize
                 </attribute>
             </xpath>
 
-            <xpath expr="//field[@name='company_config_id']" position="attributes">
+            <xpath expr="//field[@name='date_end']"
+                   position="attributes">
                 <attribute name="readonly">
                     process_finalized and is_readonly_finalize
                 </attribute>
             </xpath>
 
-            <xpath expr="//field[@name='sucursal_id']" position="attributes">
+            <xpath expr="//field[@name='ec_contract_type_id']"
+                   position="attributes">
                 <attribute name="readonly">
                     process_finalized and is_readonly_finalize
                 </attribute>
             </xpath>
 
+            <xpath expr="//field[@name='company_config_id']"
+                   position="attributes">
+                <attribute name="readonly">
+                    process_finalized and is_readonly_finalize
+                </attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='sucursal_id']"
+                   position="attributes">
+                <attribute name="readonly">
+                    process_finalized and is_readonly_finalize
+                </attribute>
+            </xpath>
         </field>
     </record>
 
 </odoo>
+
+
 
 
