@@ -755,40 +755,102 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Validations
     //----------------------------------------------------------------------
 
-    _validateCurrentStep1() {
-        const isImageValid = this._validateImage();
+    // _validateCurrentStep1() {
+    //     const isImageValid = this._validateImage();
 
+    //     const isLastnamePaternoValid = this._validateField('#hr-lastname-paterno');
+    //     const isLastnameMaternoValid = this._validateField('#hr-lastname-materno');
+    //     const isNameValid = this._validateField('#hr-name');
+    //     const isAgeValid = this._validateField('#hr-age');
+
+    //     const isAddressValid = this._validateField('#hr-address');
+    //     const isParishValid = this._validateField('#hr-parish');
+
+    //     const isBirthDateValid = this._validateBirthDate();
+
+    //     const isBirthCountryValid = this._validateField('#hr-country');
+    //     const isProvinceValid = this._validateField('#hr-provincia');
+
+    //     const isCodeCellphoneValid = this._validateCodePhone();
+    //     const isCellphoneValid = this._validatePhone();
+
+    //     const isViveConValid = this._validateField('input[name="viveCon"]');
+    //     const isTipoViviendaValid = this._validateField('input[name="tipoVivienda"]');
+    //     const isHijosValid = this._validateField('#hr-hijos');
+
+    //     const isEmailValid = this._validateEmail();
+
+    //     const isDocTypeValid = this._validateField('#hr-type-doc');
+    //     const isDocNumberValid = this._validateDocumentNumber();
+    //     const isNationalityValid = this._validateField('#hr-nationality');
+
+    //     const isEstadoCivilValid = this._validateField('input[name="estadoCivil"]');
+
+    //     // Validar hoja de vida
+    //     // const isCurriculumValid = this._validateField('#curriculum-vitae');
+    //     const isCurriculumValid = this._validateCurriculum();
+
+    //     if (
+    //         !isImageValid ||
+    //         !isLastnamePaternoValid ||
+    //         !isLastnameMaternoValid ||
+    //         !isNameValid ||
+    //         !isAgeValid ||
+    //         !isAddressValid ||
+    //         !isParishValid ||
+    //         !isBirthDateValid ||
+    //         !isBirthCountryValid ||
+    //         !isProvinceValid ||
+    //         !isCodeCellphoneValid ||
+    //         !isCellphoneValid ||
+    //         !isViveConValid ||
+    //         !isTipoViviendaValid ||
+    //         !isHijosValid ||
+    //         !isEmailValid ||
+    //         !isDocTypeValid ||
+    //         !isDocNumberValid ||
+    //         !isNationalityValid ||
+    //         !isCurriculumValid || 
+    //         !isEstadoCivilValid
+    //     ) {
+    //         this._scrollToFirstError();
+    //         return false;
+    //     }
+
+    //     return true;
+    // },
+
+    _validateCurrentStep1() {
+
+        const isImageValid = this._validateImage();
         const isLastnamePaternoValid = this._validateField('#hr-lastname-paterno');
         const isLastnameMaternoValid = this._validateField('#hr-lastname-materno');
         const isNameValid = this._validateField('#hr-name');
         const isAgeValid = this._validateField('#hr-age');
-
         const isAddressValid = this._validateField('#hr-address');
         const isParishValid = this._validateField('#hr-parish');
-
         const isBirthDateValid = this._validateBirthDate();
-
         const isBirthCountryValid = this._validateField('#hr-country');
         const isProvinceValid = this._validateField('#hr-provincia');
-
         const isCodeCellphoneValid = this._validateCodePhone();
         const isCellphoneValid = this._validatePhone();
-
         const isViveConValid = this._validateField('input[name="viveCon"]');
         const isTipoViviendaValid = this._validateField('input[name="tipoVivienda"]');
         const isHijosValid = this._validateField('#hr-hijos');
-
         const isEmailValid = this._validateEmail();
-
         const isDocTypeValid = this._validateField('#hr-type-doc');
         const isDocNumberValid = this._validateDocumentNumber();
         const isNationalityValid = this._validateField('#hr-nationality');
-
         const isEstadoCivilValid = this._validateField('input[name="estadoCivil"]');
-
-        // Validar hoja de vida
-        // const isCurriculumValid = this._validateField('#curriculum-vitae');
         const isCurriculumValid = this._validateCurriculum();
+        const isDiscapacidadValid = this._validateField('input[name="discapacidad"]');
+        let isTipoDiscapacidadValid = true;
+        let isPorcentajeDiscapacidadValid = true;
+
+        if (this.$('input[name="discapacidad"]:checked').val() === 'si') {
+            isTipoDiscapacidadValid = this._validateField('input[name="tipo_discapacidad"]');
+            isPorcentajeDiscapacidadValid = this._validateField('input[name="porcentaje_discapacidad"]');
+        }
 
         if (
             !isImageValid ||
@@ -811,7 +873,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isDocNumberValid ||
             !isNationalityValid ||
             !isCurriculumValid || 
-            !isEstadoCivilValid
+            !isEstadoCivilValid ||
+            !isDiscapacidadValid ||
+            !isTipoDiscapacidadValid ||
+            !isPorcentajeDiscapacidadValid
         ) {
             this._scrollToFirstError();
             return false;
@@ -1381,7 +1446,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         } else if (type === 'id_extrj') {
             if (!isValidForeignId(value)) {
                 isValid = false;
-                errorMsg = 'La cédula extranjera debe tener 10 dígitos numéricos.';
+                errorMsg = 'La cédula extranjera no es valida.';
             }
         } else if (type === 'pasaporte') {
             isValid = true; // no se valida nada
@@ -1686,20 +1751,35 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
-    _toggleDisabilityFields: function() {
-        const value = this.$('input[name="discapacidad"]:checked').val();
-        const tipo = this.$('input[name="tipo_discapacidad"]');
-        const porcentaje = this.$('input[name="porcentaje_discapacidad"]');
-        const $radios = this.$('input[name="discapacidad"]');
+    // _toggleDisabilityFields: function() {
+    //     const value = this.$('input[name="discapacidad"]:checked').val();
+    //     const tipo = this.$('input[name="tipo_discapacidad"]');
+    //     const porcentaje = this.$('input[name="porcentaje_discapacidad"]');
+    //     const $radios = this.$('input[name="discapacidad"]');
         
-        $radios.removeClass('is-invalid');
+    //     $radios.removeClass('is-invalid');
 
-        if (value === 'no') {
-            tipo.prop('disabled', true).val('');
-            porcentaje.prop('disabled', true).val('');
+    //     if (value === 'no') {
+    //         tipo.prop('disabled', true).val('');
+    //         porcentaje.prop('disabled', true).val('');
+    //     } else {
+    //         tipo.prop('disabled', false);
+    //         porcentaje.prop('disabled', false);
+    //     }
+    // },
+
+    _toggleDisabilityFields() {
+        const value = this.$('input[name="discapacidad"]:checked').val();
+        const $tipo = this.$('input[name="tipo_discapacidad"]');
+        const $porcentaje = this.$('input[name="porcentaje_discapacidad"]');
+
+        if (value === 'si') {
+            $tipo.prop('required', true).prop('disabled', false);
+            $porcentaje.prop('required', true).prop('disabled', false);
         } else {
-            tipo.prop('disabled', false);
-            porcentaje.prop('disabled', false);
+            $tipo.prop('required', false).prop('disabled', true).removeClass('is-invalid');
+            $porcentaje.prop('required', false).prop('disabled', true).removeClass('is-invalid');
+            this.$('#doc-error').text('');
         }
     },
 
