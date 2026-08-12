@@ -21,6 +21,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change #hijos-menores': '_onFileSelected',
         'change #cursos-realizados': '_onFileSelected',
         'change #formulario-107': '_onFileSelected',
+
+        'click #next-button': '_onNextClick',
     },
 
     //----------------------------------------------------------------------
@@ -64,6 +66,21 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         // Refrescar input y renderizar lista
         this._refreshFileInput(input);
         this._renderFileList(container, input);
+    },
+
+    _onNextClick(ev) {
+        ev.preventDefault();
+
+        // Ejecutar validaciones del Step 1
+        const isStepValid = this._validateCurrentStep1();
+
+        if (isStepValid) {
+            // Si todo está correcto, puedes avanzar al siguiente paso
+            console.log("Step 1 validado correctamente, avanzar al siguiente paso.");
+            // Aquí puedes disparar tu lógica para mostrar Step 2
+        } else {
+            console.log("Errores en Step 1, revisar campos.");
+        }
     },
 
     _refreshFileInput(input) {
