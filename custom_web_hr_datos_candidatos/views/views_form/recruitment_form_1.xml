@@ -330,7 +330,7 @@
 
                     <div class="col-12 col-md-6 mb-4">
                         <div class="row">
-                            <span class="fs-6"> Adjuntar CV: </span>
+                            <span class="fs-6"> Adjuntar CV y Cedula: </span>
                                 <div class="my-2 border border-1 border-gray"></div>
                                     <input class="d-none" id="curriculum-vitae" name="curriculumVitae" type="file" accept="application/pdf,.pdf" multiple="multiple"/>
                                 <label for="curriculum-vitae" class="text-info  custom_vitae fs-5"> + adjuntar archivo formato PDF </label>
