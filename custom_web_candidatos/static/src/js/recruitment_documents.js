@@ -2,450 +2,221 @@
 
 import publicWidget from "@web/legacy/js/public/public_widget";
 
-publicWidget.registry.MultistepForm.include({
+publicWidget.registry.CandidatosWidget.include({
 
-    init() {
-        this._super(...arguments);
-        this.uploadedFiles = {};
+    start: function () {
+        var self = this;
+
+        return this._super.apply(this, arguments).then(function () {
+            self._initCustomFileFields();
+            self._initCustomRequiredFields();
+
+        });
     },
 
-    start() {
-        const result = this._super(...arguments);
-        this._initializeDocumentFiles();
-        return result;
-    },
+    _initCustomFileFields: function () {
 
-    events: {
+        var self = this;
 
-        'change #hr-job-recruitment-form input[type="file"]':
-            '_onCustomFileSelected',
-
-    },
-
-
-    /**
-     * Inicializa los archivos de los inputs.
-     */
-    _initializeDocumentFiles() {
-
-        const self = this;
-
-        this.$('#hr-job-recruitment-form input[type="file"]')
+        this.$el
+            .find('input[type="file"][data-custom-file="1"]')
             .each(function () {
 
-                const inputId = this.id;
+                var $input = $(this);
 
-                if (inputId && !self.uploadedFiles[inputId]) {
-                    self.uploadedFiles[inputId] = [];
-                }
+                self._prepareCustomFileField($input);
             });
     },
 
+    _prepareCustomFileField: function ($input) {
 
-    /**
-     * Evento cuando se selecciona un archivo.
-     */
-    _onCustomFileSelected(ev) {
+        var self = this;
 
-        const input = ev.currentTarget;
-
-        if (!input) {
-            return;
-        }
-
-        const inputId = input.id;
-
-        if (!inputId) {
-            return;
-        }
-
-        if (!this.uploadedFiles[inputId]) {
-            this.uploadedFiles[inputId] = [];
-        }
-
-        const newFiles = Array.from(input.files || []);
-
-        if (!newFiles.length) {
-            return;
-        }
-
-        const isImage = inputId === 'fotografia';
-
-        const invalidFiles = newFiles.filter(file => {
-
-            if (isImage) {
-                return !file.type.startsWith('image/');
-            }
-
-            return file.type !== 'application/pdf' &&
-                !file.name.toLowerCase().endsWith('.pdf');
-        });
-
-        const $container =
-            this.$(`#file-selected-${inputId}`);
-
-        if (invalidFiles.length) {
-
-            input.value = '';
-
-            this.uploadedFiles[inputId] = [];
-
-            $container.html(`
-                <div class="text-danger custom-message fs-6">
-                    ${
-                        isImage
-                            ? 'Solo se permiten imágenes.'
-                            : 'Solo se permiten archivos PDF.'
-                    }
-                </div>
-            `);
-
-            $(input).addClass('is-invalid');
-
-            return;
-        }
-
-        this.uploadedFiles[inputId] =
-            this.uploadedFiles[inputId].concat(newFiles);
-
-        // Eliminar duplicados
-        this.uploadedFiles[inputId] =
-            this.uploadedFiles[inputId].filter(
-                (file, index, self) =>
-                    index === self.findIndex(
-                        f =>
-                            f.name === file.name &&
-                            f.size === file.size &&
-                            f.lastModified === file.lastModified
-                    )
-            );
-
-        this._refreshCustomFileInput(input);
-
-        this._renderCustomFileList(
-            $container[0],
-            input
+        $input.off(
+            'change.custom_web_candidatos'
         );
 
-        $(input).removeClass('is-invalid');
-    },
+        $input.on(
+            'change.custom_web_candidatos',
+            function () {
 
+                var file = this.files && this.files[0];
 
-    /**
-     * Reconstruye input.files usando DataTransfer.
-     */
-    _refreshCustomFileInput(input) {
-
-        const inputId = input.id;
-
-        const files =
-            this.uploadedFiles[inputId] || [];
-
-        const dataTransfer = new DataTransfer();
-
-        files.forEach(file => {
-            dataTransfer.items.add(file);
-        });
-
-        input.files = dataTransfer.files;
-    },
-
-
-    /**
-     * Renderiza los archivos seleccionados.
-     */
-    _renderCustomFileList(container, input) {
-
-        if (!container) {
-            return;
-        }
-
-        const inputId = input.id;
-
-        const files =
-            this.uploadedFiles[inputId] || [];
-
-        container.innerHTML = '';
-
-        if (!files.length) {
-            return;
-        }
-
-        files.forEach((file, index) => {
-
-            const fileItem =
-                document.createElement('div');
-
-            fileItem.className =
-                'd-flex align-items-center ' +
-                'justify-content-between ' +
-                'border rounded-pill px-3 py-2 mb-2';
-
-            fileItem.innerHTML = `
-                <span class="text-success">
-                    ${file.name} ✓
-                </span>
-
-                <button
-                    type="button"
-                    class="btn btn-sm btn-danger remove-custom-file"
-                    data-index="${index}">
-                    ×
-                </button>
-            `;
-
-            container.appendChild(fileItem);
-        });
-
-        container
-            .querySelectorAll('.remove-custom-file')
-            .forEach(button => {
-
-                button.addEventListener('click', ev => {
-
-                    const index = parseInt(
-                        ev.currentTarget.dataset.index,
-                        10
-                    );
-
-                    this.uploadedFiles[inputId]
-                        .splice(index, 1);
-
-                    this._refreshCustomFileInput(input);
-
-                    this._renderCustomFileList(
-                        container,
-                        input
-                    );
-
-                    // Si es obligatorio, volver a validar.
-                    if (this._isRequiredCustomDocument(inputId)) {
-                        this._validateCustomDocument(input);
-                    }
-                });
-            });
-    },
-
-
-    // ---------------------------------------------------------
-    // DOCUMENTOS OBLIGATORIOS
-    // ---------------------------------------------------------
-
-    /**
-     * Define qué documentos son opcionales.
-     *
-     * Todo lo que NO esté aquí será obligatorio.
-     */
-    _isRequiredCustomDocument(inputId) {
-
-        const optionalDocuments = [
-            'acta-matrimonio',
-            'hijos-menores',
-            'cursos-realizados',
-            'formulario-107',
-        ];
-
-        return !optionalDocuments.includes(inputId);
-    },
-
-
-    /**
-     * Valida un documento individual.
-     */
-    _validateCustomDocument(input) {
-
-        if (!input) {
-            return true;
-        }
-
-        const inputId = input.id;
-
-        const files =
-            this.uploadedFiles[inputId] || [];
-
-        const $input = $(input);
-
-        const $container =
-            this.$(`#file-selected-${inputId}`);
-
-        const required =
-            this._isRequiredCustomDocument(inputId);
-
-        // -----------------------------------------------------
-        // OPCIONAL SIN ARCHIVO
-        // -----------------------------------------------------
-
-        if (!required && !files.length) {
-
-            $input.removeClass('is-invalid');
-
-            return true;
-        }
-
-        // -----------------------------------------------------
-        // OBLIGATORIO SIN ARCHIVO
-        // -----------------------------------------------------
-
-        if (required && !files.length) {
-
-            $input.addClass('is-invalid');
-
-            $container.html(`
-                <div class="text-danger custom-message fs-6">
-                    Campo obligatorio. Debe seleccionar un archivo.
-                </div>
-            `);
-
-            return false;
-        }
-
-        // -----------------------------------------------------
-        // VALIDAR TIPO
-        // -----------------------------------------------------
-
-        const isImage =
-            inputId === 'fotografia';
-
-        const invalidFiles =
-            files.filter(file => {
-
-                if (isImage) {
-                    return !file.type.startsWith('image/');
+                if (!file) {
+                    return;
                 }
 
-                return file.type !== 'application/pdf' &&
-                    !file.name.toLowerCase().endsWith('.pdf');
-            });
-
-        if (invalidFiles.length) {
-
-            $input.addClass('is-invalid');
-
-            $container.html(`
-                <div class="text-danger custom-message fs-6">
-                    ${
-                        isImage
-                            ? 'Solo se permiten imágenes.'
-                            : 'Solo se permiten archivos PDF.'
-                    }
-                </div>
-            `);
-
-            return false;
-        }
-
-        $input.removeClass('is-invalid');
-
-        return true;
+                self._showCustomFileDeleteButton(
+                    $input,
+                    file
+                );
+            }
+        );
     },
 
-
     /**
-     * Valida todos los documentos de la vista.
+     * Muestra el botón para eliminar el archivo seleccionado.
      */
-    _validateCustomDocuments() {
+    _showCustomFileDeleteButton: function ($input, file) {
 
-        let isValid = true;
+        var $container = $input.closest(
+            '.o_website_form_field, .form-group, .field-file'
+        );
 
-        const $inputs =
-            this.$('#hr-job-recruitment-form input[type="file"]');
+        if (!$container.length) {
+            $container = $input.parent();
+        }
 
-        $inputs.each((index, input) => {
+        // Eliminamos únicamente nuestro botón anterior.
+        $container
+            .find('.o_custom_delete_file')
+            .remove();
 
-            const valid =
-                this._validateCustomDocument(input);
-
-            if (!valid) {
-                isValid = false;
-            }
+        var $deleteButton = $('<button/>', {
+            type: 'button',
+            class: 'btn btn-link text-danger o_custom_delete_file',
+            text: 'Eliminar archivo',
         });
 
-        return isValid;
+        $deleteButton.on(
+            'click.custom_web_candidatos',
+            function () {
+
+                self._deleteCustomFile(
+                    $input,
+                    $container
+                );
+            }.bind(this)
+        );
+
+        $container.append($deleteButton);
     },
 
+    /**
+     * Elimina el archivo seleccionado.
+     */
+    _deleteCustomFile: function ($input, $container) {
 
-    // ---------------------------------------------------------
-    // CURRICULUM
-    // ---------------------------------------------------------
+        // Limpiamos el input file.
+        $input.val('');
+
+        // Eliminamos solamente nuestros elementos.
+        $container
+            .find('.o_custom_delete_file')
+            .remove();
+
+        // Eliminamos posible preview custom.
+        $container
+            .find('.o_custom_file_preview')
+            .remove();
+    },
+
+    // ============================================================
+    // CAMPOS OBLIGATORIOS
+    // ============================================================
 
     /**
-     * Sobrescribimos la validación del curriculum
-     * para utilizar la estructura nueva.
+     * Inicializa los campos marcados como obligatorios.
+     *
+     * Ejemplo:
+     *
+     * <input
+     *     type="file"
+     *     data-custom-required="1"
+     * >
      */
-    _validateCurriculum() {
+    _initCustomRequiredFields: function () {
 
-        const $input =
-            this.$('#curriculum-vitae');
+        var self = this;
 
-        const $container =
-            this.$('#file-selected-message');
+        this.$el
+            .find('[data-custom-required="1"]')
+            .each(function () {
 
-        const files =
-            this.uploadedFiles['curriculum-vitae'] || [];
+                self._markCustomFieldRequired(
+                    $(this)
+                );
+            });
+    },
 
-        if (!files.length) {
+    /**
+     * Marca visualmente el campo como obligatorio.
+     */
+    _markCustomFieldRequired: function ($field) {
 
-            $input.addClass('is-invalid');
+        var $label = this.$el.find(
+            'label[for="' + $field.attr('id') + '"]'
+        );
 
-            $container.html(`
-                <div class="text-danger custom-message fs-6">
-                    Campo obligatorio.
-                    Debe seleccionar al menos un archivo PDF.
-                </div>
-            `);
+        if ($label.length) {
 
-            return false;
+            if (!$label.find('.o_custom_required').length) {
+
+                $label.append(
+                    $('<span/>', {
+                        class: 'text-danger o_custom_required',
+                        text: ' *',
+                    })
+                );
+            }
         }
 
-        const invalidFiles =
-            files.filter(file => {
+        // Para inputs HTML normales utilizamos required.
+        $field.attr('required', 'required');
+    },
 
-                return file.type !== 'application/pdf' &&
-                    !file.name.toLowerCase().endsWith('.pdf');
+    /**
+     * Validación adicional de nuestros campos.
+     *
+     * No sustituye la validación original de Odoo.
+     */
+    _validateCustomRequiredFields: function () {
+
+        var valid = true;
+
+        this.$el
+            .find('[data-custom-required="1"]')
+            .each(function () {
+
+                var $field = $(this);
+
+                var value = $field.val();
+
+                if (!value) {
+
+                    valid = false;
+
+                    $field.addClass(
+                        'is-invalid'
+                    );
+
+                    if (
+                        !$field.next(
+                            '.o_custom_required_error'
+                        ).length
+                    ) {
+
+                        $('<div/>', {
+                            class:
+                                'invalid-feedback o_custom_required_error',
+                            text:
+                                'Este campo es obligatorio.',
+                        }).insertAfter($field);
+                    }
+
+                } else {
+
+                    $field.removeClass(
+                        'is-invalid'
+                    );
+
+                    $field.next(
+                        '.o_custom_required_error'
+                    ).remove();
+                }
             });
 
-        if (invalidFiles.length) {
-
-            $input.addClass('is-invalid');
-
-            $container.html(`
-                <div class="text-danger custom-message fs-6">
-                    Solo se permiten archivos PDF.
-                </div>
-            `);
-
-            return false;
-        }
-
-        $input.removeClass('is-invalid');
-
-        return true;
-    },
-
-
-    // ---------------------------------------------------------
-    // STEP 1
-    // ---------------------------------------------------------
-
-    /**
-     * Extendemos la validación existente del módulo original.
-     *
-     * Primero ejecutamos la validación original.
-     * Después agregamos nuestros documentos.
-     */
-    _validateCurrentStep1() {
-
-        const originalValid =
-            this._super(...arguments);
-
-        const documentsValid =
-            this._validateCustomDocuments();
-
-        if (!documentsValid) {
-            this._scrollToFirstError();
-        }
-
-        return originalValid && documentsValid;
+        return valid;
     },
 
 });
