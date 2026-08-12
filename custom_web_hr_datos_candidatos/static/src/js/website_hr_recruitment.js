@@ -1774,12 +1774,15 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const $porcentaje = this.$('input[name="porcentaje_discapacidad"]');
 
         if (value === 'si') {
+            // Activar y marcar como obligatorios
             $tipo.prop('required', true).prop('disabled', false);
             $porcentaje.prop('required', true).prop('disabled', false);
         } else {
+            // Desactivar y quitar obligatoriedad
             $tipo.prop('required', false).prop('disabled', true).removeClass('is-invalid');
             $porcentaje.prop('required', false).prop('disabled', true).removeClass('is-invalid');
-            this.$('#doc-error').text('');
+            $tipo.next('.invalid-feedback').remove(); 
+            $porcentaje.next('.invalid-feedback').remove();
         }
     },
 
