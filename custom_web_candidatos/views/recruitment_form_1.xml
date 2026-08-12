@@ -55,289 +55,96 @@
 
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        6. Certificado del último año de estudios / Título certificado por SENECYT:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="estudios-senecyt"
-                        name="estudiosSenecyt"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                        multiple="multiple"
-                    />
-
-                    <label
-                        for="estudios-senecyt"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar certificado o título
-                    </label>
-
-                    <div
-                        id="file-selected-estudios-senecyt"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjutnar copias de certificado del último año de estudios o COPIA del título Certificado de SENECYT.</span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="estudios-senecyt" name="estudiosSenecyt" type="file" accept="application/pdf,.pdf"/>
+                        <label for="estudios-senecyt" class="text-info custom_vitae fs-5"> + adjuntar certificado o título </label>
+                    <div id="file-selected-estudios-senecyt" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
 
-
-            <!-- 7. Cursos realizados -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        7. Certificados de todos los cursos realizados:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="cursos-realizados"
-                        name="cursosRealizados"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                        multiple="multiple"
-                    />
-
-                    <label
-                        for="cursos-realizados"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar certificados de cursos
-                    </label>
-
-                    <div
-                        id="file-selected-cursos-realizados"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjuntar Copias legibles de todos los cursos realizados si tuviere </span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="cursos-realizados" name="cursosRealizados" type="file" accept="application/pdf,.pdf"/>
+                        <label for="cursos-realizados" class="text-info custom_vitae fs-5"> + adjuntar certificados de cursos </label>
+                    <div id="file-selected-cursos-realizados" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
 
-
-            <!-- 8. Recomendaciones -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        8. Recomendaciones originales y actualizadas (mínimo 2):
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="recomendaciones"
-                        name="recomendaciones"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                        multiple="multiple"
-                    />
-
-                    <label
-                        for="recomendaciones"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar recomendaciones
-                    </label>
-
-                    <div
-                        id="file-selected-recomendaciones"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjuntar recomendaciones Originales y Actualizadas, con número de teléfono de la persona:</span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="recomendaciones" name="recomendaciones" type="file" accept="application/pdf,.pdf"/>
+                            <label for="recomendaciones" class="text-info custom_vitae fs-5"> + adjuntar recomendaciones </label>
+                        <div id="file-selected-recomendaciones" class="text-success custom-message fs-5 mt-2 ms-2">
+                    </div>
                 </div>
             </div>
 
-
-            <!-- 9. Certificados de trabajos anteriores -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        9. Certificados de trabajos anteriores:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="certificados-trabajo"
-                        name="certificadosTrabajo"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                        multiple="multiple"
-                    />
-
-                    <label
-                        for="certificados-trabajo"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar certificados de trabajo
-                    </label>
-
-                    <div
-                        id="file-selected-certificados-trabajo"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjuntar certificados de trabajos anteriores: </span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="certificados-trabajo" name="certificadosTrabajo" type="file" accept="application/pdf,.pdf"/>
+                        <label for="certificados-trabajo" class="text-info custom_vitae fs-5"> + adjuntar certificados de trabajo </label>
+                    <div id="file-selected-certificados-trabajo" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
 
-
-            <!-- 10. Planilla de servicios básicos -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        10. Planilla de servicios básicos del lugar de residencia:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="planilla-servicios"
-                        name="planillaServicios"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                    />
-
-                    <label
-                        for="planilla-servicios"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar planilla
-                    </label>
-
-                    <div
-                        id="file-selected-planilla-servicios"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjuntar Copia de Planilla de servicios básicos del lugar de residencia </span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="planilla-servicios" name="planillaServicios" type="file" accept="application/pdf,.pdf"/>
+                    <label for="planilla-servicios" class="text-info custom_vitae fs-5"> + adjuntar planilla</label>
+                    <div id="file-selected-planilla-servicios" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
 
-
-            <!-- 11. Croquis del domicilio -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        11. Croquis del domicilio:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="croquis-domicilio"
-                        name="croquisDomicilio"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                    />
-
-                    <label
-                        for="croquis-domicilio"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar croquis
-                    </label>
-
-                    <div
-                        id="file-selected-croquis-domicilio"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjuntar croquis del domicilio: </span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="croquis-domicilio" name="croquisDomicilio" type="file" accept="application/pdf,.pdf"/>
+                        <label for="croquis-domicilio" class="text-info custom_vitae fs-5"> + adjuntar croquis </label>
+                    <div id="file-selected-croquis-domicilio" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
 
-
-            <!-- 12. Formulario 107 -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        12. Formulario No. 107 del SRI:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="formulario-107"
-                        name="formulario107"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                    />
-
-                    <label
-                        for="formulario-107"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar Formulario 107
-                    </label>
-
-                    <div
-                        id="file-selected-formulario-107"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjuntar formulario No. 107 del SRI (en el caso de haber estado en relación de dependencia). </span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="formulario-107" name="formulario107" type="file" accept="application/pdf,.pdf"/>
+                        <label for="formulario-107" class="text-info custom_vitae fs-5">+ adjuntar Formulario 107 </label>
+                    <div id="file-selected-formulario-107" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
 
-
-            <!-- 13. Cuenta Banco Internacional -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        13. Copia de cuenta de ahorros del Banco Internacional:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="cuenta-banco-internacional"
-                        name="cuentaBancoInternacional"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                    />
-
-                    <label
-                        for="cuenta-banco-internacional"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar cuenta bancaria
-                    </label>
-
-                    <div
-                        id="file-selected-cuenta-banco-internacional"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjutnar copia de cuenta de ahorros del Banco Internacional:</span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="cuenta-banco-internacional" name="cuentaBancoInternacional" type="file" accept="application/pdf,.pdf"/>
+                        <label for="cuenta-banco-internacional" class="text-info custom_vitae fs-5"> + adjuntar cuenta bancaria </label>
+                    <div id="file-selected-cuenta-banco-internacional" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
 
-
-            <!-- 14. Certificado de salud -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        14. Certificado de salud del Ministerio de Salud Pública
-                        con detalle de tipo de sangre:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="certificado-salud"
-                        name="certificadoSalud"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                    />
-
-                    <label
-                        for="certificado-salud"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar certificado de salud
-                    </label>
-
-                    <div
-                        id="file-selected-certificado-salud"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjuntar certificado de salud otorgado por el ministerio de salud pública con el detalle de tipo de sangre </span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="certificado-salud" name="certificadoSalud" type="file" accept="application/pdf,.pdf"/>
+                        <label for="certificado-salud" class="text-info custom_vitae fs-5"> + adjuntar certificado de salud </label>
+                    <div id="file-selected-certificado-salud" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
-
         </xpath>
-
+        
     </template>
-
 </odoo>
 
