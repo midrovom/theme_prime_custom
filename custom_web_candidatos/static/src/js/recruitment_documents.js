@@ -77,7 +77,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 <div>
                     ${file.name}
                     <button type="button" class="btn btn-sm btn-danger remove-file" data-index="${index}">
-                        Quitar
+                        X
                     </button>
                 </div>
             `;
@@ -87,14 +87,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         container.querySelectorAll(".remove-file").forEach(button => {
             button.addEventListener("click", (e) => {
                 const index = parseInt(e.currentTarget.dataset.index);
-
-                // Eliminar archivo
                 this.uploadedFiles.splice(index, 1);
-
-                // Reconstruir input
                 this._refreshFileInput(input);
-
-                // Re-renderizar
                 this._renderFileList(container, input);
             });
         });
