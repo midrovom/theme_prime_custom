@@ -3,7 +3,7 @@
 import publicWidget from "@web/legacy/js/public/public_widget";
 import { _t } from "@web/core/l10n/translation";
 
-publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
+publicWidget.registry.MultistepForm = publicWidget.Widget.include({
     selector: '#hr_job_recruitment_form',
 
     events: {
@@ -112,7 +112,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !isCuentaBancoValid ||
             !isCertificadoSaludValid
         ) {
-            this._scrollToFirstError();
+            // this._scrollToFirstError();
             return false;
         }
 
@@ -245,14 +245,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return true;
     },
 
-    _scrollToFirstError() {
-        const $firstError = this.$('.is-invalid').first();
-        if ($firstError.length) {
-            $('html, body').animate({
-                scrollTop: $firstError.offset().top - 100
-            }, 500);
-        }
-    },
+    // _scrollToFirstError() {
+    //     const $firstError = this.$('.is-invalid').first();
+    //     if ($firstError.length) {
+    //         $('html, body').animate({
+    //             scrollTop: $firstError.offset().top - 100
+    //         }, 500);
+    //     }
+    // },
 
     _renderFileList(container, input) {
         container.innerHTML = "";
