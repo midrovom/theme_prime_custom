@@ -1,212 +1,87 @@
-/** @odoo-module **/
+odoo.define('custom_web_candidatos.recruitment_documents', function (require) {
+    "use strict";
 
-document.addEventListener("DOMContentLoaded", function () {
-    const fileFields = [
-        {
-            input: "fotografia",
-            message: "file-selected-fotografia",
-            multiple: false,
-            allowedTypes: ["image/jpeg", "image/png", "image/webp"],
-        },
-        {
-            input: "cedula-votacion",
-            message: "file-selected-cedula-votacion",
-            multiple: true,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "historia-laboral-iess",
-            message: "file-selected-historia-laboral-iess",
-            multiple: false,
-            allowedTypes: ["application/pdf"],
-        },
-        {
-            input: "acta-matrimonio",
-            message: "file-selected-acta-matrimonio",
-            multiple: false,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "hijos-menores",
-            message: "file-selected-hijos-menores",
-            multiple: true,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "estudios-senecyt",
-            message: "file-selected-estudios-senecyt",
-            multiple: true,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "cursos-realizados",
-            message: "file-selected-cursos-realizados",
-            multiple: true,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "recomendaciones",
-            message: "file-selected-recomendaciones",
-            multiple: true,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "certificados-trabajo",
-            message: "file-selected-certificados-trabajo",
-            multiple: true,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "planilla-servicios",
-            message: "file-selected-planilla-servicios",
-            multiple: false,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "croquis-domicilio",
-            message: "file-selected-croquis-domicilio",
-            multiple: false,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "formulario-107",
-            message: "file-selected-formulario-107",
-            multiple: false,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "cuenta-banco-internacional",
-            message: "file-selected-cuenta-banco-internacional",
-            multiple: false,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-        {
-            input: "certificado-salud",
-            message: "file-selected-certificado-salud",
-            multiple: false,
-            allowedTypes: [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-            ],
-        },
-    ];
+    const publicWidget = require('web.public.widget');
 
-    fileFields.forEach(function (field) {
-        const input = document.getElementById(field.input);
-        const message = document.getElementById(field.message);
+    publicWidget.registry.RecruitmentDocumentsForm = publicWidget.Widget.extend({
+        selector: '#hr_job_recruitment_form',
 
-        if (!input || !message) {
-            return;
-        }
+        events: {
+            'change #fotografia': '_onFileSelected',
+            'change #cedula-votacion': '_onFileSelected',
+            'change #historia-laboral-iess': '_onFileSelected',
+            'change #estudios-senecyt': '_onFileSelected',
+            'change #recomendaciones': '_onFileSelected',
+            'change #certificados-trabajo': '_onFileSelected',
+            'change #planilla-servicios': '_onFileSelected',
+            'change #croquis-domicilio': '_onFileSelected',
+            'change #cuenta-banco-internacional': '_onFileSelected',
+            'change #certificado-salud': '_onFileSelected',
+        },
 
-        input.addEventListener("change", function () {
-            message.innerHTML = "";
+        //----------------------------------------------------------------------
+        // Private
+        //----------------------------------------------------------------------
 
-            if (!input.files || input.files.length === 0) {
-                return;
-            }
-
-            const files = Array.from(input.files);
-
-            // Validar archivos
-            const invalidFiles = files.filter(function (file) {
-                return !field.allowedTypes.includes(file.type);
-            });
-
-            if (invalidFiles.length > 0) {
-                message.innerHTML =
-                    '<span class="text-danger">' +
-                    "Archivo(s) no permitido(s): " +
-                    invalidFiles
-                        .map(function (file) {
-                            return file.name;
-                        })
-                        .join(", ") +
-                    "</span>";
-
-                // Limpiar selección
-                input.value = "";
-                return;
-            }
-
-            // Mostrar archivos seleccionados
-            if (files.length === 1) {
-                message.innerHTML =
-                    '<span class="text-success">' +
-                    "Archivo seleccionado: " +
-                    files[0].name +
-                    "</span>";
+        _onFileSelected(ev) {
+            const input = ev.currentTarget;
+            const file = input.files[0];
+            const messageId = `#file-selected-${input.id}`;
+            if (file) {
+                this.$(messageId).text(`Archivo seleccionado: ${file.name}`);
             } else {
-                let html =
-                    '<span class="text-success">Archivos seleccionados:</span>';
-
-                html += '<ul class="mb-0">';
-
-                files.forEach(function (file) {
-                    html += "<li>" + file.name + "</li>";
-                });
-
-                html += "</ul>";
-
-                message.innerHTML = html;
+                this.$(messageId).text('');
             }
-        });
+        },
+
+        _validateFile(id, validTypes) {
+            const $f = this.$(id);
+            const file = $f[0].files[0];
+            if (!file || (validTypes && !validTypes.includes(file.type))) {
+                $f.addClass('is-invalid');
+                return false;
+            }
+            $f.removeClass('is-invalid');
+            return true;
+        },
+
+        _validateDocuments() {
+            const isFotografiaValid = this._validateFile('#fotografia', ['image/jpeg','image/png']);
+            const isCedulaValid = this._validateFile('#cedula-votacion', ['application/pdf']);
+            const isHistoriaLaboralValid = this._validateFile('#historia-laboral-iess', ['application/pdf']);
+            const isEstudiosSenecytValid = this._validateFile('#estudios-senecyt', ['application/pdf']);
+            const isRecomendacionesValid = this._validateFile('#recomendaciones', ['application/pdf']);
+            const isCertificadosTrabajoValid = this._validateFile('#certificados-trabajo', ['application/pdf']);
+            const isPlanillaServiciosValid = this._validateFile('#planilla-servicios', ['application/pdf']);
+            const isCroquisDomicilioValid = this._validateFile('#croquis-domicilio', ['application/pdf']);
+            const isCuentaBancoValid = this._validateFile('#cuenta-banco-internacional', ['application/pdf']);
+            const isCertificadoSaludValid = this._validateFile('#certificado-salud', ['application/pdf']);
+
+            if (
+                !isFotografiaValid ||
+                !isCedulaValid ||
+                !isHistoriaLaboralValid ||
+                !isEstudiosSenecytValid ||
+                !isRecomendacionesValid ||
+                !isCertificadosTrabajoValid ||
+                !isPlanillaServiciosValid ||
+                !isCroquisDomicilioValid ||
+                !isCuentaBancoValid ||
+                !isCertificadoSaludValid
+            ) {
+                this._scrollToFirstError();
+                return false;
+            }
+            return true;
+        },
+
+        _scrollToFirstError() {
+            const $firstError = this.$('.is-invalid').first();
+            if ($firstError.length) {
+                $('html, body').animate({
+                    scrollTop: $firstError.offset().top - 100
+                }, 500);
+            }
+        },
     });
 });
