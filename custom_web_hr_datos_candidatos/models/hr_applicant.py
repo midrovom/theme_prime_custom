@@ -1,8 +1,9 @@
 from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 DOCUMENT_TYPES = [
     ('cedula', 'Cédula'),
-    ('ruc', 'RUC'),
+    ('id_extrj', 'Cédula extranjera'),
     ('pasaporte', 'Pasaporte'),
 ]
 
@@ -61,6 +62,44 @@ class HrApplicant(models.Model):
 
     num_hijos = fields.Integer(string="Número de hijos")
     dependientes = fields.Char(string="Personas que dependen de usted")
+
+    # Validar documentos (Cedula, Pasaporte, Cedula Extranjera)
+    @api.model
+    def is_valid_ecuadorian_id(self, value):
+        cedula = "".join(filter(str.isdigit, value or ""))
+        if len(cedula) != 10:
+            return False
+        province = int(cedula[:2])
+        if province < 1 or province > 24 or int(cedula[2]) > 5:
+            return False
+        coefficients = [2, 1, 2, 1, 2, 1, 2, 1, 2]
+        total = 0
+        for index, coefficient in enumerate(coefficients):
+            product = int(cedula[index]) * coefficient
+            total += product - 9 if product >= 10 else product
+        verifier = (10 - total % 10) % 10
+        return verifier == int(cedula[9])
+
+    @api.model
+    def is_valid_foreign_id(self, id_number):
+        """Validación para documentos extranjeros: solo números y 10 dígitos"""
+        if not id_number:
+            return False
+        return id_number.isdigit() and len(id_number) == 10
+
+    @api.constrains('document_type', 'cedula')
+    def _check_document_validation(self):
+        for rec in self:
+            if rec.document_type == 'cedula':
+                if not self.is_valid_ecuadorian_id(rec.cedula):
+                    raise ValidationError("La cédula ecuatoriana no es válida.")
+            elif rec.document_type == 'id_extrj':
+                if not self.is_valid_foreign_id(rec.cedula):
+                    raise ValidationError("La cédula extranjera debe tener 10 dígitos numéricos.")
+            elif rec.document_type == 'pasaporte':
+                # No se valida nada, se permite cualquier valor
+                pass
+
 
 class HrCandidate(models.Model):
     _inherit = 'hr.candidate'

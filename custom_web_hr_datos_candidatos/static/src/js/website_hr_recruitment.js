@@ -1347,27 +1347,80 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return true;
     },
 
-    _validateDocumentNumber() {
-        const $error = this.$('#doc-error');
-        const $docNumber = this.$('#hr-number-doc');
-        const docNumber = $docNumber.val();
+    // _validateDocumentNumber() {
+    //     const $error = this.$('#doc-error');
+    //     const $docNumber = this.$('#hr-number-doc');
+    //     const docNumber = $docNumber.val();
 
-        if(docNumber === '') {
-            $error.text(_t("Campo obligatorio.")).show();
-        }
+    //     if(docNumber === '') {
+    //         $error.text(_t("Campo obligatorio.")).show();
+    //     }
 
-        const isValid = /^\d{10}$/.test(docNumber);
+    //     const isValid = /^\d{10}$/.test(docNumber);
 
-        if(!isValid && docNumber != '') {
-            $error.text(_t("Documento no válido.")).show();
-        }
+    //     if(!isValid && docNumber != '') {
+    //         $error.text(_t("Documento no válido.")).show();
+    //     }
 
-        if(isValid) {
-            $error.hide();
-        }
+    //     if(isValid) {
+    //         $error.hide();
+    //     }
         
-        $docNumber.toggleClass('is-invalid', !isValid);
-        return isValid;
+    //     $docNumber.toggleClass('is-invalid', !isValid);
+    //     return isValid;
+    // },
+
+    _validateDocumentNumber(ev) {
+        const $input = $(ev.currentTarget);
+        const value = $input.val().trim();
+        const type = this.$('#hr-type-doc').val(); // tipo de documento seleccionado
+        let isValid = true;
+        let errorMsg = '';
+
+        // Validación cédula ecuatoriana
+        function isValidEcuadorianId(cedula) {
+            cedula = (cedula || '').replace(/\D/g, '');
+            if (cedula.length !== 10) return false;
+            const province = parseInt(cedula.substring(0, 2), 10);
+            if (province < 1 || province > 24 || parseInt(cedula[2], 10) > 5) return false;
+            const coefficients = [2,1,2,1,2,1,2,1,2];
+            let total = 0;
+            for (let i = 0; i < coefficients.length; i++) {
+                let product = parseInt(cedula[i], 10) * coefficients[i];
+                total += product >= 10 ? product - 9 : product;
+            }
+            const verifier = (10 - (total % 10)) % 10;
+            return verifier === parseInt(cedula[9], 10);
+        }
+
+        // Validación cédula extranjera
+        function isValidForeignId(idNumber) {
+            return /^\d{10}$/.test(idNumber);
+        }
+
+        if (type === 'cedula') {
+            if (!isValidEcuadorianId(value)) {
+                isValid = false;
+                errorMsg = 'La cédula ecuatoriana no es válida.';
+            }
+        } else if (type === 'id_extrj') {
+            if (!isValidForeignId(value)) {
+                isValid = false;
+                errorMsg = 'La cédula extranjera debe tener 10 dígitos numéricos.';
+            }
+        } else if (type === 'pasaporte') {
+            // No se valida nada
+            isValid = true;
+        }
+
+        // Mostrar resultado
+        if (!isValid) {
+            $input.addClass('is-invalid');
+            this.$('#doc-error').text(errorMsg);
+        } else {
+            $input.removeClass('is-invalid');
+            this.$('#doc-error').text('');
+        }
     },
 
     _validateFamilyCedula(ev) {
