@@ -245,15 +245,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.include({
         return true;
     },
 
-    // _scrollToFirstError() {
-    //     const $firstError = this.$('.is-invalid').first();
-    //     if ($firstError.length) {
-    //         $('html, body').animate({
-    //             scrollTop: $firstError.offset().top - 100
-    //         }, 500);
-    //     }
-    // },
-
     _renderFileList(container, input) {
         container.innerHTML = "";
         this.uploadedFiles.forEach((file, index) => {
@@ -267,7 +258,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.include({
             `;
         });
 
-        // Enganchar botones de quitar
         container.querySelectorAll(".remove-file").forEach(button => {
             button.addEventListener("click", (e) => {
                 const index = parseInt(e.currentTarget.dataset.index);
