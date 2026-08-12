@@ -1,4 +1,4 @@
-odoo.define('custom_web_hr_datos_candidatos.website_hr_recruitment', function (require) {
+odoo.define('custom_web_candidatos.website_hr_recruitment', function (require) {
     "use strict";
 
     const publicWidget = require('web.public.widget');
@@ -14,7 +14,7 @@ odoo.define('custom_web_hr_datos_candidatos.website_hr_recruitment', function (r
             'submit': '_onSubmitForm',
             'click #add-experience': '_onAddExperience',
             'click #add-reference': '_onAddReference',
-            
+
             'change #hr-perfil': '_validateImage',
             'change #curriculum-vitae': '_onFileSelected',
 
