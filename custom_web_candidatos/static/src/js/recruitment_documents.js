@@ -88,29 +88,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _validateCurrentStep1() {
-        // Validaciones de campos de texto nativos
-        const isImageValid = this._validateImage();
-        const isLastnamePaternoValid = this._validateField('#hr-lastname-paterno');
-        const isLastnameMaternoValid = this._validateField('#hr-lastname-materno');
-        const isNameValid = this._validateField('#hr-name');
-        const isAgeValid = this._validateField('#hr-age');
-        const isAddressValid = this._validateField('#hr-address');
-        const isParishValid = this._validateField('#hr-parish');
-        const isBirthDateValid = this._validateBirthDate();
-        const isBirthCountryValid = this._validateField('#hr-country');
-        const isProvinceValid = this._validateField('#hr-provincia');
-        const isCodeCellphoneValid = this._validateCodePhone();
-        const isCellphoneValid = this._validatePhone();
-        const isViveConValid = this._validateField('input[name="viveCon"]');
-        const isTipoViviendaValid = this._validateField('input[name="tipoVivienda"]');
-        const isHijosValid = this._validateField('#hr-hijos');
-        const isEmailValid = this._validateEmail();
-        const isDocTypeValid = this._validateField('#hr-type-doc');
-        const isDocNumberValid = this._validateDocumentNumber();
-        const isNationalityValid = this._validateField('#hr-nationality');
-        const isEstadoCivilValid = this._validateField('input[name="estadoCivil"]');
-
-        // Validaciones de documentos nuevos
+        
         const isCurriculumValid = this._validateCurriculum();
         const isFotografiaValid = this._validateFotografia();
         const isCedulaValid = this._validateCedulaVotacion();
@@ -123,28 +101,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const isCuentaBancoValid = this._validateCuentaBancoInternacional();
         const isCertificadoSaludValid = this._validateCertificadoSalud();
 
-        // Evaluar todos juntos
         if (
-            !isImageValid ||
-            !isLastnamePaternoValid ||
-            !isLastnameMaternoValid ||
-            !isNameValid ||
-            !isAgeValid ||
-            !isAddressValid ||
-            !isParishValid ||
-            !isBirthDateValid ||
-            !isBirthCountryValid ||
-            !isProvinceValid ||
-            !isCodeCellphoneValid ||
-            !isCellphoneValid ||
-            !isViveConValid ||
-            !isTipoViviendaValid ||
-            !isHijosValid ||
-            !isEmailValid ||
-            !isDocTypeValid ||
-            !isDocNumberValid ||
-            !isNationalityValid ||
-            !isEstadoCivilValid ||
             !isCurriculumValid ||
             !isFotografiaValid ||
             !isCedulaValid ||
