@@ -1769,20 +1769,27 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // },
 
     _toggleDisabilityFields() {
-        const value = this.$('input[name="discapacidad"]:checked').val();
+        const $discapacidadSi = this.$('input[name="discapacidad"][value="si"]');
         const $tipo = this.$('input[name="tipo_discapacidad"]');
         const $porcentaje = this.$('input[name="porcentaje_discapacidad"]');
 
-        if (value === 'si') {
-            // Activar y marcar como obligatorios
-            $tipo.prop('required', true).prop('disabled', false);
-            $porcentaje.prop('required', true).prop('disabled', false);
+        if ($discapacidadSi.is(':checked')) {
+            $tipo.prop('disabled', false);
+            $porcentaje.prop('disabled', false);
+            $tipo.attr('required', true);
+            $porcentaje.attr('required', true);
+            $tipo.on('blur', () => {
+                $tipo.toggleClass('is-invalid', !$tipo.val().trim());
+            });
+            $porcentaje.on('blur', () => {
+                $porcentaje.toggleClass('is-invalid', !$porcentaje.val().trim());
+            });
+
         } else {
-            // Desactivar y quitar obligatoriedad
-            $tipo.prop('required', false).prop('disabled', true).removeClass('is-invalid');
-            $porcentaje.prop('required', false).prop('disabled', true).removeClass('is-invalid');
-            $tipo.next('.invalid-feedback').remove(); 
-            $porcentaje.next('.invalid-feedback').remove();
+            $tipo.prop('disabled', true).removeClass('is-invalid').val('');
+            $porcentaje.prop('disabled', true).removeClass('is-invalid').val('');
+            $tipo.removeAttr('required');
+            $porcentaje.removeAttr('required');
         }
     },
 
