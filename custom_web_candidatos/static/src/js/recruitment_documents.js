@@ -88,8 +88,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _validateCurrentStep1() {
-        
-        const isCurriculumValid = this._validateCurriculum();
+
         const isFotografiaValid = this._validateFotografia();
         const isCedulaValid = this._validateCedulaVotacion();
         const isHistoriaLaboralValid = this._validateHistoriaLaboral();
@@ -102,7 +101,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const isCertificadoSaludValid = this._validateCertificadoSalud();
 
         if (
-            !isCurriculumValid ||
             !isFotografiaValid ||
             !isCedulaValid ||
             !isHistoriaLaboralValid ||
