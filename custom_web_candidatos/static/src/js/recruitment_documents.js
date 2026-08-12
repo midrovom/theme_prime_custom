@@ -27,81 +27,76 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Private
     //----------------------------------------------------------------------
 
+    // función para mostrar archivos seleccionados
     _onFileSelected(ev) {
         const input = ev.currentTarget;
-        const file = input.files[0];
-        const messageId = `#file-selected-${input.id}`;
-        if (file) {
-            this.$(messageId).html(`
-                Archivo seleccionado: ${file.name}
-                <button type="button" class="btn btn-sm btn-danger remove-file" data-input="${input.id}">
-                    Quitar
-                </button>
-            `);
-            this._bindRemoveFile(input, messageId);
-        } else {
-            this.$(messageId).text('');
-        }
-    },
+        const newFiles = Array.from(input.files);
+        const container = document.getElementById(`file-selected-${input.id}`);
 
-    _bindRemoveFile(input, messageId) {
-        this.$(`${messageId} .remove-file`).on('click', (e) => {
-            this._refreshFileInput(input);
-            this.$(messageId).text('');
+        if (!this.uploadedFiles) {
+            this.uploadedFiles = [];
+        }
+
+        // Validar que sean PDF (excepto fotografía que es imagen)
+        const invalidFiles = newFiles.filter(file => {
+            if (input.id === "fotografia") {
+                return !file.type.startsWith("image/");
+            }
+            return file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf");
         });
+
+        if (invalidFiles.length > 0) {
+            container.innerHTML = `
+                <div class="text-danger custom-message fs-6">
+                    Solo se permiten archivos ${input.id === "fotografia" ? "de imagen" : "PDF"}.
+                </div>
+            `;
+            input.value = "";
+            return;
+        }
+
+        // Agregar nuevos archivos evitando duplicados por nombre
+        this.uploadedFiles = this.uploadedFiles.concat(newFiles);
+        this.uploadedFiles = this.uploadedFiles.filter(
+            (file, index, self) => index === self.findIndex(f => f.name === file.name)
+        );
+
+        // Refrescar input y renderizar lista
+        this._refreshFileInput(input);
+        this._renderFileList(container, input);
     },
 
     _refreshFileInput(input) {
         input.value = "";
     },
 
-    _validateFile(id, validTypes) {
-        const $f = this.$(id);
-        const file = $f[0].files[0];
-        if (!file || (validTypes && !validTypes.includes(file.type))) {
-            $f.addClass('is-invalid');
-            return false;
-        }
-        $f.removeClass('is-invalid');
-        return true;
-    },
+    _renderFileList(container, input) {
+        container.innerHTML = "";
+        this.uploadedFiles.forEach((file, index) => {
+            container.innerHTML += `
+                <div>
+                    ${file.name}
+                    <button type="button" class="btn btn-sm btn-danger remove-file" data-index="${index}">
+                        Quitar
+                    </button>
+                </div>
+            `;
+        });
 
-    _validateDocuments() {
-        const isFotografiaValid = this._validateFile('#fotografia', ['image/jpeg','image/png']);
-        const isCedulaValid = this._validateFile('#cedula-votacion', ['application/pdf']);
-        const isHistoriaLaboralValid = this._validateFile('#historia-laboral-iess', ['application/pdf']);
-        const isEstudiosSenecytValid = this._validateFile('#estudios-senecyt', ['application/pdf']);
-        const isRecomendacionesValid = this._validateFile('#recomendaciones', ['application/pdf']);
-        const isCertificadosTrabajoValid = this._validateFile('#certificados-trabajo', ['application/pdf']);
-        const isPlanillaServiciosValid = this._validateFile('#planilla-servicios', ['application/pdf']);
-        const isCroquisDomicilioValid = this._validateFile('#croquis-domicilio', ['application/pdf']);
-        const isCuentaBancoValid = this._validateFile('#cuenta-banco-internacional', ['application/pdf']);
-        const isCertificadoSaludValid = this._validateFile('#certificado-salud', ['application/pdf']);
+        // Enganchar botones de quitar
+        container.querySelectorAll(".remove-file").forEach(button => {
+            button.addEventListener("click", (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
 
-        if (
-            !isFotografiaValid ||
-            !isCedulaValid ||
-            !isHistoriaLaboralValid ||
-            !isEstudiosSenecytValid ||
-            !isRecomendacionesValid ||
-            !isCertificadosTrabajoValid ||
-            !isPlanillaServiciosValid ||
-            !isCroquisDomicilioValid ||
-            !isCuentaBancoValid ||
-            !isCertificadoSaludValid
-        ) {
-            this._scrollToFirstError();
-            return false;
-        }
-        return true;
-    },
+                // Eliminar archivo
+                this.uploadedFiles.splice(index, 1);
 
-    _scrollToFirstError() {
-        const $firstError = this.$('.is-invalid').first();
-        if ($firstError.length) {
-            $('html, body').animate({
-                scrollTop: $firstError.offset().top - 100
-            }, 500);
-        }
+                // Reconstruir input
+                this._refreshFileInput(input);
+
+                // Re-renderizar
+                this._renderFileList(container, input);
+            });
+        });
     },
 });
