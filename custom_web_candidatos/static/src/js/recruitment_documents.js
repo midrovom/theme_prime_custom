@@ -2,221 +2,244 @@
 
 import publicWidget from "@web/legacy/js/public/public_widget";
 
-publicWidget.registry.CandidatosWidget.include({
+publicWidget.registry.MultistepForm.include({
 
     start: function () {
-        var self = this;
-
-        return this._super.apply(this, arguments).then(function () {
-            self._initCustomFileFields();
-            self._initCustomRequiredFields();
-
+        const result = this._super.apply(this, arguments);
+        Promise.resolve(result).then(() => {
+            this._initCustomCandidateFields();
         });
-    },
 
-    _initCustomFileFields: function () {
-
-        var self = this;
-
-        this.$el
-            .find('input[type="file"][data-custom-file="1"]')
-            .each(function () {
-
-                var $input = $(this);
-
-                self._prepareCustomFileField($input);
-            });
-    },
-
-    _prepareCustomFileField: function ($input) {
-
-        var self = this;
-
-        $input.off(
-            'change.custom_web_candidatos'
-        );
-
-        $input.on(
-            'change.custom_web_candidatos',
-            function () {
-
-                var file = this.files && this.files[0];
-
-                if (!file) {
-                    return;
-                }
-
-                self._showCustomFileDeleteButton(
-                    $input,
-                    file
-                );
-            }
-        );
+        return result;
     },
 
     /**
-     * Muestra el botón para eliminar el archivo seleccionado.
+     * Inicialización de funcionalidades personalizadas.
      */
-    _showCustomFileDeleteButton: function ($input, file) {
+    _initCustomCandidateFields: function () {
+        const self = this;
 
-        var $container = $input.closest(
-            '.o_website_form_field, .form-group, .field-file'
+        // Evitamos inicializarlo dos veces.
+        if (this._customCandidateFieldsInitialized) {
+            return;
+        }
+
+        this._customCandidateFieldsInitialized = true;
+
+        /*
+         * ---------------------------------------------------------
+         * 1. CAMPOS DE ARCHIVO
+         * ---------------------------------------------------------
+         *
+         * Agrega aquí los nombres/IDs de los campos que deben
+         * comportarse como el curriculum:
+         *
+         * - seleccionar archivo
+         * - mostrar archivo seleccionado
+         * - permitir eliminarlo
+         */
+        const fileSelectors = [
+            'input[type="file"][name="documento_identidad"]',
+            'input[type="file"][name="certificado"]',
+            'input[type="file"][name="titulo"]',
+        ];
+
+        fileSelectors.forEach(function (selector) {
+            self._initCustomFileField(selector);
+        });
+
+        /*
+         * ---------------------------------------------------------
+         * 2. CAMPOS OBLIGATORIOS
+         * ---------------------------------------------------------
+         *
+         * Estos campos serán obligatorios.
+         *
+         * Puedes utilizar name:
+         *
+         * input[name="..."]
+         * select[name="..."]
+         * textarea[name="..."]
+         */
+        const requiredSelectors = [
+            '[name="documento_identidad"]',
+            '[name="certificado"]',
+            '[name="titulo"]',
+        ];
+
+        requiredSelectors.forEach(function (selector) {
+            self._setCustomRequired(selector);
+        });
+    },
+
+    /**
+     * Hace que un campo sea obligatorio sin modificar el
+     * funcionamiento original del formulario.
+     */
+    _setCustomRequired: function (selector) {
+        const $fields = this.$(selector);
+
+        if (!$fields.length) {
+            return;
+        }
+
+        $fields.each(function () {
+            const $field = $(this);
+
+            // HTML5
+            $field.attr("required", "required");
+
+            /*
+             * Odoo utiliza muchas veces .o_required_modifier
+             * para indicar visualmente que un campo es obligatorio.
+             */
+            $field.addClass("o_required_modifier");
+
+            /*
+             * Añadimos el indicador visual solamente si no existe.
+             */
+            const $container = $field.closest(
+                ".form-group, .mb-3, .o_field_widget"
+            );
+
+            if ($container.length && !$container.find(".o_custom_required_star").length) {
+                const $label = $container.find("label").first();
+
+                if ($label.length && !$label.find(".o_custom_required_star").length) {
+                    $label.append(
+                        ' <span class="o_custom_required_star text-danger">*</span>'
+                    );
+                }
+            }
+        });
+    },
+
+    /**
+     * Añade el comportamiento de eliminación a un input file.
+     *
+     * No sustituye el comportamiento original del input.
+     */
+    _initCustomFileField: function (selector) {
+        const self = this;
+
+        this.$(selector).each(function () {
+            const input = this;
+
+            /*
+             * No inicializamos dos veces el mismo input.
+             */
+            if ($(input).data("custom-file-initialized")) {
+                return;
+            }
+
+            $(input).data("custom-file-initialized", true);
+
+            /*
+             * Guardamos el nombre del archivo seleccionado.
+             */
+            $(input).on("change.customCandidateFile", function () {
+                self._showCustomFileInfo(input);
+            });
+
+            /*
+             * Si ya existe un archivo al cargar el formulario,
+             * mostramos también el control de eliminación.
+             */
+            if (input.files && input.files.length) {
+                self._showCustomFileInfo(input);
+            }
+        });
+    },
+
+    /**
+     * Muestra información del archivo y botón "Eliminar".
+     */
+    _showCustomFileInfo: function (input) {
+        const $input = $(input);
+
+        if (!input.files || !input.files.length) {
+            return;
+        }
+
+        const file = input.files[0];
+
+        /*
+         * Buscamos el contenedor del input.
+         */
+        let $container = $input.closest(
+            ".form-group, .mb-3, .o_field_widget"
         );
 
         if (!$container.length) {
             $container = $input.parent();
         }
 
-        // Eliminamos únicamente nuestro botón anterior.
-        $container
-            .find('.o_custom_delete_file')
-            .remove();
+        /*
+         * Eliminamos solamente nuestra información anterior.
+         */
+        $container.find(".o_custom_file_info").remove();
 
-        var $deleteButton = $('<button/>', {
-            type: 'button',
-            class: 'btn btn-link text-danger o_custom_delete_file',
-            text: 'Eliminar archivo',
-        });
+        const $info = $(`
+            <div class="o_custom_file_info mt-2">
+                <span class="text-muted">
+                    ${_.escape(file.name)}
+                </span>
 
-        $deleteButton.on(
-            'click.custom_web_candidatos',
-            function () {
+                <button
+                    type="button"
+                    class="btn btn-sm btn-link text-danger o_custom_remove_file">
+                    Eliminar
+                </button>
+            </div>
+        `);
 
-                self._deleteCustomFile(
-                    $input,
-                    $container
-                );
-            }.bind(this)
+        $container.append($info);
+
+        /*
+         * Botón eliminar.
+         */
+        $info.find(".o_custom_remove_file").on(
+            "click.customCandidateFile",
+            function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                self._removeCustomFile(input);
+            }
         );
-
-        $container.append($deleteButton);
     },
 
     /**
      * Elimina el archivo seleccionado.
      */
-    _deleteCustomFile: function ($input, $container) {
+    _removeCustomFile: function (input) {
+        const $input = $(input);
 
-        // Limpiamos el input file.
-        $input.val('');
+        /*
+         * La forma correcta de limpiar un <input type="file">
+         * es asignarle una cadena vacía.
+         */
+        $input.val("");
 
-        // Eliminamos solamente nuestros elementos.
-        $container
-            .find('.o_custom_delete_file')
+        /*
+         * Disparamos change para que cualquier lógica original
+         * que dependa de ese evento pueda reaccionar.
+         */
+        $input.trigger("change");
+
+        /*
+         * Eliminamos nuestra interfaz.
+         */
+        $input
+            .closest(".form-group, .mb-3, .o_field_widget, parent")
+            .find(".o_custom_file_info")
             .remove();
 
-        // Eliminamos posible preview custom.
-        $container
-            .find('.o_custom_file_preview')
-            .remove();
-    },
-
-    // ============================================================
-    // CAMPOS OBLIGATORIOS
-    // ============================================================
-
-    /**
-     * Inicializa los campos marcados como obligatorios.
-     *
-     * Ejemplo:
-     *
-     * <input
-     *     type="file"
-     *     data-custom-required="1"
-     * >
-     */
-    _initCustomRequiredFields: function () {
-
-        var self = this;
-
-        this.$el
-            .find('[data-custom-required="1"]')
-            .each(function () {
-
-                self._markCustomFieldRequired(
-                    $(this)
-                );
-            });
-    },
-
-    /**
-     * Marca visualmente el campo como obligatorio.
-     */
-    _markCustomFieldRequired: function ($field) {
-
-        var $label = this.$el.find(
-            'label[for="' + $field.attr('id') + '"]'
-        );
-
-        if ($label.length) {
-
-            if (!$label.find('.o_custom_required').length) {
-
-                $label.append(
-                    $('<span/>', {
-                        class: 'text-danger o_custom_required',
-                        text: ' *',
-                    })
-                );
-            }
-        }
-
-        // Para inputs HTML normales utilizamos required.
-        $field.attr('required', 'required');
-    },
-
-    /**
-     * Validación adicional de nuestros campos.
-     *
-     * No sustituye la validación original de Odoo.
-     */
-    _validateCustomRequiredFields: function () {
-
-        var valid = true;
-
-        this.$el
-            .find('[data-custom-required="1"]')
-            .each(function () {
-
-                var $field = $(this);
-
-                var value = $field.val();
-
-                if (!value) {
-
-                    valid = false;
-
-                    $field.addClass(
-                        'is-invalid'
-                    );
-
-                    if (
-                        !$field.next(
-                            '.o_custom_required_error'
-                        ).length
-                    ) {
-
-                        $('<div/>', {
-                            class:
-                                'invalid-feedback o_custom_required_error',
-                            text:
-                                'Este campo es obligatorio.',
-                        }).insertAfter($field);
-                    }
-
-                } else {
-
-                    $field.removeClass(
-                        'is-invalid'
-                    );
-
-                    $field.next(
-                        '.o_custom_required_error'
-                    ).remove();
-                }
-            });
-
-        return valid;
+        /*
+         * Fallback por si el selector anterior no encontró
+         * correctamente el contenedor.
+         */
+        $input.parent().find(".o_custom_file_info").remove();
     },
 
 });
