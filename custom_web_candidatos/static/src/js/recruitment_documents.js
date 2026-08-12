@@ -1,4 +1,4 @@
-odoo.define('custom_web_candidatos.website_hr_recruitment', function (require) {
+odoo.define('custom_web_candidatos.recruitment_documents', function (require) {
     "use strict";
 
     const publicWidget = require('web.public.widget');
