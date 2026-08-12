@@ -24,7 +24,7 @@
     'application': False,
     'assets': {
         "web.assets_frontend":[
-            'custom_web_candidatos/static/src/js/recruitment_documents.js',
+            # 'custom_web_candidatos/static/src/js/recruitment_documents.js',
         ]
         
     }
