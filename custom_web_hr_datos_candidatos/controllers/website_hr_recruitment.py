@@ -26,8 +26,8 @@ MONTHS = [
 YEARS = [ i for i in range(1900, 2026) ]
 
 DOCUMENT_TYPES = [
-    ('cedula', 'Cedula'),
-    ('ruc', 'RUC'),
+    ('cedula', 'Cédula'),
+    ('id_extrj', 'Cédula extranjera'),
     ('pasaporte', 'Pasaporte'),
 ]
 

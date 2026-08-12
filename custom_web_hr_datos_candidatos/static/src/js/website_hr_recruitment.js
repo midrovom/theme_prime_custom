@@ -1347,29 +1347,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return true;
     },
 
-    // _validateDocumentNumber() {
-    //     const $error = this.$('#doc-error');
-    //     const $docNumber = this.$('#hr-number-doc');
-    //     const docNumber = $docNumber.val();
-
-    //     if(docNumber === '') {
-    //         $error.text(_t("Campo obligatorio.")).show();
-    //     }
-
-    //     const isValid = /^\d{10}$/.test(docNumber);
-
-    //     if(!isValid && docNumber != '') {
-    //         $error.text(_t("Documento no válido.")).show();
-    //     }
-
-    //     if(isValid) {
-    //         $error.hide();
-    //     }
-        
-    //     $docNumber.toggleClass('is-invalid', !isValid);
-    //     return isValid;
-    // },
-
     _validateDocumentNumber(ev) {
         const $input = $(ev.currentTarget);
         const value = $input.val().trim();
