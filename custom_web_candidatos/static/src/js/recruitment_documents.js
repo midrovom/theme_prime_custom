@@ -7,7 +7,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     selector: '#hr_job_recruitment_form',
 
     events: {
-
         'change #fotografia': '_onFileSelected',
         'change #cedula-votacion': '_onFileSelected',
         'change #historia-laboral-iess': '_onFileSelected',
@@ -33,10 +32,27 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const file = input.files[0];
         const messageId = `#file-selected-${input.id}`;
         if (file) {
-            this.$(messageId).text(`Archivo seleccionado: ${file.name}`);
+            this.$(messageId).html(`
+                Archivo seleccionado: ${file.name}
+                <button type="button" class="btn btn-sm btn-danger remove-file" data-input="${input.id}">
+                    Quitar
+                </button>
+            `);
+            this._bindRemoveFile(input, messageId);
         } else {
             this.$(messageId).text('');
         }
+    },
+
+    _bindRemoveFile(input, messageId) {
+        this.$(`${messageId} .remove-file`).on('click', (e) => {
+            this._refreshFileInput(input);
+            this.$(messageId).text('');
+        });
+    },
+
+    _refreshFileInput(input) {
+        input.value = "";
     },
 
     _validateFile(id, validTypes) {
