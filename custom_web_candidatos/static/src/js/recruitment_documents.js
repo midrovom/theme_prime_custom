@@ -1,383 +1,157 @@
-/** @odoo-module **/
-
-import publicWidget from "@web/legacy/js/public/public_widget";
-
-publicWidget.registry.MultistepForm.extend({
-
-    events: {
-        'change #fotografia': '_onCustomFileSelected',
-        'change #cedula-votacion': '_onCustomFileSelected',
-        'change #historia-laboral-iess': '_onCustomFileSelected',
-        'change #acta-matrimonio': '_onCustomFileSelected',
-        'change #hijos-menores': '_onCustomFileSelected',
-        'change #estudios-senecyt': '_onCustomFileSelected',
-        'change #cursos-realizados': '_onCustomFileSelected',
-        'change #recomendaciones': '_onCustomFileSelected',
-        'change #certificados-trabajo': '_onCustomFileSelected',
-        'change #planilla-servicios': '_onCustomFileSelected',
-        'change #croquis-domicilio': '_onCustomFileSelected',
-        'change #formulario-107': '_onCustomFileSelected',
-        'change #cuenta-banco-internacional': '_onCustomFileSelected',
-        'change #certificado-salud': '_onCustomFileSelected',
-    },
-
-    init() {
-        this._super(...arguments);
-
-        this.customUploadedFiles = {};
-    },
-
-    // ============================================================
-    // ARCHIVOS
-    // ============================================================
-
-    _onCustomFileSelected(ev) {
-
-        const input = ev.currentTarget;
-        const inputId = input.id;
-
-        const container = document.getElementById(
-            `file-selected-${inputId}`
-        );
-
-        if (!input || !container) {
-            return;
-        }
-
-        const files = Array.from(input.files || []);
-
-        if (!files.length) {
-            return;
-        }
-
-        const isPhotography = inputId === 'fotografia';
-
-        const invalidFiles = files.filter((file) => {
-
-            if (isPhotography) {
-                return !file.type.startsWith('image/');
-            }
-
-            return (
-                file.type !== 'application/pdf' &&
-                !file.name.toLowerCase().endsWith('.pdf')
-            );
-        });
-
-        // --------------------------------------------------------
-        // ARCHIVO INVÁLIDO
-        // --------------------------------------------------------
-
-        if (invalidFiles.length) {
-
-            const message = isPhotography
-                ? 'Solo se permiten archivos de imagen.'
-                : 'Solo se permiten archivos PDF.';
-
-            container.innerHTML = `
-                <div class="text-danger custom-message fs-6">
-                    ${message}
-                </div>
-            `;
-
-            input.classList.add('is-invalid');
-            input.value = '';
-
-            this.customUploadedFiles[inputId] = [];
-
-            return;
-        }
-
-        // --------------------------------------------------------
-        // ARCHIVO VÁLIDO
-        // --------------------------------------------------------
-
-        input.classList.remove('is-invalid');
-
-        if (!this.customUploadedFiles[inputId]) {
-            this.customUploadedFiles[inputId] = [];
-        }
-
-        this.customUploadedFiles[inputId] =
-            this.customUploadedFiles[inputId].concat(files);
-
-        // Eliminar duplicados
-        this.customUploadedFiles[inputId] =
-            this.customUploadedFiles[inputId].filter(
-                (file, index, self) =>
-                    index === self.findIndex(
-                        (f) =>
-                            f.name === file.name &&
-                            f.size === file.size
-                    )
-            );
-
-        this._refreshCustomFileInput(input);
-
-        this._renderCustomFileList(
-            container,
-            input
-        );
-    },
-
-    _refreshCustomFileInput(input) {
-
-        const files =
-            this.customUploadedFiles[input.id] || [];
-
-        const dataTransfer = new DataTransfer();
-
-        files.forEach((file) => {
-            dataTransfer.items.add(file);
-        });
-
-        input.files = dataTransfer.files;
-    },
-
-    _renderCustomFileList(container, input) {
-
-        container.innerHTML = '';
-
-        const files =
-            this.customUploadedFiles[input.id] || [];
-
-        if (!files.length) {
-            return;
-        }
-
-        files.forEach((file, index) => {
-
-            const fileItem =
-                document.createElement('div');
-
-            fileItem.className =
-                'd-flex align-items-center ' +
-                'justify-content-between ' +
-                'border rounded-pill ' +
-                'px-3 py-2 mb-2';
-
-            fileItem.innerHTML = `
-                <span class="text-success">
-                    ${file.name}
-                </span>
-
-                <button
-                    type="button"
-                    class="btn btn-sm btn-danger remove-custom-file"
-                    data-index="${index}">
-                    ×
-                </button>
-            `;
-
-            container.appendChild(fileItem);
-        });
-
-        container
-            .querySelectorAll('.remove-custom-file')
-            .forEach((button) => {
-
-                button.addEventListener('click', (ev) => {
-
-                    const index = parseInt(
-                        ev.currentTarget.dataset.index,
-                        10
-                    );
-
-                    const inputId = input.id;
-
-                    this.customUploadedFiles[inputId]
-                        .splice(index, 1);
-
-                    this._refreshCustomFileInput(input);
-
-                    this._renderCustomFileList(
-                        container,
-                        input
-                    );
-                });
-            });
-    },
-
-    // ============================================================
-    // VALIDACIÓN STEP 1
-    // ============================================================
-
-    _validateCurrentStep1() {
-
-        // Primero ejecutamos TODA la validación
-        // que ya existe en el widget original.
-        const originalValid = this._super(...arguments);
-
-        // Después validamos nuestros documentos.
-        const customDocumentsValid =
-            this._validateCustomDocuments();
-
-        if (!originalValid || !customDocumentsValid) {
-
-            this._scrollToFirstError();
-
-            return false;
-        }
-
-        return true;
-    },
-
-    // ============================================================
-    // VALIDAR DOCUMENTOS PERSONALIZADOS
-    // ============================================================
-
-    _validateCustomDocuments() {
-
-        let isValid = true;
-
-        const documents = [
-            {
-                id: 'fotografia',
-                required: true,
-                type: 'image',
-            },
-            {
-                id: 'cedula-votacion',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'historia-laboral-iess',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'acta-matrimonio',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'hijos-menores',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'estudios-senecyt',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'cursos-realizados',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'recomendaciones',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'certificados-trabajo',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'planilla-servicios',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'croquis-domicilio',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'formulario-107',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'cuenta-banco-internacional',
-                required: true,
-                type: 'pdf',
-            },
-            {
-                id: 'certificado-salud',
-                required: true,
-                type: 'pdf',
-            },
-        ];
-
-        documents.forEach((document) => {
-
-            const $input = this.$(`#${document.id}`);
-
-            if (!$input.length) {
-                return;
-            }
-
-            const files =
-                this.customUploadedFiles[document.id] || [];
-
-            // ----------------------------------------------------
-            // OBLIGATORIO
-            // ----------------------------------------------------
-
-            if (document.required && !files.length) {
-
-                $input.addClass('is-invalid');
-
-                const container =
-                    this.$(`#file-selected-${document.id}`);
-
-                container.html(`
-                    <div class="text-danger custom-message fs-6">
-                        Campo obligatorio.
-                    </div>
-                `);
-
-                isValid = false;
-
-                return;
-            }
-
-            // ----------------------------------------------------
-            // VALIDAR TIPO
-            // ----------------------------------------------------
-
-            const invalidFile = files.some((file) => {
-
-                if (document.type === 'image') {
-                    return !file.type.startsWith('image/');
-                }
-
-                return (
-                    file.type !== 'application/pdf' &&
-                    !file.name.toLowerCase().endsWith('.pdf')
-                );
-            });
-
-            if (invalidFile) {
-
-                $input.addClass('is-invalid');
-
-                const container =
-                    this.$(`#file-selected-${document.id}`);
-
-                container.html(`
-                    <div class="text-danger custom-message fs-6">
-                        ${
-                            document.type === 'image'
-                                ? 'Solo se permiten imágenes.'
-                                : 'Solo se permiten archivos PDF.'
+odoo.define('custom_web_hr_datos_candidatos.website_hr_recruitment', function (require) {
+    "use strict";
+
+    const publicWidget = require('web.public.widget');
+
+    publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
+        selector: '#hr_job_recruitment_form',
+
+        events: {
+            'click #next-button': '_onNextClick',
+            'click #next-button-step2': '_onNextStep2',
+            'click #prev-button': '_onPrevClick',
+            'click #prev-button-2': '_onPrevClickStep2',
+            'submit': '_onSubmitForm',
+            'click #add-experience': '_onAddExperience',
+            'click #add-reference': '_onAddReference',
+            
+            'change #hr-perfil': '_validateImage',
+            'change #curriculum-vitae': '_onFileSelected',
+
+            // NUEVOS CAMPOS DE ARCHIVO
+            'change #fotografia': '_onFileSelected',
+            'change #cedula-votacion': '_onFileSelected',
+            'change #historia-laboral-iess': '_onFileSelected',
+            'change #acta-matrimonio': '_onFileSelected',
+            'change #hijos-menores': '_onFileSelected',
+        },
+
+        init() {
+            this._super(...arguments);
+            this.educationCount = 1;
+            this.experienceCount = 1;
+            this.familyCount = 0;
+            this.referenceCount = 0;
+            this.uploadedFiles = [];
+        },
+
+        start() {
+            this._initializeForm();
+            this._addEducationBlock();
+            this._addExperienceBlock();
+            this._addFamilyBlock();
+            this._addReferenceBlock();
+
+            this._toggleStudyFields(); 
+            this._toggleDisabilityFields();
+            this._toggleFamilyKnownFields();
+            this._toggleParentescoField();
+            this._toggleJobDisabilityFields();
+            this._onChangeCountry({ currentTarget: this.$('#hr-country') });
+
+            return this._super();
+        },
+
+        //----------------------------------------------------------------------
+        // Private
+        //----------------------------------------------------------------------
+
+        _onFileSelected(ev) {
+            const input = ev.currentTarget;
+            const file = input.files[0];
+            if (file) {
+                console.log(`Archivo seleccionado en ${input.name}: ${file.name}`);
+                // Si es fotografía, mostrar preview
+                if (input.id === 'fotografia' && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const previewId = '#preview-fotografia';
+                        let $preview = this.$(previewId);
+                        if (!$preview.length) {
+                            $preview = $('<img>', { id: 'preview-fotografia', class: 'img-thumbnail mt-2', width: 150 });
+                            $(input).after($preview);
                         }
-                    </div>
-                `);
+                        $preview.attr('src', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        },
 
-                isValid = false;
+        _validateFile(id, validTypes) {
+            const $f = this.$(id);
+            const file = $f[0].files[0];
+            if (!file || (validTypes && !validTypes.includes(file.type))) {
+                $f.addClass('is-invalid');
+                return false;
+            }
+            $f.removeClass('is-invalid');
+            return true;
+        },
 
-                return;
+        _validateCurrentStep1() {
+            const isImageValid = this._validateImage();
+            const isLastnamePaternoValid = this._validateField('#hr-lastname-paterno');
+            const isLastnameMaternoValid = this._validateField('#hr-lastname-materno');
+            const isNameValid = this._validateField('#hr-name');
+            const isAgeValid = this._validateField('#hr-age');
+            const isAddressValid = this._validateField('#hr-address');
+            const isParishValid = this._validateField('#hr-parish');
+            const isBirthDateValid = this._validateBirthDate();
+            const isBirthCountryValid = this._validateField('#hr-country');
+            const isProvinceValid = this._validateField('#hr-provincia');
+            const isCodeCellphoneValid = this._validateCodePhone();
+            const isCellphoneValid = this._validatePhone();
+            const isViveConValid = this._validateField('input[name="viveCon"]');
+            const isTipoViviendaValid = this._validateField('input[name="tipoVivienda"]');
+            const isHijosValid = this._validateField('#hr-hijos');
+            const isEmailValid = this._validateEmail();
+            const isDocTypeValid = this._validateField('#hr-type-doc');
+            const isDocNumberValid = this._validateDocumentNumber();
+            const isNationalityValid = this._validateField('#hr-nationality');
+            const isEstadoCivilValid = this._validateField('input[name="estadoCivil"]');
+            const isCurriculumValid = this._validateCurriculum();
+
+            // NUEVAS VALIDACIONES DE ARCHIVOS
+            const isFotografiaValid = this._validateFile('#fotografia', ['image/jpeg','image/png']);
+            const isCedulaValid = this._validateFile('#cedula-votacion', ['application/pdf']);
+            const isHistoriaLaboralValid = this._validateFile('#historia-laboral-iess', ['application/pdf']);
+            const isActaMatrimonioValid = this._validateFile('#acta-matrimonio', ['application/pdf']);
+            const isHijosMenoresValid = this._validateFile('#hijos-menores', ['application/pdf']);
+
+            if (
+                !isImageValid ||
+                !isLastnamePaternoValid ||
+                !isLastnameMaternoValid ||
+                !isNameValid ||
+                !isAgeValid ||
+                !isAddressValid ||
+                !isParishValid ||
+                !isBirthDateValid ||
+                !isBirthCountryValid ||
+                !isProvinceValid ||
+                !isCodeCellphoneValid ||
+                !isCellphoneValid ||
+                !isViveConValid ||
+                !isTipoViviendaValid ||
+                !isHijosValid ||
+                !isEmailValid ||
+                !isDocTypeValid ||
+                !isDocNumberValid ||
+                !isNationalityValid ||
+                !isCurriculumValid ||
+                !isEstadoCivilValid ||
+                !isFotografiaValid ||
+                !isCedulaValid ||
+                !isHistoriaLaboralValid ||
+                !isActaMatrimonioValid ||
+                !isHijosMenoresValid
+            ) {
+                this._scrollToFirstError();
+                return false;
             }
 
-            $input.removeClass('is-invalid');
-        });
-
-        return isValid;
-    },
-
+            return true;
+        },
+    });
 });
