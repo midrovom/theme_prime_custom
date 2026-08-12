@@ -113,50 +113,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     _refreshFileInput(input) {
         input.value = "";
     },
-
-
-    _validatePDF(inputId, containerId, message) {
-        const $input = this.$(inputId);
-        const $container = this.$(containerId);
-        const file = $input[0].files[0];
-
-        if (!file) {
-            $input.addClass('is-invalid');
-            $container.html(`<div class="text-danger fs-6">${message}</div>`);
-            return false;
-        }
-
-        if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-            $input.addClass('is-invalid');
-            $container.html(`<div class="text-danger fs-6">Solo se permiten archivos PDF.</div>`);
-            return false;
-        }
-
-        $input.removeClass('is-invalid');
-        return true;
-    },
-
-    _validateImageFile(inputId, containerId, message) {
-        const $input = this.$(inputId);
-        const $container = this.$(containerId);
-        const file = $input[0].files[0];
-
-        if (!file) {
-            $input.addClass('is-invalid');
-            $container.html(`<div class="text-danger fs-6">${message}</div>`);
-            return false;
-        }
-
-        if (!file.type.startsWith("image/")) {
-            $input.addClass('is-invalid');
-            $container.html(`<div class="text-danger fs-6">Solo se permiten imágenes.</div>`);
-            return false;
-        }
-
-        $input.removeClass('is-invalid');
-        return true;
-    },
-
+    
 
     _renderFileList(container, input) {
         container.innerHTML = "";
