@@ -1,7 +1,7 @@
-/** @odoo-module **/
+odoo.define('custom_web_candidatos.recruitment_documents', function (require) {
+    "use strict";
 
-import publicWidget from "@web/legacy/js/public/public_widget";
-import { _t } from "@web/core/l10n/translation";
+    const publicWidget = require('web.public.widget');
 
     publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         selector: '#hr_job_recruitment_form',
@@ -154,4 +154,4 @@ import { _t } from "@web/core/l10n/translation";
             return true;
         },
     });
-
+});
