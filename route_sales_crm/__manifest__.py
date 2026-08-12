@@ -18,6 +18,7 @@
     "assets": {
         "web.assets_backend": [
             "route_sales_crm/static/src/js/gps_capture.js",
+            'route_sales_crm/static/src/js/route_visit_search_filters.js',
             "route_sales_crm/static/src/xml/gps_capture.xml",
         ],
     },
