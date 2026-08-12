@@ -1,10 +1,10 @@
-odoo.define('custom_web_candidatos.recruitment_documents', function (require) {
-    "use strict";
+/** @odoo-module **/
 
-    const publicWidget = require('web.public.widget');
+import publicWidget from "@web/legacy/js/public/public_widget";
+import { _t } from "@web/core/l10n/translation";
 
-    publicWidget.registry.RecruitmentDocumentsForm = publicWidget.Widget.extend({
-        selector: '#hr_job_recruitment_form',
+publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
+    selector: '#hr_job_recruitment_form',
 
         events: {
             'change #fotografia': '_onFileSelected',
@@ -84,4 +84,3 @@ odoo.define('custom_web_candidatos.recruitment_documents', function (require) {
             }
         },
     });
-});
