@@ -1378,12 +1378,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         if (type === 'cedula') {
             if (!isValidEcuadorianId(value)) {
                 isValid = false;
-                errorMsg = 'La cédula ecuatoriana no es válida.';
+                errorMsg = 'La cédula no es válida.';
             }
         } else if (type === 'id_extrj') {
             if (!isValidForeignId(value)) {
                 isValid = false;
-                errorMsg = 'La cédula extranjera debe tener 10 dígitos numéricos.';
+                errorMsg = 'La cédula extranjera no es valida';
             }
         } else if (type === 'pasaporte') {
             // No se valida nada
