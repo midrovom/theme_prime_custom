@@ -3,159 +3,56 @@
         <xpath expr="//input[@id='curriculum-vitae']/ancestor::div[contains(@class, 'col-12') and contains(@class, 'col-md-6')][1]" position="after">
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6"> 1. Fotografía actualizada a color tamaño carnet: </span>
+                    <span class="fs-6"> Adjuntar fotografía actualizada a color tamaño carnet: </span>
                         <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="fotografia"
-                        name="fotografia"
-                        type="file"
-                        accept="image/*"
-                    />
-
-                    <label
-                        for="fotografia"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar fotografía
-                    </label>
-
-                    <div
-                        id="file-selected-fotografia"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                        <input class="d-none" id="fotografia" name="fotografia" type="file" accept="image/*"/>
+                        <label for="fotografia" class="text-info custom_vitae fs-5"> + adjuntar fotografía </label>
+                    <div id="file-selected-fotografia" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
 
-
-            <!-- 2. Cédula y certificado de votación -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        2. Cédula de identidad y certificado de votación 2024:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="cedula-votacion"
-                        name="cedulaVotacion"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                        multiple="multiple"
-                    />
-
-                    <label
-                        for="cedula-votacion"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar cédula y certificado de votación
-                    </label>
-
-                    <div
-                        id="file-selected-cedula-votacion"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjuntar 2 copias de cédula de identidad y certificado de votación: </span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="cedula-votacion" name="cedulaVotacion" type="file" accept="application/pdf,.pdf"/>
+                        <label for="cedula-votacion" class="text-info custom_vitae fs-5"> + adjuntar cédula y certificado de votación </label>
+                    <div id="file-selected-cedula-votacion" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
 
-
-            <!-- 3. Historia laboral IESS -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        3. Historia laboral extraída de la página web del IESS:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="historia-laboral-iess"
-                        name="historiaLaboralIess"
-                        type="file"
-                        accept="application/pdf,.pdf"
-                    />
-
-                    <label
-                        for="historia-laboral-iess"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar historia laboral
-                    </label>
-
-                    <div
-                        id="file-selected-historia-laboral-iess"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjuntar Historia laboral extraída de la página web del IESS: </span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="historia-laboral-iess" name="historiaLaboralIess" type="file" accept="application/pdf,.pdf"/>
+                            <label for="historia-laboral-iess" class="text-info custom_vitae fs-5"> + adjuntar historia laboral </label>
+                        <div id="file-selected-historia-laboral-iess" class="text-success custom-message fs-5 mt-2 ms-2">
+                    </div>
                 </div>
             </div>
 
-
-            <!-- 4. Acta de matrimonio -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        4. Acta de matrimonio ORIGINAL / Registro de unión de hecho:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="acta-matrimonio"
-                        name="actaMatrimonio"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                    />
-
-                    <label
-                        for="acta-matrimonio"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar acta de matrimonio
-                    </label>
-
-                    <div
-                        id="file-selected-acta-matrimonio"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6">Adjuntar acta de matrimonio ORIGINAL, Si es unión de hecho deberá estar registrado en la cédula</span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="acta-matrimonio" name="actaMatrimonio" type="file" accept="application/pdf,.pdf"/>
+                            <label for="acta-matrimonio" class="text-info custom_vitae fs-5"> + adjuntar acta de matrimonio </label>
+                        <div id="file-selected-acta-matrimonio" class="text-success custom-message fs-5 mt-2 ms-2">
+                    </div>
                 </div>
             </div>
 
-
-            <!-- 5. Hijos menores de 18 años -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
-                    <span class="fs-6">
-                        5. Hijos menores de 18 años - partida de nacimiento y/o cédula:
-                    </span>
-                    <div class="my-2 border border-1 border-gray"></div>
-
-                    <input
-                        class="d-none"
-                        id="hijos-menores"
-                        name="hijosMenores"
-                        type="file"
-                        accept="application/pdf,.pdf,image/*"
-                        multiple="multiple"
-                    />
-
-                    <label
-                        for="hijos-menores"
-                        class="text-info custom_vitae fs-5"
-                    >
-                        + adjuntar documentos de hijos
-                    </label>
-
-                    <div
-                        id="file-selected-hijos-menores"
-                        class="text-success custom-message fs-5 mt-2 ms-2"
-                    ></div>
+                    <span class="fs-6"> Adjutnar copia a COPIA a color de la partida de nacimiento y/o Copia de Cédula:</span>
+                        <div class="my-2 border border-1 border-gray"></div>
+                            <input class="d-none" id="hijos-menores" name="hijosMenores" type="file" accept="application/pdf,.pdf"/>
+                    <label for="hijos-menores" class="text-info custom_vitae fs-5"> + adjuntar documentos de hijos </label>
+                    <div id="file-selected-hijos-menores" class="text-success custom-message fs-5 mt-2 ms-2"></div>
                 </div>
             </div>
 
-
-            <!-- 6. Estudios / SENECYT -->
             <div class="col-12 col-md-6 mb-4">
                 <div class="row">
                     <span class="fs-6">
