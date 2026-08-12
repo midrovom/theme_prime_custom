@@ -248,7 +248,7 @@
                     <div class="col-12 col-md-4 mb-4">
                         <div>
                             <label for="hr-email" class="fs-6">Email: <span class="text-danger">*</span></label>
-                            <input type="text" name="email" class="form-control rounded-pill py-2" id="hr-email" required="required"/>
+                            <input type="text" name="email" class="form-control rounded-pill py-2" id="hr-email" required="required" t-att-value="request.env.user.email"/>
                             <div class="invalid-feedback" id="email-error"></div>
                         </div>
                     </div>
