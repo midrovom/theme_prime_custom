@@ -115,8 +115,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         this._addEducationBlock();
         this._addExperienceBlock();
-        this._addReferenceBlock();
-
+        for (let i = 0; i < 3; i++) {
+            this._addReferenceBlock();
+        }
         this._toggleStudyFields(); 
         this._toggleDisabilityFields();
         this._toggleFamilyKnownFields();
@@ -592,62 +593,52 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return block;
     },
 
-    async _getReferenceBlock() {
+    _getReferenceBlock() {
         return `
             <div class="row d-flex justify-content-center reference-block">
                 <div class="col-12 col-md-10">
-                    <div class="row d-flex justify-content-start">
+                    <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
+                        <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+                            background: white; padding: 0 15px; color: #666; font-size: 14px;">
+                            Referencia # ${this.referenceCount + 1}
+                        </span>
+                    </div>
 
+                    <div class="row g-3">
                         <!-- Nombre -->
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Nombre <span class="required-asterisk">*</span></label>
-                            <input type="text" name="ref_nombre_${this.referenceCount}" 
-                                class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">
-                                Campo obligatorio
-                            </div>
-                        </div>
-
-                        <!-- Domicilio -->
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Domicilio <span class="required-asterisk">*</span></label>
-                            <input type="text" name="ref_domicilio_${this.referenceCount}" 
-                                class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">
-                                Campo obligatorio
-                            </div>
+                        <div class="col-md-4">
+                            <label class="fs-6">Nombre completo <span class="required-asterisk">*</span></label>
+                            <input type="text" name="ref_nombre_${this.referenceCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Teléfono -->
-                        <div class="col-12 col-md-3 mb-4">
+                        <div class="col-md-4">
                             <label class="fs-6">Teléfono <span class="required-asterisk">*</span></label>
-                            <input type="text" name="ref_telefono_${this.referenceCount}" 
-                                class="form-control rounded-pill py-2 ref-telefono" required/>
-                            <div class="invalid-feedback">
-                                Campo obligatorio
-                            </div>
+                            <input type="tel" name="ref_telefono_${this.referenceCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Ocupación -->
-                        <div class="col-12 col-md-3 mb-4">
+                        <div class="col-md-4">
                             <label class="fs-6">Ocupación <span class="required-asterisk">*</span></label>
-                            <input type="text" name="ref_ocupacion_${this.referenceCount}" 
-                                class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">
-                                Campo obligatorio
-                            </div>
+                            <input type="text" name="ref_ocupacion_${this.referenceCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
-                        <!-- Tiempo de conocerlo -->
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Tiempo de conocerlo <span class="required-asterisk">*</span></label>
-                            <input type="text" name="ref_tiempo_${this.referenceCount}" 
-                                class="form-control rounded-pill py-2" required/>
-                            <div class="invalid-feedback">
-                                Campo obligatorio
-                            </div>
+                        <!-- Tiempo de conocimiento -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Tiempo de conocimiento <span class="required-asterisk">*</span></label>
+                            <input type="text" name="ref_tiempo_${this.referenceCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
+                        <!-- Domicilio -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Domicilio <span class="required-asterisk">*</span></label>
+                            <input type="text" name="ref_domicilio_${this.referenceCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2000,27 +1991,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
-    async _addReferenceBlock() {
+    _addReferenceBlock() {
+        const block = this._getReferenceBlock();
+        this.$('#reference_container').append(block);
         this.referenceCount++;
-        const newBlock = await this._getReferenceBlock(this.referenceCount === 1);
-        this.$('#reference_container').append(newBlock);
-
-        this.$('#total_references').val(this.referenceCount);
-
-        this.$('#reference_container')
-            .find('.reference-block')
-            .last()
-            .find('input[required]')
-            .on('blur', (ev) => this._validateReferenceField(ev));
-
-        this.$('#reference_container')
-            .find('.remove-reference')
-            .last()
-            .on('click', (ev) => {
-                $(ev.currentTarget).closest('.reference-block').remove();
-                this.referenceCount--;
-                this.$('#total_references').val(this.referenceCount);
-            });
     },
 
     async _onAddReference(ev) {
