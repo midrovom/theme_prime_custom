@@ -1835,12 +1835,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         let valid = true;
 
         if (this.experienceCount < 3) {
-            this.$('#experience-error')
-                .show() 
-                .text("Debe ingresar al menos 3 experiencias laborales.");
+            alert("Debe ingresar al menos 3 experiencias laborales.");
             return;
-        } else {
-            this.$('#experience-error').hide(); 
         }
 
         this.$('#experience_container .experience-block input, #experience_container .experience-block select').each((i, el) => {
