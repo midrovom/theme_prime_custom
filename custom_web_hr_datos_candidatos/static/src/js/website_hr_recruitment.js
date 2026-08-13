@@ -538,7 +538,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <div class="row d-flex justify-content-between">
                             <div class="col-12 mt-3 d-flex justify-content-end">
-                                <button type="button" class="btn btn-outline-danger rounded-pill px-4 remove-experience-btn">
+                                <button type="button" class="btn btn-outline-danger rounded-pill px-4 remove-experience">
                                     - Eliminar esta experiencia
                                 </button>
                             </div>
@@ -1978,14 +1978,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
+
     _onRemoveExperience(ev) {
-        if (this.experienceCount > 1) {
-            this.$('#experience_container .experience-block').last().remove();
-            this.experienceCount--;
-            this.$('#experience_container .experience-block').each((index, el) => {
-                $(el).find('.separator-education span').text(`Experiencia Laboral # ${index + 1}`);
-            });
-        }
+        const $block = $(ev.currentTarget).closest('.experience-block'); 
+        $block.remove();
+        this.experienceCount--;
+        this.$('#experience_container .experience-block').each((index, el) => {
+            $(el).find('.experience-title').text(`Experiencia Laboral # ${index + 1}`);
+        });
     },
 
     async _addReferenceBlock() {
