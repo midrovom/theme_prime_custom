@@ -421,183 +421,21 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return block;
     },
 
-    // async _getExperienceBlock(isFirstBlock = false) {
-    //     await loadCountriesAndStates(); 
-
-    //     const separator = isFirstBlock ? '' : `
-    //         <div class="row d-flex justify-content-center my-4">
-    //             <div class="col-12 col-md-10">
-    //                 <div class="separator-education" style="
-    //                     border-top: 2px solid #e0e0e0;
-    //                     position: relative;
-    //                     margin: 20px 0;
-    //                 ">
-    //                     <span style="
-    //                         position: absolute;
-    //                         top: -12px;
-    //                         left: 50%;
-    //                         transform: translateX(-50%);
-    //                         background: white;
-    //                         padding: 0 15px;
-    //                         color: #666;
-    //                         font-size: 14px;
-    //                     ">Experiencia Laboral # ${this.experienceCount - 1}</span>
-    //                 </div>
-    //             </div>
-    //         </div>
-    //     `;
-
-    //     const block = `
-    //         <div class="row d-flex justify-content-center">
-    //             <div class="col-12 col-md-10">
-    //                 <div class="row d-flex justify-content-between">
-
-    //                     <!-- Tiempo que prestó su servicio -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="tiempo_${this.experienceCount}" class="fs-6">Tiempo que prestó su servicio:</label>
-    //                         <input id="tiempo_${this.experienceCount}" type="text" name="tiempo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
-    //                     </div>
-
-    //                     <!-- Nombre de la compañía -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="company_${this.experienceCount}" class="fs-6">Nombre de la compañía:</label>
-    //                         <input id="company_${this.experienceCount}" type="text" name="company_${this.experienceCount}" class="form-control rounded-pill py-2"/>
-    //                     </div>
-
-    //                     <!-- País Experiencia -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País:</label>
-    //                         <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
-    //                             <option value=""></option> ${ cachedCountries.map(country => `
-    //                                 <option value="country-${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
-    //                                     ${country.name}
-    //                                 </option>
-    //                             `).join('') }
-    //                         </select>
-    //                     </div>
-
-    //                     <!-- Ciudad/Provincia Experiencia -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="ciudad-experiencia_${this.experienceCount}" class="fs-6">Ciudad/Provincia:</label>
-    //                         <select id="ciudad-experiencia_${this.experienceCount}" name="ciudadExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
-    //                             <option value=""></option> ${ cachedStatesByCountry[ cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
-    //                                 <option value="state-${state.id}">${state.name}</option>
-    //                             `).join('') }
-    //                         </select>
-    //                     </div>
-
-    //                     <!-- Teléfono -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="telefonos_${this.experienceCount}" class="fs-6">Teléfono:</label>
-    //                         <input id="telefonos_${this.experienceCount}" type="text" name="telefonos_${this.experienceCount}" class="form-control rounded-pill py-2"/>
-    //                     </div>
-
-    //                     <!-- Cargo desempeñado -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="cargo_${this.experienceCount}" class="fs-6">Cargo desempeñado:</label>
-    //                         <input id="cargo_${this.experienceCount}" type="text" name="cargo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
-    //                     </div>
-
-    //                     <!-- Ingreso mensual -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="ingreso_${this.experienceCount}" class="fs-6">Ingreso mensual:</label>
-    //                         <input id="ingreso_${this.experienceCount}" type="number" name="ingreso_${this.experienceCount}" class="form-control rounded-pill py-2"/>
-    //                     </div>
-
-    //                     <!-- Motivo de separación -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="motivo_${this.experienceCount}" class="fs-6">Motivo de separación:</label>
-    //                         <input id="motivo_${this.experienceCount}" type="text" name="motivo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
-    //                     </div>
-
-    //                     <!-- Nombre de su jefe directo -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="jefe_${this.experienceCount}" class="fs-6">Nombre de su jefe directo:</label>
-    //                         <input id="jefe_${this.experienceCount}" type="text" name="jefe_${this.experienceCount}" class="form-control rounded-pill py-2"/>
-    //                     </div>
-
-    //                     <!-- Cargo de su jefe directo -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="cargo-jefe_${this.experienceCount}" class="fs-6">Cargo de su jefe directo:</label>
-    //                         <input id="cargo-jefe_${this.experienceCount}" type="text" name="cargoJefe_${this.experienceCount}" class="form-control rounded-pill py-2"/>
-    //                     </div>
-
-    //                     <!-- Fecha de inicio -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="job-inicio_${this.experienceCount}" class="fs-6">Desde:</label>
-    //                         <input id="job-inicio_${this.experienceCount}" type="date" name="jobInicio_${this.experienceCount}" class="form-control rounded-pill py-2"/>
-    //                     </div>
-
-    //                     <!-- Año de finalización -->
-    //                     <div class="col-12 col-md-3 mb-4">
-    //                         <label for="job-fin_${this.experienceCount}" class="fs-6">Hasta:</label>
-    //                         <select id="job-fin_${this.experienceCount}" name="jobFin_${this.experienceCount}" class="form-select rounded-pill py-2">
-    //                             <option selected="selected"></option>
-    //                         </select>
-    //                     </div>
-
-    //                 </div>
-    //             </div>
-    //         </div>
-    //     ` + separator;
-
-    //     setTimeout(() => {
-    //         const startId = `job-inicio_${this.experienceCount}`;
-    //         const endId = `job-fin_${this.experienceCount}`;
-    //         const startInput = document.getElementById(startId);
-    //         const endSelect = document.getElementById(endId);
-
-    //         if (startInput && endSelect) {
-    //             startInput.addEventListener("change", () => {
-    //                 const startDate = startInput.value;
-    //                 if (startDate) {
-    //                     const startYear = new Date(startDate).getFullYear();
-    //                     const currentYear = new Date().getFullYear();
-
-    //                     // reconstruir opciones
-    //                     endSelect.innerHTML = "<option value=''></option>";
-
-    //                     // recorrer hasta el año anterior al actual
-    //                     for (let year = startYear; year < currentYear; year++) {
-    //                         const opt = document.createElement("option");
-    //                         opt.value = year;
-    //                         opt.textContent = year;
-    //                         endSelect.appendChild(opt);
-    //                     }
-
-    //                     // agregar solo "Presente" en lugar del año actual
-    //                     const presentOpt = document.createElement("option");
-    //                     presentOpt.value = "presente";
-    //                     presentOpt.textContent = "Presente";
-    //                     endSelect.appendChild(presentOpt);
-    //                 }
-    //             });
-    //         }
-    //     }, 0);
-
-
-    //     return block;
-    // },
-
     async _getExperienceBlock(isFirstBlock = false) {
         await loadCountriesAndStates(); 
 
-        const separator = isFirstBlock ? '' : `
-            <div class="row d-flex justify-content-center my-4">
+        const block = `
+            <div class="row d-flex justify-content-center experience-block">
                 <div class="col-12 col-md-10">
+
+                    <!-- Separador con numeración -->
                     <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
                         <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
                             background: white; padding: 0 15px; color: #666; font-size: 14px;">
                             Experiencia Laboral # ${this.experienceCount}
                         </span>
                     </div>
-                </div>
-            </div>
-        `;
 
-        const block = `
-            <div class="row d-flex justify-content-center experience-block">
-                <div class="col-12 col-md-10">
                     <div class="row d-flex justify-content-between">
 
                         <!-- Tiempo que prestó su servicio -->
@@ -618,7 +456,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <div class="col-12 col-md-3 mb-4">
                             <label class="fs-6">País:</label>
                             <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2" required>
-                                <option value=""></option> ${ cachedCountries.map(country => `
+                                <option value=""></option> 
+                                ${ cachedCountries.map(country => `
                                     <option value="country-${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
                                         ${country.name}
                                     </option>
@@ -631,7 +470,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <div class="col-12 col-md-3 mb-4">
                             <label class="fs-6">Ciudad/Provincia:</label>
                             <select id="ciudad-experiencia_${this.experienceCount}" name="ciudadExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2" required>
-                                <option value=""></option> ${ cachedStatesByCountry[ cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
+                                <option value=""></option> 
+                                ${ cachedStatesByCountry[ cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
                                     <option value="state-${state.id}">${state.name}</option>
                                 `).join('') }
                             </select>
@@ -699,7 +539,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     </div>
                 </div>
             </div>
-        ` + separator;
+        `;
 
         setTimeout(() => {
             const startId = `job-inicio_${this.experienceCount}`;
@@ -717,15 +557,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         // reconstruir opciones
                         endSelect.innerHTML = "<option value=''></option>";
 
-                        // recorrer hasta el año anterior al actual
-                        for (let year = startYear; year < currentYear; year++) {
+                        for (let year = startYear; year <= currentYear; year++) {
                             const opt = document.createElement("option");
                             opt.value = year;
                             opt.textContent = year;
                             endSelect.appendChild(opt);
                         }
 
-                        // agregar solo "Presente" en lugar del año actual
                         const presentOpt = document.createElement("option");
                         presentOpt.value = "presente";
                         presentOpt.textContent = "Presente";
