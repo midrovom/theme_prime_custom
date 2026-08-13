@@ -13,3 +13,5 @@ access_settlement_user,settlement user,model_petty_cash_settlement,petty_cash_co
 access_settlement_approver,settlement approver,model_petty_cash_settlement,petty_cash_control.group_petty_cash_approver,1,1,1,0
 access_settlement_manager,settlement manager,model_petty_cash_settlement,petty_cash_control.group_petty_cash_manager,1,1,1,1
 access_report_wizard,report wizard,model_petty_cash_report_wizard,petty_cash_control.group_petty_cash_user,1,1,1,1
+access_department_petty_cash_user,department petty cash user,hr.model_hr_department,petty_cash_control.group_petty_cash_user,1,0,0,0
+access_department_petty_cash_manager,department petty cash manager,hr.model_hr_department,petty_cash_control.group_petty_cash_manager,1,1,1,1

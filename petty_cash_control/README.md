@@ -7,9 +7,15 @@ Módulo independiente de Contabilidad para administrar varias cajas chicas.
 - Varias cajas, responsable principal y responsables alternos.
 - Entrega inicial y reposición de fondos con aprobación.
 - Gastos categorizados, proveedor, RUC, tipo/número de comprobante y adjuntos.
+- Proveedor seleccionado desde Contactos con carga automática de RUC/Cédula.
+- Beneficiarios seleccionados desde Contactos y marcados como beneficiarios de caja chica.
+- Departamento responsable del gasto para medición y análisis.
+- Mantenimiento de departamentos desde **Caja chica > Configuración > Departamentos**.
 - Validación de comprobante obligatorio, límite por categoría y saldo disponible.
 - Liquidaciones con carga automática de gastos aprobados y devolución de sobrantes.
 - Reporte PDF por rango de fechas, cajas y categorías.
+- Filtros de reporte por beneficiario y departamento.
+- PDF detallado de cada liquidación disponible en cualquier estado.
 - Análisis dinámico en tablas pivote y gráficos.
 - Perfiles: Usuario, Aprobador y Administrador.
 - Historial de cambios y actividades mediante chatter.

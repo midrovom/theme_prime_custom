@@ -2,6 +2,15 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 
 
+class ResPartner(models.Model):
+    _inherit = "res.partner"
+
+    is_petty_cash_beneficiary = fields.Boolean(
+        string="Beneficiario de caja chica",
+        help="Permite seleccionar este contacto como beneficiario de un gasto de caja chica.",
+    )
+
+
 class PettyCashCategory(models.Model):
     _name = "petty.cash.category"
     _description = "Categoría de caja chica"
@@ -72,8 +81,7 @@ class PettyCashFund(models.Model):
     fund_type = fields.Selection([("initial", "Entrega inicial"), ("replenishment", "Reposición")], default="replenishment", required=True, tracking=True)
     amount = fields.Monetary(required=True, tracking=True)
     currency_id = fields.Many2one(related="box_id.currency_id", store=True)
-    # company_id = fields.Many2one(related="box_id.company_id", store=True)
-    company_id = fields.Many2one("res.company", string="Compañía", required=True, default=lambda self: self.env.company, readonly=True,)
+    company_id = fields.Many2one(related="box_id.company_id", store=True)
     description = fields.Text(required=True)
     attachment_ids = fields.Many2many("ir.attachment", "petty_cash_fund_attachment_rel", "fund_id", "attachment_id", string="Comprobantes")
     state = fields.Selection([("draft", "Borrador"), ("submitted", "Por aprobar"), ("approved", "Aprobado"), ("rejected", "Rechazado"), ("cancelled", "Anulado")], default="draft", tracking=True)
@@ -94,7 +102,10 @@ class PettyCashFund(models.Model):
             raise ValidationError(_("El valor debe ser mayor que cero."))
 
     def action_submit(self):
-        self.filtered(lambda r: r.state in ("draft", "rejected")).write({"state": "submitted", "rejection_reason": False})
+        for rec in self:
+            if rec.state not in ("draft", "rejected"):
+                raise UserError(_("Solo puede enviar fondos en borrador o rechazados."))
+            rec.write({"state": "submitted", "rejection_reason": False})
 
     def action_approve(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
@@ -109,13 +120,27 @@ class PettyCashFund(models.Model):
     def action_reject(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
             raise UserError(_("No tiene permisos para rechazar fondos."))
-        self.write({"state": "rejected", "rejection_reason": _("Rechazado por %s") % self.env.user.name})
+        for rec in self:
+            if rec.state != "submitted":
+                raise UserError(_("Solo puede rechazar fondos pendientes de aprobación."))
+            rec.write({"state": "rejected", "rejection_reason": _("Rechazado por %s") % self.env.user.name})
 
     def action_cancel(self):
-        self.write({"state": "cancelled"})
+        for rec in self:
+            if rec.state not in ("draft", "submitted", "rejected"):
+                raise UserError(_("No puede anular un fondo aprobado."))
+            rec.state = "cancelled"
 
     def action_reset_draft(self):
-        self.write({"state": "draft", "approved_by": False, "approved_date": False})
+        for rec in self:
+            if rec.state not in ("rejected", "cancelled"):
+                raise UserError(_("Solo puede devolver a borrador registros rechazados o anulados."))
+            rec.write({"state": "draft", "approved_by": False, "approved_date": False, "rejection_reason": False})
+
+    def unlink(self):
+        if any(rec.state not in ("draft", "cancelled") for rec in self):
+            raise UserError(_("Solo puede eliminar fondos en borrador o anulados."))
+        return super().unlink()
 
 
 class PettyCashExpense(models.Model):
@@ -129,15 +154,25 @@ class PettyCashExpense(models.Model):
     box_id = fields.Many2one("petty.cash.box", required=True, tracking=True, check_company=True)
     responsible_id = fields.Many2one(related="box_id.responsible_id", store=True)
     category_id = fields.Many2one("petty.cash.category", required=True, tracking=True)
-    supplier_name = fields.Char(string="Proveedor", required=True)
-    supplier_vat = fields.Char(string="RUC/Cédula")
+    supplier_id = fields.Many2one(
+        "res.partner", string="Proveedor", tracking=True,
+        domain="[('active', '=', True)]", ondelete="restrict",
+    )
+    supplier_name = fields.Char(string="Proveedor anterior", readonly=True)
+    supplier_vat = fields.Char(related="supplier_id.vat", string="RUC/Cédula", readonly=True, store=True)
+    beneficiary_id = fields.Many2one(
+        "res.partner", string="Beneficiario", tracking=True,
+        domain="[('is_petty_cash_beneficiary', '=', True), ('active', '=', True)]", ondelete="restrict",
+    )
+    department_id = fields.Many2one(
+        "hr.department", string="Departamento", tracking=True, ondelete="restrict",
+    )
     document_type = fields.Selection([("invoice", "Factura"), ("sale_note", "Nota de venta"), ("receipt", "Recibo"), ("other", "Otro")], default="invoice", required=True)
     document_number = fields.Char(string="N.º de comprobante")
     description = fields.Text(required=True)
     amount = fields.Monetary(required=True, tracking=True)
     currency_id = fields.Many2one(related="box_id.currency_id", store=True)
-    # company_id = fields.Many2one(related="box_id.company_id", store=True)
-    company_id = fields.Many2one("res.company", string="Compañía", required=True, default=lambda self: self.env.company, readonly=True,)
+    company_id = fields.Many2one(related="box_id.company_id", store=True)
     attachment_ids = fields.Many2many("ir.attachment", "petty_cash_expense_attachment_rel", "expense_id", "attachment_id", string="Comprobantes")
     settlement_id = fields.Many2one("petty.cash.settlement", readonly=True, copy=False)
     state = fields.Selection([("draft", "Borrador"), ("submitted", "Por aprobar"), ("approved", "Aprobado"), ("rejected", "Rechazado"), ("cancelled", "Anulado")], default="draft", tracking=True)
@@ -162,9 +197,23 @@ class PettyCashExpense(models.Model):
 
     def action_submit(self):
         for rec in self:
+            if rec.state not in ("draft", "rejected"):
+                raise UserError(_("Solo puede enviar gastos en borrador o rechazados."))
+            rec._validate_expense_data()
+            rec.write({"state": "submitted", "rejection_reason": False})
+
+    def _validate_expense_data(self):
+        for rec in self:
+            if not rec.supplier_id:
+                raise ValidationError(_("Debe seleccionar el proveedor."))
+            if not rec.beneficiary_id:
+                raise ValidationError(_("Debe seleccionar el beneficiario."))
+            if not rec.department_id:
+                raise ValidationError(_("Debe seleccionar el departamento al que corresponde el gasto."))
+            if rec.department_id.company_id and rec.department_id.company_id != rec.company_id:
+                raise ValidationError(_("El departamento debe pertenecer a la misma compañía de la caja."))
             if not rec.attachment_ids:
                 raise ValidationError(_("Debe adjuntar al menos un comprobante."))
-            rec.write({"state": "submitted", "rejection_reason": False})
 
     def action_approve(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
@@ -172,6 +221,7 @@ class PettyCashExpense(models.Model):
         for rec in self:
             if rec.state != "submitted":
                 raise UserError(_("Solo se pueden aprobar gastos enviados."))
+            rec._validate_expense_data()
             if rec.amount > rec.box_id.available_balance:
                 raise ValidationError(_("La caja no tiene saldo suficiente para aprobar este gasto."))
             rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
@@ -179,15 +229,31 @@ class PettyCashExpense(models.Model):
     def action_reject(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
             raise UserError(_("No tiene permisos para rechazar gastos."))
-        self.write({"state": "rejected", "rejection_reason": _("Rechazado por %s") % self.env.user.name})
+        for rec in self:
+            if rec.state != "submitted":
+                raise UserError(_("Solo puede rechazar gastos pendientes de aprobación."))
+            rec.write({"state": "rejected", "rejection_reason": _("Rechazado por %s") % self.env.user.name})
 
     def action_cancel(self):
-        if any(rec.settlement_id for rec in self):
-            raise UserError(_("No puede anular un gasto incluido en una liquidación."))
-        self.write({"state": "cancelled"})
+        for rec in self:
+            if rec.settlement_id:
+                raise UserError(_("No puede anular un gasto incluido en una liquidación."))
+            if rec.state not in ("draft", "submitted", "rejected"):
+                raise UserError(_("No puede anular un gasto aprobado."))
+            rec.state = "cancelled"
 
     def action_reset_draft(self):
-        self.write({"state": "draft", "approved_by": False, "approved_date": False})
+        for rec in self:
+            if rec.state not in ("rejected", "cancelled"):
+                raise UserError(_("Solo puede devolver a borrador gastos rechazados o anulados."))
+            rec.write({"state": "draft", "approved_by": False, "approved_date": False, "rejection_reason": False})
+
+    def unlink(self):
+        if any(rec.state not in ("draft", "cancelled") for rec in self):
+            raise UserError(_("Solo puede eliminar gastos en borrador o anulados."))
+        if any(rec.settlement_id for rec in self):
+            raise UserError(_("No puede eliminar gastos incluidos en una liquidación."))
+        return super().unlink()
 
 
 class PettyCashSettlement(models.Model):
@@ -204,8 +270,7 @@ class PettyCashSettlement(models.Model):
     expense_total = fields.Monetary(compute="_compute_totals", store=True)
     return_amount = fields.Monetary(string="Sobrante devuelto", tracking=True)
     currency_id = fields.Many2one(related="box_id.currency_id", store=True)
-    # company_id = fields.Many2one(related="box_id.company_id", store=True)
-    company_id = fields.Many2one("res.company", string="Compañía", required=True, default=lambda self: self.env.company, readonly=True,)
+    company_id = fields.Many2one(related="box_id.company_id", store=True)
     attachment_ids = fields.Many2many("ir.attachment", "petty_cash_settlement_attachment_rel", "settlement_id", "attachment_id", string="Evidencias")
     notes = fields.Text()
     state = fields.Selection([("draft", "Borrador"), ("submitted", "Por aprobar"), ("approved", "Aprobada"), ("closed", "Cerrada"), ("rejected", "Rechazada"), ("cancelled", "Anulada")], default="draft", tracking=True)
@@ -232,20 +297,29 @@ class PettyCashSettlement(models.Model):
     def action_load_expenses(self):
         for rec in self:
             if rec.state != "draft":
-                continue
+                raise UserError(_("Solo puede cargar gastos en una liquidación en borrador."))
             expenses = self.env["petty.cash.expense"].search([("box_id", "=", rec.box_id.id), ("state", "=", "approved"), ("settlement_id", "=", False)])
             expenses.write({"settlement_id": rec.id})
 
     def action_submit(self):
         for rec in self:
+            if rec.state != "draft":
+                raise UserError(_("Solo puede enviar liquidaciones en borrador."))
             if not rec.expense_ids and not rec.return_amount:
                 raise ValidationError(_("La liquidación debe contener gastos o una devolución."))
+            if rec.expense_ids.filtered(lambda expense: expense.state != "approved"):
+                raise ValidationError(_("Todos los gastos de la liquidación deben estar aprobados."))
+            if rec.expense_ids.filtered(lambda expense: expense.box_id != rec.box_id):
+                raise ValidationError(_("Todos los gastos deben pertenecer a la misma caja de la liquidación."))
             rec.state = "submitted"
 
     def action_approve(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
             raise UserError(_("No tiene permisos para aprobar liquidaciones."))
-        self.filtered(lambda x: x.state == "submitted").write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+        for rec in self:
+            if rec.state != "submitted":
+                raise UserError(_("Solo puede aprobar liquidaciones pendientes de aprobación."))
+            rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
 
     def action_close(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
@@ -260,15 +334,29 @@ class PettyCashSettlement(models.Model):
     def action_reject(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
             raise UserError(_("No tiene permisos para rechazar liquidaciones."))
-        self.write({"state": "rejected"})
+        for rec in self:
+            if rec.state != "submitted":
+                raise UserError(_("Solo puede rechazar liquidaciones pendientes de aprobación."))
+            rec.state = "rejected"
 
     def action_cancel(self):
         for rec in self:
-            if rec.state == "closed":
-                raise UserError(_("Una liquidación cerrada no puede anularse."))
+            if rec.state not in ("draft", "rejected"):
+                raise UserError(_("Solo puede anular liquidaciones en borrador o rechazadas."))
             rec.expense_ids.write({"settlement_id": False})
             rec.state = "cancelled"
 
     def action_reset_draft(self):
         for rec in self:
+            if rec.state not in ("rejected", "cancelled"):
+                raise UserError(_("Solo puede devolver a borrador liquidaciones rechazadas o anuladas."))
             rec.state = "draft"
+
+    def action_print_settlement(self):
+        self.ensure_one()
+        return self.env.ref("petty_cash_control.action_report_petty_cash_settlement").report_action(self)
+
+    def unlink(self):
+        if any(rec.state not in ("draft", "cancelled") for rec in self):
+            raise UserError(_("Solo puede eliminar liquidaciones en borrador o anuladas."))
+        return super().unlink()

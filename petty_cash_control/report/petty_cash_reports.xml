@@ -1,4 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <record id="action_report_petty_cash_expenses" model="ir.actions.report"><field name="name">Reporte de gastos de caja chica</field><field name="model">petty.cash.expense</field><field name="report_type">qweb-pdf</field><field name="report_name">petty_cash_control.report_expenses_document</field><field name="report_file">petty_cash_control.report_expenses_document</field><field name="print_report_name">'Caja_chica_%s' % (time.strftime('%Y%m%d'))</field></record>
-  <template id="report_expenses_document"><t t-call="web.html_container"><div class="page"><h2>Reporte de gastos de caja chica</h2><p t-if="data"><strong>Período:</strong> <span t-esc="data.get('date_from')"/> al <span t-esc="data.get('date_to')"/></p><p t-if="not docs">No existen gastos para los filtros seleccionados.</p><table class="table table-sm" t-if="docs"><thead><tr><th>Fecha</th><th>Caja</th><th>Categoría</th><th>Proveedor</th><th>Comprobante</th><th class="text-end">Valor</th></tr></thead><tbody><t t-set="total" t-value="0"/><tr t-foreach="docs" t-as="o"><td><span t-field="o.date"/></td><td><span t-field="o.box_id"/></td><td><span t-field="o.category_id"/></td><td><span t-field="o.supplier_name"/></td><td><span t-field="o.document_number"/></td><td class="text-end"><span t-field="o.amount" t-options="{'widget':'monetary','display_currency':o.currency_id}"/></td><t t-set="total" t-value="total + o.amount"/></tr></tbody><tfoot><tr><th colspan="5" class="text-end">TOTAL</th><th class="text-end"><span t-esc="total" t-options="{'widget':'monetary','display_currency':docs[0].currency_id}"/></th></tr></tfoot></table></div></t></template>
+  <record id="action_report_petty_cash_expenses" model="ir.actions.report">
+    <field name="name">Reporte de gastos de caja chica</field><field name="model">petty.cash.expense</field><field name="report_type">qweb-pdf</field>
+    <field name="report_name">petty_cash_control.report_expenses_document</field><field name="report_file">petty_cash_control.report_expenses_document</field><field name="print_report_name">'Gastos_Caja_Chica'</field>
+  </record>
+  <record id="action_report_petty_cash_settlement" model="ir.actions.report">
+    <field name="name">Detalle de liquidación</field><field name="model">petty.cash.settlement</field><field name="report_type">qweb-pdf</field>
+    <field name="report_name">petty_cash_control.report_settlement_document</field><field name="report_file">petty_cash_control.report_settlement_document</field>
+    <field name="binding_model_id" ref="model_petty_cash_settlement"/><field name="binding_type">report</field><field name="print_report_name">'Liquidacion_%s' % object.name.replace('/', '_')</field>
+  </record>
+  <template id="report_expenses_document">
+    <t t-call="web.html_container"><t t-call="web.external_layout"><div class="page">
+      <h2>Reporte de gastos de caja chica</h2><p><strong>Período:</strong> <span t-esc="data.get('date_from', '')"/> al <span t-esc="data.get('date_to', '')"/></p>
+      <p t-if="not docs">No existen gastos para los filtros seleccionados.</p>
+      <table class="table table-sm" t-if="docs"><thead><tr><th>Fecha</th><th>Caja</th><th>Proveedor</th><th>Beneficiario</th><th>Departamento</th><th>Categoría</th><th>Comprobante</th><th class="text-end">Valor</th></tr></thead><tbody>
+        <t t-set="total" t-value="0"/><tr t-foreach="docs" t-as="o"><td><span t-field="o.date"/></td><td><span t-field="o.box_id"/></td><td><span t-if="o.supplier_id" t-field="o.supplier_id"/><span t-else="" t-field="o.supplier_name"/></td><td><span t-field="o.beneficiary_id"/></td><td><span t-field="o.department_id"/></td><td><span t-field="o.category_id"/></td><td><span t-field="o.document_number"/></td><td class="text-end"><span t-field="o.amount" t-options="{'widget':'monetary','display_currency':o.currency_id}"/></td><t t-set="total" t-value="total + o.amount"/></tr>
+      </tbody><tfoot><tr><th colspan="7" class="text-end">TOTAL</th><th class="text-end"><span t-esc="total" t-options="{'widget':'monetary','display_currency':docs[0].currency_id}"/></th></tr></tfoot></table>
+    </div></t></t>
+  </template>
+  <template id="report_settlement_document">
+    <t t-call="web.html_container"><t t-foreach="docs" t-as="o"><t t-call="web.external_layout"><div class="page">
+      <h2>Liquidación de caja chica <span t-field="o.name"/></h2>
+      <div class="row mb-3"><div class="col-6"><strong>Caja:</strong> <span t-field="o.box_id"/><br/><strong>Responsable:</strong> <span t-field="o.responsible_id"/></div><div class="col-6"><strong>Fecha:</strong> <span t-field="o.date"/><br/><strong>Estado:</strong> <span t-field="o.state"/></div></div>
+      <table class="table table-sm"><thead><tr><th>Fecha</th><th>Proveedor / RUC</th><th>Beneficiario</th><th>Departamento</th><th>Categoría</th><th>Comprobante</th><th>Descripción</th><th class="text-end">Valor</th></tr></thead><tbody>
+        <tr t-foreach="o.expense_ids" t-as="e"><td><span t-field="e.date"/></td><td><span t-if="e.supplier_id" t-field="e.supplier_id"/><span t-else="" t-field="e.supplier_name"/><br/><small t-field="e.supplier_vat"/></td><td><span t-field="e.beneficiary_id"/></td><td><span t-field="e.department_id"/></td><td><span t-field="e.category_id"/></td><td><span t-field="e.document_number"/></td><td><span t-field="e.description"/></td><td class="text-end"><span t-field="e.amount" t-options="{'widget':'monetary','display_currency':e.currency_id}"/></td></tr>
+      </tbody><tfoot><tr><th colspan="7" class="text-end">Total de gastos</th><th class="text-end"><span t-field="o.expense_total" t-options="{'widget':'monetary','display_currency':o.currency_id}"/></th></tr><tr><th colspan="7" class="text-end">Sobrante devuelto</th><th class="text-end"><span t-field="o.return_amount" t-options="{'widget':'monetary','display_currency':o.currency_id}"/></th></tr></tfoot></table>
+      <div class="mt-4" t-if="o.notes"><strong>Notas:</strong><p t-field="o.notes"/></div><div class="row mt-5"><div class="col-5 text-center"><div style="border-top:1px solid #000;">Responsable</div></div><div class="col-2"/><div class="col-5 text-center"><div style="border-top:1px solid #000;">Aprobador</div></div></div>
+    </div></t></t></t>
+  </template>
 </odoo>
