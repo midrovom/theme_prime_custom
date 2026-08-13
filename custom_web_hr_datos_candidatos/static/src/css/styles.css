@@ -128,3 +128,7 @@ input.form-check-input:focus {
 .custom-message {
     font-size: 13px !important;
 }
+
+#experience-error {
+    display: none;
+}
