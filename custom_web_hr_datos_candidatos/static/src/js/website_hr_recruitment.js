@@ -1981,10 +1981,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     _onRemoveExperience(ev) {
         const $block = $(ev.currentTarget).closest('.experience-block'); 
+        const index = this.$('#experience_container .experience-block').index($block);
+
+        if (index === 0) {
+            return;
+        }
+
         $block.remove();
         this.experienceCount--;
-        this.$('#experience_container .experience-block').each((index, el) => {
-            $(el).find('.experience-title').text(`Experiencia Laboral # ${index + 1}`);
+        this.$('#experience_container .experience-block').each((i, el) => {
+            $(el).find('.separator-education span').text(`Experiencia Laboral # ${i + 1}`);
         });
     },
 
