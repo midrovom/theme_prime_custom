@@ -164,8 +164,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             'pointer-events': 'none'
         });
 
+        this.$('#remove-family').prop('disabled', true); 
         this._checkFieldsFilled();
         this._checkEducationFieldsFilled();
+
     },
 
     async _getFamilyBlock() {
