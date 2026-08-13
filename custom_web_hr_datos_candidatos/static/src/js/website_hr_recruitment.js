@@ -30,7 +30,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'click #add-experience': '_onAddExperience',
         'click .remove-experience': '_onRemoveExperience',
         'click #add-reference': '_onAddReference',
-        'click #remove-family': '_onRemoveFamily',
+        'click .remove-family': '_onRemoveFamily',
         'click #add-education': '_onAddEducation',
         'click #add-family': '_addFamilyBlock',
         'click .family-btn': '_onSelectFamily',
@@ -259,7 +259,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <label class="fs-6">Tipo de discapacidad</label>
                                 <input type="text"name="famDiscTipo_${this.familyCount}" class="form-control rounded-pill fam-disc-tipo" disabled />
                         </div>
+                    </div>
 
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-12 mt-3 d-flex justify-content-end">
+                            <button type="button" class="btn btn-outline-danger rounded-pill px-4 remove-family">
+                                - Eliminar este familiar
+                            </button>
+                        </div>
                     </div>
 
                 </div>
@@ -1907,10 +1914,17 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _onRemoveFamily(ev) {
-        if (this.familyCount > 0) {
-            this.$('#family_container .family-block').last().remove();
-            this.familyCount--;
+        const $block = $(ev.currentTarget).closest('.family-block');
+        const index = this.$('#family_container .family-block').index($block);
+        if (index === 0) {
+            return; 
         }
+
+        $block.remove();
+        this.familyCount--;
+        this.$('#family_container .family-block').each((i, el) => {
+            $(el).find('span.text-info').text(`Familiar # ${i + 1}`);
+        });
     },
 
     async _onAddEducation(ev) {
