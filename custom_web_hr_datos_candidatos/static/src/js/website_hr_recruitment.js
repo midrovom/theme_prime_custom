@@ -29,16 +29,15 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'submit': '_onSubmitForm',
         'click #add-experience': '_onAddExperience',
         'click #add-reference': '_onAddReference',
-        'click #add-family': '_onAddFamily',
         'click #remove-family': '_onRemoveFamily',
+        'click #add-education': '_onAddEducation',
+        'click #add-family': '_addFamilyBlock',
 
         'change #hr-perfil': '_validateImage',
 
         'input #experience_container input, #experience_container select, #experience_container textarea': '_checkFieldsFilled',
         'change #experience_container input, #experience_container select, #experience_container textarea': '_checkFieldsFilled',
 
-        'click #add-education': '_onAddEducation',
-        'click #add-family': '_addFamilyBlock',
         'input #education_container input, #education_container select': '_checkEducationFieldsFilled',
         'input input[name^="famTelefono_"]': '_validateDynamicPhone',
         'input input[name^="telefonos_"]': '_validateDynamicPhone',
@@ -1742,24 +1741,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('input[name="knownPosee_1"]').removeClass('is-invalid');
     },
 
-    _onAddFamily(ev) {
-        this.familyCount++;
-        this._addFamilyBlock();
-        if (this.familyCount > 1) {
-            this.$('#remove-family').prop('disabled', false);
-        }
-    },
-
-    _onRemoveFamily(ev) {
-        if (this.familyCount > 1) {
-            this.$('#family_container .family-block').last().remove();
-            this.familyCount--;
-        }
-        if (this.familyCount <= 1) {
-            this.$('#remove-family').prop('disabled', true);
-        }
-    },
-
     _toggleParentescoField() {
         const relation = this.$('input[name="knownRelacion_1"]:checked').val();
         const $parentesco = this.$('input[name="knownParentesco_1"]');
@@ -1902,6 +1883,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.familyCount++;
         const html = await this._getFamilyBlock();
         this.$('#family_container').append(html);
+
+        if (this.familyCount > 1) {
+            this.$('#remove-family').prop('disabled', false);
+        }
+
         const i = this.familyCount;
 
         this.$(`input[name="famDisc_${i}"]`).on('change', () => {
@@ -1917,6 +1903,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             const name = $(ev.currentTarget).attr('name');
             this.$(`input[name="${name}"]`).removeClass('is-invalid');
         });
+    },
+
+    _onRemoveFamily(ev) {
+        if (this.familyCount > 1) {
+            this.$('#family_container .family-block').last().remove();
+            this.familyCount--;
+        }
+        if (this.familyCount <= 1) {
+            this.$('#remove-family').prop('disabled', true);
+        }
     },
 
     async _onAddEducation(ev) {
