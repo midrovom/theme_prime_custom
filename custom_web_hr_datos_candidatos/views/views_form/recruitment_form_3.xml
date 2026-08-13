@@ -9,16 +9,13 @@
             </div>
 
             <div id="education_container"></div>
-
+            
             <div class="col">
                 <div class="row d-flex justify-content-center mb-4">
                     <div class="col-12 col-md-10">
                         <div class="row">
                             <span class="text-info fs-5" id="add-education">
                                 + añadir educación
-                            </span>
-                            <span class="text-danger fs-5 ms-4" id="remove-experience">
-                                - eliminar experiencia
                             </span>
                         </div>
                     </div>
@@ -101,16 +98,19 @@
                         </div>
                     </div>
 
-                    <div class="col-12 col-md-10">
-                        <div class="row">
-                            <span class="text-info fs-5" id="add-experience">
-                                + añadir experiencia
-                            </span>
-                        </div>
+                    <div id="experience_container"></div>
+
+                    <div class="col-12 col-md-10 d-flex justify-content-between mt-3">
+                        <button type="button" id="add-experience" class="btn btn-outline-info rounded-pill px-4">
+                            + Añadir experiencia
+                        </button>
+                        <button type="button" id="remove-experience" class="btn btn-outline-danger rounded-pill px-4">
+                            - Eliminar experiencia
+                        </button>
                     </div>
+
                 </div>
 
-                <div id="experience_container"></div>
 
                 <input type="hidden" name="total_experiences" id="total_experiences" value="1"/>
 
