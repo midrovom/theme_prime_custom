@@ -177,14 +177,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <span class="fw-normal fs-4 text-info">
                             ${this.familyCount === 1 ? 'Datos Familiares' : 'Familiar #' + this.familyCount}
                         </span>
-
-                        ${this.familyCount > 1 ? `
-                            <button type="button" 
-                                    class="btn btn-outline-danger rounded-pill px-4 remove-family" 
-                                    data-index="${this.familyCount}">
-                                - Eliminar
-                            </button>
-                        ` : ''}
                     </div>
 
                     <div class="row g-3">

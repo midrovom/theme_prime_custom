@@ -133,9 +133,12 @@
                 <div id="family_container"></div>
 
                 <div class="row d-flex justify-content-center my-4">
-                    <div class="col-12 col-md-10 text-start">
+                    <div class="col-12 col-md-10 d-flex justify-content-between">
                         <button type="button" id="add-family" class="btn btn-outline-primary rounded-pill px-4">
                             + Agregar familiar
+                        </button>
+                        <button type="button" id="remove-family" class="btn btn-outline-danger rounded-pill px-4">
+                            - Eliminar familiar
                         </button>
                     </div>
                 </div>
