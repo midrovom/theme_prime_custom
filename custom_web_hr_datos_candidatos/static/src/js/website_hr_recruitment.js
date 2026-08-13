@@ -1974,6 +1974,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         if (this.experienceCount > 1) {
             this.$('#experience_container .experience-block').last().remove();
             this.experienceCount--;
+            this.$('#experience_container .experience-block').each((index, el) => {
+                $(el).find('.separator-education span').text(`Experiencia Laboral # ${index + 1}`);
+            });
         }
     },
 
