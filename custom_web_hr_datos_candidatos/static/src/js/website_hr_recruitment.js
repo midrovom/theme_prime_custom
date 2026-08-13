@@ -536,6 +536,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
+                        <div class="row d-flex justify-content-between">
+                            <div class="col-12 mt-3 d-flex justify-content-end">
+                                <button type="button" class="btn btn-outline-danger rounded-pill px-4 remove-experience-btn">
+                                    - Eliminar esta experiencia
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>

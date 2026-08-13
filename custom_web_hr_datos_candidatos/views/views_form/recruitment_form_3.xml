@@ -98,10 +98,10 @@
                         </div>
                     </div>
 
-                    <div class="col-12 col-md-10 d-flex justify-content-between mt-3">
+                    <!-- <div class="col-12 col-md-10 d-flex justify-content-between mt-3">
                         <button type="button" id="add-experience" class="btn btn-outline-info rounded-pill px-4"> + Añadir experiencia </button>
                         <button type="button" id="remove-experience" class="btn btn-outline-danger rounded-pill px-4"> - Eliminar experiencia </button>
-                    </div>
+                    </div> -->
 
                     <div id="experience_container"></div>
 
