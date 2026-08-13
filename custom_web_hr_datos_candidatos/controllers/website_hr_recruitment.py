@@ -156,6 +156,7 @@ class WebsiteHRRecruitment(http.Controller):
             while kwargs.get(f'famNombre_{k}') is not None:
 
                 name = kwargs.get(f'famNombre_{k}')
+                tipo = kwargs.get(f'famTipo_{k}')
 
                 if name:
                     family_lines.append((0, 0, {
@@ -167,6 +168,7 @@ class WebsiteHRRecruitment(http.Controller):
                         'economically_dependent': kwargs.get(f'famDepende_{k}'),
                         'disability': kwargs.get(f'famDisc_{k}'),
                         'disability_type': kwargs.get(f'famDiscTipo_{k}'),
+                        'familiar_type': tipo,
                     }))
 
                 k += 1
@@ -316,24 +318,6 @@ class WebsiteHRRecruitment(http.Controller):
             # ---------------- Crear postulante ----------------
 
             applicant = request.env['hr.applicant'].sudo().create(applicant_values)
-
-            # ---------------- Adjuntar archivos ----------------
-
-            # files = request.httprequest.files
-            # for field_name, file_storage in files.items():
-            #     if not file_storage.filename:
-            #         continue
-            #     file_content = file_storage.read()
-            #     if not file_content:
-            #         continue
-            #     request.env['ir.attachment'].sudo().create({
-            #         'name': secure_filename(file_storage.filename),
-            #         'type': 'binary',
-            #         'datas': base64.b64encode(file_content),
-            #         'res_model': 'hr.applicant',
-            #         'res_id': applicant.id,
-            #         'mimetype': file_storage.content_type,
-            #     })
 
         except Exception:
             _logger.exception('ERROR FORM COMPLETO')

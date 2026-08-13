@@ -1,22 +1,27 @@
 from odoo import _, api, fields, models
 
+FAMILY_TYPES = [
+    ('1', 'Padre'),
+    ('2', 'Madre'),
+    ('3', 'Hermano(a)'),
+    ('4', 'Conyugue'),
+    ('5', 'Hijo(a)'),
+]
+
 class ApplicantFamily(models.Model):
     _name = 'applicant.family'
     _description = 'Familiares del postulante'
 
-    applicant_id = fields.Many2one(
-        'hr.applicant',
-        string='Postulante',
+    applicant_id = fields.Many2one( 'hr.applicant', string='Postulante',
         ondelete='cascade'
     )
 
+    familiar_type = fields.Selection(selection=FAMILY_TYPES, string="Tipo de familiar", required=True)
     name = fields.Char(string='Nombre completo')
     cedula = fields.Char(string='Cédula')
     birthdate = fields.Date(string='Fecha de nacimiento')
     phone = fields.Char(string='Teléfono')
-
     occupation = fields.Char(string='Ocupación / Empresa')
-
     economically_dependent = fields.Selection(
         [
             ('si', 'Sí'),

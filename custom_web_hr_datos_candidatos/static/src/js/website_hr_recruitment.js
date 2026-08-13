@@ -1894,6 +1894,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.familyCount++;
         const html = await this._getFamilyBlock(parentesco);
         this.$('#family_container').append(html);
+        this.$(`#family_container .family-block:last`).append(`
+            <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
+        `);
 
         if (this.familyCount > 1) {
             this.$('#remove-family').prop('disabled', false);

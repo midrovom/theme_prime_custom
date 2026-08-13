@@ -90,6 +90,7 @@
                     <page string="Datos Familiares" name="page_family">
                         <field name="family_ids" readonly="is_readonly_group">
                             <list>
+                                <field name="familiar_type"/>
                                 <field name="name"/>
                                 <field name="cedula"/>
                                 <field name="birthdate"/>
