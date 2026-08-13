@@ -1898,10 +1898,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
         `);
 
-        if (this.familyCount > 1) {
-            this.$('#remove-family').prop('disabled', false);
-        }
-
         const i = this.familyCount;
         this.$(`input[name="famDisc_${i}"]`).on('change', () => {
             this._toggleFamilyDisability(i);
@@ -1913,12 +1909,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _onRemoveFamily(ev) {
-        if (this.familyCount > 1) {
+        if (this.familyCount > 0) {
             this.$('#family_container .family-block').last().remove();
             this.familyCount--;
-        }
-        if (this.familyCount <= 1) {
-            this.$('#remove-family').prop('disabled', true);
         }
     },
 
