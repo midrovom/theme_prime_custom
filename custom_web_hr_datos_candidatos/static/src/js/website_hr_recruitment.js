@@ -29,6 +29,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'submit': '_onSubmitForm',
         'click #add-experience': '_onAddExperience',
         'click #add-reference': '_onAddReference',
+        'click .remove-family': '_onRemoveFamily',
 
         'change #hr-perfil': '_validateImage',
 
@@ -177,6 +178,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             ${this.familyCount === 1 ? 'Datos Familiares' : 'Familiar #' + this.familyCount}
                         </span>
                     </div>
+
+                    <div class="col-12 text-end">
+                        <button type="button" class="btn btn-danger btn-sm remove-family" data-index="${this.familyCount}">
+                            Eliminar
+                        </button>
+                    </div>
+
 
                     <div class="row g-3">
 
@@ -1738,6 +1746,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('input[name="knownPosee_1"]').removeClass('is-invalid');
     },
 
+    _onRemoveFamily(ev) {
+        const index = $(ev.currentTarget).data('index');
+        $(ev.currentTarget).closest('.family-block').remove();
+    },
+
     _toggleParentescoField() {
         const relation = this.$('input[name="knownRelacion_1"]:checked').val();
         const $parentesco = this.$('input[name="knownParentesco_1"]');
@@ -1750,23 +1763,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             $parentesco.removeClass('is-invalid');
         }
     },
-
-    // _toggleDisabilityFields: function() {
-    //     const value = this.$('input[name="discapacidad"]:checked').val();
-    //     const tipo = this.$('input[name="tipo_discapacidad"]');
-    //     const porcentaje = this.$('input[name="porcentaje_discapacidad"]');
-    //     const $radios = this.$('input[name="discapacidad"]');
-        
-    //     $radios.removeClass('is-invalid');
-
-    //     if (value === 'no') {
-    //         tipo.prop('disabled', true).val('');
-    //         porcentaje.prop('disabled', true).val('');
-    //     } else {
-    //         tipo.prop('disabled', false);
-    //         porcentaje.prop('disabled', false);
-    //     }
-    // },
 
     _toggleDisabilityFields() {
         const $discapacidadSi = this.$('input[name="discapacidad"][value="si"]');
