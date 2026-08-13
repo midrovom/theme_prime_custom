@@ -264,7 +264,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     <div class="row d-flex justify-content-between">
                         <div class="col-12 mt-3 d-flex justify-content-end">
                             <button type="button" class="btn btn-outline-danger rounded-pill px-4 remove-family">
-                                - Eliminar este familiar
+                                Eliminar
                             </button>
                         </div>
                     </div>
@@ -546,7 +546,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <div class="row d-flex justify-content-between">
                             <div class="col-12 mt-3 d-flex justify-content-end">
                                 <button type="button" class="btn btn-outline-danger rounded-pill px-4 remove-experience">
-                                    - Eliminar esta experiencia
+                                    Eliminar
                                 </button>
                             </div>
                         </div>
@@ -1914,17 +1914,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _onRemoveFamily(ev) {
-        const $block = $(ev.currentTarget).closest('.family-block');
-        const index = this.$('#family_container .family-block').index($block);
-        if (index === 0) {
-            return; 
+        if (this.familyCount > 0) {
+            this.$('#family_container .family-block').last().remove();
+            this.familyCount--;
         }
-
-        $block.remove();
-        this.familyCount--;
-        this.$('#family_container .family-block').each((i, el) => {
-            $(el).find('span.text-info').text(`Familiar # ${i + 1}`);
-        });
     },
 
     async _onAddEducation(ev) {
