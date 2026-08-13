@@ -29,7 +29,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'submit': '_onSubmitForm',
         'click #add-experience': '_onAddExperience',
         'click #add-reference': '_onAddReference',
-        'click .remove-family': '_onRemoveFamily',
+        'click #remove-family': '_onRemoveFamily',
 
         'change #hr-perfil': '_validateImage',
 
@@ -1740,8 +1740,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _onRemoveFamily(ev) {
-        const index = $(ev.currentTarget).data('index');
-        $(ev.currentTarget).closest('.family-block').remove();
+        if (this.familyCount > 1) {
+            this.$('#family_container .family-block').last().remove();
+            this.familyCount--;
+        }
     },
 
     _toggleParentescoField() {
