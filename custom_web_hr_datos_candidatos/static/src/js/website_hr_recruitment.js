@@ -1914,10 +1914,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _onRemoveFamily(ev) {
-        if (this.familyCount > 0) {
-            this.$('#family_container .family-block').last().remove();
-            this.familyCount--;
-        }
+        const $block = $(ev.currentTarget).closest('.family-block');
+        $block.remove();
+        this.familyCount--;
     },
 
     async _onAddEducation(ev) {
