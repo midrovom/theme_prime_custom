@@ -132,13 +132,19 @@
 
                 <div class="row d-flex justify-content-center my-4">
                     <div class="col-12 col-md-10">
-                        <label class="fs-6">Seleccione parentesco:</label>
-                        <select id="family-select" class="form-select rounded-pill px-4">
-                            <option value="">Seleccione...</option>
-                            <t t-foreach="family_types" t-as="ft">
-                                <option t-att-value="ft[1]"><t t-esc="ft[1]"/></option>
-                            </t>
-                        </select>
+                        <div class="py-3 d-flex justify-content-start mb-3">
+                            <span class="fw-normal fs-4 text-info">Datos Familiares</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center my-4">
+                    <div class="col-12 col-md-10 d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="Padre">Padre</button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="Madre">Madre</button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="Hermano">Hermano(a)</button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="Conyugue">Conyugue</button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="Hijo">Hijo(a)</button>
                     </div>
                 </div>
 
@@ -146,9 +152,6 @@
 
                 <div class="row d-flex justify-content-center my-4">
                     <div class="col-12 col-md-10 d-flex justify-content-between">
-                        <button type="button" id="add-family" class="btn btn-outline-primary rounded-pill px-4">
-                            + Agregar familiar
-                        </button>
                         <button type="button" id="remove-family" class="btn btn-outline-danger rounded-pill px-4">
                             - Eliminar familiar
                         </button>

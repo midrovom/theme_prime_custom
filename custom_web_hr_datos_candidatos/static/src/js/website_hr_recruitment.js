@@ -32,6 +32,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'click #remove-family': '_onRemoveFamily',
         'click #add-education': '_onAddEducation',
         'click #add-family': '_addFamilyBlock',
+        'click .family-btn': '_onSelectFamily',
 
         'change #hr-perfil': '_validateImage',
 
@@ -90,7 +91,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="enfermedad_laboral"]': function() {this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');},
         'change input[name="cirugia_realizada"]': function() {this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');},
         'change #curriculum-vitae': '_onFileSelected',
-        'change #family-select': '_onSelectFamily',
     },
     
     /**
@@ -175,15 +175,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return `
             <div class="row d-flex justify-content-center family-block" data-type="${parentesco}">
                 <div class="col-12 col-md-10">
-
                     <div class="py-3 d-flex justify-content-start mb-3">
-                        <span class="fw-normal fs-4 text-info">
-                            ${this.familyCount === 1 ? 'Datos Familiares' : ''}
-                        </span>
-                        <span class="fw-normal fs-5 text-secondary ms-3">
-                            ${parentesco}
-                        </span>
-
+                        <span class="fw-normal fs-4 text-info">${parentesco}</span>
                     </div>
 
                     <div class="row g-3">
@@ -1886,9 +1879,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     _onSelectFamily(ev) {
-        const parentesco = $(ev.currentTarget).val();
+        const parentesco = $(ev.currentTarget).data('type');
         if (!parentesco) return;
-
         if (["Padre","Madre","Conyugue"].includes(parentesco)) {
             if (this.$(`#family_container .family-block[data-type="${parentesco}"]`).length) {
                 alert(`${parentesco} ya fue agregado`);
@@ -1901,7 +1893,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     async _addFamilyBlock(parentesco) {
         this.familyCount++;
-        const html = await this._getFamilyBlock(parentesco); // <-- siempre pasamos el parentesco
+        const html = await this._getFamilyBlock(parentesco);
         this.$('#family_container').append(html);
 
         if (this.familyCount > 1) {
