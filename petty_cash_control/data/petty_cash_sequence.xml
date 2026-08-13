@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
-  <record id="seq_petty_cash_fund" model="ir.sequence"><field name="name">Fondos de caja chica</field><field name="code">petty.cash.fund</field><field name="prefix">FON/%(year)s/</field><field name="padding">5</field><field name="company_id" eval="False"/></record>
-  <record id="seq_petty_cash_expense" model="ir.sequence"><field name="name">Gastos de caja chica</field><field name="code">petty.cash.expense</field><field name="prefix">GAS/%(year)s/</field><field name="padding">5</field><field name="company_id" eval="False"/></record>
-  <record id="seq_petty_cash_settlement" model="ir.sequence"><field name="name">Liquidaciones de caja chica</field><field name="code">petty.cash.settlement</field><field name="prefix">LIQ/%(year)s/</field><field name="padding">5</field><field name="company_id" eval="False"/></record>
-</odoo>
