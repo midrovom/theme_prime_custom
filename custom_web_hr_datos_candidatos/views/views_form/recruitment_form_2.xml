@@ -130,6 +130,18 @@
                     </div>
                 </div>
 
+                <div class="row d-flex justify-content-center my-4">
+                    <div class="col-12 col-md-10">
+                        <label class="fs-6">Seleccione parentesco:</label>
+                        <select id="family-select" class="form-select rounded-pill px-4">
+                            <option value="">Seleccione...</option>
+                            <t t-foreach="family_types" t-as="ft">
+                                <option t-att-value="ft[1]"><t t-esc="ft[1]"/></option>
+                            </t>
+                        </select>
+                    </div>
+                </div>
+
                 <div id="family_container"></div>
 
                 <div class="row d-flex justify-content-center my-4">

@@ -90,6 +90,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="enfermedad_laboral"]': function() {this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');},
         'change input[name="cirugia_realizada"]': function() {this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');},
         'change #curriculum-vitae': '_onFileSelected',
+        'change #family-select': '_onSelectFamily',
     },
     
     /**
@@ -170,15 +171,20 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     },
 
+
     async _getFamilyBlock() {
         return `
-            <div class="row d-flex justify-content-center family-block">
+            <div class="row d-flex justify-content-center family-block" data-type="${parentesco}">
                 <div class="col-12 col-md-10">
 
                     <div class="py-3 d-flex justify-content-start mb-3">
                         <span class="fw-normal fs-4 text-info">
-                            ${this.familyCount === 1 ? 'Datos Familiares' : 'Familiar #' + this.familyCount}
+                            ${this.familyCount === 1 ? 'Datos Familiares' : ''}
                         </span>
+                        <span class="fw-normal fs-5 text-secondary ms-3">
+                            ${parentesco}
+                        </span>
+                        
                     </div>
 
                     <div class="row g-3">
@@ -1879,9 +1885,22 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._checkEducationFieldsFilled();
     },
 
-    async _addFamilyBlock() {
+    _onSelectFamily(ev) {
+        const parentesco = $(ev.currentTarget).val();
+        if (!parentesco) return;
+        if (["Padre","Madre","Conyugue"].includes(parentesco)) {
+            if (this.$(`#family_container .family-block[data-type="${parentesco}"]`).length) {
+                alert(`${parentesco} ya fue agregado`);
+                return;
+            }
+        }
+        
+        this._addFamilyBlock(parentesco);
+    },
+
+    async _addFamilyBlock(parentesco) {
         this.familyCount++;
-        const html = await this._getFamilyBlock();
+        const html = await this._getFamilyBlock(parentesco);
         this.$('#family_container').append(html);
 
         if (this.familyCount > 1) {
@@ -1889,17 +1908,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
 
         const i = this.familyCount;
-
         this.$(`input[name="famDisc_${i}"]`).on('change', () => {
             this._toggleFamilyDisability(i);
         });
-
         this.$(`input[name="famDepende_${i}"]`).on('change', (ev) => {
-            const name = $(ev.currentTarget).attr('name');
-            this.$(`input[name="${name}"]`).removeClass('is-invalid');
-        });
-
-        this.$(`input[name="famDisc_${i}"]`).on('change', (ev) => {
             const name = $(ev.currentTarget).attr('name');
             this.$(`input[name="${name}"]`).removeClass('is-invalid');
         });

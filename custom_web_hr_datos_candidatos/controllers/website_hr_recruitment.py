@@ -31,6 +31,14 @@ DOCUMENT_TYPES = [
     ('pasaporte', 'Pasaporte'),
 ]
 
+FAMILY_TYPES = [
+    ('1', 'Padre'),
+    ('2', 'Madre'),
+    ('3', 'Hermano(a)'),
+    ('4', 'Conyugue'),
+    ('5', 'Hijo(a)'),
+]
+
 class WebsiteHRRecruitment(http.Controller):
 
     @http.route('''/jobs/recruitment/<model("hr.job"):job>''', type="http", auth="public", website=True, sitemap=True)
@@ -43,6 +51,7 @@ class WebsiteHRRecruitment(http.Controller):
             "months": MONTHS,
             "years": YEARS,
             "days": DAYS,
+            "family_types": FAMILY_TYPES,
         }
         return request.render("custom_web_hr_datos_candidatos.web_recruitment", values)
 
