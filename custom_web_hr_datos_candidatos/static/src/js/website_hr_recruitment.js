@@ -1741,10 +1741,21 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('input[name="knownPosee_1"]').removeClass('is-invalid');
     },
 
+    _onAddFamily(ev) {
+        this.familyCount++;
+        this._addFamilyBlock();
+        if (this.familyCount > 1) {
+            this.$('#remove-family').prop('disabled', false);
+        }
+    },
+
     _onRemoveFamily(ev) {
         if (this.familyCount > 1) {
             this.$('#family_container .family-block').last().remove();
             this.familyCount--;
+        }
+        if (this.familyCount <= 1) {
+            this.$('#remove-family').prop('disabled', true);
         }
     },
 
