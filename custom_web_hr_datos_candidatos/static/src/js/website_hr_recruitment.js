@@ -28,6 +28,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'click #prev-button-2': '_onPrevClickStep2',
         'submit': '_onSubmitForm',
         'click #add-experience': '_onAddExperience',
+        'click #remove-experience': '_onRemoveExperience',
         'click #add-reference': '_onAddReference',
         'click #remove-family': '_onRemoveFamily',
         'click #add-education': '_onAddEducation',
@@ -420,160 +421,285 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return block;
     },
 
+    // async _getExperienceBlock(isFirstBlock = false) {
+    //     await loadCountriesAndStates(); 
+
+    //     const separator = isFirstBlock ? '' : `
+    //         <div class="row d-flex justify-content-center my-4">
+    //             <div class="col-12 col-md-10">
+    //                 <div class="separator-education" style="
+    //                     border-top: 2px solid #e0e0e0;
+    //                     position: relative;
+    //                     margin: 20px 0;
+    //                 ">
+    //                     <span style="
+    //                         position: absolute;
+    //                         top: -12px;
+    //                         left: 50%;
+    //                         transform: translateX(-50%);
+    //                         background: white;
+    //                         padding: 0 15px;
+    //                         color: #666;
+    //                         font-size: 14px;
+    //                     ">Experiencia Laboral # ${this.experienceCount - 1}</span>
+    //                 </div>
+    //             </div>
+    //         </div>
+    //     `;
+
+    //     const block = `
+    //         <div class="row d-flex justify-content-center">
+    //             <div class="col-12 col-md-10">
+    //                 <div class="row d-flex justify-content-between">
+
+    //                     <!-- Tiempo que prestó su servicio -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="tiempo_${this.experienceCount}" class="fs-6">Tiempo que prestó su servicio:</label>
+    //                         <input id="tiempo_${this.experienceCount}" type="text" name="tiempo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+    //                     </div>
+
+    //                     <!-- Nombre de la compañía -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="company_${this.experienceCount}" class="fs-6">Nombre de la compañía:</label>
+    //                         <input id="company_${this.experienceCount}" type="text" name="company_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+    //                     </div>
+
+    //                     <!-- País Experiencia -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País:</label>
+    //                         <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
+    //                             <option value=""></option> ${ cachedCountries.map(country => `
+    //                                 <option value="country-${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
+    //                                     ${country.name}
+    //                                 </option>
+    //                             `).join('') }
+    //                         </select>
+    //                     </div>
+
+    //                     <!-- Ciudad/Provincia Experiencia -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="ciudad-experiencia_${this.experienceCount}" class="fs-6">Ciudad/Provincia:</label>
+    //                         <select id="ciudad-experiencia_${this.experienceCount}" name="ciudadExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
+    //                             <option value=""></option> ${ cachedStatesByCountry[ cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
+    //                                 <option value="state-${state.id}">${state.name}</option>
+    //                             `).join('') }
+    //                         </select>
+    //                     </div>
+
+    //                     <!-- Teléfono -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="telefonos_${this.experienceCount}" class="fs-6">Teléfono:</label>
+    //                         <input id="telefonos_${this.experienceCount}" type="text" name="telefonos_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+    //                     </div>
+
+    //                     <!-- Cargo desempeñado -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="cargo_${this.experienceCount}" class="fs-6">Cargo desempeñado:</label>
+    //                         <input id="cargo_${this.experienceCount}" type="text" name="cargo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+    //                     </div>
+
+    //                     <!-- Ingreso mensual -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="ingreso_${this.experienceCount}" class="fs-6">Ingreso mensual:</label>
+    //                         <input id="ingreso_${this.experienceCount}" type="number" name="ingreso_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+    //                     </div>
+
+    //                     <!-- Motivo de separación -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="motivo_${this.experienceCount}" class="fs-6">Motivo de separación:</label>
+    //                         <input id="motivo_${this.experienceCount}" type="text" name="motivo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+    //                     </div>
+
+    //                     <!-- Nombre de su jefe directo -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="jefe_${this.experienceCount}" class="fs-6">Nombre de su jefe directo:</label>
+    //                         <input id="jefe_${this.experienceCount}" type="text" name="jefe_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+    //                     </div>
+
+    //                     <!-- Cargo de su jefe directo -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="cargo-jefe_${this.experienceCount}" class="fs-6">Cargo de su jefe directo:</label>
+    //                         <input id="cargo-jefe_${this.experienceCount}" type="text" name="cargoJefe_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+    //                     </div>
+
+    //                     <!-- Fecha de inicio -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="job-inicio_${this.experienceCount}" class="fs-6">Desde:</label>
+    //                         <input id="job-inicio_${this.experienceCount}" type="date" name="jobInicio_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+    //                     </div>
+
+    //                     <!-- Año de finalización -->
+    //                     <div class="col-12 col-md-3 mb-4">
+    //                         <label for="job-fin_${this.experienceCount}" class="fs-6">Hasta:</label>
+    //                         <select id="job-fin_${this.experienceCount}" name="jobFin_${this.experienceCount}" class="form-select rounded-pill py-2">
+    //                             <option selected="selected"></option>
+    //                         </select>
+    //                     </div>
+
+    //                 </div>
+    //             </div>
+    //         </div>
+    //     ` + separator;
+
+    //     setTimeout(() => {
+    //         const startId = `job-inicio_${this.experienceCount}`;
+    //         const endId = `job-fin_${this.experienceCount}`;
+    //         const startInput = document.getElementById(startId);
+    //         const endSelect = document.getElementById(endId);
+
+    //         if (startInput && endSelect) {
+    //             startInput.addEventListener("change", () => {
+    //                 const startDate = startInput.value;
+    //                 if (startDate) {
+    //                     const startYear = new Date(startDate).getFullYear();
+    //                     const currentYear = new Date().getFullYear();
+
+    //                     // reconstruir opciones
+    //                     endSelect.innerHTML = "<option value=''></option>";
+
+    //                     // recorrer hasta el año anterior al actual
+    //                     for (let year = startYear; year < currentYear; year++) {
+    //                         const opt = document.createElement("option");
+    //                         opt.value = year;
+    //                         opt.textContent = year;
+    //                         endSelect.appendChild(opt);
+    //                     }
+
+    //                     // agregar solo "Presente" en lugar del año actual
+    //                     const presentOpt = document.createElement("option");
+    //                     presentOpt.value = "presente";
+    //                     presentOpt.textContent = "Presente";
+    //                     endSelect.appendChild(presentOpt);
+    //                 }
+    //             });
+    //         }
+    //     }, 0);
+
+
+    //     return block;
+    // },
+
     async _getExperienceBlock(isFirstBlock = false) {
         await loadCountriesAndStates(); 
 
         const separator = isFirstBlock ? '' : `
             <div class="row d-flex justify-content-center my-4">
                 <div class="col-12 col-md-10">
-                    <div class="separator-education" style="
-                        border-top: 2px solid #e0e0e0;
-                        position: relative;
-                        margin: 20px 0;
-                    ">
-                        <span style="
-                            position: absolute;
-                            top: -12px;
-                            left: 50%;
-                            transform: translateX(-50%);
-                            background: white;
-                            padding: 0 15px;
-                            color: #666;
-                            font-size: 14px;
-                        ">Experiencia Laboral # ${this.experienceCount - 1}</span>
+                    <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
+                        <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+                            background: white; padding: 0 15px; color: #666; font-size: 14px;">
+                            Experiencia Laboral # ${this.experienceCount}
+                        </span>
                     </div>
                 </div>
             </div>
         `;
 
         const block = `
-            <div class="row d-flex justify-content-center">
+            <div class="row d-flex justify-content-center experience-block">
                 <div class="col-12 col-md-10">
                     <div class="row d-flex justify-content-between">
 
                         <!-- Tiempo que prestó su servicio -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="tiempo_${this.experienceCount}" class="fs-6">Tiempo que prestó su servicio:</label>
-                            <input id="tiempo_${this.experienceCount}" type="text" name="tiempo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+                            <label class="fs-6">Tiempo que prestó su servicio:</label>
+                            <input id="tiempo_${this.experienceCount}" type="text" name="tiempo_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Nombre de la compañía -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="company_${this.experienceCount}" class="fs-6">Nombre de la compañía:</label>
-                            <input id="company_${this.experienceCount}" type="text" name="company_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+                            <label class="fs-6">Nombre de la compañía:</label>
+                            <input id="company_${this.experienceCount}" type="text" name="company_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- País Experiencia -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="pais-experiencia_${this.experienceCount}" class="fs-6">País:</label>
-                            <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
+                            <label class="fs-6">País:</label>
+                            <select id="pais-experiencia_${this.experienceCount}" name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2" required>
                                 <option value=""></option> ${ cachedCountries.map(country => `
                                     <option value="country-${country.id}" ${country.name === 'Ecuador' ? 'selected' : ''}>
                                         ${country.name}
                                     </option>
                                 `).join('') }
                             </select>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Ciudad/Provincia Experiencia -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="ciudad-experiencia_${this.experienceCount}" class="fs-6">Ciudad/Provincia:</label>
-                            <select id="ciudad-experiencia_${this.experienceCount}" name="ciudadExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
+                            <label class="fs-6">Ciudad/Provincia:</label>
+                            <select id="ciudad-experiencia_${this.experienceCount}" name="ciudadExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2" required>
                                 <option value=""></option> ${ cachedStatesByCountry[ cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
                                     <option value="state-${state.id}">${state.name}</option>
                                 `).join('') }
                             </select>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Teléfono -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="telefonos_${this.experienceCount}" class="fs-6">Teléfono:</label>
-                            <input id="telefonos_${this.experienceCount}" type="text" name="telefonos_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+                            <label class="fs-6">Teléfono:</label>
+                            <input id="telefonos_${this.experienceCount}" type="text" name="telefonos_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Cargo desempeñado -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="cargo_${this.experienceCount}" class="fs-6">Cargo desempeñado:</label>
-                            <input id="cargo_${this.experienceCount}" type="text" name="cargo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+                            <label class="fs-6">Cargo desempeñado:</label>
+                            <input id="cargo_${this.experienceCount}" type="text" name="cargo_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Ingreso mensual -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="ingreso_${this.experienceCount}" class="fs-6">Ingreso mensual:</label>
-                            <input id="ingreso_${this.experienceCount}" type="number" name="ingreso_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+                            <label class="fs-6">Ingreso mensual:</label>
+                            <input id="ingreso_${this.experienceCount}" type="number" name="ingreso_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Motivo de separación -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="motivo_${this.experienceCount}" class="fs-6">Motivo de separación:</label>
-                            <input id="motivo_${this.experienceCount}" type="text" name="motivo_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+                            <label class="fs-6">Motivo de separación:</label>
+                            <input id="motivo_${this.experienceCount}" type="text" name="motivo_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Nombre de su jefe directo -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="jefe_${this.experienceCount}" class="fs-6">Nombre de su jefe directo:</label>
-                            <input id="jefe_${this.experienceCount}" type="text" name="jefe_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+                            <label class="fs-6">Nombre de su jefe directo:</label>
+                            <input id="jefe_${this.experienceCount}" type="text" name="jefe_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Cargo de su jefe directo -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="cargo-jefe_${this.experienceCount}" class="fs-6">Cargo de su jefe directo:</label>
-                            <input id="cargo-jefe_${this.experienceCount}" type="text" name="cargoJefe_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+                            <label class="fs-6">Cargo de su jefe directo:</label>
+                            <input id="cargo-jefe_${this.experienceCount}" type="text" name="cargoJefe_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Fecha de inicio -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="job-inicio_${this.experienceCount}" class="fs-6">Desde:</label>
-                            <input id="job-inicio_${this.experienceCount}" type="date" name="jobInicio_${this.experienceCount}" class="form-control rounded-pill py-2"/>
+                            <label class="fs-6">Desde:</label>
+                            <input id="job-inicio_${this.experienceCount}" type="date" name="jobInicio_${this.experienceCount}" class="form-control rounded-pill py-2" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                         <!-- Año de finalización -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label for="job-fin_${this.experienceCount}" class="fs-6">Hasta:</label>
-                            <select id="job-fin_${this.experienceCount}" name="jobFin_${this.experienceCount}" class="form-select rounded-pill py-2">
-                                <option selected="selected"></option>
+                            <label class="fs-6">Hasta:</label>
+                            <select id="job-fin_${this.experienceCount}" name="jobFin_${this.experienceCount}" class="form-select rounded-pill py-2" required>
+                                <option value=""></option>
                             </select>
+                            <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
                     </div>
                 </div>
             </div>
         ` + separator;
-
-        setTimeout(() => {
-            const startId = `job-inicio_${this.experienceCount}`;
-            const endId = `job-fin_${this.experienceCount}`;
-            const startInput = document.getElementById(startId);
-            const endSelect = document.getElementById(endId);
-
-            if (startInput && endSelect) {
-                startInput.addEventListener("change", () => {
-                    const startDate = startInput.value;
-                    if (startDate) {
-                        const startYear = new Date(startDate).getFullYear();
-                        const currentYear = new Date().getFullYear();
-
-                        // reconstruir opciones
-                        endSelect.innerHTML = "<option value=''></option>";
-
-                        // recorrer hasta el año anterior al actual
-                        for (let year = startYear; year < currentYear; year++) {
-                            const opt = document.createElement("option");
-                            opt.value = year;
-                            opt.textContent = year;
-                            endSelect.appendChild(opt);
-                        }
-
-                        // agregar solo "Presente" en lugar del año actual
-                        const presentOpt = document.createElement("option");
-                        presentOpt.value = "presente";
-                        presentOpt.textContent = "Presente";
-                        endSelect.appendChild(presentOpt);
-                    }
-                });
-            }
-        }, 0);
-
 
         return block;
     },
@@ -1825,14 +1951,28 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     _onSubmitForm(ev) {
         ev.preventDefault();
+        let valid = true;
 
-        if (!this._validateCurrentStep3()) return;
+        if (this.experienceCount < 3) {
+            alert("Debe ingresar al menos 3 experiencias laborales.");
+            return;
+        }
 
-        this.$('#submit-form')
-            .prop('disabled', true)
-            .text('Enviando...');
+        this.$('#experience_container .experience-block input, #experience_container .experience-block select').each((i, el) => {
+            if (!$(el).val()) {
+                $(el).addClass('is-invalid');
+                valid = false;
+            } else {
+                $(el).removeClass('is-invalid');
+            }
+        });
 
-        this.el.submit();
+        if (!valid) {
+            alert("Complete todos los campos de experiencia antes de enviar.");
+            return;
+        }
+
+        ev.currentTarget.submit();
     },
 
     //----------------------------------------------------------------------
@@ -1955,6 +2095,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             'opacity': '0.5',
             'pointer-events': 'none'
         });
+    },
+
+    _onRemoveExperience(ev) {
+        if (this.experienceCount > 1) {
+            this.$('#experience_container .experience-block').last().remove();
+            this.experienceCount--;
+        }
     },
 
     async _addReferenceBlock() {
