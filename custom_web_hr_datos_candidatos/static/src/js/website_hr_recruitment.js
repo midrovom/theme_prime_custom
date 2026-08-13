@@ -557,7 +557,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         // reconstruir opciones
                         endSelect.innerHTML = "<option value=''></option>";
 
-                        for (let year = startYear; year <= currentYear; year++) {
+                        for (let year = startYear; year < currentYear; year++) {
                             const opt = document.createElement("option");
                             opt.value = year;
                             opt.textContent = year;
@@ -572,6 +572,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 });
             }
         }, 0);
+
 
         return block;
     },
