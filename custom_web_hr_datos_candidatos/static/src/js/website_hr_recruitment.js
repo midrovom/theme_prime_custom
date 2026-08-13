@@ -164,10 +164,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             'pointer-events': 'none'
         });
 
-        this.$('#remove-family').prop('disabled', true); 
         this._checkFieldsFilled();
         this._checkEducationFieldsFilled();
-
     },
 
     async _getFamilyBlock(parentesco) {
@@ -660,7 +658,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
 
         if (invalidFiles.length > 0) {
-
             container.innerHTML = `
                 <div class="text-danger custom-message fs-6">
                     Solo se permiten archivos PDF.
@@ -672,34 +669,27 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
 
         this.uploadedFiles = this.uploadedFiles.concat(newFiles);
-
         this.uploadedFiles = this.uploadedFiles.filter(
             (file, index, self) =>
                 index === self.findIndex(f => f.name === file.name)
         );
 
         this._refreshFileInput(input);
-
         this._renderFileList(container, input);
     },
 
     _refreshFileInput: function(input) {
-
         const dataTransfer = new DataTransfer();
-
         this.uploadedFiles.forEach(file => {
             dataTransfer.items.add(file);
         });
-
         input.files = dataTransfer.files;
     },
 
     _renderFileList: function(container, input) {
 
         container.innerHTML = "";
-
         if (this.uploadedFiles.length === 0) {
-
             container.innerHTML = `
                 <div class="text-danger custom-message fs-6">
                     No se seleccionó ningún archivo
@@ -710,17 +700,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
 
         this.uploadedFiles.forEach((file, index) => {
-
             const fileItem = document.createElement("div");
-
-            fileItem.className =
-                "d-flex align-items-center justify-content-between border rounded-pill px-3 py-2 mb-2";
-
+            fileItem.className = "d-flex align-items-center justify-content-between border rounded-pill px-3 py-2 mb-2";
             fileItem.innerHTML = `
                 <span class="text-success">
                     ${file.name}
                 </span>
-
                 <button type="button"
                         class="btn btn-sm btn-danger remove-file"
                         data-index="${index}">
@@ -733,18 +718,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         // Eventos eliminar
         container.querySelectorAll(".remove-file").forEach(button => {
-
             button.addEventListener("click", (e) => {
-
                 const index = parseInt(e.currentTarget.dataset.index);
-
-                // Eliminar archivo
                 this.uploadedFiles.splice(index, 1);
-
-                // Reconstruir input
                 this._refreshFileInput(input);
-
-                // Re-renderizar
                 this._renderFileList(container, input);
             });
         });
