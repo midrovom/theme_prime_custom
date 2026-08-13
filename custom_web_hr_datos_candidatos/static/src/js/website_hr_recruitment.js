@@ -29,6 +29,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'submit': '_onSubmitForm',
         'click #add-experience': '_onAddExperience',
         'click #add-reference': '_onAddReference',
+        'click #add-family': '_onAddFamily',
         'click #remove-family': '_onRemoveFamily',
 
         'change #hr-perfil': '_validateImage',
