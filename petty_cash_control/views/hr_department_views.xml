@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_petty_cash_department_list" model="ir.ui.view">
+    <field name="name">hr.department.petty.cash.list</field><field name="model">hr.department</field>
+    <field name="arch" type="xml"><list><field name="name"/><field name="parent_id"/><field name="company_id" groups="base.group_multi_company"/></list></field>
+  </record>
+  <record id="view_petty_cash_department_form" model="ir.ui.view">
+    <field name="name">hr.department.petty.cash.form</field><field name="model">hr.department</field>
+    <field name="arch" type="xml"><form string="Departamento"><sheet><div class="oe_title"><label for="name"/><h1><field name="name" placeholder="Nombre del departamento"/></h1></div><group><field name="parent_id"/><field name="company_id" groups="base.group_multi_company"/></group></sheet></form></field>
+  </record>
+  <record id="action_petty_cash_departments" model="ir.actions.act_window">
+    <field name="name">Departamentos</field><field name="res_model">hr.department</field><field name="view_mode">list,form</field>
+  </record>
+  <record id="action_petty_cash_departments_list" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="view_mode">list</field><field name="view_id" ref="view_petty_cash_department_list"/><field name="act_window_id" ref="action_petty_cash_departments"/>
+  </record>
+  <record id="action_petty_cash_departments_form" model="ir.actions.act_window.view">
+    <field name="sequence" eval="2"/><field name="view_mode">form</field><field name="view_id" ref="view_petty_cash_department_form"/><field name="act_window_id" ref="action_petty_cash_departments"/>
+  </record>
+</odoo>
