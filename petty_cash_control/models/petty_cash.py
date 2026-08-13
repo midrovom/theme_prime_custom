@@ -2,6 +2,15 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 
 
+class ResPartner(models.Model):
+    _inherit = "res.partner"
+
+    is_petty_cash_beneficiary = fields.Boolean(
+        string="Beneficiario de caja chica",
+        help="Permite seleccionar este contacto como beneficiario de un gasto de caja chica.",
+    )
+
+
 class PettyCashCategory(models.Model):
     _name = "petty.cash.category"
     _description = "Categoría de caja chica"

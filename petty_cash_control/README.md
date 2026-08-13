@@ -1,5 +1,7 @@
 # Control de Caja Chica — Odoo 18 Community
 
+Versión técnica: 18.0.3.1.0
+
 Módulo independiente de Contabilidad para administrar varias cajas chicas.
 
 ## Funciones
