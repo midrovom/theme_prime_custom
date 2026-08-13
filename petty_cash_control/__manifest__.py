@@ -19,10 +19,11 @@
         "views/petty_cash_settlement_views.xml",
         "wizard/petty_cash_report_wizard_views.xml",
         "report/petty_cash_reports.xml",
-        "views/petty_cash_menus.xml",
+
     ],
     "views": [
         "views/petty_cash_expense_views.xml",
+        "views/petty_cash_menus.xml",
     ],
     "application": True,
     "installable": True,
