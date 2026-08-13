@@ -28,7 +28,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'click #prev-button-2': '_onPrevClickStep2',
         'submit': '_onSubmitForm',
         'click #add-experience': '_onAddExperience',
-        'click #remove-experience': '_onRemoveExperience',
+        'click .remove-experience': '_onRemoveExperience',
         'click #add-reference': '_onAddReference',
         'click #remove-family': '_onRemoveFamily',
         'click #add-education': '_onAddEducation',
