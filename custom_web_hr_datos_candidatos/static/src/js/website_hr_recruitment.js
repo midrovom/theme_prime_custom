@@ -171,8 +171,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     },
 
-
-    async _getFamilyBlock() {
+    async _getFamilyBlock(parentesco) {
         return `
             <div class="row d-flex justify-content-center family-block" data-type="${parentesco}">
                 <div class="col-12 col-md-10">
@@ -184,7 +183,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <span class="fw-normal fs-5 text-secondary ms-3">
                             ${parentesco}
                         </span>
-                        
+
                     </div>
 
                     <div class="row g-3">
@@ -1883,24 +1882,26 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
         
         this._checkEducationFieldsFilled();
+
     },
 
     _onSelectFamily(ev) {
         const parentesco = $(ev.currentTarget).val();
         if (!parentesco) return;
+
         if (["Padre","Madre","Conyugue"].includes(parentesco)) {
             if (this.$(`#family_container .family-block[data-type="${parentesco}"]`).length) {
                 alert(`${parentesco} ya fue agregado`);
                 return;
             }
         }
-        
-        this._addFamilyBlock(parentesco);
+
+        this._addFamilyBlock(parentesco); 
     },
 
     async _addFamilyBlock(parentesco) {
         this.familyCount++;
-        const html = await this._getFamilyBlock(parentesco);
+        const html = await this._getFamilyBlock(parentesco); // <-- siempre pasamos el parentesco
         this.$('#family_container').append(html);
 
         if (this.familyCount > 1) {
