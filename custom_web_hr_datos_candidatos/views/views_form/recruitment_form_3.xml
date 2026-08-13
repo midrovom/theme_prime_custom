@@ -104,6 +104,10 @@
 
                     <div id="experience_container"></div>
 
+                    <div id="experience-error" class="invalid-feedback d-block mt-2">
+                        Debe ingresar al menos 3 experiencias laborales.
+                    </div>
+
                 </div>
 
 
