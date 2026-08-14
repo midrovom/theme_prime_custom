@@ -55,19 +55,13 @@ class ErpChangeRequest(models.Model):
         check_company=False,
     )
     developer_id = fields.Many2one(
-        "res.partner",
+        "res.users",
         string="Asignado a",
+        # domain="[('partner_id.parent_id', '=', company_id)]",
         index=True,
         tracking=True,
+        check_company=False,
     )
-    # developer_id = fields.Many2one(
-    #     "res.users",
-    #     string="Asignado a",
-    #     domain="[('partner_id.parent_id', '=', company_id)]",
-    #     index=True,
-    #     tracking=True,
-    #     check_company=False,
-    # )
     priority = fields.Selection(
         [("0", "Baja"), ("1", "Normal"), ("2", "Alta"), ("3", "Urgente")],
         default="1",
