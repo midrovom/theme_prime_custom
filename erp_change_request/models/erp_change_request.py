@@ -41,7 +41,7 @@ class ErpChangeRequest(models.Model):
         "erp.request.department",
         string="Departamento",
         required=True,
-        domain="[('partner_id', '=', partner_id)]",
+        domain="[('is_company', '=', True)]",
         tracking=True,
     )
     requester_id = fields.Many2one(
