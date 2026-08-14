@@ -57,7 +57,7 @@ class ErpChangeRequest(models.Model):
     developer_id = fields.Many2one(
         "res.users",
         string="Asignado a",
-        domain="[('company_ids', 'in', company_id)]",
+        domain="[('company_ids', 'in', [company_id])]",
         index=True,
         tracking=True,
         check_company=True,
