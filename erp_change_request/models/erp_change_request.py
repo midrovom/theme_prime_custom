@@ -231,7 +231,7 @@ class ErpChangeRequest(models.Model):
     def _set_state(self, new_state, message):
         self.ensure_one()
         self.with_context(erp_request_authorized_transition=True).write({"state": new_state})
-        partners = (self.requester_id.partner_id | self.developer_id.partner_id).filtered("email")
+        partners = (self.requester_id.partner_id | self.developer_id).filtered("email")
         self.message_post(
             body=Markup("<p>%s</p>") % message,
             partner_ids=partners.ids,
