@@ -9,7 +9,7 @@ class ErpChangeRequest(models.Model):
     _description = "Solicitud de desarrollo o cambio ERP"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "priority desc, create_date desc, id desc"
-    _check_company_auto = True
+    _check_company_auto = False
 
     name = fields.Char(
         string="Número", required=True, copy=False, readonly=True, default="Nuevo", index=True
@@ -43,7 +43,7 @@ class ErpChangeRequest(models.Model):
         required=True,
         domain="[('company_id', '=', company_id)]",
         tracking=True,
-        check_company=True,
+        check_company=False,
     )
     requester_id = fields.Many2one(
         "res.users",
@@ -52,7 +52,7 @@ class ErpChangeRequest(models.Model):
         default=lambda self: self.env.user,
         index=True,
         tracking=True,
-        check_company=True,
+        check_company=False,
     )
     developer_id = fields.Many2one(
         "res.users",
@@ -60,7 +60,7 @@ class ErpChangeRequest(models.Model):
         domain="[('company_ids', 'in', company_id)]",
         index=True,
         tracking=True,
-        check_company=True,
+        check_company=False,
     )
     priority = fields.Selection(
         [("0", "Baja"), ("1", "Normal"), ("2", "Alta"), ("3", "Urgente")],
