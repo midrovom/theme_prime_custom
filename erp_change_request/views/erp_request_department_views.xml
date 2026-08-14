@@ -5,7 +5,7 @@
         <field name="model">erp.request.department</field>
         <field name="arch" type="xml">
             <list editable="bottom">
-                <field name="customer_id" groups="base.group_multi_company"/>
+                <field name="company_id" groups="base.group_multi_company"/>
                 <field name="name"/>
                 <field name="manager_id" widget="many2one_avatar_user"/>
                 <field name="active"/>
