@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_erp_change_request_user,erp.change.request user,model_erp_change_request,group_erp_request_user,1,1,1,0
+access_erp_change_request_team,erp.change.request team,model_erp_change_request,group_erp_request_team,1,1,1,0
+access_erp_change_request_manager,erp.change.request manager,model_erp_change_request,group_erp_request_manager,1,1,1,1
+access_erp_request_department_user,erp.request.department user,model_erp_request_department,group_erp_request_user,1,0,0,0
+access_erp_request_department_manager,erp.request.department manager,model_erp_request_department,group_erp_request_manager,1,1,1,1
+

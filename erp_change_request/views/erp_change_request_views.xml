@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_erp_change_request_search" model="ir.ui.view">
+        <field name="name">erp.change.request.search</field>
+        <field name="model">erp.change.request</field>
+        <field name="arch" type="xml">
+            <search string="Buscar solicitudes">
+                <field name="name"/><field name="title"/><field name="requester_id"/>
+                <field name="developer_id"/><field name="company_id"/><field name="department_id"/>
+                <filter name="my_requests" string="Mis solicitudes" domain="[('requester_id', '=', uid)]"/>
+                <filter name="assigned_to_me" string="Asignadas a mí" domain="[('developer_id', '=', uid)]"/>
+                <filter name="open" string="Abiertas" domain="[('state', 'not in', ('done', 'cancelled'))]"/>
+                <filter name="overdue" string="Vencidas" domain="[('is_overdue', '=', True)]"/>
+                <separator/>
+                <filter name="group_company" string="Empresa" context="{'group_by': 'company_id'}"/>
+                <filter name="group_department" string="Departamento" context="{'group_by': 'department_id'}"/>
+                <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                <filter name="group_priority" string="Prioridad" context="{'group_by': 'priority'}"/>
+                <filter name="group_developer" string="Responsable" context="{'group_by': 'developer_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_erp_change_request_list" model="ir.ui.view">
+        <field name="name">erp.change.request.list</field>
+        <field name="model">erp.change.request</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="is_overdue" decoration-muted="state == 'cancelled'" decoration-success="state == 'done'">
+                <field name="priority" widget="priority" optional="show"/>
+                <field name="name"/>
+                <field name="title"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="department_id"/>
+                <field name="requester_id" widget="many2one_avatar_user" optional="show"/>
+                <field name="developer_id" widget="many2one_avatar_user" optional="show"/>
+                <field name="required_date"/>
+                <field name="estimated_hours" optional="hide"/>
+                <field name="actual_hours" optional="hide"/>
+                <field name="state" widget="badge"
+                       decoration-info="state in ('requested', 'review')"
+                       decoration-warning="state in ('approved', 'development', 'testing')"
+                       decoration-success="state == 'done'"
+                       decoration-danger="state == 'cancelled'"/>
+                <field name="is_overdue" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_erp_change_request_kanban" model="ir.ui.view">
+        <field name="name">erp.change.request.kanban</field>
+        <field name="model">erp.change.request</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column" quick_create="false">
+                <field name="state"/><field name="priority"/><field name="company_id"/>
+                <field name="department_id"/><field name="requester_id"/><field name="developer_id"/>
+                <field name="required_date"/><field name="is_overdue"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <strong><field name="name"/></strong>
+                            <field name="priority" widget="priority"/>
+                        </div>
+                        <div class="fw-bold fs-5 mb-2"><field name="title"/></div>
+                        <div class="text-muted"><i class="fa fa-building-o me-1"/><field name="company_id"/></div>
+                        <div class="text-muted"><i class="fa fa-sitemap me-1"/><field name="department_id"/></div>
+                        <div class="mt-2 d-flex justify-content-between align-items-center">
+                            <span t-att-class="record.is_overdue.raw_value ? 'text-danger fw-bold' : ''">
+                                <i class="fa fa-calendar me-1"/><field name="required_date"/>
+                            </span>
+                            <field name="developer_id" widget="many2one_avatar_user"/>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_erp_change_request_form" model="ir.ui.view">
+        <field name="name">erp.change.request.form</field>
+        <field name="model">erp.change.request</field>
+        <field name="arch" type="xml">
+            <form string="Solicitud de desarrollo ERP">
+                <header>
+                    <button name="action_start_review" string="Iniciar revisión" type="object" class="btn-primary"
+                            invisible="state != 'requested'" groups="erp_change_request.group_erp_request_team"/>
+                    <button name="action_approve" string="Aprobar" type="object" class="btn-primary"
+                            invisible="state != 'review'" groups="erp_change_request.group_erp_request_team"/>
+                    <button name="action_start_development" string="Iniciar desarrollo" type="object" class="btn-primary"
+                            invisible="state != 'approved'" groups="erp_change_request.group_erp_request_team"/>
+                    <button name="action_send_to_testing" string="Enviar a pruebas" type="object" class="btn-primary"
+                            invisible="state != 'development'" groups="erp_change_request.group_erp_request_team"/>
+                    <button name="action_accept_and_close" string="Aceptar y terminar" type="object" class="btn-success"
+                            invisible="state != 'testing'"/>
+                    <button name="action_return_to_development" string="Solicitar ajustes" type="object"
+                            invisible="state != 'testing'"/>
+                    <button name="action_cancel" string="Cancelar" type="object"
+                            invisible="state in ('done', 'cancelled')" groups="erp_change_request.group_erp_request_team"/>
+                    <button name="action_reopen" string="Reabrir" type="object"
+                            invisible="state not in ('done', 'cancelled')" groups="erp_change_request.group_erp_request_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="requested,review,approved,development,testing,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_attachments" type="object" class="oe_stat_button" icon="fa-paperclip">
+                            <field name="attachment_count" widget="statinfo" string="Archivos"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Vencida" bg_color="text-bg-danger" invisible="not is_overdue"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                        <h2><field name="title" placeholder="Ej.: Automatizar aprobación de créditos"/></h2>
+                    </div>
+                    <group>
+                        <group string="Solicitante">
+                            <field name="company_id" options="{'no_create': True}" readonly="state != 'requested'"/>
+                            <field name="department_id" options="{'no_create': True}" readonly="state != 'requested'"/>
+                            <field name="requester_id" options="{'no_create': True}" readonly="1"/>
+                            <field name="request_type" readonly="state != 'requested'"/>
+                        </group>
+                        <group string="Planificación">
+                            <field name="priority" widget="priority"/>
+                            <field name="required_date"/>
+                            <field name="developer_id" widget="many2one_avatar_user"
+                                   groups="erp_change_request.group_erp_request_team"/>
+                            <field name="estimated_hours" groups="erp_change_request.group_erp_request_team"/>
+                            <field name="actual_hours" groups="erp_change_request.group_erp_request_team"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Necesidad" name="need">
+                            <group><field name="description" placeholder="Explique qué ocurre actualmente y qué resultado necesita..."/></group>
+                            <group><field name="business_justification" placeholder="¿Qué problema resuelve o qué beneficio genera?"/></group>
+                        </page>
+                        <page string="Criterios de aceptación" name="acceptance">
+                            <field name="acceptance_criteria" placeholder="Ej.: El usuario puede aprobar desde el móvil y recibe una confirmación..."/>
+                        </page>
+                        <page string="Gestión de Sistemas" groups="erp_change_request.group_erp_request_team">
+                            <group><field name="review_notes"/><field name="test_notes"/></group>
+                        </page>
+                        <page string="Cierre">
+                            <group>
+                                <field name="requester_approved" readonly="1"/>
+                                <field name="approval_date" readonly="1"/>
+                                <field name="completed_date" readonly="1"/>
+                                <field name="days_open" readonly="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                    <field name="is_overdue" invisible="1"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_erp_change_request_graph" model="ir.ui.view">
+        <field name="name">erp.change.request.graph</field>
+        <field name="model">erp.change.request</field>
+        <field name="arch" type="xml">
+            <graph string="Solicitudes por estado" type="bar">
+                <field name="state"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+    <record id="view_erp_change_request_pivot" model="ir.ui.view">
+        <field name="name">erp.change.request.pivot</field>
+        <field name="model">erp.change.request</field>
+        <field name="arch" type="xml">
+            <pivot string="Indicadores de solicitudes">
+                <field name="company_id" type="row"/>
+                <field name="department_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="estimated_hours" type="measure"/>
+                <field name="actual_hours" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_erp_change_request" model="ir.actions.act_window">
+        <field name="name">Solicitudes ERP</field>
+        <field name="res_model">erp.change.request</field>
+        <field name="view_mode">kanban,list,form,graph,pivot</field>
+        <field name="search_view_id" ref="view_erp_change_request_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Cree su primera solicitud de desarrollo o cambio</p>
+            <p>Describa la necesidad, adjunte evidencias y siga su avance hasta la aceptación.</p>
+        </field>
+    </record>
+    <record id="action_erp_change_request_dashboard" model="ir.actions.act_window">
+        <field name="name">Panel de indicadores</field>
+        <field name="res_model">erp.change.request</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="search_view_id" ref="view_erp_change_request_search"/>
+    </record>
+</odoo>
+

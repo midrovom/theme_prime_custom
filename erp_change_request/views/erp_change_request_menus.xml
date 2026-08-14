@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_erp_request_root" name="Solicitudes ERP" sequence="35"
+              groups="erp_change_request.group_erp_request_user"/>
+    <menuitem id="menu_erp_request_requests" name="Solicitudes" parent="menu_erp_request_root"
+              action="action_erp_change_request" sequence="10"/>
+    <menuitem id="menu_erp_request_dashboard" name="Indicadores" parent="menu_erp_request_root"
+              action="action_erp_change_request_dashboard" sequence="20"
+              groups="erp_change_request.group_erp_request_team"/>
+    <menuitem id="menu_erp_request_config" name="Configuración" parent="menu_erp_request_root"
+              sequence="90" groups="erp_change_request.group_erp_request_manager"/>
+    <menuitem id="menu_erp_request_departments" name="Departamentos" parent="menu_erp_request_config"
+              action="action_erp_request_department" sequence="10"/>
+</odoo>
+
