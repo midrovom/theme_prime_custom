@@ -26,7 +26,7 @@ class ErpRequestDepartment(models.Model):
     manager_id = fields.Many2one(
         "res.users",
         string="Responsable del departamento",
-        domain="[('company_ids', 'in', company_id)]",
+        # domain="[('company_ids', 'in', company_id)]",
     )
     active = fields.Boolean(default=True)
 
