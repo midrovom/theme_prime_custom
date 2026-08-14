@@ -7,11 +7,19 @@ class ErpRequestDepartment(models.Model):
     _order = "company_id, name"
 
     name = fields.Char(string="Departamento", required=True, index=True)
+    # company_id = fields.Many2one(
+    #     "res.company",
+    #     string="Empresa",
+    #     required=True,
+    #     default=lambda self: self.env.company,
+    #     index=True,
+    #     ondelete="cascade",
+    # )
+
     company_id = fields.Many2one(
-        "res.company",
-        string="Empresa",
+        "res.partner",  
+        string="Empresa cliente",
         required=True,
-        default=lambda self: self.env.company,
         index=True,
         ondelete="cascade",
     )
