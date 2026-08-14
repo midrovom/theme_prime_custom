@@ -9,7 +9,6 @@ class ErpChangeRequest(models.Model):
     _description = "Solicitud de desarrollo o cambio ERP"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "priority desc, create_date desc, id desc"
-    _check_company_auto = False
 
     name = fields.Char(
         string="Número", required=True, copy=False, readonly=True, default="Nuevo", index=True

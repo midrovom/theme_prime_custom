@@ -4,7 +4,7 @@ from odoo import api, fields, models
 class ErpRequestDepartment(models.Model):
     _name = "erp.request.department"
     _description = "Departamento solicitante"
-    _order = "company_id, name"
+    _order = "customer_id, name"
 
     name = fields.Char(string="Departamento", required=True, index=True)
 
@@ -18,7 +18,7 @@ class ErpRequestDepartment(models.Model):
     manager_id = fields.Many2one(
         "res.users",
         string="Responsable del departamento",
-        # domain="[('company_ids', 'in', company_id)]",
+        domain="[('customer_id', 'in', customer_id)]",
     )
     active = fields.Boolean(default=True)
 

@@ -6,13 +6,13 @@
         <field name="arch" type="xml">
             <search string="Buscar solicitudes">
                 <field name="name"/><field name="title"/><field name="requester_id"/>
-                <field name="developer_id"/><field name="company_id"/><field name="department_id"/>
+                <field name="developer_id"/><field name="customer_id"/><field name="department_id"/>
                 <filter name="my_requests" string="Mis solicitudes" domain="[('requester_id', '=', uid)]"/>
                 <filter name="assigned_to_me" string="Asignadas a mí" domain="[('developer_id', '=', uid)]"/>
                 <filter name="open" string="Abiertas" domain="[('state', 'not in', ('done', 'cancelled'))]"/>
                 <filter name="overdue" string="Vencidas" domain="[('is_overdue', '=', True)]"/>
                 <separator/>
-                <filter name="group_company" string="Empresa" context="{'group_by': 'company_id'}"/>
+                <filter name="group_company" string="Empresa" context="{'group_by': 'customer_id'}"/>
                 <filter name="group_department" string="Departamento" context="{'group_by': 'department_id'}"/>
                 <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
                 <filter name="group_priority" string="Prioridad" context="{'group_by': 'priority'}"/>
@@ -29,7 +29,7 @@
                 <field name="priority" widget="priority" optional="show"/>
                 <field name="name"/>
                 <field name="title"/>
-                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="customer_id" groups="base.group_multi_company"/>
                 <field name="department_id"/>
                 <field name="requester_id" widget="many2one_avatar_user" optional="show"/>
                 <field name="developer_id" widget="many2one_avatar_user" optional="show"/>
@@ -51,7 +51,7 @@
         <field name="model">erp.change.request</field>
         <field name="arch" type="xml">
             <kanban default_group_by="state" class="o_kanban_small_column" quick_create="false">
-                <field name="state"/><field name="priority"/><field name="company_id"/>
+                <field name="state"/><field name="priority"/><field name="customer_id"/>
                 <field name="department_id"/><field name="requester_id"/><field name="developer_id"/>
                 <field name="required_date"/><field name="is_overdue"/>
                 <templates>
@@ -61,7 +61,7 @@
                             <field name="priority" widget="priority"/>
                         </div>
                         <div class="fw-bold fs-5 mb-2"><field name="title"/></div>
-                        <div class="text-muted"><i class="fa fa-building-o me-1"/><field name="company_id"/></div>
+                        <div class="text-muted"><i class="fa fa-building-o me-1"/><field name="customer_id"/></div>
                         <div class="text-muted"><i class="fa fa-sitemap me-1"/><field name="department_id"/></div>
                         <div class="mt-2 d-flex justify-content-between align-items-center">
                             <span t-att-class="record.is_overdue.raw_value ? 'text-danger fw-bold' : ''">
@@ -113,7 +113,7 @@
                     </div>
                     <group>
                         <group string="Solicitante">
-                            <field name="company_id" options="{'no_create': True}" readonly="state != 'requested'"/>
+                            <field name="customer_id" options="{'no_create': True}" readonly="state != 'requested'"/>
                             <field name="department_id" options="{'no_create': True}" readonly="state != 'requested'"/>
                             <field name="requester_id" options="{'no_create': True}" readonly="1"/>
                             <field name="request_type" readonly="state != 'requested'"/>
@@ -169,7 +169,7 @@
         <field name="model">erp.change.request</field>
         <field name="arch" type="xml">
             <pivot string="Indicadores de solicitudes">
-                <field name="company_id" type="row"/>
+                <field name="customer_id" type="row"/>
                 <field name="department_id" type="row"/>
                 <field name="state" type="col"/>
                 <field name="estimated_hours" type="measure"/>
