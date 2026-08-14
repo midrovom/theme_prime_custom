@@ -31,7 +31,8 @@ class ErpRequestDepartment(models.Model):
         )
     ]
 
-    @api.depends("name", "partner_id.name")
+    @api.depends("name")
     def _compute_display_name(self):
         for department in self:
-            department.display_name = f"{department.partner_id.name} / {department.name}"
+            department.display_name = department.name
+
