@@ -50,7 +50,7 @@ class ErpChangeRequest(models.Model):
         "erp.request.department",
         string="Departamento",
         required=True,
-        domain="[('company_id', '=', company_id)]",
+        # domain="[('company_id', '=', company_id)]",
         tracking=True,
         check_company=True,
     )
