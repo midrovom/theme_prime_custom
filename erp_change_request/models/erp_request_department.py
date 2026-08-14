@@ -4,11 +4,11 @@ from odoo import api, fields, models
 class ErpRequestDepartment(models.Model):
     _name = "erp.request.department"
     _description = "Departamento solicitante"
-    _order = "company_id, name"
+    _order = "partner_id, name"
 
     name = fields.Char(string="Departamento", required=True, index=True)
 
-    company_id = fields.Many2one(
+    partner_id = fields.Many2one(
         "res.partner",
         string="Empresa cliente",
         required=True,
@@ -25,19 +25,13 @@ class ErpRequestDepartment(models.Model):
 
     _sql_constraints = [
         (
-            "erp_request_department_company_unique",
-            "unique(name, company_id)",
-            "Ya existe un departamento con ese nombre en la empresa.",
+            "erp_request_department_partner_unique",
+            "unique(name, partner_id)",
+            "Ya existe un departamento con ese nombre en la empresa cliente.",
         )
     ]
 
-    @api.depends("name", "company_id.name")
+    @api.depends("name", "partner_id.name")
     def _compute_display_name(self):
-        multi_company = len(self.env.companies) > 1
         for department in self:
-            department.display_name = (
-                f"{department.company_id.name} / {department.name}"
-                if multi_company
-                else department.name
-            )
-
+            department.display_name = f"{department.partner_id.name} / {department.name}"
