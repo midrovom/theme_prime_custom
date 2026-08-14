@@ -28,15 +28,24 @@ class ErpChangeRequest(models.Model):
         default="change",
         tracking=True,
     )
-    company_id = fields.Many2one(
-        "res.company",
+    # company_id = fields.Many2one(
+    #     "res.company",
+    #     string="Empresa cliente",
+    #     required=True,
+    #     default=lambda self: self.env.company,
+    #     index=True,
+    #     tracking=True,
+    #     check_company=False,
+    # )
+
+    partner_id = fields.Many2one(
+        "res.partner",
         string="Empresa cliente",
         required=True,
-        default=lambda self: self.env.company,
         index=True,
         tracking=True,
-        check_company=False,
     )
+
     department_id = fields.Many2one(
         "erp.request.department",
         string="Departamento",
