@@ -29,7 +29,7 @@ class ErpChangeRequest(models.Model):
         tracking=True,
     )
     
-    company_id = fields.Many2one(
+    customer_id = fields.Many2one(
         "res.partner",
         string="Empresa cliente",
         required=True,
@@ -41,7 +41,7 @@ class ErpChangeRequest(models.Model):
         "erp.request.department",
         string="Departamento",
         required=True,
-        domain="[('company_id', '=', company_id)]",
+        domain="[('customer_id', '=', customer_id)]",
         tracking=True,
         check_company=False,
     )
@@ -57,7 +57,7 @@ class ErpChangeRequest(models.Model):
     developer_id = fields.Many2one(
         "res.users",
         string="Asignado a",
-        domain="[('company_ids', 'in', company_id)]",
+        domain="[('customer_id', 'in', customer_id)]",
         index=True,
         tracking=True,
         check_company=False,
@@ -159,10 +159,10 @@ class ErpChangeRequest(models.Model):
             if request.estimated_hours < 0 or request.actual_hours < 0:
                 raise ValidationError(_("Las horas no pueden ser negativas."))
 
-    @api.constrains("department_id", "company_id")
+    @api.constrains("department_id", "customer_id")
     def _check_department_company(self):
         for request in self:
-            if request.department_id.company_id != request.company_id:
+            if request.department_id.customer_id != request.customer_id:
                 raise ValidationError(_("El departamento debe pertenecer a la empresa cliente."))
 
     @api.model_create_multi
@@ -196,7 +196,7 @@ class ErpChangeRequest(models.Model):
                 raise AccessError(_("Solo el equipo de Sistemas puede modificar la gestión interna."))
         if not is_team and not self.env.context.get("erp_request_authorized_transition"):
             allowed_requester_fields = {
-                "title", "request_type", "company_id", "department_id", "priority",
+                "title", "request_type", "customer_id", "department_id", "priority",
                 "required_date", "description", "business_justification", "acceptance_criteria",
                 "message_follower_ids", "message_partner_ids",
             }
