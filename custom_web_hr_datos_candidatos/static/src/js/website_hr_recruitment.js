@@ -1892,7 +1892,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     async _addFamilyBlock(parentesco) {
         this.familyCount++;
-        const html = await this._getFamilyBlock(parentesco);
+        const FAMILY_TYPES_MAP = {
+            '1': 'Padre',
+            '2': 'Madre',
+            '3': 'Hermano(a)',
+            '4': 'Conyugue',
+            '5': 'Hijo(a)'
+        };
+
+        const label = FAMILY_TYPES_MAP[parentesco] || parentesco;
+        const html = await this._getFamilyBlock(label);
         this.$('#family_container').append(html);
         this.$(`#family_container .family-block:last`).append(`
             <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
