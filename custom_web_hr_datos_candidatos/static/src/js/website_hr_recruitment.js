@@ -1831,7 +1831,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     _onSubmitForm(ev) {
         ev.preventDefault();
         let valid = true;
-
+        if (!this._validateCurrentStep3()) return;
         if (this.experienceCount < 3) {
             alert("Debe ingresar al menos 3 experiencias laborales.");
             return;
@@ -1851,7 +1851,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return;
         }
 
-        ev.currentTarget.submit();
+        this.$('#submit-form')
+            .prop('disabled', true)
+            .text('Enviando...');
+
+        this.el.submit();
     },
 
     //----------------------------------------------------------------------
