@@ -35,7 +35,7 @@ class ErpChangeRequest(models.Model):
         default=lambda self: self.env.company,
         index=True,
         tracking=True,
-        check_company=True,
+        check_company=False,
     )
     department_id = fields.Many2one(
         "erp.request.department",
