@@ -29,12 +29,21 @@ class ErpChangeRequest(models.Model):
         tracking=True,
     )
     
+    # company_id = fields.Many2one(
+    #     "res.partner",
+    #     string="Empresa cliente",
+    #     required=True,
+    #     index=True,
+    #     tracking=True,
+    # )
+
     company_id = fields.Many2one(
         "res.partner",
         string="Empresa cliente",
         required=True,
         index=True,
         tracking=True,
+        domain="[('is_company', '=', True)]",
     )
 
     department_id = fields.Many2one(
@@ -43,7 +52,6 @@ class ErpChangeRequest(models.Model):
         required=True,
         domain="[('company_id', '=', company_id)]",
         tracking=True,
-        check_company=False,
     )
     requester_id = fields.Many2one(
         "res.users",
@@ -159,11 +167,21 @@ class ErpChangeRequest(models.Model):
             if request.estimated_hours < 0 or request.actual_hours < 0:
                 raise ValidationError(_("Las horas no pueden ser negativas."))
 
+    # @api.constrains("department_id", "company_id")
+    # def _check_department_company(self):
+    #     for request in self:
+    #         if request.department_id.company_id != request.company_id:
+    #             raise ValidationError(_("El departamento debe pertenecer a la empresa cliente."))
+
     @api.constrains("department_id", "company_id")
     def _check_department_company(self):
         for request in self:
-            if request.department_id.company_id != request.company_id:
-                raise ValidationError(_("El departamento debe pertenecer a la empresa cliente."))
+            if (
+                request.department_id and request.company_id and request.department_id.company_id != request.company_id
+            ):
+                raise ValidationError(
+                    _("El departamento debe pertenecer a la empresa cliente.")
+                )
 
     @api.model_create_multi
     def create(self, vals_list):
