@@ -15,7 +15,8 @@
         'custom_web_hr_datos_candidatos',
     ],
     'data': [
-        'custom_web_candidatos/views/view_home.xml',
+        'views/website_hr_recruitment.xml',
+        'views/recruitment_form_1.xml',
 
     ],
     'installable': True,
@@ -23,6 +24,7 @@
     'application': False,
     'assets': {
         "web.assets_frontend":[
+            'custom_web_candidatos/static/src/js/recruitment_documents.js',
         ]
         
     }
