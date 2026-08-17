@@ -21,9 +21,8 @@
             </div>
         </xpath>
 
-        <xpath expr="//div[@id='portal_client_category']/div[a[@href='/my/orders']]" position="replace"/>
-        <xpath expr="//div[@id='portal_client_category']/div[a[@href='/my/invoices?filterby=invoices']]" position="replace"/>
-
+            <xpath expr="//a[@href='/my/orders']/ancestor::div[@class='o_portal_index_card col-md-6 order-2']" position="replace"/>
+            <xpath expr="//a[@href='/my/invoices?filterby=invoices']/ancestor::div[@class='o_portal_index_card col-md-6 order-2']" position="replace"/>
     </template>
 
 </odoo>
