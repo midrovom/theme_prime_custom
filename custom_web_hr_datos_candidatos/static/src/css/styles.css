@@ -128,3 +128,43 @@ input.form-check-input:focus {
 .custom-message {
     font-size: 13px !important;
 }
+
+/* Mesanje flotante  */
+
+#familyMessage {
+  background: #ffffff; /* fondo blanco */
+  border-radius: 16px; /* bordes redondeados */
+  box-shadow: 0 6px 25px rgba(0,0,0,0.25); /* sombra elegante */
+  padding: 25px;
+  animation: fadeIn 0.4s ease;
+  border-top: 6px solid #ff6600; /* franja superior naranja corporativa */
+}
+
+#familyMessage .family-title {
+  color: #0056b3; /* azul corporativo */
+  font-weight: 600;
+}
+
+#familyMessage .family-text {
+  color: #444; /* gris suave para texto */
+  font-size: 15px;
+}
+
+.btn-family {
+  background-color: #0056b3; /* azul corporativo */
+  color: #fff;
+  border-radius: 50px;
+  padding: 6px 20px;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.btn-family:hover {
+  background-color: #ff6600; /* naranja corporativo al hover */
+  color: #fff;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -45%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
