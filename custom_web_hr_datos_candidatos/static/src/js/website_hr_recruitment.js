@@ -1882,7 +1882,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
-
     _onRemoveFamily(ev) {
         const $block = $(ev.currentTarget).closest('.family-block');
         $block.remove();
