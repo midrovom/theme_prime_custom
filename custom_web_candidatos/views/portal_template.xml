@@ -22,7 +22,7 @@
         </xpath>
     </template>
 
-    <template id="portal_home_remove_orders_invoices" inherit_id="portal.portal_my_home" name="Portal Home Remove Orders">
+    <template id="portal_home_remove_orders_invoices" inherit_id="portal.portal_my_home_sale" name="Portal Home Remove Orders">
         <xpath expr="//div[@id='portal_client_category']/t[t-call='portal.portal_docs_entry'][t-set='url'][.='/my/orders']" position="replace"/>
         <xpath expr="//div[@id='portal_client_category']/t[t-call='portal.portal_docs_entry'][t-set='url'][.='/my/invoices?filterby=invoices']" position="replace"/>
     </template>
