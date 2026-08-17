@@ -104,6 +104,13 @@
 
                     <div id="experience_container"></div>
 
+                    <div id="experienceMessage" class="position-fixed top-50 start-50 translate-middle d-none text-center shadow-lg rounded" style="z-index:1050; min-width:320px;">
+                        <h5 class="experience-title mb-3">Aviso</h5>
+                            <p id="experienceMessageText" class="experience-text mb-3"></p>
+                            <button type="button" class="btn btn-experience" onclick="$('#experienceMessage').addClass('d-none')"> Aceptar
+                        </button>
+                    </div>
+
                 </div>
 
 
