@@ -181,29 +181,45 @@
 
                         <t t-foreach="applicant.family_ids" t-as="fam">
                             <tr>
+                                <th style="border:1px solid #000; font-weight:bold;">Familiar</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Nombres completos</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Tipo de Documento</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Cédula de identidad</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.familiar_type"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.name"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.document_type"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.cedula"/>
+                            </tr>
+                            <tr>
                                 <th style="border:1px solid #000; font-weight:bold;">Fecha nacimiento</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Teléfono</th>
-                            </tr>
-                            <tr>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.name"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.cedula"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.birthdate"/>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.phone"/>
-                            </tr>
-                            <tr>
                                 <th style="border:1px solid #000; font-weight:bold;">Ocupación y Empresa</th>
                                 <th style="border:1px solid #000; font-weight:bold;">Dependen economicamente de Ud.</th>
-                                <th style="border:1px solid #000; font-weight:bold;">Discapacidad</th>
-                                <th style="border:1px solid #000; font-weight:bold;">Tipo de discapacidad y porcentaje</th>
                             </tr>
                             <tr>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.birthdate"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.phone"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="fam.occupation"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="fam.economically_dependent"/>
+                            </tr>
+
+                            <tr>
+                                <th style="border:1px solid #000; font-weight:bold;">Discapacidad</th>
+                                <th style="border:1px solid #000; font-weight:bold;">Tipo de discapacidad y porcentaje</th>
+                                <th style="border:1px solid #000; font-weight:bold;"></th>
+                                <th style="border:1px solid #000; font-weight:bold;"></th>
+                                <th style="border:1px solid #000; font-weight:bold;"></th>
+                            </tr>
+                            <tr>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="fam.disability"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="fam.disability_type"/>
+                                <td style="border:1px solid #000; text-align:center;"/>
+                                <td style="border:1px solid #000; text-align:center;"/>
+                                <td style="border:1px solid #000; text-align:center;"/>
                             </tr>
+                            
                         </t>
 
                         <tr>
