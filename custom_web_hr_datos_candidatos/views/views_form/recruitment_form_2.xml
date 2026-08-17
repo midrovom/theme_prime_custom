@@ -150,6 +150,15 @@
 
                 <div id="family_container"></div>
 
+                <div id="familyMessage"class="position-fixed top-50 start-50 translate-middle alert alert-warning d-none text-center shadow-lg rounded" style="z-index:1050; min-width:300px;">
+                    <span id="familyMessageText"></span>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="$('#familyMessage').addClass('d-none')">
+                            Aceptar
+                        </button>
+                    </div>
+                </div>
+
             </div> 
 
             <div class="row d-flex justify-content-center mt-2" style="width: 100%;">
