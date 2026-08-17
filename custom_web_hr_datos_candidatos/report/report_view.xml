@@ -216,7 +216,6 @@
                                 <td style="border:1px solid #000; text-align:center;" t-esc="fam.disability_type"/>
                                 <td style="border:1px solid #000; text-align:center;"/>
                                 <td style="border:1px solid #000; text-align:center;"/>
-                                <td style="border:1px solid #000; text-align:center;"/>
                             </tr>
                             
                         </t>
