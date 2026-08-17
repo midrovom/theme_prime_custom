@@ -187,7 +187,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     <div class="row g-3">
 
                         <!-- Nombre -->
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             <label class="fs-6">Nombres completos <span class="required-asterisk">*</span></label>
                             <input type="text" name="famNombre_${this.familyCount}" class="form-control rounded-pill" required/>
                             <div class="invalid-feedback">Campo obligatorio</div>
