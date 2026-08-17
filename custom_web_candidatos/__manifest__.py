@@ -12,11 +12,11 @@
     'license': 'LGPL-3',
     'category': 'Website',
     'depends': [
-        'views/website_hr_recruitment.xml',
         'custom_web_hr_datos_candidatos',
     ],
     'data': [
-        'views/view_home.xml',
+        'views/website_hr_recruitment.xml',
+        'views/portal_template.xml',
 
     ],
     'installable': True,
