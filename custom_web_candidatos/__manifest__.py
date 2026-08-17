@@ -15,7 +15,7 @@
         'custom_web_hr_datos_candidatos',
     ],
     'data': [
-        'custom_web_candidatos/views/view_home.xml',
+        'views/view_home.xml',
 
     ],
     'installable': True,

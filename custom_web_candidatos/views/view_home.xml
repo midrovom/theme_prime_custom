@@ -7,9 +7,7 @@
         <xpath expr="//a[@href='/my/security']" position="replace"/>
 
         <xpath expr="//div[contains(@class,'o_portal_home_content')]" position="inside">
-            <a t-attf-href="/jobs/recruitment/#{ slug(job) }"
-            title="Reclutamiento"
-            class="d-flex gap-2 gap-md-3 py-3 pe-2 px-md-3 h-100 rounded text-decoration-none bg-100">
+            <a t-attf-href="/jobs/recruitment/#{ slug(job) }" title="Reclutamiento" class="d-flex gap-2 gap-md-3 py-3 pe-2 px-md-3 h-100 rounded text-decoration-none bg-100">
                 <div class="o_portal_icon d-block align-self-start">
                     <img src="/hr_recruitment/static/src/img/recruitment.svg" loading="lazy"/>
                 </div>
