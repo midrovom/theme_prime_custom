@@ -20,9 +20,11 @@
                 </a>
             </div>
         </xpath>
+    </template>
 
-        <xpath expr="//a[@href='/my/orders']/ancestor::div[contains(@class,'o_portal_index_card')]" position="replace"/>
-        <xpath expr="//a[@href='/my/invoices?filterby=invoices']/ancestor::div[contains(@class,'o_portal_index_card')]" position="replace"/>
+    <template id="portal_home_remove_orders_invoices" inherit_id="portal.portal_my_home" name="Portal Home Remove Orders & Invoices">
+        <xpath expr="//div[@id='portal_client_category']/t[t-set='url'][@t-value=\"'/my/orders'\"]" position="replace"/>
+        <xpath expr="//div[@id='portal_client_category']/t[t-set='url'][@t-value=\"'/my/invoices?filterby=invoices'\"]" position="replace"/>
     </template>
 
 </odoo>
