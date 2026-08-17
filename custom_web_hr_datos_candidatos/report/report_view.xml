@@ -187,7 +187,7 @@
                                 <th style="border:1px solid #000; font-weight:bold;">Cédula de identidad</th>
                             </tr>
                             <tr>
-                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.familiar_type"/>
+                                <td style="border:1px solid #000; text-align:center;" t-esc="fam.get_selection_display('familiar_type')"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="fam.name"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="fam.document_type"/>
                                 <td style="border:1px solid #000; text-align:center;" t-esc="fam.cedula"/>
