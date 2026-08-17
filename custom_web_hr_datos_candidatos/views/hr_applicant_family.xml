@@ -9,6 +9,7 @@
                 <list string="Familiares">
                     <field name="familiar_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="document_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="birthdate" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="phone" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
@@ -33,6 +34,7 @@
                         <group string="Información personal">
                             <field name="familiar_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
                             <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="document_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             <field name="birthdate" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             <field name="phone" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>

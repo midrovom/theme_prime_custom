@@ -8,6 +8,12 @@ FAMILY_TYPES = [
     ('5', 'Hijo(a)'),
 ]
 
+DOCUMENT_TYPES = [
+    ('cedula', 'Cédula'),
+    ('id_extrj', 'Cédula extranjera'),
+    ('pasaporte', 'Pasaporte'),
+]
+
 class ApplicantFamily(models.Model):
     _name = 'applicant.family'
     _description = 'Familiares del postulante'
@@ -18,6 +24,7 @@ class ApplicantFamily(models.Model):
 
     familiar_type = fields.Selection(selection=FAMILY_TYPES, string="Tipo de familiar", required=True)
     name = fields.Char(string='Nombre completo')
+    document_type = fields.Selection(DOCUMENT_TYPES, string='Tipo de documento')
     cedula = fields.Char(string='Cédula')
     birthdate = fields.Date(string='Fecha de nacimiento')
     phone = fields.Char(string='Teléfono')

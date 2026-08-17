@@ -157,10 +157,12 @@ class WebsiteHRRecruitment(http.Controller):
 
                 name = kwargs.get(f'famNombre_{k}')
                 tipo = kwargs.get(f'famTipo_{k}')
+                doc_type = kwargs.get(f'famTipoDoc_{k}')
 
                 if name:
                     family_lines.append((0, 0, {
                         'name': name,
+                        'document_type': doc_type,
                         'cedula': kwargs.get(f'famCedula_{k}'),
                         'birthdate': kwargs.get(f'famFecha_{k}'),
                         'phone': kwargs.get(f'famTelefono_{k}'),

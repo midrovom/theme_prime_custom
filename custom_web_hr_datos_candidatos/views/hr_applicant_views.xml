@@ -92,6 +92,7 @@
                             <list>
                                 <field name="familiar_type"/>
                                 <field name="name"/>
+                                <field name="document_type"/>
                                 <field name="cedula"/>
                                 <field name="birthdate"/>
                                 <field name="phone"/>
