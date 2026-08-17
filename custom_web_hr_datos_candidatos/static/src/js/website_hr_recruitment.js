@@ -63,10 +63,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'blur input[name^="ref_tiempo_"]': '_validateReferenceField',
         'blur input[name^="famNombre_"]': '_validateReferenceField',
         'blur input[name^="famFecha_"]': '_validateFamilyDate',
+        'blur input[name^="famCedula_"]': '_validateDocumentNumber',
         'blur input[name^="famOcupacion_"]': '_validateReferenceField',
         'blur input[name^="famDepende_"]': '_validateReferenceField',
         'blur input[name^="famDisc_"]': '_validateReferenceField',
-        'blur input[name^="famCedula_"]': '_validateFamilyCedula',
         'blur input[name^="inicioEstudio_"]': function(ev) { this._validateDateField(ev.currentTarget);},
         'blur input[name^="jobInicio_"]': function(ev) {this._validateDateField(ev.currentTarget);},
         'blur input[name="tipo_sangre"]': '_validateTipoSangre',
@@ -186,10 +186,23 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <input type="text" name="famNombre_${this.familyCount}" class="form-control rounded-pill" required/>
                             <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
+                        
+                        <!-- Tipo de documento -->
+                        <div class="col-12 col-md-3">
+                            <label for="fam-type-doc_${this.familyCount}" class="fs-6"> Tipo de documento: <span class="text-danger">*</span></label>
+                                <select id="fam-type-doc_${this.familyCount}" name="famTipoDoc_${this.familyCount}" class="form-select rounded-pill py-2" 
+                                        aria-label="Seleccionar tipo de documento" required="required">
+                                    <option selected="selected"></option>
+                                    <t t-foreach="document_types" t-as="document_type">
+                                        <option t-att-value="document_type[0]" t-esc="document_type[1]"/>
+                                    </t>
+                                </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
 
-                        <!-- Cédula -->
+                        <!-- Numero de Documento -->
                         <div class="col-md-3">
-                            <label class="fs-6">Cédula <span class="required-asterisk">*</span></label>
+                            <label class="fs-6">Numero de Documento <span class="required-asterisk">*</span></label>
                             <input type="text" name="famCedula_${this.familyCount}" class="form-control rounded-pill" required/>
                             <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
@@ -736,71 +749,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     //----------------------------------------------------------------------
     // Validations
     //----------------------------------------------------------------------
-
-    // _validateCurrentStep1() {
-    //     const isImageValid = this._validateImage();
-
-    //     const isLastnamePaternoValid = this._validateField('#hr-lastname-paterno');
-    //     const isLastnameMaternoValid = this._validateField('#hr-lastname-materno');
-    //     const isNameValid = this._validateField('#hr-name');
-    //     const isAgeValid = this._validateField('#hr-age');
-
-    //     const isAddressValid = this._validateField('#hr-address');
-    //     const isParishValid = this._validateField('#hr-parish');
-
-    //     const isBirthDateValid = this._validateBirthDate();
-
-    //     const isBirthCountryValid = this._validateField('#hr-country');
-    //     const isProvinceValid = this._validateField('#hr-provincia');
-
-    //     const isCodeCellphoneValid = this._validateCodePhone();
-    //     const isCellphoneValid = this._validatePhone();
-
-    //     const isViveConValid = this._validateField('input[name="viveCon"]');
-    //     const isTipoViviendaValid = this._validateField('input[name="tipoVivienda"]');
-    //     const isHijosValid = this._validateField('#hr-hijos');
-
-    //     const isEmailValid = this._validateEmail();
-
-    //     const isDocTypeValid = this._validateField('#hr-type-doc');
-    //     const isDocNumberValid = this._validateDocumentNumber();
-    //     const isNationalityValid = this._validateField('#hr-nationality');
-
-    //     const isEstadoCivilValid = this._validateField('input[name="estadoCivil"]');
-
-    //     // Validar hoja de vida
-    //     // const isCurriculumValid = this._validateField('#curriculum-vitae');
-    //     const isCurriculumValid = this._validateCurriculum();
-
-    //     if (
-    //         !isImageValid ||
-    //         !isLastnamePaternoValid ||
-    //         !isLastnameMaternoValid ||
-    //         !isNameValid ||
-    //         !isAgeValid ||
-    //         !isAddressValid ||
-    //         !isParishValid ||
-    //         !isBirthDateValid ||
-    //         !isBirthCountryValid ||
-    //         !isProvinceValid ||
-    //         !isCodeCellphoneValid ||
-    //         !isCellphoneValid ||
-    //         !isViveConValid ||
-    //         !isTipoViviendaValid ||
-    //         !isHijosValid ||
-    //         !isEmailValid ||
-    //         !isDocTypeValid ||
-    //         !isDocNumberValid ||
-    //         !isNationalityValid ||
-    //         !isCurriculumValid || 
-    //         !isEstadoCivilValid
-    //     ) {
-    //         this._scrollToFirstError();
-    //         return false;
-    //     }
-
-    //     return true;
-    // },
 
     _validateCurrentStep1() {
 
@@ -1394,31 +1342,71 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return true;
     },
 
+    // _validateDocumentNumber(ev) {
+    //     const $input = ev ? $(ev.currentTarget) : this.$('#hr-number-doc');
+    //     const value = $input.val().trim();
+    //     const type = this.$('#hr-type-doc').val();
+    //     let isValid = true;
+    //     let errorMsg = '';
+
+    //     function isValidEcuadorianId(cedula) {
+    //         cedula = (cedula || '').replace(/\D/g, '');
+    //         if (cedula.length !== 10) return false;
+    //         const province = parseInt(cedula.substring(0, 2), 10);
+    //         if (province < 1 || province > 24 || parseInt(cedula[2], 10) > 5) return false;
+    //         const coefficients = [2,1,2,1,2,1,2,1,2];
+    //         let total = 0;
+    //         for (let i = 0; i < coefficients.length; i++) {
+    //             let product = parseInt(cedula[i], 10) * coefficients[i];
+    //             total += product >= 10 ? product - 9 : product;
+    //         }
+    //         const verifier = (10 - (total % 10)) % 10;
+    //         return verifier === parseInt(cedula[9], 10);
+    //     }
+
+    //     function isValidForeignId(idNumber) {
+    //         return /^\d{10}$/.test(idNumber);
+    //     }
+
+    //     if (type === 'cedula') {
+    //         if (!isValidEcuadorianId(value)) {
+    //             isValid = false;
+    //             errorMsg = 'La cédula no es válida.';
+    //         }
+    //     } else if (type === 'id_extrj') {
+    //         if (!isValidForeignId(value)) {
+    //             isValid = false;
+    //             errorMsg = 'La cédula extranjera no es valida.';
+    //         }
+    //     } else if (type === 'pasaporte') {
+    //         isValid = true; // no se valida nada
+    //     }
+
+    //     if (!isValid) {
+    //         $input.addClass('is-invalid');
+    //         this.$('#doc-error').text(errorMsg);
+    //     } else {
+    //         $input.removeClass('is-invalid');
+    //         this.$('#doc-error').text('');
+    //     }
+
+    //     return isValid; 
+    // },
+
     _validateDocumentNumber(ev) {
         const $input = ev ? $(ev.currentTarget) : this.$('#hr-number-doc');
         const value = $input.val().trim();
-        const type = this.$('#hr-type-doc').val();
+        const familyIndex = $input.attr("name").split("_")[1];
+        let type;
+
+        if ($input.attr("name").startsWith("famCedula_")) {
+            type = this.$(`#fam-type-doc_${familyIndex}`).val();
+        } else {
+            type = this.$('#hr-type-doc').val();
+        }
+
         let isValid = true;
         let errorMsg = '';
-
-        function isValidEcuadorianId(cedula) {
-            cedula = (cedula || '').replace(/\D/g, '');
-            if (cedula.length !== 10) return false;
-            const province = parseInt(cedula.substring(0, 2), 10);
-            if (province < 1 || province > 24 || parseInt(cedula[2], 10) > 5) return false;
-            const coefficients = [2,1,2,1,2,1,2,1,2];
-            let total = 0;
-            for (let i = 0; i < coefficients.length; i++) {
-                let product = parseInt(cedula[i], 10) * coefficients[i];
-                total += product >= 10 ? product - 9 : product;
-            }
-            const verifier = (10 - (total % 10)) % 10;
-            return verifier === parseInt(cedula[9], 10);
-        }
-
-        function isValidForeignId(idNumber) {
-            return /^\d{10}$/.test(idNumber);
-        }
 
         if (type === 'cedula') {
             if (!isValidEcuadorianId(value)) {
@@ -1428,53 +1416,26 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         } else if (type === 'id_extrj') {
             if (!isValidForeignId(value)) {
                 isValid = false;
-                errorMsg = 'La cédula extranjera no es valida.';
+                errorMsg = 'La cédula extranjera no es válida.';
             }
         } else if (type === 'pasaporte') {
-            isValid = true; // no se valida nada
+            isValid = true; 
         }
 
         if (!isValid) {
             $input.addClass('is-invalid');
-            this.$('#doc-error').text(errorMsg);
+            $input.next('.invalid-feedback').text(errorMsg);
         } else {
             $input.removeClass('is-invalid');
-            this.$('#doc-error').text('');
+            $input.next('.invalid-feedback').text('');
         }
 
-        return isValid; 
-    },
-
-
-    _validateFamilyCedula(ev) {
-        const $field = $(ev.currentTarget);
-        const $error = $field.siblings('.error-message');
-        const cedula = $field.val();
-
-        if (cedula === '') {
-            $error.text(_t("Campo obligatorio.")).show();
-            $field.addClass('is-invalid');
-            return false;
-        }
-
-        const isValid = /^\d{10}$/.test(cedula);
-
-        if (!isValid) {
-            $error.text(_t("Cédula no válida.")).show();
-            $field.addClass('is-invalid');
-            return false;
-        }
-
-        $error.hide();
-        $field.removeClass('is-invalid');
-        return true;
+        return isValid;
     },
 
     _validateCodePhone() {
         const codPhone = this.$('#hr-code-cellphone').val();
-
         const isValid = codPhone !== "código";
-
         this.$('#hr-code-cellphone').toggleClass('is-invalid', !isValid);
         return isValid
     },
@@ -1483,9 +1444,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const day = this.$('#hr-day').val();
         const month = this.$('#hr-month').val();
         const year = this.$('#hr-year').val();
-        
         const isValid = day !== "Dia" && month !== "Mes" && year !== "Año";
-        
         this.$('#hr-day, #hr-month, #hr-year').toggleClass('is-invalid', !isValid);
         return isValid;
     },
@@ -1494,7 +1453,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const $field = field instanceof jQuery ? field : $(field);
         const value = $field.val();
         const $errorMessage = $field.siblings('.invalid-feedback');
-
         if (!value) {
             $field.addClass('is-invalid');
             $errorMessage.text('Campo obligatorio.').show();
