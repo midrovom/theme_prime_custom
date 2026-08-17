@@ -1761,8 +1761,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         ev.preventDefault();
         let valid = true;
         if (!this._validateCurrentStep3()) return;
+
         if (this.experienceCount < 3) {
-            alert("Debe ingresar al menos 3 experiencias laborales.");
+            $('#experienceMessageText').text("Debe ingresar al menos 3 experiencias laborales.");
+            $('#experienceMessage').removeClass('d-none');
             return;
         }
 
@@ -1776,7 +1778,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
 
         if (!valid) {
-            alert("Complete todos los campos de experiencia antes de enviar.");
+            $('#experienceMessageText').text("Complete todos los campos de experiencia antes de enviar.");
+            $('#experienceMessage').removeClass('d-none');
             return;
         }
 
@@ -1786,6 +1789,36 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         this.el.submit();
     },
+
+    // _onSubmitForm(ev) {
+    //     ev.preventDefault();
+    //     let valid = true;
+    //     if (!this._validateCurrentStep3()) return;
+    //     if (this.experienceCount < 3) {
+    //         alert("Debe ingresar al menos 3 experiencias laborales.");
+    //         return;
+    //     }
+
+    //     this.$('#experience_container .experience-block input, #experience_container .experience-block select').each((i, el) => {
+    //         if (!$(el).val()) {
+    //             $(el).addClass('is-invalid');
+    //             valid = false;
+    //         } else {
+    //             $(el).removeClass('is-invalid');
+    //         }
+    //     });
+
+    //     if (!valid) {
+    //         alert("Complete todos los campos de experiencia antes de enviar.");
+    //         return;
+    //     }
+
+    //     this.$('#submit-form')
+    //         .prop('disabled', true)
+    //         .text('Enviando...');
+
+    //     this.el.submit();
+    // },
 
     //----------------------------------------------------------------------
     // Methods education
