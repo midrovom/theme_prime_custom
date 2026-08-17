@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="portal_home_custom" inherit_id="portal.portal_my_home" name="Portal Home Custom">
-        <xpath expr="//div[@id='portal_common_category']" position="inside">
+        <xpath expr="//div[@id='portal_common_category']" position="replace">
             <div class="o_portal_index_card col-md-6 order-2">
                 <a href="/jobs" title="Reclutamiento" class="d-flex gap-2 gap-md-3 py-3 pe-2 px-md-3 h-100 rounded text-decoration-none bg-100">
                     <div class="o_portal_icon d-block align-self-start">
@@ -20,11 +20,6 @@
                 </a>
             </div>
         </xpath>
-    </template>
-
-    <template id="portal_home_remove_orders_invoices" inherit_id="portal.portal_my_home" name="Portal Home Remove Orders">
-        <xpath expr="//div[@id='portal_client_category']/t[t-call='portal.portal_docs_entry'][t-set='title'][.='Your Orders']" position="replace"/>
-        <xpath expr="//div[@id='portal_client_category']/t[t-call='portal.portal_docs_entry'][t-set='title'][.='Your Invoices']" position="replace"/>
     </template>
 
 </odoo>
