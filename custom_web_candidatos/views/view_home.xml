@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <template id="portal_home_custom" inherit_id="portal.portal_home" name="Portal Home Custom">
+    <template id="portal_home_custom" inherit_id="portal.portal_my_home" name="Portal Home Custom">
         <xpath expr="//a[@href='/my/orders']" position="replace"/>
         <xpath expr="//a[@href='/my/invoices?filterby=invoices']" position="replace"/>
         <xpath expr="//a[@href='/my/security']" position="replace"/>

@@ -12,7 +12,7 @@
     'license': 'LGPL-3',
     'category': 'Website',
     'depends': [
-        'custom_web_hr_datos_candidatos','portal',
+        'custom_web_hr_datos_candidatos',
     ],
     'data': [
         'views/view_home.xml',
