@@ -4,11 +4,16 @@ import publicWidget from "@web/legacy/js/public/public_widget";
 import { _t } from "@web/core/l10n/translation";
 
 const YEARS = Array.from({ length: 2026 - 1900 }, (_, i) => i + 1900);
-
 const optionsYears = YEARS.map(year => `<option value="${year}">${year}</option>`).join("");
 
 let cachedCountries = null;
 let cachedStatesByCountry = {};
+
+DOCUMENT_TYPES = [
+    ('cedula', 'Cédula'),
+    ('id_extrj', 'Cédula extranjera'),
+    ('pasaporte', 'Pasaporte'),
+]
 
 async function loadCountriesAndStates() {
     if (!cachedCountries) {
