@@ -1806,35 +1806,47 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     },
 
-    // _onSelectFamily(ev) {
-    //     const parentesco = $(ev.currentTarget).data('type');
-    //     if (!parentesco) return;
-    //     if (["Padre","Madre","Conyugue"].includes(parentesco)) {
-    //         if (this.$(`#family_container .family-block[data-type="${parentesco}"]`).length) {
-    //             alert(`${parentesco} ya fue agregado`);
-    //             return;
-    //         }
-    //     }
-
-    //     this._addFamilyBlock(parentesco); 
-    // },
-
     _onSelectFamily(ev) {
         const parentesco = $(ev.currentTarget).data('type');
         if (!parentesco) return;
-        const UNIQUE_TYPES = ['Padre', 'Madre', 'Conyugue'];
-        if (UNIQUE_TYPES.includes(parentesco)) {
+        if (["Padre","Madre","Conyugue"].includes(parentesco)) {
             if (this.$(`#family_container .family-block[data-type="${parentesco}"]`).length) {
                 alert(`${parentesco} ya fue agregado`);
                 return;
             }
         }
 
-        this._addFamilyBlock(parentesco);
+        this._addFamilyBlock(parentesco); 
     },
 
+    // async _addFamilyBlock(parentesco) {
+    //     this.familyCount++;
+    //     const FAMILY_TYPES_MAP = {
+    //         '1': 'Padre',
+    //         '2': 'Madre',
+    //         '3': 'Hermano(a)',
+    //         '4': 'Conyugue',
+    //         '5': 'Hijo(a)'
+    //     };
+
+    //     const label = FAMILY_TYPES_MAP[parentesco] || parentesco;
+    //     const html = await this._getFamilyBlock(label);
+    //     this.$('#family_container').append(html);
+    //     this.$(`#family_container .family-block:last`).append(`
+    //         <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
+    //     `);
+
+    //     const i = this.familyCount;
+    //     this.$(`input[name="famDisc_${i}"]`).on('change', () => {
+    //         this._toggleFamilyDisability(i);
+    //     });
+    //     this.$(`input[name="famDepende_${i}"]`).on('change', (ev) => {
+    //         const name = $(ev.currentTarget).attr('name');
+    //         this.$(`input[name="${name}"]`).removeClass('is-invalid');
+    //     });
+    // },
+
     async _addFamilyBlock(parentesco) {
-        this.familyCount++;
         const FAMILY_TYPES_MAP = {
             '1': 'Padre',
             '2': 'Madre',
@@ -1843,8 +1855,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             '5': 'Hijo(a)'
         };
 
+        const UNIQUE_TYPES = ['1', '2', '4'];
+        if (UNIQUE_TYPES.includes(parentesco) &&
+            this.$(`#family_container .family-block[data-type="${FAMILY_TYPES_MAP[parentesco]}"]`).length > 0) {
+            alert(`Ya existe un bloque para ${FAMILY_TYPES_MAP[parentesco]}`);
+            return;
+        }
+
+        this.familyCount++;
         const label = FAMILY_TYPES_MAP[parentesco] || parentesco;
         const html = await this._getFamilyBlock(label);
+
+
         this.$('#family_container').append(html);
         this.$(`#family_container .family-block:last`).append(`
             <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
@@ -1859,6 +1881,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$(`input[name="${name}"]`).removeClass('is-invalid');
         });
     },
+
 
     _onRemoveFamily(ev) {
         const $block = $(ev.currentTarget).closest('.family-block');
