@@ -1411,6 +1411,25 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         let isValid = true;
         let errorMsg = '';
 
+        function isValidEcuadorianId(cedula) {
+            cedula = (cedula || '').replace(/\D/g, '');
+            if (cedula.length !== 10) return false;
+            const province = parseInt(cedula.substring(0, 2), 10);
+            if (province < 1 || province > 24 || parseInt(cedula[2], 10) > 5) return false;
+            const coefficients = [2,1,2,1,2,1,2,1,2];
+            let total = 0;
+            for (let i = 0; i < coefficients.length; i++) {
+                let product = parseInt(cedula[i], 10) * coefficients[i];
+                total += product >= 10 ? product - 9 : product;
+            }
+            const verifier = (10 - (total % 10)) % 10;
+            return verifier === parseInt(cedula[9], 10);
+        }
+
+        function isValidForeignId(idNumber) {
+            return /^\d{10}$/.test(idNumber);
+        }
+
         if (type === 'cedula') {
             if (!isValidEcuadorianId(value)) {
                 isValid = false;
