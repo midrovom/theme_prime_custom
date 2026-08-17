@@ -1838,12 +1838,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return;
         }
 
-        // if (UNIQUE_TYPES.includes(label) &&
-        //     this.$(`#family_container .family-block[data-type="${label}"]`).length > 0) {
-        //     alert(`Ya existe un bloque para ${label}`);
-        //     return;
-        // }
-
         this.familyCount++;
         const html = await this._getFamilyBlock(label);
         this.$('#family_container').append(html);
