@@ -97,6 +97,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="enfermedad_laboral"]': function() {this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');},
         'change input[name="cirugia_realizada"]': function() {this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');},
         'change #curriculum-vitae': '_onFileSelected',
+        'change select[name^="famTipoDoc_"]': '_validateField',
     },
     
     /**
