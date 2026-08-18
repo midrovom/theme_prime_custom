@@ -329,18 +329,21 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
             this.$(`input[name="famApellidoPaterno_${i}"], 
                     input[name="famApellidoMaterno_${i}"], 
-                    input[name="famPrimerNombre_${i}"]`).on("input blur", function() {
+                    input[name="famPrimerNombre_${i}"], 
+                    input[name="famSegundoNombre_${i}"]`).on("input blur", function() {
                 const $f = $(this);
-                if (!$f.val().trim()) {
+                if (!$f.val().trim() && $f.prop("required")) {
                     $f.addClass("is-invalid");
+                    if ($f.next(".invalid-feedback").length === 0) {
+                        $f.after('<div class="invalid-feedback">Campo obligatorio</div>');
+                    }
                 } else {
                     $f.removeClass("is-invalid");
                 }
                 updateFullName();
             });
-
-            this.$(`input[name="famSegundoNombre_${i}"]`).on("input", updateFullName);
         }, 0);
+
 
     },
 
