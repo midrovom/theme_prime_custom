@@ -23,7 +23,8 @@
     </template>
 
     <template id="portal_home_remove_orders" inherit_id="portal.portal_my_home" name="Portal Home Remove Orders">
-        <xpath expr="//div[@id='portal_client_category']/t[t-set='url'][@t-value=\"'/my/orders'\"]" position="replace"/>
+        <xpath expr="//t[@t-call='portal.portal_docs_entry']" position="replace">
+        </xpath>
     </template>
 
 </odoo>
