@@ -153,8 +153,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$('input[name="studyOptions"]').removeClass('is-invalid');
         });
 
-        this.$('#add-family[data-type="Hijo"]').prop('disabled', true);
-
         // NUEVO: controlar hijos automáticamente
         this.$('#hr-hijos').on('input change', async (ev) => {
             const numHijos = parseInt(ev.currentTarget.value, 10);

@@ -144,7 +144,7 @@
                         <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="2">Madre</button>
                         <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="3">Hermano(a)</button>
                         <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="4">Conyugue</button>
-                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="5">Hijo(a)</button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="5" disabled>Hijo(a)</button>
                     </div>
                 </div>
 
