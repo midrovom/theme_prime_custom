@@ -118,11 +118,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     start() {
         
         this._initializeForm();
-
-        this._addEducationBlock();
-        for (let i = 0; i < 3; i++) {
-            this._addExperienceBlock();
-        }
+        this._addExperienceBlock();
         for (let i = 0; i < 3; i++) {
             this._addReferenceBlock();
         }
