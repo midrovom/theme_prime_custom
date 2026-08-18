@@ -631,15 +631,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
-                        <div class="col-12 mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input no-aplica-exp" type="checkbox" id="no-aplica_${this.experienceCount}" name="noAplica_${this.experienceCount}">
-                                <label class="form-check-label" for="no-aplica_${this.experienceCount}">
-                                    No aplica (no tengo más experiencias)
-                                </label>
-                            </div>
-                        </div>
-
                         <div class="row d-flex justify-content-between">
                             <div class="col-12 mt-3 d-flex justify-content-end">
                                 <button type="button" class="btn btn-outline-danger rounded-pill px-4 remove-experience">
@@ -2079,14 +2070,29 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Methods experience job
     //----------------------------------------------------------------------
 
+    // async _addExperienceBlock() {
+    //     const newBlock = await this._getExperienceBlock(true);
+    //     this.$('#experience_container').append(newBlock);
+    //     this.$('#experience_container').find('.remove-experience').last().on('click', (ev) => {
+    //         $(ev.target).closest('.education-block').remove();
+    //         this._checkFieldsFilled();
+    //     });
+        
+    //     this._checkFieldsFilled();
+    // },
+
     async _addExperienceBlock() {
+        this.experienceCount++;
         const newBlock = await this._getExperienceBlock(true);
         this.$('#experience_container').append(newBlock);
         this.$('#experience_container').find('.remove-experience').last().on('click', (ev) => {
-            $(ev.target).closest('.education-block').remove();
+            $(ev.target).closest('.experience-block').remove();
+            this.experienceCount--;
+            this.$('#total_experiences').val(this.experienceCount);
             this._checkFieldsFilled();
         });
-        
+
+        this.$('#total_experiences').val(this.experienceCount);
         this._checkFieldsFilled();
     },
 
