@@ -153,6 +153,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$('input[name="studyOptions"]').removeClass('is-invalid');
         });
 
+        this.$('#add-family[data-type="Hijo"]').prop('disabled', true);
+
         // NUEVO: controlar hijos automáticamente
         this.$('#hr-hijos').on('input change', async (ev) => {
             const numHijos = parseInt(ev.currentTarget.value, 10);
@@ -1910,26 +1912,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     },
 
-    // _onSelectFamily(ev) {
-    //     const parentesco = $(ev.currentTarget).data('type');
-    //     if (!parentesco) return;
-    //     if (["Padre","Madre","Conyugue"].includes(parentesco)) {
-    //         if (this.$(`#family_container .family-block[data-type="${parentesco}"]`).length) {
-    //             alert(`${parentesco} ya fue agregado`);
-    //             return;
-    //         }
-    //     }
-
-    //     this._addFamilyBlock(parentesco); 
-    // },
-
     _onSelectFamily(ev) {
         const parentesco = $(ev.currentTarget).data('type');
         if (!parentesco) return;
-        if (parentesco === "Hijo(a)") {
-            return;
-        }
-
         if (["Padre","Madre","Conyugue"].includes(parentesco)) {
             if (this.$(`#family_container .family-block[data-type="${parentesco}"]`).length) {
                 alert(`${parentesco} ya fue agregado`);
