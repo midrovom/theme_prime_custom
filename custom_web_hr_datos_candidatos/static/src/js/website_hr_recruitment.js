@@ -1145,61 +1145,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
-    // _validateFamilyFields(i) {
-    //     let valid = true;
-
-    //     const requiredFields = [
-    //         `famNombre_${i}`,
-    //         `famCedula_${i}`,
-    //         `famFecha_${i}`,
-    //         `famTelefono_${i}`,
-    //         `famOcupacion_${i}`,
-    //         `famDepende_${i}`,
-    //         `famDisc_${i}`
-    //     ];
-
-    //     requiredFields.forEach(name => {
-
-    //         const $group = this.$(`input[name="${name}"]`);
-    //         const isRadio = $group.length && $group.first().attr('type') === 'radio';
-
-    //         let ok;
-
-    //         if (isRadio) {
-    //             ok = $group.filter(':checked').length > 0;
-    //             $group.removeClass('is-invalid');
-
-    //             if (!ok) {
-    //                 $group.addClass('is-invalid');
-    //                 valid = false;
-    //             }
-
-    //         } else {
-    //             const $el = this.$(`[name="${name}"]`);
-    //             ok = !!$el.val()?.toString().trim();
-
-    //             $el.toggleClass('is-invalid', !ok);
-
-    //             if (!ok) valid = false;
-    //         }
-    //     });
-
-    //     const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
-    //     const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
-
-    //     if (discValue === 'si') {
-    //         const okTipo = !!$tipo.val()?.trim();
-
-    //         $tipo.toggleClass('is-invalid', !okTipo);
-
-    //         if (!okTipo) valid = false;
-    //     } else {
-    //         $tipo.removeClass('is-invalid');
-    //     }
-
-    //     return valid;
-    // },
-
     _validateFamilyFields(i) {
         let valid = true;
 
@@ -1868,6 +1813,39 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-1').removeClass('d-none');
     },
 
+    // _onSubmitForm(ev) {
+    //     ev.preventDefault();
+    //     let valid = true;
+    //     if (!this._validateCurrentStep3()) return;
+
+    //     if (this.experienceCount < 3) {
+    //         $('#experienceMessageText').text("Debe ingresar al menos 3 experiencias laborales.");
+    //         $('#experienceMessage').removeClass('d-none');
+    //         return;
+    //     }
+
+    //     this.$('#experience_container .experience-block input, #experience_container .experience-block select').each((i, el) => {
+    //         if (!$(el).val()) {
+    //             $(el).addClass('is-invalid');
+    //             valid = false;
+    //         } else {
+    //             $(el).removeClass('is-invalid');
+    //         }
+    //     });
+
+    //     if (!valid) {
+    //         $('#experienceMessageText').text("Complete todos los campos de experiencia antes de enviar.");
+    //         $('#experienceMessage').removeClass('d-none');
+    //         return;
+    //     }
+
+    //     this.$('#submit-form')
+    //         .prop('disabled', true)
+    //         .text('Enviando...');
+
+    //     this.el.submit();
+    // },
+
     _onSubmitForm(ev) {
         ev.preventDefault();
         let valid = true;
@@ -1893,6 +1871,17 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             $('#experienceMessage').removeClass('d-none');
             return;
         }
+
+        this.$('.family-block').each((index, block) => {
+            const i = $(block).find('input[name^="famApellidoPaterno_"]').attr('name').split('_')[1];
+            const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val()?.trim() || "";
+            const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
+            const primer  = this.$(`input[name="famPrimerNombre_${i}"]`).val()?.trim() || "";
+            const segundo = this.$(`input[name="famSegundoNombre_${i}"]`).val()?.trim() || "";
+
+            const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
+            this.$(`input[name="famNombre_${i}"]`).val(fullName);
+        });
 
         this.$('#submit-form')
             .prop('disabled', true)
