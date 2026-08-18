@@ -46,6 +46,7 @@ class ApplicantFamily(models.Model):
     )
 
     disability_type = fields.Char(string='Tipo de discapacidad')
+    disability_percentage = fields.Integer(string="Porcentaje de discapacidad")
 
 class ApplicantKnown(models.Model):
     _name = 'applicant.known'

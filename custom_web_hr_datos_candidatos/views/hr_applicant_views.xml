@@ -100,6 +100,7 @@
                                 <field name="economically_dependent"/>
                                 <field name="disability"/>
                                 <field name="disability_type"/>
+                                <field name="disability_percentage"/>
                             </list>
                         </field>
                     </page>

@@ -17,6 +17,7 @@
                     <field name="economically_dependent" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="disability" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="disability_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="disability_percentage" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                 </list>
             </field>
         </record>
@@ -42,6 +43,7 @@
                             <field name="economically_dependent" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             <field name="disability" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             <field name="disability_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="disability_percentage" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                         </group>
                     </sheet>
                 </form>
