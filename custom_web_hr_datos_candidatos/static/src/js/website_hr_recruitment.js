@@ -120,7 +120,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._initializeForm();
 
         this._addEducationBlock();
-        this._addExperienceBlock();
+        for (let i = 0; i < 3; i++) {
+            this._addExperienceBlock();
+        }
         for (let i = 0; i < 3; i++) {
             this._addReferenceBlock();
         }
@@ -630,6 +632,15 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                                 <option value=""></option>
                             </select>
                             <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input no-aplica-exp" type="checkbox" id="no-aplica_${this.experienceCount}" name="noAplica_${this.experienceCount}">
+                                <label class="form-check-label" for="no-aplica_${this.experienceCount}">
+                                    No aplica (no tengo más experiencias)
+                                </label>
+                            </div>
                         </div>
 
                         <div class="row d-flex justify-content-between">
@@ -1851,6 +1862,50 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
   
+    // _onSubmitForm(ev) {
+    //     ev.preventDefault();
+    //     let valid = true;
+    //     if (!this._validateCurrentStep3()) return;
+
+    //     if (this.experienceCount < 3) {
+    //         $('#experienceMessageText').text("Debe ingresar al menos 3 experiencias laborales.");
+    //         $('#experienceMessage').removeClass('d-none');
+    //         return;
+    //     }
+
+    //     this.$('#experience_container .experience-block input, #experience_container .experience-block select').each((i, el) => {
+    //         if (!$(el).val()) {
+    //             $(el).addClass('is-invalid');
+    //             valid = false;
+    //         } else {
+    //             $(el).removeClass('is-invalid');
+    //         }
+    //     });
+
+    //     if (!valid) {
+    //         $('#experienceMessageText').text("Complete todos los campos de experiencia antes de enviar.");
+    //         $('#experienceMessage').removeClass('d-none');
+    //         return;
+    //     }
+
+    //     this.$('.family-block').each((index, block) => {
+    //         const i = $(block).find('input[name^="famApellidoPaterno_"]').attr('name').split('_')[1];
+    //         const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val()?.trim() || "";
+    //         const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
+    //         const primer  = this.$(`input[name="famPrimerNombre_${i}"]`).val()?.trim() || "";
+    //         const segundo = this.$(`input[name="famSegundoNombre_${i}"]`).val()?.trim() || "";
+
+    //         const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
+    //         this.$(`input[name="famNombre_${i}"]`).val(fullName);
+    //     });
+
+    //     this.$('#submit-form')
+    //         .prop('disabled', true)
+    //         .text('Enviando...');
+
+    //     this.el.submit();
+    // },
+
     _onSubmitForm(ev) {
         ev.preventDefault();
         let valid = true;
@@ -1862,17 +1917,26 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return;
         }
 
-        this.$('#experience_container .experience-block input, #experience_container .experience-block select').each((i, el) => {
-            if (!$(el).val()) {
-                $(el).addClass('is-invalid');
-                valid = false;
+        this.$('#experience_container .experience-block').each((i, block) => {
+            const $block = $(block);
+            const noAplica = $block.find('.no-aplica-exp').is(':checked'); 
+
+            if (!noAplica) {
+                $block.find('input, select').each((j, el) => {
+                    if (!$(el).val()) {
+                        $(el).addClass('is-invalid');
+                        valid = false;
+                    } else {
+                        $(el).removeClass('is-invalid');
+                    }
+                });
             } else {
-                $(el).removeClass('is-invalid');
+                $block.find('input, select').removeClass('is-invalid').prop('disabled', true);
             }
         });
 
         if (!valid) {
-            $('#experienceMessageText').text("Complete todos los campos de experiencia antes de enviar.");
+            $('#experienceMessageText').text("Complete todos los campos de experiencia o marque 'No aplica'.");
             $('#experienceMessage').removeClass('d-none');
             return;
         }
