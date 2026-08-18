@@ -1118,9 +1118,44 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return isValid;
     },
 
+    // _toggleFamilyDisability(i) {
+    //     const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
+    //     const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
+    //     const $errorTipo = $tipo.siblings('.fam-disc-type-error');
+    //     const $errorRadio = this.$(`input[name="famDisc_${i}"]`)
+    //         .closest('.col-md-3')
+    //         .find('.fam-disc-error');
+
+    //     if (discValue === 'si') {
+    //         $tipo.prop('disabled', false);
+
+
+    //         if (!$tipo.val().trim()) {
+    //             $tipo.addClass('is-invalid');
+    //         } else {
+    //             $tipo.removeClass('is-invalid');
+    //         }
+
+    //     } else if (discValue === 'no') {
+    //         $tipo.prop('disabled', true)
+    //             .val('')
+    //             .removeClass('is-invalid');
+
+    //         $errorTipo.addClass('d-none');
+    //         $errorRadio.addClass('d-none');
+    //     }
+
+    //     if (!discValue) {
+    //         $errorRadio.removeClass('d-none');
+    //     } else {
+    //         $errorRadio.addClass('d-none');
+    //     }
+    // },
+
     _toggleFamilyDisability(i) {
         const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
         const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
+        const $porcentaje = this.$(`input[name="famDiscPorcentaje_${i}"]`);
         const $errorTipo = $tipo.siblings('.fam-disc-type-error');
         const $errorRadio = this.$(`input[name="famDisc_${i}"]`)
             .closest('.col-md-3')
@@ -1128,7 +1163,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         if (discValue === 'si') {
             $tipo.prop('disabled', false);
-
+            $porcentaje.prop('disabled', false);
 
             if (!$tipo.val().trim()) {
                 $tipo.addClass('is-invalid');
@@ -1136,8 +1171,19 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 $tipo.removeClass('is-invalid');
             }
 
+            const val = $porcentaje.val();
+            const isValid = val && !isNaN(val) && val >= 0 && val <= 100;
+            if (!isValid) {
+                $porcentaje.addClass('is-invalid');
+            } else {
+                $porcentaje.removeClass('is-invalid');
+            }
+
         } else if (discValue === 'no') {
             $tipo.prop('disabled', true)
+                .val('')
+                .removeClass('is-invalid');
+            $porcentaje.prop('disabled', true)
                 .val('')
                 .removeClass('is-invalid');
 
