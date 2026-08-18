@@ -158,13 +158,17 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         // NUEVO: controlar hijos automáticamente
         this.$('#hr-hijos').on('input change', async (ev) => {
             const numHijos = parseInt(ev.currentTarget.value, 10);
-            this.$('.family-block[data-type="Hijo"]').remove();
+            const $container = this.$('#family_container');
+            $container.find('.family-block[data-type="Hijo"]').remove();
+
             if (!isNaN(numHijos) && numHijos > 1) {
                 for (let i = 0; i < numHijos; i++) {
                     this.familyCount++;
                     const blockHtml = await this._getFamilyBlock("Hijo");
-                    this.$('#family_container').append(blockHtml);
+                    $container.append(blockHtml);
                 }
+                
+                this.$('#form-step-2').removeClass('d-none');
             }
         });
 
