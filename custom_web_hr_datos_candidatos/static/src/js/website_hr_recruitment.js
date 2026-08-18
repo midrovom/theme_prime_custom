@@ -78,6 +78,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'blur input[name^="famApellidoPaterno_"]': '_validateField',
         'blur input[name^="famApellidoMaterno_"]': '_validateField',
         'blur input[name^="famPrimerNombre_"]':    '_validateField',
+        'blur input[name^="famSegundoNombre_"]': '_validateField',
 
         'change input[name="studyOptions"]': '_toggleStudyFields',
         'change #hr-type-doc, #hr-country, #hr-provincia, #curriculum-vitae, #experience_container select, #education_container select': '_validateField',
