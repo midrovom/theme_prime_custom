@@ -165,6 +165,23 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             }
         });
 
+        this.$('#total_experiences').on('input change', async (ev) => {
+            let num = parseInt($(ev.currentTarget).val(), 10);
+            this.$('#experience_container').empty();
+            this.experienceCount = 0;
+
+            if (!isNaN(num) && num > 0) {
+                for (let i = 0; i < num; i++) {
+                    this.experienceCount++;
+                    const newBlock = await this._getExperienceBlock(false);
+                    this.$('#experience_container').append(newBlock);
+                }
+            }
+
+            this._checkFieldsFilled();
+        });
+
+
         return this._super();
     },
 
