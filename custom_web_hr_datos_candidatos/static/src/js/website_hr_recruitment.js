@@ -298,6 +298,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <label class="fs-6">Tipo de discapacidad</label>
                                 <input type="text"name="famDiscTipo_${this.familyCount}" class="form-control rounded-pill fam-disc-tipo" disabled />
                         </div>
+
+                        <div class="col-md-3">
+                            <label class="fs-6">Porcentaje de discapacidad</label>
+                                <input type="number" name="famDiscPorcentaje_${this.familyCount}" class="form-control rounded-pill fam-disc-porcentaje" min="0" max="100" step="1" />
+                            <div class="invalid-feedback">Ingrese un valor entre 0 y 100</div>
+                        </div>
+
                     </div>
 
                     <div class="row d-flex justify-content-between">
@@ -1726,18 +1733,24 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         if ($discapacidadSi.is(':checked')) {
             $tipo.prop('disabled', false);
             $porcentaje.prop('disabled', false);
+
             $tipo.attr('required', true);
             $porcentaje.attr('required', true);
+
             $tipo.on('blur', () => {
                 $tipo.toggleClass('is-invalid', !$tipo.val().trim());
             });
+
             $porcentaje.on('blur', () => {
-                $porcentaje.toggleClass('is-invalid', !$porcentaje.val().trim());
+                const val = $porcentaje.val();
+                const isValid = val && !isNaN(val) && val >= 0 && val <= 100;
+                $porcentaje.toggleClass('is-invalid', !isValid);
             });
 
         } else {
             $tipo.prop('disabled', true).removeClass('is-invalid').val('');
             $porcentaje.prop('disabled', true).removeClass('is-invalid').val('');
+
             $tipo.removeAttr('required');
             $porcentaje.removeAttr('required');
         }
@@ -1813,39 +1826,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-1').removeClass('d-none');
     },
 
-    // _onSubmitForm(ev) {
-    //     ev.preventDefault();
-    //     let valid = true;
-    //     if (!this._validateCurrentStep3()) return;
-
-    //     if (this.experienceCount < 3) {
-    //         $('#experienceMessageText').text("Debe ingresar al menos 3 experiencias laborales.");
-    //         $('#experienceMessage').removeClass('d-none');
-    //         return;
-    //     }
-
-    //     this.$('#experience_container .experience-block input, #experience_container .experience-block select').each((i, el) => {
-    //         if (!$(el).val()) {
-    //             $(el).addClass('is-invalid');
-    //             valid = false;
-    //         } else {
-    //             $(el).removeClass('is-invalid');
-    //         }
-    //     });
-
-    //     if (!valid) {
-    //         $('#experienceMessageText').text("Complete todos los campos de experiencia antes de enviar.");
-    //         $('#experienceMessage').removeClass('d-none');
-    //         return;
-    //     }
-
-    //     this.$('#submit-form')
-    //         .prop('disabled', true)
-    //         .text('Enviando...');
-
-    //     this.el.submit();
-    // },
-
+  
     _onSubmitForm(ev) {
         ev.preventDefault();
         let valid = true;
