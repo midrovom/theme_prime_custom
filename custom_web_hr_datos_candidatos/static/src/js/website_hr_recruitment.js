@@ -186,13 +186,35 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                     <div class="row g-3">
 
-                        <!-- Nombre -->
-                        <div class="col-md-5">
-                            <label class="fs-6">Nombres completos <span class="required-asterisk">*</span></label>
-                            <input type="text" name="famNombre_${this.familyCount}" class="form-control rounded-pill" required/>
+                        <!-- Apellido paterno -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Apellido paterno <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famApellidoPaterno_${this.familyCount}" class="form-control rounded-pill" required/>
                             <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
-                        
+
+                        <!-- Apellido materno -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Apellido materno <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famApellidoMaterno_${this.familyCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+
+                        <!-- Primer nombre -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Primer nombre <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famPrimerNombre_${this.familyCount}" class="form-control rounded-pill" required/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+
+                        <!-- Segundo nombre -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Segundo nombre</label>
+                            <input type="text" name="famSegundoNombre_${this.familyCount}" class="form-control rounded-pill"/>
+                        </div>
+
+                        <input type="hidden" name="famNombre_${this.familyCount}" class="fam-nombre-completo"/>
+
                         <!-- Tipo de documento -->
                         <div class="col-12 col-md-3">
                             <label for="fam-type-doc_${this.familyCount}" class="fs-6"> Tipo de documento: <span class="text-danger">*</span></label>
@@ -289,6 +311,25 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 </div>
             </div>
         `;
+
+        setTimeout(() => {
+            const i = this.familyCount;
+            const updateFullName = () => {
+                const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val() || "";
+                const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val() || "";
+                const primer = this.$(`input[name="famPrimerNombre_${i}"]`).val() || "";
+                const segundo = this.$(`input[name="famSegundoNombre_${i}"]`).val() || "";
+
+                const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
+                this.$(`input[name="famNombre_${i}"]`).val(fullName);
+            };
+
+            this.$(`input[name="famApellidoPaterno_${i}"], 
+                    input[name="famApellidoMaterno_${i}"], 
+                    input[name="famPrimerNombre_${i}"], 
+                    input[name="famSegundoNombre_${i}"]`).on("input", updateFullName);
+        }, 0);
+
     },
 
     async _getEducationBlock(isFirstBlock = false) {
