@@ -22,9 +22,8 @@
         </xpath>
     </template>
 
-
-    <template id="portal_home_remove_orders_generic" inherit_id="portal.portal_my_home" name="Portal Home Remove Orders Generic">
-        <xpath expr="//div[contains(@class,'o_portal_index_card')]//a[contains(@href,'/my/orders')]/ancestor::div[contains(@class,'o_portal_index_card')]" position="replace"/>
+    <template id="portal_home_remove_orders" inherit_id="portal.portal_my_home" name="Portal Home Remove Orders">
+        <xpath expr="//div[@id='portal_client_category']/t[t-set='url'][@t-value=\"'/my/orders'\"]" position="replace"/>
     </template>
 
 </odoo>
