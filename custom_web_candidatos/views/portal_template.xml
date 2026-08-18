@@ -18,22 +18,33 @@
                 </a>
             </div>
 
-            <div class="o_portal_index_card col-md-6 order-3">
-                <a href="/my/applications" title="Historial de Postulación" class="d-flex gap-2 gap-md-3 py-3 pe-2 px-md-3 h-100 rounded text-decoration-none bg-100">
-                    <div class="o_portal_icon d-block align-self-start">
-                        <img src="/hr_recruitment/static/src/img/applications.svg" loading="lazy"/>
-                    </div>
-                    <div>
-                        <div class="mt-0 mb-1 fs-5 fw-normal lh-1">
-                            <span>Historial de Postulación</span>
-                        </div>
-                        <div class="opacity-75">
-                            Revise los cargos a los que ha postulado
-                        </div>
-                    </div>
-                </a>
-            </div>
-            
+        <div class="container mt-4">
+            <h2>Historial de Postulación</h2>
+            <t t-if="applications">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Cargo</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="applications" t-as="app">
+                            <tr>
+                                <td><t t-esc="app.job_id.name"/></td>
+                                <td><t t-esc="app.create_date"/></td>
+                                <td><t t-esc="app.stage_id.name"/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </t>
+            <t t-else="">
+                <p class="text-muted">No tiene postulaciones registradas.</p>
+            </t>
+        </div>
+
         </xpath>
     </template>
 
@@ -46,5 +57,4 @@
     </template>
 
 </odoo>
-
 
