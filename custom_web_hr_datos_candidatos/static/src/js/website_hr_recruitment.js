@@ -75,6 +75,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'blur input[name^="inicioEstudio_"]': function(ev) { this._validateDateField(ev.currentTarget);},
         'blur input[name^="jobInicio_"]': function(ev) {this._validateDateField(ev.currentTarget);},
         'blur input[name="tipo_sangre"]': '_validateTipoSangre',
+        'blur input[name^="famApellidoPaterno_"]': '_validateField',
+        'blur input[name^="famApellidoMaterno_"]': '_validateField',
+        'blur input[name^="famPrimerNombre_"]':    '_validateField',
 
         'change input[name="studyOptions"]': '_toggleStudyFields',
         'change #hr-type-doc, #hr-country, #hr-provincia, #curriculum-vitae, #experience_container select, #education_container select': '_validateField',
@@ -326,21 +329,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
             this.$(`input[name="famApellidoPaterno_${i}"], 
                     input[name="famApellidoMaterno_${i}"], 
-                    input[name="famPrimerNombre_${i}"], 
-                    input[name="famSegundoNombre_${i}"]`).on("input blur", function() {
+                    input[name="famPrimerNombre_${i}"]`).on("input blur", function() {
                 const $f = $(this);
-                if (!$f.val().trim() && $f.prop("required")) {
+                if (!$f.val().trim()) {
                     $f.addClass("is-invalid");
-                    if ($f.next(".invalid-feedback").length === 0) {
-                        $f.after('<div class="invalid-feedback">Campo obligatorio</div>');
-                    }
                 } else {
                     $f.removeClass("is-invalid");
                 }
                 updateFullName();
             });
-        }, 0);
 
+            this.$(`input[name="famSegundoNombre_${i}"]`).on("input", updateFullName);
+        }, 0);
 
     },
 
