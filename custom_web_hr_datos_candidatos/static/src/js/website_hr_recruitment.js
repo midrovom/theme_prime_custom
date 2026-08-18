@@ -1212,13 +1212,19 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         if (discValue === 'si') {
             const okTipo = !!$tipo.val()?.trim();
-
             $tipo.toggleClass('is-invalid', !okTipo);
-
             if (!okTipo) valid = false;
+
+            const valPorcentaje = $porcentaje.val();
+            const okPorcentaje = valPorcentaje && !isNaN(valPorcentaje) && valPorcentaje >= 0 && valPorcentaje <= 100;
+            $porcentaje.toggleClass('is-invalid', !okPorcentaje);
+            if (!okPorcentaje) valid = false;
+
         } else {
             $tipo.removeClass('is-invalid');
+            $porcentaje.removeClass('is-invalid');
         }
+
 
         return valid;
     },
