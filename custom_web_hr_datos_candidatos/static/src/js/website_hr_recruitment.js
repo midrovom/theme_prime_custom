@@ -1725,17 +1725,40 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
+    // _toggleDisabilityFields() {
+    //     const $discapacidadSi = this.$('input[name="discapacidad"][value="si"]');
+    //     const $tipo = this.$('input[name="tipo_discapacidad"]');
+    //     const $porcentaje = this.$('input[name="porcentaje_discapacidad"]');
+
+    //     if ($discapacidadSi.is(':checked')) {
+    //         $tipo.prop('disabled', false);
+    //         $porcentaje.prop('disabled', false);
+    //         $tipo.attr('required', true);
+    //         $porcentaje.attr('required', true);
+    //         $tipo.on('blur', () => {
+    //             $tipo.toggleClass('is-invalid', !$tipo.val().trim());
+    //         });
+    //         $porcentaje.on('blur', () => {
+    //             $porcentaje.toggleClass('is-invalid', !$porcentaje.val().trim());
+    //         });
+
+    //     } else {
+    //         $tipo.prop('disabled', true).removeClass('is-invalid').val('');
+    //         $porcentaje.prop('disabled', true).removeClass('is-invalid').val('');
+    //         $tipo.removeAttr('required');
+    //         $porcentaje.removeAttr('required');
+    //     }
+    // },
+
     _toggleDisabilityFields() {
-        const $discapacidadSi = this.$('input[name="discapacidad"][value="si"]');
-        const $tipo = this.$('input[name="tipo_discapacidad"]');
-        const $porcentaje = this.$('input[name="porcentaje_discapacidad"]');
+        const i = this.familyCount;
+        const $discapacidadSi = this.$(`input[name="famDisc_${i}"][value="si"]`);
+        const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
+        const $porcentaje = this.$(`input[name="famDiscPorcentaje_${i}"]`);
 
         if ($discapacidadSi.is(':checked')) {
-            $tipo.prop('disabled', false);
-            $porcentaje.prop('disabled', false);
-
-            $tipo.attr('required', true);
-            $porcentaje.attr('required', true);
+            $tipo.prop('disabled', false).attr('required', true);
+            $porcentaje.prop('disabled', false).attr('required', true);
 
             $tipo.on('blur', () => {
                 $tipo.toggleClass('is-invalid', !$tipo.val().trim());
@@ -1748,11 +1771,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             });
 
         } else {
-            $tipo.prop('disabled', true).removeClass('is-invalid').val('');
-            $porcentaje.prop('disabled', true).removeClass('is-invalid').val('');
-
-            $tipo.removeAttr('required');
-            $porcentaje.removeAttr('required');
+            $tipo.prop('disabled', true).removeClass('is-invalid').val('').removeAttr('required');
+            $porcentaje.prop('disabled', true).removeClass('is-invalid').val('').removeAttr('required');
         }
     },
 
