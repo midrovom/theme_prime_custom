@@ -75,10 +75,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'blur input[name^="inicioEstudio_"]': function(ev) { this._validateDateField(ev.currentTarget);},
         'blur input[name^="jobInicio_"]': function(ev) {this._validateDateField(ev.currentTarget);},
         'blur input[name="tipo_sangre"]': '_validateTipoSangre',
-        'blur input[name^="famApellidoPaterno_"]': '_validateField',
-        'blur input[name^="famApellidoMaterno_"]': '_validateField',
-        'blur input[name^="famPrimerNombre_"]':    '_validateField',
-        'blur input[name^="famSegundoNombre_"]': '_validateField',
 
         'change input[name="studyOptions"]': '_toggleStudyFields',
         'change #hr-type-doc, #hr-country, #hr-provincia, #curriculum-vitae, #experience_container select, #education_container select': '_validateField',
@@ -1149,10 +1145,69 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
+    // _validateFamilyFields(i) {
+    //     let valid = true;
+
+    //     const requiredFields = [
+    //         `famNombre_${i}`,
+    //         `famCedula_${i}`,
+    //         `famFecha_${i}`,
+    //         `famTelefono_${i}`,
+    //         `famOcupacion_${i}`,
+    //         `famDepende_${i}`,
+    //         `famDisc_${i}`
+    //     ];
+
+    //     requiredFields.forEach(name => {
+
+    //         const $group = this.$(`input[name="${name}"]`);
+    //         const isRadio = $group.length && $group.first().attr('type') === 'radio';
+
+    //         let ok;
+
+    //         if (isRadio) {
+    //             ok = $group.filter(':checked').length > 0;
+    //             $group.removeClass('is-invalid');
+
+    //             if (!ok) {
+    //                 $group.addClass('is-invalid');
+    //                 valid = false;
+    //             }
+
+    //         } else {
+    //             const $el = this.$(`[name="${name}"]`);
+    //             ok = !!$el.val()?.toString().trim();
+
+    //             $el.toggleClass('is-invalid', !ok);
+
+    //             if (!ok) valid = false;
+    //         }
+    //     });
+
+    //     const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
+    //     const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
+
+    //     if (discValue === 'si') {
+    //         const okTipo = !!$tipo.val()?.trim();
+
+    //         $tipo.toggleClass('is-invalid', !okTipo);
+
+    //         if (!okTipo) valid = false;
+    //     } else {
+    //         $tipo.removeClass('is-invalid');
+    //     }
+
+    //     return valid;
+    // },
+
     _validateFamilyFields(i) {
         let valid = true;
 
         const requiredFields = [
+            `famApellidoPaterno_${i}`,
+            `famApellidoMaterno_${i}`,
+            `famPrimerNombre_${i}`,
+            `famSegundoNombre_${i}`, 
             `famNombre_${i}`,
             `famCedula_${i}`,
             `famFecha_${i}`,
@@ -1163,7 +1218,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         ];
 
         requiredFields.forEach(name => {
-
             const $group = this.$(`input[name="${name}"]`);
             const isRadio = $group.length && $group.first().attr('type') === 'radio';
 
