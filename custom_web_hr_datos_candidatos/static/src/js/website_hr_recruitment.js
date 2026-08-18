@@ -153,6 +153,35 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$('input[name="studyOptions"]').removeClass('is-invalid');
         });
 
+        // NUEVO: controlar hijos automáticamente
+        this.$('#hr-hijos').on('input change', async (ev) => {
+            const numHijos = parseInt(ev.currentTarget.value, 10);
+            this.$('.family-block[data-type="Hijo"]').remove();
+
+            if (!isNaN(numHijos) && numHijos > 1) {
+                this.$('#add-family[data-type="Hijo"]').css({
+                    'opacity': '0.5',
+                    'pointer-events': 'none'
+                });
+
+                for (let i = 0; i < numHijos; i++) {
+                    this.familyCount++;
+                    const blockHtml = await this._getFamilyBlock("Hijo");
+                    this.$('#family_container').append(blockHtml);
+                }
+            } else {
+                this.$('#add-family[data-type="Hijo"]').css({
+                    'opacity': '0.5',
+                    'pointer-events': 'none'
+                });
+            }
+        });
+
+        this.$('#add-family').not('[data-type="Hijo"]').css({
+            'opacity': '1',
+            'pointer-events': 'auto'
+        });
+
         return this._super();
     },
 
