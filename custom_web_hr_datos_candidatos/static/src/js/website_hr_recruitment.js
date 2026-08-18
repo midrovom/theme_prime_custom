@@ -1838,15 +1838,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
-    // _onNextClick(ev) {
-    //     ev.preventDefault();
-
-    //     if (this._validateCurrentStep1()) {
-    //         this.$('#form-step-1').addClass('d-none');
-    //         this.$('#form-step-2').removeClass('d-none');
-    //     }
-    // },
-
     _onNextClick(ev) {
         ev.preventDefault();
 
@@ -1856,7 +1847,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
             this.$('.family-block[data-type="Hijo"]').remove();
 
-            if (!isNaN(numHijos) && numHijos > 1) {
+            if (!isNaN(numHijos) && numHijos > 0) {
                 for (let i = 0; i < numHijos; i++) {
                     this.familyCount++;
                     this._getFamilyBlock("Hijo").then(blockHtml => {
