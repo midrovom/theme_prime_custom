@@ -158,17 +158,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         // NUEVO: controlar hijos automáticamente
         this.$('#hr-hijos').on('input change', async (ev) => {
             const numHijos = parseInt(ev.currentTarget.value, 10);
-            const $container = this.$('#family_container');
-            $container.find('.family-block[data-type="Hijo"]').remove();
-
+            this.$('.family-block[data-type="Hijo"]').remove();
             if (!isNaN(numHijos) && numHijos > 1) {
                 for (let i = 0; i < numHijos; i++) {
                     this.familyCount++;
                     const blockHtml = await this._getFamilyBlock("Hijo");
-                    $container.append(blockHtml);
+                    this.$('#family_container').append(blockHtml);
                 }
-                
-                this.$('#form-step-2').removeClass('d-none');
             }
         });
 
@@ -1842,12 +1838,32 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
+    // _onNextClick(ev) {
+    //     ev.preventDefault();
+
+    //     if (this._validateCurrentStep1()) {
+    //         this.$('#form-step-1').addClass('d-none');
+    //         this.$('#form-step-2').removeClass('d-none');
+    //     }
+    // },
+
     _onNextClick(ev) {
         ev.preventDefault();
 
         if (this._validateCurrentStep1()) {
             this.$('#form-step-1').addClass('d-none');
             this.$('#form-step-2').removeClass('d-none');
+            const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
+            this.$('.family-block[data-type="Hijo"]').remove();
+
+            if (!isNaN(numHijos) && numHijos > 1) {
+                for (let i = 0; i < numHijos; i++) {
+                    this.familyCount++;
+                    this._getFamilyBlock("Hijo").then(blockHtml => {
+                        this.$('#family_container').append(blockHtml);
+                    });
+                }
+            }
         }
     },
 
