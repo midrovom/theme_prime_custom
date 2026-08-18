@@ -21,8 +21,8 @@
             </div>
         </xpath>
 
-        <xpath expr="//div[@id='portal_client_category']/div[a[@href='/my/orders']]" position="replace"/>
-        
+        <xpath expr="//a[contains(@href, '/my/orders')]" position="replace"/>
+
     </template>
 
 </odoo>
