@@ -1118,40 +1118,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return isValid;
     },
 
-    // _toggleFamilyDisability(i) {
-    //     const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
-    //     const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
-    //     const $errorTipo = $tipo.siblings('.fam-disc-type-error');
-    //     const $errorRadio = this.$(`input[name="famDisc_${i}"]`)
-    //         .closest('.col-md-3')
-    //         .find('.fam-disc-error');
-
-    //     if (discValue === 'si') {
-    //         $tipo.prop('disabled', false);
-
-
-    //         if (!$tipo.val().trim()) {
-    //             $tipo.addClass('is-invalid');
-    //         } else {
-    //             $tipo.removeClass('is-invalid');
-    //         }
-
-    //     } else if (discValue === 'no') {
-    //         $tipo.prop('disabled', true)
-    //             .val('')
-    //             .removeClass('is-invalid');
-
-    //         $errorTipo.addClass('d-none');
-    //         $errorRadio.addClass('d-none');
-    //     }
-
-    //     if (!discValue) {
-    //         $errorRadio.removeClass('d-none');
-    //     } else {
-    //         $errorRadio.addClass('d-none');
-    //     }
-    // },
-
     _toggleFamilyDisability(i) {
         const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
         const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
@@ -1771,54 +1737,28 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
-    // _toggleDisabilityFields() {
-    //     const $discapacidadSi = this.$('input[name="discapacidad"][value="si"]');
-    //     const $tipo = this.$('input[name="tipo_discapacidad"]');
-    //     const $porcentaje = this.$('input[name="porcentaje_discapacidad"]');
-
-    //     if ($discapacidadSi.is(':checked')) {
-    //         $tipo.prop('disabled', false);
-    //         $porcentaje.prop('disabled', false);
-    //         $tipo.attr('required', true);
-    //         $porcentaje.attr('required', true);
-    //         $tipo.on('blur', () => {
-    //             $tipo.toggleClass('is-invalid', !$tipo.val().trim());
-    //         });
-    //         $porcentaje.on('blur', () => {
-    //             $porcentaje.toggleClass('is-invalid', !$porcentaje.val().trim());
-    //         });
-
-    //     } else {
-    //         $tipo.prop('disabled', true).removeClass('is-invalid').val('');
-    //         $porcentaje.prop('disabled', true).removeClass('is-invalid').val('');
-    //         $tipo.removeAttr('required');
-    //         $porcentaje.removeAttr('required');
-    //     }
-    // },
-
     _toggleDisabilityFields() {
-        const i = this.familyCount;
-        const $discapacidadSi = this.$(`input[name="famDisc_${i}"][value="si"]`);
-        const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
-        const $porcentaje = this.$(`input[name="famDiscPorcentaje_${i}"]`);
+        const $discapacidadSi = this.$('input[name="discapacidad"][value="si"]');
+        const $tipo = this.$('input[name="tipo_discapacidad"]');
+        const $porcentaje = this.$('input[name="porcentaje_discapacidad"]');
 
         if ($discapacidadSi.is(':checked')) {
-            $tipo.prop('disabled', false).attr('required', true);
-            $porcentaje.prop('disabled', false).attr('required', true);
-
+            $tipo.prop('disabled', false);
+            $porcentaje.prop('disabled', false);
+            $tipo.attr('required', true);
+            $porcentaje.attr('required', true);
             $tipo.on('blur', () => {
                 $tipo.toggleClass('is-invalid', !$tipo.val().trim());
             });
-
             $porcentaje.on('blur', () => {
-                const val = $porcentaje.val();
-                const isValid = val && !isNaN(val) && val >= 0 && val <= 100;
-                $porcentaje.toggleClass('is-invalid', !isValid);
+                $porcentaje.toggleClass('is-invalid', !$porcentaje.val().trim());
             });
 
         } else {
-            $tipo.prop('disabled', true).removeClass('is-invalid').val('').removeAttr('required');
-            $porcentaje.prop('disabled', true).removeClass('is-invalid').val('').removeAttr('required');
+            $tipo.prop('disabled', true).removeClass('is-invalid').val('');
+            $porcentaje.prop('disabled', true).removeClass('is-invalid').val('');
+            $tipo.removeAttr('required');
+            $porcentaje.removeAttr('required');
         }
     },
 
