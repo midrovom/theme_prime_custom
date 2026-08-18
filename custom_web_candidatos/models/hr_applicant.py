@@ -1,6 +1,6 @@
-from odoo import models, fields
+from odoo import models, fields, api
 
-class HrApplicant(models.model):
+class HrApplicant(models.Model):
     _inherit = 'hr.applicant'
 
     portal_user_id = fields.Many2one('res.user', string="Usuario del portal", ondelete="set null")
