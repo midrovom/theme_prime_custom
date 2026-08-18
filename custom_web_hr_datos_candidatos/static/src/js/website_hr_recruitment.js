@@ -301,7 +301,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <div class="col-md-3">
                             <label class="fs-6">Porcentaje de discapacidad</label>
-                                <input type="number" name="famDiscPorcentaje_${this.familyCount}" class="form-control rounded-pill fam-disc-porcentaje" min="0" max="100" step="1" />
+                                <input type="number" name="famDiscPorcentaje_${this.familyCount}" class="form-control rounded-pill fam-disc-porcentaje" min="0" max="100" step="1" disabled/>
                             <div class="invalid-feedback">Ingrese un valor entre 0 y 100</div>
                         </div>
 
@@ -1224,7 +1224,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             $tipo.removeClass('is-invalid');
             $porcentaje.removeClass('is-invalid');
         }
-
 
         return valid;
     },
