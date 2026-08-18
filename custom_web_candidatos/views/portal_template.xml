@@ -20,10 +20,9 @@
                 </a>
             </div>
         </xpath>
-    </template>
 
-    <template id="portal_home_remove_orders_invoices" inherit_id="portal.portal_my_home" name="Portal Home Remove Orders">
         <xpath expr="//div[@id='portal_client_category']/div[a[@href='/my/orders']]" position="replace"/>
+        
     </template>
 
 </odoo>
