@@ -1208,6 +1208,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
         const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
+        const $porcentaje = this.$(`input[name="famDiscPorcentaje_${i}"]`);
 
         if (discValue === 'si') {
             const okTipo = !!$tipo.val()?.trim();
