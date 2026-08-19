@@ -675,6 +675,39 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
+        setTimeout(() => {
+            const startId = `job-inicio_${this.experienceCount}`;
+            const endId = `job-fin_${this.experienceCount}`;
+            const startInput = document.getElementById(startId);
+            const endSelect = document.getElementById(endId);
+
+            if (startInput && endSelect) {
+                startInput.addEventListener("change", () => {
+                    const startDate = startInput.value;
+                    if (startDate) {
+                        const startYear = new Date(startDate).getFullYear();
+                        const currentYear = new Date().getFullYear();
+
+                        endSelect.innerHTML = "<option value=''></option>";
+
+                        // Recorremos desde el año de inicio hasta el actual
+                        for (let year = startYear; year <= currentYear; year++) {
+                            const opt = document.createElement("option");
+                            opt.value = year;
+                            opt.textContent = year;
+                            endSelect.appendChild(opt);
+                        }
+
+                        // Agregamos la opción "Presente"
+                        const presentOpt = document.createElement("option");
+                        presentOpt.value = "presente";
+                        presentOpt.textContent = "Presente";
+                        endSelect.appendChild(presentOpt);
+                    }
+                });
+            }
+        }, 0);
+
         return block;
     },
 
