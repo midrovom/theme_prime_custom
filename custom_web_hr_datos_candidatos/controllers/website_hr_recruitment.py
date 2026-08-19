@@ -161,7 +161,8 @@ class WebsiteHRRecruitment(http.Controller):
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
                 file_obj = kwargs.get(f'famArchivo_{k}')
 
-                _logger.info(">>> Familia %s: name=%s, tipo=%s, doc_type=%s, cedula=%s, fecha=%s, telefono=%s, ocupacion=%s, depende=%s, disc=%s, disc_tipo=%s, disc_porcentaje=%s, archivo=%s, archivo_filename=%s",
+                _logger.info(
+                    ">>> Familia %s: name=%s, tipo=%s, doc_type=%s, cedula=%s, fecha=%s, telefono=%s, ocupacion=%s, depende=%s, disc=%s, disc_tipo=%s, disc_porcentaje=%s, archivo=%s, archivo_filename=%s",
                     k,
                     name,
                     tipo,
@@ -174,13 +175,17 @@ class WebsiteHRRecruitment(http.Controller):
                     kwargs.get(f'famDisc_{k}'),
                     kwargs.get(f'famDiscTipo_{k}'),
                     kwargs.get(f'famDiscPorcentaje_{k}'),
-                    kwargs.get(f'famArchivo_{k}'),
-                    kwargs.get(f'famArchivo_{k}_filename'),
                     file_obj,
                     getattr(file_obj, "filename", None),
                 )
 
                 if name:
+                    file_content = False
+                    filename = False
+                    if file_obj:
+                        file_content = base64.b64encode(file_obj.read()).decode('utf-8')
+                        filename = getattr(file_obj, "filename", f"documento_fam_{k}.pdf")
+
                     family_lines.append((0, 0, {
                         'name': name,
                         'document_type': doc_type,
@@ -193,14 +198,45 @@ class WebsiteHRRecruitment(http.Controller):
                         'disability_type': kwargs.get(f'famDiscTipo_{k}'),
                         'disability_percentage': int(kwargs.get(f'famDiscPorcentaje_{k}') or 0),
                         'familiar_type': tipo,
-                        'filename': getattr(file_obj, "filename", None),
-                        'document_file': file_obj.read() if file_obj else False,
+                        'filename': filename,
+                        'document_file': file_content,
                     }))
 
                 k += 1
 
             if family_lines:
                 applicant_values['family_ids'] = family_lines
+
+            # family_lines = []
+            # k = 1
+
+            # while kwargs.get(f'famNombre_{k}') is not None:
+
+            #     name = kwargs.get(f'famNombre_{k}')
+            #     tipo = kwargs.get(f'famTipo_{k}')
+            #     doc_type = kwargs.get(f'famTipoDoc_{k}')
+
+            #     if name:
+            #         family_lines.append((0, 0, {
+            #             'name': name,
+            #             'document_type': doc_type,
+            #             'cedula': kwargs.get(f'famCedula_{k}'),
+            #             'birthdate': kwargs.get(f'famFecha_{k}'),
+            #             'phone': kwargs.get(f'famTelefono_{k}'),
+            #             'occupation': kwargs.get(f'famOcupacion_{k}'),
+            #             'economically_dependent': kwargs.get(f'famDepende_{k}'),
+            #             'disability': kwargs.get(f'famDisc_{k}'),
+            #             'disability_type': kwargs.get(f'famDiscTipo_{k}'),
+            #             'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}'),
+            #             'familiar_type': tipo,
+            #             'filename': kwargs.get(f'famArchivo_{k}_filename'),
+            #             'document_file': kwargs.get(f'famArchivo_{k}'),
+            #         }))
+
+            #     k += 1
+
+            # if family_lines:
+            #     applicant_values['family_ids'] = family_lines
 
             # ---------------- Funcion para parseo de localizacion Pais/Ciudad ----------------
 
