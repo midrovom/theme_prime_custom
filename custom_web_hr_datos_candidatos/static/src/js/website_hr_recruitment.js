@@ -1816,11 +1816,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const $archivoDoc = this.$(`input[name="famArchivo_${index}"]`);
 
         if ($select.val() === 'part_naci') {
+            $archivoDoc.removeClass('d-none').prop('disabled', false).attr('required', true);
             $numDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
-            $archivoDoc.prop('disabled', false).attr('required', true);
         } else {
             $numDoc.prop('disabled', false).attr('required', true);
-            $archivoDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+            $archivoDoc.addClass('d-none').prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
         }
     },
 
