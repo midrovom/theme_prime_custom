@@ -159,6 +159,7 @@ class WebsiteHRRecruitment(http.Controller):
                 name = kwargs.get(f'famNombre_{k}')
                 tipo = kwargs.get(f'famTipo_{k}')
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
+                file_obj = kwargs.get(f'famArchivo_{k}')
 
                 _logger.info(">>> Familia %s: name=%s, tipo=%s, doc_type=%s, cedula=%s, fecha=%s, telefono=%s, ocupacion=%s, depende=%s, disc=%s, disc_tipo=%s, disc_porcentaje=%s, archivo=%s, archivo_filename=%s",
                     k,
@@ -174,7 +175,9 @@ class WebsiteHRRecruitment(http.Controller):
                     kwargs.get(f'famDiscTipo_{k}'),
                     kwargs.get(f'famDiscPorcentaje_{k}'),
                     kwargs.get(f'famArchivo_{k}'),
-                    kwargs.get(f'famArchivo_{k}_filename')
+                    kwargs.get(f'famArchivo_{k}_filename'),
+                    file_obj,
+                    getattr(file_obj, "filename", None),
                 )
 
                 if name:
@@ -190,8 +193,8 @@ class WebsiteHRRecruitment(http.Controller):
                         'disability_type': kwargs.get(f'famDiscTipo_{k}'),
                         'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}'),
                         'familiar_type': tipo,
-                        'filename': kwargs.get(f'famArchivo_{k}_filename'),
-                        'document_file': kwargs.get(f'famArchivo_{k}'),
+                        'filename': getattr(file_obj, "filename", None),
+                        'document_file': file_obj,
                     }))
 
                 k += 1
