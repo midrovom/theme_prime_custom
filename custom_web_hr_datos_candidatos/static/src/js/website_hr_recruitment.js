@@ -687,18 +687,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     if (startDate) {
                         const startYear = new Date(startDate).getFullYear();
                         const currentYear = new Date().getFullYear();
-
                         endSelect.innerHTML = "<option value=''></option>";
-
-                        // Recorremos desde el año de inicio hasta el actual
-                        for (let year = startYear; year <= currentYear; year++) {
+                        
+                        for (let year = startYear; year < currentYear; year++) {
                             const opt = document.createElement("option");
                             opt.value = year;
                             opt.textContent = year;
                             endSelect.appendChild(opt);
                         }
 
-                        // Agregamos la opción "Presente"
+                        // agregar solo "Presente" en lugar del año actual
                         const presentOpt = document.createElement("option");
                         presentOpt.value = "presente";
                         presentOpt.textContent = "Presente";
