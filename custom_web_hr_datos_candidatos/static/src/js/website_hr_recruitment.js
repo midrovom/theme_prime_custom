@@ -1127,6 +1127,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return isValid;
     },
 
+    _validateFamilyFile(ev) {
+        const $fileInput = $(ev.currentTarget);
+        const file = ev.currentTarget.files[0];
+        const ok = !!file && file.type === "application/pdf";
+        $fileInput.toggleClass('is-invalid', !ok);
+    },
+
     _toggleFamilyDisability(i) {
         const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
         const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
