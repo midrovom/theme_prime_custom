@@ -252,16 +252,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         <!-- Tipo de documento -->
                         <div class="col-12 col-md-3">
-                            <label for="fam-type-doc_${this.familyCount}" class="fs-6">Tipo de documento: <span class="text-danger">*</span></label>
+                            <label for="fam-type-doc_${this.familyCount}" class="fs-6"> Tipo de documento: <span class="text-danger">*</span></label>
                                 <select id="fam-type-doc_${this.familyCount}" name="famTipoDoc_${this.familyCount}" class="form-select rounded-pill py-2" aria-label="Seleccionar tipo de documento" required="required">
                                     <option selected="selected"></option>
-                                        <t t-foreach="document_types" t-as="document_type">
-                                        <option t-att-value="document_type[0]" t-esc="document_type[1]"/>
-                                    </t>
-                                </select>
+                                ${DOCUMENT_TYPES.map(doc => `<option value="${doc[0]}">${doc[1]}</option>`).join('')}
+                            </select>
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
-
 
                         <!-- Numero de Documento -->
                         <div class="col-md-3">
