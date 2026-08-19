@@ -99,6 +99,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name="cirugia_realizada"]': function() {this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');},
         'change #curriculum-vitae': '_onFileSelected',
         'change select[name^="famTipoDoc_"]': '_validateField',
+        'change select[name^="famTipoDoc_"]': '_onChangeFamilyDocType',
+        'change input[name^="famArchivo_"]': '_validateFamilyFile',
     },
     
     /**
@@ -359,36 +361,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
-        // setTimeout(() => {
-        //     const i = this.familyCount;
-        //     const updateFullName = () => {
-        //         const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val()?.trim() || "";
-        //         const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
-        //         const primer = this.$(`input[name="famPrimerNombre_${i}"]`).val()?.trim() || "";
-        //         const segundo = this.$(`input[name="famSegundoNombre_${i}"]`).val()?.trim() || "";
-
-        //         const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
-        //         this.$(`input[name="famNombre_${i}"]`).val(fullName);
-        //     };
-
-        //     this.$(`input[name="famApellidoPaterno_${i}"], 
-        //             input[name="famApellidoMaterno_${i}"], 
-        //             input[name="famPrimerNombre_${i}"], 
-        //             input[name="famSegundoNombre_${i}"]`).on("input blur", function() {
-        //         const $f = $(this);
-        //         if (!$f.val().trim() && $f.prop("required")) {
-        //             $f.addClass("is-invalid");
-        //             if ($f.next(".invalid-feedback").length === 0) {
-        //                 $f.after('<div class="invalid-feedback">Campo obligatorio</div>');
-        //             }
-        //         } else {
-        //             $f.removeClass("is-invalid");
-        //         }
-        //         updateFullName();
-        //     });
-
-        // }, 0);
-
         setTimeout(() => {
             const i = this.familyCount;
             const updateFullName = () => {
@@ -417,19 +389,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 updateFullName();
             });
 
-            const $tipoDoc = this.$(`#fam-type-doc_${i}`);
-            const $numDoc = this.$(`input[name="famCedula_${i}"]`);
-            const $archivoDoc = this.$(`input[name="famArchivo_${i}"]`);
-
-            $tipoDoc.on('change', () => {
-                if ($tipoDoc.val() === 'part_naci') {
-                    $numDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
-                    $archivoDoc.prop('disabled', false).attr('required', true).removeClass('d-none');
-                } else {
-                    $numDoc.prop('disabled', false).attr('required', true);
-                    $archivoDoc.prop('disabled', true).removeAttr('required').val('').addClass('d-none').removeClass('is-invalid');
-                }
-            });
         }, 0);
 
     },
@@ -1843,6 +1802,20 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
+    _onChangeFamilyDocType(ev) {
+        const $select = $(ev.currentTarget);
+        const index = $select.attr('name').split('_')[1];
+        const $numDoc = this.$(`input[name="famCedula_${index}"]`);
+        const $archivoDoc = this.$(`input[name="famArchivo_${index}"]`);
+
+        if ($select.val() === 'part_naci') {
+            $numDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+            $archivoDoc.prop('disabled', false).attr('required', true);
+        } else {
+            $numDoc.prop('disabled', false).attr('required', true);
+            $archivoDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+        }
+    },
 
     _isValidEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
