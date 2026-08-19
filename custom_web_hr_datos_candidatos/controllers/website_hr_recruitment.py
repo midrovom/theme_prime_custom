@@ -172,6 +172,7 @@ class WebsiteHRRecruitment(http.Controller):
                         'disability_type': kwargs.get(f'famDiscTipo_{k}'),
                         'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}'),
                         'familiar_type': tipo,
+                        'filename': kwargs.get(f'famArchivo_{k}_filename'),
                         'document_file': kwargs.get(f'famArchivo_{k}'),
                     }))
 
