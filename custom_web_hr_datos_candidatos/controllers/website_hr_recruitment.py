@@ -191,7 +191,7 @@ class WebsiteHRRecruitment(http.Controller):
                         'economically_dependent': kwargs.get(f'famDepende_{k}'),
                         'disability': kwargs.get(f'famDisc_{k}'),
                         'disability_type': kwargs.get(f'famDiscTipo_{k}'),
-                        'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}'),
+                        'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}'or 0),
                         'familiar_type': tipo,
                         'filename': getattr(file_obj, "filename", None),
                         'document_file': file_obj,
