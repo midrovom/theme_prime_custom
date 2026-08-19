@@ -1970,15 +1970,22 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             const docType = this.$(`select[name="famTipoDoc_${i}"]`).val();
             const $numDoc = this.$(`input[name="famCedula_${i}"]`);
             const $archivoDoc = this.$(`input[name="famArchivo_${i}"]`);
+            const $porcentaje = this.$(`input[name="famDiscPorcentaje_${i}"]`);
+            const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
 
             if (docType === 'part_naci') {
-                $archivoDoc.prop('disabled', false);
-                $numDoc.prop('disabled', true).val('');
+                $archivoDoc.prop('disabled', false);   
+                $numDoc.prop('disabled', true).val(''); 
             } else {
-                $numDoc.prop('disabled', false);
-                $archivoDoc.prop('disabled', true).val('');
+                $numDoc.prop('disabled', false);       
+                $archivoDoc.prop('disabled', true).val(''); 
             }
 
+            if (discValue === 'si') {
+                $porcentaje.prop('disabled', false);
+            } else {
+                $porcentaje.prop('disabled', true).val('');
+            }
         });
 
         this.$('#submit-form')
