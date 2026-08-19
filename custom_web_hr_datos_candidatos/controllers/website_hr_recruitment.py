@@ -29,6 +29,7 @@ DOCUMENT_TYPES = [
     ('cedula', 'Cédula'),
     ('id_extrj', 'Cédula extranjera'),
     ('pasaporte', 'Pasaporte'),
+    ('part_naci', 'Partida de Nacimiento'),
 ]
 
 FAMILY_TYPES = [
