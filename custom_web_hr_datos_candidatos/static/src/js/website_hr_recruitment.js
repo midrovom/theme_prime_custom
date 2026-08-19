@@ -265,6 +265,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
+                        <!-- Partida de Nacimiento -->
+                        <div class="col-md-3">
+                            <label class="fs-6">Adjuntar Partida de Nacimiento <span class="required-asterisk">*</span></label>
+                                <input type="file" name="famArchivo_${this.familyCount}" class="form-control rounded-pill" accept="application/pdf" required/>
+                            <div class="invalid-feedback">Debe adjuntar un archivo PDF</div>
+                        </div>
+
                         <!-- Fecha -->
                         <div class="col-md-3">
                             <label class="fs-6">Fecha nacimiento <span class="required-asterisk">*</span></label>
@@ -379,8 +386,21 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 }
                 updateFullName();
             });
-        }, 0);
 
+            const $tipoDoc = this.$(`#fam-type-doc_${i}`);
+            const $numDoc = this.$(`input[name="famCedula_${i}"]`);
+            const $archivoDoc = this.$(`input[name="famArchivo_${i}"]`);
+            $tipoDoc.on('change', () => {
+                if ($tipoDoc.val() === 'part_naci') {
+                    $numDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+                    $archivoDoc.prop('disabled', false).attr('required', true);
+                } else {
+                    $numDoc.prop('disabled', false).attr('required', true);
+                    $archivoDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+                }
+            });
+            
+        }, 0);
 
     },
 
@@ -1178,30 +1198,36 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             `famTelefono_${i}`,
             `famOcupacion_${i}`,
             `famDepende_${i}`,
-            `famDisc_${i}`
+            `famDisc_${i}`,
+            `famArchivo_${i}`   // campo archivo PDF
         ];
 
         requiredFields.forEach(name => {
             const $group = this.$(`input[name="${name}"]`);
             const isRadio = $group.length && $group.first().attr('type') === 'radio';
+            const isFile = $group.length && $group.first().attr('type') === 'file';
 
             let ok;
 
             if (isRadio) {
                 ok = $group.filter(':checked').length > 0;
                 $group.removeClass('is-invalid');
-
                 if (!ok) {
                     $group.addClass('is-invalid');
                     valid = false;
                 }
-
+            } else if (isFile) {
+                const file = $group[0].files[0];
+                ok = !!file && file.type === "application/pdf";
+                $group.removeClass('is-invalid');
+                if (!ok) {
+                    $group.addClass('is-invalid');
+                    valid = false;
+                }
             } else {
                 const $el = this.$(`[name="${name}"]`);
                 ok = !!$el.val()?.toString().trim();
-
                 $el.toggleClass('is-invalid', !ok);
-
                 if (!ok) valid = false;
             }
         });
