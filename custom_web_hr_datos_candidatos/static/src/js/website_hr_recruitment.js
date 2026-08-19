@@ -1965,6 +1965,20 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
             const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
             this.$(`input[name="famNombre_${i}"]`).val(fullName);
+
+            // NUEVO
+            const docType = this.$(`select[name="famTipoDoc_${i}"]`).val();
+            const $numDoc = this.$(`input[name="famCedula_${i}"]`);
+            const $archivoDoc = this.$(`input[name="famArchivo_${i}"]`);
+
+            if (docType === 'part_naci') {
+                $archivoDoc.prop('disabled', false);
+                $numDoc.prop('disabled', true).val('');
+            } else {
+                $numDoc.prop('disabled', false);
+                $archivoDoc.prop('disabled', true).val('');
+            }
+
         });
 
         this.$('#submit-form')
