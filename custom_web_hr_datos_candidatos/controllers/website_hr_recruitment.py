@@ -152,11 +152,13 @@ class WebsiteHRRecruitment(http.Controller):
             # ---------------- Familiares ----------------
 
             family_lines = []
-            k = 1
+            total_families = int(kwargs.get('numHijos') or 0)
 
-            while kwargs.get(f'famNombre_{k}') is not None:
-
+            for k in range(1, total_families + 1):
                 name = kwargs.get(f'famNombre_{k}')
+                if not name:
+                    continue 
+
                 tipo = kwargs.get(f'famTipo_{k}')
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
                 file_obj = kwargs.get(f'famArchivo_{k}')
@@ -179,33 +181,32 @@ class WebsiteHRRecruitment(http.Controller):
                     getattr(file_obj, "filename", None),
                 )
 
-                if name:
-                    file_content = False
-                    filename = False
-                    if file_obj:
-                        file_content = base64.b64encode(file_obj.read()).decode('utf-8')
-                        filename = getattr(file_obj, "filename", f"documento_fam_{k}.pdf")
+                file_content = False
+                filename = False
+                if file_obj:
+                    content = file_obj.read()  # leer una sola vez
+                    file_content = base64.b64encode(content).decode('utf-8')
+                    filename = file_obj.filename
 
-                    family_lines.append((0, 0, {
-                        'name': name,
-                        'document_type': doc_type,
-                        'cedula': kwargs.get(f'famCedula_{k}'),
-                        'birthdate': kwargs.get(f'famFecha_{k}'),
-                        'phone': kwargs.get(f'famTelefono_{k}'),
-                        'occupation': kwargs.get(f'famOcupacion_{k}'),
-                        'economically_dependent': kwargs.get(f'famDepende_{k}'),
-                        'disability': kwargs.get(f'famDisc_{k}'),
-                        'disability_type': kwargs.get(f'famDiscTipo_{k}'),
-                        'disability_percentage': int(kwargs.get(f'famDiscPorcentaje_{k}') or 0),
-                        'familiar_type': tipo,
-                        'filename': filename,
-                        'document_file': file_content,
-                    }))
-
-                k += 1
+                family_lines.append((0, 0, {
+                    'name': name,
+                    'document_type': doc_type,
+                    'cedula': kwargs.get(f'famCedula_{k}'),
+                    'birthdate': kwargs.get(f'famFecha_{k}'),
+                    'phone': kwargs.get(f'famTelefono_{k}'),
+                    'occupation': kwargs.get(f'famOcupacion_{k}'),
+                    'economically_dependent': kwargs.get(f'famDepende_{k}'),
+                    'disability': kwargs.get(f'famDisc_{k}'),
+                    'disability_type': kwargs.get(f'famDiscTipo_{k}'),
+                    'disability_percentage': int(kwargs.get(f'famDiscPorcentaje_{k}') or 0),
+                    'familiar_type': tipo,
+                    'filename': filename,
+                    'document_file': file_content,
+                }))
 
             if family_lines:
                 applicant_values['family_ids'] = family_lines
+
 
             # family_lines = []
             # k = 1
