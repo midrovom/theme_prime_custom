@@ -387,17 +387,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 updateFullName();
             });
 
+            const i = this.familyCount;
             const $tipoDoc = this.$(`#fam-type-doc_${i}`);
             const $numDoc = this.$(`input[name="famCedula_${i}"]`);
             const $archivoDoc = this.$(`input[name="famArchivo_${i}"]`);
 
             $tipoDoc.on('change', () => {
                 if ($tipoDoc.val() === 'part_naci') {
-                    $archivoDoc.removeClass('d-none').prop('disabled', false).attr('required', true);
                     $numDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+                    $archivoDoc.prop('disabled', false).attr('required', true);
                 } else {
                     $numDoc.prop('disabled', false).attr('required', true);
-                    $archivoDoc.addClass('d-none').prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+                    $archivoDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
                 }
             });
 
