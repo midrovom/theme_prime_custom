@@ -160,6 +160,23 @@ class WebsiteHRRecruitment(http.Controller):
                 tipo = kwargs.get(f'famTipo_{k}')
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
 
+                _logger.info(">>> Familia %s: name=%s, tipo=%s, doc_type=%s, cedula=%s, fecha=%s, telefono=%s, ocupacion=%s, depende=%s, disc=%s, disc_tipo=%s, disc_porcentaje=%s, archivo=%s, archivo_filename=%s",
+                    k,
+                    name,
+                    tipo,
+                    doc_type,
+                    kwargs.get(f'famCedula_{k}'),
+                    kwargs.get(f'famFecha_{k}'),
+                    kwargs.get(f'famTelefono_{k}'),
+                    kwargs.get(f'famOcupacion_{k}'),
+                    kwargs.get(f'famDepende_{k}'),
+                    kwargs.get(f'famDisc_{k}'),
+                    kwargs.get(f'famDiscTipo_{k}'),
+                    kwargs.get(f'famDiscPorcentaje_{k}'),
+                    kwargs.get(f'famArchivo_{k}'),
+                    kwargs.get(f'famArchivo_{k}_filename')
+                )
+
                 if name:
                     family_lines.append((0, 0, {
                         'name': name,
