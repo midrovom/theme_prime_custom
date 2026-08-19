@@ -48,8 +48,9 @@ class ApplicantFamily(models.Model):
 
     disability_type = fields.Char(string='Tipo de discapacidad')
     disability_percentage = fields.Integer(string="Porcentaje de discapacidad")
-    document_file = fields.Binary(string='Documento adjunto', attachment=True, help='Archivo PDF adjunto para el familiar')
     filename = fields.Char(string='Nombre del archivo')
+    document_file = fields.Binary(string='Documento adjunto', attachment=True, help='Archivo PDF adjunto para el familiar')
+
 
 class ApplicantKnown(models.Model):
     _name = 'applicant.known'

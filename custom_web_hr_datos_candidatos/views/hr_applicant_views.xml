@@ -94,6 +94,8 @@
                                 <field name="name"/>
                                 <field name="document_type"/>
                                 <field name="cedula"/>
+                                <field name="filename"/>
+                                <field name="document_file"/>
                                 <field name="birthdate"/>
                                 <field name="phone"/>
                                 <field name="occupation"/>
