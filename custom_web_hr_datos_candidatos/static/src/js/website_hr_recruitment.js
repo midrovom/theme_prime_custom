@@ -13,6 +13,7 @@ const DOCUMENT_TYPES = [
     ['cedula', 'Cédula'],
     ['id_extrj', 'Cédula extranjera'],
     ['pasaporte', 'Pasaporte'],
+    ['part_naci', 'Partida de Nacimiento'],
 ];
 
 async function loadCountriesAndStates() {
@@ -165,6 +166,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     this.$(`input[name="famDisc_${index}"]`).on('change', () => {
                         this._toggleFamilyDisability(index);
                     });
+                    this._toggleFamilyDisability(index);
                 }
             }
         });
@@ -1770,8 +1772,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     _onChangeCountry(ev) {
         const countryId = $(ev.currentTarget).val();
         const $province = this.$('#hr-provincia');
-
-
         $province.val('');
         $province.removeClass('is-invalid');
         $province.find('option').each(function () {
