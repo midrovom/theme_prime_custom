@@ -2091,6 +2091,42 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._addFamilyBlock(parentesco); 
     },
 
+    // async _addFamilyBlock(parentesco) {
+    //     const FAMILY_TYPES_MAP = {
+    //         '1': 'Padre',
+    //         '2': 'Madre',
+    //         '3': 'Hermano(a)',
+    //         '4': 'Conyugue',
+    //         '5': 'Hijo(a)'
+    //     };
+
+    //     const UNIQUE_TYPES = ['Padre', 'Madre', 'Conyugue']; 
+    //     const label = FAMILY_TYPES_MAP[parentesco] || parentesco;
+
+    //     if (UNIQUE_TYPES.includes(label) &&
+    //         this.$(`#family_container .family-block[data-type="${label}"]`).length > 0) {
+    //         $('#familyMessageText').text(`Ya existe un bloque para ${label}`);
+    //         $('#familyMessage').removeClass('d-none');
+    //         return;
+    //     }
+
+    //     this.familyCount++;
+    //     const html = await this._getFamilyBlock(label);
+    //     this.$('#family_container').append(html);
+    //     this.$(`#family_container .family-block:last`).append(`
+    //         <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
+    //     `);
+
+    //     const i = this.familyCount;
+    //     this.$(`input[name="famDisc_${i}"]`).on('change', () => {
+    //         this._toggleFamilyDisability(i);
+    //     });
+    //     this.$(`input[name="famDepende_${i}"]`).on('change', (ev) => {
+    //         const name = $(ev.currentTarget).attr('name');
+    //         this.$(`input[name="${name}"]`).removeClass('is-invalid');
+    //     });
+    // },
+    
     async _addFamilyBlock(parentesco) {
         const FAMILY_TYPES_MAP = {
             '1': 'Padre',
@@ -2100,9 +2136,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             '5': 'Hijo(a)'
         };
 
-        const UNIQUE_TYPES = ['Padre', 'Madre', 'Conyugue']; 
-        const label = FAMILY_TYPES_MAP[parentesco] || parentesco;
+        const label = FAMILY_TYPES_MAP[parentesco] || parentesco; 
+        const code  = parentesco; 
 
+        const UNIQUE_TYPES = ['Padre', 'Madre', 'Conyugue']; 
         if (UNIQUE_TYPES.includes(label) &&
             this.$(`#family_container .family-block[data-type="${label}"]`).length > 0) {
             $('#familyMessageText').text(`Ya existe un bloque para ${label}`);
@@ -2114,7 +2151,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const html = await this._getFamilyBlock(label);
         this.$('#family_container').append(html);
         this.$(`#family_container .family-block:last`).append(`
-            <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
+            <input type="hidden" name="famTipo_${this.familyCount}" value="${code}"/>
         `);
 
         const i = this.familyCount;
