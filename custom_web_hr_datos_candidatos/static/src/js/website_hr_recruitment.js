@@ -111,7 +111,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.educationCount = 1;
         this.experienceCount = 1;
         this.familyCount = 0;
-        this.referenceCount = 0;
+        this.referenceCount = 1;
         this.uploadedFiles = [];
     },
 
@@ -151,7 +151,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._addEducationBlock();
         this._toggleStudyFields(); 
         this._addExperienceBlockController();
-        for (let i = 0; i < 3; i++) {
+        for (let i = 1; i < 3; i++) {
             this._addReferenceBlock();
         }
 
