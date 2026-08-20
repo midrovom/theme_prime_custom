@@ -766,7 +766,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     //     this._renderFileList(container, input);
     // },
 
-    _onFileSelected(ev) {
+    _onFileSelected: function(ev) {
         const input = ev.currentTarget;
         const newFiles = Array.from(input.files);
         const container = document.getElementById("file-selected-message");
@@ -775,28 +775,40 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.uploadedFiles = [];
         }
 
-        const invalidFiles = newFiles.filter(file => file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf"));
+        const invalidFiles = newFiles.filter(file => {
+            return file.type !== "application/pdf" &&
+                !file.name.toLowerCase().endsWith(".pdf");
+        });
+
         if (invalidFiles.length > 0) {
-            container.innerHTML = `<div class="text-danger fs-6">Solo se permiten archivos PDF.</div>`;
+            container.innerHTML = `
+                <div class="text-danger custom-message fs-6">
+                    Solo se permiten archivos PDF.
+                </div>
+            `;
             input.value = "";
             return;
         }
 
         this.uploadedFiles = this.uploadedFiles.concat(newFiles);
         this.uploadedFiles = this.uploadedFiles.filter(
-            (file, index, self) => index === self.findIndex(f => f.name === file.name)
+            (file, index, self) =>
+                index === self.findIndex(f => f.name === file.name)
         );
 
         if (this.uploadedFiles.length > 2) {
-            container.innerHTML = `<div class="text-danger fs-6">Solo se permiten máximo 2 archivos PDF.</div>`;
+            container.innerHTML = `
+                <div class="text-danger custom-message fs-6">
+                    Solo se permiten máximo 2 archivos PDF.
+                </div>
+            `;
             this.uploadedFiles = this.uploadedFiles.slice(0, 2);
-            input.value = "";
-            return;
         }
 
-        container.innerHTML = this.uploadedFiles.map(file => `<div>${file.name}</div>`).join("");
-        input.value = "";
+        this._refreshFileInput(input);
+        this._renderFileList(container, input);
     },
+
 
     _refreshFileInput: function(input) {
         const dataTransfer = new DataTransfer();
