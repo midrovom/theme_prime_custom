@@ -111,7 +111,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.educationCount = 1;
         this.experienceCount = 1;
         this.familyCount = 0;
-        this.referenceCount = 1;
+        this.referenceCount = 0;
         this.uploadedFiles = [];
     },
 
@@ -152,7 +152,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._toggleStudyFields(); 
         this._addExperienceBlockController();
         for (let i = 1; i < 3; i++) {
-            this._addReferenceBlock();
+            this._addReferenceBlock(i);
         }
 
         return this._super();
@@ -2386,10 +2386,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
-    _addReferenceBlock() {
+    _addReferenceBlock(index) {
+        this.referenceCount = index;
         const block = this._getReferenceBlock();
         this.$('#reference_container').append(block);
-        this.referenceCount++;
     },
 
     async _onAddReference(ev) {
