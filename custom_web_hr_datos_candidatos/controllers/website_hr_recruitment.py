@@ -312,7 +312,7 @@ class WebsiteHRRecruitment(http.Controller):
             # ---------------- Referencias personales ----------------
 
             reference_lines = []
-            m = 1
+            m = 0
 
             while kwargs.get(f'ref_nombre_{m}') is not None:
 
