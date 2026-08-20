@@ -263,7 +263,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <!-- Numero de Documento -->
                         <div class="col-md-3">
                             <label class="fs-6">Numero de Documento <span class="required-asterisk">*</span></label>
-                            <input type="text" name="famCedula_${this.familyCount}" class="form-control rounded-pill" required/>
+                            <input type="text" name="famCedula_${this.familyCount}" class="form-control rounded-pill"/>
                             <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
 
@@ -1167,6 +1167,52 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         $fileInput.toggleClass('is-invalid', !ok);
     },
 
+    // _toggleFamilyDisability(i) {
+    //     const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
+    //     const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
+    //     const $porcentaje = this.$(`input[name="famDiscPorcentaje_${i}"]`);
+    //     const $errorTipo = $tipo.siblings('.fam-disc-type-error');
+    //     const $errorRadio = this.$(`input[name="famDisc_${i}"]`)
+    //         .closest('.col-md-3')
+    //         .find('.fam-disc-error');
+
+    //     if (discValue === 'si') {
+    //         $tipo.prop('disabled', false);
+    //         $porcentaje.prop('disabled', false);
+
+    //         if (!$tipo.val().trim()) {
+    //             $tipo.addClass('is-invalid');
+    //         } else {
+    //             $tipo.removeClass('is-invalid');
+    //         }
+
+    //         const val = $porcentaje.val();
+    //         const isValid = val && !isNaN(val) && val >= 0 && val <= 100;
+    //         if (!isValid) {
+    //             $porcentaje.addClass('is-invalid');
+    //         } else {
+    //             $porcentaje.removeClass('is-invalid');
+    //         }
+
+    //     } else if (discValue === 'no') {
+    //         $tipo.prop('disabled', true)
+    //             .val('')
+    //             .removeClass('is-invalid');
+    //         $porcentaje.prop('disabled', true)
+    //             .val('')
+    //             .removeClass('is-invalid');
+
+    //         $errorTipo.addClass('d-none');
+    //         $errorRadio.addClass('d-none');
+    //     }
+
+    //     if (!discValue) {
+    //         $errorRadio.removeClass('d-none');
+    //     } else {
+    //         $errorRadio.addClass('d-none');
+    //     }
+    // },
+
     _toggleFamilyDisability(i) {
         const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
         const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
@@ -1177,9 +1223,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             .find('.fam-disc-error');
 
         if (discValue === 'si') {
-            $tipo.prop('disabled', false);
-            $porcentaje.prop('disabled', false);
-
+            $tipo.prop('disabled', false).prop('required', true);
+            $porcentaje.prop('disabled', false).prop('required', true);
             if (!$tipo.val().trim()) {
                 $tipo.addClass('is-invalid');
             } else {
@@ -1196,9 +1241,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         } else if (discValue === 'no') {
             $tipo.prop('disabled', true)
+                .prop('required', false)
                 .val('')
                 .removeClass('is-invalid');
             $porcentaje.prop('disabled', true)
+                .prop('required', false)
                 .val('')
                 .removeClass('is-invalid');
 
@@ -1844,18 +1891,35 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     _onChangeFamilyDocType(ev) {
         const $select = $(ev.currentTarget);
-        const index = $select.attr('name').split('_')[1];
-        const $numDoc = this.$(`input[name="famCedula_${index}"]`);
-        const $archivoDoc = this.$(`input[name="famArchivo_${index}"]`);
+        const index = $select.attr("name").split("_")[1];
+        const value = $select.val();
 
-        if ($select.val() === 'part_naci') {
-            $archivoDoc.removeClass('d-none').prop('disabled', false).attr('required', true);
-            $numDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+        const $cedula = this.$(`input[name="famCedula_${index}"]`);
+        const $archivo = this.$(`input[name="famArchivo_${index}"]`);
+
+        if (value === "part_naci") {
+            $cedula.prop("disabled", true).prop("required", false).val("");
+            $archivo.removeClass("d-none").prop("disabled", false).prop("required", true);
         } else {
-            $numDoc.prop('disabled', false).attr('required', true);
-            $archivoDoc.addClass('d-none').prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+            $cedula.prop("disabled", false).prop("required", true);
+            $archivo.addClass("d-none").prop("disabled", true).prop("required", false).val("");
         }
     },
+
+    // _onChangeFamilyDocType(ev) {
+    //     const $select = $(ev.currentTarget);
+    //     const index = $select.attr('name').split('_')[1];
+    //     const $numDoc = this.$(`input[name="famCedula_${index}"]`);
+    //     const $archivoDoc = this.$(`input[name="famArchivo_${index}"]`);
+
+    //     if ($select.val() === 'part_naci') {
+    //         $archivoDoc.removeClass('d-none').prop('disabled', false).attr('required', true);
+    //         $numDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+    //     } else {
+    //         $numDoc.prop('disabled', false).attr('required', true);
+    //         $archivoDoc.addClass('d-none').prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
+    //     }
+    // },
 
     _isValidEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -2002,7 +2066,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         let valid = true;
 
         if (!this._validateCurrentStep3()) return;
-
         const totalExperiences = parseInt(this.$('#total_experiences').val(), 10);
         if (!isNaN(totalExperiences) && totalExperiences > 3) {
             $('#experienceMessageText').text("Debe ingresar mínimo 3 experiencias laborales.");
