@@ -212,7 +212,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     async _getFamilyBlock(parentesco) {
-        return `
+        const block = `
             <div class="row d-flex justify-content-center family-block" data-type="${parentesco}">
                 <div class="col-12 col-md-10">
                     <div class="py-3 d-flex justify-content-start mb-3">
@@ -390,6 +390,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             });
 
         }, 0);
+
+        return block;
 
     },
 
