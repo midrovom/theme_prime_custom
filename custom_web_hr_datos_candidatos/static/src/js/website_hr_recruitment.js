@@ -2043,18 +2043,43 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     },
 
+    // _onSelectFamily(ev) {
+    //     const parentesco = $(ev.currentTarget).data('type');
+    //     if (!parentesco) return;
+    //     if (["Padre","Madre","Conyugue"].includes(parentesco)) {
+    //         if (this.$(`#family_container .family-block[data-type="${parentesco}"]`).length) {
+    //             alert(`${parentesco} ya fue agregado`);
+    //             return;
+    //         }
+    //     }
+
+    //     this._addFamilyBlock(parentesco); 
+    // },
+
     _onSelectFamily(ev) {
-        const parentesco = $(ev.currentTarget).data('type');
-        if (!parentesco) return;
-        if (["Padre","Madre","Conyugue"].includes(parentesco)) {
-            if (this.$(`#family_container .family-block[data-type="${parentesco}"]`).length) {
-                alert(`${parentesco} ya fue agregado`);
+        const parentescoCode = $(ev.currentTarget).data('type'); // ahora llega "1","2","3","4","5"
+        if (!parentescoCode) return;
+
+        const FAMILY_TYPES_MAP = {
+            '1': 'Padre',
+            '2': 'Madre',
+            '3': 'Hermano(a)',
+            '4': 'Conyugue',
+            '5': 'Hijo(a)'
+        };
+
+        const label = FAMILY_TYPES_MAP[parentescoCode];
+
+        if (["Padre","Madre","Conyugue"].includes(label)) {
+            if (this.$(`#family_container .family-block[data-type="${label}"]`).length) {
+                alert(`${label} ya fue agregado`);
                 return;
             }
         }
 
-        this._addFamilyBlock(parentesco); 
+        this._addFamilyBlock(parentescoCode);
     },
+
 
     async _addFamilyBlock(parentesco) {
         const FAMILY_TYPES_MAP = {
