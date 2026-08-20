@@ -730,42 +730,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     // función para mostrar archivos seleccionados
 
-    // _onFileSelected: function(ev) {
-
-    //     const input = ev.currentTarget;
-    //     const newFiles = Array.from(input.files);
-    //     const container = document.getElementById("file-selected-message");
-
-    //     if (!this.uploadedFiles) {
-    //         this.uploadedFiles = [];
-    //     }
-
-    //     const invalidFiles = newFiles.filter(file => {
-    //         return file.type !== "application/pdf" &&
-    //             !file.name.toLowerCase().endsWith(".pdf");
-    //     });
-
-    //     if (invalidFiles.length > 0) {
-    //         container.innerHTML = `
-    //             <div class="text-danger custom-message fs-6">
-    //                 Solo se permiten archivos PDF.
-    //             </div>
-    //         `;
-
-    //         input.value = "";
-    //         return;
-    //     }
-
-    //     this.uploadedFiles = this.uploadedFiles.concat(newFiles);
-    //     this.uploadedFiles = this.uploadedFiles.filter(
-    //         (file, index, self) =>
-    //             index === self.findIndex(f => f.name === file.name)
-    //     );
-
-    //     this._refreshFileInput(input);
-    //     this._renderFileList(container, input);
-    // },
-
     _onFileSelected: function(ev) {
         const input = ev.currentTarget;
         const newFiles = Array.from(input.files);
@@ -2286,10 +2250,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             $(el).find('.separator-education span').text(`Experiencia Laboral # ${i + 1}`);
         });
     },
+
     _addReferenceBlock() {
-        this.referenceCount++; 
         const block = this._getReferenceBlock();
         this.$('#reference_container').append(block);
+        this.referenceCount++;
     },
 
     async _onAddReference(ev) {
