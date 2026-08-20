@@ -1934,10 +1934,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$('#form-step-2').removeClass('d-none');
             const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
             this.$('.family-block[data-type="Hijo"]').remove();
+
             if (!isNaN(numHijos) && numHijos > 0) {
                 for (let i = 0; i < numHijos; i++) {
-                    this.familyCount++;
-                    const index = this.familyCount;
+                    const index = this.familyCount + 1; 
+
                     this._getFamilyBlock("Hijo").then(blockHtml => {
                         this.$('#family_container').append(blockHtml);
                         this.$(`input[name="famDisc_${index}"]`).on('change', () => {
@@ -1946,6 +1947,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         this._toggleFamilyDisability(index);
                     });
+
+                    this.familyCount++;
                 }
             }
         }
