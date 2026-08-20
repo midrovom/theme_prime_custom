@@ -155,18 +155,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$('input[name="studyOptions"]').removeClass('is-invalid');
         });
 
-        // NUEVO: controlar hijos automáticamente
-        this.$('#hr-hijos').on('input change', async (ev) => {
-            const numHijos = parseInt(ev.currentTarget.value, 10);
-            this.$('.family-block[data-type="Hijo"]').remove();
-
-            if (!isNaN(numHijos) && numHijos > 0) {
-                for (let i = 0; i < numHijos; i++) {
-                    await this._addFamilyBlock("5"); 
-                }
-            }
-        });
-
         this.$('#total_experiences').on('input change', async (ev) => {
             let num = parseInt($(ev.currentTarget).val(), 10);
             this.$('#experience_container').empty();
