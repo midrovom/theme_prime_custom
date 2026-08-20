@@ -160,7 +160,7 @@ class WebsiteHRRecruitment(http.Controller):
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
 
                 if name:
-                    values = {
+                    family_lines.append((0, 0, {
                         'name': name,
                         'document_type': doc_type,
                         'birthdate': kwargs.get(f'famFecha_{k}'),
@@ -170,17 +170,11 @@ class WebsiteHRRecruitment(http.Controller):
                         'disability': kwargs.get(f'famDisc_{k}'),
                         'disability_type': kwargs.get(f'famDiscTipo_{k}'),
                         'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}') or None,
-                        'familiar_type': tipo,
+                        'familiar_type': str(tipo) if tipo else None,   
                         'filename': kwargs.get(f'famArchivo_{k}_filename'),
                         'document_file': kwargs.get(f'famArchivo_{k}') or None,
-                    }
-
-                    if doc_type == 'part_naci':
-                        values['cedula'] = None
-                    else:
-                        values['cedula'] = kwargs.get(f'famCedula_{k}')
-
-                    family_lines.append((0, 0, values))
+                        'cedula': None if doc_type == 'part_naci' else kwargs.get(f'famCedula_{k}'),
+                    }))
 
                 k += 1
 
