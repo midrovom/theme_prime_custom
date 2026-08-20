@@ -164,10 +164,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     this.familyCount++;
                     const blockHtml = await this._getFamilyBlock("5");
                     this.$('#family_container').append(blockHtml);
-                    const $lastBlock = this.$('#family_container .family-block:last');
-                    $lastBlock.attr('data-type', 'Hijo');
-                    $lastBlock.find('.fw-normal.fs-4.text-info').text('Hijo');
-
                     const index = this.familyCount;
                     this.$(`input[name="famDisc_${index}"]`).on('change', () => {
                         this._toggleFamilyDisability(index);
