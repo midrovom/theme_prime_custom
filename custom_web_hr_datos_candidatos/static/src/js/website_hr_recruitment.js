@@ -155,6 +155,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$('input[name="studyOptions"]').removeClass('is-invalid');
         });
 
+        this._addExperienceBlockController();
+
         return this._super();
     },
 
@@ -1897,31 +1899,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
-    // _onNextClick(ev) {
-    //     ev.preventDefault();
-
-    //     if (this._validateCurrentStep1()) {
-    //         this.$('#form-step-1').addClass('d-none');
-    //         this.$('#form-step-2').removeClass('d-none');
-    //         const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
-    //         this.$('.family-block[data-type="Hijo"]').remove();
-    //         if (!isNaN(numHijos) && numHijos > 0) {
-    //             for (let i = 0; i < numHijos; i++) {
-    //                 this.familyCount++;
-    //                 const index = this.familyCount;
-    //                 this._getFamilyBlock("Hijo").then(blockHtml => {
-    //                     this.$('#family_container').append(blockHtml);
-    //                     this.$(`input[name="famDisc_${index}"]`).on('change', () => {
-    //                         this._toggleFamilyDisability(index);
-    //                     });
-
-    //                     this._toggleFamilyDisability(index);
-    //                 });
-    //             }
-    //         }
-    //     }
-    // },
-
     _onNextClick(ev) {
         ev.preventDefault();
 
@@ -2153,6 +2130,51 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Methods experience job
     //----------------------------------------------------------------------
 
+    // async _addExperienceBlock() {
+    //     this.experienceCount++;
+    //     const newBlock = await this._getExperienceBlock(true);
+    //     this.$('#experience_container').append(newBlock);
+    //     this.$('#experience_container').find('.remove-experience').last().on('click', (ev) => {
+    //         $(ev.target).closest('.experience-block').remove();
+    //         this.experienceCount--;
+    //         this.$('#total_experiences').val(this.experienceCount); 
+    //         this._checkFieldsFilled();
+    //     });
+
+    //     this.$('#total_experiences').val(this.experienceCount);
+
+    //     const startId = `job-inicio_${this.experienceCount}`;
+    //     const endId = `job-fin_${this.experienceCount}`;
+    //     const startInput = document.getElementById(startId);
+    //     const endSelect = document.getElementById(endId);
+
+    //     if (startInput && endSelect) {
+    //         startInput.addEventListener("change", () => {
+    //             const startDate = startInput.value;
+    //             if (startDate) {
+    //                 const startYear = new Date(startDate).getFullYear();
+    //                 const currentYear = new Date().getFullYear();
+
+    //                 endSelect.innerHTML = "<option value=''></option>";
+
+    //                 for (let year = startYear; year < currentYear; year++) {
+    //                     const opt = document.createElement("option");
+    //                     opt.value = year;
+    //                     opt.textContent = year;
+    //                     endSelect.appendChild(opt);
+    //                 }
+
+    //                 const presentOpt = document.createElement("option");
+    //                 presentOpt.value = "presente";
+    //                 presentOpt.textContent = "Presente";
+    //                 endSelect.appendChild(presentOpt);
+    //             }
+    //         });
+    //     }
+
+    //     this._checkFieldsFilled();
+    // },
+
     async _addExperienceBlock() {
         this.experienceCount++;
         const newBlock = await this._getExperienceBlock(true);
@@ -2160,11 +2182,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#experience_container').find('.remove-experience').last().on('click', (ev) => {
             $(ev.target).closest('.experience-block').remove();
             this.experienceCount--;
-            this.$('#total_experiences').val(this.experienceCount); 
+            this.$('#total_experiences').val(this.experienceCount);
             this._checkFieldsFilled();
         });
-
-        this.$('#total_experiences').val(this.experienceCount);
 
         const startId = `job-inicio_${this.experienceCount}`;
         const endId = `job-fin_${this.experienceCount}`;
@@ -2177,7 +2197,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 if (startDate) {
                     const startYear = new Date(startDate).getFullYear();
                     const currentYear = new Date().getFullYear();
-
                     endSelect.innerHTML = "<option value=''></option>";
 
                     for (let year = startYear; year < currentYear; year++) {
@@ -2196,6 +2215,20 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
 
         this._checkFieldsFilled();
+    },
+
+    async _addExperienceBlockController() {
+        this.$('#total_experiences').on('input change', async (ev) => {
+            let num = parseInt($(ev.currentTarget).val(), 10);
+            this.$('#experience_container').empty();
+            this.experienceCount = 0;
+
+            if (!isNaN(num) && num > 0) {
+                for (let i = 0; i < num; i++) {
+                    await this._addExperienceBlock();
+                }
+            }
+        });
     },
 
     async _onAddExperience(ev) {
