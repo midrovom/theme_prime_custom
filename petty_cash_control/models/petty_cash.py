@@ -108,15 +108,33 @@ class PettyCashFund(models.Model):
                 raise UserError(_("Solo puede enviar fondos en borrador o rechazados."))
             rec.write({"state": "submitted", "rejection_reason": False})
 
+    # def action_approve(self):
+    #     if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
+    #         raise UserError(_("No tiene permisos para aprobar fondos."))
+    #     for rec in self:
+    #         if rec.state != "submitted":
+    #             raise UserError(_("Solo se pueden aprobar solicitudes enviadas."))
+    #         if rec.box_id.maximum_amount and rec.box_id.available_balance + rec.amount > rec.box_id.maximum_amount:
+    #             raise ValidationError(_("La aprobación excedería el fondo máximo de la caja."))
+    #         rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
     def action_approve(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
             raise UserError(_("No tiene permisos para aprobar fondos."))
+
         for rec in self:
+            if rec.box_id.responsible_id != self.env.user and self.env.user not in rec.box_id.backup_responsible_ids:
+                raise UserError(_("Solo puede aprobar fondos de las cajas donde es responsable o responsable alterno."))
+
             if rec.state != "submitted":
                 raise UserError(_("Solo se pueden aprobar solicitudes enviadas."))
             if rec.box_id.maximum_amount and rec.box_id.available_balance + rec.amount > rec.box_id.maximum_amount:
                 raise ValidationError(_("La aprobación excedería el fondo máximo de la caja."))
-            rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+
+            rec.write({
+                "state": "approved",
+                "approved_by": self.env.user.id,
+                "approved_date": fields.Datetime.now(),
+            })
 
     def action_reject(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
@@ -216,16 +234,36 @@ class PettyCashExpense(models.Model):
             if not rec.attachment_ids:
                 raise ValidationError(_("Debe adjuntar al menos un comprobante."))
 
+    # def action_approve(self):
+    #     if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
+    #         raise UserError(_("No tiene permisos para aprobar gastos."))
+    #     for rec in self:
+    #         if rec.state != "submitted":
+    #             raise UserError(_("Solo se pueden aprobar gastos enviados."))
+    #         rec._validate_expense_data()
+    #         if rec.amount > rec.box_id.available_balance:
+    #             raise ValidationError(_("La caja no tiene saldo suficiente para aprobar este gasto."))
+    #         rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+
     def action_approve(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
             raise UserError(_("No tiene permisos para aprobar gastos."))
+
         for rec in self:
+            if rec.box_id.responsible_id != self.env.user and self.env.user not in rec.box_id.backup_responsible_ids:
+                raise UserError(_("Solo puede aprobar gastos de las cajas donde es responsable o responsable alterno."))
+
             if rec.state != "submitted":
                 raise UserError(_("Solo se pueden aprobar gastos enviados."))
             rec._validate_expense_data()
             if rec.amount > rec.box_id.available_balance:
                 raise ValidationError(_("La caja no tiene saldo suficiente para aprobar este gasto."))
-            rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+
+            rec.write({
+                "state": "approved",
+                "approved_by": self.env.user.id,
+                "approved_date": fields.Datetime.now(),
+            })
 
     def action_reject(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
@@ -314,13 +352,30 @@ class PettyCashSettlement(models.Model):
                 raise ValidationError(_("Todos los gastos deben pertenecer a la misma caja de la liquidación."))
             rec.state = "submitted"
 
+    # def action_approve(self):
+    #     if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
+    #         raise UserError(_("No tiene permisos para aprobar liquidaciones."))
+    #     for rec in self:
+    #         if rec.state != "submitted":
+    #             raise UserError(_("Solo puede aprobar liquidaciones pendientes de aprobación."))
+    #         rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+
     def action_approve(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
             raise UserError(_("No tiene permisos para aprobar liquidaciones."))
+
         for rec in self:
+            if rec.box_id.responsible_id != self.env.user and self.env.user not in rec.box_id.backup_responsible_ids:
+                raise UserError(_("Solo puede aprobar liquidaciones de las cajas donde es responsable o responsable alterno."))
+
             if rec.state != "submitted":
                 raise UserError(_("Solo puede aprobar liquidaciones pendientes de aprobación."))
-            rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+
+            rec.write({
+                "state": "approved",
+                "approved_by": self.env.user.id,
+                "approved_date": fields.Datetime.now(),
+            })
 
     def action_close(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
