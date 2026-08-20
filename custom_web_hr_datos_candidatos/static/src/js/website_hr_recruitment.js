@@ -121,14 +121,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     start() {
         
         this._initializeForm();
-        this._addEducationBlock();
-        for (let i = 0; i < 3; i++) {
-            this._addReferenceBlock();
-        }
-        this._addExperienceBlockController();
-        this._toggleStudyFields(); 
-        this._toggleDisabilityFields();
         this._toggleFamilyKnownFields();
+        this._toggleDisabilityFields();
         this._toggleParentescoField();
         this._toggleJobDisabilityFields();
         this._onChangeCountry({ currentTarget: this.$('#hr-country') });
@@ -154,6 +148,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('input[name="studyOptions"]').on('change', () => {
             this.$('input[name="studyOptions"]').removeClass('is-invalid');
         });
+        this._addEducationBlock();
+        this._toggleStudyFields(); 
+        this._addExperienceBlockController();
+        for (let i = 0; i < 3; i++) {
+            this._addReferenceBlock();
+        }
 
         return this._super();
     },
@@ -730,8 +730,43 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     // función para mostrar archivos seleccionados
 
-    _onFileSelected: function(ev) {
+    // _onFileSelected: function(ev) {
 
+    //     const input = ev.currentTarget;
+    //     const newFiles = Array.from(input.files);
+    //     const container = document.getElementById("file-selected-message");
+
+    //     if (!this.uploadedFiles) {
+    //         this.uploadedFiles = [];
+    //     }
+
+    //     const invalidFiles = newFiles.filter(file => {
+    //         return file.type !== "application/pdf" &&
+    //             !file.name.toLowerCase().endsWith(".pdf");
+    //     });
+
+    //     if (invalidFiles.length > 0) {
+    //         container.innerHTML = `
+    //             <div class="text-danger custom-message fs-6">
+    //                 Solo se permiten archivos PDF.
+    //             </div>
+    //         `;
+
+    //         input.value = "";
+    //         return;
+    //     }
+
+    //     this.uploadedFiles = this.uploadedFiles.concat(newFiles);
+    //     this.uploadedFiles = this.uploadedFiles.filter(
+    //         (file, index, self) =>
+    //             index === self.findIndex(f => f.name === file.name)
+    //     );
+
+    //     this._refreshFileInput(input);
+    //     this._renderFileList(container, input);
+    // },
+
+    _onFileSelected(ev) {
         const input = ev.currentTarget;
         const newFiles = Array.from(input.files);
         const container = document.getElementById("file-selected-message");
@@ -740,30 +775,27 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.uploadedFiles = [];
         }
 
-        const invalidFiles = newFiles.filter(file => {
-            return file.type !== "application/pdf" &&
-                !file.name.toLowerCase().endsWith(".pdf");
-        });
-
+        const invalidFiles = newFiles.filter(file => file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf"));
         if (invalidFiles.length > 0) {
-            container.innerHTML = `
-                <div class="text-danger custom-message fs-6">
-                    Solo se permiten archivos PDF.
-                </div>
-            `;
-
+            container.innerHTML = `<div class="text-danger fs-6">Solo se permiten archivos PDF.</div>`;
             input.value = "";
             return;
         }
 
         this.uploadedFiles = this.uploadedFiles.concat(newFiles);
         this.uploadedFiles = this.uploadedFiles.filter(
-            (file, index, self) =>
-                index === self.findIndex(f => f.name === file.name)
+            (file, index, self) => index === self.findIndex(f => f.name === file.name)
         );
 
-        this._refreshFileInput(input);
-        this._renderFileList(container, input);
+        if (this.uploadedFiles.length > 2) {
+            container.innerHTML = `<div class="text-danger fs-6">Solo se permiten máximo 2 archivos PDF.</div>`;
+            this.uploadedFiles = this.uploadedFiles.slice(0, 2);
+            input.value = "";
+            return;
+        }
+
+        container.innerHTML = this.uploadedFiles.map(file => `<div>${file.name}</div>`).join("");
+        input.value = "";
     },
 
     _refreshFileInput: function(input) {
