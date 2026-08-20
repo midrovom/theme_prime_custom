@@ -159,15 +159,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#hr-hijos').on('input change', async (ev) => {
             const numHijos = parseInt(ev.currentTarget.value, 10);
             this.$('.family-block[data-type="Hijo"]').remove();
+
             if (!isNaN(numHijos) && numHijos > 0) {
                 for (let i = 0; i < numHijos; i++) {
-                    this.familyCount++;
-                    const blockHtml = await this._getFamilyBlock("5");
-                    this.$('#family_container').append(blockHtml);
-                    const index = this.familyCount;
-                    this.$(`input[name="famDisc_${index}"]`).on('change', () => {
-                        this._toggleFamilyDisability(index);
-                    });
+                    await this._addFamilyBlock("5"); 
                 }
             }
         });
@@ -1904,21 +1899,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             $archivo.addClass("d-none").prop("disabled", true).prop("required", false).val("");
         }
     },
-
-    // _onChangeFamilyDocType(ev) {
-    //     const $select = $(ev.currentTarget);
-    //     const index = $select.attr('name').split('_')[1];
-    //     const $numDoc = this.$(`input[name="famCedula_${index}"]`);
-    //     const $archivoDoc = this.$(`input[name="famArchivo_${index}"]`);
-
-    //     if ($select.val() === 'part_naci') {
-    //         $archivoDoc.removeClass('d-none').prop('disabled', false).attr('required', true);
-    //         $numDoc.prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
-    //     } else {
-    //         $numDoc.prop('disabled', false).attr('required', true);
-    //         $archivoDoc.addClass('d-none').prop('disabled', true).removeAttr('required').val('').removeClass('is-invalid');
-    //     }
-    // },
 
     _isValidEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
