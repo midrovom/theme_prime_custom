@@ -222,7 +222,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     <div class="row g-3">
 
                         <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
-
+                        
                         <!-- Apellido paterno -->
                         <div class="col-md-3">
                             <label class="fs-6">Apellido paterno <span class="required-asterisk">*</span></label>
@@ -2114,7 +2114,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const html = await this._getFamilyBlock(label);
         this.$('#family_container').append(html);
         this.$(`#family_container .family-block:last`).append(`
-            <input type="hidden" name="famTipo_${this.familyCount}" value="${label}"/>
+            <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
         `);
 
         const i = this.familyCount;
