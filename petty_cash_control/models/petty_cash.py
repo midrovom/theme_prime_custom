@@ -8,6 +8,7 @@ class ResPartner(models.Model):
     is_petty_cash_beneficiary = fields.Boolean(
         string="Beneficiario de caja chica",
         help="Permite seleccionar este contacto como beneficiario de un gasto de caja chica.",
+        default=True,
     )
 
 
@@ -156,7 +157,7 @@ class PettyCashExpense(models.Model):
     category_id = fields.Many2one("petty.cash.category", required=True, tracking=True)
     supplier_id = fields.Many2one(
         "res.partner", string="Proveedor", tracking=True,
-        domain="[('active', '=', True)]", ondelete="restrict",
+        domain="[('active', '=', True)]", ondelete="restrict", required=False,
     )
     supplier_name = fields.Char(string="Proveedor anterior", readonly=True)
     supplier_vat = fields.Char(related="supplier_id.vat", string="RUC/Cédula", readonly=True, store=True)
@@ -204,8 +205,8 @@ class PettyCashExpense(models.Model):
 
     def _validate_expense_data(self):
         for rec in self:
-            if not rec.supplier_id:
-                raise ValidationError(_("Debe seleccionar el proveedor."))
+            # if not rec.supplier_id:
+            #     raise ValidationError(_("Debe seleccionar el proveedor."))
             if not rec.beneficiary_id:
                 raise ValidationError(_("Debe seleccionar el beneficiario."))
             if not rec.department_id:
