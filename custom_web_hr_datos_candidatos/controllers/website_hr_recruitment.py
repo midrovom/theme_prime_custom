@@ -155,32 +155,62 @@ class WebsiteHRRecruitment(http.Controller):
             k = 1
 
             while kwargs.get(f'famNombre_{k}') is not None:
-
                 name = kwargs.get(f'famNombre_{k}')
                 tipo = kwargs.get(f'famTipo_{k}')
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
 
                 if name:
-                    family_lines.append((0, 0, {
+                    values = {
                         'name': name,
                         'document_type': doc_type,
-                        'cedula': kwargs.get(f'famCedula_{k}'),
                         'birthdate': kwargs.get(f'famFecha_{k}'),
                         'phone': kwargs.get(f'famTelefono_{k}'),
                         'occupation': kwargs.get(f'famOcupacion_{k}'),
                         'economically_dependent': kwargs.get(f'famDepende_{k}'),
                         'disability': kwargs.get(f'famDisc_{k}'),
                         'disability_type': kwargs.get(f'famDiscTipo_{k}'),
-                        # 'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}'),
+                        'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}') or None,
                         'familiar_type': tipo,
                         'filename': kwargs.get(f'famArchivo_{k}_filename'),
-                        # 'document_file': kwargs.get(f'famArchivo_{k}'),
-                    }))
+                        'document_file': kwargs.get(f'famArchivo_{k}') or None,
+                    }
+
+                    if doc_type == 'part_naci':
+                        values['cedula'] = None
+                    else:
+                        values['cedula'] = kwargs.get(f'famCedula_{k}')
+
+                    family_lines.append((0, 0, values))
 
                 k += 1
 
-            if family_lines:
-                applicant_values['family_ids'] = family_lines
+            # while kwargs.get(f'famNombre_{k}') is not None:
+
+            #     name = kwargs.get(f'famNombre_{k}')
+            #     tipo = kwargs.get(f'famTipo_{k}')
+            #     doc_type = kwargs.get(f'famTipoDoc_{k}')
+
+            #     if name:
+            #         family_lines.append((0, 0, {
+            #             'name': name,
+            #             'document_type': doc_type,
+            #             'cedula': kwargs.get(f'famCedula_{k}'),
+            #             'birthdate': kwargs.get(f'famFecha_{k}'),
+            #             'phone': kwargs.get(f'famTelefono_{k}'),
+            #             'occupation': kwargs.get(f'famOcupacion_{k}'),
+            #             'economically_dependent': kwargs.get(f'famDepende_{k}'),
+            #             'disability': kwargs.get(f'famDisc_{k}'),
+            #             'disability_type': kwargs.get(f'famDiscTipo_{k}'),
+            #             'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}' or None),
+            #             'familiar_type': tipo,
+            #             'filename': kwargs.get(f'famArchivo_{k}_filename'),
+            #             'document_file': kwargs.get(f'famArchivo_{k}' or None,),
+            #         }))
+
+            #     k += 1
+
+            # if family_lines:
+            #     applicant_values['family_ids'] = family_lines
 
             # ---------------- Funcion para parseo de localizacion Pais/Ciudad ----------------
 
