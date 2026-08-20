@@ -221,6 +221,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                     <div class="row g-3">
 
+                        <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
+                        
                         <!-- Apellido paterno -->
                         <div class="col-md-3">
                             <label class="fs-6">Apellido paterno <span class="required-asterisk">*</span></label>
@@ -1986,81 +1988,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-1').removeClass('d-none');
     },
 
-    // _onSubmitForm(ev) {
-    //     ev.preventDefault();
-    //     let valid = true;
-
-    //     if (!this._validateCurrentStep3()) return;
-    //     const totalExperiences = parseInt(this.$('#total_experiences').val(), 10);
-    //     if (!isNaN(totalExperiences) && totalExperiences > 3) {
-    //         $('#experienceMessageText').text("Debe ingresar mínimo 3 experiencias laborales.");
-    //         $('#experienceMessage').removeClass('d-none');
-    //         return;
-    //     }
-
-    //     this.$('#experience_container .experience-block').each((i, block) => {
-    //         const $block = $(block);
-    //         const noAplica = $block.find('.no-aplica-exp').is(':checked');
-
-    //         if (!noAplica) {
-    //             $block.find('input, select').each((j, el) => {
-    //                 if (!$(el).val()) {
-    //                     $(el).addClass('is-invalid');
-    //                     valid = false;
-    //                 } else {
-    //                     $(el).removeClass('is-invalid');
-    //                 }
-    //             });
-    //         } else {
-    //             $block.find('input, select').removeClass('is-invalid').prop('disabled', true);
-    //         }
-    //     });
-
-    //     if (!valid) {
-    //         $('#experienceMessageText').text("Complete todos los campos de experiencia o marque 'No aplica'.");
-    //         $('#experienceMessage').removeClass('d-none');
-    //         return;
-    //     }
-
-    //     this.$('.family-block').each((index, block) => {
-    //         const i = $(block).find('input[name^="famApellidoPaterno_"]').attr('name').split('_')[1];
-    //         const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val()?.trim() || "";
-    //         const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
-    //         const primer  = this.$(`input[name="famPrimerNombre_${i}"]`).val()?.trim() || "";
-    //         const segundo = this.$(`input[name="famSegundoNombre_${i}"]`).val()?.trim() || "";
-
-    //         const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
-    //         this.$(`input[name="famNombre_${i}"]`).val(fullName);
-
-    //         // NUEVO
-    //         const docType = this.$(`select[name="famTipoDoc_${i}"]`).val();
-    //         const $numDoc = this.$(`input[name="famCedula_${i}"]`);
-    //         const $archivoDoc = this.$(`input[name="famArchivo_${i}"]`);
-    //         const $porcentaje = this.$(`input[name="famDiscPorcentaje_${i}"]`);
-    //         const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
-
-    //         if (docType === 'part_naci') {
-    //             $archivoDoc.prop('disabled', false);   
-    //             $numDoc.prop('disabled', true).val(''); 
-    //         } else {
-    //             $numDoc.prop('disabled', false);       
-    //             $archivoDoc.prop('disabled', true).val(''); 
-    //         }
-
-    //         if (discValue === 'si') {
-    //             $porcentaje.prop('disabled', false);
-    //         } else {
-    //             $porcentaje.prop('disabled', true).val('');
-    //         }
-    //     });
-
-    //     this.$('#submit-form')
-    //         .prop('disabled', true)
-    //         .text('Enviando...');
-
-    //     this.el.submit();
-    // },
-
     _onSubmitForm(ev) {
         ev.preventDefault();
         let valid = true;
@@ -2073,7 +2000,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return;
         }
 
-        // Validación de experiencias
         this.$('#experience_container .experience-block').each((i, block) => {
             const $block = $(block);
             const noAplica = $block.find('.no-aplica-exp').is(':checked');
@@ -2098,7 +2024,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return;
         }
 
-        // Procesar familiares
         this.$('.family-block').each((index, block) => {
             const i = $(block).find('input[name^="famApellidoPaterno_"]').attr('name').split('_')[1];
             const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val()?.trim() || "";
@@ -2109,32 +2034,26 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
             this.$(`input[name="famNombre_${i}"]`).val(fullName);
 
-            // Control de documento vs archivo
+            // NUEVO
             const docType = this.$(`select[name="famTipoDoc_${i}"]`).val();
             const $numDoc = this.$(`input[name="famCedula_${i}"]`);
             const $archivoDoc = this.$(`input[name="famArchivo_${i}"]`);
-
-            if (docType === 'part_naci') {
-                $archivoDoc.prop('disabled', false);   // habilitar archivo PDF
-                $numDoc.prop('disabled', true).val(''); // limpiar número
-            } else {
-                $numDoc.prop('disabled', false);       // habilitar número
-                $archivoDoc.prop('disabled', true).val(''); // limpiar archivo
-            }
-
-            // Control de porcentaje discapacidad
             const $porcentaje = this.$(`input[name="famDiscPorcentaje_${i}"]`);
             const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
 
-            if (discValue === 'si') {
-                $porcentaje.prop('disabled', false);   // habilitar porcentaje
+            if (docType === 'part_naci') {
+                $archivoDoc.prop('disabled', false);   
+                $numDoc.prop('disabled', true).val(''); 
             } else {
-                $porcentaje.prop('disabled', true).val(''); // limpiar si no aplica
+                $numDoc.prop('disabled', false);       
+                $archivoDoc.prop('disabled', true).val(''); 
             }
 
-            // Control de ocupación (empleado)
-            const $ocupacion = this.$(`input[name="famOcupacion_${i}"]`);
-            $ocupacion.prop('disabled', false); // siempre habilitado para que viaje
+            if (discValue === 'si') {
+                $porcentaje.prop('disabled', false);
+            } else {
+                $porcentaje.prop('disabled', true).val('');
+            }
         });
 
         this.$('#submit-form')
