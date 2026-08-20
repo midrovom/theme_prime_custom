@@ -121,11 +121,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     start() {
         
         this._initializeForm();
-        this._addExperienceBlock();
+        // this._addExperienceBlock();
         this._addEducationBlock();
         for (let i = 0; i < 3; i++) {
             this._addReferenceBlock();
         }
+        this._addExperienceBlockController();
         this._toggleStudyFields(); 
         this._toggleDisabilityFields();
         this._toggleFamilyKnownFields();
@@ -154,8 +155,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('input[name="studyOptions"]').on('change', () => {
             this.$('input[name="studyOptions"]').removeClass('is-invalid');
         });
-
-        this._addExperienceBlockController();
 
         return this._super();
     },
@@ -2130,6 +2129,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Methods experience job
     //----------------------------------------------------------------------
 
+
     // async _addExperienceBlock() {
     //     this.experienceCount++;
     //     const newBlock = await this._getExperienceBlock(true);
@@ -2137,10 +2137,60 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     //     this.$('#experience_container').find('.remove-experience').last().on('click', (ev) => {
     //         $(ev.target).closest('.experience-block').remove();
     //         this.experienceCount--;
-    //         this.$('#total_experiences').val(this.experienceCount); 
+    //         this.$('#total_experiences').val(this.experienceCount);
     //         this._checkFieldsFilled();
     //     });
 
+    //     const startId = `job-inicio_${this.experienceCount}`;
+    //     const endId = `job-fin_${this.experienceCount}`;
+    //     const startInput = document.getElementById(startId);
+    //     const endSelect = document.getElementById(endId);
+
+    //     if (startInput && endSelect) {
+    //         startInput.addEventListener("change", () => {
+    //             const startDate = startInput.value;
+    //             if (startDate) {
+    //                 const startYear = new Date(startDate).getFullYear();
+    //                 const currentYear = new Date().getFullYear();
+    //                 endSelect.innerHTML = "<option value=''></option>";
+
+    //                 for (let year = startYear; year < currentYear; year++) {
+    //                     const opt = document.createElement("option");
+    //                     opt.value = year;
+    //                     opt.textContent = year;
+    //                     endSelect.appendChild(opt);
+    //                 }
+
+    //                 const presentOpt = document.createElement("option");
+    //                 presentOpt.value = "presente";
+    //                 presentOpt.textContent = "Presente";
+    //                 endSelect.appendChild(presentOpt);
+    //             }
+    //         });
+    //     }
+
+    //     this._checkFieldsFilled();
+    // },
+
+    // async _addExperienceBlockController() {
+    //     this.$('#total_experiences').on('input change', async (ev) => {
+    //         let num = parseInt($(ev.currentTarget).val(), 10);
+    //         this.$('#experience_container').empty();
+    //         this.experienceCount = 0;
+
+    //         if (!isNaN(num) && num > 0) {
+    //             for (let i = 0; i < num; i++) {
+    //                 await this._addExperienceBlock();
+    //             }
+    //         }
+    //     });
+    // },
+
+    // async _onAddExperience(ev) {
+    //     ev.preventDefault();
+    //     this.experienceCount++;
+    //     const newBlock = await this._getExperienceBlock(false);
+    //     this.$('#experience_container').prepend(newBlock);
     //     this.$('#total_experiences').val(this.experienceCount);
 
     //     const startId = `job-inicio_${this.experienceCount}`;
@@ -2172,8 +2222,25 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     //         });
     //     }
 
-    //     this._checkFieldsFilled();
+    //     this.$('#add-experience').css({
+    //         'opacity': '0.5',
+    //         'pointer-events': 'none'
+    //     });
     // },
+
+    async _addExperienceBlockController() {
+        this.$('#total_experiences').on('input change', async (ev) => {
+            let num = parseInt($(ev.currentTarget).val(), 10);
+            this.$('#experience_container').empty();
+            this.experienceCount = 0;
+
+            if (!isNaN(num) && num > 0) {
+                for (let i = 0; i < num; i++) {
+                    await this._addExperienceBlock();
+                }
+            }
+        });
+    },
 
     async _addExperienceBlock() {
         this.experienceCount++;
@@ -2186,6 +2253,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this._checkFieldsFilled();
         });
 
+        // Lógica fechas inicio/fin
         const startId = `job-inicio_${this.experienceCount}`;
         const endId = `job-fin_${this.experienceCount}`;
         const startInput = document.getElementById(startId);
@@ -2197,6 +2265,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 if (startDate) {
                     const startYear = new Date(startDate).getFullYear();
                     const currentYear = new Date().getFullYear();
+
                     endSelect.innerHTML = "<option value=''></option>";
 
                     for (let year = startYear; year < currentYear; year++) {
@@ -2215,20 +2284,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
 
         this._checkFieldsFilled();
-    },
-
-    async _addExperienceBlockController() {
-        this.$('#total_experiences').on('input change', async (ev) => {
-            let num = parseInt($(ev.currentTarget).val(), 10);
-            this.$('#experience_container').empty();
-            this.experienceCount = 0;
-
-            if (!isNaN(num) && num > 0) {
-                for (let i = 0; i < num; i++) {
-                    await this._addExperienceBlock();
-                }
-            }
-        });
     },
 
     async _onAddExperience(ev) {
