@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_website_offer" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.website.offer</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="website.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='website']" position="inside">
+                <block title="Ofertas comerciales" name="website_offer_settings_block">
+                    <setting id="website_offer_enabled_setting"
+                             string="Permitir ofertas en este sitio"
+                             help="Agrega una experiencia de negociación sin modificar el carrito ni los precios públicos.">
+                        <field name="website_offer_enabled"/>
+                    </setting>
+                    <setting id="website_offer_scope_setting"
+                             string="Productos habilitados"
+                             help="Define si se aceptan ofertas en todo el catálogo publicado o solo en productos seleccionados."
+                             invisible="not website_offer_enabled">
+                        <field name="website_offer_product_scope"/>
+                    </setting>
+                    <setting id="website_offer_login_setting"
+                             string="Identificación del cliente"
+                             help="Si no se exige sesión, el formulario solicitará nombre y un medio de contacto."
+                             invisible="not website_offer_enabled">
+                        <field name="website_offer_require_login"/>
+                    </setting>
+                    <setting id="website_offer_stock_setting"
+                             string="Control de existencias"
+                             help="El stock se toma del almacén configurado para este sitio web."
+                             invisible="not website_offer_enabled">
+                        <div class="content-group">
+                            <field name="website_offer_in_stock_only"/>
+                            <label for="website_offer_in_stock_only"/>
+                        </div>
+                        <div class="content-group mt8">
+                            <field name="website_offer_limit_to_stock"/>
+                            <label for="website_offer_limit_to_stock"/>
+                        </div>
+                    </setting>
+                    <setting id="website_offer_limits_setting"
+                             string="Condiciones predeterminadas"
+                             help="Las reglas individuales por producto pueden reemplazar estos valores."
+                             invisible="not website_offer_enabled">
+                        <div class="row mt16">
+                            <label for="website_offer_default_min_qty" class="col-lg-5 o_light_label"/>
+                            <field name="website_offer_default_min_qty" class="oe_inline"/>
+                        </div>
+                        <div class="row mt8">
+                            <label for="website_offer_minimum_price_percent" class="col-lg-5 o_light_label"/>
+                            <field name="website_offer_minimum_price_percent" class="oe_inline"/>
+                        </div>
+                        <div class="row mt8">
+                            <label for="website_offer_validity_days" class="col-lg-5 o_light_label"/>
+                            <field name="website_offer_validity_days" class="oe_inline"/>
+                        </div>
+                    </setting>
+                    <setting id="website_offer_salesperson_setting"
+                             string="Responsable automático"
+                             help="Asigna las nuevas ofertas al vendedor seleccionado."
+                             invisible="not website_offer_enabled">
+                        <field name="website_offer_user_id" options="{'no_create': True}"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>
+

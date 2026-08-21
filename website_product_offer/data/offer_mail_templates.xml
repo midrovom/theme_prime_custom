@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="mail_template_offer_received" model="mail.template">
+        <field name="name">Oferta web: recibida</field>
+        <field name="model_id" ref="model_website_sale_offer"/>
+        <field name="subject">Recibimos tu oferta {{ object.name }}</field>
+        <field name="email_from">{{ object.company_id.partner_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to">{{ object.contact_email or object.partner_id.email }}</field>
+        <field name="description">Confirmación automática al cliente</field>
+        <field name="body_html" type="html">
+            <div style="font-family:Arial,sans-serif;color:#172033;">
+                <p>Hola <t t-out="object.contact_name or 'cliente'"/>,</p>
+                <p>Recibimos tu oferta <strong><t t-out="object.name"/></strong> por
+                    <strong><t t-out="object.product_id.display_name"/></strong>.</p>
+                <p>Nuestro equipo comercial la revisará y te responderá pronto.</p>
+                <p style="margin:24px 0;">
+                    <a t-att-href="object.get_base_url() + object.get_portal_url()"
+                       style="background:#635bff;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;">
+                        Consultar mi oferta
+                    </a>
+                </p>
+                <p>Gracias por preferirnos.</p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+    <record id="mail_template_offer_counter" model="mail.template">
+        <field name="name">Oferta web: contraoferta</field>
+        <field name="model_id" ref="model_website_sale_offer"/>
+        <field name="subject">Tenemos una propuesta para tu oferta {{ object.name }}</field>
+        <field name="email_from">{{ object.company_id.partner_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to">{{ object.contact_email or object.partner_id.email }}</field>
+        <field name="description">Aviso de contraoferta al cliente</field>
+        <field name="body_html" type="html">
+            <div style="font-family:Arial,sans-serif;color:#172033;">
+                <p>Hola <t t-out="object.contact_name or 'cliente'"/>,</p>
+                <p>Revisamos tu oferta <strong><t t-out="object.name"/></strong> y preparamos una nueva propuesta.</p>
+                <p>Puedes revisar el valor, aceptarlo o cancelar la solicitud desde el siguiente enlace:</p>
+                <p style="margin:24px 0;">
+                    <a t-att-href="object.get_base_url() + object.get_portal_url()"
+                       style="background:#635bff;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;">
+                        Revisar contraoferta
+                    </a>
+                </p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+    <record id="mail_template_offer_converted" model="mail.template">
+        <field name="name">Oferta web: presupuesto creado</field>
+        <field name="model_id" ref="model_website_sale_offer"/>
+        <field name="subject">Tu oferta {{ object.name }} fue aprobada</field>
+        <field name="email_from">{{ object.company_id.partner_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to">{{ object.contact_email or object.partner_id.email }}</field>
+        <field name="description">Aviso de aprobación y creación del presupuesto</field>
+        <field name="body_html" type="html">
+            <div style="font-family:Arial,sans-serif;color:#172033;">
+                <p>Hola <t t-out="object.contact_name or 'cliente'"/>,</p>
+                <p>Tu oferta <strong><t t-out="object.name"/></strong> fue aprobada y ya generamos el presupuesto.</p>
+                <p style="margin:24px 0;">
+                    <a t-att-href="object.get_base_url() + object.get_portal_url()"
+                       style="background:#14b8a6;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;">
+                        Ver resultado
+                    </a>
+                </p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+    <record id="mail_template_offer_rejected" model="mail.template">
+        <field name="name">Oferta web: rechazada</field>
+        <field name="model_id" ref="model_website_sale_offer"/>
+        <field name="subject">Actualización de tu oferta {{ object.name }}</field>
+        <field name="email_from">{{ object.company_id.partner_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to">{{ object.contact_email or object.partner_id.email }}</field>
+        <field name="description">Aviso de oferta no aprobada</field>
+        <field name="body_html" type="html">
+            <div style="font-family:Arial,sans-serif;color:#172033;">
+                <p>Hola <t t-out="object.contact_name or 'cliente'"/>,</p>
+                <p>En esta ocasión no pudimos aprobar la oferta <strong><t t-out="object.name"/></strong>.</p>
+                <p>Gracias por tu interés. Nuestro equipo comercial estará disponible para ayudarte con otra alternativa.</p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+</odoo>
+
