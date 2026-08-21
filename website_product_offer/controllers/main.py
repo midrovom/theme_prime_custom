@@ -226,13 +226,13 @@ class WebsiteProductOfferController(http.Controller):
         }
 
 
-@http.route(
-    "/shop/offer/submit",
-    type="http",
-    auth="public",
-    methods=["POST"],
-    website=True,
-    csrf=True,
-)
-def submit_offer_http(self, **post):
-    return self.submit_offer(**post)
+    @http.route(
+        "/shop/offer/submit",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        website=True,
+        csrf=True,
+    )
+    def submit_offer_http(self, **post):
+        return self.submit_offer(**post)
