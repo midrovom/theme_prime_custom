@@ -75,9 +75,9 @@ class WebsiteProductOfferController(http.Controller):
         }
 
     @staticmethod
-    def _get_list_price(website, product, quantity):
+    def _get_list_price(website, product, offer_quantity):
         pricelist = website.pricelist_id
-        price = pricelist._get_product_price(product, quantity)
+        price = pricelist._get_product_price(product, offer_quantity)
         return pricelist, max(0.0, price)
 
     @http.route(
@@ -87,7 +87,7 @@ class WebsiteProductOfferController(http.Controller):
         methods=["POST"],
         website=True,
     )
-    def offer_config(self, product_id=None, quantity=None, **kwargs):
+    def offer_config(self, product_id=None, offer_quantity=None, **kwargs):
         data = self._get_product_data(product_id)
         if not data["ok"]:
             return data
@@ -99,8 +99,8 @@ class WebsiteProductOfferController(http.Controller):
                 "error": _("Inicia sesión para enviar una oferta."),
             }
 
-        quantity = max(data["min_qty"], self._number(quantity, data["min_qty"]))
-        pricelist, list_price = self._get_list_price(website, data["product"], quantity)
+        offer_quantity = max(data["min_qty"], self._number(offer_quantity, data["min_qty"]))
+        pricelist, list_price = self._get_list_price(website, data["product"], offer_quantity)
         minimum_offer = list_price * data["minimum_price_percent"] / 100
         return {
             "ok": True,
@@ -127,7 +127,7 @@ class WebsiteProductOfferController(http.Controller):
     def submit_offer(
         self,
         product_id=None,
-        quantity=None,
+        offer_quantity=None,
         offered_price=None,
         contact_name=None,
         contact_email=None,
@@ -152,22 +152,22 @@ class WebsiteProductOfferController(http.Controller):
                 "error": _("Inicia sesión para enviar una oferta."),
             }
 
-        quantity = self._number(quantity)
+        offer_quantity = self._number(offer_quantity)
         offered_price = self._number(offered_price)
-        if quantity < data["min_qty"]:
+        if offer_quantity < data["min_qty"]:
             return {
                 "ok": False,
-                "error": _("La cantidad mínima para este producto es %(quantity)s.", quantity=data["min_qty"]),
+                "error": _("La cantidad mínima para este producto es %(quantity)s.", offer_quantity=data["min_qty"]),
             }
-        if data["max_qty"] and quantity > data["max_qty"]:
+        if data["max_qty"] and offer_quantity > data["max_qty"]:
             return {
                 "ok": False,
-                "error": _("La cantidad máxima disponible es %(quantity)s.", quantity=data["max_qty"]),
+                "error": _("La cantidad máxima disponible es %(quantity)s.", offer_quantity=data["max_qty"]),
             }
         if offered_price <= 0:
             return {"ok": False, "error": _("Ingresa un precio unitario válido.")}
 
-        pricelist, list_price = self._get_list_price(website, data["product"], quantity)
+        pricelist, list_price = self._get_list_price(website, data["product"], offer_quantity)
         minimum_offer = list_price * data["minimum_price_percent"] / 100
         if minimum_offer and offered_price < minimum_offer:
             return {
@@ -207,7 +207,7 @@ class WebsiteProductOfferController(http.Controller):
                 "contact_phone": contact_phone,
                 "company_name": company_name,
                 "product_id": data["product"].id,
-                "quantity": quantity,
+                "quantity": offer_quantity,
                 "available_qty_snapshot": data["available_qty"],
                 "pricelist_id": pricelist.id,
                 "list_price": list_price,
