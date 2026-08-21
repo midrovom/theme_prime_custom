@@ -26,31 +26,31 @@ class SaleOrder(models.Model):
             "target": "current",
         }
 
-    # def _cart_update(self, product_id=None, line_id=None, add_qty=0, set_qty=0, **kwargs):
+    def _cart_update(self, product_id=None, line_id=None, add_qty=0, set_qty=0, **kwargs):
 
-    #     if 'quantity' in kwargs:
-    #         kwargs.pop('quantity')
+        if 'quantity' in kwargs:
+            kwargs.pop('quantity')
 
-    #     values = super()._cart_update(
-    #         product_id=product_id,
-    #         line_id=line_id,
-    #         add_qty=add_qty,
-    #         set_qty=set_qty,
-    #         **kwargs
-    #     )
+        values = super()._cart_update(
+            product_id=product_id,
+            line_id=line_id,
+            add_qty=add_qty,
+            set_qty=set_qty,
+            **kwargs
+        )
 
-    #     if self.website_id and not self.website_id._dr_has_b2b_access():
-    #         for line in self.order_line:
-    #             new_kwargs = dict(kwargs)  
-    #             if 'quantity' in new_kwargs:
-    #                 new_kwargs.pop('quantity')
-    #             new_val = super()._cart_update(
-    #                 product_id=line.product_id.id,
-    #                 line_id=line.id,
-    #                 add_qty=-1,
-    #                 set_qty=0,
-    #                 **new_kwargs
-    #             )
-    #             values.update(new_val)
-    #     return values
+        if self.website_id and not self.website_id._dr_has_b2b_access():
+            for line in self.order_line:
+                new_kwargs = dict(kwargs)  
+                if 'quantity' in new_kwargs:
+                    new_kwargs.pop('quantity')
+                new_val = super()._cart_update(
+                    product_id=line.product_id.id,
+                    line_id=line.id,
+                    add_qty=-1,
+                    set_qty=0,
+                    **new_kwargs
+                )
+                values.update(new_val)
+        return values
 
