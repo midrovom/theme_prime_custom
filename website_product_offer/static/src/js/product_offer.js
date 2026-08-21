@@ -14,6 +14,7 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
     },
 
     start() {
+        console.log("WebsiteProductOffer inicializado en:", this.el);
         this.config = null;
         this._boundModalShow = this._onModalShow.bind(this);
         this._boundModalHidden = this._onModalHidden.bind(this);
@@ -141,6 +142,7 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
     },
 
     async _onSubmit(event) {
+        console.log("WebsiteProductOffer _onSubmit interceptado");
         event.preventDefault();
         const form = event.currentTarget;
         this._hideError();
