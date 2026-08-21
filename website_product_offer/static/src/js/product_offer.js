@@ -5,21 +5,21 @@ import { rpc } from "@web/core/network/rpc";
 
 
 publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
-    // selector: ".o_wpo_offer_modal",
-    // events: {
-    //     "submit .o_wpo_offer_form": "_onSubmit",
-    //     "input .o_wpo_quantity": "_onAmountChanged",
-    //     "change .o_wpo_quantity": "_onQuantityCommitted",
-    //     "input .o_wpo_offered_price": "_onAmountChanged",
-    // },
-
-    selector: ".o_wpo_offer_form",   
+    selector: ".o_wpo_offer_modal",
     events: {
         "submit .o_wpo_offer_form": "_onSubmit",
         "input .o_wpo_quantity": "_onAmountChanged",
         "change .o_wpo_quantity": "_onQuantityCommitted",
         "input .o_wpo_offered_price": "_onAmountChanged",
     },
+
+    // selector: ".o_wpo_offer_form",   
+    // events: {
+    //     "submit .o_wpo_offer_form": "_onSubmit",
+    //     "input .o_wpo_quantity": "_onAmountChanged",
+    //     "change .o_wpo_quantity": "_onQuantityCommitted",
+    //     "input .o_wpo_offered_price": "_onAmountChanged",
+    // },
 
     start() {
         console.log("WebsiteProductOffer inicializado en:", this.el);
