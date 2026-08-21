@@ -51,7 +51,7 @@
                             <div class="modal-body position-relative pt-0">
                                 <div class="alert alert-danger d-none o_wpo_error" role="alert"/>
 
-                                <form class="o_wpo_offer_form" novalidate="novalidate">
+                                <form class="o_wpo_offer_form" action="/shop/offer/submit" method="post" novalidate="novalidate">
                                     <input type="hidden" name="product_id" class="o_wpo_product_id"
                                            t-att-value="product_variant.id"/>
                                     <input type="hidden" name="source_url" t-att-value="product.website_url"/>
