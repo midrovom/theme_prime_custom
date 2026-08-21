@@ -80,7 +80,7 @@
                                                 <label for="wpo_quantity" class="form-label">¿Cuántas unidades necesitas?</label>
                                                 <div class="input-group input-group-lg o_wpo_input_group">
                                                     <span class="input-group-text"><i class="fa fa-cubes" aria-hidden="true"/></span>
-                                                    <input id="wpo_quantity" name="offer_quantity" type="number"
+                                                    <input id="wpo_quantity" name="quantity" type="number"
                                                            class="form-control o_wpo_quantity" required="required"
                                                            inputmode="decimal" min="1" step="1" value="1"/>
                                                 </div>
