@@ -2043,6 +2043,31 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._addFamilyBlock(parentesco); 
     },
 
+    async _syncFamilyBrothers() {
+        const numHermanos = parseInt(
+            this.$('#famNumHermanos').val(),
+            10
+        ) || 0;
+
+        const brothersContainer = this.$(
+            '#family_container .family-block[data-type="Hermano(a)"]'
+        );
+
+        const currentBrothers = brothersContainer.length;
+        if (numHermanos < currentBrothers) {
+            const brothersToRemove = currentBrothers - numHermanos;
+            this.$(
+                '#family_container .family-block[data-type="Hermano(a)"]'
+            ).slice(-brothersToRemove).remove();
+
+            return;
+        }
+
+        const brothersToCreate = numHermanos - currentBrothers;
+        for (let i = 0; i < brothersToCreate; i++) {
+            await this._addFamilyBlock('3');
+        }
+    },
 
     async _addFamilyBlock(parentesco) {
         const FAMILY_TYPES_MAP = {
@@ -2078,26 +2103,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             const name = $(ev.currentTarget).attr('name');
             this.$(`input[name="${name}"]`).removeClass('is-invalid');
         });
-
-        this.$('#total_hermano').on('change', async (ev) => {
-    const cantidad = parseInt($(ev.currentTarget).val(), 10) || 0;
-
-    // Elimina bloques previos de hermanos para evitar duplicados
-        this.$('#family_container .family-block[data-type="Hermano(a)"]').remove();
-            for (let j = 0; j < cantidad; j++) {
-                await this._addFamilyBlock('3');
-            }
-            
-            let hidden = this.$('input[name="famNumHermanos"]');
-            if (hidden.length === 0) {
-                this.$('#family_container').append(
-                    `<input type="hidden" name="famNumHermanos" value="${cantidad}"/>`
-                );
-            } else {
-                hidden.val(cantidad);
-            }
-        });
-
     },
 
     _onRemoveFamily(ev) {
