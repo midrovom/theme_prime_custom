@@ -135,6 +135,11 @@
                         <div class="py-3 d-flex justify-content-start mb-3">
                             <span class="fw-normal fs-4 text-info">Datos Familiares</span>
                         </div>
+
+                        <div class="d-flex align-items-center">
+                            <label for="total_hermano" class="me-2 fs-6">Numero de Hermanos:</label>
+                            <input type="number" id="total_hermano" class="form-control rounded-pill px-3" min="1" max="10" style="width:100px;" />
+                        </div>
                     </div>
                 </div>
 
