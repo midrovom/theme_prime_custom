@@ -111,7 +111,7 @@ class WebsiteProductOfferController(http.Controller):
             "minimum_price_percent": data["minimum_price_percent"],
         }
 
-    @http.route('/shop/offer/submit', type="http", auth="public", methods=["POST"], website=True,)
+    @http.route('/shop/offer/submit', type="json", auth="public", methods=["POST"], website=True,)
     def submit_offer(
         self,
         product_id=None,
