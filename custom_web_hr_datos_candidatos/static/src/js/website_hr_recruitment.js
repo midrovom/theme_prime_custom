@@ -402,6 +402,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         }, 0);
 
+        return block;
+
     },
 
     async _getEducationBlock(isFirstBlock = false) {
