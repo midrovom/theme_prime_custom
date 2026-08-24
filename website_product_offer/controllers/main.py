@@ -117,110 +117,163 @@ class WebsiteProductOfferController(http.Controller):
             "minimum_price_percent": data["minimum_price_percent"],
         }
 
+    # @http.route(
+    #     "/shop/offer/submit",
+    #     type="json",
+    #     auth="public",
+    #     methods=["POST"],
+    #     website=True,
+    # )
+    # def submit_offer(
+    #     self,
+    #     product_id=None,
+    #     quantity=None,
+    #     offered_price=None,
+    #     contact_name=None,
+    #     contact_email=None,
+    #     contact_phone=None,
+    #     company_name=None,
+    #     customer_message=None,
+    #     source_url=None,
+    #     website_bait=None,
+    #     **kwargs,
+    # ):
+    #     if website_bait:
+    #         return {"ok": False, "error": _("No fue posible procesar el formulario.")}
+
+    #     data = self._get_product_data(product_id)
+    #     if not data["ok"]:
+    #         return data
+    #     website = data["website"]
+    #     if website.offer_require_login and request.env.user._is_public():
+    #         return {
+    #             "ok": False,
+    #             "login_required": True,
+    #             "error": _("Inicia sesión para enviar una oferta."),
+    #         }
+
+    #     quantity = self._number(quantity)
+    #     offered_price = self._number(offered_price)
+    #     if quantity < data["min_qty"]:
+    #         return {
+    #             "ok": False,
+    #             "error": _("La cantidad mínima para este producto es %(quantity)s.", quantity=data["min_qty"]),
+    #         }
+    #     if data["max_qty"] and quantity > data["max_qty"]:
+    #         return {
+    #             "ok": False,
+    #             "error": _("La cantidad máxima disponible es %(quantity)s.", quantity=data["max_qty"]),
+    #         }
+    #     if offered_price <= 0:
+    #         return {"ok": False, "error": _("Ingresa un precio unitario válido.")}
+
+    #     pricelist, list_price = self._get_list_price(website, data["product"], quantity)
+    #     minimum_offer = list_price * data["minimum_price_percent"] / 100
+    #     if minimum_offer and offered_price < minimum_offer:
+    #         return {
+    #             "ok": False,
+    #             "error": _(
+    #                 "La oferta está por debajo del mínimo permitido para este producto."
+    #             ),
+    #         }
+
+    #     public_user = request.env.user._is_public()
+    #     partner = request.env.user.partner_id if not public_user else request.env["res.partner"]
+    #     contact_name = self._clean(contact_name, 120) or (partner.name if partner else "")
+    #     contact_email = self._clean(contact_email, 160) or (partner.email if partner else "")
+    #     contact_phone = self._clean(contact_phone, 60) or (partner.phone if partner else "")
+    #     company_name = self._clean(company_name, 160)
+    #     customer_message = self._clean(customer_message, 2000)
+    #     source_url = self._clean(source_url, 500)
+    #     if not source_url.startswith("/"):
+    #         source_url = data["template"].website_url
+
+    #     if not contact_name:
+    #         return {"ok": False, "error": _("Indica el nombre de la persona de contacto.")}
+    #     if not contact_email and not contact_phone:
+    #         return {"ok": False, "error": _("Indica un correo o teléfono de contacto.")}
+    #     if contact_email and not EMAIL_PATTERN.match(contact_email):
+    #         return {"ok": False, "error": _("El correo electrónico no tiene un formato válido.")}
+
+    #     Offer = request.env["website.sale.offer"].sudo().with_company(website.company_id)
+    #     offer = Offer.create(
+    #         {
+    #             "website_id": website.id,
+    #             "company_id": website.company_id.id,
+    #             "user_id": website.offer_user_id.id,
+    #             "partner_id": partner.id,
+    #             "contact_name": contact_name,
+    #             "contact_email": contact_email,
+    #             "contact_phone": contact_phone,
+    #             "company_name": company_name,
+    #             "product_id": data["product"].id,
+    #             "quantity": quantity,
+    #             "available_qty_snapshot": data["available_qty"],
+    #             "pricelist_id": pricelist.id,
+    #             "list_price": list_price,
+    #             "offered_price": offered_price,
+    #             "customer_message": customer_message,
+    #             "valid_until": Offer._default_valid_until(website),
+    #             "source_url": source_url,
+    #         }
+    #     )
+    #     offer._send_status_email("website_product_offer.mail_template_offer_received")
+    #     return {
+    #         "ok": True,
+    #         "reference": offer.name,
+    #         "portal_url": offer.get_portal_url(),
+    #         "message": _("Recibimos tu oferta. Nuestro equipo la revisará y te responderá pronto."),
+    #     }
+
     @http.route(
         "/shop/offer/submit",
-        type="json",
+        type="http",              
         auth="public",
         methods=["POST"],
         website=True,
+        csrf=False,               
     )
-    def submit_offer(
-        self,
-        product_id=None,
-        quantity=None,
-        offered_price=None,
-        contact_name=None,
-        contact_email=None,
-        contact_phone=None,
-        company_name=None,
-        customer_message=None,
-        source_url=None,
-        website_bait=None,
-        **kwargs,
-    ):
+    def submit_offer(self, **post):
+        website_bait = post.get("website_bait")
         if website_bait:
-            return {"ok": False, "error": _("No fue posible procesar el formulario.")}
+            return request.render("website_sale_product_offer.offer_error", {
+                "error": _("No fue posible procesar el formulario."),
+            })
 
-        data = self._get_product_data(product_id)
-        if not data["ok"]:
-            return data
-        website = data["website"]
-        if website.offer_require_login and request.env.user._is_public():
-            return {
-                "ok": False,
-                "login_required": True,
-                "error": _("Inicia sesión para enviar una oferta."),
-            }
-
-        quantity = self._number(quantity)
-        offered_price = self._number(offered_price)
-        if quantity < data["min_qty"]:
-            return {
-                "ok": False,
-                "error": _("La cantidad mínima para este producto es %(quantity)s.", quantity=data["min_qty"]),
-            }
-        if data["max_qty"] and quantity > data["max_qty"]:
-            return {
-                "ok": False,
-                "error": _("La cantidad máxima disponible es %(quantity)s.", quantity=data["max_qty"]),
-            }
-        if offered_price <= 0:
-            return {"ok": False, "error": _("Ingresa un precio unitario válido.")}
-
-        pricelist, list_price = self._get_list_price(website, data["product"], quantity)
-        minimum_offer = list_price * data["minimum_price_percent"] / 100
-        if minimum_offer and offered_price < minimum_offer:
-            return {
-                "ok": False,
-                "error": _(
-                    "La oferta está por debajo del mínimo permitido para este producto."
-                ),
-            }
-
-        public_user = request.env.user._is_public()
-        partner = request.env.user.partner_id if not public_user else request.env["res.partner"]
-        contact_name = self._clean(contact_name, 120) or (partner.name if partner else "")
-        contact_email = self._clean(contact_email, 160) or (partner.email if partner else "")
-        contact_phone = self._clean(contact_phone, 60) or (partner.phone if partner else "")
-        company_name = self._clean(company_name, 160)
-        customer_message = self._clean(customer_message, 2000)
-        source_url = self._clean(source_url, 500)
-        if not source_url.startswith("/"):
-            source_url = data["template"].website_url
+        product_id = post.get("product_id")
+        quantity = post.get("quantity")
+        offered_price = post.get("offered_price")
+        contact_name = post.get("contact_name")
+        contact_email = post.get("contact_email")
+        contact_phone = post.get("contact_phone")
+        company_name = post.get("company_name")
+        customer_message = post.get("customer_message")
+        source_url = post.get("source_url")
 
         if not contact_name:
-            return {"ok": False, "error": _("Indica el nombre de la persona de contacto.")}
+            return request.render("website_sale_product_offer.offer_error", {
+                "error": _("Indica el nombre de la persona de contacto."),
+            })
         if not contact_email and not contact_phone:
-            return {"ok": False, "error": _("Indica un correo o teléfono de contacto.")}
-        if contact_email and not EMAIL_PATTERN.match(contact_email):
-            return {"ok": False, "error": _("El correo electrónico no tiene un formato válido.")}
+            return request.render("website_sale_product_offer.offer_error", {
+                "error": _("Indica un correo o teléfono de contacto."),
+            })
 
-        Offer = request.env["website.sale.offer"].sudo().with_company(website.company_id)
-        offer = Offer.create(
-            {
-                "website_id": website.id,
-                "company_id": website.company_id.id,
-                "user_id": website.offer_user_id.id,
-                "partner_id": partner.id,
-                "contact_name": contact_name,
-                "contact_email": contact_email,
-                "contact_phone": contact_phone,
-                "company_name": company_name,
-                "product_id": data["product"].id,
-                "quantity": quantity,
-                "available_qty_snapshot": data["available_qty"],
-                "pricelist_id": pricelist.id,
-                "list_price": list_price,
-                "offered_price": offered_price,
-                "customer_message": customer_message,
-                "valid_until": Offer._default_valid_until(website),
-                "source_url": source_url,
-            }
-        )
-        offer._send_status_email("website_product_offer.mail_template_offer_received")
-        return {
-            "ok": True,
+        Offer = request.env["website.sale.offer"].sudo()
+        offer = Offer.create({
+            "product_id": int(product_id),
+            "quantity": float(quantity),
+            "offered_price": float(offered_price),
+            "contact_name": contact_name,
+            "contact_email": contact_email,
+            "contact_phone": contact_phone,
+            "company_name": company_name,
+            "customer_message": customer_message,
+            "source_url": source_url,
+        })
+
+        return request.render("website_sale_product_offer.offer_success", {
             "reference": offer.name,
-            "portal_url": offer.get_portal_url(),
             "message": _("Recibimos tu oferta. Nuestro equipo la revisará y te responderá pronto."),
-        }
+            "portal_url": offer.get_portal_url(),
+        })

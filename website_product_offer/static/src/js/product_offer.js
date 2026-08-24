@@ -36,41 +36,10 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         return Number(productInput?.value || this.el.querySelector(".o_wpo_product_id")?.value || 0);
     },
 
-    // async _onModalShow() {
-    //     this._resetFeedback();
-    //     const productId = this._currentProductId();
-    //     this.el.querySelector(".o_wpo_product_id").value = productId;
-    //     this._setLoading(true);
-    //     try {
-    //         const response = await rpc("/shop/offer/config", { product_id: productId });
-    //         if (!response.ok) {
-    //             this._showError(response.error);
-    //             if (response.login_required) {
-    //                 window.setTimeout(() => {
-    //                     window.location.href = `/web/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-    //                 }, 900);
-    //             }
-    //             return;
-    //         }
-    //         this.config = response;
-    //         this._applyConfig(response);
-    //     } catch (error) {
-    //         this._showError("No pudimos validar el producto. Inténtalo nuevamente.");
-    //     } finally {
-    //         this._setLoading(false);
-    //     }
-    // },
-
     async _onModalShow() {
         this._resetFeedback();
         const productId = this._currentProductId();
         this.el.querySelector(".o_wpo_product_id").value = productId;
-        const form = this.el.querySelector(".o_wpo_offer_form");
-        if (form) {
-            form.addEventListener("submit", (ev) => this._onSubmit(ev), { once: true });
-            console.log("Listener de submit enganchado al abrir el modal");
-        }
-
         this._setLoading(true);
         try {
             const response = await rpc("/shop/offer/config", { product_id: productId });
@@ -172,14 +141,47 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         }
     },
 
+    // async _onSubmit(event) {
+    //     console.log("WebsiteProductOffer _onSubmit interceptado");
+    //     event.preventDefault();
+    //     const form = event.currentTarget;
+    //     this._hideError();
+    //     if (!form.checkValidity()) {
+    //         form.classList.add("was-validated");
+    //         return;
+    //     }
+
+    //     const email = form.querySelector("[name='contact_email']").value.trim();
+    //     const phone = form.querySelector("[name='contact_phone']").value.trim();
+    //     if (!email && !phone) {
+    //         this._showError("Indica un correo o un teléfono para poder responderte.");
+    //         return;
+    //     }
+
+    //     form.querySelector(".o_wpo_product_id").value = this._currentProductId();
+    //     const payload = Object.fromEntries(new FormData(form).entries());
+    //     this._setLoading(true);
+    //     try {
+    //         const response = await rpc("/shop/offer/submit", payload);
+    //         if (!response.ok) {
+    //             this._showError(response.error || "No pudimos registrar la oferta.");
+    //             return;
+    //         }
+    //         this._showSuccess(response);
+    //     } catch (error) {
+    //         this._showError("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
+    //     } finally {
+    //         this._setLoading(false);
+    //     }
+    // },
+
     async _onSubmit(event) {
         console.log("WebsiteProductOffer _onSubmit interceptado");
-        event.preventDefault();
-        event.stopImmediatePropagation();
         const form = event.currentTarget;
         this._hideError();
         if (!form.checkValidity()) {
             form.classList.add("was-validated");
+            event.preventDefault();
             return;
         }
 
@@ -187,26 +189,12 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         const phone = form.querySelector("[name='contact_phone']").value.trim();
         if (!email && !phone) {
             this._showError("Indica un correo o un teléfono para poder responderte.");
+            event.preventDefault(); 
             return;
         }
 
         form.querySelector(".o_wpo_product_id").value = this._currentProductId();
-        const payload = Object.fromEntries(new FormData(form).entries());
-        console.log("Payload enviado:", payload);
-        this._setLoading(true);
-        try {
-            // const response = await rpc("/shop/offer/submit", payload);
-            const response = await rpc("/shop/offer/submit", { params: payload });
-            if (!response.ok) {
-                this._showError(response.error || "No pudimos registrar la oferta.");
-                return;
-            }
-            this._showSuccess(response);
-        } catch (error) {
-            this._showError("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
-        } finally {
-            this._setLoading(false);
-        }
+
     },
 
     _setLoading(loading) {
