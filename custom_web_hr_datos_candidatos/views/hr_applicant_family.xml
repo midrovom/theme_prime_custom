@@ -8,6 +8,7 @@
             <field name="arch" type="xml">
                 <list string="Familiares">
                     <field name="familiar_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="fallecido" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="document_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                     <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
@@ -35,6 +36,7 @@
                         </group>
 
                         <group string="Información personal">
+                            <field name="fallecido" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             <field name="familiar_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
                             <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
                             <field name="document_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>

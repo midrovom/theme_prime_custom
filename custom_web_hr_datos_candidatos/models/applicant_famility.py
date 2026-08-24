@@ -23,6 +23,7 @@ class ApplicantFamily(models.Model):
         ondelete='cascade'
     )
 
+    fallecido = fields.Boolean("Fallecido") 
     familiar_type = fields.Selection(selection=FAMILY_TYPES, string="Tipo de familiar")
     name = fields.Char(string='Nombre completo')
     document_type = fields.Selection(DOCUMENT_TYPES, string='Tipo de documento')

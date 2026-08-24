@@ -91,6 +91,7 @@
                         <field name="family_ids" readonly="is_readonly_group">
                             <list>
                                 <field name="familiar_type"/>
+                                <field name="fallecido"/>
                                 <field name="name"/>
                                 <field name="document_type"/>
                                 <field name="cedula"/>
