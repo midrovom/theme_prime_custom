@@ -363,8 +363,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         setTimeout(() => {
             const i = this.familyCount;
-
-            // Actualizar nombre completo
             const updateFullName = () => {
                 const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val()?.trim() || "";
                 const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
@@ -387,25 +385,24 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 updateFullName();
             });
 
-            // Lógica para el check Fallecido
             const fallecidoCheck = this.$(`input[name="famFallecido_${i}"]`);
             if (fallecidoCheck.length) {
                 fallecidoCheck.on("change", () => {
                     const disabled = fallecidoCheck.is(":checked");
                     const $fields = this.$(`#family_container .family-block[data-type="${parentesco}"] input:not([name="famFallecido_${i}"]), 
                                             #family_container .family-block[data-type="${parentesco}"] select`);
-
                     $fields.prop("disabled", disabled);
                     $fields.prop("required", !disabled);
+
                     if (disabled) {
                         $fields.val("");
                         $fields.removeClass("is-invalid");
+                        $fields.siblings(".error-message").hide();
                     }
                 });
             }
 
         }, 0);
-
 
         return block;
 
@@ -1712,11 +1709,32 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return true;
     },
 
+    // _validateReferenceField(ev) {
+    //     const $field = $(ev.currentTarget);
+    //     const $error = $field.siblings('.error-message'); 
+    //     const value = $field.val();
+
+    //     if (value.trim() === '') {
+    //         $error.text("Campo obligatorio").show();
+    //         $field.addClass('is-invalid');
+    //         return false;
+    //     }
+
+    //     $error.hide();
+    //     $field.removeClass('is-invalid');
+    //     return true;
+    // },
+
     _validateReferenceField(ev) {
         const $field = $(ev.currentTarget);
         const $error = $field.siblings('.error-message'); 
-        const value = $field.val();
+        if ($field.prop("disabled")) {
+            $error.hide();
+            $field.removeClass('is-invalid');
+            return true; 
+        }
 
+        const value = $field.val();
         if (value.trim() === '') {
             $error.text("Campo obligatorio").show();
             $field.addClass('is-invalid');
