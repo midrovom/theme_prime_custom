@@ -180,14 +180,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     async _getFamilyBlock(parentesco) {
         const fallecidoBlock = (["Padre","Madre"].includes(parentesco)) ? `
-            <!-- Fallecido -->
-            <div class="col-md-3">
-                <label class="fs-6">Fallecido</label>
-                <div class="form-check mt-2">
-                    <input class="form-check-input" type="checkbox" 
-                        name="famFallecido_${this.familyCount}" value="si"/>
-                    <label class="form-check-label">Sí</label>
-                </div>
+            <div class="col-md-3 d-flex align-items-center">
+                <label class="fs-6 me-2">Fallecido</label>
+                <input class="form-check-input" type="checkbox" 
+                    name="famFallecido_${this.familyCount}"/>
             </div>
         ` : "";
 
