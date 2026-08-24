@@ -179,6 +179,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     async _getFamilyBlock(parentesco) {
+        const fallecidoBlock = (["Padre","Madre"].includes(parentesco)) ? `
+            <!-- Fallecido -->
+            <div class="col-md-3">
+                <label class="fs-6">Fallecido</label>
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" 
+                        name="famFallecido_${this.familyCount}" value="si"/>
+                    <label class="form-check-label">Sí</label>
+                </div>
+            </div>
+        ` : "";
+
         const block = `
             <div class="row d-flex justify-content-center family-block" data-type="${parentesco}">
                 <div class="col-12 col-md-10">
@@ -319,6 +331,38 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         `;
 
+        // setTimeout(() => {
+        //     const i = this.familyCount;
+        //     const updateFullName = () => {
+        //         const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val()?.trim() || "";
+        //         const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
+        //         const primer = this.$(`input[name="famPrimerNombre_${i}"]`).val()?.trim() || "";
+        //         const segundo = this.$(`input[name="famSegundoNombre_${i}"]`).val()?.trim() || "";
+
+        //         const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
+        //         this.$(`input[name="famNombre_${i}"]`).val(fullName);
+        //     };
+
+        //     this.$(`input[name="famApellidoPaterno_${i}"], 
+        //             input[name="famApellidoMaterno_${i}"], 
+        //             input[name="famPrimerNombre_${i}"], 
+        //             input[name="famSegundoNombre_${i}"]`).on("input blur", function() {
+        //         const $f = $(this);
+        //         if (!$f.val().trim() && $f.prop("required")) {
+        //             $f.addClass("is-invalid");
+        //             if ($f.next(".invalid-feedback").length === 0) {
+        //                 $f.after('<div class="invalid-feedback">Campo obligatorio</div>');
+        //             }
+        //         } else {
+        //             $f.removeClass("is-invalid");
+        //         }
+        //         updateFullName();
+        //     });
+
+        // }, 0);
+
+        // return block;
+
         setTimeout(() => {
             const i = this.familyCount;
             const updateFullName = () => {
@@ -326,7 +370,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
                 const primer = this.$(`input[name="famPrimerNombre_${i}"]`).val()?.trim() || "";
                 const segundo = this.$(`input[name="famSegundoNombre_${i}"]`).val()?.trim() || "";
-
                 const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
                 this.$(`input[name="famNombre_${i}"]`).val(fullName);
             };
@@ -338,18 +381,26 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 const $f = $(this);
                 if (!$f.val().trim() && $f.prop("required")) {
                     $f.addClass("is-invalid");
-                    if ($f.next(".invalid-feedback").length === 0) {
-                        $f.after('<div class="invalid-feedback">Campo obligatorio</div>');
-                    }
                 } else {
                     $f.removeClass("is-invalid");
                 }
                 updateFullName();
             });
 
-        }, 0);
+            const fallecidoCheck = this.$(`input[name="famFallecido_${i}"]`);
+            if (fallecidoCheck.length) {
+                fallecidoCheck.on("change", () => {
+                    const disabled = fallecidoCheck.is(":checked");
+                    this.$(`input[name="famTelefono_${i}"]`).prop("disabled", disabled).val("");
+                    this.$(`input[name="famOcupacion_${i}"]`).prop("disabled", disabled).val("");
+                    this.$(`input[name="famDepende_${i}"]`).prop("disabled", disabled);
+                    this.$(`input[name="famDisc_${i}"]`).prop("disabled", disabled);
+                    this.$(`input[name="famDiscTipo_${i}"]`).prop("disabled", true).val("");
+                    this.$(`input[name="famDiscPorcentaje_${i}"]`).prop("disabled", true).val("");
+                });
+            }
 
-        return block;
+        }, 0);
 
     },
 
