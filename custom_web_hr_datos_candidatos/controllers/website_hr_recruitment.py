@@ -156,16 +156,16 @@ class WebsiteHRRecruitment(http.Controller):
 
             while kwargs.get(f'famNombre_{k}') is not None:
                 name = kwargs.get(f'famNombre_{k}')
-                tipo = kwargs.get(f'famTipo_{k}')
+                tipo = kwargs.get(f'famTipo_{k}')   
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
-                fallecido = kwargs.get(f'famFallecido_{k}')  
+                fallecido = bool(kwargs.get(f'famFallecido_{k}'))  
 
                 if name:
-                    if tipo in ['Padre', 'Madre'] and fallecido:
+                    if tipo in ['1', '2'] and fallecido:
                         family_lines.append((0, 0, {
                             'name': name,
-                            'familiar_type': str(tipo),
-                            'fallecido': True, 
+                            'familiar_type': tipo,  
+                            'fallecido': True,
                         }))
                     else:
                         family_file = kwargs.get(f'famArchivo_{k}')
@@ -186,7 +186,7 @@ class WebsiteHRRecruitment(http.Controller):
                             'disability': kwargs.get(f'famDisc_{k}'),
                             'disability_type': kwargs.get(f'famDiscTipo_{k}'),
                             'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}') or None,
-                            'familiar_type': str(tipo) if tipo else None,
+                            'familiar_type': tipo,   
                             'filename': filename,
                             'document_file': document_file,
                             'cedula': (
@@ -201,6 +201,7 @@ class WebsiteHRRecruitment(http.Controller):
 
             if family_lines:
                 applicant_values['family_ids'] = family_lines
+
 
 
             # family_lines = []
