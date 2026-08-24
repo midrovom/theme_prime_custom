@@ -179,11 +179,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     async _getFamilyBlock(parentesco) {
+
         const fallecidoBlock = (["Padre","Madre"].includes(parentesco)) ? `
             <div class="col-md-3 d-flex align-items-center">
                 <label class="fs-6 me-2">Fallecido</label>
-                <input class="form-check-input" type="checkbox" 
-                    name="famFallecido_${this.familyCount}"/>
+                <input class="form-check-input" type="checkbox" name="famFallecido_${this.familyCount}"/>
             </div>
         ` : "";
 
@@ -363,6 +363,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         setTimeout(() => {
             const i = this.familyCount;
+
+            // Función para actualizar nombre completo
             const updateFullName = () => {
                 const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val()?.trim() || "";
                 const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
@@ -372,6 +374,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 this.$(`input[name="famNombre_${i}"]`).val(fullName);
             };
 
+            // Validación de campos obligatorios y concatenación
             this.$(`input[name="famApellidoPaterno_${i}"], 
                     input[name="famApellidoMaterno_${i}"], 
                     input[name="famPrimerNombre_${i}"], 
@@ -379,22 +382,30 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 const $f = $(this);
                 if (!$f.val().trim() && $f.prop("required")) {
                     $f.addClass("is-invalid");
+                    if ($f.next(".invalid-feedback").length === 0) {
+                        $f.after('<div class="invalid-feedback">Campo obligatorio</div>');
+                    }
                 } else {
                     $f.removeClass("is-invalid");
                 }
                 updateFullName();
             });
 
+            // Lógica para el check Fallecido
             const fallecidoCheck = this.$(`input[name="famFallecido_${i}"]`);
             if (fallecidoCheck.length) {
                 fallecidoCheck.on("change", () => {
                     const disabled = fallecidoCheck.is(":checked");
-                    this.$(`input[name="famTelefono_${i}"]`).prop("disabled", disabled).val("");
-                    this.$(`input[name="famOcupacion_${i}"]`).prop("disabled", disabled).val("");
-                    this.$(`input[name="famDepende_${i}"]`).prop("disabled", disabled);
-                    this.$(`input[name="famDisc_${i}"]`).prop("disabled", disabled);
-                    this.$(`input[name="famDiscTipo_${i}"]`).prop("disabled", true).val("");
-                    this.$(`input[name="famDiscPorcentaje_${i}"]`).prop("disabled", true).val("");
+
+                    // Deshabilitar todos los inputs y selects del bloque excepto el check
+                    this.$(`#family_container .family-block[data-type="${parentesco}"] input:not([name="famFallecido_${i}"]), 
+                            #family_container .family-block[data-type="${parentesco}"] select`).prop("disabled", disabled);
+
+                    // Limpiar valores si está marcado
+                    if (disabled) {
+                        this.$(`#family_container .family-block[data-type="${parentesco}"] input:not([type="checkbox"])`).val("");
+                        this.$(`#family_container .family-block[data-type="${parentesco}"] select`).val("");
+                    }
                 });
             }
 
