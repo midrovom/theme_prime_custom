@@ -67,7 +67,7 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         this.el.querySelector(".o_wpo_product_id").value = productId;
         const form = this.el.querySelector(".o_wpo_offer_form");
         if (form) {
-            form.addEventListener("submit", this._boundSubmit);
+            form.addEventListener("submit", (ev) => this._onSubmit(ev), { once: true });
             console.log("Listener de submit enganchado al abrir el modal");
         }
 
@@ -175,7 +175,7 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
     async _onSubmit(event) {
         console.log("WebsiteProductOffer _onSubmit interceptado");
         event.preventDefault();
-        event.stopPropagation(); 
+        event.stopImmediatePropagation();
         const form = event.currentTarget;
         this._hideError();
         if (!form.checkValidity()) {
