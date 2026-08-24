@@ -119,7 +119,7 @@ class WebsiteProductOfferController(http.Controller):
 
     @http.route(
         "/shop/offer/submit",
-        type="json",
+        type="http",
         auth="public",
         methods=["POST"],
         website=True,
