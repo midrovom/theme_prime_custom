@@ -162,7 +162,8 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         const payload = Object.fromEntries(new FormData(form).entries());
         this._setLoading(true);
         try {
-            const response = await rpc("/shop/offer/submit", payload);
+            // const response = await rpc("/shop/offer/submit", payload);
+            const response = await rpc("/shop/offer/submit", { params: payload });
             if (!response.ok) {
                 this._showError(response.error || "No pudimos registrar la oferta.");
                 return;
