@@ -36,11 +36,42 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         return Number(productInput?.value || this.el.querySelector(".o_wpo_product_id")?.value || 0);
     },
 
+    // async _onModalShow() {
+    //     this._resetFeedback();
+    //     const productId = this._currentProductId();
+    //     this.el.querySelector(".o_wpo_product_id").value = productId;
+    //     this._setLoading(true);
+    //     try {
+    //         const response = await rpc("/shop/offer/config", { product_id: productId });
+    //         if (!response.ok) {
+    //             this._showError(response.error);
+    //             if (response.login_required) {
+    //                 window.setTimeout(() => {
+    //                     window.location.href = `/web/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+    //                 }, 900);
+    //             }
+    //             return;
+    //         }
+    //         this.config = response;
+    //         this._applyConfig(response);
+    //     } catch (error) {
+    //         this._showError("No pudimos validar el producto. Inténtalo nuevamente.");
+    //     } finally {
+    //         this._setLoading(false);
+    //     }
+    // },
+
     async _onModalShow() {
         this._resetFeedback();
         const productId = this._currentProductId();
         this.el.querySelector(".o_wpo_product_id").value = productId;
         this._setLoading(true);
+        const form = this.el.querySelector(".o_wpo_offer_form");
+        if (form) {
+            form.addEventListener("submit", this._boundSubmit);
+            console.log("Listener de submit enganchado al abrir el modal");
+        }
+
         try {
             const response = await rpc("/shop/offer/config", { product_id: productId });
             if (!response.ok) {
