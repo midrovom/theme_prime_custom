@@ -65,13 +65,13 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         this._resetFeedback();
         const productId = this._currentProductId();
         this.el.querySelector(".o_wpo_product_id").value = productId;
-        this._setLoading(true);
         const form = this.el.querySelector(".o_wpo_offer_form");
         if (form) {
             form.addEventListener("submit", this._boundSubmit);
             console.log("Listener de submit enganchado al abrir el modal");
         }
 
+        this._setLoading(true);
         try {
             const response = await rpc("/shop/offer/config", { product_id: productId });
             if (!response.ok) {
