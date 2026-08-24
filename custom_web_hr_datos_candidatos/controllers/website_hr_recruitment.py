@@ -168,7 +168,6 @@ class WebsiteHRRecruitment(http.Controller):
                             'fallecido': True, 
                         }))
                     else:
-                        # Caso normal: enviar todos los datos
                         family_file = kwargs.get(f'famArchivo_{k}')
                         document_file = False
                         filename = False
