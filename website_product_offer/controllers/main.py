@@ -3,6 +3,8 @@ import re
 from odoo import _, http
 from odoo.http import request
 
+import logging
+_logger = logging.getLogger(__name__)
 
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
@@ -196,6 +198,20 @@ class WebsiteProductOfferController(http.Controller):
             return {"ok": False, "error": _("El correo electrónico no tiene un formato válido.")}
 
         Offer = request.env["website.sale.offer"].sudo().with_company(website.company_id)
+
+        _logger.info("========== SUBMIT OFFER ==========")
+        _logger.info("product_id=%s", product_id)
+        _logger.info("quantity=%s", quantity)
+        _logger.info("offered_price=%s", offered_price)
+        _logger.info("contact_name=%s", contact_name)
+        _logger.info("contact_email=%s", contact_email)
+        _logger.info("contact_phone=%s", contact_phone)
+        _logger.info("company_name=%s", company_name)
+        _logger.info("customer_message=%s", customer_message)
+        _logger.info("source_url=%s", source_url)
+        _logger.info("website_bait=%s", website_bait)
+        _logger.info("===================================")
+
         offer = Offer.create(
             {
                 "website_id": website.id,
@@ -224,15 +240,3 @@ class WebsiteProductOfferController(http.Controller):
             "portal_url": offer.get_portal_url(),
             "message": _("Recibimos tu oferta. Nuestro equipo la revisará y te responderá pronto."),
         }
-
-
-    @http.route(
-        "/shop/offer/submit",
-        type="http",
-        auth="public",
-        methods=["POST"],
-        website=True,
-        csrf=True,
-    )
-    def submit_offer_http(self, **post):
-        return self.submit_offer(**post)

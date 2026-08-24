@@ -201,10 +201,19 @@ class WebsiteSaleOffer(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+
+        _logger.info(">>> WEBSITE.SALE.OFFER CREATE")
+        _logger.info(">>> VALORES RECIBIDOS: %s", vals_list)
+
         for vals in vals_list:
             if vals.get("name", "/") == "/":
                 vals["name"] = self.env["ir.sequence"].next_by_code("website.sale.offer") or "/"
         offers = super().create(vals_list)
+
+        _logger.info( ">>> WEBSITE.SALE.OFFER CREADA: %s",
+            offers.ids,
+        )
+        
         offers._portal_ensure_token()
         return offers
 
