@@ -101,6 +101,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change select[name^="famTipoDoc_"]': '_validateField',
         'change select[name^="famTipoDoc_"]': '_onChangeFamilyDocType',
         'change input[name^="famArchivo_"]': '_validateFamilyFile',
+        'change #famNumHermanos': '_onChangeNumHermanos'
     },
     
     /**
@@ -2043,33 +2044,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._addFamilyBlock(parentesco); 
     },
 
-    async _syncFamilyBrothers() {
-        const numHermanos = parseInt(
-            this.$('#famNumHermanos').val(),
-            10
-        ) || 0;
-
-        const brothers = this.$(
-            '#family_container .family-block[data-type="Hermano(a)"]'
-        );
-
-        const currentBrothers = brothers.length;
-        if (numHermanos > currentBrothers) {
-            const toCreate = numHermanos - currentBrothers;
-
-            for (let i = 0; i < toCreate; i++) {
-                await this._addFamilyBlock('3');
-            }
-        }
-
-        else if (numHermanos < currentBrothers) {
-            const toRemove = currentBrothers - numHermanos;
-
-            this.$(
-                '#family_container .family-block[data-type="Hermano(a)"]'
-            )
-            .slice(-toRemove)
-            .remove();
+    async _onChangeNumHermanos(ev) {
+        const cantidad = parseInt($(ev.currentTarget).val(), 10) || 0;
+        this.$('#family_container .family-block[data-type="Hermano(a)"]').remove();
+        for (let j = 0; j < cantidad; j++) {
+            await this._addFamilyBlock('3'); 
         }
     },
 
