@@ -198,6 +198,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <span class="fw-normal fs-4 text-info">${parentesco}</span>
                     </div>
 
+                    ${fallecidoBlock}
+
                     <div class="row g-3">
                         <!-- Apellido paterno -->
                         <div class="col-md-3">
