@@ -2049,23 +2049,27 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             10
         ) || 0;
 
-        const brothersContainer = this.$(
+        const brothers = this.$(
             '#family_container .family-block[data-type="Hermano(a)"]'
         );
 
-        const currentBrothers = brothersContainer.length;
-        if (numHermanos < currentBrothers) {
-            const brothersToRemove = currentBrothers - numHermanos;
-            this.$(
-                '#family_container .family-block[data-type="Hermano(a)"]'
-            ).slice(-brothersToRemove).remove();
+        const currentBrothers = brothers.length;
+        if (numHermanos > currentBrothers) {
+            const toCreate = numHermanos - currentBrothers;
 
-            return;
+            for (let i = 0; i < toCreate; i++) {
+                await this._addFamilyBlock('3');
+            }
         }
 
-        const brothersToCreate = numHermanos - currentBrothers;
-        for (let i = 0; i < brothersToCreate; i++) {
-            await this._addFamilyBlock('3');
+        else if (numHermanos < currentBrothers) {
+            const toRemove = currentBrothers - numHermanos;
+
+            this.$(
+                '#family_container .family-block[data-type="Hermano(a)"]'
+            )
+            .slice(-toRemove)
+            .remove();
         }
     },
 

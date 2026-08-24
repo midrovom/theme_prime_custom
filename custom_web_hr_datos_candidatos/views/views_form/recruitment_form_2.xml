@@ -138,7 +138,7 @@
 
                         <div class="d-flex align-items-center">
                             <label for="famNumHermanos" class="me-2 fs-6">Numero de Hermanos:</label>
-                            <input type="number" name="famNumHermanos" class="form-control rounded-pill px-3" min="1" max="10" style="width:100px;" />
+                            <input type="number" id="famNumHermanos" class="form-control rounded-pill px-3" min="1" max="10" style="width:100px;" />
                         </div>
                     </div>
                 </div>
@@ -147,7 +147,7 @@
                     <div class="col-12 col-md-10 d-flex flex-wrap gap-2">
                         <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="1">Padre</button>
                         <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="2">Madre</button>
-                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="3">Hermano(a)</button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="3" disabled="disabled">Hermano(a)</button>
                         <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="4">Conyugue</button>
                         <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="5" disabled="disabled">Hijo(a)</button>
                     </div>
