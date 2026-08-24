@@ -80,13 +80,7 @@ class WebsiteProductOfferController(http.Controller):
         price = pricelist._get_product_price(product, quantity)
         return pricelist, max(0.0, price)
 
-    @http.route(
-        "/shop/offer/config",
-        type="json",
-        auth="public",
-        methods=["POST"],
-        website=True,
-    )
+    @http.route('/shop/offer/config',type="json", auth="public", methods=["POST"], website=True,)
     def offer_config(self, product_id=None, quantity=None, **kwargs):
         data = self._get_product_data(product_id)
         if not data["ok"]:
@@ -117,13 +111,7 @@ class WebsiteProductOfferController(http.Controller):
             "minimum_price_percent": data["minimum_price_percent"],
         }
 
-    @http.route(
-        "/shop/offer/submit",
-        type="http",
-        auth="public",
-        methods=["POST"],
-        website=True,
-    )
+    @http.route('/shop/offer/submit', type="http", auth="public", methods=["POST"], website=True,)
     def submit_offer(
         self,
         product_id=None,
