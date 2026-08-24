@@ -144,6 +144,7 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
     async _onSubmit(event) {
         console.log("WebsiteProductOffer _onSubmit interceptado");
         event.preventDefault();
+        event.stopPropagation(); 
         const form = event.currentTarget;
         this._hideError();
         if (!form.checkValidity()) {
