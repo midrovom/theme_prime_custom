@@ -161,6 +161,7 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
 
         form.querySelector(".o_wpo_product_id").value = this._currentProductId();
         const payload = Object.fromEntries(new FormData(form).entries());
+        console.log("Payload enviado:", payload);
         this._setLoading(true);
         try {
             // const response = await rpc("/shop/offer/submit", payload);
