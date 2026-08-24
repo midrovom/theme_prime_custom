@@ -11,7 +11,6 @@
         "portal",
         "sale_management",
         "website_sale_stock",
-        'theme_prime_custom'
     ],
     "data": [
         "security/offer_security.xml",
