@@ -176,10 +176,6 @@
                 </div>
             </t>
         </xpath>
-
-        <xpath expr="//div[@id='add_to_cart_wrap']" position="attributes">
-            <attribute name="t-if">not product._website_offer_is_enabled(website)</attribute>
-        </xpath>
-
+        
     </template>
 </odoo>
