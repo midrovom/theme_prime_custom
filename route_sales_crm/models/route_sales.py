@@ -292,3 +292,6 @@ class SaleOrder(models.Model):
     _inherit = "sale.order"
 
     route_visit_id = fields.Many2one("route.sale.visit", string="Visita de ruta", copy=False, index=True)
+    opportunity_id = fields.Many2one("crm.lead", string="Oportunidad", copy=False, index=True,
+        help="Oportunidad CRM vinculada a este pedido."
+    )
