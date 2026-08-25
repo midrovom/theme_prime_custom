@@ -52,7 +52,7 @@
                                 <div class="alert alert-danger d-none o_wpo_error" role="alert"/>
 
                                 <form class="o_wpo_offer_form" novalidate="novalidate">
-                                    <input type="hidden" name="product_id" class="o_wpo_product_id"
+                                    <input type="hidden" name="offer_product_id" class="o_wpo_product_id"
                                            t-att-value="product_variant.id"/>
                                     <input type="hidden" name="source_url" t-att-value="product.website_url"/>
                                     <div class="o_wpo_honeypot" aria-hidden="true">
@@ -82,7 +82,7 @@
                                                 <label for="wpo_quantity" class="form-label">¿Cuántas unidades necesitas?</label>
                                                 <div class="input-group input-group-lg o_wpo_input_group">
                                                     <span class="input-group-text"><i class="fa fa-cubes" aria-hidden="true"/></span>
-                                                    <input id="wpo_quantity" name="quantity" type="number"
+                                                    <input id="wpo_quantity" name="offer_quantity" type="number"
                                                            class="form-control o_wpo_quantity" required="required"
                                                            inputmode="decimal" min="1" step="1" value="1"/>
                                                 </div>
