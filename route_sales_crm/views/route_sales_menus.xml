@@ -2,7 +2,7 @@
 <odoo>
   <menuitem id="menu_route_sales_root" name="Ventas en Ruta" sequence="25" groups="route_sales_crm.group_route_salesperson"/>
   <menuitem id="menu_route_operations" name="Operaciones" parent="menu_route_sales_root" sequence="10"/>
-  <menuitem id="menu_route_visits" name="Mis visitas" parent="menu_route_operations" action="action_route_visit" sequence="10"/>
+  <!-- <menuitem id="menu_route_visits" name="Mis visitas" parent="menu_route_operations" action="action_route_visit" sequence="10"/> -->
   <menuitem id="menu_route_plans" name="Planificación" parent="menu_route_operations" action="action_route_plan" sequence="20"/>
   <menuitem id="menu_route_customers" name="Clientes y tiendas" parent="menu_route_sales_root" action="action_route_customers" sequence="20"/>
   <menuitem id="menu_route_crm" name="CRM" parent="menu_route_sales_root" action="crm.crm_lead_action_pipeline" sequence="30"/>
