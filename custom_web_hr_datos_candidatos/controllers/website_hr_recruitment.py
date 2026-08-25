@@ -150,6 +150,7 @@ class WebsiteHRRecruitment(http.Controller):
             applicant_values['medical_ids'] = medical_lines
 
             # ---------------- Familiares ----------------
+            
             family_lines = []
             k = 1
 
@@ -160,6 +161,10 @@ class WebsiteHRRecruitment(http.Controller):
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
                 fallecido = kwargs.get(f'famFallecido_{k}') == '1'
 
+                # Si está fallecido y no hay nombre, asignar texto por defecto
+                if not name and fallecido:
+                    name = f"Fallecido - {tipo}"
+
                 # Guardar siempre si hay nombre o si está fallecido
                 if name or fallecido:
                     family_file = kwargs.get(f'famArchivo_{k}')
@@ -169,10 +174,6 @@ class WebsiteHRRecruitment(http.Controller):
                     if family_file:
                         filename = family_file.filename
                         document_file = base64.b64encode(family_file.read())
-
-                    # Si está fallecido y no hay nombre, asignar texto por defecto
-                    if not name and fallecido:
-                        name = f"Fallecido - {tipo}"
 
                     family_lines.append((0, 0, {
                         'name': name,
@@ -195,7 +196,6 @@ class WebsiteHRRecruitment(http.Controller):
 
             if family_lines:
                 applicant_values['family_ids'] = family_lines
-
 
             # ---------------- Funcion para parseo de localizacion Pais/Ciudad ----------------
 
