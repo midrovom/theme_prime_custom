@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <menuitem id="menu_route_sales_root" name="Ventas en Ruta" sequence="25" groups="route_sales_crm.group_route_salesperson"/>
+  <menuitem id="menu_route_operations" name="Operaciones" parent="menu_route_sales_root" sequence="10"/>
+  <menuitem id="menu_route_visits" name="Mis visitas" parent="menu_route_operations" action="action_route_visit" sequence="10"/>
+  <menuitem id="menu_route_plans" name="Planificación" parent="menu_route_operations" action="action_route_plan" sequence="20"/>
+  <menuitem id="menu_route_customers" name="Clientes y tiendas" parent="menu_route_sales_root" action="action_route_customers" sequence="20"/>
+  <menuitem id="menu_route_crm" name="CRM" parent="menu_route_sales_root" action="crm.crm_lead_action_pipeline" sequence="30"/>
+  <menuitem id="menu_route_quotations" name="Cotizaciones" parent="menu_route_sales_root" action="sale.action_quotations_with_onboarding" sequence="40"/>
+  <menuitem id="menu_route_reports" name="Reportes" parent="menu_route_sales_root" sequence="50" groups="route_sales_crm.group_route_supervisor"/>
+  <menuitem id="menu_route_visit_analysis" name="Análisis de visitas" parent="menu_route_reports" action="action_route_visit_analysis" sequence="10"/>
+</odoo>
