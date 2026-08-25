@@ -150,39 +150,28 @@ class WebsiteHRRecruitment(http.Controller):
             applicant_values['medical_ids'] = medical_lines
 
             # ---------------- Familiares ----------------
-
             family_lines = []
             k = 1
 
             while kwargs.get(f'famTipo_{k}') is not None:
 
                 tipo = kwargs.get(f'famTipo_{k}')
-                name = kwargs.get(f'famNombre_{k}', '')
+                name = kwargs.get(f'famNombre_{k}', '') or ''
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
-                fallecido = bool(kwargs.get(f'famFallecido_{k}'))
+                fallecido = kwargs.get(f'famFallecido_{k}') == '1'
 
-                _logger.info(
-                    "FAMILIAR %s >>> tipo=%s, nombre=%s, fallecido=%s",
-                    k,
-                    tipo,
-                    name,
-                    fallecido
-                )
-
-                if name:
-
+                # Guardar siempre si hay nombre o si está fallecido
+                if name or fallecido:
                     family_file = kwargs.get(f'famArchivo_{k}')
                     document_file = False
                     filename = False
 
                     if family_file:
                         filename = family_file.filename
-                        document_file = base64.b64encode(
-                            family_file.read()
-                        )
+                        document_file = base64.b64encode(family_file.read())
 
                     family_lines.append((0, 0, {
-                        'name': name,
+                        'name': name, 
                         'document_type': doc_type,
                         'birthdate': kwargs.get(f'famFecha_{k}'),
                         'phone': kwargs.get(f'famTelefono_{k}'),
@@ -194,8 +183,7 @@ class WebsiteHRRecruitment(http.Controller):
                         'familiar_type': tipo,
                         'filename': filename,
                         'document_file': document_file,
-                        'cedula': ( None if doc_type == 'part_naci' else kwargs.get(f'famCedula_{k}')
-                        ),
+                        'cedula': None if doc_type == 'part_naci' else kwargs.get(f'famCedula_{k}'),
                         'fallecido': fallecido,
                     }))
 

@@ -183,7 +183,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const fallecidoBlock = (["Padre","Madre"].includes(parentesco)) ? `
             <div class="col-md-3 d-flex align-items-center">
                 <label class="fs-6 me-2">Fallecido</label>
-                <input class="form-check-input" type="checkbox" name="famFallecido_${this.familyCount}"/>
+                <input class="form-check-input" type="checkbox" name="famFallecido_${this.familyCount}" value="1"/>
             </div>
         ` : "";
 
