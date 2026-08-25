@@ -176,6 +176,8 @@ class WebsiteSaleOffer(models.Model):
         ondelete="set null",
         tracking=True,
     )
+    line_ids = fields.One2many(comodel_name="website.sale.offer.line", inverse_name="offer_id",
+    string="Productos", copy=True,)
 
     @api.depends("quantity", "list_price", "offered_price", "counter_price")
     def _compute_amounts(self):
@@ -254,19 +256,45 @@ class WebsiteSaleOffer(models.Model):
             self.product_id,
         )
 
+    # def _check_stock_before_conversion(self):
+    #     self.ensure_one()
+    #     if not self.website_id.offer_limit_to_stock:
+    #         return
+    #     available_qty = self._current_available_qty()
+    #     if self.quantity > available_qty:
+    #         raise UserError(
+    #             _(
+    #                 "No es posible crear el presupuesto: se solicitaron %(requested)s unidades y actualmente hay %(available)s disponibles.",
+    #                 requested=self.quantity,
+    #                 available=available_qty,
+    #             )
+    #         )
+
     def _check_stock_before_conversion(self):
         self.ensure_one()
         if not self.website_id.offer_limit_to_stock:
             return
-        available_qty = self._current_available_qty()
-        if self.quantity > available_qty:
-            raise UserError(
-                _(
-                    "No es posible crear el presupuesto: se solicitaron %(requested)s unidades y actualmente hay %(available)s disponibles.",
-                    requested=self.quantity,
-                    available=available_qty,
+
+        for line in self.line_ids:
+            available_qty = (
+                line.product_tmpl_id
+                ._website_offer_available_qty(
+                    self.website_id,
+                    line.product_id,
                 )
             )
+
+            if line.quantity > available_qty:
+                raise UserError(
+                    _(
+                        "No es posible crear el presupuesto para "
+                        "%(product)s: se solicitaron %(requested)s "
+                        "unidades y actualmente hay %(available)s disponibles.",
+                        product=line.product_id.display_name,
+                        requested=line.quantity,
+                        available=available_qty,
+                    )
+                )
 
     def _ensure_customer_partner(self):
         self.ensure_one()
@@ -310,19 +338,83 @@ class WebsiteSaleOffer(models.Model):
             "target": "current",
         }
 
-    def _convert_to_quotation(self, accepted_price):
+    # def _convert_to_quotation(self, accepted_price):
+    #     self.ensure_one()
+    #     if self.sale_order_id:
+    #         return self._quotation_action()
+    #     if self.state not in ("draft", "review", "counter"):
+    #         raise UserError(_("Esta oferta ya no puede convertirse en presupuesto."))
+    #     if accepted_price <= 0:
+    #         raise UserError(_("El precio acordado debe ser mayor que cero."))
+
+    #     self._check_stock_before_conversion()
+    #     partner = self._ensure_customer_partner()
+    #     warehouse = self.website_id._get_warehouse_available()
+    #     warehouse_id = getattr(warehouse, "id", warehouse)
+    #     order_values = {
+    #         "partner_id": partner.id,
+    #         "company_id": self.company_id.id,
+    #         "pricelist_id": self.pricelist_id.id,
+    #         "website_id": self.website_id.id,
+    #         "website_offer_id": self.id,
+    #         "origin": self.name,
+    #         "client_order_ref": self.name,
+    #     }
+    #     if self.user_id:
+    #         order_values["user_id"] = self.user_id.id
+    #     if warehouse_id:
+    #         order_values["warehouse_id"] = warehouse_id
+
+    #     order = self.env["sale.order"].sudo().with_company(self.company_id).create(order_values)
+    #     product = self.product_id.with_context(lang=partner.lang)
+    #     self.env["sale.order.line"].sudo().with_company(self.company_id).create(
+    #         {
+    #             "order_id": order.id,
+    #             "product_id": product.id,
+    #             "name": product.get_product_multiline_description_sale(),
+    #             "product_uom_qty": self.quantity,
+    #             "product_uom": self.uom_id.id,
+    #             "price_unit": accepted_price,
+    #         }
+    #     )
+    #     order._portal_ensure_token()
+    #     self.sudo().write(
+    #         {
+    #             "sale_order_id": order.id,
+    #             "converted_price": accepted_price,
+    #             "state": "converted",
+    #         }
+    #     )
+    #     self.message_post(
+    #         body=_("Oferta convertida en el presupuesto %s.", order.name),
+    #         subtype_xmlid="mail.mt_note",
+    #     )
+    #     self._send_status_email("website_product_offer.mail_template_offer_converted")
+    #     return self._quotation_action()
+
+    def _convert_to_quotation(self):
         self.ensure_one()
+
         if self.sale_order_id:
             return self._quotation_action()
+
         if self.state not in ("draft", "review", "counter"):
-            raise UserError(_("Esta oferta ya no puede convertirse en presupuesto."))
-        if accepted_price <= 0:
-            raise UserError(_("El precio acordado debe ser mayor que cero."))
+            raise UserError(
+                _("Esta oferta ya no puede convertirse en presupuesto.")
+            )
+
+        if not self.line_ids:
+            raise UserError(
+                _("La oferta debe contener al menos un producto.")
+            )
 
         self._check_stock_before_conversion()
+
         partner = self._ensure_customer_partner()
+
         warehouse = self.website_id._get_warehouse_available()
         warehouse_id = getattr(warehouse, "id", warehouse)
+
         order_values = {
             "partner_id": partner.id,
             "company_id": self.company_id.id,
@@ -332,36 +424,81 @@ class WebsiteSaleOffer(models.Model):
             "origin": self.name,
             "client_order_ref": self.name,
         }
+
         if self.user_id:
             order_values["user_id"] = self.user_id.id
+
         if warehouse_id:
             order_values["warehouse_id"] = warehouse_id
 
-        order = self.env["sale.order"].sudo().with_company(self.company_id).create(order_values)
-        product = self.product_id.with_context(lang=partner.lang)
-        self.env["sale.order.line"].sudo().with_company(self.company_id).create(
-            {
-                "order_id": order.id,
-                "product_id": product.id,
-                "name": product.get_product_multiline_description_sale(),
-                "product_uom_qty": self.quantity,
-                "product_uom": self.uom_id.id,
-                "price_unit": accepted_price,
-            }
+        order = (
+            self.env["sale.order"]
+            .sudo()
+            .with_company(self.company_id)
+            .create(order_values)
         )
-        order._portal_ensure_token()
-        self.sudo().write(
-            {
-                "sale_order_id": order.id,
+
+        SaleOrderLine = (
+            self.env["sale.order.line"]
+            .sudo()
+            .with_company(self.company_id)
+        )
+
+        for line in self.line_ids:
+
+            accepted_price = (
+                line.counter_price
+                if self.state == "counter"
+                else line.offered_price
+            )
+
+            if accepted_price <= 0:
+                raise UserError(
+                    _(
+                        "El precio acordado para %(product)s "
+                        "debe ser mayor que cero.",
+                        product=line.product_id.display_name,
+                    )
+                )
+
+            product = line.product_id.with_context(
+                lang=partner.lang
+            )
+
+            SaleOrderLine.create(
+                {
+                    "order_id": order.id,
+                    "product_id": product.id,
+                    "name": product.get_product_multiline_description_sale(),
+                    "product_uom_qty": line.quantity,
+                    "product_uom": line.uom_id.id,
+                    "price_unit": accepted_price,
+                }
+            )
+
+            line.sudo().write({
                 "converted_price": accepted_price,
-                "state": "converted",
-            }
-        )
+            })
+
+        order._portal_ensure_token()
+
+        self.sudo().write({
+            "sale_order_id": order.id,
+            "state": "converted",
+        })
+
         self.message_post(
-            body=_("Oferta convertida en el presupuesto %s.", order.name),
+            body=_(
+                "Oferta convertida en el presupuesto %s.",
+                order.name,
+            ),
             subtype_xmlid="mail.mt_note",
         )
-        self._send_status_email("website_product_offer.mail_template_offer_converted")
+
+        self._send_status_email(
+            "website_product_offer.mail_template_offer_converted"
+        )
+
         return self._quotation_action()
 
     def action_set_review(self):
@@ -369,11 +506,15 @@ class WebsiteSaleOffer(models.Model):
             if offer.state == "draft":
                 offer.state = "review"
 
+    # def action_accept_offer(self):
+    #     self.ensure_one()
+    #     return self._convert_to_quotation(self.offered_price)
+
     def action_accept_offer(self):
         self.ensure_one()
-        return self._convert_to_quotation(self.offered_price)
+        return self._convert_to_quotation()
 
-    def action_send_counter(self):
+    # def action_send_counter(self):
         self.ensure_one()
         if self.state not in ("draft", "review", "counter"):
             raise UserError(_("Esta oferta ya no admite una contraoferta."))
@@ -386,13 +527,55 @@ class WebsiteSaleOffer(models.Model):
         )
         self._send_status_email("website_product_offer.mail_template_offer_counter")
 
+    def action_send_counter(self):
+        for offer in self:
+            if offer.state not in ("draft", "review", "counter"):
+                raise UserError(
+                    _("Esta oferta ya no admite una contraoferta.")
+                )
+
+            if not offer.line_ids:
+                raise UserError(
+                    _("La oferta no tiene productos.")
+                )
+
+            invalid_lines = offer.line_ids.filtered(lambda line: line.counter_price <= 0)
+
+            if invalid_lines:
+                raise UserError(
+                    _("Todas las líneas deben tener "
+                        "un precio de contraoferta mayor que cero."
+                    )
+                )
+
+            offer.state = "counter"
+            offer.message_post(
+                body=_("Se envió una contraoferta para %(count)s productos.", count=len(offer.line_ids),),
+                subtype_xmlid="mail.mt_note",
+            )
+            offer._send_status_email("website_product_offer.mail_template_offer_counter")
+
+    # def action_customer_accept_counter(self):
+    #     self.ensure_one()
+    #     if self.state != "counter" or self.counter_price <= 0:
+    #         raise UserError(_("La contraoferta ya no está disponible."))
+    #     if self.valid_until and self.valid_until < fields.Date.context_today(self):
+    #         raise UserError(_("La contraoferta venció. Solicita una nueva revisión comercial."))
+    #     return self._convert_to_quotation(self.counter_price)
+
     def action_customer_accept_counter(self):
         self.ensure_one()
-        if self.state != "counter" or self.counter_price <= 0:
-            raise UserError(_("La contraoferta ya no está disponible."))
+        if self.state != "counter":
+            raise UserError(
+                _("La contraoferta ya no está disponible.")
+            )
+        
         if self.valid_until and self.valid_until < fields.Date.context_today(self):
-            raise UserError(_("La contraoferta venció. Solicita una nueva revisión comercial."))
-        return self._convert_to_quotation(self.counter_price)
+            raise UserError(
+                _("La contraoferta venció. Solicita una nueva revisión comercial.")
+            )
+
+        return self._convert_to_quotation()
 
     def action_reject(self):
         for offer in self:
