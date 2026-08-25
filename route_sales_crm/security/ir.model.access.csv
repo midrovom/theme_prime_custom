@@ -1,8 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_route_plan_user,route plan user,model_route_sale_plan,route_sales_crm.group_route_salesperson,1,1,1,0
-access_route_plan_manager,route plan manager,model_route_sale_plan,route_sales_crm.group_route_manager,1,1,1,1
-access_route_visit_user,route visit user,model_route_sale_visit,route_sales_crm.group_route_salesperson,1,1,1,0
-access_route_visit_manager,route visit manager,model_route_sale_visit,route_sales_crm.group_route_manager,1,1,1,1
-access_survey_user,survey user,model_route_visit_survey_line,route_sales_crm.group_route_salesperson,1,1,1,1
-access_competitor_user,competitor user,model_route_visit_competitor,route_sales_crm.group_route_salesperson,1,1,1,1
-access_collection_user,collection user,model_route_visit_collection,route_sales_crm.group_route_salesperson,1,1,1,1
