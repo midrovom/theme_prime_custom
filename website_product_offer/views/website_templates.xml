@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="website_sale_product_offer_button"
-              inherit_id="website_sale.product"
-              name="Botón de oferta comercial">
+    <template id="website_sale_product_offer_button" inherit_id="website_sale.product" name="Botón de oferta comercial">
         <xpath expr="//div[@id='add_to_cart_wrap']" position="after">
             <t t-if="product._website_offer_is_enabled(website)">
                 <div class="o_wpo_offer_entry mt-3">
