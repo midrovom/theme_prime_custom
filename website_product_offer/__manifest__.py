@@ -23,6 +23,7 @@
         "views/sale_order_views.xml",
         "views/website_templates.xml",
         "views/portal_templates.xml",
+        'views/offer_cart.xml',
     ],
     "assets": {
         "web.assets_frontend": [
