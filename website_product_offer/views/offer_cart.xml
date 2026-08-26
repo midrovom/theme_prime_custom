@@ -49,17 +49,17 @@
                                                             <td>
                                                                 <strong><t t-out="line['product_name']"/></strong>
                                                                 <div class="small text-muted">
-                                                                    Precio lista: <t t-out="line['list_price_formatted']"/>
+                                                                    Precio lista: <t t-out="line['list_price']"/>
                                                                 </div>
                                                             </td>
                                                             <td class="text-center">
                                                                 <t t-out="line['quantity']"/>
                                                             </td>
                                                             <td class="text-end">
-                                                                <t t-out="line['offered_price_formatted']"/>
+                                                                <t t-out="line['offered_price']"/>
                                                             </td>
                                                             <td class="text-end">
-                                                                <strong><t t-out="line['total_formatted']"/></strong>
+                                                                <strong><t t-out="line['total']"/></strong>
                                                             </td>
                                                             <td class="text-end">
                                                                 <button type="button"
@@ -81,7 +81,7 @@
                                                 <div class="col-md-4">
                                                     <div class="d-flex justify-content-between">
                                                         <span>Total de productos</span>
-                                                        <strong><t t-out="offer_cart_summary['total_formatted']"/></strong>
+                                                        <strong><t t-out="offer_cart_summary['total']"/></strong>
                                                     </div>
                                                 </div>
                                             </div>
