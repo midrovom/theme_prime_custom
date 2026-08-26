@@ -403,16 +403,9 @@
                     </group>
 
                     <group string="Propuesta comercial">
-
-                        <field name="offer_line_ids"
-                            widget="one2many_list"
-                            nolabel="1">
-
+                        <field name="line_ids" nolabel="1" readonly="state in ('converted', 'rejected', 'cancelled')">
                             <list editable="bottom">
-
-                                <!-- Producto -->
-                                <field name="product_id"
-                                    string="Producto"/>
+                                <field name="product_id" string="Producto"/>
 
                                 <field name="quantity"
                                     string="Cantidad"/>
