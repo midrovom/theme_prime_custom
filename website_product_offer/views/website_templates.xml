@@ -159,11 +159,12 @@
                                     <div class="modal-footer border-0 px-0 pb-0 o_wpo_form_footer">
                                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Ahora no</button>
                                         <button type="submit" class="btn btn-primary btn-lg o_wpo_submit">
-                                            <span class="o_wpo_submit_label">
-                                                Enviar mi oferta <i class="fa fa-arrow-right ms-2" aria-hidden="true"/>
+                                            <span class="o_wpo_submit_label"> Agregar a mi oferta
+                                                <i class="fa fa-plus ms-2" aria-hidden="true"/>
                                             </span>
                                             <span class="o_wpo_submit_loading d-none">
-                                                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"/> Validando…
+                                                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"/>
+                                                Agregando…
                                             </span>
                                         </button>
                                     </div>
