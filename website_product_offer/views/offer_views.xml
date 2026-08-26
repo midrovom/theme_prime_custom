@@ -84,25 +84,26 @@
                         </group>
                     </group>
                     <group string="Propuesta comercial">
-                        <group>
-                            <field name="product_id"/>
-                            <field name="quantity"/>
-                            <field name="uom_id"/>
-                            <field name="available_qty_snapshot"/>
-                            <field name="pricelist_id"/>
-                        </group>
-                        <group>
-                            <field name="currency_id" invisible="1"/>
-                            <field name="list_price"/>
-                            <field name="offered_price"/>
-                            <field name="requested_discount_percent"/>
-                            <field name="offer_total"/>
-                            <field name="counter_price"
-                                   readonly="state in ('converted', 'rejected', 'cancelled')"/>
-                            <field name="counter_total" invisible="not counter_price"/>
-                            <field name="converted_price" invisible="state != 'converted'"/>
-                        </group>
+                        <field name="line_ids" widget="one2many_list">
+                            <list editable="bottom">
+                                <field name="product_id"/>
+                                <field name="quantity"/>
+                                <field name="uom_id"/>
+                                <field name="available_qty_snapshot"/>
+                                <field name="pricelist_id"/>
+                                <field name="currency_id" invisible="1"/>
+                                <field name="list_price"/>
+                                <field name="offered_price"/>
+                                <field name="requested_discount_percent"/>
+                                <field name="offer_total"/>
+                                <field name="counter_price"
+                                    readonly="state in ('converted', 'rejected', 'cancelled')"/>
+                                <field name="counter_total" invisible="not counter_price"/>
+                                <field name="converted_price" invisible="state != 'converted'"/>
+                            </list>
+                        </field>
                     </group>
+
                     <notebook>
                         <page string="Mensaje del cliente" name="customer_message">
                             <field name="customer_message" placeholder="El cliente no agregó comentarios."/>
