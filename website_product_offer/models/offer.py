@@ -90,9 +90,14 @@ class WebsiteSaleOfferMulti(models.Model):
         ondelete="set null",
         tracking=True,
     )
-
+    pricelist_id = fields.Many2one(
+        comodel_name="product.pricelist",
+        string="Lista de precios",
+        required=True,
+        ondelete="restrict",
+    )
     currency_id = fields.Many2one(
-        comodel_name="res.currency",
+        related="pricelist_id.currency_id",
         store=True,
         readonly=True,
     )
