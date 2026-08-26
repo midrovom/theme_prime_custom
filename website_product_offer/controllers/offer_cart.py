@@ -2,7 +2,6 @@ from odoo import http
 from odoo.http import request
 from odoo.tools import formatLang
 
-
 class WebsiteProductOfferController(http.Controller):
 
     @http.route("/shop/offer/add", type="json", auth="public", website=True)
@@ -19,6 +18,7 @@ class WebsiteProductOfferController(http.Controller):
             return {"ok": False, "error": "El producto no existe."}
 
         offer_cart = list(request.session.get("wpo_offer_cart", []))
+
         existing_line = next((line for line in offer_cart if int(line.get("product_id")) == product.id), None)
         if existing_line:
             existing_line.update({
@@ -102,4 +102,9 @@ class WebsiteProductOfferController(http.Controller):
         request.session.pop("wpo_offer_cart", None)
         request.session.modified = True
 
-        return {"ok": True, "reference": offer.name, "portal_url": offer.get_portal_url()}
+        return {
+            "ok": True,
+            "reference": offer.name,
+            "portal_url": offer.get_portal_url(),
+            "message": "Tu oferta fue enviada correctamente.",
+        }
