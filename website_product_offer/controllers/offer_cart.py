@@ -121,3 +121,17 @@ class WebsiteProductOfferController(http.Controller):
             "portal_url": offer.get_portal_url(),
             "message": "Tu oferta fue enviada correctamente.",
         }
+
+    @http.route("/shop/offer/remove", type="json", auth="public", website=True)
+    def shop_offer_remove(self, product_id=None, **kwargs):
+        """Eliminar una línea del carrito de oferta por product_id"""
+        if not product_id:
+            return {"ok": False, "error": "Producto inválido."}
+
+        offer_cart = list(request.session.get("wpo_offer_cart", []))
+        new_cart = [line for line in offer_cart if int(line.get("product_id")) != int(product_id)]
+
+        request.session["wpo_offer_cart"] = new_cart
+        request.session.modified = True
+
+        return {"ok": True, "redirect": "/shop/offer/cart", "count": len(new_cart)}

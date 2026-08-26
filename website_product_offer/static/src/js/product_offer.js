@@ -124,6 +124,22 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
             quantity > 0 && price > 0 ? this._formatMoney(quantity * price) : "—";
     },
 
+    async _onRemoveLine(ev) {
+        ev.preventDefault();
+        const productId = ev.currentTarget.dataset.productId;
+        try {
+            const response = await rpc("/shop/offer/remove", { product_id: productId });
+            if (response.ok) {
+                    window.location.href = response.redirect;
+            } else {
+                    alert(response.error || "No se pudo eliminar el producto.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error al eliminar el producto.");
+        }
+    },
+
     async _onQuantityCommitted() {
         const quantity = Number(this.el.querySelector(".o_wpo_quantity")?.value || 0);
         if (!quantity || !this.config) {
