@@ -30,7 +30,6 @@ class WebsiteSaleOffer(models.Model):
         default="/",
         tracking=True,
     )
-
     state = fields.Selection(
         selection=[
             ("draft", "Recibida"),
@@ -47,7 +46,6 @@ class WebsiteSaleOffer(models.Model):
         index=True,
         tracking=True,
     )
-
     website_id = fields.Many2one(
         comodel_name="website",
         string="Sitio web",
@@ -57,7 +55,6 @@ class WebsiteSaleOffer(models.Model):
         ondelete="restrict",
         tracking=True,
     )
-
     company_id = fields.Many2one(
         comodel_name="res.company",
         string="Compañía",
@@ -65,77 +62,29 @@ class WebsiteSaleOffer(models.Model):
         readonly=True,
         index=True,
     )
-
     user_id = fields.Many2one(
         comodel_name="res.users",
         string="Vendedor",
         domain="[('share', '=', False)]",
         tracking=True,
     )
-
     partner_id = fields.Many2one(
         comodel_name="res.partner",
         string="Cliente",
         index=True,
         tracking=True,
     )
-
-    contact_name = fields.Char(
-        string="Contacto",
-        required=True,
-        tracking=True,
-    )
-
-    contact_email = fields.Char(
-        string="Correo",
-        tracking=True,
-    )
-
-    contact_phone = fields.Char(
-        string="Teléfono",
-        tracking=True,
-    )
-
-    company_name = fields.Char(
-        string="Empresa",
-    )
-
-    pricelist_id = fields.Many2one(
-        comodel_name="product.pricelist",
-        string="Lista de precios",
-        required=True,
-        readonly=True,
-        ondelete="restrict",
-    )
-
-    currency_id = fields.Many2one(
-        related="pricelist_id.currency_id",
-        store=True,
-        readonly=True,
-    )
-
-    customer_message = fields.Text(
-        string="Mensaje del cliente",
-    )
-
-    counter_message = fields.Text(
-        string="Mensaje de contraoferta",
-    )
-
-    internal_note = fields.Text(
-        string="Nota interna",
-    )
-
-    valid_until = fields.Date(
-        string="Válida hasta",
-        tracking=True,
-    )
-
-    source_url = fields.Char(
-        string="Página de origen",
-        readonly=True,
-    )
-
+    contact_name = fields.Char(string="Contacto", required=True, tracking=True,)
+    contact_email = fields.Char(string="Correo", tracking=True,)
+    contact_phone = fields.Char(string="Teléfono", tracking=True,)
+    company_name = fields.Char(string="Empresa",)
+    pricelist_id = fields.Many2one(comodel_name="product.pricelist", string="Lista de precios", required=True, readonly=True, ondelete="restrict",)
+    currency_id = fields.Many2one(related="pricelist_id.currency_id", store=True, readonly=True,)
+    customer_message = fields.Text(string="Mensaje del cliente",)
+    counter_message = fields.Text(string="Mensaje de contraoferta",)
+    internal_note = fields.Text(string="Nota interna",)
+    valid_until = fields.Date(string="Válida hasta", tracking=True,)
+    source_url = fields.Char(string="Página de origen", readonly=True,)
     sale_order_id = fields.Many2one(
         comodel_name="sale.order",
         string="Presupuesto",
@@ -145,35 +94,25 @@ class WebsiteSaleOffer(models.Model):
         ondelete="set null",
         tracking=True,
     )
-
     line_ids = fields.One2many(
         comodel_name="website.sale.offer.line",
         inverse_name="offer_id",
         string="Productos",
         copy=True,
     )
-
-    list_total = fields.Monetary(
-        string="Total de lista",
-        compute="_compute_amounts",
-        currency_field="currency_id",
-        store=True,
-    )
-
+    list_total = fields.Monetary(string="Total de lista", compute="_compute_amounts", currency_field="currency_id", store=True,)
     offer_total = fields.Monetary(
         string="Total ofertado",
         compute="_compute_amounts",
         currency_field="currency_id",
         store=True,
     )
-
     counter_total = fields.Monetary(
         string="Total contraofertado",
         compute="_compute_amounts",
         currency_field="currency_id",
         store=True,
     )
-
     requested_discount_percent = fields.Float(
         string="Diferencia solicitada (%)",
         compute="_compute_amounts",
@@ -188,26 +127,10 @@ class WebsiteSaleOffer(models.Model):
     )
     def _compute_amounts(self):
         for offer in self:
-            offer.list_total = sum(
-                offer.line_ids.mapped("list_total")
-            )
-
-            offer.offer_total = sum(
-                offer.line_ids.mapped("offer_total")
-            )
-
-            offer.counter_total = sum(
-                offer.line_ids.mapped("counter_total")
-            )
-
-            offer.requested_discount_percent = (
-                (
-                    (offer.list_total - offer.offer_total)
-                    / offer.list_total
-                ) * 100
-                if offer.list_total
-                else 0.0
-            )
+            offer.list_total = sum(offer.line_ids.mapped("list_total"))
+            offer.offer_total = sum(offer.line_ids.mapped("offer_total"))
+            offer.counter_total = sum(offer.line_ids.mapped("counter_total"))
+            offer.requested_discount_percent = (((offer.list_total - offer.offer_total) / offer.list_total) * 100 if offer.list_total else 0.0)
 
     @api.constrains("line_ids")
     def _check_lines(self):
@@ -223,14 +146,8 @@ class WebsiteSaleOffer(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
 
-        _logger.info(
-            ">>> WEBSITE.SALE.OFFER CREATE"
-        )
-
-        _logger.info(
-            ">>> VALORES RECIBIDOS: %s",
-            vals_list,
-        )
+        _logger.info(">>> WEBSITE.SALE.OFFER CREATE")
+        _logger.info(">>> VALORES RECIBIDOS: %s", vals_list,)
 
         for vals in vals_list:
             if vals.get("name", "/") == "/":
@@ -243,13 +160,9 @@ class WebsiteSaleOffer(models.Model):
 
         offers = super().create(vals_list)
 
-        _logger.info(
-            ">>> WEBSITE.SALE.OFFER CREADA: %s",
-            offers.ids,
-        )
+        _logger.info(">>> WEBSITE.SALE.OFFER CREADA: %s", offers.ids,)
 
         offers._portal_ensure_token()
-
         return offers
 
     def _compute_access_url(self):
@@ -260,36 +173,22 @@ class WebsiteSaleOffer(models.Model):
                 f"/my/offers/{offer.id}"
             )
 
-    def get_portal_url(
-        self,
-        suffix=None,
-        report_type=None,
-        download=None,
-        query_string=None,
-        anchor=None,
-    ):
+    def get_portal_url(self, suffix=None, report_type=None, download=None, query_string=None, anchor=None,):
         self.ensure_one()
-
         self._portal_ensure_token()
 
         url = f"/my/offers/{self.id}"
-
         if suffix:
             url += suffix
-
         params = {
             "access_token": self.access_token,
         }
-
         if report_type:
             params["report_type"] = report_type
-
         if download:
             params["download"] = download
 
-        result = (
-            f"{url}?{urlencode(params)}"
-        )
+        result = (f"{url}?{urlencode(params)}")
 
         if query_string:
             result += (
@@ -303,13 +202,11 @@ class WebsiteSaleOffer(models.Model):
 
     def _check_stock_before_conversion(self):
         self.ensure_one()
-
         for line in self.line_ids:
             line._check_stock_before_conversion()
 
     def _ensure_customer_partner(self):
         self.ensure_one()
-
         if self.partner_id:
             return self.partner_id
 
@@ -320,7 +217,6 @@ class WebsiteSaleOffer(models.Model):
         )
 
         partner = Partner.browse()
-
         if self.contact_email:
             matches = Partner.search(
                 [
@@ -338,7 +234,6 @@ class WebsiteSaleOffer(models.Model):
 
         if not partner:
             partner_name = self.contact_name
-
             if self.company_name:
                 partner_name = (
                     f"{self.company_name} - "
@@ -373,7 +268,6 @@ class WebsiteSaleOffer(models.Model):
 
     def _convert_to_quotation(self, price_field):
         self.ensure_one()
-
         if self.sale_order_id:
             return self._quotation_action()
 
@@ -411,13 +305,8 @@ class WebsiteSaleOffer(models.Model):
         # Validar stock de todas las líneas antes
         # de crear cualquier registro del presupuesto.
         self._check_stock_before_conversion()
-
         partner = self._ensure_customer_partner()
-
-        warehouse = (
-            self.website_id._get_warehouse_available()
-        )
-
+        warehouse = (self.website_id._get_warehouse_available())
         warehouse_id = getattr(
             warehouse,
             "id",
@@ -459,13 +348,8 @@ class WebsiteSaleOffer(models.Model):
         # Crear una línea de venta por cada
         # línea de la oferta.
         for line in self.line_ids:
-
-            product = line.product_id.with_context(
-                lang=partner.lang
-            )
-
+            product = line.product_id.with_context(lang=partner.lang)
             accepted_price = line[price_field]
-
             SaleOrderLine.create(
                 {
                     "order_id": order.id,
@@ -487,7 +371,6 @@ class WebsiteSaleOffer(models.Model):
             )
 
         order._portal_ensure_token()
-
         self.sudo().write(
             {
                 "sale_order_id": order.id,
@@ -503,9 +386,7 @@ class WebsiteSaleOffer(models.Model):
             subtype_xmlid="mail.mt_note",
         )
 
-        self._send_status_email(
-            "website_product_offer.mail_template_offer_converted"
-        )
+        self._send_status_email("website_product_offer.mail_template_offer_converted")
 
         return self._quotation_action()
 
@@ -522,9 +403,7 @@ class WebsiteSaleOffer(models.Model):
                 _("La oferta no contiene productos.")
             )
 
-        return self._convert_to_quotation(
-            "offered_price"
-        )
+        return self._convert_to_quotation("offered_price")
 
     def action_send_counter(self):
         self.ensure_one()
@@ -546,9 +425,7 @@ class WebsiteSaleOffer(models.Model):
                 _("La oferta no contiene productos.")
             )
 
-        invalid_lines = self.line_ids.filtered(
-            lambda line: line.counter_price <= 0
-        )
+        invalid_lines = self.line_ids.filtered(lambda line: line.counter_price <= 0)
 
         if invalid_lines:
             products = ", ".join(
@@ -577,18 +454,13 @@ class WebsiteSaleOffer(models.Model):
             subtype_xmlid="mail.mt_note",
         )
 
-        self._send_status_email(
-            "website_product_offer.mail_template_offer_counter"
-        )
+        self._send_status_email("website_product_offer.mail_template_offer_counter")
 
     def action_customer_accept_counter(self):
         self.ensure_one()
-
         if self.state != "counter":
             raise UserError(
-                _(
-                    "La contraoferta ya no está disponible."
-                )
+                _("La contraoferta ya no está disponible.")
             )
 
         if (
@@ -608,9 +480,7 @@ class WebsiteSaleOffer(models.Model):
                 _("La oferta no contiene productos.")
             )
 
-        invalid_lines = self.line_ids.filtered(
-            lambda line: line.counter_price <= 0
-        )
+        invalid_lines = self.line_ids.filtered(lambda line: line.counter_price <= 0)
 
         if invalid_lines:
             products = ", ".join(
@@ -627,9 +497,7 @@ class WebsiteSaleOffer(models.Model):
                 )
             )
 
-        return self._convert_to_quotation(
-            "counter_price"
-        )
+        return self._convert_to_quotation("counter_price")
 
     def action_reject(self):
         for offer in self:
@@ -638,10 +506,7 @@ class WebsiteSaleOffer(models.Model):
                 "cancelled",
             ):
                 offer.state = "rejected"
-
-                offer._send_status_email(
-                    "website_product_offer.mail_template_offer_rejected"
-                )
+                offer._send_status_email("website_product_offer.mail_template_offer_rejected")
 
     def action_cancel(self):
         for offer in self:
@@ -657,9 +522,7 @@ class WebsiteSaleOffer(models.Model):
             "counter",
         ):
             raise UserError(
-                _(
-                    "Esta oferta ya no puede cancelarse."
-                )
+                _("Esta oferta ya no puede cancelarse.")
             )
 
         self.state = "cancelled"
@@ -674,14 +537,10 @@ class WebsiteSaleOffer(models.Model):
                     "un presupuesto."
                 )
             )
-
         return self._quotation_action()
 
     def _send_status_email(self, template_xmlid):
-        template = self.env.ref(
-            template_xmlid,
-            raise_if_not_found=False,
-        )
+        template = self.env.ref(template_xmlid, raise_if_not_found=False,)
 
         if not template:
             return
@@ -705,11 +564,7 @@ class WebsiteSaleOffer(models.Model):
                     },
                 )
             except Exception:
-                _logger.exception(
-                    "No se pudo poner en cola "
-                    "el correo de la oferta %s",
-                    offer.name,
-                )
+                _logger.exception( "No se pudo poner en cola " "el correo de la oferta %s", offer.name,)
 
     @api.model
     def _default_valid_until(self, website):
