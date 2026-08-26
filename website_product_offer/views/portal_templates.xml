@@ -175,13 +175,31 @@
                                 </ul>
                             </div>
                         </div>
-                        <form t-if="offer.state in ('draft', 'review')"
-                            t-att-action="'/my/offers/%s/cancel' % offer.id" method="post" class="mt-3">
-                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                            <input type="hidden" name="access_token" t-att-value="access_token or offer.access_token"/>
-                            <button type="submit" class="btn btn-link text-danger w-100">Cancelar esta oferta</button>
-                        </form>
+
+                        <div class="d-flex gap-2 mt-3">
+                            <form t-if="offer.state in ('draft', 'review')"
+                                t-att-action="'/my/offers/%s/cancel' % offer.id" method="post" class="flex-fill">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="access_token" t-att-value="access_token or offer.access_token"/>
+                                <button type="submit" class="btn btn-link text-danger w-100">Cancelar esta oferta</button>
+                            </form>
+
+                            <form t-if="offer.state in ('draft', 'review')"
+                                t-att-action="'/my/offers/%s/submit' % offer.id" method="post" class="flex-fill">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="access_token" t-att-value="access_token or offer.access_token"/>
+                                <button type="submit" class="btn btn-primary btn-lg o_wpo_submit w-100">
+                                    <span class="o_wpo_submit_label">
+                                        Enviar mi oferta <i class="fa fa-arrow-right ms-2" aria-hidden="true"/>
+                                    </span>
+                                    <span class="o_wpo_submit_loading d-none">
+                                        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"/> Validando…
+                                    </span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </t>
