@@ -36,6 +36,11 @@ class WebsiteSaleOfferLine(models.Model):
         digits="Product Unit of Measure",
         tracking=True,
     )
+    available_qty_snapshot = fields.Float(
+        string="Stock al recibir",
+        digits="Product Unit of Measure",
+        readonly=True,
+    )
     pricelist_id = fields.Many2one(
         comodel_name="product.pricelist",
         string="Lista de precios",
