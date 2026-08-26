@@ -103,7 +103,7 @@ class WebsiteProductOfferController(http.Controller):
     def shop_offer_cart(self):
         offer_cart = request.session.get("wpo_offer_cart", [])
         return request.render(
-            "website_product_offer.website_offer_cart",
+            "website_product_offer.offer_cart",
             {
                 "offer_cart": offer_cart,
             },
