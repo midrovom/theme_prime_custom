@@ -23,7 +23,6 @@ class WebsiteSaleOffer(models.Model):
         default="/",
         tracking=True,
     )
-    products_data = fields.Json(string="Productos ofertados") # Nuevo campo
     state = fields.Selection(
         selection=[
             ("draft", "Recibida"),
@@ -176,9 +175,6 @@ class WebsiteSaleOffer(models.Model):
         index=True,
         ondelete="set null",
         tracking=True,
-    )
-    total_offered_all = fields.Monetary(string="Total ofertado (todos los productos)", compute="_compute_total_offered_all",
-        currency_field="currency_id", store=True,
     )
 
     @api.depends("quantity", "list_price", "offered_price", "counter_price")
@@ -442,14 +438,3 @@ class WebsiteSaleOffer(models.Model):
     @api.model
     def _default_valid_until(self, website):
         return fields.Date.context_today(self) + timedelta(days=website.offer_validity_days)
-
-    @api.depends("products_data")
-    def _compute_total_offered_all(self):
-        for offer in self:
-            total = 0.0
-            if offer.products_data:
-                for prod in offer.products_data:
-                    qty = prod.get("quantity", 0)
-                    price = prod.get("offered_price", 0)
-                    total += qty * price
-            offer.total_offered_all = total

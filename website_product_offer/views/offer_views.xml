@@ -85,12 +85,13 @@
                     </group>
                     <group string="Propuesta comercial">
                         <group>
-                            <field name="products_data" widget="json"/>
                             <field name="product_id"/>
                             <field name="quantity"/>
                             <field name="uom_id"/>
                             <field name="available_qty_snapshot"/>
                             <field name="pricelist_id"/>
+                        </group>
+                        <group>
                             <field name="currency_id" invisible="1"/>
                             <field name="list_price"/>
                             <field name="offered_price"/>
