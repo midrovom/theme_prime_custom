@@ -283,7 +283,7 @@ class WebsiteSaleOffer(models.Model):
         order_values = {
             "partner_id": partner.id,
             "company_id": self.company_id.id,
-            "pricelist_id": self.line_ids[0].currency_id.id if self.line_ids else False,
+            "pricelist_id": self.line_ids[0].pricelist_id.id if self.line_ids else False,
             "website_id": self.website_id.id,
             "website_offer_id": self.id,
             "origin": self.name,
@@ -295,6 +295,8 @@ class WebsiteSaleOffer(models.Model):
             order_values["warehouse_id"] = warehouse_id
 
         order = self.env["sale.order"].sudo().with_company(self.company_id).create(order_values)
+
+        total_converted = 0.0
         for line in self.line_ids:
             product = line.product_id.with_context(lang=partner.lang)
             self.env["sale.order.line"].sudo().with_company(self.company_id).create({
@@ -305,9 +307,12 @@ class WebsiteSaleOffer(models.Model):
                 "product_uom": line.uom_id.id,
                 "price_unit": line.offered_price,
             })
+            total_converted += line.quantity * line.offered_price
+
         order._portal_ensure_token()
         self.sudo().write({
             "sale_order_id": order.id,
+            "converted_price": total_converted, 
             "state": "converted",
         })
         self.message_post(
