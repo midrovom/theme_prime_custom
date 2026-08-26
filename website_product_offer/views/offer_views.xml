@@ -264,6 +264,7 @@
                         </group>
                     </group>
                     <group string="Propuesta comercial">
+                        <field name="line_ids">
                             <list name="line_ids">
                                 <field name="product_id"/>
                                 <field name="quantity"/>
@@ -277,6 +278,7 @@
                                 <field name="offer_total"/>
                                 <field name="counter_total"/>
                             </list>
+                        </field>
                     </group>
                     <group string="Totales">
                         <field name="list_total" readonly="1"/>
