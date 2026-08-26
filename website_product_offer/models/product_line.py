@@ -57,7 +57,12 @@ class WebsiteSaleOfferLine(models.Model):
         required=True,
         readonly=True,
     )
-
+    pricelist_id = fields.Many2one(
+        comodel_name="product.pricelist",
+        string="Lista de precios",
+        required=True,
+        ondelete="restrict",
+    )
     list_total = fields.Monetary(
         string="Total de lista",
         compute="_compute_amounts",
