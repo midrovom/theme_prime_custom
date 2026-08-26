@@ -1,6 +1,5 @@
 from odoo import http
 from odoo.http import request
-from odoo.tools import formatLang
 
 class WebsiteProductOfferController(http.Controller):
 
@@ -25,8 +24,6 @@ class WebsiteProductOfferController(http.Controller):
                 "quantity": quantity,
                 "offered_price": offered_price,
                 "total": quantity * offered_price,
-                "offered_price_formatted": formatLang(request.env, offered_price, currency_obj=product.currency_id),
-                "total_formatted": formatLang(request.env, quantity * offered_price, currency_obj=product.currency_id),
             })
         else:
             offer_cart.append({
@@ -36,9 +33,6 @@ class WebsiteProductOfferController(http.Controller):
                 "offered_price": offered_price,
                 "total": quantity * offered_price,
                 "list_price": product.lst_price,
-                "list_price_formatted": formatLang(request.env, product.lst_price, currency_obj=product.currency_id),
-                "offered_price_formatted": formatLang(request.env, offered_price, currency_obj=product.currency_id),
-                "total_formatted": formatLang(request.env, quantity * offered_price, currency_obj=product.currency_id),
                 "website_url": product.website_url,
             })
 
@@ -52,7 +46,7 @@ class WebsiteProductOfferController(http.Controller):
         offer_cart = request.session.get("wpo_offer_cart", [])
         total = sum(line["total"] for line in offer_cart)
         offer_cart_summary = {
-            "total_formatted": formatLang(request.env, total, currency_obj=request.website.currency_id),
+            "total": total,
         }
         return request.render("website_product_offer.offer_cart", {
             "offer_cart": offer_cart,
