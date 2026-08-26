@@ -49,7 +49,7 @@
                     <button name="action_cancel" type="object" string="Cancelar"
                             invisible="state not in ('draft', 'review', 'counter')"/>
                     <field name="state" widget="statusbar"
-                           statusbar_visible="draft,review,counter,converted,rejected,cancelled"/>
+                        statusbar_visible="draft,review,counter,converted,rejected,cancelled"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
@@ -81,27 +81,31 @@
                             <field name="create_date"/>
                             <field name="valid_until"/>
                             <field name="source_url" widget="url"/>
+                            <field name="pricelist_id"/>
                         </group>
                     </group>
                     <group string="Propuesta comercial">
                         <field name="line_ids">
-                            <list>
+                            <tree editable="bottom">
                                 <field name="product_id"/>
                                 <field name="quantity"/>
                                 <field name="uom_id"/>
                                 <field name="available_qty_snapshot"/>
-                                <!-- <field name="pricelist_id"/> -->
-                                <field name="currency_id" invisible="1"/>
                                 <field name="list_price"/>
                                 <field name="offered_price"/>
-                                <field name="requested_discount_percent"/>
+                                <field name="counter_price"/>
+                                <field name="converted_price" readonly="1"/>
+                                <field name="list_total"/>
                                 <field name="offer_total"/>
-                                <field name="counter_price"
-                                    readonly="state in ('converted', 'rejected', 'cancelled')"/>
-                                <field name="counter_total" invisible="not counter_price"/>
-                                <field name="converted_price" invisible="state != 'converted'"/>
-                            </list>
+                                <field name="counter_total"/>
+                            </tree>
                         </field>
+                    </group>
+                    <group string="Totales">
+                        <field name="list_total" readonly="1"/>
+                        <field name="offer_total" readonly="1"/>
+                        <field name="counter_total" readonly="1"/>
+                        <field name="requested_discount_percent" readonly="1"/>
                     </group>
                     <notebook>
                         <page string="Mensaje del cliente" name="customer_message">
@@ -109,8 +113,8 @@
                         </page>
                         <page string="Contraoferta" name="counteroffer">
                             <field name="counter_message"
-                                   placeholder="Explica brevemente las condiciones de la contraoferta..."
-                                   readonly="state in ('converted', 'rejected', 'cancelled')"/>
+                                placeholder="Explica brevemente las condiciones de la contraoferta..."
+                                readonly="state in ('converted', 'rejected', 'cancelled')"/>
                         </page>
                         <page string="Notas internas" name="internal_notes">
                             <field name="internal_note" placeholder="Información visible solo para el equipo comercial."/>
@@ -121,6 +125,7 @@
             </form>
         </field>
     </record>
+
 
     <record id="view_website_sale_offer_search" model="ir.ui.view">
         <field name="name">website.sale.offer.search</field>
