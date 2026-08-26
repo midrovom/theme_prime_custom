@@ -14,14 +14,14 @@
                 <field name="create_date"/>
                 <field name="contact_name"/>
                 <field name="company_name" optional="hide"/>
-                <!-- <field name="product_id"/> -->
-                <!-- <field name="quantity"/> -->
-                <!-- <field name="list_price" optional="hide"/> -->
-                <!-- <field name="offered_price"/>
+                <field name="product_id"/>
+                <field name="quantity"/>
+                <field name="list_price" optional="hide"/>
+                <field name="offered_price"/>
                 <field name="requested_discount_percent" optional="show"/>
-                <field name="offer_total" sum="Total"/> -->
+                <field name="offer_total" sum="Total"/>
                 <field name="currency_id" column_invisible="True"/>
-                <!-- <field name="website_id" optional="show"/> -->
+                <field name="website_id" optional="show"/>
                 <field name="user_id" optional="show" widget="many2one_avatar_user"/>
                 <field name="state" widget="badge"
                        decoration-info="state == 'review'"
@@ -84,26 +84,25 @@
                         </group>
                     </group>
                     <group string="Propuesta comercial">
-                        <field name="line_ids">
-                            <list editable="bottom">
-                                <field name="product_id"/>
-                                <field name="quantity"/>
-                                <field name="uom_id"/>
-                                <field name="available_qty_snapshot"/>
-                                <field name="pricelist_id"/>
-                                <field name="currency_id" invisible="1"/>
-                                <field name="list_price"/>
-                                <field name="offered_price"/>
-                                <field name="requested_discount_percent"/>
-                                <field name="offer_total"/>
-                                <field name="counter_price"
-                                    readonly="state in ('converted', 'rejected', 'cancelled')"/>
-                                <field name="counter_total" invisible="not counter_price"/>
-                                <field name="converted_price" invisible="state != 'converted'"/>
-                            </list>
-                        </field>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="quantity"/>
+                            <field name="uom_id"/>
+                            <field name="available_qty_snapshot"/>
+                            <field name="pricelist_id"/>
+                        </group>
+                        <group>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="list_price"/>
+                            <field name="offered_price"/>
+                            <field name="requested_discount_percent"/>
+                            <field name="offer_total"/>
+                            <field name="counter_price"
+                                   readonly="state in ('converted', 'rejected', 'cancelled')"/>
+                            <field name="counter_total" invisible="not counter_price"/>
+                            <field name="converted_price" invisible="state != 'converted'"/>
+                        </group>
                     </group>
-
                     <notebook>
                         <page string="Mensaje del cliente" name="customer_message">
                             <field name="customer_message" placeholder="El cliente no agregó comentarios."/>
