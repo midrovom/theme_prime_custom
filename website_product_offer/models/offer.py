@@ -72,6 +72,19 @@ class WebsiteSaleOffer(models.Model):
     contact_phone = fields.Char(string="Teléfono", tracking=True)
     company_name = fields.Char(string="Empresa")
 
+    pricelist_id = fields.Many2one(
+        comodel_name="product.pricelist",
+        string="Lista de precios",
+        required=True,
+        readonly=True,
+        ondelete="restrict",
+    )
+    currency_id = fields.Many2one(
+        related="pricelist_id.currency_id",
+        store=True,
+        readonly=True,
+    )
+
     converted_price = fields.Monetary(
         string="Precio convertido",
         currency_field="currency_id",
@@ -100,13 +113,6 @@ class WebsiteSaleOffer(models.Model):
         string="Líneas de productos",
     )
 
-    currency_id = fields.Many2one(
-        comodel_name="res.currency",
-        string="Moneda",
-        readonly=True,
-        compute="_compute_currency",
-        store=True,
-    )
 
     @api.depends("line_ids.offer_total")
     def _compute_totals(self):
