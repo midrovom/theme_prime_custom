@@ -3,7 +3,6 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 
-
 class WebsiteSaleOfferLine(models.Model):
     _name = "website.sale.offer.line"
     _description = "Línea de oferta comercial desde el sitio web"
