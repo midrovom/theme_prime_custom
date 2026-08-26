@@ -39,7 +39,6 @@
                                                         <th>Producto</th>
                                                         <th class="text-center">Cantidad</th>
                                                         <th class="text-end">Precio ofrecido</th>
-                                                        <th class="text-end">Total</th>
                                                         <th/>
                                                     </tr>
                                                 </thead>
@@ -57,9 +56,6 @@
                                                             </td>
                                                             <td class="text-end">
                                                                 <t t-out="line['offered_price']"/>
-                                                            </td>
-                                                            <td class="text-end">
-                                                                <strong><t t-out="line['total']"/></strong>
                                                             </td>
                                                             <td class="text-end">
                                                                 <button type="button"
@@ -142,3 +138,4 @@
         </t>
     </template>
 </odoo>
+

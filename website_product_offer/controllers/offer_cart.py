@@ -23,8 +23,7 @@ class WebsiteProductOfferController(http.Controller):
             existing_line.update({
                 "quantity": quantity,
                 "offered_price": offered_price,
-                "total": quantity * offered_price,
-                # también actualizamos los datos de contacto
+                "total": offered_price,
                 "contact_name": kwargs.get("contact_name"),
                 "contact_email": kwargs.get("contact_email"),
                 "contact_phone": kwargs.get("contact_phone"),
@@ -37,10 +36,9 @@ class WebsiteProductOfferController(http.Controller):
                 "product_name": product.display_name,
                 "quantity": quantity,
                 "offered_price": offered_price,
-                "total": quantity * offered_price,
+                "total": offered_price,  
                 "list_price": product.lst_price,
                 "website_url": product.website_url,
-                # añadimos datos de contacto
                 "contact_name": kwargs.get("contact_name"),
                 "contact_email": kwargs.get("contact_email"),
                 "contact_phone": kwargs.get("contact_phone"),
@@ -63,7 +61,6 @@ class WebsiteProductOfferController(http.Controller):
         return request.render("website_product_offer.offer_cart", {
             "offer_cart": offer_cart,
             "offer_cart_summary": offer_cart_summary,
-            # pasamos también los datos de contacto para mostrarlos en el formulario
             "contact_name": offer_cart and offer_cart[0].get("contact_name") or "",
             "contact_email": offer_cart and offer_cart[0].get("contact_email") or "",
             "contact_phone": offer_cart and offer_cart[0].get("contact_phone") or "",
@@ -77,7 +74,6 @@ class WebsiteProductOfferController(http.Controller):
         if not offer_cart:
             return {"ok": False, "error": "No tienes productos en tu oferta."}
 
-        # tomamos los datos de contacto desde kwargs o desde el carrito
         contact_name = (kwargs.get("contact_name") or offer_cart[0].get("contact_name") or "").strip()
         contact_email = (kwargs.get("contact_email") or offer_cart[0].get("contact_email") or "").strip()
         contact_phone = (kwargs.get("contact_phone") or offer_cart[0].get("contact_phone") or "").strip()
@@ -122,16 +118,8 @@ class WebsiteProductOfferController(http.Controller):
             "message": "Tu oferta fue enviada correctamente.",
         }
 
-    @http.route("/shop/offer/remove", type="json", auth="public", website=True)
-    def shop_offer_remove(self, product_id=None, **kwargs):
-        """Eliminar una línea del carrito de oferta por product_id"""
-        if not product_id:
-            return {"ok": False, "error": "Producto inválido."}
-
-        offer_cart = list(request.session.get("wpo_offer_cart", []))
-        new_cart = [line for line in offer_cart if int(line.get("product_id")) != int(product_id)]
-
-        request.session["wpo_offer_cart"] = new_cart
+    @http.route("/shop/offer/clear", type="json", auth="public", website=True)
+    def shop_offer_clear(self, **kwargs):
+        request.session.pop("wpo_offer_cart", None)
         request.session.modified = True
-
-        return {"ok": True, "redirect": "/shop/offer/cart", "count": len(new_cart)}
+        return {"ok": True, "redirect": "/shop/offer/cart"}
