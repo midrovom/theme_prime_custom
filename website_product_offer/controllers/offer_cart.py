@@ -24,6 +24,12 @@ class WebsiteProductOfferController(http.Controller):
                 "quantity": quantity,
                 "offered_price": offered_price,
                 "total": quantity * offered_price,
+                # también actualizamos los datos de contacto
+                "contact_name": kwargs.get("contact_name"),
+                "contact_email": kwargs.get("contact_email"),
+                "contact_phone": kwargs.get("contact_phone"),
+                "company_name": kwargs.get("company_name"),
+                "customer_message": kwargs.get("customer_message"),
             })
         else:
             offer_cart.append({
@@ -34,6 +40,12 @@ class WebsiteProductOfferController(http.Controller):
                 "total": quantity * offered_price,
                 "list_price": product.lst_price,
                 "website_url": product.website_url,
+                # añadimos datos de contacto
+                "contact_name": kwargs.get("contact_name"),
+                "contact_email": kwargs.get("contact_email"),
+                "contact_phone": kwargs.get("contact_phone"),
+                "company_name": kwargs.get("company_name"),
+                "customer_message": kwargs.get("customer_message"),
             })
 
         request.session["wpo_offer_cart"] = offer_cart
@@ -51,6 +63,12 @@ class WebsiteProductOfferController(http.Controller):
         return request.render("website_product_offer.offer_cart", {
             "offer_cart": offer_cart,
             "offer_cart_summary": offer_cart_summary,
+            # pasamos también los datos de contacto para mostrarlos en el formulario
+            "contact_name": offer_cart and offer_cart[0].get("contact_name") or "",
+            "contact_email": offer_cart and offer_cart[0].get("contact_email") or "",
+            "contact_phone": offer_cart and offer_cart[0].get("contact_phone") or "",
+            "company_name": offer_cart and offer_cart[0].get("company_name") or "",
+            "customer_message": offer_cart and offer_cart[0].get("customer_message") or "",
         })
 
     @http.route("/shop/offer/submit", type="json", auth="public", website=True)
@@ -59,11 +77,12 @@ class WebsiteProductOfferController(http.Controller):
         if not offer_cart:
             return {"ok": False, "error": "No tienes productos en tu oferta."}
 
-        contact_name = (kwargs.get("contact_name") or "").strip()
-        contact_email = (kwargs.get("contact_email") or "").strip()
-        contact_phone = (kwargs.get("contact_phone") or "").strip()
-        company_name = (kwargs.get("company_name") or "").strip()
-        customer_message = (kwargs.get("customer_message") or "").strip()
+        # tomamos los datos de contacto desde kwargs o desde el carrito
+        contact_name = (kwargs.get("contact_name") or offer_cart[0].get("contact_name") or "").strip()
+        contact_email = (kwargs.get("contact_email") or offer_cart[0].get("contact_email") or "").strip()
+        contact_phone = (kwargs.get("contact_phone") or offer_cart[0].get("contact_phone") or "").strip()
+        company_name = (kwargs.get("company_name") or offer_cart[0].get("company_name") or "").strip()
+        customer_message = (kwargs.get("customer_message") or offer_cart[0].get("customer_message") or "").strip()
 
         Offer = request.env["website.sale.offer"].sudo()
         offer = Offer.create({
