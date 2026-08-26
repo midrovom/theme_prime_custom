@@ -16,6 +16,15 @@ class WebsiteSaleOfferLine(models.Model):
         index=True,
     )
 
+    pricelist_id = fields.Many2one(
+        comodel_name="product.pricelist",
+        string="Lista de precios",
+        related="offer_id.pricelist_id",
+        store=True,
+        readonly=True,
+        ondelete="restrict",
+    )
+
     product_id = fields.Many2one(
         comodel_name="product.product",
         string="Producto",
