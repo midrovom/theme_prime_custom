@@ -8,7 +8,6 @@ from odoo.exceptions import UserError, ValidationError
 
 _logger = logging.getLogger(__name__)
 
-
 class WebsiteSaleOffer(models.Model):
     _name = "website.sale.offer"
     _description = "Oferta comercial desde el sitio web"
@@ -38,6 +37,12 @@ class WebsiteSaleOffer(models.Model):
         copy=False,
         index=True,
         tracking=True,
+    )
+
+    line_ids = fields.One2many(
+        comodel_name="website.sale.offer.line",
+        inverse_name="offer_id",
+        string="Líneas de productos",
     )
     website_id = fields.Many2one(
         comodel_name="website",
@@ -102,11 +107,6 @@ class WebsiteSaleOffer(models.Model):
         tracking=True,
     )
 
-    line_ids = fields.One2many(
-        comodel_name="website.sale.offer.line",
-        inverse_name="offer_id",
-        string="Líneas de productos",
-    )
 
     @api.depends("line_ids.offer_total")
     def _compute_totals(self):

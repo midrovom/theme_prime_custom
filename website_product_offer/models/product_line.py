@@ -11,7 +11,7 @@ class WebsiteSaleOfferLine(models.Model):
         required=True,
         ondelete="cascade",
     )
-    
+
     product_id = fields.Many2one(
         comodel_name="product.product",
         string="Producto",
@@ -40,15 +40,15 @@ class WebsiteSaleOfferLine(models.Model):
         comodel_name="product.pricelist",
         string="Lista de precios",
         required=True,
-        readonly=True,
         ondelete="restrict",
     )
+
     currency_id = fields.Many2one(
-        comodel_name="res.currency",   
         related="pricelist_id.currency_id",
         store=True,
         readonly=True,
     )
+
     list_price = fields.Monetary(
         string="Precio de lista unitario",
         required=True,
