@@ -5,11 +5,13 @@ from urllib.parse import urlencode
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
+
 _logger = logging.getLogger(__name__)
 
-class WebsiteSaleOfferMulti(models.Model):
-    _name = "website.sale.offer.multi"
-    _description = "Oferta comercial multiproducto"
+
+class WebsiteSaleOffer(models.Model):
+    _name = "website.sale.offer"
+    _description = "Oferta comercial desde el sitio web"
     _inherit = ["mail.thread", "mail.activity.mixin", "portal.mixin"]
     _order = "create_date desc, id desc"
 
@@ -70,10 +72,11 @@ class WebsiteSaleOfferMulti(models.Model):
     contact_phone = fields.Char(string="Teléfono", tracking=True)
     company_name = fields.Char(string="Empresa")
 
-    line_ids = fields.One2many(
-        comodel_name="website.sale.offer.line",
-        inverse_name="offer_id",
-        string="Líneas de productos",
+    converted_price = fields.Monetary(
+        string="Precio convertido",
+        currency_field="currency_id",
+        readonly=True,
+        copy=False,
     )
 
     customer_message = fields.Text(string="Mensaje del cliente")
@@ -90,22 +93,11 @@ class WebsiteSaleOfferMulti(models.Model):
         ondelete="set null",
         tracking=True,
     )
-    pricelist_id = fields.Many2one(
-        comodel_name="product.pricelist",
-        string="Lista de precios",
-        required=True,
-        ondelete="restrict",
-    )
-    currency_id = fields.Many2one(
-        related="pricelist_id.currency_id",
-        store=True,
-        readonly=True,
-    )
-    offer_total = fields.Monetary(
-        string="Total ofertado",
-        compute="_compute_totals",
-        currency_field="currency_id",
-        store=True,
+
+    line_ids = fields.One2many(
+        comodel_name="website.sale.offer.line",
+        inverse_name="offer_id",
+        string="Líneas de productos",
     )
 
     @api.depends("line_ids.offer_total")
@@ -115,10 +107,19 @@ class WebsiteSaleOfferMulti(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+
+        _logger.info(">>> WEBSITE.SALE.OFFER CREATE")
+        _logger.info(">>> VALORES RECIBIDOS: %s", vals_list)
+
         for vals in vals_list:
             if vals.get("name", "/") == "/":
-                vals["name"] = self.env["ir.sequence"].next_by_code("website.sale.offer.multi") or "/"
+                vals["name"] = self.env["ir.sequence"].next_by_code("website.sale.offer") or "/"
         offers = super().create(vals_list)
+
+        _logger.info( ">>> WEBSITE.SALE.OFFER CREADA: %s",
+            offers.ids,
+        )
+        
         offers._portal_ensure_token()
         return offers
 
@@ -127,7 +128,14 @@ class WebsiteSaleOfferMulti(models.Model):
         for offer in self:
             offer.access_url = f"/my/offers/{offer.id}"
 
-    def get_portal_url(self, suffix=None, report_type=None, download=None, query_string=None, anchor=None):
+    def get_portal_url(
+        self,
+        suffix=None,
+        report_type=None,
+        download=None,
+        query_string=None,
+        anchor=None,
+    ):
         self.ensure_one()
         self._portal_ensure_token()
         url = f"/my/offers/{self.id}"
@@ -145,27 +153,55 @@ class WebsiteSaleOfferMulti(models.Model):
             result += f"#{anchor}"
         return result
 
+    def _current_available_qty(self):
+        self.ensure_one()
+        return self.product_tmpl_id._website_offer_available_qty(
+            self.website_id,
+            self.product_id,
+        )
+
+    def _check_stock_before_conversion(self):
+        self.ensure_one()
+        if not self.website_id.offer_limit_to_stock:
+            return
+        available_qty = self._current_available_qty()
+        if self.quantity > available_qty:
+            raise UserError(
+                _(
+                    "No es posible crear el presupuesto: se solicitaron %(requested)s unidades y actualmente hay %(available)s disponibles.",
+                    requested=self.quantity,
+                    available=available_qty,
+                )
+            )
+
     def _ensure_customer_partner(self):
         self.ensure_one()
         if self.partner_id:
             return self.partner_id
+
         Partner = self.env["res.partner"].sudo().with_company(self.company_id)
         partner = Partner.browse()
         if self.contact_email:
-            matches = Partner.search([("email", "=ilike", self.contact_email.strip())], limit=2)
+            matches = Partner.search(
+                [("email", "=ilike", self.contact_email.strip())],
+                limit=2,
+            )
             if len(matches) == 1:
                 partner = matches
+
         if not partner:
             partner_name = self.contact_name
             if self.company_name:
                 partner_name = f"{self.company_name} - {self.contact_name}"
-            partner = Partner.create({
-                "name": partner_name,
-                "email": self.contact_email,
-                "phone": self.contact_phone,
-                "company_id": self.company_id.id,
-                "customer_rank": 1,
-            })
+            partner = Partner.create(
+                {
+                    "name": partner_name,
+                    "email": self.contact_email,
+                    "phone": self.contact_phone,
+                    "company_id": self.company_id.id,
+                    "customer_rank": 1,
+                }
+            )
         self.sudo().partner_id = partner
         return partner
 
@@ -179,6 +215,60 @@ class WebsiteSaleOfferMulti(models.Model):
             "view_mode": "form",
             "target": "current",
         }
+
+    # def _convert_to_quotation(self, accepted_price):
+    #     self.ensure_one()
+    #     if self.sale_order_id:
+    #         return self._quotation_action()
+    #     if self.state not in ("draft", "review", "counter"):
+    #         raise UserError(_("Esta oferta ya no puede convertirse en presupuesto."))
+    #     if accepted_price <= 0:
+    #         raise UserError(_("El precio acordado debe ser mayor que cero."))
+
+    #     self._check_stock_before_conversion()
+    #     partner = self._ensure_customer_partner()
+    #     warehouse = self.website_id._get_warehouse_available()
+    #     warehouse_id = getattr(warehouse, "id", warehouse)
+    #     order_values = {
+    #         "partner_id": partner.id,
+    #         "company_id": self.company_id.id,
+    #         "pricelist_id": self.pricelist_id.id,
+    #         "website_id": self.website_id.id,
+    #         "website_offer_id": self.id,
+    #         "origin": self.name,
+    #         "client_order_ref": self.name,
+    #     }
+    #     if self.user_id:
+    #         order_values["user_id"] = self.user_id.id
+    #     if warehouse_id:
+    #         order_values["warehouse_id"] = warehouse_id
+
+    #     order = self.env["sale.order"].sudo().with_company(self.company_id).create(order_values)
+    #     product = self.product_id.with_context(lang=partner.lang)
+    #     self.env["sale.order.line"].sudo().with_company(self.company_id).create(
+    #         {
+    #             "order_id": order.id,
+    #             "product_id": product.id,
+    #             "name": product.get_product_multiline_description_sale(),
+    #             "product_uom_qty": self.quantity,
+    #             "product_uom": self.uom_id.id,
+    #             "price_unit": accepted_price,
+    #         }
+    #     )
+    #     order._portal_ensure_token()
+    #     self.sudo().write(
+    #         {
+    #             "sale_order_id": order.id,
+    #             "converted_price": accepted_price,
+    #             "state": "converted",
+    #         }
+    #     )
+    #     self.message_post(
+    #         body=_("Oferta convertida en el presupuesto %s.", order.name),
+    #         subtype_xmlid="mail.mt_note",
+    #     )
+    #     self._send_status_email("website_product_offer.mail_template_offer_converted")
+    #     return self._quotation_action()
 
     def _convert_to_quotation(self):
         self.ensure_one()
@@ -227,10 +317,36 @@ class WebsiteSaleOfferMulti(models.Model):
         self._send_status_email("website_product_offer.mail_template_offer_converted")
         return self._quotation_action()
 
+
     def action_set_review(self):
         for offer in self:
             if offer.state == "draft":
                 offer.state = "review"
+
+    def action_accept_offer(self):
+        self.ensure_one()
+        return self._convert_to_quotation(self.offered_price)
+
+    def action_send_counter(self):
+        self.ensure_one()
+        if self.state not in ("draft", "review", "counter"):
+            raise UserError(_("Esta oferta ya no admite una contraoferta."))
+        if self.counter_price <= 0:
+            raise UserError(_("Ingrese un precio de contraoferta mayor que cero."))
+        self.state = "counter"
+        self.message_post(
+            body=_("Se envió una contraoferta de %(price)s por unidad.", price=self.counter_price),
+            subtype_xmlid="mail.mt_note",
+        )
+        self._send_status_email("website_product_offer.mail_template_offer_counter")
+
+    def action_customer_accept_counter(self):
+        self.ensure_one()
+        if self.state != "counter" or self.counter_price <= 0:
+            raise UserError(_("La contraoferta ya no está disponible."))
+        if self.valid_until and self.valid_until < fields.Date.context_today(self):
+            raise UserError(_("La contraoferta venció. Solicita una nueva revisión comercial."))
+        return self._convert_to_quotation(self.counter_price)
 
     def action_reject(self):
         for offer in self:
