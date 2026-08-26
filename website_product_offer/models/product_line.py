@@ -52,9 +52,15 @@ class WebsiteSaleOfferLine(models.Model):
         currency_field="currency_id",
         tracking=True,
     )
-    currency_id = fields.Many2one(
-        comodel_name="res.currency",
+    pricelist_id = fields.Many2one(
+        comodel_name="product.pricelist",
+        string="Lista de precios",
         required=True,
+        ondelete="restrict",
+    )
+    currency_id = fields.Many2one(
+        related="pricelist_id.currency_id",
+        store=True,
         readonly=True,
     )
     list_total = fields.Monetary(
