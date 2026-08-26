@@ -95,6 +95,27 @@ class WebsiteSaleOfferLine(models.Model):
         digits=(16, 2),
     )
 
+    def action_send_counter(self):
+        self.ensure_one()
+        if self.state not in ("draft", "review", "counter"):
+            raise UserError(_("Esta oferta ya no admite una contraoferta."))
+        if self.counter_price <= 0:
+            raise UserError(_("Ingrese un precio de contraoferta mayor que cero."))
+        self.state = "counter"
+        self.message_post(
+            body=_("Se envió una contraoferta de %(price)s por unidad.", price=self.counter_price),
+            subtype_xmlid="mail.mt_note",
+        )
+        self._send_status_email("website_product_offer.mail_template_offer_counter")
+
+    def action_customer_accept_counter(self):
+        self.ensure_one()
+        if self.state != "counter" or self.counter_price <= 0:
+            raise UserError(_("La contraoferta ya no está disponible."))
+        if self.valid_until and self.valid_until < fields.Date.context_today(self):
+            raise UserError(_("La contraoferta venció. Solicita una nueva revisión comercial."))
+        return self._convert_to_quotation(self.counter_price)
+
     @api.depends("quantity", "list_price", "offered_price", "counter_price")
     def _compute_amounts(self):
         for line in self:
@@ -116,3 +137,4 @@ class WebsiteSaleOfferLine(models.Model):
                 raise ValidationError(
                     _("Los precios no pueden ser negativos y la oferta debe ser mayor que cero.")
                 )
+
