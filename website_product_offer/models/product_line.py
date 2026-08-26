@@ -76,6 +76,18 @@ class WebsiteSaleOfferLine(models.Model):
         store=True,
         digits=(16, 2),
     )
+    pricelist_id = fields.Many2one(
+        comodel_name="product.pricelist",
+        string="Lista de precios",
+        required=True,
+        readonly=True,
+        ondelete="restrict",
+    )
+    currency_id = fields.Many2one(
+        related="pricelist_id.currency_id",
+        store=True,
+        readonly=True,
+    )
 
     @api.depends("quantity", "list_price", "offered_price", "counter_price")
     def _compute_amounts(self):
