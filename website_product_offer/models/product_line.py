@@ -40,9 +40,9 @@ class WebsiteSaleOfferLine(models.Model):
         comodel_name="product.pricelist",
         string="Lista de precios",
         required=True,
+        readonly=True,
         ondelete="restrict",
     )
-
     currency_id = fields.Many2one(
         related="pricelist_id.currency_id",
         store=True,
