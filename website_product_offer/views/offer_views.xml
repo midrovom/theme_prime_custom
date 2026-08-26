@@ -14,12 +14,12 @@
                 <field name="create_date"/>
                 <field name="contact_name"/>
                 <field name="company_name" optional="hide"/>
-                <field name="product_id"/>
+                <!-- <field name="product_id"/>
                 <field name="quantity"/>
                 <field name="list_price" optional="hide"/>
                 <field name="offered_price"/>
                 <field name="requested_discount_percent" optional="show"/>
-                <field name="offer_total" sum="Total"/>
+                <field name="offer_total" sum="Total"/> -->
                 <field name="currency_id" column_invisible="True"/>
                 <field name="website_id" optional="show"/>
                 <field name="user_id" optional="show" widget="many2one_avatar_user"/>
