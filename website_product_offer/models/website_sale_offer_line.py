@@ -1,10 +1,13 @@
-from odoo import _, api, fields, models
+from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
+
 
 class WebsiteSaleOfferLine(models.Model):
     _name = "website.sale.offer.line"
-    _description = "Línea de oferta comercial"
+    _description = "Línea de oferta comercial desde el sitio web"
     _order = "sequence, id"
+
+    sequence = fields.Integer(default=10)
 
     offer_id = fields.Many2one(
         comodel_name="website.sale.offer",
@@ -12,11 +15,6 @@ class WebsiteSaleOfferLine(models.Model):
         required=True,
         ondelete="cascade",
         index=True,
-    )
-
-    sequence = fields.Integer(
-        string="Secuencia",
-        default=10,
     )
 
     product_id = fields.Many2one(
@@ -29,8 +27,9 @@ class WebsiteSaleOfferLine(models.Model):
 
     product_tmpl_id = fields.Many2one(
         related="product_id.product_tmpl_id",
-        string="Plantilla",
+        string="Plantilla de producto",
         store=True,
+        index=True,
     )
 
     uom_id = fields.Many2one(
@@ -52,38 +51,31 @@ class WebsiteSaleOfferLine(models.Model):
     )
 
     list_price = fields.Monetary(
-        string="Precio de lista",
+        string="Precio de lista unitario",
         required=True,
-        readonly=True,
         currency_field="currency_id",
     )
 
     offered_price = fields.Monetary(
-        string="Precio ofertado",
+        string="Precio unitario ofrecido",
         required=True,
         currency_field="currency_id",
     )
 
     counter_price = fields.Monetary(
-        string="Precio contraoferta",
+        string="Precio de contraoferta",
         currency_field="currency_id",
     )
 
     converted_price = fields.Monetary(
         string="Precio convertido",
+        currency_field="currency_id",
         readonly=True,
         copy=False,
-        currency_field="currency_id",
-    )
-
-    currency_id = fields.Many2one(
-        related="offer_id.currency_id",
-        store=True,
-        readonly=True,
     )
 
     list_total = fields.Monetary(
-        string="Total lista",
+        string="Total de lista",
         compute="_compute_amounts",
         store=True,
         currency_field="currency_id",
@@ -97,17 +89,23 @@ class WebsiteSaleOfferLine(models.Model):
     )
 
     counter_total = fields.Monetary(
-        string="Total contraoferta",
+        string="Total contraofertado",
         compute="_compute_amounts",
         store=True,
         currency_field="currency_id",
     )
 
     requested_discount_percent = fields.Float(
-        string="Descuento solicitado (%)",
+        string="Diferencia solicitada (%)",
         compute="_compute_amounts",
         store=True,
         digits=(16, 2),
+    )
+
+    currency_id = fields.Many2one(
+        related="offer_id.currency_id",
+        store=True,
+        readonly=True,
     )
 
     @api.depends(
@@ -123,10 +121,7 @@ class WebsiteSaleOfferLine(models.Model):
             line.counter_total = line.quantity * line.counter_price
 
             line.requested_discount_percent = (
-                (
-                    (line.list_price - line.offered_price)
-                    / line.list_price
-                ) * 100
+                ((line.list_price - line.offered_price) / line.list_price) * 100
                 if line.list_price
                 else 0.0
             )
@@ -144,17 +139,14 @@ class WebsiteSaleOfferLine(models.Model):
                     _("La cantidad debe ser mayor que cero.")
                 )
 
-            if line.list_price < 0:
+            if (
+                line.list_price < 0
+                or line.offered_price <= 0
+                or line.counter_price < 0
+            ):
                 raise ValidationError(
-                    _("El precio de lista no puede ser negativo.")
-                )
-
-            if line.offered_price <= 0:
-                raise ValidationError(
-                    _("El precio ofertado debe ser mayor que cero.")
-                )
-
-            if line.counter_price < 0:
-                raise ValidationError(
-                    _("El precio de contraoferta no puede ser negativo.")
+                    _(
+                        "Los precios no pueden ser negativos "
+                        "y la oferta debe ser mayor que cero."
+                    )
                 )
