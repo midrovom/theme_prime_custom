@@ -6,12 +6,12 @@ class WebsiteSaleOfferLine(models.Model):
     _description = "Línea de producto en oferta comercial"
 
     offer_id = fields.Many2one(
-        comodel_name="website.sale.offer.multi",
+        comodel_name="website.sale.offer",
         string="Oferta",
         required=True,
         ondelete="cascade",
     )
-
+    
     product_id = fields.Many2one(
         comodel_name="product.product",
         string="Producto",

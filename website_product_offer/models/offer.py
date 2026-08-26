@@ -108,7 +108,6 @@ class WebsiteSaleOffer(models.Model):
         string="Líneas de productos",
     )
 
-
     @api.depends("line_ids.offer_total")
     def _compute_totals(self):
         for offer in self:
