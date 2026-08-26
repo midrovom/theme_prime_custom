@@ -72,15 +72,10 @@ class WebsiteSaleOffer(models.Model):
     contact_phone = fields.Char(string="Teléfono", tracking=True)
     company_name = fields.Char(string="Empresa")
 
-    pricelist_id = fields.Many2one(
-        comodel_name="product.pricelist",
-        string="Lista de precios",
-        required=True,
-        readonly=True,
-        ondelete="restrict",
-    )
     currency_id = fields.Many2one(
-        related="pricelist_id.currency_id",
+        comodel_name="res.currency",
+        string="Moneda",
+        compute="_compute_currency",
         store=True,
         readonly=True,
     )
