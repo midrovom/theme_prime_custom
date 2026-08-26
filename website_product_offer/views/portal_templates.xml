@@ -53,7 +53,6 @@
         </t>
     </template>
 
-
     <template id="portal_offer_page" name="Detalle de oferta">
         <t t-call="portal.portal_layout">
             <div class="container py-4 o_wpo_portal_detail">
@@ -81,6 +80,11 @@
                                             <strong t-field="line.product_id"/>
                                             <span class="text-muted"> - <t t-out="line.quantity"/> <span t-field="line.uom_id"/></span>
                                             <span class="d-block">
+                                                <small>Precio de lista:</small>
+                                                <span t-field="line.list_price"
+                                                    t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                            </span>
+                                            <span class="d-block">
                                                 <small>Precio ofertado:</small>
                                                 <span t-field="line.offered_price"
                                                     t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
@@ -88,19 +92,11 @@
                                         </li>
                                     </ul>
                                 </div>
-                                <div class="row g-3">
+
+                                <div class="row g-3 mt-3">
                                     <div class="col-6 col-md-3">
-                                        <small class="text-muted d-block">Cantidad</small>
-                                        <strong><span t-field="offer.quantity"/> <span t-field="offer.uom_id"/></strong>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <small class="text-muted d-block">Precio de lista</small>
-                                        <strong t-field="offer.list_price"
-                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <small class="text-muted d-block">Tu precio</small>
-                                        <strong t-field="offer.offered_price"
+                                        <small class="text-muted d-block">Total de lista</small>
+                                        <strong t-field="offer.list_total"
                                                 t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
                                     </div>
                                     <div class="col-6 col-md-3">
@@ -108,13 +104,21 @@
                                         <strong class="text-primary" t-field="offer.offer_total"
                                                 t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
                                     </div>
+                                    <div class="col-6 col-md-3">
+                                        <small class="text-muted d-block">Total contraofertado</small>
+                                        <strong t-field="offer.counter_total"
+                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                    </div>
                                 </div>
+
                                 <div t-if="offer.customer_message" class="mt-4 p-3 bg-light rounded-3">
                                     <small class="text-muted d-block mb-1">Tu mensaje</small>
                                     <span t-field="offer.customer_message"/>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Contraoferta por línea -->
                         <div t-if="offer.state == 'counter'" class="card border-0 shadow-sm rounded-4 mt-4 o_wpo_counter_card">
                             <div class="card-body p-4">
                                 <span class="o_wpo_eyebrow">NUEVA PROPUESTA</span>
@@ -182,5 +186,6 @@
             </div>
         </t>
     </template>
+
 
 </odoo>
