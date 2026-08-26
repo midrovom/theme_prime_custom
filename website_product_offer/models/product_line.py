@@ -36,6 +36,18 @@ class WebsiteSaleOfferLine(models.Model):
         digits="Product Unit of Measure",
         tracking=True,
     )
+    pricelist_id = fields.Many2one(
+        comodel_name="product.pricelist",
+        string="Lista de precios",
+        required=True,
+        readonly=True,
+        ondelete="restrict",
+    )
+    currency_id = fields.Many2one(
+        related="pricelist_id.currency_id",
+        store=True,
+        readonly=True,
+    )
     list_price = fields.Monetary(
         string="Precio de lista unitario",
         required=True,
@@ -75,18 +87,6 @@ class WebsiteSaleOfferLine(models.Model):
         compute="_compute_amounts",
         store=True,
         digits=(16, 2),
-    )
-    pricelist_id = fields.Many2one(
-        comodel_name="product.pricelist",
-        string="Lista de precios",
-        required=True,
-        readonly=True,
-        ondelete="restrict",
-    )
-    currency_id = fields.Many2one(
-        related="pricelist_id.currency_id",
-        store=True,
-        readonly=True,
     )
 
     @api.depends("quantity", "list_price", "offered_price", "counter_price")
