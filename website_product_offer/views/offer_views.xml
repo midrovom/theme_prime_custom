@@ -264,7 +264,7 @@
                         </group>
                     </group>
                     <group string="Propuesta comercial">
-                        <field name="line_ids">
+                        <field name="line_ids" invisible="1">
                             <list name="line_ids">
                                 <field name="product_id"/>
                                 <field name="quantity"/>
