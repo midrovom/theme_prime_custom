@@ -119,6 +119,11 @@ class WebsiteSaleOffer(models.Model):
         store=True,
         digits=(16, 2),
     )
+    total_general = fields.Monetary(
+        string="Total general",
+        currency_field="currency_id",
+        tracking=True,
+    )
 
     @api.depends(
         "line_ids.list_total",
