@@ -44,7 +44,7 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
         event.preventDefault();
         event.stopPropagation();
         const form = event.currentTarget;
-        this._hideError();
+        this._hideErrorBox();
         if (!form.checkValidity()) {
             form.classList.add("was-validated");
             return;
@@ -103,10 +103,18 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
         }
     },
 
-    _showSuccess(response) {
-        this.el.querySelector(".o_wpo_success_message").textContent = response.message;
-        this.el.querySelector(".o_wpo_reference").textContent = response.reference;
-        window.location.href = response.portal_url;
-}
+    _showSuccessBox(response) {
+        const body = this.el.querySelector(".o_wpo_form_body");
+        const footer = this.el.querySelector(".o_wpo_form_footer");
+        const success = this.el.querySelector(".o_wpo_success");
 
+        if (body) body.classList.add("d-none");
+        if (footer) footer.classList.add("d-none");
+        if (success) {
+            this.el.querySelector(".o_wpo_success_message").textContent = response.message;
+            this.el.querySelector(".o_wpo_reference").textContent = response.reference;
+            this.el.querySelector(".o_wpo_portal_link").href = response.portal_url;
+            success.classList.remove("d-none");
+        }
+    },
 });
