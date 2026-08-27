@@ -75,42 +75,45 @@
                             <div class="card-body p-4">
                                 <div>
                                     <small class="text-muted">Productos</small>
-                                    <ul class="list-unstyled">
-                                        <li t-foreach="offer.line_ids" t-as="line">
-                                            <strong t-field="line.product_id"/>
-                                            <span class="text-muted"> - <t t-out="line.quantity"/> <span t-field="line.uom_id"/></span>
-                                            <span class="d-block">
-                                                <small>Precio de lista:</small>
-                                                <span t-field="line.list_price"
-                                                    t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
-                                            </span>
-                                            <span class="d-block">
-                                                <small>Precio ofertado:</small>
-                                                <span t-field="line.offered_price"
-                                                    t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
-                                            </span>
-                                        </li>
-                                    </ul>
+                                    <div class="table-responsive mt-3">
+                                        <table class="table align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Producto</th>
+                                                    <th class="text-center">Cantidad</th>
+                                                    <th class="text-end">Precio de lista</th>
+                                                    <th class="text-end">Tu precio</th>
+                                                    <th class="text-end">Total ofertado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr t-foreach="offer.line_ids" t-as="line">
+                                                    <td>
+                                                        <strong t-field="line.product_id"/>
+                                                        <div class="small text-muted" t-field="line.uom_id"/>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <t t-out="line.quantity"/>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <span t-field="line.list_price"
+                                                            t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <span t-field="line.offered_price"
+                                                            t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <strong class="text-primary" t-field="line.offer_total"
+                                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
 
-                                <div class="row g-3 mt-3">
-                                    <div class="col-6 col-md-3">
-                                        <small class="text-muted d-block">Total de lista</small>
-                                        <strong t-field="offer.list_total"
-                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <small class="text-muted d-block">Total ofertado</small>
-                                        <strong class="text-primary" t-field="offer.offer_total"
-                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <small class="text-muted d-block">Total contraofertado</small>
-                                        <strong t-field="offer.counter_total"
-                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
-                                    </div>
-                                </div>
-
+                                <!-- Mensaje del cliente -->
                                 <div t-if="offer.customer_message" class="mt-4 p-3 bg-light rounded-3">
                                     <small class="text-muted d-block mb-1">Tu mensaje</small>
                                     <span t-field="offer.customer_message"/>
@@ -123,22 +126,32 @@
                             <div class="card-body p-4">
                                 <span class="o_wpo_eyebrow">NUEVA PROPUESTA</span>
                                 <h2 class="h4 mt-2">Recibiste una contraoferta</h2>
-                                <ul class="list-unstyled my-4">
-                                    <li t-foreach="offer.line_ids" t-as="line">
-                                        <div class="d-flex justify-content-between align-items-end">
-                                            <div>
-                                                <small class="text-muted d-block"><span t-field="line.product_id"/></small>
-                                                <strong t-field="line.counter_price"
+                                <div class="table-responsive mt-3">
+                                    <table class="table align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-center">Cantidad</th>
+                                                <th class="text-end">Precio contraoferta</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr t-foreach="offer.line_ids" t-as="line">
+                                                <td>
+                                                    <strong t-field="line.product_id"/>
+                                                    <div class="small text-muted" t-field="line.uom_id"/>
+                                                </td>
+                                                <td class="text-center">
+                                                    <t t-out="line.quantity"/>
+                                                </td>
+                                                <td class="text-end">
+                                                    <span t-field="line.counter_price"
                                                         t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
-                                            </div>
-                                            <div class="text-end">
-                                                <small class="text-muted d-block">Total</small>
-                                                <strong t-field="line.counter_total"
-                                                        t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
-                                            </div>
-                                        </div>
-                                    </li>
-                                </ul>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
 
                                 <p t-if="offer.counter_message" t-field="offer.counter_message"/>
                                 <div class="d-grid d-sm-flex gap-2">
@@ -186,5 +199,6 @@
             </div>
         </t>
     </template>
-    
+
+
 </odoo>
