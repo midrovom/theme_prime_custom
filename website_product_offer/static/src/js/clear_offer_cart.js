@@ -1,5 +1,3 @@
-/** @odoo-module **/
-
 import publicWidget from "@web/legacy/js/public/public_widget";
 import { rpc } from "@web/core/network/rpc";
 
@@ -82,15 +80,35 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
 
     _showError(message) {
         const alert = this.el.querySelector(".o_wpo_error");
-        alert.textContent = message || "No pudimos procesar la solicitud.";
-        alert.classList.remove("d-none");
-        alert.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        if (alert) {
+            alert.textContent = message || "No pudimos procesar la solicitud.";
+            alert.classList.remove("d-none");
+            alert.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } else {
+            alert(message);
+        }
     },
 
     _hideError() {
         const alert = this.el.querySelector(".o_wpo_error");
-        alert.textContent = "";
-        alert.classList.add("d-none");
+        if (alert) {
+            alert.textContent = "";
+            alert.classList.add("d-none");
+        }
     },
 
+    _showSuccess(response) {
+        const body = this.el.querySelector(".o_wpo_form_body");
+        const footer = this.el.querySelector(".o_wpo_form_footer");
+        const success = this.el.querySelector(".o_wpo_success");
+
+        if (body) body.classList.add("d-none");
+        if (footer) footer.classList.add("d-none");
+        if (success) {
+            this.el.querySelector(".o_wpo_success_message").textContent = response.message;
+            this.el.querySelector(".o_wpo_reference").textContent = response.reference;
+            this.el.querySelector(".o_wpo_portal_link").href = response.portal_url;
+            success.classList.remove("d-none");
+        }
+    },
 });
