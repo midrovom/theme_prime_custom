@@ -17,13 +17,14 @@ class WebsiteProductOfferController(http.Controller):
             return {"ok": False, "error": "El producto no existe."}
 
         offer_cart = list(request.session.get("wpo_offer_cart", []))
+        total_line = quantity * offered_price   
 
         existing_line = next((line for line in offer_cart if int(line.get("product_id")) == product.id), None)
         if existing_line:
             existing_line.update({
                 "quantity": quantity,
                 "offered_price": offered_price,
-                "total": offered_price,
+                "total": total_line,
                 "contact_name": kwargs.get("contact_name"),
                 "contact_email": kwargs.get("contact_email"),
                 "contact_phone": kwargs.get("contact_phone"),
@@ -34,7 +35,7 @@ class WebsiteProductOfferController(http.Controller):
                 "product_name": product.display_name,
                 "quantity": quantity,
                 "offered_price": offered_price,
-                "total": offered_price,
+                "total": total_line,
                 "list_price": product.lst_price,
                 "website_url": product.website_url,
                 "contact_name": kwargs.get("contact_name"),
@@ -44,8 +45,14 @@ class WebsiteProductOfferController(http.Controller):
 
         request.session["wpo_offer_cart"] = offer_cart
         request.session.modified = True
+        total_cart = sum(line["total"] for line in offer_cart)
 
-        return {"ok": True, "redirect": "/shop/offer/cart", "count": len(offer_cart)}
+        return {
+            "ok": True,
+            "redirect": "/shop/offer/cart",
+            "count": len(offer_cart),
+            "total": total_cart,
+        }
 
     @http.route("/shop/offer/cart", type="http", auth="public", website=True)
     def shop_offer_cart(self):

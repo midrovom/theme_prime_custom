@@ -20,7 +20,6 @@
 
                             <div class="card border-0 shadow-sm">
                                 <div class="card-body p-0">
-                                    <!-- Carrito vacío -->
                                     <t t-if="not offer_cart">
                                         <div class="text-center py-5">
                                             <i class="fa fa-shopping-basket fa-3x text-muted mb-3"/>
@@ -30,7 +29,6 @@
                                         </div>
                                     </t>
 
-                                    <!-- Carrito con productos -->
                                     <t t-else="">
                                         <div class="table-responsive">
                                             <table class="table align-middle mb-0">
@@ -38,7 +36,8 @@
                                                     <tr>
                                                         <th>Producto</th>
                                                         <th class="text-center">Cantidad</th>
-                                                        <th class="text-end">Precio ofrecido</th>
+                                                        <th class="text-end">Tu precio por unidad</th>
+                                                        <th class="text-end">Total propuesto</th>
                                                         <th/>
                                                     </tr>
                                                 </thead>
@@ -56,6 +55,9 @@
                                                             </td>
                                                             <td class="text-end">
                                                                 <t t-out="line['offered_price']"/>
+                                                            </td>
+                                                            <td class="text-end">
+                                                                <strong><t t-out="line['total']"/></strong>
                                                             </td>
                                                             <td class="text-end">
                                                                 <button type="button"
@@ -76,7 +78,7 @@
                                                 <div class="col-md-8"/>
                                                 <div class="col-md-4">
                                                     <div class="d-flex justify-content-between">
-                                                        <span>Total</span>
+                                                        <span>Total general</span>
                                                         <strong><t t-out="offer_cart_summary['total']"/></strong>
                                                     </div>
                                                 </div>
@@ -138,4 +140,5 @@
         </t>
     </template>
 </odoo>
+
 
