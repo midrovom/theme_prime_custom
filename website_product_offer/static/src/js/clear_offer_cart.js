@@ -97,18 +97,12 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
         }
     },
 
-    _showSuccessBox(response) {
-        const body = this.el.querySelector(".o_wpo_form_body");
-        const footer = this.el.querySelector(".o_wpo_form_footer");
-        const success = this.el.querySelector(".o_wpo_success");
-
-        if (body) body.classList.add("d-none");
-        if (footer) footer.classList.add("d-none");
-        if (success) {
-            this.el.querySelector(".o_wpo_success_message").textContent = response.message;
-            this.el.querySelector(".o_wpo_reference").textContent = response.reference;
-            this.el.querySelector(".o_wpo_portal_link").href = response.portal_url;
-            success.classList.remove("d-none");
-        }
+    _showSuccess(response) {
+        this.el.querySelector(".o_wpo_form_body").classList.add("d-none");
+        this.el.querySelector(".o_wpo_form_footer").classList.add("d-none");
+        this.el.querySelector(".o_wpo_success_message").textContent = response.message;
+        this.el.querySelector(".o_wpo_reference").textContent = response.reference;
+        this.el.querySelector(".o_wpo_portal_link").href = response.portal_url;
+        this.el.querySelector(".o_wpo_success").classList.remove("d-none");
     },
 });
