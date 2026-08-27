@@ -17,7 +17,7 @@ class WebsiteProductOfferController(http.Controller):
             return {"ok": False, "error": "El producto no existe."}
 
         offer_cart = list(request.session.get("wpo_offer_cart", []))
-        total_line = quantity * offered_price   
+        total_line = quantity * offered_price
 
         existing_line = next((line for line in offer_cart if int(line.get("product_id")) == product.id), None)
         if existing_line:
@@ -53,6 +53,21 @@ class WebsiteProductOfferController(http.Controller):
             "count": len(offer_cart),
             "total": total_cart,
         }
+
+    @http.route("/shop/offer/remove", type="json", auth="public", website=True)
+    def shop_offer_remove(self, product_id=None, **kwargs):
+        """Eliminar una línea del carrito de oferta por product_id"""
+        if not product_id:
+            return {"ok": False, "error": "Producto inválido."}
+
+        offer_cart = list(request.session.get("wpo_offer_cart", []))
+        new_cart = [line for line in offer_cart if int(line.get("product_id")) != int(product_id)]
+
+        request.session["wpo_offer_cart"] = new_cart
+        request.session.modified = True
+        total_cart = sum(line["total"] for line in new_cart)
+
+        return {"ok": True, "redirect": "/shop/offer/cart", "count": len(new_cart), "total": total_cart}
 
     @http.route("/shop/offer/cart", type="http", auth="public", website=True)
     def shop_offer_cart(self):
@@ -119,8 +134,8 @@ class WebsiteProductOfferController(http.Controller):
             "message": "Tu oferta fue enviada correctamente.",
         }
 
-    @http.route("/shop/offer/clear", type="json", auth="public", website=True)
-    def shop_offer_clear(self, **kwargs):
-        request.session.pop("wpo_offer_cart", None)
-        request.session.modified = True
-        return {"ok": True, "redirect": "/shop/offer/cart"}
+    # @http.route("/shop/offer/clear", type="json", auth="public", website=True)
+    # def shop_offer_clear(self, **kwargs):
+    #     request.session.pop("wpo_offer_cart", None)
+    #     request.session.modified = True
+    #     return {"ok": True, "redirect": "/shop/offer/cart"}

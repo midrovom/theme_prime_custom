@@ -72,7 +72,6 @@
                                             </table>
                                         </div>
 
-                                        <!-- Resumen de totales -->
                                         <div class="border-top p-4">
                                             <div class="row">
                                                 <div class="col-md-8"/>
@@ -89,7 +88,6 @@
                             </div>
                         </div>
 
-                        <!-- Columna lateral con datos de contacto -->
                         <div class="col-lg-4">
                             <div class="card border-0 shadow-sm">
                                 <div class="card-body">
@@ -98,28 +96,23 @@
                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                         <div class="mb-3">
                                             <label class="form-label">Nombre</label>
-                                            <input type="text" name="contact_name" class="form-control"
-                                                   required="required" maxlength="120" t-att-value="contact_name"/>
+                                            <input type="text" name="contact_name" class="form-control" required="required" maxlength="120" t-att-value="contact_name"/>
                                         </div>
                                         <div class="mb-3">
                                             <label class="form-label">Empresa (opcional)</label>
-                                            <input type="text" name="company_name" class="form-control"
-                                                   maxlength="160" t-att-value="company_name"/>
+                                            <input type="text" name="company_name" class="form-control" maxlength="160" t-att-value="company_name"/>
                                         </div>
                                         <div class="mb-3">
                                             <label class="form-label">Correo</label>
-                                            <input type="email" name="contact_email" class="form-control"
-                                                   maxlength="160" t-att-value="contact_email"/>
+                                            <input type="email" name="contact_email" class="form-control" maxlength="160" t-att-value="contact_email"/>
                                         </div>
                                         <div class="mb-3">
                                             <label class="form-label">Teléfono</label>
-                                            <input type="tel" name="contact_phone" class="form-control"
-                                                   maxlength="60" t-att-value="contact_phone"/>
+                                            <input type="tel" name="contact_phone" class="form-control" maxlength="60" t-att-value="contact_phone"/>
                                         </div>
                                         <div class="mb-3">
                                             <label class="form-label">Mensaje (opcional)</label>
-                                            <textarea name="customer_message" class="form-control"
-                                                      rows="4" maxlength="2000"><t t-out="customer_message"/></textarea>
+                                            <textarea name="customer_message" class="form-control" rows="4" maxlength="2000"><t t-out="customer_message"/></textarea>
                                         </div>
                                         <button type="submit" class="btn btn-primary btn-lg w-100 o_wpo_submit">
                                             <span class="o_wpo_submit_label">
