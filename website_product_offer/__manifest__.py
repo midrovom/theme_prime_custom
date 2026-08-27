@@ -29,6 +29,7 @@
         "web.assets_frontend": [
             "website_product_offer/static/src/scss/product_offer.scss",
             "website_product_offer/static/src/js/product_offer.js",
+            'website_product_offer/static/src/js/clear_offer_cart.js',
         ],
     },
     "application": True,

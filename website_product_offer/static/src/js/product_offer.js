@@ -124,14 +124,6 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
             quantity > 0 && price > 0 ? this._formatMoney(quantity * price) : "—";
     },
 
-    async _onClearCart(ev) {
-        ev.preventDefault();
-        const response = await rpc("/shop/offer/clear", {});
-        if (response.ok) {
-            window.location.href = response.redirect;
-        }
-    },
-
     async _onQuantityCommitted() {
         const quantity = Number(this.el.querySelector(".o_wpo_quantity")?.value || 0);
         if (!quantity || !this.config) {

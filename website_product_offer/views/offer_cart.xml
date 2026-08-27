@@ -76,7 +76,7 @@
                                                 <div class="col-md-8"/>
                                                 <div class="col-md-4">
                                                     <div class="d-flex justify-content-between">
-                                                        <span>Total de productos</span>
+                                                        <span>Total</span>
                                                         <strong><t t-out="offer_cart_summary['total']"/></strong>
                                                     </div>
                                                 </div>
@@ -100,7 +100,7 @@
                                                    required="required" maxlength="120" t-att-value="contact_name"/>
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label">Empresa</label>
+                                            <label class="form-label">Empresa (opcional)</label>
                                             <input type="text" name="company_name" class="form-control"
                                                    maxlength="160" t-att-value="company_name"/>
                                         </div>
@@ -115,7 +115,7 @@
                                                    maxlength="60" t-att-value="contact_phone"/>
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label">Mensaje</label>
+                                            <label class="form-label">Mensaje (opcional)</label>
                                             <textarea name="customer_message" class="form-control"
                                                       rows="4" maxlength="2000"><t t-out="customer_message"/></textarea>
                                         </div>
