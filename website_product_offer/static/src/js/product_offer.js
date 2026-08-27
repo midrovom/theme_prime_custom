@@ -43,15 +43,6 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         this._setLoading(true);
         try {
             const response = await rpc("/shop/offer/config", { product_id: productId });
-            // if (!response.ok) {
-            //     this._showError(response.error);
-            //     if (response.login_required) {
-            //         window.setTimeout(() => {
-            //             window.location.href = `/web/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-            //         }, 900);
-            //     }
-            //     return;
-            // }
             if (response.error) {
                 this._showError(response.error);
                 if (response.login_required) {

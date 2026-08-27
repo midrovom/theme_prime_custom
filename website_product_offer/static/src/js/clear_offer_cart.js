@@ -16,11 +16,11 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
             if (response.ok) {
                 window.location.href = response.redirect;
             } else {
-                alert(response.error || "No se pudo limpiar el carrito.");
+                window.alert(response.error || "No se pudo limpiar el carrito.");
             }
         } catch (error) {
             console.error(error);
-            alert("Error al limpiar el carrito.");
+            window.alert("Error al limpiar el carrito.");
         }
     },
 
@@ -32,11 +32,11 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
             if (response.ok) {
                 window.location.href = response.redirect;
             } else {
-                alert(response.error || "No se pudo eliminar el producto.");
+                window.alert(response.error || "No se pudo eliminar el producto.");
             }
         } catch (error) {
             console.error(error);
-            alert("Error al eliminar el producto.");
+            window.alert("Error al eliminar el producto.");
         }
     },
 
@@ -44,7 +44,7 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
         event.preventDefault();
         event.stopPropagation();
         const form = event.currentTarget;
-        this._hideError();
+        this._hideErrorBox();
 
         if (!form.checkValidity()) {
             form.classList.add("was-validated");
@@ -57,12 +57,12 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
         try {
             const response = await rpc("/shop/offer/submit", payload);
             if (!response.ok) {
-                this._showError(response.error || "No pudimos registrar la oferta.");
+                this._showErrorBox(response.error || "No pudimos registrar la oferta.");
                 return;
             }
-            this._showSuccess(response);
+            this._showSuccessBox(response);
         } catch (error) {
-            this._showError("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
+            this._showErrorBox("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
         } finally {
             this._setLoading(false);
         }
@@ -78,26 +78,26 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
         button.querySelector(".o_wpo_submit_loading").classList.toggle("d-none", !loading);
     },
 
-    _showError(message) {
-        const alert = this.el.querySelector(".o_wpo_error");
-        if (alert) {
-            alert.textContent = message || "No pudimos procesar la solicitud.";
-            alert.classList.remove("d-none");
-            alert.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    _showErrorBox(message) {
+        const alertBox = this.el.querySelector(".o_wpo_error");
+        if (alertBox) {
+            alertBox.textContent = message || "No pudimos procesar la solicitud.";
+            alertBox.classList.remove("d-none");
+            alertBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
         } else {
-            alert(message);
+            window.alert(message);
         }
     },
 
-    _hideError() {
-        const alert = this.el.querySelector(".o_wpo_error");
-        if (alert) {
-            alert.textContent = "";
-            alert.classList.add("d-none");
+    _hideErrorBox() {
+        const alertBox = this.el.querySelector(".o_wpo_error");
+        if (alertBox) {
+            alertBox.textContent = "";
+            alertBox.classList.add("d-none");
         }
     },
 
-    _showSuccess(response) {
+    _showSuccessBox(response) {
         const body = this.el.querySelector(".o_wpo_form_body");
         const footer = this.el.querySelector(".o_wpo_form_footer");
         const success = this.el.querySelector(".o_wpo_success");
