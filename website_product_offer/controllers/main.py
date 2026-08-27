@@ -112,7 +112,6 @@ class WebsiteProductOfferController(http.Controller):
         }
 
     # CONTROLADOR CARRITO
-
     @http.route("/shop/offer/add", type="json", auth="public", website=True)
     def shop_offer_add(self, **kwargs):
         product_id = int(kwargs.get("product_id") or 0)
@@ -218,7 +217,6 @@ class WebsiteProductOfferController(http.Controller):
             "contact_email": offer_cart and offer_cart[0].get("contact_email") or "",
             "contact_phone": offer_cart and offer_cart[0].get("contact_phone") or "",
         })
-
 
     # CONTROLADOR ENVIO
     @http.route('/shop/offer/submit', type="json", auth="public", methods=["POST"], website=True)
