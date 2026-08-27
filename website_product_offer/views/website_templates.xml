@@ -110,15 +110,12 @@
                                         <div class="row g-3">
                                             <div class="col-12 col-md-6">
                                                 <label for="wpo_contact_name" class="form-label">Nombre de contacto</label>
-                                                <input id="wpo_contact_name" name="contact_name" type="text"
-                                                       class="form-control" required="required" maxlength="120"
-                                                       autocomplete="name"
-                                                       t-att-value="request.env.user.partner_id.name if not request.env.user._is_public() else ''"/>
+                                                <input id="wpo_contact_name" name="contact_name" type="text" class="form-control" required="required" maxlength="120"
+                                                       autocomplete="name" t-att-value="request.env.user.partner_id.name if not request.env.user._is_public() else ''"/>
                                             </div>
-                                            <div class="col-12 col-md-6">
+                                            <div class="col-12 col-md-6" t-attf-style="display: none;">
                                                 <label for="wpo_company_name" class="form-label">Empresa <span class="text-muted">(opcional)</span></label>
-                                                <input id="wpo_company_name" name="company_name" type="text"
-                                                       class="form-control" maxlength="160" autocomplete="organization"/>
+                                                <input id="wpo_company_name" name="company_name" type="text" class="form-control" maxlength="160" autocomplete="organization"/>
                                             </div>
                                             <div class="col-12 col-md-6">
                                                 <label for="wpo_contact_email" class="form-label">Correo</label>
@@ -128,15 +125,11 @@
                                             </div>
                                             <div class="col-12 col-md-6">
                                                 <label for="wpo_contact_phone" class="form-label">Teléfono o WhatsApp</label>
-                                                <input id="wpo_contact_phone" name="contact_phone" type="tel"
-                                                       class="form-control" maxlength="60" autocomplete="tel"
-                                                       t-att-value="(request.env.user.partner_id.mobile or request.env.user.partner_id.phone) if not request.env.user._is_public() else ''"/>
+                                                <input id="wpo_contact_phone" name="contact_phone" type="tel" class="form-control" maxlength="60" autocomplete="tel" t-att-value="(request.env.user.partner_id.mobile or request.env.user.partner_id.phone) if not request.env.user._is_public() else ''"/>
                                             </div>
-                                            <div class="col-12">
+                                            <div class="col-12" t-attf-style="display: none;">
                                                 <label for="wpo_customer_message" class="form-label">Mensaje <span class="text-muted">(opcional)</span></label>
-                                                <textarea id="wpo_customer_message" name="customer_message" rows="3"
-                                                          class="form-control" maxlength="2000"
-                                                          placeholder="Cuéntanos si necesitas entrega en una fecha específica o alguna condición especial."/>
+                                                <textarea id="wpo_customer_message" name="customer_message" rows="3" class="form-control" maxlength="2000" placeholder="Cuéntanos si necesitas entrega en una fecha específica o alguna condición especial."/>
                                             </div>
                                         </div>
 
