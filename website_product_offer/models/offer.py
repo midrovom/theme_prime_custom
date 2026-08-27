@@ -125,11 +125,7 @@ class WebsiteSaleOffer(models.Model):
         tracking=True,
     )
 
-    @api.depends(
-        "line_ids.list_total",
-        "line_ids.offer_total",
-        "line_ids.counter_total",
-    )
+    @api.depends("line_ids.list_total", "line_ids.offer_total", "line_ids.counter_total")
     def _compute_amounts(self):
         for offer in self:
             offer.list_total = sum(offer.line_ids.mapped("list_total"))
@@ -152,99 +148,83 @@ class WebsiteSaleOffer(models.Model):
     def create(self, vals_list):
 
         _logger.info(">>> WEBSITE.SALE.OFFER CREATE")
-        _logger.info(">>> VALORES RECIBIDOS: %s", vals_list,)
+        _logger.info(">>> VALORES RECIBIDOS: %s", vals_list)
 
         for vals in vals_list:
             if vals.get("name", "/") == "/":
-                vals["name"] = (
-                    self.env["ir.sequence"].next_by_code(
-                        "website.sale.offer"
-                    )
-                    or "/"
-                )
-
+                vals["name"] = self.env["ir.sequence"].next_by_code("website.sale.offer") or "/"
         offers = super().create(vals_list)
 
-        _logger.info(">>> WEBSITE.SALE.OFFER CREADA: %s", offers.ids,)
-
+        _logger.info( ">>> WEBSITE.SALE.OFFER CREADA: %s",
+            offers.ids,
+        )
+        
         offers._portal_ensure_token()
         return offers
 
     def _compute_access_url(self):
         super()._compute_access_url()
-
         for offer in self:
-            offer.access_url = (
-                f"/my/offers/{offer.id}"
-            )
+            offer.access_url = f"/my/offers/{offer.id}"
 
-    def get_portal_url(self, suffix=None, report_type=None, download=None, query_string=None, anchor=None,):
+    def get_portal_url(
+        self,
+        suffix=None,
+        report_type=None,
+        download=None,
+        query_string=None,
+        anchor=None,
+    ):
         self.ensure_one()
         self._portal_ensure_token()
-
         url = f"/my/offers/{self.id}"
         if suffix:
             url += suffix
-        params = {
-            "access_token": self.access_token,
-        }
+        params = {"access_token": self.access_token}
         if report_type:
             params["report_type"] = report_type
         if download:
             params["download"] = download
-
-        result = (f"{url}?{urlencode(params)}")
-
+        result = f"{url}?{urlencode(params)}"
         if query_string:
-            result += (
-                f"&{query_string.lstrip('?')}"
-            )
-
+            result += f"&{query_string.lstrip('?')}"
         if anchor:
             result += f"#{anchor}"
-
         return result
-
+    
     def _check_stock_before_conversion(self):
         self.ensure_one()
-        for line in self.line_ids:
-            line._check_stock_before_conversion()
+        if not self.website_id.offer_limit_to_stock:
+            return
+        available_qty = self._current_available_qty()
+        if self.quantity > available_qty:
+            raise UserError(
+                _(
+                    "No es posible crear el presupuesto: se solicitaron %(requested)s unidades y actualmente hay %(available)s disponibles.",
+                    requested=self.quantity,
+                    available=available_qty,
+                )
+            )
 
     def _ensure_customer_partner(self):
         self.ensure_one()
         if self.partner_id:
             return self.partner_id
 
-        Partner = (
-            self.env["res.partner"]
-            .sudo()
-            .with_company(self.company_id)
-        )
-
+        Partner = self.env["res.partner"].sudo().with_company(self.company_id)
         partner = Partner.browse()
         if self.contact_email:
             matches = Partner.search(
-                [
-                    (
-                        "email",
-                        "=ilike",
-                        self.contact_email.strip(),
-                    )
-                ],
+                [("email", "=ilike", self.contact_email.strip())],
                 limit=2,
             )
-
             if len(matches) == 1:
                 partner = matches
 
         if not partner:
             partner_name = self.contact_name
             if self.company_name:
-                partner_name = (
-                    f"{self.company_name} - "
-                    f"{self.contact_name}"
-                )
-
+                partner_name = f"{self.company_name} - {self.contact_name}"
             partner = Partner.create(
                 {
                     "name": partner_name,
@@ -254,14 +234,11 @@ class WebsiteSaleOffer(models.Model):
                     "customer_rank": 1,
                 }
             )
-
         self.sudo().partner_id = partner
-
         return partner
 
     def _quotation_action(self):
         self.ensure_one()
-
         return {
             "type": "ir.actions.act_window",
             "name": _("Presupuesto"),
@@ -402,114 +379,32 @@ class WebsiteSaleOffer(models.Model):
 
     def action_accept_offer(self):
         self.ensure_one()
-
-        if not self.line_ids:
-            raise UserError(
-                _("La oferta no contiene productos.")
-            )
-
-        return self._convert_to_quotation("offered_price")
+        return self._convert_to_quotation(self.offered_price)
 
     def action_send_counter(self):
         self.ensure_one()
-
-        if self.state not in (
-            "draft",
-            "review",
-            "counter",
-        ):
-            raise UserError(
-                _(
-                    "Esta oferta ya no admite "
-                    "una contraoferta."
-                )
-            )
-
-        if not self.line_ids:
-            raise UserError(
-                _("La oferta no contiene productos.")
-            )
-
-        invalid_lines = self.line_ids.filtered(lambda line: line.counter_price <= 0)
-
-        if invalid_lines:
-            products = ", ".join(
-                invalid_lines.mapped(
-                    "product_id.display_name"
-                )
-            )
-
-            raise UserError(
-                _(
-                    "Ingrese un precio de contraoferta "
-                    "mayor que cero para los siguientes "
-                    "productos: %s",
-                    products,
-                )
-            )
-
+        if self.state not in ("draft", "review", "counter"):
+            raise UserError(_("Esta oferta ya no admite una contraoferta."))
+        if self.counter_price <= 0:
+            raise UserError(_("Ingrese un precio de contraoferta mayor que cero."))
         self.state = "counter"
-
         self.message_post(
-            body=_(
-                "Se envió una contraoferta para "
-                "%s productos.",
-                len(self.line_ids),
-            ),
+            body=_("Se envió una contraoferta de %(price)s por unidad.", price=self.counter_price),
             subtype_xmlid="mail.mt_note",
         )
-
         self._send_status_email("website_product_offer.mail_template_offer_counter")
 
     def action_customer_accept_counter(self):
         self.ensure_one()
-        if self.state != "counter":
-            raise UserError(
-                _("La contraoferta ya no está disponible.")
-            )
-
-        if (
-            self.valid_until
-            and self.valid_until
-            < fields.Date.context_today(self)
-        ):
-            raise UserError(
-                _(
-                    "La contraoferta venció. "
-                    "Solicita una nueva revisión comercial."
-                )
-            )
-
-        if not self.line_ids:
-            raise UserError(
-                _("La oferta no contiene productos.")
-            )
-
-        invalid_lines = self.line_ids.filtered(lambda line: line.counter_price <= 0)
-
-        if invalid_lines:
-            products = ", ".join(
-                invalid_lines.mapped(
-                    "product_id.display_name"
-                )
-            )
-
-            raise UserError(
-                _(
-                    "Las siguientes líneas no tienen "
-                    "un precio de contraoferta válido: %s",
-                    products,
-                )
-            )
-
-        return self._convert_to_quotation("counter_price")
+        if self.state != "counter" or self.counter_price <= 0:
+            raise UserError(_("La contraoferta ya no está disponible."))
+        if self.valid_until and self.valid_until < fields.Date.context_today(self):
+            raise UserError(_("La contraoferta venció. Solicita una nueva revisión comercial."))
+        return self._convert_to_quotation(self.counter_price)
 
     def action_reject(self):
         for offer in self:
-            if offer.state not in (
-                "converted",
-                "cancelled",
-            ):
+            if offer.state not in ("converted", "cancelled"):
                 offer.state = "rejected"
                 offer._send_status_email("website_product_offer.mail_template_offer_rejected")
 
@@ -520,63 +415,34 @@ class WebsiteSaleOffer(models.Model):
 
     def action_customer_cancel(self):
         self.ensure_one()
-
-        if self.state not in (
-            "draft",
-            "review",
-            "counter",
-        ):
-            raise UserError(
-                _("Esta oferta ya no puede cancelarse.")
-            )
-
+        if self.state not in ("draft", "review", "counter"):
+            raise UserError(_("Esta oferta ya no puede cancelarse."))
         self.state = "cancelled"
 
     def action_open_quotation(self):
         self.ensure_one()
-
         if not self.sale_order_id:
-            raise UserError(
-                _(
-                    "La oferta todavía no tiene "
-                    "un presupuesto."
-                )
-            )
+            raise UserError(_("La oferta todavía no tiene un presupuesto."))
         return self._quotation_action()
 
     def _send_status_email(self, template_xmlid):
-        template = self.env.ref(template_xmlid, raise_if_not_found=False,)
-
+        template = self.env.ref(template_xmlid, raise_if_not_found=False)
         if not template:
             return
-
         for offer in self:
-            recipient = (
-                offer.contact_email
-                or offer.partner_id.email
-            )
-
+            recipient = offer.contact_email or offer.partner_id.email
             if not recipient:
                 continue
-
             try:
                 template.sudo().send_mail(
                     offer.id,
                     force_send=False,
                     raise_exception=False,
-                    email_values={
-                        "email_to": recipient,
-                    },
+                    email_values={"email_to": recipient},
                 )
             except Exception:
-                _logger.exception( "No se pudo poner en cola " "el correo de la oferta %s", offer.name,)
+                _logger.exception("No se pudo poner en cola el correo de la oferta %s", offer.name)
 
     @api.model
     def _default_valid_until(self, website):
-        return (
-            fields.Date.context_today(self)
-            + timedelta(
-                days=website.offer_validity_days
-            )
-        )
-
+        return fields.Date.context_today(self) + timedelta(days=website.offer_validity_days)
