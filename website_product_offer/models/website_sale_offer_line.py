@@ -32,49 +32,23 @@ class WebsiteSaleOfferLine(models.Model):
     offer_total = fields.Monetary(string="Total ofertado", compute="_compute_amounts", currency_field="currency_id",
         store=True,
     )
-    counter_total = fields.Monetary(string="Total contraofertado", compute="_compute_amounts", currency_field="currency_id",
-        store=True,
-    )
+    # counter_total = fields.Monetary(string="Total contraofertado", compute="_compute_amounts", currency_field="currency_id",
+    #     store=True,
+    # )
     requested_discount_percent = fields.Float(string="Diferencia solicitada (%)", compute="_compute_amounts", store=True,
         digits=(16, 2),
     )
     currency_id = fields.Many2one(related="offer_id.currency_id", string="Moneda", store=True,readonly=True,)
 
-    @api.depends(
-        "quantity",
-        "list_price",
-        "offered_price",
-        "counter_price",
-    )
+    @api.depends("quantity", "list_price", "offered_price", "counter_price",)
     def _compute_amounts(self):
         for line in self:
-            line.list_total = (
-                line.quantity * line.list_price
-            )
+            line.list_total = (line.quantity * line.list_price)
+            line.offer_total = (line.quantity * line.offered_price)
+            # line.counter_total = (line.quantity * line.counter_price)
+            line.requested_discount_percent = (((line.list_price - line.offered_price) / line.list_price) * 100 if line.list_price else 0.0)
 
-            line.offer_total = (
-                line.quantity * line.offered_price
-            )
-
-            line.counter_total = (
-                line.quantity * line.counter_price
-            )
-
-            line.requested_discount_percent = (
-                (
-                    (line.list_price - line.offered_price)
-                    / line.list_price
-                ) * 100
-                if line.list_price
-                else 0.0
-            )
-
-    @api.constrains(
-        "quantity",
-        "list_price",
-        "offered_price",
-        "counter_price",
-    )
+    @api.constrains("quantity", "list_price", "offered_price", "counter_price",)
     def _check_positive_values(self):
         for line in self:
             if line.quantity <= 0:
@@ -98,7 +72,6 @@ class WebsiteSaleOfferLine(models.Model):
 
     def _current_available_qty(self):
         self.ensure_one()
-
         return self.product_tmpl_id._website_offer_available_qty(
             self.offer_id.website_id,
             self.product_id,
@@ -111,7 +84,6 @@ class WebsiteSaleOfferLine(models.Model):
             return
 
         available_qty = self._current_available_qty()
-
         if self.quantity > available_qty:
             raise ValidationError(
                 _(

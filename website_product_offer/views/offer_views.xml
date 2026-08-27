@@ -94,7 +94,7 @@
                                 <field name="converted_price" readonly="1"/>
                                 <field name="list_total"/>
                                 <field name="offer_total"/>
-                                <field name="counter_total"/>
+                                <!-- <field name="counter_total"/> -->
                             </list>
                         </field>
                     </group>

@@ -100,7 +100,12 @@ class WebsiteSaleOffer(models.Model):
         string="Productos",
         copy=True,
     )
-    list_total = fields.Monetary(string="Total de lista", compute="_compute_amounts", currency_field="currency_id", store=True,)
+    list_total = fields.Monetary(
+        string="Total de lista",
+        compute="_compute_amounts",
+        currency_field="currency_id",
+        store=True,
+    )
     offer_total = fields.Monetary(
         string="Total ofertado",
         compute="_compute_amounts",
@@ -125,13 +130,17 @@ class WebsiteSaleOffer(models.Model):
         tracking=True,
     )
 
-    @api.depends("line_ids.list_total", "line_ids.offer_total", "line_ids.counter_total")
+    @api.depends("quantity", "list_price", "offered_price", "counter_price")
     def _compute_amounts(self):
         for offer in self:
-            offer.list_total = sum(offer.line_ids.mapped("list_total"))
-            offer.offer_total = sum(offer.line_ids.mapped("offer_total"))
-            offer.counter_total = sum(offer.line_ids.mapped("counter_total"))
-            offer.requested_discount_percent = (((offer.list_total - offer.offer_total) / offer.list_total) * 100 if offer.list_total else 0.0)
+            offer.list_total = offer.quantity * offer.list_price
+            offer.offer_total = offer.quantity * offer.offered_price
+            offer.counter_total = offer.quantity * offer.counter_price
+            offer.requested_discount_percent = (
+                ((offer.list_price - offer.offered_price) / offer.list_price) * 100
+                if offer.list_price
+                else 0.0
+            )
 
     @api.constrains("line_ids")
     def _check_lines(self):
