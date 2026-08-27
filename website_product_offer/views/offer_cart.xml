@@ -60,9 +60,7 @@
                                                                 <strong><t t-out="line['total']"/></strong>
                                                             </td>
                                                             <td class="text-end">
-                                                                <button type="button"
-                                                                        class="btn btn-sm btn-outline-danger o_wpo_remove_line"
-                                                                        t-att-data-product-id="line['product_id']">
+                                                                <button type="button" class="btn btn-sm btn-outline-danger o_wpo_remove_line" t-att-data-product-id="line['product_id']">
                                                                     <i class="fa fa-trash"/>
                                                                 </button>
                                                             </td>

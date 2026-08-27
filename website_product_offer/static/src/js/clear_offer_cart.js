@@ -1,46 +1,45 @@
-/** Manejar limpiar todo el carrito */
-async function _onClearCart(ev) {
-    ev.preventDefault();
-    try {
-        const response = await rpc("/shop/offer/clear", {});
-        if (response.ok) {
-            window.location.href = response.redirect;
-        } else {
-            alert(response.error || "No se pudo limpiar el carrito.");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("Error al limpiar el carrito.");
-    }
-}
+odoo.define('website_product_offer.clear_offer_cart', function (require) {
+    "use strict";
 
-/** Manejar eliminar una línea específica */
-async function _onRemoveLine(ev) {
-    ev.preventDefault();
-    const productId = ev.currentTarget.dataset.productId;
-    try {
-        const response = await rpc("/shop/offer/remove", { product_id: productId });
-        if (response.ok) {
-            window.location.href = response.redirect;
-        } else {
-            alert(response.error || "No se pudo eliminar el producto.");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("Error al eliminar el producto.");
-    }
-}
+    const publicWidget = require('web.public.widget');
+    const rpc = require('web.rpc');
 
-/** Registrar eventos al cargar la página */
-document.addEventListener("DOMContentLoaded", () => {
-    // Botón limpiar carrito
-    const clearBtn = document.querySelector(".o_wpo_clear_cart");
-    if (clearBtn) {
-        clearBtn.addEventListener("click", _onClearCart);
-    }
+    publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
+        selector: '.o_wpo_cart',  
+        events: {
+            'click .o_wpo_clear_cart': '_onClearCart',
+            'click .o_wpo_remove_line': '_onRemoveLine',
+        },
 
-    // Botones eliminar línea
-    document.querySelectorAll(".o_wpo_remove_line").forEach(btn => {
-        btn.addEventListener("click", _onRemoveLine);
+        async _onClearCart(ev) {
+            ev.preventDefault();
+            try {
+                const response = await rpc.query({route: "/shop/offer/clear", params: {}});
+                if (response.ok) {
+                    window.location.href = response.redirect;
+                } else {
+                    alert(response.error || "No se pudo limpiar el carrito.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error al limpiar el carrito.");
+            }
+        },
+
+        async _onRemoveLine(ev) {
+            ev.preventDefault();
+            const productId = ev.currentTarget.dataset.productId;
+            try {
+                const response = await rpc.query({route: "/shop/offer/remove", params: {product_id: productId}});
+                if (response.ok) {
+                    window.location.href = response.redirect;
+                } else {
+                    alert(response.error || "No se pudo eliminar el producto.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error al eliminar el producto.");
+            }
+        },
     });
 });
