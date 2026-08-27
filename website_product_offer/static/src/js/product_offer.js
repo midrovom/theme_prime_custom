@@ -278,24 +278,14 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
     },
 
     _setLoading(loading) {
-        const button = this.el.querySelector(".o_wpo_submit_form");
+        const button = this.el.querySelector(".o_wpo_submit");
         if (!button) {
             return;
         }
         button.disabled = loading;
-        button.querySelector(".o_wpo_submit_form_label").classList.toggle("d-none", loading);
-        button.querySelector(".o_wpo_submit_form_loading").classList.toggle("d-none", !loading);
+        button.querySelector(".o_wpo_submit_label").classList.toggle("d-none", loading);
+        button.querySelector(".o_wpo_submit_loading").classList.toggle("d-none", !loading);
     },
-
-    // _setLoading(loading) {
-    //     const button = this.el.querySelector(".o_wpo_submit");
-    //     if (!button) {
-    //         return;
-    //     }
-    //     button.disabled = loading;
-    //     button.querySelector(".o_wpo_submit_label").classList.toggle("d-none", loading);
-    //     button.querySelector(".o_wpo_submit_loading").classList.toggle("d-none", !loading);
-    // },
 
     _showError(message) {
         const alert = this.el.querySelector(".o_wpo_error");
