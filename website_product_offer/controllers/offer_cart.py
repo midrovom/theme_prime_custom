@@ -3,21 +3,96 @@ from odoo.http import request
 
 class WebsiteProductOfferController(http.Controller):
 
+    # @http.route("/shop/offer/add", type="json", auth="public", website=True)
+    # def shop_offer_add(self, **kwargs):
+    #     product_id = int(kwargs.get("product_id") or 0)
+    #     quantity = float(kwargs.get("quantity") or 0)
+    #     offered_price = float(kwargs.get("offered_price") or 0)
+
+    #     if not product_id or quantity <= 0 or offered_price <= 0:
+    #         return {"ok": False, "error": "Datos inválidos."}
+
+    #     product = request.env["product.product"].sudo().browse(product_id)
+    #     if not product.exists():
+    #         return {"ok": False, "error": "El producto no existe."}
+
+    #     offer_cart = list(request.session.get("wpo_offer_cart", []))
+    #     total_line = quantity * offered_price
+
+    #     existing_line = next((line for line in offer_cart if int(line.get("product_id")) == product.id), None)
+    #     if existing_line:
+    #         existing_line.update({
+    #             "quantity": quantity,
+    #             "offered_price": offered_price,
+    #             "total": total_line,
+    #             "contact_name": kwargs.get("contact_name"),
+    #             "contact_email": kwargs.get("contact_email"),
+    #             "contact_phone": kwargs.get("contact_phone"),
+    #         })
+    #     else:
+    #         offer_cart.append({
+    #             "product_id": product.id,
+    #             "product_name": product.display_name,
+    #             "quantity": quantity,
+    #             "offered_price": offered_price,
+    #             "total": total_line,
+    #             "list_price": product.lst_price,
+    #             "website_url": product.website_url,
+    #             "contact_name": kwargs.get("contact_name"),
+    #             "contact_email": kwargs.get("contact_email"),
+    #             "contact_phone": kwargs.get("contact_phone"),
+    #         })
+
+    #     request.session["wpo_offer_cart"] = offer_cart
+    #     request.session.modified = True
+    #     total_cart = sum(line["total"] for line in offer_cart)
+
+    #     return {
+    #         "ok": True,
+    #         "redirect": "/shop/offer/cart",
+    #         "count": len(offer_cart),
+    #         "total": total_cart,
+    #     }
+
     @http.route("/shop/offer/add", type="json", auth="public", website=True)
     def shop_offer_add(self, **kwargs):
         product_id = int(kwargs.get("product_id") or 0)
-        quantity = float(kwargs.get("quantity") or 0)
-        offered_price = float(kwargs.get("offered_price") or 0)
+        quantity = self._number(kwargs.get("quantity"))
+        offered_price = self._number(kwargs.get("offered_price"))
 
         if not product_id or quantity <= 0 or offered_price <= 0:
-            return {"ok": False, "error": "Datos inválidos."}
+            return {"ok": False, "error": _("Datos inválidos.")}
 
-        product = request.env["product.product"].sudo().browse(product_id)
-        if not product.exists():
-            return {"ok": False, "error": "El producto no existe."}
+        data = self._get_product_data(product_id)
+        if not data["ok"]:
+            return data
+        website = data["website"]
 
-        offer_cart = list(request.session.get("wpo_offer_cart", []))
+        # Validaciones por producto
+        if quantity < data["min_qty"]:
+            return {
+                "ok": False,
+                "error": _("La cantidad mínima para este producto es %(quantity)s.", quantity=data["min_qty"]),
+            }
+        if data["max_qty"] and quantity > data["max_qty"]:
+            return {
+                "ok": False,
+                "error": _("La cantidad máxima disponible es %(quantity)s.", quantity=data["max_qty"]),
+            }
+        if offered_price <= 0:
+            return {"ok": False, "error": _("Ingresa un precio unitario válido.")}
+
+        pricelist, list_price = self._get_list_price(website, data["product"], quantity)
+        minimum_offer = list_price * data["minimum_price_percent"] / 100
+        if minimum_offer and offered_price < minimum_offer:
+            return {
+                "ok": False,
+                "error": _("La oferta está por debajo del mínimo permitido para este producto."),
+            }
+
+        product = data["product"]
         total_line = quantity * offered_price
+        offer_cart = list(request.session.get("wpo_offer_cart", []))
 
         existing_line = next((line for line in offer_cart if int(line.get("product_id")) == product.id), None)
         if existing_line:
@@ -25,6 +100,7 @@ class WebsiteProductOfferController(http.Controller):
                 "quantity": quantity,
                 "offered_price": offered_price,
                 "total": total_line,
+                "list_price": list_price,
                 "contact_name": kwargs.get("contact_name"),
                 "contact_email": kwargs.get("contact_email"),
                 "contact_phone": kwargs.get("contact_phone"),
@@ -36,7 +112,7 @@ class WebsiteProductOfferController(http.Controller):
                 "quantity": quantity,
                 "offered_price": offered_price,
                 "total": total_line,
-                "list_price": product.lst_price,
+                "list_price": list_price,
                 "website_url": product.website_url,
                 "contact_name": kwargs.get("contact_name"),
                 "contact_email": kwargs.get("contact_email"),
@@ -83,59 +159,3 @@ class WebsiteProductOfferController(http.Controller):
             "contact_email": offer_cart and offer_cart[0].get("contact_email") or "",
             "contact_phone": offer_cart and offer_cart[0].get("contact_phone") or "",
         })
-
-    @http.route("/shop/offer/submit", type="json", auth="public", website=True)
-    def shop_offer_submit(self, **kwargs):
-        offer_cart = request.session.get("wpo_offer_cart", [])
-        if not offer_cart:
-            return {"ok": False, "error": "No tienes productos en tu oferta."}
-
-        contact_name = (kwargs.get("contact_name") or "").strip()
-        contact_email = (kwargs.get("contact_email") or "").strip()
-        contact_phone = (kwargs.get("contact_phone") or "").strip()
-        company_name = (kwargs.get("company_name") or "").strip()
-        customer_message = (kwargs.get("customer_message") or "").strip()
-
-        Offer = request.env["website.sale.offer"].sudo()
-        offer = Offer.create({
-            "website_id": request.website.id,
-            "company_id": request.website.company_id.id,
-            "pricelist_id": request.website.pricelist_id.id,
-            "contact_name": contact_name,
-            "contact_email": contact_email,
-            "contact_phone": contact_phone,
-            "company_name": company_name,
-            "customer_message": customer_message,
-            "valid_until": Offer._default_valid_until(request.website),
-            "source_url": "/shop/offer/cart",
-        })
-
-        OfferLine = request.env["website.sale.offer.line"].sudo()
-        for item in offer_cart:
-            product = request.env["product.product"].sudo().browse(int(item["product_id"]))
-            if not product.exists():
-                continue
-            OfferLine.create({
-                "offer_id": offer.id,
-                "product_id": product.id,
-                "quantity": float(item["quantity"]),
-                "list_price": float(item["list_price"]),
-                "offered_price": float(item["offered_price"]),
-                "available_qty_snapshot": product.qty_available,
-            })
-
-        request.session.pop("wpo_offer_cart", None)
-        request.session.modified = True
-
-        return {
-            "ok": True,
-            "reference": offer.name,
-            "portal_url": offer.get_portal_url(),
-            "message": "Tu oferta fue enviada correctamente.",
-        }
-
-    # @http.route("/shop/offer/clear", type="json", auth="public", website=True)
-    # def shop_offer_clear(self, **kwargs):
-    #     request.session.pop("wpo_offer_cart", None)
-    #     request.session.modified = True
-    #     return {"ok": True, "redirect": "/shop/offer/cart"}
