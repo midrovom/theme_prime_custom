@@ -8,7 +8,6 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
     selector: ".o_wpo_offer_modal",
     events: {
         "submit .o_wpo_offer_form": "_onSubmit",
-        "submit .o_wpo_submit_form": "_onSubmitFinal",
         "input .o_wpo_quantity": "_onAmountChanged",
         "change .o_wpo_quantity": "_onQuantityCommitted",
         "input .o_wpo_offered_price": "_onAmountChanged",
@@ -244,34 +243,6 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
             this._showError(
                 "Ocurrió un inconveniente al agregar el producto."
             );
-        } finally {
-            this._setLoading(false);
-        }
-    },
-
-    async _onSubmitFinal(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        const form = event.currentTarget;
-        this._hideError();
-
-        if (!form.checkValidity()) {
-            form.classList.add("was-validated");
-            return;
-        }
-
-        const payload = Object.fromEntries(new FormData(form).entries());
-        this._setLoading(true);
-
-        try {
-            const response = await rpc("/shop/offer/submit", payload);
-            if (!response.ok) {
-                this._showError(response.error || "No pudimos registrar la oferta.");
-                return;
-            }
-            this._showSuccess(response);
-        } catch (error) {
-            this._showError("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
         } finally {
             this._setLoading(false);
         }

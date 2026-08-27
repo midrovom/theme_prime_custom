@@ -6,6 +6,7 @@ import { rpc } from "@web/core/network/rpc";
 publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
     selector: ".o_wpo_cart",
     events: {
+        "submit .o_wpo_submit_form": "_onSubmitFinal",
         "click .o_wpo_clear_cart": "_onClearCart",
         "click .o_wpo_remove_line": "_onRemoveLine",
     },
@@ -39,5 +40,43 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
             console.error(error);
             alert("Error al eliminar el producto.");
         }
+    },
+
+    async _onSubmitFinal(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const form = event.currentTarget;
+        this._hideError();
+
+        if (!form.checkValidity()) {
+            form.classList.add("was-validated");
+            return;
+        }
+
+        const payload = Object.fromEntries(new FormData(form).entries());
+        this._setLoading(true);
+
+        try {
+            const response = await rpc("/shop/offer/submit", payload);
+            if (!response.ok) {
+                this._showError(response.error || "No pudimos registrar la oferta.");
+                return;
+            }
+            this._showSuccess(response);
+        } catch (error) {
+            this._showError("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
+        } finally {
+            this._setLoading(false);
+        }
+    },
+
+    _setLoading(loading) {
+        const button = this.el.querySelector(".o_wpo_submit");
+        if (!button) {
+            return;
+        }
+        button.disabled = loading;
+        button.querySelector(".o_wpo_submit_label").classList.toggle("d-none", loading);
+        button.querySelector(".o_wpo_submit_loading").classList.toggle("d-none", !loading);
     },
 });
