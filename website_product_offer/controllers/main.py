@@ -277,6 +277,7 @@ class WebsiteProductOfferController(http.Controller):
             "total_general": float(total_general or sum(line["total"] for line in offer_cart)),
         })
 
+        offer._ensure_customer_partner()
         OfferLine = request.env["website.sale.offer.line"].sudo()
         for item in offer_cart:
             product = request.env["product.product"].sudo().browse(int(item["product_id"]))
@@ -291,7 +292,6 @@ class WebsiteProductOfferController(http.Controller):
                 "available_qty_snapshot": product.qty_available,
             })
 
-        # Vaciar carrito
         request.session.pop("wpo_offer_cart", None)
         request.session.modified = True
         offer._send_status_email("website_product_offer.mail_template_offer_received")
