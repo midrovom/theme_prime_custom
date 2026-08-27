@@ -79,4 +79,18 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
         button.querySelector(".o_wpo_submit_label").classList.toggle("d-none", loading);
         button.querySelector(".o_wpo_submit_loading").classList.toggle("d-none", !loading);
     },
+
+    _showError(message) {
+        const alert = this.el.querySelector(".o_wpo_error");
+        alert.textContent = message || "No pudimos procesar la solicitud.";
+        alert.classList.remove("d-none");
+        alert.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    },
+
+    _hideError() {
+        const alert = this.el.querySelector(".o_wpo_error");
+        alert.textContent = "";
+        alert.classList.add("d-none");
+    },
+
 });
