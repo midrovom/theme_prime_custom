@@ -9,11 +9,6 @@ class CustomerPortalOffers(CustomerPortal):
         partner = request.env.user.partner_id.commercial_partner_id
         return [("partner_id", "child_of", partner.id)]
 
-    @http.route(['/my/home'], type='http', auth="user", website=True)
-    def home(self, **kwargs):
-        values = self._prepare_home_portal_values(counters=["offer_count"])
-        return request.render("portal.portal_my_home", values)
-
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
         if "offer_count" in counters:
