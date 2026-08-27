@@ -45,6 +45,7 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
         event.stopPropagation();
         const form = event.currentTarget;
         this._hideErrorBox();
+
         if (!form.checkValidity()) {
             form.classList.add("was-validated");
             return;
@@ -53,22 +54,24 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
         const email = form.querySelector("[name='contact_email']").value.trim();
         const phone = form.querySelector("[name='contact_phone']").value.trim();
         if (!email && !phone) {
-            this._showError("Indica un correo o un teléfono para poder responderte.");
+            this._showErrorBox("Indica un correo o un teléfono para poder responderte.");
             return;
         }
 
-        form.querySelector(".o_wpo_product_id").value = this._currentProductId();
         const payload = Object.fromEntries(new FormData(form).entries());
         this._setLoading(true);
+
         try {
             const response = await rpc("/shop/offer/submit", payload);
             if (!response.ok) {
-                this._showError(response.error || "No pudimos registrar la oferta.");
+                this._showErrorBox(response.error || "No pudimos registrar la oferta.");
                 return;
             }
-            this._showSuccess(response);
+
+            window.location.href = response.portal_url;
+
         } catch (error) {
-            this._showError("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
+            this._showErrorBox("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
         } finally {
             this._setLoading(false);
         }
