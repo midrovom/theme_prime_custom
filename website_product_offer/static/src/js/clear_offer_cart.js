@@ -98,11 +98,9 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
     },
 
     _showSuccess(response) {
-        this.el.querySelector(".o_wpo_form_body").classList.add("d-none");
-        this.el.querySelector(".o_wpo_form_footer").classList.add("d-none");
         this.el.querySelector(".o_wpo_success_message").textContent = response.message;
         this.el.querySelector(".o_wpo_reference").textContent = response.reference;
-        this.el.querySelector(".o_wpo_portal_link").href = response.portal_url;
-        this.el.querySelector(".o_wpo_success").classList.remove("d-none");
-    },
+        window.location.href = response.portal_url;
+}
+
 });
