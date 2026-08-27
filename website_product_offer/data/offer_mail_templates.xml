@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
-    <record id="mail_template_offer_received" model="mail.template">
+<odoo>
+    <!-- <record id="mail_template_offer_received" model="mail.template">
         <field name="name">Oferta web: recibida</field>
         <field name="model_id" ref="model_website_sale_offer"/>
         <field name="subject">Recibimos tu oferta {{ object.name }}</field>
@@ -16,6 +16,40 @@
                 <p style="margin:24px 0;">
                     <a t-att-href="object.get_base_url() + object.get_portal_url()"
                        style="background:#635bff;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;">
+                        Consultar mi oferta
+                    </a>
+                </p>
+                <p>Gracias por preferirnos.</p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record> -->
+
+    <record id="mail_template_offer_received" model="mail.template">
+        <field name="name">Oferta web: recibida</field>
+        <field name="model_id" ref="model_website_sale_offer"/>
+        <field name="subject">Recibimos tu oferta {{ object.name }}</field>
+        <field name="email_from">{{ object.company_id.partner_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to">{{ object.contact_email or object.partner_id.email }}</field>
+        <field name="description">Confirmación automática al cliente</field>
+        <field name="body_html" type="html">
+            <div style="font-family:Arial,sans-serif;color:#172033;">
+                <p>Hola <t t-out="object.contact_name or 'cliente'"/>,</p>
+                <p>Recibimos tu oferta <strong><t t-out="object.name"/></strong> con los siguientes productos:</p>
+                <ul>
+                    <t t-foreach="object.line_ids" t-as="line">
+                        <li>
+                            <strong><t t-out="line.product_id.display_name"/></strong>
+                            — <t t-out="line.quantity"/> x 
+                            <t t-out="line.offered_price"/> 
+                            (Total: <t t-out="line.offer_total"/>)
+                        </li>
+                    </t>
+                </ul>
+                <p>Nuestro equipo comercial la revisará y te responderá pronto.</p>
+                <p style="margin:24px 0;">
+                    <a t-att-href="object.get_base_url() + object.get_portal_url()"
+                    style="background:#635bff;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;">
                         Consultar mi oferta
                     </a>
                 </p>
