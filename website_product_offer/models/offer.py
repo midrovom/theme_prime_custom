@@ -146,19 +146,12 @@ class WebsiteSaleOffer(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-
-        _logger.info(">>> WEBSITE.SALE.OFFER CREATE")
-        _logger.info(">>> VALORES RECIBIDOS: %s", vals_list)
-
         for vals in vals_list:
+            if not vals.get("partner_id") and self.env.user.partner_id:
+                vals["partner_id"] = self.env.user.partner_id.id
             if vals.get("name", "/") == "/":
                 vals["name"] = self.env["ir.sequence"].next_by_code("website.sale.offer") or "/"
         offers = super().create(vals_list)
-
-        _logger.info( ">>> WEBSITE.SALE.OFFER CREADA: %s",
-            offers.ids,
-        )
-        
         offers._portal_ensure_token()
         return offers
 
@@ -210,6 +203,10 @@ class WebsiteSaleOffer(models.Model):
         self.ensure_one()
         if self.partner_id:
             return self.partner_id
+
+        if self.env.user.has_group("base.group_portal") and self.env.user.partner_id:
+            self.sudo().partner_id = self.env.user.partner_id.id
+            return self.env.user.partner_id
 
         Partner = self.env["res.partner"].sudo().with_company(self.company_id)
         partner = Partner.browse()
@@ -446,3 +443,4 @@ class WebsiteSaleOffer(models.Model):
     @api.model
     def _default_valid_until(self, website):
         return fields.Date.context_today(self) + timedelta(days=website.offer_validity_days)
+    
