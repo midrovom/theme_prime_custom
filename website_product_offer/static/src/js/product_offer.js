@@ -8,6 +8,7 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
     selector: ".o_wpo_offer_modal",
     events: {
         "submit .o_wpo_offer_form": "_onSubmit",
+        "submit .o_wpo_submit_form": "_onSubmitFinal",
         "input .o_wpo_quantity": "_onAmountChanged",
         "change .o_wpo_quantity": "_onQuantityCommitted",
         "input .o_wpo_offered_price": "_onAmountChanged",
@@ -248,6 +249,34 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         }
     },
 
+    async _onSubmitFinal(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const form = event.currentTarget;
+        this._hideError();
+
+        if (!form.checkValidity()) {
+            form.classList.add("was-validated");
+            return;
+        }
+
+        const payload = Object.fromEntries(new FormData(form).entries());
+        this._setLoading(true);
+
+        try {
+            const response = await rpc("/shop/offer/submit", payload);
+            if (!response.ok) {
+                this._showError(response.error || "No pudimos registrar la oferta.");
+                return;
+            }
+            this._showSuccess(response);
+        } catch (error) {
+            this._showError("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
+        } finally {
+            this._setLoading(false);
+        }
+    },
+
     _setLoading(loading) {
         const button = this.el.querySelector(".o_wpo_submit");
         if (!button) {
@@ -279,15 +308,6 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         this.el.querySelector(".o_wpo_portal_link").href = response.portal_url;
         this.el.querySelector(".o_wpo_success").classList.remove("d-none");
     },
-
-    // _resetFeedback() {
-    //     const form = this.el.querySelector(".o_wpo_offer_form");
-    //     form.classList.remove("was-validated");
-    //     this._hideError();
-    //     this.el.querySelector(".o_wpo_form_body").classList.remove("d-none");
-    //     this.el.querySelector(".o_wpo_form_footer").classList.remove("d-none");
-    //     this.el.querySelector(".o_wpo_success").classList.add("d-none");
-    // },
 
     _resetFeedback() {
         const form = this.el.querySelector(".o_wpo_offer_form");

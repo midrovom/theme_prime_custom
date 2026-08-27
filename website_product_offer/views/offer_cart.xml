@@ -90,7 +90,7 @@
                             <div class="card border-0 shadow-sm">
                                 <div class="card-body">
                                     <h4>Datos de contacto</h4>
-                                    <form class="o_wpo_submit_form" method="post" action="/shop/offer/submit">
+                                    <form class="o_wpo_submit_form" novalidate="novalidate">
                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                         <div class="mb-3">
                                             <label class="form-label">Nombre</label>
