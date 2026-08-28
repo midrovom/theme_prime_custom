@@ -107,6 +107,7 @@ class WebsiteSaleOffer(models.Model):
         currency_field="currency_id",
         store=True,
     )
+    counter_price = fields.Monetary(string="Precio de contraoferta", currency_field="currency_id", tracking=True,)
     converted_price = fields.Monetary(string="Precio convertido", currency_field="currency_id", readonly=True,copy=False,)
     counter_total = fields.Monetary(
         string="Total contraofertado",
@@ -126,24 +127,27 @@ class WebsiteSaleOffer(models.Model):
         tracking=True,
     )
 
-    @api.depends("line_ids.list_price", "line_ids.quantity", "line_ids.offered_price", "line_ids.counter_price")
+    @api.depends("line_ids.list_price", "line_ids.quantity", "line_ids.offered_price")
     def _compute_amounts(self):
         for offer in self:
             list_total = sum(line.quantity * line.list_price for line in offer.line_ids)
             offer.offer_total = sum(line.quantity * line.offered_price for line in offer.line_ids)
-            offer.counter_total = sum(line.quantity * line.counter_price for line in offer.line_ids)
-            offer.requested_discount_percent = (((list_total - offer.offer_total) / list_total) * 100 if list_total else 0.0)
+            offer.counter_total = list_total * (offer.counter_price / (list_total / sum(line.quantity for line in offer.line_ids))) if offer.counter_price else 0.0
+            offer.requested_discount_percent = (
+                ((list_total - offer.offer_total) / list_total) * 100 if list_total else 0.0
+            )
+
+    @api.constrains("counter_price")
+    def _check_counter_price(self):
+        for offer in self:
+            if offer.counter_price < 0:
+                raise ValidationError(_("El precio de contraoferta no puede ser negativo."))
 
     @api.constrains("line_ids")
     def _check_lines(self):
         for offer in self:
             if not offer.line_ids:
-                raise ValidationError(
-                    _(
-                        "La oferta debe contener al menos "
-                        "un producto."
-                    )
-                )
+                raise ValidationError(_("La oferta debe contener al menos " "un producto."))
 
     @api.model_create_multi
     def create(self, vals_list):
