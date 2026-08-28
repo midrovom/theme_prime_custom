@@ -97,7 +97,8 @@
                     </group>
                     <group string="Totales">
                         <field name="offer_total" readonly="1"/>
-                        <field name="counter_total" invisible="not counter_price"/>
+                        <field name="counter_total" readonly="1"/>
+                        <!-- <field name="counter_total" invisible="not counter_price"/> -->
                         <field name="requested_discount_percent" readonly="1"/>
                         <field name="converted_price" invisible="state != 'converted'"/>
                     </group>
