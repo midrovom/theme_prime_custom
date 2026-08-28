@@ -430,7 +430,6 @@ class WebsiteSaleOffer(models.Model):
 
         return self._convert_to_quotation("counter_price")
 
-
     def action_reject(self):
         for offer in self:
             if offer.state not in ("converted", "cancelled"):
