@@ -81,7 +81,7 @@
                                                 <tr>
                                                     <th>Producto</th>
                                                     <th class="text-center">Cantidad</th>
-                                                    <th class="text-end">Precio de lista</th>
+                                                    <!-- <th class="text-end">Precio de lista</th> -->
                                                     <th class="text-end">Tu precio</th>
                                                     <th class="text-end">Total ofertado</th>
                                                 </tr>
@@ -95,10 +95,10 @@
                                                     <td class="text-center">
                                                         <t t-out="line.quantity"/>
                                                     </td>
-                                                    <td class="text-end">
+                                                    <!-- <td class="text-end">
                                                         <span t-field="line.list_price"
                                                             t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
-                                                    </td>
+                                                    </td> -->
                                                     <td class="text-end">
                                                         <span t-field="line.offered_price"
                                                             t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
