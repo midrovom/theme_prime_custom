@@ -87,17 +87,16 @@
                                 <field name="quantity"/>
                                 <field name="uom_id"/>
                                 <field name="available_qty_snapshot"/>
-                                <!-- <field name="currency_id" invisible="1"/> -->
                                 <field name="list_price"/>
                                 <field name="offered_price"/>
                                 <field name="offer_total"/>
+                                <field name="counter_price" readonly="state in ('converted','rejected','cancelled')"/>
+                                <field name="counter_total"/>
                             </list>
                         </field>
                     </group>
                     <group string="Totales">
                         <field name="offer_total" readonly="1"/>
-                        <field name="counter_price"
-                            readonly="state in ('converted','rejected','cancelled')"/>
                         <field name="counter_total" invisible="not counter_price"/>
                         <field name="requested_discount_percent" readonly="1"/>
                         <field name="converted_price" invisible="state != 'converted'"/>
