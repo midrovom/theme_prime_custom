@@ -28,100 +28,6 @@
         </field>
     </record>
 
-    <!-- FORM VIEW -->
-    <!-- <record id="view_website_sale_offer_form" model="ir.ui.view">
-        <field name="name">website.sale.offer.form</field>
-        <field name="model">website.sale.offer</field>
-        <field name="arch" type="xml">
-            <form string="Oferta web">
-                <header>
-                    <button name="action_set_review" type="object" string="Iniciar revisión"
-                            class="btn-primary" invisible="state != 'draft'"/>
-                    <button name="action_accept_offer" type="object" string="Aceptar y crear presupuesto"
-                            class="btn-primary" invisible="state not in ('draft', 'review')"/>
-                    <button name="action_send_counter" type="object" string="Enviar contraoferta"
-                            class="btn-secondary" invisible="state not in ('draft', 'review', 'counter')"/>
-                    <button name="action_reject" type="object" string="Rechazar"
-                            invisible="state not in ('draft', 'review', 'counter')"/>
-                    <button name="action_cancel" type="object" string="Cancelar"
-                            invisible="state not in ('draft', 'review', 'counter')"/>
-                    <field name="state" widget="statusbar"
-                           statusbar_visible="draft,review,counter,converted,rejected,cancelled"/>
-                </header>
-                <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_quotation" type="object" class="oe_stat_button"
-                                icon="fa-file-text-o" invisible="not sale_order_id">
-                            <field name="sale_order_id" widget="statinfo" string="Presupuesto"/>
-                        </button>
-                    </div>
-                    <widget name="web_ribbon" title="Presupuesto creado" bg_color="bg-success"
-                            invisible="state != 'converted'"/>
-                    <widget name="web_ribbon" title="Rechazada" bg_color="bg-danger"
-                            invisible="state != 'rejected'"/>
-                    <div class="oe_title">
-                        <label for="name"/>
-                        <h1><field name="name"/></h1>
-                    </div>
-                    <group>
-                        <group string="Cliente">
-                            <field name="partner_id" context="{'default_customer_rank': 1}"/>
-                            <field name="contact_name"/>
-                            <field name="company_name"/>
-                            <field name="contact_email" widget="email"/>
-                            <field name="contact_phone" widget="phone"/>
-                        </group>
-                        <group string="Origen">
-                            <field name="website_id"/>
-                            <field name="company_id" groups="base.group_multi_company"/>
-                            <field name="user_id" widget="many2one_avatar_user"/>
-                            <field name="create_date"/>
-                            <field name="valid_until"/>
-                            <field name="source_url" widget="url"/>
-                            <field name="pricelist_id"/>
-                        </group>
-                    </group>
-                    <group string="Propuesta comercial">
-                        <field name="line_ids" nolabel="1">
-                            <list>
-                                <field name="product_id"/>
-                                <field name="quantity"/>
-                                <field name="uom_id"/>
-                                <field name="available_qty_snapshot"/>
-                                <field name="list_price"/>
-                                <field name="offered_price"/>
-                                <field name="counter_price"/>
-                                <field name="converted_price" readonly="1"/>
-                                <field name="list_total"/>
-                                <field name="offer_total"/>
-                            </list>
-                        </field>
-                    </group>
-                    <group string="Totales">
-                        <field name="list_total" readonly="1"/>
-                        <field name="offer_total" readonly="1"/>
-                        <field name="counter_total" readonly="1"/>
-                        <field name="requested_discount_percent" readonly="1"/>
-                    </group>
-                    <notebook>
-                        <page string="Mensaje del cliente" name="customer_message">
-                            <field name="customer_message" placeholder="El cliente no agregó comentarios."/>
-                        </page>
-                        <page string="Contraoferta" name="counteroffer">
-                            <field name="counter_message"
-                                   placeholder="Explica brevemente las condiciones de la contraoferta..."
-                                   readonly="state in ('converted', 'rejected', 'cancelled')"/>
-                        </page>
-                        <page string="Notas internas" name="internal_notes">
-                            <field name="internal_note" placeholder="Información visible solo para el equipo comercial."/>
-                        </page>
-                    </notebook>
-                </sheet>
-                <chatter/>
-            </form>
-        </field>
-    </record> -->
-
     <record id="view_website_sale_offer_form" model="ir.ui.view">
         <field name="name">website.sale.offer.form</field>
         <field name="model">website.sale.offer</field>
@@ -181,7 +87,6 @@
                                 <field name="quantity"/>
                                 <field name="uom_id"/>
                                 <field name="available_qty_snapshot"/>
-                                <field name="pricelist_id"/>
                                 <field name="currency_id" invisible="1"/>
                                 <field name="list_price"/>
                                 <field name="offered_price"/>
