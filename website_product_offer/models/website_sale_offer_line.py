@@ -51,16 +51,13 @@ class WebsiteSaleOfferLine(models.Model):
                 if line.list_price else 0.0
             )
 
-    @api.constrains("quantity", "list_price", "offered_price")
+    @api.constrains("quantity", "list_price", "offered_price", "counter_price")
     def _check_positive_values(self):
         for line in self:
             if line.quantity <= 0:
                 raise ValidationError(_("La cantidad debe ser mayor que cero."))
-
-            if line.list_price < 0 or line.offered_price <= 0:
-                raise ValidationError(
-                    _("Los precios no pueden ser negativos y la oferta debe ser mayor que cero.")
-                )
+            if line.list_price < 0 or line.offered_price <= 0 or (line.counter_price and line.counter_price < 0):
+                raise ValidationError(_("Los precios no pueden ser negativos y la oferta debe ser mayor que cero."))
 
     def _current_available_qty(self):
         self.ensure_one()

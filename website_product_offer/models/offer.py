@@ -107,7 +107,7 @@ class WebsiteSaleOffer(models.Model):
         currency_field="currency_id",
         store=True,
     )
-    counter_price = fields.Monetary(string="Precio de contraoferta", currency_field="currency_id", tracking=True,)
+    # counter_price = fields.Monetary(string="Precio de contraoferta", currency_field="currency_id", tracking=True,)
     converted_price = fields.Monetary(string="Precio convertido", currency_field="currency_id", readonly=True,copy=False,)
     counter_total = fields.Monetary(
         string="Total contraofertado",
@@ -138,12 +138,6 @@ class WebsiteSaleOffer(models.Model):
                 if offer.list_total else 0.0
             )
 
-    @api.constrains("counter_price")
-    def _check_counter_price(self):
-        for offer in self:
-            if offer.counter_price < 0:
-                raise ValidationError(_("El precio de contraoferta no puede ser negativo."))
-
     @api.constrains("line_ids")
     def _check_lines(self):
         for offer in self:
@@ -166,14 +160,7 @@ class WebsiteSaleOffer(models.Model):
         for offer in self:
             offer.access_url = f"/my/offers/{offer.id}"
 
-    def get_portal_url(
-        self,
-        suffix=None,
-        report_type=None,
-        download=None,
-        query_string=None,
-        anchor=None,
-    ):
+    def get_portal_url(self, suffix=None, report_type=None, download=None, query_string=None, anchor=None,):
         self.ensure_one()
         self._portal_ensure_token()
         url = f"/my/offers/{self.id}"
@@ -257,15 +244,17 @@ class WebsiteSaleOffer(models.Model):
     #     self.ensure_one()
     #     if self.sale_order_id:
     #         return self._quotation_action()
-
     #     if self.state not in ("draft", "review", "counter"):
     #         raise UserError(_("Esta oferta ya no puede convertirse en presupuesto."))
-
     #     if not self.line_ids:
     #         raise UserError(_("La oferta no contiene productos."))
 
     #     for line in self.line_ids:
-    #         accepted_price = self.counter_price if price_field == "counter_price" else line[price_field]
+    #         if price_field == "counter_price":
+    #             accepted_price = self.counter_price
+    #         else:
+    #             accepted_price = line[price_field]
+
     #         if accepted_price <= 0:
     #             raise UserError(
     #                 _("El precio acordado para %(product)s debe ser mayor que cero.",
@@ -297,7 +286,10 @@ class WebsiteSaleOffer(models.Model):
 
     #     for line in self.line_ids:
     #         product = line.product_id.with_context(lang=partner.lang)
-    #         accepted_price = self.counter_price if price_field == "counter_price" else line[price_field]
+    #         if price_field == "counter_price":
+    #             accepted_price = self.counter_price
+    #         else:
+    #             accepted_price = line[price_field] 
 
     #         SaleOrderLine.create({
     #             "order_id": order.id,
@@ -327,19 +319,14 @@ class WebsiteSaleOffer(models.Model):
         self.ensure_one()
         if self.sale_order_id:
             return self._quotation_action()
-
         if self.state not in ("draft", "review", "counter"):
             raise UserError(_("Esta oferta ya no puede convertirse en presupuesto."))
-
         if not self.line_ids:
             raise UserError(_("La oferta no contiene productos."))
 
+        # Validación de precios por línea
         for line in self.line_ids:
-            if price_field == "counter_price":
-                accepted_price = self.counter_price
-            else:
-                accepted_price = line[price_field]
-
+            accepted_price = line.counter_price if price_field == "counter_price" else line[price_field]
             if accepted_price <= 0:
                 raise UserError(
                     _("El precio acordado para %(product)s debe ser mayor que cero.",
@@ -350,7 +337,6 @@ class WebsiteSaleOffer(models.Model):
         partner = self._ensure_customer_partner()
         warehouse = self.website_id._get_warehouse_available()
         warehouse_id = getattr(warehouse, "id", warehouse)
-
         order_values = {
             "partner_id": partner.id,
             "company_id": self.company_id.id,
@@ -369,12 +355,10 @@ class WebsiteSaleOffer(models.Model):
         order = SaleOrder.create(order_values)
         SaleOrderLine = self.env["sale.order.line"].sudo().with_company(self.company_id)
 
+        # Crear líneas del presupuesto
         for line in self.line_ids:
             product = line.product_id.with_context(lang=partner.lang)
-            if price_field == "counter_price":
-                accepted_price = self.counter_price
-            else:
-                accepted_price = line[price_field] 
+            accepted_price = line.counter_price if price_field == "counter_price" else line[price_field]
 
             SaleOrderLine.create({
                 "order_id": order.id,
@@ -385,9 +369,11 @@ class WebsiteSaleOffer(models.Model):
                 "price_unit": accepted_price,
             })
 
+            line.sudo().write({"counter_total": line.quantity * accepted_price})
+
         self.sudo().write({
             "sale_order_id": order.id,
-            "converted_price": self.counter_price if price_field == "counter_price" else self.offer_total,
+            "converted_price": self.counter_total if price_field == "counter_price" else self.offer_total,
             "state": "converted",
         })
 
@@ -399,6 +385,7 @@ class WebsiteSaleOffer(models.Model):
         self._send_status_email("website_product_offer.mail_template_offer_converted")
 
         return self._quotation_action()
+
 
     def action_set_review(self):
         for offer in self:
