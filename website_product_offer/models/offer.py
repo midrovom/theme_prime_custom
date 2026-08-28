@@ -431,14 +431,13 @@ class WebsiteSaleOffer(models.Model):
                 "price_unit": accepted_price,
             })
 
-            line.sudo().write({"converted_price": accepted_price})
-
-        order._portal_ensure_token()
         self.sudo().write({
             "sale_order_id": order.id,
+            "converted_price": self.counter_price if price_field == "counter_price" else self.offer_total,
             "state": "converted",
         })
 
+        order._portal_ensure_token()
         self.message_post(
             body=_("Oferta convertida en el presupuesto %s.", order.name),
             subtype_xmlid="mail.mt_note",
