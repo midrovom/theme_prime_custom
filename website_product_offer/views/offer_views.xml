@@ -91,7 +91,7 @@
                                 <field name="offered_price"/>
                                 <field name="offer_total"/>
                                 <field name="counter_price" readonly="state in ('converted','rejected','cancelled')"/>
-                                <field name="counter_total"/>
+                                <field name="counter_total" invisible="not counter_price"/>
                             </list>
                         </field>
                     </group>
