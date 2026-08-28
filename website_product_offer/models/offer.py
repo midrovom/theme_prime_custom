@@ -189,6 +189,13 @@ class WebsiteSaleOffer(models.Model):
         if anchor:
             result += f"#{anchor}"
         return result
+
+    def _current_available_qty(self):
+        self.ensure_one()
+        return self.product_tmpl_id._website_offer_available_qty(
+            self.offer_id.website_id,
+            self.product_id,
+        )
     
     def _check_stock_before_conversion(self):
         self.ensure_one()
@@ -444,7 +451,6 @@ class WebsiteSaleOffer(models.Model):
         self._send_status_email("website_product_offer.mail_template_offer_converted")
 
         return self._quotation_action()
-
 
     def action_set_review(self):
         for offer in self:
