@@ -145,7 +145,7 @@
                                                     <t t-out="line.quantity"/>
                                                 </td>
                                                 <td class="text-end">
-                                                    <span t-field="line.counter_price"
+                                                    <span t-field="offer.counter_price"
                                                         t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
                                                 </td>
                                             </tr>
