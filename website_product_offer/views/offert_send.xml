@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="offer_success" name="Oferta enviada - Éxito">
-        <div class="o_wpo_success text-center py-5" aria-live="polite">
-            <div class="o_wpo_success_icon mb-3">
-                <i class="fa fa-check fa-3x text-success" aria-hidden="true"/>
+    <template id="offer_success_page" name="Oferta enviada - Página">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure">
+                <div class="container py-5">
+                    <div class="o_wpo_success text-center py-5" aria-live="polite">
+                        <div class="o_wpo_success_icon mb-3">
+                            <i class="fa fa-check fa-3x text-success" aria-hidden="true"/>
+                        </div>
+                        <h3 class="mt-2">¡Oferta enviada!</h3>
+                        <p class="text-muted"><t t-out="message"/></p>
+                        <div class="o_wpo_reference_box mt-2">
+                            Referencia: <strong><t t-out="reference"/></strong>
+                        </div>
+                        <a t-att-href="portal_url" class="btn btn-primary mt-3">Consultar estado</a>
+                    </div>
+                </div>
             </div>
-            <h3 class="mt-2">¡Oferta enviada!</h3>
-            <p class="text-muted o_wpo_success_message"/>
-            <div class="o_wpo_reference_box mt-2">
-                Referencia: <strong class="o_wpo_reference"/>
-            </div>
-            <a href="#" class="btn btn-primary mt-3 o_wpo_portal_link">Consultar estado</a>
-        </div>
+        </t>
     </template>
 </odoo>

@@ -141,41 +141,6 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
         }
     },
 
-    // async _onSubmit(event) {
-    //     console.log("WebsiteProductOffer _onSubmit interceptado");
-    //     event.preventDefault();
-    //     event.stopPropagation();
-    //     const form = event.currentTarget;
-    //     this._hideError();
-    //     if (!form.checkValidity()) {
-    //         form.classList.add("was-validated");
-    //         return;
-    //     }
-
-    //     const email = form.querySelector("[name='contact_email']").value.trim();
-    //     const phone = form.querySelector("[name='contact_phone']").value.trim();
-    //     if (!email && !phone) {
-    //         this._showError("Indica un correo o un teléfono para poder responderte.");
-    //         return;
-    //     }
-
-    //     form.querySelector(".o_wpo_product_id").value = this._currentProductId();
-    //     const payload = Object.fromEntries(new FormData(form).entries());
-    //     this._setLoading(true);
-    //     try {
-    //         const response = await rpc("/shop/offer/submit", payload);
-    //         if (!response.ok) {
-    //             this._showError(response.error || "No pudimos registrar la oferta.");
-    //             return;
-    //         }
-    //         this._showSuccess(response);
-    //     } catch (error) {
-    //         this._showError("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
-    //     } finally {
-    //         this._setLoading(false);
-    //     }
-    // },
-
     async _onSubmit(event) {
         event.preventDefault();
         event.stopPropagation();

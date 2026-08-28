@@ -302,3 +302,11 @@ class WebsiteProductOfferController(http.Controller):
             "portal_url": offer.get_portal_url(),
             "message": _("Recibimos tu oferta. Nuestro equipo la revisará y te responderá pronto."),
         }
+
+    @http.route('/shop/offer/success', type="http", auth="public", website=True)
+    def offer_success(self, reference=None, portal_url=None, message=None):
+        return request.render("website_product_offer.offer_success_page", {
+            "reference": reference,
+            "portal_url": portal_url,
+            "message": message,
+        })
