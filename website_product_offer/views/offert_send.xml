@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="offer_success" name="Oferta enviada - Éxito">
+        <div class="o_wpo_success text-center py-5" aria-live="polite">
+            <div class="o_wpo_success_icon mb-3">
+                <i class="fa fa-check fa-3x text-success" aria-hidden="true"/>
+            </div>
+            <h3 class="mt-2">¡Oferta enviada!</h3>
+            <p class="text-muted o_wpo_success_message"/>
+            <div class="o_wpo_reference_box mt-2">
+                Referencia: <strong class="o_wpo_reference"/>
+            </div>
+            <a href="#" class="btn btn-primary mt-3 o_wpo_portal_link">Consultar estado</a>
+        </div>
+    </template>
+</odoo>

@@ -22,6 +22,7 @@
         "views/offer_views.xml",
         "views/sale_order_views.xml",
         'views/offer_cart.xml',
+        'views/offert_send.xml',
         "views/website_templates.xml",
         "views/portal_templates.xml",
     ],
