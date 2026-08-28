@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_offer" inherit_id="portal.portal_my_home" priority="35">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="title">Mis ofertas</t>
+                <t t-set="url" t-value="'/my/offers'"/>
+                <t t-set="placeholder_count" t-value="'offer_count'"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_my_offers" name="Mis ofertas">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Mis ofertas</t>
+            </t>
+
+            <div t-if="not offers" class="alert alert-info">
+                Todavía no has enviado ofertas desde nuestro catálogo.
+            </div>
+            <div t-else="" class="o_wpo_portal_list">
+                <div class="table-responsive border rounded-3 bg-white">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Referencia</th>
+                                <th>Producto</th>
+                                <th class="text-end">Cantidad</th>
+                                <th class="text-end">Total ofertado</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="offers" t-as="offer">
+                                <td>
+                                    <a t-att-href="offer.get_portal_url()" class="fw-semibold">
+                                        <t t-out="offer.name"/>
+                                    </a>
+                                    <small class="d-block text-muted" t-field="offer.create_date"/>
+                                </td>
+                                <td><span t-field="offer.product_id"/></td>
+                                <td class="text-end"><span t-field="offer.quantity"/> <span t-field="offer.uom_id"/></td>
+                                <td class="text-end">
+                                    <span t-field="offer.offer_total"
+                                          t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                </td>
+                                <td><span t-attf-class="badge o_wpo_state_#{offer.state}" t-field="offer.state"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_offer_page" name="Detalle de oferta">
+        <t t-call="portal.portal_layout">
+            <div class="container py-4 o_wpo_portal_detail">
+                <div t-if="error" class="alert alert-danger" role="alert"><t t-out="error"/></div>
+
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+                    <div>
+                        <a t-if="not request.env.user._is_public()" href="/my/offers" class="small text-muted text-decoration-none">
+                            <i class="fa fa-arrow-left me-1"/> Mis ofertas
+                        </a>
+                        <h1 class="h2 mt-2 mb-1"><t t-out="offer.name"/></h1>
+                        <p class="text-muted mb-0">Creada el <span t-field="offer.create_date"/></p>
+                    </div>
+                    <span t-attf-class="badge rounded-pill fs-6 o_wpo_state_#{offer.state}" t-field="offer.state"/>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-12 col-lg-8">
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center gap-3 mb-4">
+                                    <div class="o_wpo_product_icon"><i class="fa fa-mobile"/></div>
+                                    <div>
+                                        <small class="text-muted">Producto</small>
+                                        <h2 class="h5 mb-0" t-field="offer.product_id"/>
+                                    </div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-6 col-md-3">
+                                        <small class="text-muted d-block">Cantidad</small>
+                                        <strong><span t-field="offer.quantity"/> <span t-field="offer.uom_id"/></strong>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <small class="text-muted d-block">Precio de lista</small>
+                                        <strong t-field="offer.list_price"
+                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <small class="text-muted d-block">Tu precio</small>
+                                        <strong t-field="offer.offered_price"
+                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <small class="text-muted d-block">Total ofertado</small>
+                                        <strong class="text-primary" t-field="offer.offer_total"
+                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                    </div>
+                                </div>
+                                <div t-if="offer.customer_message" class="mt-4 p-3 bg-light rounded-3">
+                                    <small class="text-muted d-block mb-1">Tu mensaje</small>
+                                    <span t-field="offer.customer_message"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div t-if="offer.state == 'counter'" class="card border-0 shadow-sm rounded-4 mt-4 o_wpo_counter_card">
+                            <div class="card-body p-4">
+                                <span class="o_wpo_eyebrow">NUEVA PROPUESTA</span>
+                                <h2 class="h4 mt-2">Recibiste una contraoferta</h2>
+                                <div class="d-flex justify-content-between align-items-end my-4">
+                                    <div>
+                                        <small class="text-muted d-block">Precio por unidad</small>
+                                        <strong class="display-6" t-field="offer.counter_price"
+                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted d-block">Total</small>
+                                        <strong class="h4" t-field="offer.counter_total"
+                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                    </div>
+                                </div>
+                                <p t-if="offer.counter_message" t-field="offer.counter_message"/>
+                                <div class="d-grid d-sm-flex gap-2">
+                                    <form t-att-action="'/my/offers/%s/accept-counter' % offer.id" method="post">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <input type="hidden" name="access_token" t-att-value="access_token or offer.access_token"/>
+                                        <button type="submit" class="btn btn-primary btn-lg">Aceptar contraoferta</button>
+                                    </form>
+                                    <form t-att-action="'/my/offers/%s/cancel' % offer.id" method="post">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <input type="hidden" name="access_token" t-att-value="access_token or offer.access_token"/>
+                                        <button type="submit" class="btn btn-outline-secondary btn-lg">No continuar</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div t-if="offer.state == 'converted' and offer.sale_order_id" class="alert alert-success mt-4 rounded-4 p-4">
+                            <h2 class="h4"><i class="fa fa-check-circle me-2"/>¡Tu oferta fue aprobada!</h2>
+                            <p>Generamos el presupuesto <strong t-field="offer.sale_order_id.name"/> con el precio acordado.</p>
+                            <a t-att-href="offer.sale_order_id.get_portal_url()" class="btn btn-success">Ver presupuesto</a>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <div class="card border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <h2 class="h5">Seguimiento</h2>
+                                <ul class="list-unstyled o_wpo_timeline mb-0">
+                                    <li class="is-done"><span/>Oferta recibida</li>
+                                    <li t-att-class="'is-done' if offer.state in ('review', 'counter', 'converted', 'rejected') else ''"><span/>Revisión comercial</li>
+                                    <li t-att-class="'is-done' if offer.state in ('counter', 'converted') else ''"><span/>Negociación</li>
+                                    <li t-att-class="'is-done' if offer.state == 'converted' else ''"><span/>Presupuesto</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <form t-if="offer.state in ('draft', 'review')"
+                              t-att-action="'/my/offers/%s/cancel' % offer.id" method="post" class="mt-3">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="access_token" t-att-value="access_token or offer.access_token"/>
+                            <button type="submit" class="btn btn-link text-danger w-100">Cancelar esta oferta</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>
