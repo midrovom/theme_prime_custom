@@ -417,11 +417,19 @@ class WebsiteSaleOffer(models.Model):
 
     def action_customer_accept_counter(self):
         self.ensure_one()
-        if self.state != "counter" or self.counter_price <= 0:
+        if self.state != "counter":
             raise UserError(_("La contraoferta ya no está disponible."))
         if self.valid_until and self.valid_until < fields.Date.context_today(self):
             raise UserError(_("La contraoferta venció. Solicita una nueva revisión comercial."))
+
+        for line in self.line_ids:
+            if not line.counter_price or line.counter_price <= 0:
+                raise UserError( _("Ingrese un precio de contraoferta mayor que cero para el producto %s.") 
+                    % line.product_id.display_name
+                )
+
         return self._convert_to_quotation("counter_price")
+
 
     def action_reject(self):
         for offer in self:
