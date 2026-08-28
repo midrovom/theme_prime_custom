@@ -190,26 +190,21 @@ class WebsiteSaleOffer(models.Model):
             result += f"#{anchor}"
         return result
 
-    def _current_available_qty(self):
-        self.ensure_one()
-        return self.product_tmpl_id._website_offer_available_qty(
-            self.offer_id.website_id,
-            self.product_id,
-        )
-    
     def _check_stock_before_conversion(self):
         self.ensure_one()
         if not self.website_id.offer_limit_to_stock:
             return
-        available_qty = self._current_available_qty()
-        if self.quantity > available_qty:
-            raise UserError(
-                _(
-                    "No es posible crear el presupuesto: se solicitaron %(requested)s unidades y actualmente hay %(available)s disponibles.",
-                    requested=self.quantity,
-                    available=available_qty,
+
+        for line in self.line_ids:
+            available_qty = line._current_available_qty()
+            if line.quantity > available_qty:
+                raise UserError(
+                    _("No es posible crear el presupuesto para %(product)s: "
+                    "se solicitaron %(requested)s unidades y actualmente hay %(available)s disponibles.",
+                    product=line.product_id.display_name,
+                    requested=line.quantity,
+                    available=available_qty)
                 )
-            )
 
     def _ensure_customer_partner(self):
         self.ensure_one()

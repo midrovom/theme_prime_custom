@@ -58,29 +58,9 @@ class WebsiteSaleOfferLine(models.Model):
                     _("Los precios no pueden ser negativos y la oferta debe ser mayor que cero.")
                 )
 
-    # def _current_available_qty(self):
-    #     self.ensure_one()
-    #     return self.product_tmpl_id._website_offer_available_qty(
-    #         self.offer_id.website_id,
-    #         self.product_id,
-    #     )
-
-    # def _check_stock_before_conversion(self):
-    #     self.ensure_one()
-
-    #     if not self.offer_id.website_id.offer_limit_to_stock:
-    #         return
-
-    #     available_qty = self._current_available_qty()
-    #     if self.quantity > available_qty:
-    #         raise ValidationError(
-    #             _(
-    #                 "No es posible crear el presupuesto para %(product)s: "
-    #                 "se solicitaron %(requested)s unidades y actualmente "
-    #                 "hay %(available)s disponibles.",
-    #                 product=self.product_id.display_name,
-    #                 requested=self.quantity,
-    #                 available=available_qty,
-    #             )
-    #         )
-
+    def _current_available_qty(self):
+        self.ensure_one()
+        return self.product_tmpl_id._website_offer_available_qty(
+            self.offer_id.website_id,
+            self.product_id,
+        )
