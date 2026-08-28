@@ -139,6 +139,8 @@
                                             <tr>
                                                 <th>Producto</th>
                                                 <th class="text-center">Cantidad</th>
+                                                <th class="text-end">Precio contraoferta</th>
+                                                <th class="text-end">Total contraofertado</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -150,12 +152,21 @@
                                                 <td class="text-center">
                                                     <t t-out="line.quantity"/>
                                                 </td>
+                                                <td class="text-end">
+                                                    <span t-field="line.counter_price"
+                                                        t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                                </td>
+                                                <td class="text-end">
+                                                    <span t-field="line.counter_total"
+                                                        t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
+
                                     <div class="text-end mt-3">
-                                        <strong>Precio contraoferta:</strong>
-                                        <span t-field="offer.counter_price" t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                        <strong>Total contraofertado:</strong>
+                                        <span t-field="offer.counter_total" t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
                                     </div>
                                 </div>
 
