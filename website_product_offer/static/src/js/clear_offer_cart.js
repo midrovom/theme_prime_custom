@@ -68,7 +68,7 @@ publicWidget.registry.OfferCartActions = publicWidget.Widget.extend({
                 return;
             }
 
-            window.location.href = response.portal_url;
+            this._showSuccessBox(response);
 
         } catch (error) {
             this._showErrorBox("Ocurrió un inconveniente al enviar la oferta. Inténtalo nuevamente.");
