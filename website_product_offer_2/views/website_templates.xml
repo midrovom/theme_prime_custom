@@ -29,7 +29,7 @@
             </t>
         </xpath>
 
-                <xpath expr="//form[@action='/shop/cart/update']" position="after">
+        <xpath expr="//form[@action='/shop/cart/update']" position="after">
             <t t-if="product._website_offer_is_enabled(website) and not (website.offer_require_login and request.env.user._is_public())">
                 <div class="modal fade o_wpo_offer_modal"
                      id="wpoOfferModal"

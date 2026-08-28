@@ -217,7 +217,7 @@ class WebsiteProductOfferController(http.Controller):
                 "source_url": source_url,
             }
         )
-        offer._send_status_email("website_product_offer.mail_template_offer_received")
+        offer._send_status_email("website_product_offer_2.mail_template_offer_received")
         return {
             "ok": True,
             "reference": offer.name,
