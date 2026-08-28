@@ -87,7 +87,7 @@
                                 <field name="quantity"/>
                                 <field name="uom_id"/>
                                 <field name="available_qty_snapshot"/>
-                                <field name="currency_id" invisible="1"/>
+                                <!-- <field name="currency_id" invisible="1"/> -->
                                 <field name="list_price"/>
                                 <field name="offered_price"/>
                                 <field name="offer_total"/>
