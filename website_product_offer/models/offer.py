@@ -400,11 +400,17 @@ class WebsiteSaleOffer(models.Model):
         self.ensure_one()
         if self.state not in ("draft", "review", "counter"):
             raise UserError(_("Esta oferta ya no admite una contraoferta."))
-        if self.counter_price <= 0:
-            raise UserError(_("Ingrese un precio de contraoferta mayor que cero."))
+        
+        for line in self.line_ids:
+            if not line.counter_price or line.counter_price <= 0:
+                raise UserError(
+                    _("Ingrese un precio de contraoferta mayor que cero para el producto %s.") 
+                    % line.product_id.display_name
+                )
+
         self.state = "counter"
         self.message_post(
-            body=_("Se envió una contraoferta de %(price)s por unidad.", price=self.counter_price),
+            body=_("Se envió una contraoferta."),
             subtype_xmlid="mail.mt_note",
         )
         self._send_status_email("website_product_offer.mail_template_offer_counter")
