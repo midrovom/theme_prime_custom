@@ -37,8 +37,9 @@ class WebsiteSaleOfferLine(models.Model):
         digits=(16, 2),
     )
     counter_price = fields.Monetary(string="Precio unitario contraoferta", currency_field="currency_id", tracking=True,)
-    counter_total = fields.Monetary(string="Total contraofertado por producto", compute="_compute_amounts",
-        currency_field="currency_id", store=True,)
+    counter_total = fields.Monetary(string="Total contraofertado por producto", compute="_compute_amounts", currency_field="currency_id", store=True,)
+    state = fields.Selection(related="offer_id.state", string="Estado de la oferta", store=True, readonly=True,)
+
 
     @api.depends("quantity", "list_price", "offered_price", "counter_price")
     def _compute_amounts(self):
