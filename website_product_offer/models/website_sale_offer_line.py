@@ -36,12 +36,16 @@ class WebsiteSaleOfferLine(models.Model):
     requested_discount_percent = fields.Float(string="Diferencia solicitada (%)", compute="_compute_amounts", store=True,
         digits=(16, 2),
     )
+    counter_price = fields.Monetary(string="Precio unitario contraoferta", currency_field="currency_id", tracking=True,)
+    counter_total = fields.Monetary(string="Total contraofertado por producto", compute="_compute_amounts",
+        currency_field="currency_id", store=True,)
 
-    @api.depends("quantity", "list_price", "offered_price")
+    @api.depends("quantity", "list_price", "offered_price", "counter_price")
     def _compute_amounts(self):
         for line in self:
             line.list_total = line.quantity * line.list_price
             line.offer_total = line.quantity * line.offered_price
+            line.counter_total = line.quantity * line.counter_price if line.counter_price else 0.0
             line.requested_discount_percent = (
                 ((line.list_price - line.offered_price) / line.list_price) * 100
                 if line.list_price else 0.0

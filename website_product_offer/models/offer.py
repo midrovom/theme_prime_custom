@@ -127,14 +127,15 @@ class WebsiteSaleOffer(models.Model):
         tracking=True,
     )
 
-    @api.depends("line_ids.list_price", "line_ids.quantity", "line_ids.offered_price")
+    @api.depends("line_ids.list_total", "line_ids.offer_total", "line_ids.counter_total")
     def _compute_amounts(self):
         for offer in self:
-            list_total = sum(line.quantity * line.list_price for line in offer.line_ids)
-            offer.offer_total = sum(line.quantity * line.offered_price for line in offer.line_ids)
-            offer.counter_total = list_total * (offer.counter_price / (list_total / sum(line.quantity for line in offer.line_ids))) if offer.counter_price else 0.0
+            offer.list_total = sum(line.list_total for line in offer.line_ids)
+            offer.offer_total = sum(line.offer_total for line in offer.line_ids)
+            offer.counter_total = sum(line.counter_total for line in offer.line_ids)
             offer.requested_discount_percent = (
-                ((list_total - offer.offer_total) / list_total) * 100 if list_total else 0.0
+                ((offer.list_total - offer.offer_total) / offer.list_total) * 100
+                if offer.list_total else 0.0
             )
 
     @api.constrains("counter_price")
