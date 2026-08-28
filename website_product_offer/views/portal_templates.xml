@@ -132,7 +132,6 @@
                                             <tr>
                                                 <th>Producto</th>
                                                 <th class="text-center">Cantidad</th>
-                                                <th class="text-end">Precio contraoferta</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -144,13 +143,14 @@
                                                 <td class="text-center">
                                                     <t t-out="line.quantity"/>
                                                 </td>
-                                                <td class="text-end">
-                                                    <span t-field="offer.counter_price"
-                                                        t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
-                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
+
+                                    <div class="text-end mt-3">
+                                        <strong>Precio contraoferta:</strong>
+                                        <span t-field="offer.counter_price" t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                    </div>
                                 </div>
 
                                 <p t-if="offer.counter_message" t-field="offer.counter_message"/>
