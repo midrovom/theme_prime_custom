@@ -90,7 +90,8 @@
                                 <field name="list_price"/>
                                 <field name="offered_price"/>
                                 <field name="offer_total"/>
-                                <field name="counter_price" readonly="state in ('converted','rejected','cancelled')"/>
+                                <field name="offer_id.state" invisible="1"/>
+                                <field name="counter_price" readonly="offer_id.state in ('converted','rejected','cancelled')"/>
                                 <field name="counter_total"/>
                             </list>
                         </field>
