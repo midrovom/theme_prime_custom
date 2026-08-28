@@ -83,7 +83,7 @@
                                                     <th class="text-center">Cantidad</th>
                                                     <!-- <th class="text-end">Precio de lista</th> -->
                                                     <th class="text-end">Tu precio</th>
-                                                    <th class="text-end">Total ofertado</th>
+                                                    <th class="text-end">Ofertado por producto</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -109,6 +109,17 @@
                                                     </td>
                                                 </tr>
                                             </tbody>
+                                            <tfoot>
+                                                <tr class="border-top">
+                                                    <td colspan="3" class="text-end">
+                                                        <strong>Total ofertado</strong>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <strong class="text-primary" t-field="offer.offer_total"
+                                                                t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
                                         </table>
                                     </div>
                                 </div>
