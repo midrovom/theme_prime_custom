@@ -25,7 +25,6 @@ class WebsiteSaleOfferLine(models.Model):
     list_price = fields.Monetary(string="Precio de lista unitario", required=True, readonly=True, currency_field="currency_id",)
     offered_price = fields.Monetary(string="Precio unitario ofrecido", required=True, currency_field="currency_id", tracking=True,)
     counter_price = fields.Monetary(string="Precio de contraoferta", currency_field="currency_id",tracking=True,)
-    converted_price = fields.Monetary(string="Precio convertido", currency_field="currency_id", readonly=True,copy=False,)
     list_total = fields.Monetary(string="Total de lista", compute="_compute_amounts", currency_field="currency_id",
         store=True,
     )

@@ -107,6 +107,7 @@ class WebsiteSaleOffer(models.Model):
         currency_field="currency_id",
         store=True,
     )
+    converted_price = fields.Monetary(string="Precio convertido", currency_field="currency_id", readonly=True,copy=False,)
     counter_total = fields.Monetary(
         string="Total contraofertado",
         compute="_compute_amounts",
