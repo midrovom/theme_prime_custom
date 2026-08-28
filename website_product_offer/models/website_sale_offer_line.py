@@ -22,6 +22,9 @@ class WebsiteSaleOfferLine(models.Model):
     uom_id = fields.Many2one(related="product_id.uom_id", string="Unidad de medida", store=True,)
     quantity = fields.Float(string="Cantidad solicitada", required=True, digits="Product Unit of Measure", tracking=True,)
     available_qty_snapshot = fields.Float(string="Stock al recibir", digits="Product Unit of Measure", readonly=True,)
+    pricelist_id = fields.Many2one(comodel_name="product.pricelist", string="Lista de precios", required=True,
+        readonly=True, ondelete="restrict",)
+    currency_id = fields.Many2one(related="pricelist_id.currency_id", string="Moneda", store=True,readonly=True,)
     list_price = fields.Monetary(string="Precio de lista unitario", required=True, readonly=True, currency_field="currency_id",)
     offered_price = fields.Monetary(string="Precio unitario ofrecido", required=True, currency_field="currency_id", tracking=True,)
     list_total = fields.Monetary(string="Total de lista", compute="_compute_amounts", currency_field="currency_id",
@@ -33,7 +36,7 @@ class WebsiteSaleOfferLine(models.Model):
     requested_discount_percent = fields.Float(string="Diferencia solicitada (%)", compute="_compute_amounts", store=True,
         digits=(16, 2),
     )
-    currency_id = fields.Many2one(related="pricelist_id.currency_id", string="Moneda", store=True,readonly=True,)
+    # currency_id = fields.Many2one(related="offer_id.currency_id", string="Moneda", store=True,readonly=True,)
 
     @api.depends("quantity", "list_price", "offered_price")
     def _compute_amounts(self):
