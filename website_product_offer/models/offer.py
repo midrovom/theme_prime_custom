@@ -386,11 +386,7 @@ class WebsiteSaleOffer(models.Model):
             raise UserError(_("La oferta no contiene productos."))
 
         for line in self.line_ids:
-            if price_field == "counter_price":
-                accepted_price = self.counter_price
-            else:
-                accepted_price = line[price_field]
-
+            accepted_price = self.counter_price if price_field == "counter_price" else line[price_field]
             if accepted_price <= 0:
                 raise UserError(
                     _("El precio acordado para %(product)s debe ser mayor que cero.",
@@ -449,6 +445,7 @@ class WebsiteSaleOffer(models.Model):
 
         return self._quotation_action()
 
+
     def action_set_review(self):
         for offer in self:
             if offer.state == "draft":
@@ -456,7 +453,7 @@ class WebsiteSaleOffer(models.Model):
 
     def action_accept_offer(self):
         self.ensure_one()
-        return self._convert_to_quotation(self.offered_price)
+        return self._convert_to_quotation("offered_price")
 
     def action_send_counter(self):
         self.ensure_one()
@@ -477,7 +474,7 @@ class WebsiteSaleOffer(models.Model):
             raise UserError(_("La contraoferta ya no está disponible."))
         if self.valid_until and self.valid_until < fields.Date.context_today(self):
             raise UserError(_("La contraoferta venció. Solicita una nueva revisión comercial."))
-        return self._convert_to_quotation(self.counter_price)
+        return self._convert_to_quotation("counter_price")
 
     def action_reject(self):
         for offer in self:
