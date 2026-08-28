@@ -290,6 +290,7 @@ class WebsiteProductOfferController(http.Controller):
                 "list_price": float(item.get("list_price", 0)),
                 "offered_price": float(item.get("offered_price", 0)),
                 "available_qty_snapshot": product.qty_available,
+                "pricelist_id": offer.pricelist_id.id,
             })
 
         request.session.pop("wpo_offer_cart", None)
