@@ -74,7 +74,7 @@
                         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                             <div class="card-body p-4">
                                 <div>
-                                    <small class="text-muted">Productos</small>
+                                    <!-- <small class="text-muted">Productos</small> -->
                                     <div class="table-responsive mt-3">
                                         <table class="table align-middle mb-0">
                                             <thead>
