@@ -1,6 +1,6 @@
 {
     "name": "Caja Chica - Recibos y Saldos",
-    "version": "18.0.1.1.0",
+    "version": "18.0.3.1.0",
     "summary": "Recibos de gastos, comprobantes opcionales y saldos de liquidación",
     "category": "Operations",
     "author": "Custom",
