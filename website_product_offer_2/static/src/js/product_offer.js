@@ -207,11 +207,18 @@ publicWidget.registry.WebsiteProductOffer = publicWidget.Widget.extend({
 
     _resetFeedback() {
         const form = this.el.querySelector(".o_wpo_offer_form");
-        form.classList.remove("was-validated");
+        if (form) {
+            form.classList.remove("was-validated");
+        }
         this._hideError();
-        this.el.querySelector(".o_wpo_form_body").classList.remove("d-none");
-        this.el.querySelector(".o_wpo_form_footer").classList.remove("d-none");
-        this.el.querySelector(".o_wpo_success").classList.add("d-none");
+
+        const body = this.el.querySelector(".o_wpo_form_body");
+        const footer = this.el.querySelector(".o_wpo_form_footer");
+        const success = this.el.querySelector(".o_wpo_success");
+
+        if (body) body.classList.remove("d-none");
+        if (footer) footer.classList.remove("d-none");
+        if (success) success.classList.add("d-none");
     },
 
     _onModalHidden() {
