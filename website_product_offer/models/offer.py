@@ -252,6 +252,76 @@ class WebsiteSaleOffer(models.Model):
             "target": "current",
         }
 
+    # def _convert_to_quotation(self, price_field):
+    #     self.ensure_one()
+    #     if self.sale_order_id:
+    #         return self._quotation_action()
+
+    #     if self.state not in ("draft", "review", "counter"):
+    #         raise UserError(_("Esta oferta ya no puede convertirse en presupuesto."))
+
+    #     if not self.line_ids:
+    #         raise UserError(_("La oferta no contiene productos."))
+
+    #     for line in self.line_ids:
+    #         accepted_price = self.counter_price if price_field == "counter_price" else line[price_field]
+    #         if accepted_price <= 0:
+    #             raise UserError(
+    #                 _("El precio acordado para %(product)s debe ser mayor que cero.",
+    #                 product=line.product_id.display_name)
+    #             )
+
+    #     self._check_stock_before_conversion()
+    #     partner = self._ensure_customer_partner()
+    #     warehouse = self.website_id._get_warehouse_available()
+    #     warehouse_id = getattr(warehouse, "id", warehouse)
+
+    #     order_values = {
+    #         "partner_id": partner.id,
+    #         "company_id": self.company_id.id,
+    #         "pricelist_id": self.pricelist_id.id,
+    #         "website_id": self.website_id.id,
+    #         "website_offer_id": self.id,
+    #         "origin": self.name,
+    #         "client_order_ref": self.name,
+    #     }
+    #     if self.user_id:
+    #         order_values["user_id"] = self.user_id.id
+    #     if warehouse_id:
+    #         order_values["warehouse_id"] = warehouse_id
+
+    #     SaleOrder = self.env["sale.order"].sudo().with_company(self.company_id)
+    #     order = SaleOrder.create(order_values)
+    #     SaleOrderLine = self.env["sale.order.line"].sudo().with_company(self.company_id)
+
+    #     for line in self.line_ids:
+    #         product = line.product_id.with_context(lang=partner.lang)
+    #         accepted_price = self.counter_price if price_field == "counter_price" else line[price_field]
+
+    #         SaleOrderLine.create({
+    #             "order_id": order.id,
+    #             "product_id": product.id,
+    #             "name": product.get_product_multiline_description_sale(),
+    #             "product_uom_qty": line.quantity,
+    #             "product_uom": line.uom_id.id,
+    #             "price_unit": accepted_price,
+    #         })
+
+    #     self.sudo().write({
+    #         "sale_order_id": order.id,
+    #         "converted_price": self.counter_price if price_field == "counter_price" else self.offer_total,
+    #         "state": "converted",
+    #     })
+
+    #     order._portal_ensure_token()
+    #     self.message_post(
+    #         body=_("Oferta convertida en el presupuesto %s.", order.name),
+    #         subtype_xmlid="mail.mt_note",
+    #     )
+    #     self._send_status_email("website_product_offer.mail_template_offer_converted")
+
+    #     return self._quotation_action()
+
     def _convert_to_quotation(self, price_field):
         self.ensure_one()
         if self.sale_order_id:
@@ -264,7 +334,11 @@ class WebsiteSaleOffer(models.Model):
             raise UserError(_("La oferta no contiene productos."))
 
         for line in self.line_ids:
-            accepted_price = self.counter_price if price_field == "counter_price" else line[price_field]
+            if price_field == "counter_price":
+                accepted_price = self.counter_price
+            else:
+                accepted_price = line[price_field]
+
             if accepted_price <= 0:
                 raise UserError(
                     _("El precio acordado para %(product)s debe ser mayor que cero.",
@@ -296,7 +370,10 @@ class WebsiteSaleOffer(models.Model):
 
         for line in self.line_ids:
             product = line.product_id.with_context(lang=partner.lang)
-            accepted_price = self.counter_price if price_field == "counter_price" else line[price_field]
+            if price_field == "counter_price":
+                accepted_price = self.counter_price
+            else:
+                accepted_price = line[price_field] 
 
             SaleOrderLine.create({
                 "order_id": order.id,
