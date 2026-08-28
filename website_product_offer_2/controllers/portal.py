@@ -57,7 +57,7 @@ class CustomerPortalOffers(CustomerPortal):
                 "sortby": sortby,
             }
         )
-        return request.render("website_product_offer.portal_my_offers", values)
+        return request.render("website_product_offer_2.portal_my_offers", values)
 
     def _check_offer_access(self, offer_id, access_token=None):
         return self._document_check_access(
@@ -86,7 +86,7 @@ class CustomerPortalOffers(CustomerPortal):
         except (AccessError, MissingError):
             return request.redirect("/my")
         return request.render(
-            "website_product_offer.portal_offer_page",
+            "website_product_offer_2.portal_offer_page",
             self._offer_page_values(offer, access_token),
         )
 
@@ -107,7 +107,7 @@ class CustomerPortalOffers(CustomerPortal):
             offer.sudo().action_customer_accept_counter()
         except UserError as error:
             return request.render(
-                "website_product_offer.portal_offer_page",
+                "website_product_offer_2.portal_offer_page",
                 self._offer_page_values(offer, access_token, str(error)),
             )
         return request.redirect(offer.get_portal_url())
@@ -129,7 +129,7 @@ class CustomerPortalOffers(CustomerPortal):
             offer.sudo().action_customer_cancel()
         except UserError as error:
             return request.render(
-                "website_product_offer.portal_offer_page",
+                "website_product_offer_2.portal_offer_page",
                 self._offer_page_values(offer, access_token, str(error)),
             )
         return request.redirect(offer.get_portal_url())
