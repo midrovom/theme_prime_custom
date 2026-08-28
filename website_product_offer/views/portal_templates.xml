@@ -112,16 +112,12 @@
                                         </table>
                                     </div>
                                 </div>
-
-                                <!-- Mensaje del cliente -->
                                 <div t-if="offer.customer_message" class="mt-4 p-3 bg-light rounded-3">
                                     <small class="text-muted d-block mb-1">Tu mensaje</small>
                                     <span t-field="offer.customer_message"/>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Contraoferta por línea -->
                         <div t-if="offer.state == 'counter'" class="card border-0 shadow-sm rounded-4 mt-4 o_wpo_counter_card">
                             <div class="card-body p-4">
                                 <span class="o_wpo_eyebrow">NUEVA PROPUESTA</span>
@@ -146,7 +142,6 @@
                                             </tr>
                                         </tbody>
                                     </table>
-
                                     <div class="text-end mt-3">
                                         <strong>Precio contraoferta:</strong>
                                         <span t-field="offer.counter_price" t-options="{'widget': 'monetary', 'display_currency': offer.currency_id}"/>
