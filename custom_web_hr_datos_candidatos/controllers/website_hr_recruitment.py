@@ -156,26 +156,34 @@ class WebsiteHRRecruitment(http.Controller):
 
             while kwargs.get(f'famTipo_{k}') is not None:
                 tipo = kwargs.get(f'famTipo_{k}')
+                fallecido = kwargs.get(f'famFallecido_{k}') == '1'
                 name = kwargs.get(f'famNombre_{k}', '') or ''
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
-                fallecido = kwargs.get(f'famFallecido_{k}') == '1'  # checkbox manda "1"
 
-                family_file = kwargs.get(f'famArchivo_{k}')
-                document_file = False
-                filename = False
-                if family_file:
-                    filename = family_file.filename
-                    document_file = base64.b64encode(family_file.read())
-
-                # Caso 1: fallecido → solo tipo + fallecido
+                # Si está fallecido, no enviar documento ni otros campos
                 if fallecido:
                     family_lines.append((0, 0, {
-                        'name': f"Fallecido - {tipo}",  # texto por defecto
+                        'name': f"Fallecido - {tipo}",
                         'familiar_type': tipo,
                         'fallecido': True,
+                        'cedula': None,
+                        'document_type': None,
+                        'birthdate': None,
+                        'phone': None,
+                        'occupation': None,
+                        'economically_dependent': None,
+                        'disability': None,
+                        'disability_type': None,
+                        'disability_percentage': None,
+                        'filename': None,
+                        'document_file': None,
                     }))
-                # Caso 2: vivo → requiere nombre
                 elif name:
+                    # Caso normal: familiar vivo
+                    family_file = kwargs.get(f'famArchivo_{k}')
+                    filename = family_file.filename if family_file else False
+                    document_file = base64.b64encode(family_file.read()) if family_file else False
+
                     family_lines.append((0, 0, {
                         'name': name,
                         'document_type': doc_type,
