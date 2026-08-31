@@ -43,11 +43,11 @@
     <template id="index" name="template_name" inherit_id="website_hr_recruitment.index">
         <xpath expr="//div[@class='o_job_infos d-flex flex-column']" position="after">
             <t t-if="request.env.user.id != request.website.user_id.id">
-                <a t-attf-href="/jobs/recruitment/#{ slug(job) }" t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
+                <a t-attf-href="/jobs/recruitment/#{ slug(job) }" t-attf-class="text-decoration-none text-reset btn btn-primary mt-3" style="background-color:#FF7300; border-color:#FF7300; color:#fff;"
                 draggable="false">APLICAR</a>
             </t>
             <t t-else="">
-                <a t-attf-href="/web/login?redirect=/jobs/recruitment/#{ slug(job) }" t-attf-class="text-decoration-none text-reset btn btn-primary mt-3"
+                <a t-attf-href="/web/login?redirect=/jobs/recruitment/#{ slug(job) }" t-attf-class="text-decoration-none text-reset btn btn-primary mt-3" style="background-color:#FF7300; border-color:#FF7300; color:#fff;"
                 draggable="false">APLICAR</a>
             </t>
         </xpath>
