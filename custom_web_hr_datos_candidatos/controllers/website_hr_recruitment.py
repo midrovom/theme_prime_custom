@@ -155,26 +155,27 @@ class WebsiteHRRecruitment(http.Controller):
             k = 1
 
             while kwargs.get(f'famTipo_{k}') is not None:
-
                 tipo = kwargs.get(f'famTipo_{k}')
                 name = kwargs.get(f'famNombre_{k}', '') or ''
                 doc_type = kwargs.get(f'famTipoDoc_{k}')
-                fallecido = kwargs.get(f'famFallecido_{k}') == '1' 
+                fallecido = kwargs.get(f'famFallecido_{k}') == '1'  # checkbox manda "1"
 
-                # Si está fallecido y no hay nombre, asignar texto por defecto
-                if not name and fallecido:
-                    name = f"Fallecido - {tipo}"
+                family_file = kwargs.get(f'famArchivo_{k}')
+                document_file = False
+                filename = False
+                if family_file:
+                    filename = family_file.filename
+                    document_file = base64.b64encode(family_file.read())
 
-                # Guardar siempre si hay nombre o si está fallecido
-                if name or fallecido:
-                    family_file = kwargs.get(f'famArchivo_{k}')
-                    document_file = False
-                    filename = False
-
-                    if family_file:
-                        filename = family_file.filename
-                        document_file = base64.b64encode(family_file.read())
-
+                # Caso 1: fallecido → solo tipo + fallecido
+                if fallecido:
+                    family_lines.append((0, 0, {
+                        'name': f"Fallecido - {tipo}",  # texto por defecto
+                        'familiar_type': tipo,
+                        'fallecido': True,
+                    }))
+                # Caso 2: vivo → requiere nombre
+                elif name:
                     family_lines.append((0, 0, {
                         'name': name,
                         'document_type': doc_type,
@@ -189,14 +190,13 @@ class WebsiteHRRecruitment(http.Controller):
                         'filename': filename,
                         'document_file': document_file,
                         'cedula': None if doc_type == 'part_naci' else kwargs.get(f'famCedula_{k}'),
-                        'fallecido': fallecido,
+                        'fallecido': False,
                     }))
 
                 k += 1
 
             if family_lines:
                 applicant_values['family_ids'] = family_lines
-
 
             # ---------------- Funcion para parseo de localizacion Pais/Ciudad ----------------
 
