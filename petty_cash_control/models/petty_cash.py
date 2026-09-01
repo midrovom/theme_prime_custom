@@ -49,9 +49,9 @@ class PettyCashBox(models.Model):
     approved_expense = fields.Monetary(compute="_compute_balances", string="Gastos aprobados")
     returned_amount = fields.Monetary(compute="_compute_balances", string="Devoluciones")
     available_balance = fields.Monetary(compute="_compute_balances", string="Saldo disponible")
-    company_related_id = fields.Many2one("res.partner", string="Empresa", required=True,
-        index=True, ondelete="cascade", domain="[('is_company', '=', True)]",
-    )
+    # company_related_id = fields.Many2one("res.partner", string="Empresa", required=True,
+    #     index=True, ondelete="cascade", domain="[('is_company', '=', True)]",
+    # )
 
     @api.depends("fund_ids.state", "fund_ids.amount", "expense_ids.state", "expense_ids.amount", "settlement_ids.state", "settlement_ids.return_amount")
     def _compute_balances(self):
@@ -93,9 +93,9 @@ class PettyCashFund(models.Model):
     approved_date = fields.Datetime(readonly=True)
     rejection_reason = fields.Text(readonly=True)
 
-    company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
-        store=True, readonly=True,
-    )
+    # company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
+    #     store=True, readonly=True,
+    # )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -206,9 +206,9 @@ class PettyCashExpense(models.Model):
     approved_date = fields.Datetime(readonly=True)
     rejection_reason = fields.Text(readonly=True)
 
-    company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
-        store=True, readonly=True,
-    )
+    # company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
+    #     store=True, readonly=True,
+    # )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -327,9 +327,9 @@ class PettyCashSettlement(models.Model):
     approved_by = fields.Many2one("res.users", readonly=True)
     approved_date = fields.Datetime(readonly=True)
 
-    company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
-        store=True, readonly=True,
-    )
+    # company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
+    #     store=True, readonly=True,
+    # )
 
     @api.depends("expense_ids.amount", "expense_ids.state")
     def _compute_totals(self):
