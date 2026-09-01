@@ -49,7 +49,7 @@ class PettyCashBox(models.Model):
     approved_expense = fields.Monetary(compute="_compute_balances", string="Gastos aprobados")
     returned_amount = fields.Monetary(compute="_compute_balances", string="Devoluciones")
     available_balance = fields.Monetary(compute="_compute_balances", string="Saldo disponible")
-    company_related_id = fields.Many2one("res.partner", string="Compañía relacionada", required=False,
+    company_related_id = fields.Many2one("res.partner", string="Compañía relacionada", string="Empresa", required=True,
         index=True, ondelete="cascade", domain="[('is_company', '=', True)]",
     )
 
