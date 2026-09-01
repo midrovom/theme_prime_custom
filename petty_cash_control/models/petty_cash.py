@@ -206,6 +206,10 @@ class PettyCashExpense(models.Model):
     approved_date = fields.Datetime(readonly=True)
     rejection_reason = fields.Text(readonly=True)
 
+    company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
+        store=True, readonly=True,
+    )
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -322,6 +326,10 @@ class PettyCashSettlement(models.Model):
     state = fields.Selection([("draft", "Borrador"), ("submitted", "Por aprobar"), ("approved", "Aprobada"), ("closed", "Cerrada"), ("rejected", "Rechazada"), ("cancelled", "Anulada")], default="draft", tracking=True)
     approved_by = fields.Many2one("res.users", readonly=True)
     approved_date = fields.Datetime(readonly=True)
+
+    company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
+        store=True, readonly=True,
+    )
 
     @api.depends("expense_ids.amount", "expense_ids.state")
     def _compute_totals(self):
