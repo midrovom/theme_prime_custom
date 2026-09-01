@@ -49,6 +49,9 @@ class PettyCashBox(models.Model):
     approved_expense = fields.Monetary(compute="_compute_balances", string="Gastos aprobados")
     returned_amount = fields.Monetary(compute="_compute_balances", string="Devoluciones")
     available_balance = fields.Monetary(compute="_compute_balances", string="Saldo disponible")
+    company_related_id = fields.Many2one("res.partner", string="Compañía relacionada", required=False,
+        index=True, ondelete="cascade", domain="[('is_company', '=', True)]",
+    )
 
     @api.depends("fund_ids.state", "fund_ids.amount", "expense_ids.state", "expense_ids.amount", "settlement_ids.state", "settlement_ids.return_amount")
     def _compute_balances(self):
