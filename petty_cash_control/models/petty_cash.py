@@ -93,6 +93,10 @@ class PettyCashFund(models.Model):
     approved_date = fields.Datetime(readonly=True)
     rejection_reason = fields.Text(readonly=True)
 
+    company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
+        store=True, readonly=True,
+    )
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
