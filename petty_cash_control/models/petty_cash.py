@@ -35,8 +35,8 @@ class PettyCashBox(models.Model):
 
     name = fields.Char(required=True, tracking=True)
     code = fields.Char(required=True, tracking=True)
-    responsible_id = fields.Many2one("res.users", required=True, tracking=True)
-    backup_responsible_ids = fields.Many2many("res.users", string="Responsables alternos")
+    responsible_id = fields.Many2one("res.users", required=True, tracking=True, domain="[('company_id', '=', company_id)]")
+    backup_responsible_ids = fields.Many2many("res.users", string="Responsables alternos", domain="[('company_id', '=', company_id)]")
     company_id = fields.Many2one("res.company", default=lambda self: self.env.company, required=True)
     currency_id = fields.Many2one(related="company_id.currency_id", store=True)
     maximum_amount = fields.Monetary(string="Fondo máximo", required=True, tracking=True)
@@ -70,7 +70,6 @@ class PettyCashBox(models.Model):
             raise ValidationError(_("El fondo máximo debe ser mayor que cero."))
 
     _sql_constraints = [("code_company_uniq", "unique(code, company_id)", "El código de caja debe ser único por compañía.")]
-
 
 class PettyCashFund(models.Model):
     _name = "petty.cash.fund"
@@ -158,7 +157,6 @@ class PettyCashFund(models.Model):
         if any(rec.state not in ("draft", "cancelled") for rec in self):
             raise UserError(_("Solo puede eliminar fondos en borrador o anulados."))
         return super().unlink()
-
 
 class PettyCashExpense(models.Model):
     _name = "petty.cash.expense"
@@ -284,7 +282,6 @@ class PettyCashExpense(models.Model):
         if any(rec.settlement_id for rec in self):
             raise UserError(_("No puede eliminar gastos incluidos en una liquidación."))
         return super().unlink()
-
 
 class PettyCashSettlement(models.Model):
     _name = "petty.cash.settlement"
