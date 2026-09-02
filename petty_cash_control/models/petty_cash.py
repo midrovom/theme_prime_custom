@@ -35,8 +35,8 @@ class PettyCashBox(models.Model):
 
     name = fields.Char(required=True, tracking=True)
     code = fields.Char(required=True, tracking=True)
-    responsible_id = fields.Many2one("res.users", required=True, tracking=True, domain="[('company_ids', 'in', company_id)]" )
-    backup_responsible_ids = fields.Many2many("res.users", string="Responsables alternos", domain="[('company_ids', 'in', company_id)]")
+    responsible_id = fields.Many2one("res.users", required=True, tracking=True)
+    backup_responsible_ids = fields.Many2many("res.users", string="Responsables alternos")
     company_id = fields.Many2one("res.company", default=lambda self: self.env.company, required=True)
     currency_id = fields.Many2one(related="company_id.currency_id", store=True)
     maximum_amount = fields.Monetary(string="Fondo máximo", required=True, tracking=True)
