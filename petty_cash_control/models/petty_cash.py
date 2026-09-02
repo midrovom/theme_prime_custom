@@ -49,6 +49,9 @@ class PettyCashBox(models.Model):
     approved_expense = fields.Monetary(compute="_compute_balances", string="Gastos aprobados")
     returned_amount = fields.Monetary(compute="_compute_balances", string="Devoluciones")
     available_balance = fields.Monetary(compute="_compute_balances", string="Saldo disponible")
+    # company_related_id = fields.Many2one("res.partner", string="Empresa", required=True,
+    #     index=True, ondelete="cascade", domain="[('is_company', '=', True)]",
+    # )
 
     @api.depends("fund_ids.state", "fund_ids.amount", "expense_ids.state", "expense_ids.amount", "settlement_ids.state", "settlement_ids.return_amount")
     def _compute_balances(self):
@@ -68,6 +71,7 @@ class PettyCashBox(models.Model):
 
     _sql_constraints = [("code_company_uniq", "unique(code, company_id)", "El código de caja debe ser único por compañía.")]
 
+
 class PettyCashFund(models.Model):
     _name = "petty.cash.fund"
     _description = "Entrega o reposición de caja chica"
@@ -81,13 +85,17 @@ class PettyCashFund(models.Model):
     fund_type = fields.Selection([("initial", "Entrega inicial"), ("replenishment", "Reposición")], default="replenishment", required=True, tracking=True)
     amount = fields.Monetary(required=True, tracking=True)
     currency_id = fields.Many2one(related="box_id.currency_id", store=True)
-    company_id = fields.Many2one(related="box_id.company_id", store=True)
+    company_id = fields.Many2one("res.company", string="Compañía", required=True, default=lambda self: self.env.company, readonly=True,)
     description = fields.Text(required=True)
     attachment_ids = fields.Many2many("ir.attachment", "petty_cash_fund_attachment_rel", "fund_id", "attachment_id", string="Comprobantes")
     state = fields.Selection([("draft", "Borrador"), ("submitted", "Por aprobar"), ("approved", "Aprobado"), ("rejected", "Rechazado"), ("cancelled", "Anulado")], default="draft", tracking=True)
     approved_by = fields.Many2one("res.users", readonly=True)
     approved_date = fields.Datetime(readonly=True)
     rejection_reason = fields.Text(readonly=True)
+
+    # company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
+    #     store=True, readonly=True,
+    # )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -107,15 +115,33 @@ class PettyCashFund(models.Model):
                 raise UserError(_("Solo puede enviar fondos en borrador o rechazados."))
             rec.write({"state": "submitted", "rejection_reason": False})
 
+    # def action_approve(self):
+    #     if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
+    #         raise UserError(_("No tiene permisos para aprobar fondos."))
+    #     for rec in self:
+    #         if rec.state != "submitted":
+    #             raise UserError(_("Solo se pueden aprobar solicitudes enviadas."))
+    #         if rec.box_id.maximum_amount and rec.box_id.available_balance + rec.amount > rec.box_id.maximum_amount:
+    #             raise ValidationError(_("La aprobación excedería el fondo máximo de la caja."))
+    #         rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
     def action_approve(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
             raise UserError(_("No tiene permisos para aprobar fondos."))
+
         for rec in self:
+            if rec.box_id.responsible_id != self.env.user and self.env.user not in rec.box_id.backup_responsible_ids:
+                raise UserError(_("Solo puede aprobar fondos de las cajas donde es responsable o responsable alterno."))
+
             if rec.state != "submitted":
                 raise UserError(_("Solo se pueden aprobar solicitudes enviadas."))
             if rec.box_id.maximum_amount and rec.box_id.available_balance + rec.amount > rec.box_id.maximum_amount:
                 raise ValidationError(_("La aprobación excedería el fondo máximo de la caja."))
-            rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+
+            rec.write({
+                "state": "approved",
+                "approved_by": self.env.user.id,
+                "approved_date": fields.Datetime.now(),
+            })
 
     def action_reject(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
@@ -142,6 +168,7 @@ class PettyCashFund(models.Model):
             raise UserError(_("Solo puede eliminar fondos en borrador o anulados."))
         return super().unlink()
 
+
 class PettyCashExpense(models.Model):
     _name = "petty.cash.expense"
     _description = "Gasto de caja chica"
@@ -155,7 +182,7 @@ class PettyCashExpense(models.Model):
     category_id = fields.Many2one("petty.cash.category", required=True, tracking=True)
     supplier_id = fields.Many2one(
         "res.partner", string="Proveedor", tracking=True,
-        domain="[('active', '=', True)]", ondelete="restrict",
+        domain="[('active', '=', True)]", ondelete="restrict", required=False,
     )
     supplier_name = fields.Char(string="Proveedor anterior", readonly=True)
     supplier_vat = fields.Char(related="supplier_id.vat", string="RUC/Cédula", readonly=True, store=True)
@@ -171,13 +198,17 @@ class PettyCashExpense(models.Model):
     description = fields.Text(required=True)
     amount = fields.Monetary(required=True, tracking=True)
     currency_id = fields.Many2one(related="box_id.currency_id", store=True)
-    company_id = fields.Many2one(related="box_id.company_id", store=True)
+    company_id = fields.Many2one("res.company", string="Compañía", required=True, default=lambda self: self.env.company, readonly=True,)
     attachment_ids = fields.Many2many("ir.attachment", "petty_cash_expense_attachment_rel", "expense_id", "attachment_id", string="Comprobantes")
     settlement_id = fields.Many2one("petty.cash.settlement", readonly=True, copy=False)
     state = fields.Selection([("draft", "Borrador"), ("submitted", "Por aprobar"), ("approved", "Aprobado"), ("rejected", "Rechazado"), ("cancelled", "Anulado")], default="draft", tracking=True)
     approved_by = fields.Many2one("res.users", readonly=True)
     approved_date = fields.Datetime(readonly=True)
     rejection_reason = fields.Text(readonly=True)
+
+    # company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
+    #     store=True, readonly=True,
+    # )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -203,8 +234,8 @@ class PettyCashExpense(models.Model):
 
     def _validate_expense_data(self):
         for rec in self:
-            if not rec.supplier_id:
-                raise ValidationError(_("Debe seleccionar el proveedor."))
+            # if not rec.supplier_id:
+            #     raise ValidationError(_("Debe seleccionar el proveedor."))
             if not rec.beneficiary_id:
                 raise ValidationError(_("Debe seleccionar el beneficiario."))
             if not rec.department_id:
@@ -214,16 +245,36 @@ class PettyCashExpense(models.Model):
             if not rec.attachment_ids:
                 raise ValidationError(_("Debe adjuntar al menos un comprobante."))
 
+    # def action_approve(self):
+    #     if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
+    #         raise UserError(_("No tiene permisos para aprobar gastos."))
+    #     for rec in self:
+    #         if rec.state != "submitted":
+    #             raise UserError(_("Solo se pueden aprobar gastos enviados."))
+    #         rec._validate_expense_data()
+    #         if rec.amount > rec.box_id.available_balance:
+    #             raise ValidationError(_("La caja no tiene saldo suficiente para aprobar este gasto."))
+    #         rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+
     def action_approve(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
             raise UserError(_("No tiene permisos para aprobar gastos."))
+
         for rec in self:
+            if rec.box_id.responsible_id != self.env.user and self.env.user not in rec.box_id.backup_responsible_ids:
+                raise UserError(_("Solo puede aprobar gastos de las cajas donde es responsable o responsable alterno."))
+
             if rec.state != "submitted":
                 raise UserError(_("Solo se pueden aprobar gastos enviados."))
             rec._validate_expense_data()
             if rec.amount > rec.box_id.available_balance:
                 raise ValidationError(_("La caja no tiene saldo suficiente para aprobar este gasto."))
-            rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+
+            rec.write({
+                "state": "approved",
+                "approved_by": self.env.user.id,
+                "approved_date": fields.Datetime.now(),
+            })
 
     def action_reject(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
@@ -254,6 +305,7 @@ class PettyCashExpense(models.Model):
             raise UserError(_("No puede eliminar gastos incluidos en una liquidación."))
         return super().unlink()
 
+
 class PettyCashSettlement(models.Model):
     _name = "petty.cash.settlement"
     _description = "Liquidación de caja chica"
@@ -268,12 +320,16 @@ class PettyCashSettlement(models.Model):
     expense_total = fields.Monetary(compute="_compute_totals", store=True)
     return_amount = fields.Monetary(string="Sobrante devuelto", tracking=True)
     currency_id = fields.Many2one(related="box_id.currency_id", store=True)
-    company_id = fields.Many2one(related="box_id.company_id", store=True)
+    company_id = fields.Many2one("res.company", string="Compañía", required=True, default=lambda self: self.env.company, readonly=True,)
     attachment_ids = fields.Many2many("ir.attachment", "petty_cash_settlement_attachment_rel", "settlement_id", "attachment_id", string="Evidencias")
     notes = fields.Text()
     state = fields.Selection([("draft", "Borrador"), ("submitted", "Por aprobar"), ("approved", "Aprobada"), ("closed", "Cerrada"), ("rejected", "Rechazada"), ("cancelled", "Anulada")], default="draft", tracking=True)
     approved_by = fields.Many2one("res.users", readonly=True)
     approved_date = fields.Datetime(readonly=True)
+
+    # company_related_id = fields.Many2one("res.partner", string="Empresa", related="box_id.company_related_id",
+    #     store=True, readonly=True,
+    # )
 
     @api.depends("expense_ids.amount", "expense_ids.state")
     def _compute_totals(self):
@@ -311,13 +367,30 @@ class PettyCashSettlement(models.Model):
                 raise ValidationError(_("Todos los gastos deben pertenecer a la misma caja de la liquidación."))
             rec.state = "submitted"
 
+    # def action_approve(self):
+    #     if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
+    #         raise UserError(_("No tiene permisos para aprobar liquidaciones."))
+    #     for rec in self:
+    #         if rec.state != "submitted":
+    #             raise UserError(_("Solo puede aprobar liquidaciones pendientes de aprobación."))
+    #         rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+
     def action_approve(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
             raise UserError(_("No tiene permisos para aprobar liquidaciones."))
+
         for rec in self:
+            if rec.box_id.responsible_id != self.env.user and self.env.user not in rec.box_id.backup_responsible_ids:
+                raise UserError(_("Solo puede aprobar liquidaciones de las cajas donde es responsable o responsable alterno."))
+
             if rec.state != "submitted":
                 raise UserError(_("Solo puede aprobar liquidaciones pendientes de aprobación."))
-            rec.write({"state": "approved", "approved_by": self.env.user.id, "approved_date": fields.Datetime.now()})
+
+            rec.write({
+                "state": "approved",
+                "approved_by": self.env.user.id,
+                "approved_date": fields.Datetime.now(),
+            })
 
     def action_close(self):
         if not self.env.user.has_group("petty_cash_control.group_petty_cash_approver"):
