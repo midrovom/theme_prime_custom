@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_digital_training_certificate_template_list" model="ir.ui.view">
+        <field name="name">digital.training.certificate.template.list</field>
+        <field name="model">digital.training.certificate.template</field>
+        <field name="arch" type="xml">
+            <list string="Plantillas de certificado">
+                <field name="name"/>
+                <field name="certificate_title"/>
+                <field name="show_organization_logo"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_digital_training_certificate_template_form" model="ir.ui.view">
+        <field name="name">digital.training.certificate.template.form</field>
+        <field name="model">digital.training.certificate.template</field>
+        <field name="arch" type="xml">
+            <form string="Plantilla de certificado">
+                <sheet>
+                    <widget name="web_ribbon" title="Archivada" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Nombre de la plantilla"/></h1>
+                    </div>
+                    <group>
+                        <field name="active"/>
+                    </group>
+                    <notebook>
+                        <page string="Diseño">
+                            <group>
+                                <group string="Imágenes">
+                                    <field name="logo_primary" widget="image"/>
+                                    <field name="logo_secondary" widget="image"/>
+                                    <field name="show_organization_logo"/>
+                                </group>
+                                <group string="Apariencia">
+                                    <field name="primary_color" placeholder="#123B5D"/>
+                                    <field name="accent_color" placeholder="#D6A84B"/>
+                                    <field name="background_image" widget="image"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Texto del certificado">
+                            <div class="alert alert-info" role="alert">
+                                Variables disponibles: [NOMBRE], [CORREO], [EMPRESA], [CURSO], [FECHA], [DURACION], [INSTRUCTOR] y [CERTIFICADO].
+                            </div>
+                            <group>
+                                <field name="certificate_title"/>
+                            </group>
+                            <field name="body_html" widget="html"/>
+                            <separator string="Texto inferior"/>
+                            <field name="footer_html" widget="html"/>
+                        </page>
+                        <page string="Firmas">
+                            <group>
+                                <group string="Primera firma">
+                                    <field name="signature_1_image" widget="image"/>
+                                    <field name="signature_1_name"/>
+                                    <field name="signature_1_title"/>
+                                </group>
+                                <group string="Segunda firma">
+                                    <field name="signature_2_image" widget="image"/>
+                                    <field name="signature_2_name"/>
+                                    <field name="signature_2_title"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Correo electrónico">
+                            <div class="alert alert-info" role="alert">
+                                Puede utilizar las mismas variables disponibles en el texto del certificado.
+                            </div>
+                            <group>
+                                <field name="email_subject"/>
+                            </group>
+                            <field name="email_body_html" widget="html"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_digital_training_certificate_template" model="ir.actions.act_window">
+        <field name="name">Plantillas de certificado</field>
+        <field name="res_model">digital.training.certificate.template</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>
+

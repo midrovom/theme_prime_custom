@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_digital_training_root"
+              name="Capacitaciones"
+              sequence="45"
+              groups="digital_training_certificate.group_digital_training_manager"/>
+
+    <menuitem id="menu_digital_training_events"
+              name="Capacitaciones"
+              parent="menu_digital_training_root"
+              action="action_digital_training_event"
+              sequence="10"/>
+
+    <menuitem id="menu_digital_training_attendees"
+              name="Participantes"
+              parent="menu_digital_training_root"
+              action="action_digital_training_attendee"
+              sequence="20"/>
+
+    <menuitem id="menu_digital_training_configuration"
+              name="Configuración"
+              parent="menu_digital_training_root"
+              sequence="90"/>
+
+    <menuitem id="menu_digital_training_courses"
+              name="Cursos"
+              parent="menu_digital_training_configuration"
+              action="action_digital_training_course"
+              sequence="10"/>
+
+    <menuitem id="menu_digital_training_organizations"
+              name="Empresas participantes"
+              parent="menu_digital_training_configuration"
+              action="action_digital_training_organization"
+              sequence="20"/>
+
+    <menuitem id="menu_digital_training_templates"
+              name="Plantillas de certificado"
+              parent="menu_digital_training_configuration"
+              action="action_digital_training_certificate_template"
+              sequence="30"/>
+</odoo>

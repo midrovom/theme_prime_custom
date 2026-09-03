@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_training_certificate" model="report.paperformat">
+        <field name="name">Certificado A4 horizontal</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">0</field>
+        <field name="margin_bottom">0</field>
+        <field name="margin_left">0</field>
+        <field name="margin_right">0</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="report_training_certificate" model="ir.actions.report">
+        <field name="name">Certificado de participación</field>
+        <field name="model">digital.training.attendee</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">digital_training_certificate.report_training_certificate_document</field>
+        <field name="report_file">digital_training_certificate.report_training_certificate_document</field>
+        <field name="paperformat_id" ref="digital_training_certificate.paperformat_training_certificate"/>
+        <field name="binding_model_id" ref="model_digital_training_attendee"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">('Certificado_%s' % (object.certificate_number or object.id)).replace('/', '_')</field>
+    </record>
+
+    <template id="report_training_certificate_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="tpl" t-value="o.event_id.certificate_template_id"/>
+                <div class="page" style="position: relative; width: 297mm; height: 210mm; overflow: hidden; padding: 0; margin: 0;">
+                    <t t-if="tpl.background_image">
+                        <img t-att-src="image_data_uri(tpl.background_image)"
+                             style="position: absolute; top: 0; left: 0; width: 297mm; height: 210mm; z-index: 0;"/>
+                    </t>
+                    <div t-att-style="'position: absolute; top: 9mm; right: 9mm; bottom: 9mm; left: 9mm; z-index: 1; border: 2px solid %s; padding: 10mm 14mm; box-sizing: border-box; color: %s; font-family: DejaVu Sans, Arial, sans-serif;' % (tpl.accent_color or '#D6A84B', tpl.primary_color or '#123B5D')">
+                        <div style="height: 24mm; display: table; width: 100%;">
+                            <div style="display: table-cell; width: 33%; vertical-align: middle; text-align: left;">
+                                <img t-if="tpl.logo_primary" t-att-src="image_data_uri(tpl.logo_primary)" style="max-height: 22mm; max-width: 62mm;"/>
+                            </div>
+                            <div style="display: table-cell; width: 34%; vertical-align: middle; text-align: center;">
+                                <span style="font-size: 13px; letter-spacing: 1px;" t-out="o.event_id.name"/>
+                            </div>
+                            <div style="display: table-cell; width: 33%; vertical-align: middle; text-align: right;">
+                                <img t-if="tpl.show_organization_logo and o.organization_id.logo"
+                                     t-att-src="image_data_uri(o.organization_id.logo)"
+                                     style="max-height: 22mm; max-width: 62mm;"/>
+                                <img t-elif="tpl.logo_secondary" t-att-src="image_data_uri(tpl.logo_secondary)" style="max-height: 22mm; max-width: 62mm;"/>
+                            </div>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 3mm;">
+                            <h1 t-att-style="'font-size: 30px; letter-spacing: 2px; margin: 0 0 7mm; color: %s;' % (tpl.primary_color or '#123B5D')"
+                                t-out="tpl.certificate_title"/>
+                            <div t-out="o.get_certificate_body_html()"/>
+                        </div>
+
+                        <div style="position: absolute; left: 14mm; right: 14mm; bottom: 17mm;">
+                            <div style="display: table; width: 100%; table-layout: fixed; text-align: center;">
+                                <div style="display: table-cell; width: 50%; vertical-align: bottom; padding: 0 12mm;">
+                                    <img t-if="tpl.signature_1_image" t-att-src="image_data_uri(tpl.signature_1_image)" style="max-height: 20mm; max-width: 55mm;"/>
+                                    <div t-att-style="'border-top: 1px solid %s; padding-top: 2mm;' % (tpl.primary_color or '#123B5D')">
+                                        <strong t-out="tpl.signature_1_name or o.event_id.instructor_name"/>
+                                        <div style="font-size: 12px;" t-out="tpl.signature_1_title or 'Facilitador / instructor'"/>
+                                    </div>
+                                </div>
+                                <div t-if="tpl.signature_2_name or tpl.signature_2_image" style="display: table-cell; width: 50%; vertical-align: bottom; padding: 0 12mm;">
+                                    <img t-if="tpl.signature_2_image" t-att-src="image_data_uri(tpl.signature_2_image)" style="max-height: 20mm; max-width: 55mm;"/>
+                                    <div t-att-style="'border-top: 1px solid %s; padding-top: 2mm;' % (tpl.primary_color or '#123B5D')">
+                                        <strong t-out="tpl.signature_2_name"/>
+                                        <div style="font-size: 12px;" t-out="tpl.signature_2_title"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="font-size: 10px; margin-top: 4mm; text-align: center; color: #555;">
+                                <div t-if="tpl.footer_html" t-out="o.get_certificate_footer_html()"/>
+                                <span>N.º </span><span t-out="o.certificate_number"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_digital_training_attendee_search" model="ir.ui.view">
+        <field name="name">digital.training.attendee.search</field>
+        <field name="model">digital.training.attendee</field>
+        <field name="arch" type="xml">
+            <search string="Buscar participantes">
+                <field name="full_name"/>
+                <field name="email"/>
+                <field name="certificate_number"/>
+                <field name="event_id"/>
+                <field name="organization_id"/>
+                <filter string="Correo con error" name="email_error" domain="[('email_state', '=', 'error')]"/>
+                <filter string="Correo enviado" name="email_sent" domain="[('email_state', '=', 'sent')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Capacitación" name="group_event" context="{'group_by': 'event_id'}"/>
+                    <filter string="Empresa" name="group_organization" context="{'group_by': 'organization_id'}"/>
+                    <filter string="Estado del correo" name="group_email_state" context="{'group_by': 'email_state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_digital_training_attendee_list" model="ir.ui.view">
+        <field name="name">digital.training.attendee.list</field>
+        <field name="model">digital.training.attendee</field>
+        <field name="arch" type="xml">
+            <list string="Participantes" decoration-success="email_state == 'sent'" decoration-danger="email_state == 'error'">
+                <field name="full_name"/>
+                <field name="email"/>
+                <field name="organization_id"/>
+                <field name="event_id"/>
+                <field name="registered_at"/>
+                <field name="certificate_number"/>
+                <field name="email_state" widget="badge"/>
+                <field name="email_sent_at" optional="hide"/>
+                <button name="action_send_certificate" type="object" string="Enviar" icon="fa-envelope"/>
+                <button name="action_download_certificate" type="object" string="Descargar" icon="fa-download"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_digital_training_attendee_form" model="ir.ui.view">
+        <field name="name">digital.training.attendee.form</field>
+        <field name="model">digital.training.attendee</field>
+        <field name="arch" type="xml">
+            <form string="Participante">
+                <header>
+                    <button name="action_generate_certificate" type="object" string="Regenerar certificado" class="btn-secondary"/>
+                    <button name="action_send_certificate" type="object" string="Enviar por correo" class="btn-primary"/>
+                    <button name="action_download_certificate" type="object" string="Descargar" class="btn-secondary" icon="fa-download"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="full_name"/>
+                        <h1><field name="full_name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="email"/>
+                            <field name="organization_id"/>
+                            <field name="event_id"/>
+                            <field name="registered_at"/>
+                        </group>
+                        <group>
+                            <field name="certificate_number" readonly="1"/>
+                            <field name="certificate_attachment_id" readonly="1"/>
+                            <field name="email_state" widget="badge" readonly="1"/>
+                            <field name="email_sent_at" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Detalle del error" invisible="email_state != 'error'">
+                        <field name="email_error" readonly="1" nolabel="1"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_digital_training_attendee" model="ir.actions.act_window">
+        <field name="name">Participantes</field>
+        <field name="res_model">digital.training.attendee</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_digital_training_attendee_search"/>
+    </record>
+</odoo>
+

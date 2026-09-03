@@ -1,0 +1,27 @@
+{
+    "name": "Capacitaciones y Certificados por QR",
+    "summary": "Registro público por QR, certificado PDF y envío automático por correo",
+    "version": "18.0.1.0.0",
+    "category": "Human Resources",
+    "author": "Radis Software",
+    "website": "",
+    "license": "LGPL-3",
+    "depends": ["base", "mail", "web", "website"],
+    "data": [
+        "security/security.xml",
+        "security/ir.model.access.csv",
+        "data/sequences.xml",
+        "data/certificate_template_data.xml",
+        "report/certificate_report.xml",
+        "views/organization_views.xml",
+        "views/course_views.xml",
+        "views/certificate_template_views.xml",
+        "views/event_views.xml",
+        "views/attendee_views.xml",
+        "views/website_templates.xml",
+        "views/menus.xml",
+    ],
+    "application": True,
+    "installable": True,
+}
+

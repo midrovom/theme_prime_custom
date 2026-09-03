@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_digital_training_event_search" model="ir.ui.view">
+        <field name="name">digital.training.event.search</field>
+        <field name="model">digital.training.event</field>
+        <field name="arch" type="xml">
+            <search string="Buscar capacitaciones">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="course_id"/>
+                <field name="instructor_name"/>
+                <filter string="Registro abierto" name="open" domain="[('state', '=', 'open')]"/>
+                <filter string="Cerradas" name="closed" domain="[('state', '=', 'closed')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Curso" name="group_course" context="{'group_by': 'course_id'}"/>
+                    <filter string="Estado" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Fecha" name="group_date" context="{'group_by': 'event_date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_digital_training_event_list" model="ir.ui.view">
+        <field name="name">digital.training.event.list</field>
+        <field name="model">digital.training.event</field>
+        <field name="arch" type="xml">
+            <list string="Capacitaciones" decoration-success="state == 'open'" decoration-muted="state == 'closed'">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="course_id"/>
+                <field name="event_date"/>
+                <field name="instructor_name"/>
+                <field name="attendee_count"/>
+                <field name="email_sent_count" optional="show"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_digital_training_event_form" model="ir.ui.view">
+        <field name="name">digital.training.event.form</field>
+        <field name="model">digital.training.event</field>
+        <field name="arch" type="xml">
+            <form string="Capacitación">
+                <header>
+                    <button name="action_open_registration" type="object" string="Abrir registro" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_close_registration" type="object" string="Cerrar registro" class="btn-secondary" invisible="state != 'open'"/>
+                    <button name="action_reset_to_draft" type="object" string="Volver a borrador" invisible="state != 'closed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,open,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_attendees" type="object" class="oe_stat_button" icon="fa-users">
+                            <field name="attendee_count" widget="statinfo" string="Participantes"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Ej.: Inducción de Conciencia Digital - Septiembre"/></h1>
+                        <h2><field name="code" readonly="1"/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="course_id" options="{'no_create_edit': False}"/>
+                            <field name="event_date"/>
+                            <field name="duration_hours"/>
+                            <field name="instructor_name"/>
+                        </group>
+                        <group>
+                            <field name="certificate_template_id" options="{'no_create_edit': False}"/>
+                            <field name="organization_ids" widget="many2many_tags" options="{'no_create_edit': False}"/>
+                            <field name="email_from" placeholder="Capacitaciones &lt;capacitaciones@empresa.com&gt;"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="QR y registro">
+                            <group>
+                                <group string="Vigencia">
+                                    <field name="registration_start"/>
+                                    <field name="registration_end"/>
+                                    <field name="public_base_url" placeholder="https://odoo.suempresa.com"/>
+                                </group>
+                                <group string="Enlace público">
+                                    <field name="public_url" widget="url" readonly="1"/>
+                                    <button name="action_show_qr" type="object" string="Mostrar QR" class="btn-primary" icon="fa-qrcode"/>
+                                    <button name="action_open_public_form" type="object" string="Abrir formulario" icon="fa-external-link"/>
+                                    <button name="action_regenerate_token" type="object" string="Regenerar QR" icon="fa-refresh" confirm="El enlace anterior dejará de funcionar. ¿Desea continuar?"/>
+                                </group>
+                            </group>
+                            <separator string="Contenido del formulario"/>
+                            <group>
+                                <field name="form_title"/>
+                            </group>
+                            <field name="form_intro" widget="html"/>
+                            <separator string="Mensaje después del registro"/>
+                            <field name="success_message" widget="html"/>
+                            <separator string="Aviso sobre los datos"/>
+                            <field name="privacy_notice" widget="html"/>
+                        </page>
+                        <page string="Participantes">
+                            <field name="attendee_ids" readonly="1">
+                                <list>
+                                    <field name="full_name"/>
+                                    <field name="email"/>
+                                    <field name="organization_id"/>
+                                    <field name="registered_at"/>
+                                    <field name="certificate_number"/>
+                                    <field name="email_state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_digital_training_event" model="ir.actions.act_window">
+        <field name="name">Capacitaciones</field>
+        <field name="res_model">digital.training.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_digital_training_event_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Cree su primera capacitación</p>
+            <p>Configure el curso, las empresas, la plantilla y abra el registro para mostrar el QR.</p>
+        </field>
+    </record>
+</odoo>
+
