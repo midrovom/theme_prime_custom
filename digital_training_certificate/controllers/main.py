@@ -44,7 +44,7 @@ class DigitalTrainingCertificateController(http.Controller):
         "/capacitacion/<string:token>/registrar",
         type="http",
         auth="public",
-        website=True,
+        website=False,
         sitemap=False,
         csrf=True,
         methods=["POST"],
@@ -139,7 +139,7 @@ class DigitalTrainingCertificateController(http.Controller):
         "/capacitacion/certificado/<string:token>/descargar",
         type="http",
         auth="public",
-        website=False,
+        website=True,
         sitemap=False,
         methods=["GET"],
     )
