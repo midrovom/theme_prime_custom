@@ -2,7 +2,7 @@
 <odoo>
     <record id="default_certificate_template" model="digital.training.certificate.template">
         <field name="name">Certificado corporativo</field>
-        <field name="certificate_title">CERTIFICADO DE PARTICIPACIÓN</field>
+        <field name="certificate_title">CERTIFICADO DE PARTICIPACION</field>
         <field name="primary_color">#123B5D</field>
         <field name="accent_color">#D6A84B</field>
         <field name="show_organization_logo">True</field>
@@ -22,8 +22,8 @@
         <field name="email_body_html" type="html">
             <div>
                 <p>Estimado/a <strong>[NOMBRE]</strong>:</p>
-                <p>Gracias por participar en la capacitación <strong>[CURSO]</strong>.</p>
-                <p>Adjuntamos su certificado de participación número <strong>[CERTIFICADO]</strong>.</p>
+                <p>Gracias por participar en la capacitacion <strong>[CURSO]</strong>.</p>
+                <p>Adjuntamos su certificado de participación numero <strong>[CERTIFICADO]</strong>.</p>
                 <p>Saludos cordiales.</p>
             </div>
         </field>
