@@ -8,17 +8,17 @@
         <field name="show_organization_logo">True</field>
         <field name="body_html" type="html">
             <div style="text-align: center;">
-                <p style="font-size: 18px; margin-bottom: 8px;">Se certifica que</p>
+                <p style="font-size: 18px; margin-bottom: 8px;">SE CERTIFICA QUE</p>
                 <p style="font-size: 34px; font-weight: 700; margin: 8px 0;">[NOMBRE]</p>
-                <p style="font-size: 17px; margin: 8px 0;">perteneciente a <strong>[EMPRESA]</strong>, participó en la capacitación</p>
+                <p style="font-size: 17px; margin: 8px 0;">PERTENECIENTE A <strong>[EMPRESA]</strong>, PARTICIPO EN LA CAPACITACION</p>
                 <p style="font-size: 25px; font-weight: 700; margin: 10px 0;">“[CURSO]”</p>
-                <p style="font-size: 16px; margin-top: 8px;">realizada el [FECHA], con una duración de [DURACION].</p>
+                <p style="font-size: 16px; margin-top: 8px;">REALIZADA EL [FECHA], CON UNA DURACION DE [DURACION].</p>
             </div>
         </field>
         <field name="footer_html" type="html">
-            <p style="text-align: center;">Este certificado acredita la participación en la actividad indicada.</p>
+            <p style="text-align: center;">ESTE CERTIFICADO ACREDITA LA PARTICIPACION EN LA ACTIVIDAD INDICADA.</p>
         </field>
-        <field name="email_subject">Su certificado de [CURSO]</field>
+        <field name="email_subject">SU CERTIFICADO DE [CURSO]</field>
         <field name="email_body_html" type="html">
             <div>
                 <p>Estimado/a <strong>[NOMBRE]</strong>:</p>
