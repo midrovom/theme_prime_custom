@@ -12,34 +12,6 @@ class DigitalTrainingCertificateController(http.Controller):
             [("access_token", "=", token)], limit=1
         )
 
-    # @http.route(
-    #     "/capacitacion/<string:token>",
-    #     type="http",
-    #     auth="public",
-    #     website=True,
-    #     sitemap=False,
-    #     methods=["GET"],
-    # )
-    # def training_registration(self, token, **kwargs):
-    #     event = self._find_event(token)
-    #     if not event:
-    #         return request.render(
-    #             "digital_training_certificate.registration_unavailable",
-    #             {"message": "El enlace de registro no es válido."},
-    #         )
-    #     available, message = event.get_registration_availability()
-    #     return request.render(
-    #         "digital_training_certificate.training_registration_page",
-    #         {
-    #             "event": event,
-    #             "organizations": event.organization_ids.filtered("active"),
-    #             "available": available,
-    #             "availability_message": message,
-    #             "errors": [],
-    #             "form_data": {},
-    #         },
-    #     )
-
     @http.route(
         "/capacitacion/<string:token>",
         type="http",
@@ -49,35 +21,18 @@ class DigitalTrainingCertificateController(http.Controller):
         methods=["GET"],
     )
     def training_registration(self, token, **kwargs):
-
-        event = (
-            request.env["digital.training.event"]
-            .sudo()
-            .search(
-                [("access_token", "=", token)],
-                limit=1,
-            )
-        )
-
+        event = self._find_event(token)
         if not event:
             return request.render(
                 "digital_training_certificate.registration_unavailable",
-                {
-                    "message": "El enlace de registro no es válido.",
-                },
+                {"message": "El enlace de registro no es válido."},
             )
-
         available, message = event.get_registration_availability()
-
-        organizations = event.organization_ids.filtered(
-            lambda organization: organization.active
-        )
-
         return request.render(
             "digital_training_certificate.training_registration_page",
             {
                 "event": event,
-                "organizations": organizations,
+                "organizations": event.organization_ids.filtered("active"),
                 "available": available,
                 "availability_message": message,
                 "errors": [],
