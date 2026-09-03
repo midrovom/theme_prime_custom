@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<odoo>
     <record id="sequence_digital_training_event" model="ir.sequence">
         <field name="name">Capacitación</field>
         <field name="code">digital.training.event</field>
