@@ -35,7 +35,7 @@
                         <img t-att-src="image_data_uri(tpl.background_image)"
                              style="position: absolute; top: 0; left: 0; width: 297mm; height: 210mm; z-index: 0;"/>
                     </t>
-                    <div t-att-style="'position: absolute; top: 9mm; right: 9mm; bottom: 9mm; left: 9mm; z-index: 1; border: 2px solid %s; padding: 10mm 14mm; box-sizing: border-box; color: %s; font-family: DejaVu Sans, Arial, sans-serif;' % (tpl.accent_color or '#D6A84B', tpl.primary_color or '#123B5D')">
+                    <div t-att-style="'position: absolute; top: 9mm; right: 9mm; bottom: 9mm; left: 9mm; z-index: 1; border: 2px solid %s; padding: 10mm; box-sizing: border-box; color: %s; font-family: DejaVu Sans, Arial, sans-serif;' % (tpl.accent_color or '#D6A84B', tpl.primary_color or '#123B5D')">
                         <div style="height: 24mm; display: table; width: 100%;">
                             <div style="display: table-cell; width: 33%; vertical-align: middle; text-align: left;">
                                 <img t-if="tpl.logo_primary" t-att-src="image_data_uri(tpl.logo_primary)" style="max-height: 22mm; max-width: 62mm;"/>
