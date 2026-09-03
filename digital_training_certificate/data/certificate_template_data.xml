@@ -11,7 +11,7 @@
                 <p style="font-size: 18px; margin-bottom: 8px;">SE CERTIFICA QUE</p>
                 <p style="font-size: 34px; font-weight: 700; margin: 8px 0;">[NOMBRE]</p>
                 <p style="font-size: 17px; margin: 8px 0;">PERTENECIENTE A <strong>[EMPRESA]</strong>, PARTICIPO EN LA CAPACITACION</p>
-                <p style="font-size: 25px; font-weight: 700; margin: 10px 0;">“[CURSO]”</p>
+                <p style="font-size: 25px; font-weight: 700; margin: 10px 0;">[CURSO]</p>
                 <p style="font-size: 16px; margin-top: 8px;">REALIZADA EL [FECHA], CON UNA DURACION DE [DURACION].</p>
             </div>
         </field>
