@@ -1,10 +1,10 @@
 {
-  "buildNumber": "7c61b9180de4ed8b575311a9ac4672f63c68d701@2026-08-28 02:11:53 +0000",
-  "id": "98984F8B917A47A7999F6371C111F9AF.uat01-vm-tx04",
-  "ndc": "98984F8B917A47A7999F6371C111F9AF.uat01-vm-tx04",
   "result": {
-    "code": "000.200.100",
-    "description": "successfully created checkout"
+    "code": "800.900.300",
+    "description": "user authorization failed"
   },
-  "timestamp": "2026-09-07 20:19:42+0000"
+  "buildNumber": "7c61b9180de4ed8b575311a9ac4672f63c68d701@2026-08-28 02:11:53 +0000",
+  "timestamp": "2026-09-07 21:06:15+0000",
+  "ndc": "0D9D9C9F290AF0301D51BEA30CD836AD.uat01-vm-tx02",
+  "id": "0D9D9C9F290AF0301D51BEA30CD836AD.uat01-vm-tx02"
 }
