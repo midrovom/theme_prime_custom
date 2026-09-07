@@ -90,27 +90,27 @@ class PaymentTransaction(models.Model):
             "amount": "{:.2f}".format(self.amount), #formato 2 decimales para datafast
             "currency": self.currency_id.name,
             "paymentType": "DB",
-            "customer.givenName": given_name,
-            "customer.middleName": middle_name,
-            "customer.surname": surname,
-            "customer.ip": client_ip,
-            "customer.merchantCustomerId": f"{ self.partner_id.id }",
-            "merchantTransactionId": f"transaction_{ self.id }",
-            "customer.email": self.partner_email,
-            "customer.identificationDocType": "IDCARD",
-            "customer.identificationDocId": self.partner_id.get_identification_doc_id(),
-            "customer.phone": self.partner_phone,
-            "billing.street1": self.partner_address,
-            "billing.country": self.partner_country_id.code.upper(),
-            "shipping.street1": self.partner_address, # cambiar aqui es direccion de envio
-            "shipping.country": self.partner_country_id.code.upper(), #cambiar aqui es pais de envio
-            "customParameters[SHOPPER_ECI]": DATAFAST_SHOPPER_ECI,
-            "customParameters[SHOPPER_PSERV]": DATAFAST_SHOPPER_PSERV,
-            "customParameters[SHOPPER_VAL_BASE0]": "{:.2f}".format(sale_order.shopper_val_base0),
-            "customParameters[SHOPPER_VAL_BASEIMP]": "{:.2f}".format(sale_order.shopper_val_baseimp),#formato 2 decimales para datafast
-            "customParameters[SHOPPER_VAL_IVA]": f"{ sale_order.shopper_val_iva }",
-            "risk.parameters[USER_DATA2]": self.company_id.name,
-            "customParameters[SHOPPER_VERSIONDF]": "2",
+            # "customer.givenName": given_name,
+            # "customer.middleName": middle_name,
+            # "customer.surname": surname,
+            # "customer.ip": client_ip,
+            # "customer.merchantCustomerId": f"{ self.partner_id.id }",
+            # "merchantTransactionId": f"transaction_{ self.id }",
+            # "customer.email": self.partner_email,
+            # "customer.identificationDocType": "IDCARD",
+            # "customer.identificationDocId": self.partner_id.get_identification_doc_id(),
+            # "customer.phone": self.partner_phone,
+            # "billing.street1": self.partner_address,
+            # "billing.country": self.partner_country_id.code.upper(),
+            # "shipping.street1": self.partner_address, # cambiar aqui es direccion de envio
+            # "shipping.country": self.partner_country_id.code.upper(), #cambiar aqui es pais de envio
+            # "customParameters[SHOPPER_ECI]": DATAFAST_SHOPPER_ECI,
+            # "customParameters[SHOPPER_PSERV]": DATAFAST_SHOPPER_PSERV,
+            # "customParameters[SHOPPER_VAL_BASE0]": "{:.2f}".format(sale_order.shopper_val_base0),
+            # "customParameters[SHOPPER_VAL_BASEIMP]": "{:.2f}".format(sale_order.shopper_val_baseimp),#formato 2 decimales para datafast
+            # "customParameters[SHOPPER_VAL_IVA]": f"{ sale_order.shopper_val_iva }",
+            # "risk.parameters[USER_DATA2]": self.company_id.name,
+            # "customParameters[SHOPPER_VERSIONDF]": "2",
         }
 
         order_line_ids = sale_order_ids[0].order_line
