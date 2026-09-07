@@ -1,10 +1,10 @@
- {
-    "result": {
-        "code": "000.200.100",
-        "description": "successfully created checkout"
-    }, 
-    "buildNumber": "acddc75f60a48737fd5a719cdcddc6b4f6192885@2025-06-02 06:09:11 +0000", 
-    "timestamp": "2025-06-02 16:58:45+0000",
-    "ndc": "DAA73247E6C8C158EA200B8BBA01E61D.uat01-vm-tx03",
-    "id": "DAA73247E6C8C158EA200B8BBA01E61D.uat01-vm-tx03"
+{
+  "buildNumber": "7c61b9180de4ed8b575311a9ac4672f63c68d701@2026-08-28 02:11:53 +0000",
+  "id": "98984F8B917A47A7999F6371C111F9AF.uat01-vm-tx04",
+  "ndc": "98984F8B917A47A7999F6371C111F9AF.uat01-vm-tx04",
+  "result": {
+    "code": "000.200.100",
+    "description": "successfully created checkout"
+  },
+  "timestamp": "2026-09-07 20:19:42+0000"
 }
