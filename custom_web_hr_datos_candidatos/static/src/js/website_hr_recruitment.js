@@ -2100,22 +2100,23 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         if (!['Padre','Madre'].includes(parentesco)) return;
 
         const fallecidoCheck = this.$(`input[name="famFallecido_${i}"]`);
-        if (fallecidoCheck.length) {
-            fallecidoCheck.on("change", () => {
-                const disabled = fallecidoCheck.is(":checked");
-                const $fields = this.$(`#family_container .family-block[data-type="${parentesco}"] input:not([name="famFallecido_${i}"]), 
-                                        #family_container .family-block[data-type="${parentesco}"] select`);
+        fallecidoCheck.on("change", () => {
+            const disabled = fallecidoCheck.is(":checked");
+            const $fields = this.$(`.family-block[data-type="${parentesco}"]`)
+                .find("input:not([name='famFallecido_"+i+"']), select");
 
-                $fields.prop("disabled", disabled);
-                $fields.prop("required", !disabled);
-
+            $fields.each(function() {
+                const $f = $(this);
                 if (disabled) {
-                    $fields.val(""); 
-                    $fields.removeClass("is-invalid"); 
-                    $fields.siblings(".error-message").hide();
+                    $f.prop("disabled", true).prop("required", false).removeClass("is-invalid").val("");
+                } else {
+                    $f.prop("disabled", false);
+                    if ($f.attr("required") !== undefined) {
+                        $f.prop("required", true);
+                    }
                 }
             });
-        }
+        });
     },
 
     _onRemoveFamily(ev) {
