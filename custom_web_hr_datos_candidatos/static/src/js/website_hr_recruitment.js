@@ -1934,6 +1934,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                                     $fields.val("");
                                     $fields.removeClass("is-invalid");
                                     $fields.siblings(".error-message").hide();
+                                    block.find(`input[name="famNombre_${index}"]`).val("FALLECIDO");
+                                } else {
+                                    block.find(`input[name="famNombre_${index}"]`).val("");
                                 }
                             });
                         }
