@@ -1909,20 +1909,41 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$('.family-block[data-type="Hijo"]').remove();
             const AUTO_FAMILY = ["Padre", "Madre", "Conyugue"];
             AUTO_FAMILY.forEach(tipo => {
-                this.familyCount++;
-                const index = this.familyCount;
-                this._getFamilyBlock(tipo).then(blockHtml => {
-                    const block = $(blockHtml);
-                    let tipoVal = tipo === "Padre" ? "1" :
-                                tipo === "Madre" ? "2" :
-                                tipo === "Conyugue" ? "4" : tipo;
-                    block.append(`<input type="hidden" name="famTipo_${index}" value="${tipoVal}"/>`);
-                    this.$('#family_container').append(block);
-                    this.$(`input[name="famDisc_${index}"]`).on('change', () => {
+                if (this.$(`.family-block[data-type="${tipo}"]`).length === 0) {
+                    this.familyCount++;
+                    const index = this.familyCount;
+
+                    this._getFamilyBlock(tipo).then(blockHtml => {
+                        const block = $(blockHtml);
+                        let tipoVal = tipo === "Padre" ? "1" :
+                                    tipo === "Madre" ? "2" :
+                                    tipo === "Conyugue" ? "4" : tipo;
+
+                        block.append(`<input type="hidden" name="famTipo_${index}" value="${tipoVal}"/>`);
+                        this.$('#family_container').append(block);
+
+                        const fallecidoCheck = block.find(`input[name="famFallecido_${index}"]`);
+                        if (fallecidoCheck.length) {
+                            fallecidoCheck.on("change", () => {
+                                const disabled = fallecidoCheck.is(":checked");
+                                const $fields = block.find("input:not([name^='famFallecido_']), select");
+                                $fields.prop("disabled", disabled);
+                                $fields.prop("required", !disabled);
+
+                                if (disabled) {
+                                    $fields.val("");
+                                    $fields.removeClass("is-invalid");
+                                    $fields.siblings(".error-message").hide();
+                                }
+                            });
+                        }
+
+                        this.$(`input[name="famDisc_${index}"]`).on('change', () => {
+                            this._toggleFamilyDisability(index);
+                        });
                         this._toggleFamilyDisability(index);
                     });
-                    this._toggleFamilyDisability(index);
-                });
+                }
             });
 
             if (!isNaN(numHijos) && numHijos > 0) {
