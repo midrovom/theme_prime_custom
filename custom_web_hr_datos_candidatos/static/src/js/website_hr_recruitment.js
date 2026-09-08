@@ -1936,15 +1936,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Handlers
     //----------------------------------------------------------------------
 
-    _onNextStep2(ev) {
-        ev.preventDefault();
-
-        if (this._validateCurrentStep2()) {
-            this.$('#form-step-2').addClass('d-none');
-            this.$('#form-step-3').removeClass('d-none');
-        }
-    },
-
     // _onNextClick(ev) {
     //     ev.preventDefault();
 
@@ -2022,6 +2013,28 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             }
         }
     },
+
+    _onNextStep2(ev) {
+        ev.preventDefault();
+
+        if (this._validateCurrentStep2()) {
+            this.$('select[name^="famTipoDoc_"]').each((_, el) => {
+                this._onChangeFamilyDocType({ currentTarget: el });
+            });
+
+            this.$('#form-step-2').addClass('d-none');
+            this.$('#form-step-3').removeClass('d-none');
+        }
+    },
+
+    // _onNextStep2(ev) {
+    //     ev.preventDefault();
+
+    //     if (this._validateCurrentStep2()) {
+    //         this.$('#form-step-2').addClass('d-none');
+    //         this.$('#form-step-3').removeClass('d-none');
+    //     }
+    // },
 
     _onPrevClick(ev) {
         ev.preventDefault();
