@@ -36,6 +36,28 @@ class CommissionSettlement(models.Model):
                 "met": achievement >= lt.required_achievement,
             }
 
+        # Evita una doble comisión de gestión si quedaron asignaciones
+        # históricas duplicadas antes de instalar esta versión.
+        active_management_lines = period.manager_seller_rule_ids.filtered(
+            lambda rule: rule.active
+            and rule.management_id
+            and rule.management_id.active
+        )
+        management_count = defaultdict(int)
+        for rule in active_management_lines:
+            management_count[rule.seller_id.id] += 1
+        duplicated_management = [
+            seller_id for seller_id, count in management_count.items() if count > 1
+        ]
+        if duplicated_management:
+            names = ", ".join(
+                self.env["commission.seller"].browse(duplicated_management).mapped("name")
+            )
+            raise UserError(_(
+                "Hay vendedores asignados más de una vez en la gestión de "
+                "administradores para este período. Revise: %s"
+            ) % names)
+
         active_targets = period.target_ids.filtered("active")
         target_count = defaultdict(int)
         for target in active_targets:

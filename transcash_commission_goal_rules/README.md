@@ -1,83 +1,46 @@
 # Transcash Commissions - Metas y Liquidaciones
 
-Extensión para Odoo 18 sobre `transcash_commission`.
+Módulo de extensión para Odoo 18. Depende únicamente de `transcash_commission` y modifica la lógica de metas, gestión de administradores y reportes de liquidación.
 
-Este módulo concentra los cambios funcionales de metas, gestión de administradores y reportes, sin modificar el modelo de ventas ni la sincronización del módulo base.
+## Funcionalidad
 
-## 1. Metas de vendedores
+- La meta del vendedor es global al período y **no depende de localidad**.
+- Solo vendedores con meta activa generan una fila en la liquidación.
+- La gestión del administrador se configura en una cabecera por **Período + Administrador + Local**.
+- En la cabecera se agregan los vendedores a cargo como líneas.
+- Cada vendedor puede tener su propio mínimo administrativo:
+  - monto fijo; o
+  - porcentaje de su propia meta.
+- Cada vendedor tiene un porcentaje específico de comisión para el administrador.
+- El vendedor debe superar su mínimo administrativo y el local de la cabecera debe cumplir su meta.
+- Las ventas usadas para comprobar el mínimo y calcular la gestión son todas las ventas del vendedor en el período; la localidad solo se usa como condición de habilitación.
+- Se evita que el mismo vendedor quede asignado activamente más de una vez en un mismo período.
+- Incluye PDF consolidado de liquidación y PDF individual por vendedor.
 
-- La meta del vendedor es global para el período.
-- La meta no depende de localidad.
-- Todas las ventas del vendedor dentro del período participan en su cumplimiento.
-- Solo puede existir una meta activa por vendedor y período.
-- Un vendedor sin meta activa no genera resultado en la liquidación y no aparece en los PDF de liquidación.
+## Corrección de actualización 18.0.1.2.0
 
-## 2. Gestión de comisiones de administradores
+La versión anterior intentaba agrupar reglas históricas desde `model.init()`. Durante la actualización del registro de Odoo, ese código podía ejecutarse antes de que PostgreSQL creara la columna nueva `management_id`, produciendo:
 
-La configuración se realiza en un solo registro por:
+`psycopg2.errors.UndefinedColumn: column r.management_id does not exist`
 
-- Período
-- Administrador
-- Local cuya meta debe cumplirse
+En `18.0.1.2.0` se eliminó completamente esa migración de `init()` y se movió a:
 
-En la parte inferior del formulario existe un detalle **Vendedores a cargo**. Cada línea contiene:
+`upgrades/18.0.1.2.0/post-10-group-manager-lines.py`
 
-- Vendedor
-- Tipo de mínimo
-- Mínimo de venta fijo o porcentaje de la meta del vendedor
-- Meta del vendedor como referencia
-- Mínimo efectivo calculado
-- Porcentaje específico de comisión del administrador
-- Base de cálculo
-- Activo
+La fase `post` se ejecuta después de que Odoo haya cargado y actualizado el esquema del módulo. El script verifica además que la tabla y la columna existan antes de migrar y es seguro ante reintentos.
 
-Ejemplo:
+## Cómo actualizar después del RPC_ERROR
 
-| Vendedor | Tipo mínimo | Parámetro | Mínimo efectivo | % Admin |
-|---|---|---:|---:|---:|
-| Vanessa | Monto fijo | 6.000 | 6.000 | 0,75% |
-| Pedro | % de meta | 80% | 8.000 | 0,50% |
-| José | Monto fijo | 5.000 | 5.000 | 1,00% |
+1. Reemplazar la carpeta `transcash_commission_goal_rules` del servidor por la incluida en este ZIP.
+2. Reiniciar el servicio de Odoo para que cargue el código nuevo.
+3. Actualizar la lista de aplicaciones si fuera necesario.
+4. Ejecutar **Actualizar** sobre `Transcash Commissions - Metas y Liquidaciones`.
 
-Esto permite administrar todos los vendedores de un administrador desde una sola cabecera.
+No es necesario crear manualmente `management_id` ni ejecutar SQL en PostgreSQL.
 
-## 3. Condiciones para pagar gestión
+## Dependencia
 
-Por cada vendedor se validan de forma independiente:
+- `transcash_commission`
+- `web`
 
-1. El vendedor alcanza su **mínimo administrativo**.
-2. El local configurado en la cabecera cumple su meta local.
-3. Si ambas condiciones se cumplen, el administrador recibe el porcentaje definido en la línea del vendedor.
-
-El mínimo administrativo es independiente de la comisión propia del vendedor. Puede expresarse como:
-
-- monto fijo; o
-- porcentaje de la meta propia del vendedor.
-
-La meta propia del vendedor se utiliza para calcular la comisión del vendedor. Solo se usa como referencia del mínimo administrativo cuando se selecciona expresamente `% de la meta del vendedor`.
-
-Las ventas utilizadas para validar el mínimo administrativo son todas las ventas del vendedor en el período, sin filtrar por local. El local de la cabecera funciona como condición adicional de cumplimiento.
-
-## 4. Liquidaciones
-
-La liquidación genera filas exclusivamente para vendedores que tengan meta activa en el período. Esto evita mostrar vendedores creados por sincronización que todavía no tienen parametrización de comisiones.
-
-## 5. PDF
-
-Incluye:
-
-- PDF consolidado de liquidación.
-- PDF individual por vendedor/administrador.
-
-El PDF consolidado utiliza únicamente los resultados generados en la liquidación, por lo que tampoco muestra vendedores sin meta.
-
-El PDF individual presenta ventas, meta, cumplimiento, comisión propia, proyectos, gestión, bono y detalle de auditoría.
-
-## Instalación
-
-1. Mantener instalado `transcash_commission`.
-2. Copiar `transcash_commission_goal_rules` a la ruta de addons.
-3. Actualizar la lista de aplicaciones.
-4. Instalar o actualizar **Transcash Commissions - Metas y Liquidaciones**.
-
-El módulo técnico es `transcash_commission_goal_rules`.
+Versión: `18.0.1.2.0`

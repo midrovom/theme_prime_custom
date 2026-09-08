@@ -86,46 +86,6 @@ class CommissionManagerGoalRule(models.Model):
         )
     ]
 
-    def init(self):
-        """Agrupa automáticamente líneas antiguas en la nueva cabecera.
-
-        La versión anterior de esta extensión guardaba un registro separado por
-        administrador + vendedor. Al actualizar, las líneas existentes se
-        agrupan por período + administrador + local para evitar perder la
-        configuración o duplicar comisiones.
-        """
-        self.env.cr.execute(
-            """
-            INSERT INTO commission_manager_goal_rule
-                (period_id, manager_id, location_id, active,
-                 create_uid, write_uid, create_date, write_date)
-            SELECT DISTINCT
-                r.period_id, r.manager_id, r.location_id, TRUE,
-                %s, %s, NOW(), NOW()
-            FROM commission_manager_seller_rule r
-            WHERE r.management_id IS NULL
-              AND NOT EXISTS (
-                    SELECT 1
-                    FROM commission_manager_goal_rule g
-                    WHERE g.period_id = r.period_id
-                      AND g.manager_id = r.manager_id
-                      AND g.location_id = r.location_id
-              )
-            """,
-            (self.env.uid, self.env.uid),
-        )
-        self.env.cr.execute(
-            """
-            UPDATE commission_manager_seller_rule r
-               SET management_id = g.id
-              FROM commission_manager_goal_rule g
-             WHERE r.management_id IS NULL
-               AND g.period_id = r.period_id
-               AND g.manager_id = r.manager_id
-               AND g.location_id = r.location_id
-            """
-        )
-
     @api.depends("period_id", "manager_id", "location_id")
     def _compute_name(self):
         for rec in self:
@@ -145,6 +105,8 @@ class CommissionManagerGoalRule(models.Model):
                     "manager_id": rec.manager_id.id,
                     "location_id": rec.location_id.id,
                 })
+        if {"active", "period_id", "manager_id", "location_id"} & set(vals):
+            self.mapped("line_ids")._check_unique_active_seller_assignment()
         return res
 
     @api.constrains("manager_id", "line_ids")
@@ -342,6 +304,33 @@ class CommissionManagerSellerRule(models.Model):
                 rec.period_id = rec.management_id.period_id
                 rec.manager_id = rec.management_id.manager_id
                 rec.location_id = rec.management_id.location_id
+
+    @api.constrains("management_id", "period_id", "seller_id", "active")
+    def _check_unique_active_seller_assignment(self):
+        """Evita pagar dos veces gestión por el mismo vendedor en un período."""
+        for rec in self.filtered(lambda line: line.active and line.seller_id):
+            if rec.management_id and not rec.management_id.active:
+                continue
+            period = rec.management_id.period_id or rec.period_id
+            if not period:
+                continue
+            duplicate = self.search_count([
+                ("id", "!=", rec.id),
+                ("seller_id", "=", rec.seller_id.id),
+                ("period_id", "=", period.id),
+                ("active", "=", True),
+                "|",
+                ("management_id", "=", False),
+                ("management_id.active", "=", True),
+            ])
+            if duplicate:
+                raise ValidationError(_(
+                    "El vendedor %(seller)s ya está asignado a una gestión activa "
+                    "en el período %(period)s. No puede liquidarse gestión dos veces."
+                ) % {
+                    "seller": rec.seller_id.display_name,
+                    "period": period.display_name,
+                })
 
     @api.constrains("manager_id", "seller_id")
     def _check_people(self):
