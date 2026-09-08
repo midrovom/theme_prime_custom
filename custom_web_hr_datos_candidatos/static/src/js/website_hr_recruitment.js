@@ -318,6 +318,19 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                     </div>
 
+                    ${['Padre','Madre'].includes(parentesco) ? `
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-3">
+                            <label class="fs-6">Fallecido</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" 
+                                    name="famFallecido_${this.familyCount}" value="si"/>
+                                <label class="form-check-label">Sí</label>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+
                     <div class="row d-flex justify-content-between">
                         <div class="col-12 mt-3 d-flex justify-content-end">
                             <button type="button" class="btn btn-outline-danger rounded-pill px-4 remove-family">

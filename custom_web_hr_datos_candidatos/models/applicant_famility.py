@@ -52,25 +52,6 @@ class ApplicantFamily(models.Model):
     filename = fields.Char(string='Nombre del archivo')
     document_file = fields.Binary(string='Documento adjunto', attachment=True, help='Archivo PDF adjunto para el familiar')
 
-    @api.model
-    def create(self, vals):
-        if vals.get('fallecido'):
-            vals['name'] = "FALLECIDO"
-            vals.update({
-                'cedula': None,
-                'document_type': None,
-                'birthdate': None,
-                'phone': None,
-                'occupation': None,
-                'economically_dependent': None,
-                'disability': None,
-                'disability_type': None,
-                'disability_percentage': None,
-                'filename': None,
-                'document_file': None,
-            })
-        return super(ApplicantFamily, self).create(vals)
-
 class ApplicantKnown(models.Model):
     _name = 'applicant.known'
     _description = 'Familiares o conocidos del grupo empresarial'
