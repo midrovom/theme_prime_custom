@@ -2085,14 +2085,15 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         if (fallecidoCheck.length) {
             fallecidoCheck.on("change", () => {
                 const disabled = fallecidoCheck.is(":checked");
-                const $fields = this.$(`#family_container .family-block[data-type="${parentesco}"] input:not([name="famFallecido_${i}"]), 
-                                        #family_container .family-block[data-type="${parentesco}"] select`);
+                const $fields = this.$(`#family_container .family-block[data-type="${parentesco}"] 
+                    input:not([name="famFallecido_${i}"]), 
+                    #family_container .family-block[data-type="${parentesco}"] select`);
+
                 $fields.prop("disabled", disabled);
                 $fields.prop("required", !disabled);
-
                 if (disabled) {
-                    $fields.val("");
-                    $fields.removeClass("is-invalid");
+                    $fields.val(""); 
+                    $fields.removeClass("is-invalid"); 
                     $fields.siblings(".error-message").hide();
                 }
             });
