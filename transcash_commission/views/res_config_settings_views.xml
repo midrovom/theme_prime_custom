@@ -1,0 +1,41 @@
+<odoo>
+    <record id="res_config_settings_view_form_commission" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.commission</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app string="Comisiones" name="transcash_commission">
+                    <block title="Sincronización de ventas" name="commission_api_settings">
+                        <setting string="Endpoint estándar de ventas" help="Conector HTTP estándar. Para el consumo definitivo también puede sobrescribirse commission.sync._fetch_remote_rows().">
+                            <field name="commission_api_url" placeholder="https://..."/>
+                            <field name="commission_api_method"/>
+                        </setting>
+                        <setting string="Autenticación">
+                            <field name="commission_api_auth_type"/>
+                            <field name="commission_api_token" password="True" invisible="commission_api_auth_type == 'none'"/>
+                            <field name="commission_api_header_name" invisible="commission_api_auth_type != 'header'"/>
+                        </setting>
+                        <setting string="Rango de fechas" help="Nombres de parámetros enviados a la API cuando se importa desde un período.">
+                            <field name="commission_api_date_from_param"/>
+                            <field name="commission_api_date_to_param"/>
+                        </setting>
+                        <setting string="Ejecución automática">
+                            <field name="commission_api_auto_import"/>
+                            <field name="commission_api_timeout"/>
+                            <field name="commission_api_cron_days_back" invisible="not commission_api_auto_import"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_commission_settings" model="ir.actions.act_window">
+        <field name="name">Ajustes de comisiones</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context">{'module': 'transcash_commission'}</field>
+    </record>
+</odoo>

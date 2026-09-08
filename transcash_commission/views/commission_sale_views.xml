@@ -1,0 +1,126 @@
+<odoo>
+    <record id="view_commission_sale_search" model="ir.ui.view">
+        <field name="name">commission.sale.search</field>
+        <field name="model">commission.sale</field>
+        <field name="arch" type="xml">
+            <search string="Ventas">
+                <field name="registration_date"/>
+                <field name="seller_id"/>
+                <field name="seller_code"/>
+                <field name="location_id"/>
+                <field name="location_code"/>
+                <field name="origin"/>
+                <field name="product_code"/>
+                <field name="invoice"/>
+                <filter string="Liquidación" name="liquidation" domain="[('price_indicator', '=', 3)]"/>
+                <filter string="Excluidas" name="excluded" domain="[('excluded', '=', True)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Vendedor" name="group_seller" context="{'group_by': 'seller_id'}"/>
+                    <filter string="Localidad" name="group_location" context="{'group_by': 'location_id'}"/>
+                    <filter string="Origen" name="group_origin" context="{'group_by': 'origin'}"/>
+                    <filter string="Fecha" name="group_date" context="{'group_by': 'registration_date:month'}"/>
+                    <filter string="Sincronización" name="group_sync" context="{'group_by': 'sync_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_commission_sale_list" model="ir.ui.view">
+        <field name="name">commission.sale.list</field>
+        <field name="model">commission.sale</field>
+        <field name="arch" type="xml">
+            <list string="Ventas" decoration-muted="excluded">
+                <field name="registration_date"/>
+                <field name="document_type"/>
+                <field name="number"/>
+                <field name="invoice"/>
+                <field name="seller_id"/>
+                <field name="location_id"/>
+                <field name="origin"/>
+                <field name="product_code"/>
+                <field name="product_name" optional="hide"/>
+                <field name="quantity" sum="Cantidad"/>
+                <field name="total_price" sum="Total"/>
+                <field name="total_net" sum="Total"/>
+                <field name="profit" sum="Total"/>
+                <field name="price_indicator"/>
+                <field name="document_sign"/>
+                <field name="excluded"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_commission_sale_form" model="ir.ui.view">
+        <field name="name">commission.sale.form</field>
+        <field name="model">commission.sale</field>
+        <field name="arch" type="xml">
+            <form string="Venta">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="registration_date"/>
+                            <field name="due_date"/>
+                            <field name="document_type"/>
+                            <field name="number"/>
+                            <field name="invoice"/>
+                            <field name="client"/>
+                        </group>
+                        <group>
+                            <field name="seller_id" readonly="1"/>
+                            <field name="seller_code"/>
+                            <field name="seller_name"/>
+                            <field name="location_id" readonly="1"/>
+                            <field name="location_code"/>
+                            <field name="location_name"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Producto y valores">
+                            <group>
+                                <group>
+                                    <field name="warehouse"/>
+                                    <field name="product_line"/>
+                                    <field name="brand"/>
+                                    <field name="product_code"/>
+                                    <field name="product_name"/>
+                                    <field name="supplier"/>
+                                    <field name="origin"/>
+                                </group>
+                                <group>
+                                    <field name="quantity"/>
+                                    <field name="cost"/>
+                                    <field name="total_cost"/>
+                                    <field name="total_price"/>
+                                    <field name="total_net"/>
+                                    <field name="discount"/>
+                                    <field name="discount_percent"/>
+                                    <field name="profit"/>
+                                    <field name="profit_percent"/>
+                                    <field name="price_indicator"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Control">
+                            <group>
+                                <field name="document_sign"/>
+                                <field name="excluded"/>
+                                <field name="exclusion_reason" required="excluded"/>
+                                <field name="sync_id" readonly="1"/>
+                                <field name="imported_at" readonly="1"/>
+                                <field name="fingerprint" readonly="1"/>
+                            </group>
+                            <field name="raw_payload" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_commission_sale" model="ir.actions.act_window">
+        <field name="name">Ventas</field>
+        <field name="res_model">commission.sale</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_commission_sale_search"/>
+    </record>
+</odoo>

@@ -1,0 +1,41 @@
+<odoo>
+    <record id="view_commission_project_rule_list" model="ir.ui.view">
+        <field name="name">commission.project.rule.list</field>
+        <field name="model">commission.project.rule</field>
+        <field name="arch" type="xml">
+            <list string="Reglas de proyectos">
+                <field name="period_id"/>
+                <field name="seller_id"/>
+                <field name="origin"/>
+                <field name="basis"/>
+                <field name="commission_percent"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_commission_project_rule_form" model="ir.ui.view">
+        <field name="name">commission.project.rule.form</field>
+        <field name="model">commission.project.rule</field>
+        <field name="arch" type="xml">
+            <form string="Regla de proyecto">
+                <sheet>
+                    <group>
+                        <field name="period_id"/>
+                        <field name="seller_id"/>
+                        <field name="origin"/>
+                        <field name="basis"/>
+                        <field name="commission_percent"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_commission_project_rule" model="ir.actions.act_window">
+        <field name="name">Reglas por origen</field>
+        <field name="res_model">commission.project.rule</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

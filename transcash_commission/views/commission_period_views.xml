@@ -1,0 +1,270 @@
+<odoo>
+    <record id="view_commission_seller_target_list" model="ir.ui.view">
+        <field name="name">commission.seller.target.list</field>
+        <field name="model">commission.seller.target</field>
+        <field name="arch" type="xml">
+            <list string="Metas de vendedores">
+                <field name="period_id"/>
+                <field name="seller_id"/>
+                <field name="location_id"/>
+                <field name="target_amount"/>
+                <field name="basis"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_commission_seller_target_form" model="ir.ui.view">
+        <field name="name">commission.seller.target.form</field>
+        <field name="model">commission.seller.target</field>
+        <field name="arch" type="xml">
+            <form string="Meta de vendedor">
+                <sheet>
+                    <group>
+                        <field name="period_id"/>
+                        <field name="seller_id"/>
+                        <field name="location_id"/>
+                        <field name="target_amount"/>
+                        <field name="basis"/>
+                        <field name="active"/>
+                    </group>
+                    <separator string="Rangos de cumplimiento"/>
+                    <field name="tier_ids">
+                        <list editable="bottom">
+                            <field name="min_achievement"/>
+                            <field name="max_achievement"/>
+                            <field name="commission_percent"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_commission_location_target_list" model="ir.ui.view">
+        <field name="name">commission.location.target.list</field>
+        <field name="model">commission.location.target</field>
+        <field name="arch" type="xml">
+            <list string="Metas de localidades">
+                <field name="period_id"/>
+                <field name="location_id"/>
+                <field name="target_amount"/>
+                <field name="basis"/>
+                <field name="required_achievement"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_commission_location_target_form" model="ir.ui.view">
+        <field name="name">commission.location.target.form</field>
+        <field name="model">commission.location.target</field>
+        <field name="arch" type="xml">
+            <form string="Meta de localidad">
+                <sheet>
+                    <group>
+                        <field name="period_id"/>
+                        <field name="location_id"/>
+                        <field name="target_amount"/>
+                        <field name="basis"/>
+                        <field name="required_achievement"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_commission_manager_rule_list" model="ir.ui.view">
+        <field name="name">commission.manager.rule.list</field>
+        <field name="model">commission.manager.rule</field>
+        <field name="arch" type="xml">
+            <list string="Reglas de administradores">
+                <field name="period_id"/>
+                <field name="manager_id"/>
+                <field name="location_id"/>
+                <field name="min_seller_sales"/>
+                <field name="commission_percent"/>
+                <field name="basis"/>
+                <field name="require_location_target"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_commission_manager_rule_form" model="ir.ui.view">
+        <field name="name">commission.manager.rule.form</field>
+        <field name="model">commission.manager.rule</field>
+        <field name="arch" type="xml">
+            <form string="Regla de administrador">
+                <sheet>
+                    <group>
+                        <field name="period_id"/>
+                        <field name="manager_id"/>
+                        <field name="location_id"/>
+                        <field name="min_seller_sales"/>
+                        <field name="commission_percent"/>
+                        <field name="basis"/>
+                        <field name="require_location_target"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_commission_liquidation_rule_list" model="ir.ui.view">
+        <field name="name">commission.liquidation.rule.list</field>
+        <field name="model">commission.liquidation.rule</field>
+        <field name="arch" type="xml">
+            <list string="Reglas bono liquidación">
+                <field name="period_id"/>
+                <field name="seller_id"/>
+                <field name="location_id"/>
+                <field name="indicator_value"/>
+                <field name="min_sales_amount"/>
+                <field name="amount_per_m2"/>
+                <field name="basis"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_commission_liquidation_rule_form" model="ir.ui.view">
+        <field name="name">commission.liquidation.rule.form</field>
+        <field name="model">commission.liquidation.rule</field>
+        <field name="arch" type="xml">
+            <form string="Regla bono liquidación">
+                <sheet>
+                    <group>
+                        <field name="period_id"/>
+                        <field name="seller_id"/>
+                        <field name="location_id"/>
+                        <field name="indicator_value"/>
+                        <field name="min_sales_amount"/>
+                        <field name="amount_per_m2"/>
+                        <field name="basis"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_commission_period_list" model="ir.ui.view">
+        <field name="name">commission.period.list</field>
+        <field name="model">commission.period</field>
+        <field name="arch" type="xml">
+            <list string="Períodos de liquidación">
+                <field name="name"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="state" widget="badge"/>
+                <field name="settlement_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_commission_period_form" model="ir.ui.view">
+        <field name="name">commission.period.form</field>
+        <field name="model">commission.period</field>
+        <field name="arch" type="xml">
+            <form string="Período de liquidación">
+                <header>
+                    <button name="action_import_api" type="object" string="Sincronizar ventas" class="btn-secondary" invisible="state in ['approved', 'paid', 'cancelled']" groups="transcash_commission.group_commission_manager"/>
+                    <button name="action_calculate" type="object" string="Calcular" class="btn-primary" invisible="state in ['approved', 'paid', 'cancelled']" groups="transcash_commission.group_commission_manager"/>
+                    <button name="action_approve" type="object" string="Aprobar" class="btn-primary" invisible="state != 'calculated'" groups="transcash_commission.group_commission_manager"/>
+                    <button name="action_mark_paid" type="object" string="Marcar pagado" class="btn-primary" invisible="state != 'approved'" groups="transcash_commission.group_commission_manager"/>
+                    <button name="action_reset_draft" type="object" string="Volver a borrador" invisible="state not in ['calculated', 'approved']" groups="transcash_commission.group_commission_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,calculated,approved,paid"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </group>
+                        <group>
+                            <field name="settlement_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Metas vendedores">
+                            <field name="target_ids" context="{'default_period_id': id}">
+                                <list>
+                                    <field name="seller_id"/>
+                                    <field name="location_id"/>
+                                    <field name="target_amount"/>
+                                    <field name="basis"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Metas locales">
+                            <field name="location_target_ids" context="{'default_period_id': id}">
+                                <list editable="bottom">
+                                    <field name="location_id"/>
+                                    <field name="target_amount"/>
+                                    <field name="basis"/>
+                                    <field name="required_achievement"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Administradores">
+                            <field name="manager_rule_ids" context="{'default_period_id': id}">
+                                <list editable="bottom">
+                                    <field name="manager_id"/>
+                                    <field name="location_id"/>
+                                    <field name="min_seller_sales"/>
+                                    <field name="commission_percent"/>
+                                    <field name="basis"/>
+                                    <field name="require_location_target"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Bono liquidación">
+                            <field name="liquidation_rule_ids" context="{'default_period_id': id}">
+                                <list editable="bottom">
+                                    <field name="seller_id"/>
+                                    <field name="location_id"/>
+                                    <field name="indicator_value"/>
+                                    <field name="min_sales_amount"/>
+                                    <field name="amount_per_m2"/>
+                                    <field name="basis"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notas">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_commission_period" model="ir.actions.act_window">
+        <field name="name">Períodos</field>
+        <field name="res_model">commission.period</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_commission_seller_target" model="ir.actions.act_window">
+        <field name="name">Metas de vendedores</field>
+        <field name="res_model">commission.seller.target</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_commission_location_target" model="ir.actions.act_window">
+        <field name="name">Metas de localidades</field>
+        <field name="res_model">commission.location.target</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_commission_manager_rule" model="ir.actions.act_window">
+        <field name="name">Reglas de administradores</field>
+        <field name="res_model">commission.manager.rule</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_commission_liquidation_rule" model="ir.actions.act_window">
+        <field name="name">Bonos liquidación</field>
+        <field name="res_model">commission.liquidation.rule</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

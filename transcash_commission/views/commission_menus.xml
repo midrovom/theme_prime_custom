@@ -1,0 +1,23 @@
+<odoo>
+    <menuitem id="menu_commission_root" name="Comisiones" sequence="30" groups="transcash_commission.group_commission_user"/>
+
+    <menuitem id="menu_commission_operations" name="Operación" parent="menu_commission_root" sequence="10" groups="transcash_commission.group_commission_user"/>
+    <menuitem id="menu_commission_sync" name="Sincronización" parent="menu_commission_operations" action="action_commission_sync" sequence="5" groups="transcash_commission.group_commission_manager"/>
+    <menuitem id="menu_commission_sale" name="Ventas" parent="menu_commission_operations" action="action_commission_sale" sequence="10"/>
+    <menuitem id="menu_commission_period" name="Períodos" parent="menu_commission_operations" action="action_commission_period" sequence="20"/>
+    <menuitem id="menu_commission_settlement" name="Liquidaciones" parent="menu_commission_operations" action="action_commission_settlement" sequence="30"/>
+    <menuitem id="menu_commission_result" name="Resultados" parent="menu_commission_operations" action="action_commission_result" sequence="40"/>
+
+    <menuitem id="menu_commission_rules" name="Parámetros" parent="menu_commission_root" sequence="20" groups="transcash_commission.group_commission_manager"/>
+    <menuitem id="menu_commission_seller_target" name="Metas vendedores" parent="menu_commission_rules" action="action_commission_seller_target" sequence="10"/>
+    <menuitem id="menu_commission_location_target" name="Metas locales" parent="menu_commission_rules" action="action_commission_location_target" sequence="20"/>
+    <menuitem id="menu_commission_manager_rule" name="Reglas administradores" parent="menu_commission_rules" action="action_commission_manager_rule" sequence="30"/>
+    <menuitem id="menu_commission_project_rule" name="Reglas por origen" parent="menu_commission_rules" action="action_commission_project_rule" sequence="40"/>
+    <menuitem id="menu_commission_liquidation_rule" name="Bonos liquidación" parent="menu_commission_rules" action="action_commission_liquidation_rule" sequence="50"/>
+
+    <menuitem id="menu_commission_configuration" name="Configuración" parent="menu_commission_root" sequence="30" groups="transcash_commission.group_commission_manager"/>
+    <menuitem id="menu_commission_seller" name="Vendedores" parent="menu_commission_configuration" action="action_commission_seller" sequence="10"/>
+    <menuitem id="menu_commission_location" name="Localidades" parent="menu_commission_configuration" action="action_commission_location" sequence="20"/>
+    <menuitem id="menu_commission_document_type" name="Tipos de documento" parent="menu_commission_configuration" action="action_commission_document_type" sequence="30"/>
+    <menuitem id="menu_commission_settings" name="Ajustes sincronización" parent="menu_commission_configuration" action="action_commission_settings" sequence="40" groups="base.group_system"/>
+</odoo>

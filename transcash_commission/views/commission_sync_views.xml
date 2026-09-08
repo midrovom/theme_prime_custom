@@ -1,0 +1,76 @@
+<odoo>
+    <record id="view_commission_sync_list" model="ir.ui.view">
+        <field name="name">commission.sync.list</field>
+        <field name="model">commission.sync</field>
+        <field name="arch" type="xml">
+            <list string="Sincronizaciones" decoration-danger="state == 'error'" decoration-warning="state == 'done_errors'" decoration-success="state == 'done'">
+                <field name="create_date"/>
+                <field name="name"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="state"/>
+                <field name="rows_received"/>
+                <field name="created_count"/>
+                <field name="skipped_count"/>
+                <field name="error_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_commission_sync_form" model="ir.ui.view">
+        <field name="name">commission.sync.form</field>
+        <field name="model">commission.sync</field>
+        <field name="arch" type="xml">
+            <form string="Sincronización de ventas">
+                <header>
+                    <button name="action_run" type="object" string="Sincronizar ahora" class="btn-primary" invisible="state == 'running'"/>
+                    <button name="action_open_sales" type="object" string="Ver ventas" invisible="created_count == 0"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,running,done,done_errors,error"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                        </group>
+                        <group>
+                            <field name="started_at" readonly="1"/>
+                            <field name="finished_at" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Resultado">
+                        <field name="rows_received" readonly="1"/>
+                        <field name="created_count" readonly="1"/>
+                        <field name="skipped_count" readonly="1"/>
+                        <field name="error_count" readonly="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Detalle">
+                            <field name="log_text" readonly="1"/>
+                        </page>
+                        <page string="Ventas">
+                            <field name="sale_ids" readonly="1">
+                                <list>
+                                    <field name="registration_date"/>
+                                    <field name="number"/>
+                                    <field name="seller_id"/>
+                                    <field name="location_id"/>
+                                    <field name="product_code"/>
+                                    <field name="quantity"/>
+                                    <field name="total_net"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_commission_sync" model="ir.actions.act_window">
+        <field name="name">Sincronización</field>
+        <field name="res_model">commission.sync</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>
