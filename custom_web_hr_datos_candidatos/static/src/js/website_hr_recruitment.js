@@ -355,9 +355,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     $f.removeClass("is-invalid");
                 }
                 updateFullName();
-
-                this._bindFallecido(i, parentesco);
             });
+
+            this._bindFallecido(i, parentesco);
 
             // const fallecidoCheck = this.$(`input[name="famFallecido_${i}"]`);
             // if (fallecidoCheck.length) {
