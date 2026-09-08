@@ -155,6 +155,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         for (let i = 0; i < 3; i++) {
             this._addReferenceBlock();
         }
+        const fixedTypes = ['Padre', 'Madre', 'Conyugue'];
+        for (const tipo of fixedTypes) {
+            this._addFamilyBlock(tipo);
+        }
 
         return this._super();
     },
@@ -175,11 +179,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
 
         this._checkFieldsFilled();
-        this._checkEducationFieldsFilled();
-        const fixedTypes = ['1', '2', '4']; // Padre, Madre, Conyugue
-        fixedTypes.forEach(async (tipo) => {
-            await this._addFamilyBlock(tipo);
-        });
     },
 
     async _getFamilyBlock(parentesco) {
