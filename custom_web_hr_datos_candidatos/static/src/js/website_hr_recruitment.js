@@ -357,8 +357,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 updateFullName();
             });
 
-            this._bindFallecido(i, parentesco);
-
             // const fallecidoCheck = this.$(`input[name="famFallecido_${i}"]`);
             // if (fallecidoCheck.length) {
             //     fallecidoCheck.on("change", () => {
@@ -2060,13 +2058,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
 
         this.familyCount++;
+        const i = this.familyCount;
         const html = await this._getFamilyBlock(label);
         this.$('#family_container').append(html);
         this.$(`#family_container .family-block:last`).append(`
             <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
         `);
-
-        const i = this.familyCount;
+        this._bindFallecido(i, label);
         this.$(`input[name="famDisc_${i}"]`).on('change', () => {
             this._toggleFamilyDisability(i);
         });
