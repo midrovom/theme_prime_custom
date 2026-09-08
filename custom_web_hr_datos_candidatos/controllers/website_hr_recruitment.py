@@ -187,6 +187,7 @@ class WebsiteHRRecruitment(http.Controller):
                             if doc_type == 'part_naci'
                             else kwargs.get(f'famCedula_{k}')
                         ),
+                        'fallecido': kwargs.get(f'famFallecido_{k}') == '1'
                     }))
 
                 k += 1
