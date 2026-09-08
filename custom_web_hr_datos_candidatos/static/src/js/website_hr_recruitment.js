@@ -331,14 +331,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     </div>
                     ` : ''}
 
-                    <div class="row d-flex justify-content-between">
-                        <div class="col-12 mt-3 d-flex justify-content-end">
-                            <button type="button" class="btn btn-outline-danger rounded-pill px-4 remove-family">
-                                Eliminar
-                            </button>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         `;
@@ -1867,13 +1859,37 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Handlers
     //----------------------------------------------------------------------
 
-    _onNextStep2(ev) {
-        ev.preventDefault();
+    // _onNextStep2(ev) {
+    //     ev.preventDefault();
 
-        if (this._validateCurrentStep2()) {
-            this.$('#form-step-2').addClass('d-none');
-            this.$('#form-step-3').removeClass('d-none');
-        }
+    //     if (this._validateCurrentStep2()) {
+    //         this.$('#form-step-2').addClass('d-none');
+    //         this.$('#form-step-3').removeClass('d-none');
+    //     }
+    // },
+
+    _validateCurrentStep2() {
+        let valid = true;
+        const self = this;
+        
+        this.$("#family_container .family-block").each(function() {
+            const $block = $(this);
+            const fallecido = $block.find("input[name^='famFallecido_']").is(":checked");
+            if (!fallecido) {
+                $block.find("input[required], select[required]").each(function() {
+                    if (!$(this).val()) {
+                        $(this).addClass("is-invalid");
+                        valid = false;
+                    } else {
+                        $(this).removeClass("is-invalid");
+                    }
+                });
+            } else {
+                $block.find(".is-invalid").removeClass("is-invalid");
+            }
+        });
+
+        return valid;
     },
 
     _onNextClick(ev) {
