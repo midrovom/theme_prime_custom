@@ -9,9 +9,7 @@
 
                 <script t-att-src="datafast_url + '/v1/paymentWidgets.js?checkoutId=' + checkout_id"/>
                 <form t-att-action="callback_url" class="paymentWidgets" data-brands="VISA MASTER AMEX DINERS DISCOVER"></form>
-
-                <script type="text/javascript" src="https://www.datafast.com.ec/js/dfAdditionalValidations1.js">
-
+                
             </div>
         </t>
     </template>

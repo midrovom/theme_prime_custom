@@ -77,29 +77,29 @@ class PaymentProvider(models.Model):
         """
         self.ensure_one()
 
-        # if payload and method == "POST":
-        #     payload["entityId"] = self.entity_id
-
-        #     if payload.get("paymentType") != "RF":
-        #         payload["customParameters[SHOPPER_MID]"] = self.merchant_id
-        #         payload["customParameters[SHOPPER_TID]"] = self.terminal_id
-
-        #     if self.state == 'test':
-        #         payload["testMode"] = self.test_mode
-
-        # Codigo temporal (para fase 1)
         if payload and method == "POST":
             payload["entityId"] = self.entity_id
 
-            # Solo añadir MID y TID si están configurados
             if payload.get("paymentType") != "RF":
-                if self.merchant_id:
-                    payload["customParameters[SHOPPER_MID]"] = self.merchant_id
-                if self.terminal_id:
-                    payload["customParameters[SHOPPER_TID]"] = self.terminal_id
+                payload["customParameters[SHOPPER_MID]"] = self.merchant_id
+                payload["customParameters[SHOPPER_TID]"] = self.terminal_id
 
             if self.state == 'test':
                 payload["testMode"] = self.test_mode
+
+        # # Codigo temporal (para fase 1)
+        # if payload and method == "POST":
+        #     payload["entityId"] = self.entity_id
+
+        #     # Solo añadir MID y TID si están configurados
+        #     if payload.get("paymentType") != "RF":
+        #         if self.merchant_id:
+        #             payload["customParameters[SHOPPER_MID]"] = self.merchant_id
+        #         if self.terminal_id:
+        #             payload["customParameters[SHOPPER_TID]"] = self.terminal_id
+
+        #     if self.state == 'test':
+        #         payload["testMode"] = self.test_mode
 
 
         url = urls.url_join(self.datafast_url, endpoint)
