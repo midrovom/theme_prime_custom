@@ -902,6 +902,63 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return true;
     },
 
+    // _validateCurrentStep2() {
+    //     const enfermedad = this._validateRadio('enfermedad_persistente');
+    //     const medicacion = this._validateRadio('medicacion_continua');
+    //     const enfermedadLaboral = this._validateRadio('enfermedad_laboral');
+    //     const cirugia = this._validateRadio('cirugia_realizada');
+    //     const discapacidad = this._validateRadio('discapacidad');
+    //     const enfermedadDetalle = this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');
+    //     const medicacionDetalle = this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
+    //     const enfermedadLaboralDetalle = this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
+    //     const cirugiaDetalle = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
+
+    //     const tipoSangre = this._validateTipoSangre({
+    //         currentTarget: this.$('input[name="tipo_sangre"]')[0]
+    //     });
+
+    //     let discapacidadExtra = true;
+    //     const discValue = this.$('input[name="discapacidad"]:checked').val();
+
+    //     if (discValue === 'si') {
+    //         const tipo = this.$('input[name="tipo_discapacidad"]');
+    //         const porcentaje = this.$('input[name="porcentaje_discapacidad"]');
+
+    //         const tipoValid = !!tipo.val();
+    //         const porcentajeValid = !!porcentaje.val();
+
+    //         tipo.toggleClass('is-invalid', !tipoValid);
+    //         porcentaje.toggleClass('is-invalid', !porcentajeValid);
+    //     }
+
+    //     let familyValid = true;
+
+    //     for (let i = 1; i <= this.familyCount; i++) {
+    //         const valid = this._validateFamilyFields(i);
+    //         if (!valid) {
+    //             familyValid = false;
+    //         }
+    //     }
+
+    //     if (
+    //         !enfermedad ||
+    //         !medicacion ||
+    //         !enfermedadLaboral ||
+    //         !cirugia ||
+    //         !discapacidad ||
+    //         !enfermedadDetalle ||
+    //         !medicacionDetalle ||
+    //         !enfermedadLaboralDetalle ||
+    //         !cirugiaDetalle ||
+    //         !tipoSangre 
+    //     ) {
+    //         this._scrollToFirstError();
+    //         return false;
+    //     }
+
+    //     return true;
+    // },
+
     _validateCurrentStep2() {
         const enfermedad = this._validateRadio('enfermedad_persistente');
         const medicacion = this._validateRadio('medicacion_continua');
@@ -912,10 +969,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const medicacionDetalle = this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
         const enfermedadLaboralDetalle = this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
         const cirugiaDetalle = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
-
-        const tipoSangre = this._validateTipoSangre({
-            currentTarget: this.$('input[name="tipo_sangre"]')[0]
-        });
+        const tipoSangre = this._validateTipoSangre({currentTarget: this.$('input[name="tipo_sangre"]')[0]});
 
         let discapacidadExtra = true;
         const discValue = this.$('input[name="discapacidad"]:checked').val();
@@ -934,9 +988,20 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         let familyValid = true;
 
         for (let i = 1; i <= this.familyCount; i++) {
-            const valid = this._validateFamilyFields(i);
-            if (!valid) {
-                familyValid = false;
+            const fallecido = this.$(`input[name="famFallecido_${i}"]`).is(":checked");
+            if (!fallecido) {
+                const valid = this._validateFamilyFields(i);
+                if (!valid) {
+                    familyValid = false;
+                }
+            } else {
+                this.$(`#family_container input[name^="famApellidoPaterno_${i}"],
+                        #family_container input[name^="famApellidoMaterno_${i}"],
+                        #family_container input[name^="famPrimerNombre_${i}"],
+                        #family_container input[name^="famCedula_${i}"],
+                        #family_container input[name^="famFecha_${i}"],
+                        #family_container input[name^="famTelefono_${i}"],
+                        #family_container input[name^="famOcupacion_${i}"]`).removeClass("is-invalid");
             }
         }
 
@@ -950,7 +1015,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !medicacionDetalle ||
             !enfermedadLaboralDetalle ||
             !cirugiaDetalle ||
-            !tipoSangre 
+            !tipoSangre ||
+            !familyValid
         ) {
             this._scrollToFirstError();
             return false;
@@ -1859,37 +1925,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Handlers
     //----------------------------------------------------------------------
 
-    // _onNextStep2(ev) {
-    //     ev.preventDefault();
+    _onNextStep2(ev) {
+        ev.preventDefault();
 
-    //     if (this._validateCurrentStep2()) {
-    //         this.$('#form-step-2').addClass('d-none');
-    //         this.$('#form-step-3').removeClass('d-none');
-    //     }
-    // },
-
-    _validateCurrentStep2() {
-        let valid = true;
-        const self = this;
-        
-        this.$("#family_container .family-block").each(function() {
-            const $block = $(this);
-            const fallecido = $block.find("input[name^='famFallecido_']").is(":checked");
-            if (!fallecido) {
-                $block.find("input[required], select[required]").each(function() {
-                    if (!$(this).val()) {
-                        $(this).addClass("is-invalid");
-                        valid = false;
-                    } else {
-                        $(this).removeClass("is-invalid");
-                    }
-                });
-            } else {
-                $block.find(".is-invalid").removeClass("is-invalid");
-            }
-        });
-
-        return valid;
+        if (this._validateCurrentStep2()) {
+            this.$('#form-step-2').addClass('d-none');
+            this.$('#form-step-3').removeClass('d-none');
+        }
     },
 
     _onNextClick(ev) {
