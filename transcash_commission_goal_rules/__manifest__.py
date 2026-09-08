@@ -1,7 +1,7 @@
 {
     "name": "Transcash Commissions - Metas y Liquidaciones",
-    "summary": "Metas de vendedor sin localidad, gestión por vendedor y reportes PDF",
-    "version": "18.0.1.0.0",
+    "summary": "Metas sin localidad, gestión de administradores con detalle de vendedores y PDF",
+    "version": "18.0.1.1.0",
     "category": "Sales/Commissions",
     "author": "Transcash",
     "license": "LGPL-3",

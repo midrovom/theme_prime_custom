@@ -1,64 +1,83 @@
 # Transcash Commissions - Metas y Liquidaciones
 
-Addon de extensión para Odoo 18. Depende de `transcash_commission` y no modifica los archivos del módulo original.
+Extensión para Odoo 18 sobre `transcash_commission`.
 
-## Alcance
+Este módulo concentra los cambios funcionales de metas, gestión de administradores y reportes, sin modificar el modelo de ventas ni la sincronización del módulo base.
 
-Este módulo incorpora únicamente los cambios funcionales solicitados sobre metas, gestión administrativa y liquidaciones:
+## 1. Metas de vendedores
 
-1. **Meta de vendedor sin localidad**
-   - La meta es única por vendedor y período.
-   - La comisión propia suma todas las ventas del vendedor dentro del período, independientemente de la localidad de la venta.
-   - Se mantienen los rangos de cumplimiento y porcentajes del módulo original.
+- La meta del vendedor es global para el período.
+- La meta no depende de localidad.
+- Todas las ventas del vendedor dentro del período participan en su cumplimiento.
+- Solo puede existir una meta activa por vendedor y período.
+- Un vendedor sin meta activa no genera resultado en la liquidación y no aparece en los PDF de liquidación.
 
-2. **Gestión del administrador por vendedor**
-   - Nueva regla `commission.manager.seller.rule`.
-   - Configuración por **Período + Administrador + Vendedor a cargo**.
-   - Cada vendedor puede tener un mínimo administrativo distinto.
-   - El mínimo puede expresarse como:
-     - monto fijo de ventas; o
-     - porcentaje de la meta propia del vendedor.
-   - El porcentaje de comisión de gestión es un parámetro independiente y específico para esa relación.
-   - El local asignado debe cumplir su meta para habilitar el pago de gestión.
-   - Las ventas del vendedor usadas para validar su mínimo y calcular la gestión se toman de todas sus localidades; el local asignado actúa únicamente como condición de cumplimiento local.
+## 2. Gestión de comisiones de administradores
 
-3. **Vendedores sin meta**
-   - No se crea `commission.result` para vendedores sin meta activa en el período.
-   - Por ello no aparecen en pantalla ni en el PDF consolidado.
-   - Un administrador también debe tener una meta activa si se desea que tenga una fila propia de liquidación y reciba en ella su comisión de gestión.
+La configuración se realiza en un solo registro por:
 
-4. **PDF de liquidación total**
-   - A4 horizontal.
-   - Incluye ventas, meta, cumplimiento, comisión propia, proyectos, gestión, bono de liquidación y total por vendedor.
-   - Solo lista resultados efectivamente liquidados, es decir, vendedores con meta activa.
+- Período
+- Administrador
+- Local cuya meta debe cumplirse
 
-5. **PDF individual**
-   - A4 vertical.
-   - Resume la liquidación del vendedor y muestra el detalle de auditoría del cálculo.
+En la parte inferior del formulario existe un detalle **Vendedores a cargo**. Cada línea contiene:
 
-## Ejemplo de gestión administrativa
+- Vendedor
+- Tipo de mínimo
+- Mínimo de venta fijo o porcentaje de la meta del vendedor
+- Meta del vendedor como referencia
+- Mínimo efectivo calculado
+- Porcentaje específico de comisión del administrador
+- Base de cálculo
+- Activo
 
-Meta propia del vendedor: 10.000
+Ejemplo:
 
-Regla administrativa:
+| Vendedor | Tipo mínimo | Parámetro | Mínimo efectivo | % Admin |
+|---|---|---:|---:|---:|
+| Vanessa | Monto fijo | 6.000 | 6.000 | 0,75% |
+| Pedro | % de meta | 80% | 8.000 | 0,50% |
+| José | Monto fijo | 5.000 | 5.000 | 1,00% |
 
-- Tipo de mínimo: `% de la meta del vendedor`
-- Mínimo: 80%
-- Mínimo administrativo efectivo: 8.000
-- Comisión de gestión del administrador: 0,75%
-- Local para validar meta: SDO
+Esto permite administrar todos los vendedores de un administrador desde una sola cabecera.
 
-Si el vendedor vende 8.500 en el período y SDO cumple su meta, el administrador gana:
+## 3. Condiciones para pagar gestión
 
-`8.500 x 0,75% = 63,75`
+Por cada vendedor se validan de forma independiente:
 
-La comisión personal del vendedor se calcula por sus propios rangos de cumplimiento y no por esta regla administrativa.
+1. El vendedor alcanza su **mínimo administrativo**.
+2. El local configurado en la cabecera cumple su meta local.
+3. Si ambas condiciones se cumplen, el administrador recibe el porcentaje definido en la línea del vendedor.
+
+El mínimo administrativo es independiente de la comisión propia del vendedor. Puede expresarse como:
+
+- monto fijo; o
+- porcentaje de la meta propia del vendedor.
+
+La meta propia del vendedor se utiliza para calcular la comisión del vendedor. Solo se usa como referencia del mínimo administrativo cuando se selecciona expresamente `% de la meta del vendedor`.
+
+Las ventas utilizadas para validar el mínimo administrativo son todas las ventas del vendedor en el período, sin filtrar por local. El local de la cabecera funciona como condición adicional de cumplimiento.
+
+## 4. Liquidaciones
+
+La liquidación genera filas exclusivamente para vendedores que tengan meta activa en el período. Esto evita mostrar vendedores creados por sincronización que todavía no tienen parametrización de comisiones.
+
+## 5. PDF
+
+Incluye:
+
+- PDF consolidado de liquidación.
+- PDF individual por vendedor/administrador.
+
+El PDF consolidado utiliza únicamente los resultados generados en la liquidación, por lo que tampoco muestra vendedores sin meta.
+
+El PDF individual presenta ventas, meta, cumplimiento, comisión propia, proyectos, gestión, bono y detalle de auditoría.
 
 ## Instalación
 
 1. Mantener instalado `transcash_commission`.
-2. Copiar la carpeta `transcash_commission_goal_rules` al path de addons.
+2. Copiar `transcash_commission_goal_rules` a la ruta de addons.
 3. Actualizar la lista de aplicaciones.
-4. Instalar **Transcash Commissions - Metas y Liquidaciones**.
+4. Instalar o actualizar **Transcash Commissions - Metas y Liquidaciones**.
 
-El módulo antiguo `commission.manager.rule` permanece físicamente en el módulo base para no alterar datos ni código original, pero esta extensión oculta su menú y reemplaza su uso en el cálculo por la nueva regla específica por vendedor.
+El módulo técnico es `transcash_commission_goal_rules`.

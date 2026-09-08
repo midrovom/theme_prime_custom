@@ -17,67 +17,62 @@
         </field>
     </record>
 
-    <record id="view_commission_manager_seller_rule_list" model="ir.ui.view">
-        <field name="name">commission.manager.seller.rule.list</field>
-        <field name="model">commission.manager.seller.rule</field>
+    <record id="view_commission_manager_goal_rule_list" model="ir.ui.view">
+        <field name="name">commission.manager.goal.rule.list</field>
+        <field name="model">commission.manager.goal.rule</field>
         <field name="arch" type="xml">
-            <list string="Gestión de administradores por vendedor">
+            <list string="Gestión de comisiones de administradores">
                 <field name="period_id"/>
                 <field name="manager_id"/>
-                <field name="seller_id"/>
                 <field name="location_id"/>
-                <field name="minimum_type"/>
-                <field name="minimum_amount" optional="show"/>
-                <field name="minimum_target_percent" optional="show"/>
-                <field name="seller_target_amount" optional="show"/>
-                <field name="effective_minimum"/>
-                <field name="commission_percent"/>
-                <field name="basis"/>
                 <field name="active"/>
             </list>
         </field>
     </record>
 
-    <record id="view_commission_manager_seller_rule_form" model="ir.ui.view">
-        <field name="name">commission.manager.seller.rule.form</field>
-        <field name="model">commission.manager.seller.rule</field>
+    <record id="view_commission_manager_goal_rule_form" model="ir.ui.view">
+        <field name="name">commission.manager.goal.rule.form</field>
+        <field name="model">commission.manager.goal.rule</field>
         <field name="arch" type="xml">
-            <form string="Gestión de administrador por vendedor">
+            <form string="Gestión de comisión de administrador">
                 <sheet>
                     <group>
-                        <group string="Responsabilidad">
+                        <group string="Administrador">
                             <field name="period_id"/>
                             <field name="manager_id"/>
-                            <field name="seller_id"/>
+                        </group>
+                        <group string="Condición del local">
                             <field name="location_id"/>
                             <field name="active"/>
                         </group>
-                        <group string="Comisión de gestión">
+                    </group>
+
+                    <separator string="Vendedores a cargo"/>
+                    <field name="line_ids" context="{'default_management_id': id, 'default_period_id': period_id, 'default_manager_id': manager_id, 'default_location_id': location_id}">
+                        <list editable="bottom">
+                            <field name="seller_id"/>
                             <field name="minimum_type"/>
                             <field name="minimum_amount" invisible="minimum_type != 'fixed'"/>
                             <field name="minimum_target_percent" invisible="minimum_type != 'target_percent'"/>
-                            <field name="seller_target_configured" invisible="1"/>
-                            <field name="seller_target_amount" readonly="1"/>
+                            <field name="seller_target_amount" readonly="1" optional="show"/>
                             <field name="effective_minimum" readonly="1"/>
                             <field name="commission_percent"/>
-                            <field name="basis"/>
-                        </group>
-                    </group>
-                    <div class="alert alert-info" role="alert">
-                        <strong>Reglas independientes:</strong>
-                        la meta propia del vendedor calcula su comisión personal. El mínimo administrativo solo determina si ese vendedor habilita comisión de gestión para su administrador. El local indicado debe cumplir su meta. El porcentaje de gestión es específico para esta relación administrador-vendedor.
-                    </div>
-                    <div class="alert alert-warning" role="alert" invisible="minimum_type != 'target_percent' or seller_target_configured">
-                        El mínimo está definido como porcentaje de la meta, pero este vendedor no tiene una meta activa en el período. En ese caso no podrá habilitar comisión de gestión hasta configurar la meta.
+                            <field name="basis" optional="show"/>
+                            <field name="active"/>
+                        </list>
+                    </field>
+
+                    <div class="alert alert-info mt-2" role="alert">
+                        Cada vendedor tiene su propio mínimo de venta y su propio porcentaje de comisión para el administrador. El mínimo puede ser un monto fijo o un porcentaje de la meta del vendedor. Además, el local seleccionado arriba debe cumplir su meta para habilitar el pago de gestión.
                     </div>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <record id="action_commission_manager_seller_rule" model="ir.actions.act_window">
-        <field name="name">Gestión administradores por vendedor</field>
-        <field name="res_model">commission.manager.seller.rule</field>
+    <record id="action_commission_manager_goal_rule" model="ir.actions.act_window">
+        <field name="name">Gestión de comisiones de administradores</field>
+        <field name="res_model">commission.manager.goal.rule</field>
         <field name="view_mode">list,form</field>
         <field name="context">{}</field>
     </record>

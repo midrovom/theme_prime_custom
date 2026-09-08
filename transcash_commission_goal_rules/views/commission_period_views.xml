@@ -8,23 +8,15 @@
 
             <xpath expr="//page[.//field[@name='manager_rule_ids']]" position="replace">
                 <page string="Administradores">
-                    <field name="manager_seller_rule_ids" context="{'default_period_id': id}">
-                        <list editable="bottom">
+                    <field name="manager_goal_rule_ids" context="{'default_period_id': id}">
+                        <list>
                             <field name="manager_id"/>
-                            <field name="seller_id"/>
                             <field name="location_id"/>
-                            <field name="minimum_type"/>
-                            <field name="minimum_amount" optional="show"/>
-                            <field name="minimum_target_percent" optional="show"/>
-                            <field name="seller_target_amount" readonly="1" optional="show"/>
-                            <field name="effective_minimum" readonly="1"/>
-                            <field name="commission_percent"/>
-                            <field name="basis"/>
                             <field name="active"/>
                         </list>
                     </field>
                     <div class="alert alert-info mt-2" role="alert">
-                        El vendedor debe alcanzar su mínimo administrativo y el local asignado debe cumplir su meta. La comisión propia del vendedor se calcula con su meta global del período, sin depender de localidad.
+                        Abra un registro de administrador para configurar debajo todos sus vendedores a cargo, el mínimo de venta de cada uno y el porcentaje específico de comisión de gestión.
                     </div>
                 </page>
             </xpath>

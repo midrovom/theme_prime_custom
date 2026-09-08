@@ -353,16 +353,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 updateFullName();
             });
 
-            this._getFamilyBlock("Padre").then(blockHtml => {
-                const block = $(blockHtml);
-                this.$('#family_container').append(block);
-
-                const fallecidoCheck = block.find(`input[name="famFallecido_${this.familyCount}"]`);
+                const fallecidoCheck = this.$(`input[name="famFallecido_${i}"]`);
                 if (fallecidoCheck.length) {
                     fallecidoCheck.on("change", () => {
                         const disabled = fallecidoCheck.is(":checked");
-                        const $fields = block.find("input:not([name^='famFallecido_']), select");
-
+                        const $fields = this.$(`#family_container .family-block[data-type="${parentesco}"] input:not([name="famFallecido_${i}"]), 
+                                                #family_container .family-block[data-type="${parentesco}"] select`);
                         $fields.prop("disabled", disabled);
                         $fields.prop("required", !disabled);
 
@@ -373,25 +369,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         }
                     });
                 }
-            });
-
-            // const fallecidoCheck = this.$(`input[name="famFallecido_${i}"]`);
-            // if (fallecidoCheck.length) {
-            //     fallecidoCheck.on("change", () => {
-            //         const disabled = fallecidoCheck.is(":checked");
-            //         const $fields = this.$(`#family_container .family-block[data-type="${parentesco}"] input:not([name="famFallecido_${i}"]), 
-            //                                 #family_container .family-block[data-type="${parentesco}"] select`);
-            //         $fields.prop("disabled", disabled);
-            //         $fields.prop("required", !disabled);
-
-            //         if (disabled) {
-            //             $fields.val("");
-            //             $fields.removeClass("is-invalid");
-            //             $fields.siblings(".error-message").hide();
-            //         }
-            //     });
-            // }
-
         }, 0);
 
         return block;

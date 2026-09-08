@@ -79,6 +79,17 @@ class TestCommissionGoalRules(TransactionCase):
             "required_achievement": 100.0,
         })
 
+    def _management(self, lines):
+        commands = []
+        for vals in lines:
+            commands.append((0, 0, vals))
+        return self.env["commission.manager.goal.rule"].create({
+            "period_id": self.period.id,
+            "manager_id": self.manager.id,
+            "location_id": self.loc_a.id,
+            "line_ids": commands,
+        })
+
     def test_seller_target_uses_all_locations(self):
         target = self._target(self.seller_1, amount=1000.0, rate=2.0)
         self.assertFalse(target.location_id)
@@ -101,24 +112,47 @@ class TestCommissionGoalRules(TransactionCase):
         self.assertIn(self.seller_1, sellers)
         self.assertNotIn(self.no_target, sellers)
 
+    def test_one_management_header_has_multiple_sellers(self):
+        self._target(self.seller_1, 1000.0)
+        self._target(self.seller_2, 2000.0)
+        management = self._management([
+            {
+                "seller_id": self.seller_1.id,
+                "minimum_type": "fixed",
+                "minimum_amount": 600.0,
+                "commission_percent": 1.0,
+                "basis": "net",
+            },
+            {
+                "seller_id": self.seller_2.id,
+                "minimum_type": "target_percent",
+                "minimum_target_percent": 75.0,
+                "commission_percent": 1.5,
+                "basis": "net",
+            },
+        ])
+        self.assertEqual(len(management.line_ids), 2)
+        self.assertEqual(management.line_ids.mapped("manager_id"), self.manager)
+        self.assertEqual(management.line_ids.mapped("location_id"), self.loc_a)
+        self.assertAlmostEqual(
+            management.line_ids.filtered(lambda l: l.seller_id == self.seller_2).effective_minimum,
+            1500.0,
+            places=4,
+        )
+
     def test_manager_fixed_minimum_is_independent_from_seller_target(self):
-        # El administrador necesita meta para aparecer como resultado de liquidación.
         self._target(self.manager, amount=100.0, rate=0.0)
         self._target(self.seller_1, amount=1000.0, rate=0.0)
         self._location_target(amount=500.0)
-        self.env["commission.manager.seller.rule"].create({
-            "period_id": self.period.id,
-            "manager_id": self.manager.id,
+        self._management([{
             "seller_id": self.seller_1.id,
-            "location_id": self.loc_a.id,
             "minimum_type": "fixed",
             "minimum_amount": 600.0,
             "commission_percent": 1.0,
             "basis": "net",
-        })
+        }])
 
-        # Solo llega a 70% de su meta propia, pero supera el mínimo ADMIN de 600.
-        # 500 en local A habilita la meta local; 200 en B también cuenta para el mínimo.
+        # 70% de su meta propia, pero supera el mínimo ADMIN de 600.
         self._sale("GR-F1A", self.seller_1, self.loc_a, 500.0)
         self._sale("GR-F1B", self.seller_1, self.loc_b, 200.0)
 
@@ -130,16 +164,14 @@ class TestCommissionGoalRules(TransactionCase):
         self._target(self.manager, amount=100.0, rate=0.0)
         self._target(self.seller_1, amount=1000.0, rate=0.0)
         self._location_target(amount=600.0)
-        rule = self.env["commission.manager.seller.rule"].create({
-            "period_id": self.period.id,
-            "manager_id": self.manager.id,
+        management = self._management([{
             "seller_id": self.seller_1.id,
-            "location_id": self.loc_a.id,
             "minimum_type": "target_percent",
             "minimum_target_percent": 80.0,
             "commission_percent": 1.5,
             "basis": "net",
-        })
+        }])
+        rule = management.line_ids
         self.assertAlmostEqual(rule.effective_minimum, 800.0, places=4)
 
         self._sale("GR-P1A", self.seller_1, self.loc_a, 600.0)
@@ -147,29 +179,24 @@ class TestCommissionGoalRules(TransactionCase):
 
         settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
         manager_result = settlement.result_ids.filtered(lambda r: r.seller_id == self.manager)
-        # 850 >= 800 y el local A alcanzó 600/600. Comisión 850 * 1.5%.
         self.assertAlmostEqual(manager_result.management_commission, 12.75, places=4)
 
     def test_manager_commission_requires_location_target(self):
         self._target(self.manager, amount=100.0, rate=0.0)
         self._target(self.seller_1, amount=1000.0, rate=0.0)
         self._location_target(amount=1000.0)
-        self.env["commission.manager.seller.rule"].create({
-            "period_id": self.period.id,
-            "manager_id": self.manager.id,
+        self._management([{
             "seller_id": self.seller_1.id,
-            "location_id": self.loc_a.id,
             "minimum_type": "fixed",
             "minimum_amount": 500.0,
             "commission_percent": 1.0,
             "basis": "net",
-        })
+        }])
         self._sale("GR-L1A", self.seller_1, self.loc_a, 400.0)
         self._sale("GR-L1B", self.seller_1, self.loc_b, 400.0)
 
         settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
         manager_result = settlement.result_ids.filtered(lambda r: r.seller_id == self.manager)
-        # El vendedor supera 500, pero el local A solo llega a 40% de su meta.
         self.assertAlmostEqual(manager_result.management_commission, 0.0, places=4)
 
     def test_reports_are_available(self):

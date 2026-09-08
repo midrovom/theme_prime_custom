@@ -139,7 +139,12 @@ class CommissionSettlement(models.Model):
             return
 
         rules = self.period_id.manager_seller_rule_ids.filtered(
-            lambda rule: rule.manager_id == manager and rule.active
+            lambda rule: (
+                rule.manager_id == manager
+                and rule.active
+                and rule.management_id
+                and rule.management_id.active
+            )
         )
         Target = self.env["commission.seller.target"]
 
