@@ -101,6 +101,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change select[name^="famTipoDoc_"]': '_validateField',
         'change select[name^="famTipoDoc_"]': '_onChangeFamilyDocType',
         'change input[name^="famArchivo_"]': '_validateFamilyFile',
+        'change #famNumHermanos': '_onChangeNumHermanos'
     },
     
     /**
@@ -178,12 +179,22 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     },
 
     async _getFamilyBlock(parentesco) {
+
+        const fallecidoBlock = (["Padre","Madre"].includes(parentesco)) ? `
+            <div class="col-md-3 d-flex align-items-center">
+                <label class="fs-6 me-2">Fallecido</label>
+                <input class="form-check-input" type="checkbox" name="famFallecido_${this.familyCount}" value="1"/>
+            </div>
+        ` : "";
+
         const block = `
             <div class="row d-flex justify-content-center family-block" data-type="${parentesco}">
                 <div class="col-12 col-md-10">
                     <div class="py-3 d-flex justify-content-start mb-3">
                         <span class="fw-normal fs-4 text-info">${parentesco}</span>
                     </div>
+
+                    ${fallecidoBlock}
 
                     <div class="row g-3">
                         <!-- Apellido paterno -->
@@ -314,19 +325,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                     </div>
 
-                    ${['Padre','Madre'].includes(parentesco) ? `
-                    <div class="row g-3 mt-2">
-                        <div class="col-md-3">
-                            <label class="fs-6">Fallecido</label>
-                            <div class="form-check mt-2">
-                                <input class="form-check-input" type="checkbox" 
-                                    name="famFallecido_${this.familyCount}" value="si"/>
-                                <label class="form-check-label"></label>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-
                 </div>
             </div>
         `;
@@ -338,7 +336,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
                 const primer = this.$(`input[name="famPrimerNombre_${i}"]`).val()?.trim() || "";
                 const segundo = this.$(`input[name="famSegundoNombre_${i}"]`).val()?.trim() || "";
-
                 const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
                 this.$(`input[name="famNombre_${i}"]`).val(fullName);
             };
@@ -350,14 +347,28 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 const $f = $(this);
                 if (!$f.val().trim() && $f.prop("required")) {
                     $f.addClass("is-invalid");
-                    if ($f.next(".invalid-feedback").length === 0) {
-                        $f.after('<div class="invalid-feedback">Campo obligatorio</div>');
-                    }
                 } else {
                     $f.removeClass("is-invalid");
                 }
                 updateFullName();
             });
+
+            const fallecidoCheck = this.$(`input[name="famFallecido_${i}"]`);
+            if (fallecidoCheck.length) {
+                fallecidoCheck.on("change", () => {
+                    const disabled = fallecidoCheck.is(":checked");
+                    const $fields = this.$(`#family_container .family-block[data-type="${parentesco}"] input:not([name="famFallecido_${i}"]), 
+                                            #family_container .family-block[data-type="${parentesco}"] select`);
+                    $fields.prop("disabled", disabled);
+                    $fields.prop("required", !disabled);
+
+                    if (disabled) {
+                        $fields.val("");
+                        $fields.removeClass("is-invalid");
+                        $fields.siblings(".error-message").hide();
+                    }
+                });
+            }
 
         }, 0);
 
@@ -898,63 +909,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         return true;
     },
 
-    // _validateCurrentStep2() {
-    //     const enfermedad = this._validateRadio('enfermedad_persistente');
-    //     const medicacion = this._validateRadio('medicacion_continua');
-    //     const enfermedadLaboral = this._validateRadio('enfermedad_laboral');
-    //     const cirugia = this._validateRadio('cirugia_realizada');
-    //     const discapacidad = this._validateRadio('discapacidad');
-    //     const enfermedadDetalle = this._validateHealthGroup('enfermedad_persistente','detalle_enfermedad_persistente');
-    //     const medicacionDetalle = this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
-    //     const enfermedadLaboralDetalle = this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
-    //     const cirugiaDetalle = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
-
-    //     const tipoSangre = this._validateTipoSangre({
-    //         currentTarget: this.$('input[name="tipo_sangre"]')[0]
-    //     });
-
-    //     let discapacidadExtra = true;
-    //     const discValue = this.$('input[name="discapacidad"]:checked').val();
-
-    //     if (discValue === 'si') {
-    //         const tipo = this.$('input[name="tipo_discapacidad"]');
-    //         const porcentaje = this.$('input[name="porcentaje_discapacidad"]');
-
-    //         const tipoValid = !!tipo.val();
-    //         const porcentajeValid = !!porcentaje.val();
-
-    //         tipo.toggleClass('is-invalid', !tipoValid);
-    //         porcentaje.toggleClass('is-invalid', !porcentajeValid);
-    //     }
-
-    //     let familyValid = true;
-
-    //     for (let i = 1; i <= this.familyCount; i++) {
-    //         const valid = this._validateFamilyFields(i);
-    //         if (!valid) {
-    //             familyValid = false;
-    //         }
-    //     }
-
-    //     if (
-    //         !enfermedad ||
-    //         !medicacion ||
-    //         !enfermedadLaboral ||
-    //         !cirugia ||
-    //         !discapacidad ||
-    //         !enfermedadDetalle ||
-    //         !medicacionDetalle ||
-    //         !enfermedadLaboralDetalle ||
-    //         !cirugiaDetalle ||
-    //         !tipoSangre 
-    //     ) {
-    //         this._scrollToFirstError();
-    //         return false;
-    //     }
-
-    //     return true;
-    // },
-
     _validateCurrentStep2() {
         const enfermedad = this._validateRadio('enfermedad_persistente');
         const medicacion = this._validateRadio('medicacion_continua');
@@ -965,7 +919,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const medicacionDetalle = this._validateHealthGroup('medicacion_continua','detalle_medicacion_continua');
         const enfermedadLaboralDetalle = this._validateHealthGroup('enfermedad_laboral','detalle_enfermedad_laboral');
         const cirugiaDetalle = this._validateHealthGroup('cirugia_realizada','detalle_cirugia_realizada');
-        const tipoSangre = this._validateTipoSangre({currentTarget: this.$('input[name="tipo_sangre"]')[0]});
+
+        const tipoSangre = this._validateTipoSangre({
+            currentTarget: this.$('input[name="tipo_sangre"]')[0]
+        });
 
         let discapacidadExtra = true;
         const discValue = this.$('input[name="discapacidad"]:checked').val();
@@ -984,20 +941,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         let familyValid = true;
 
         for (let i = 1; i <= this.familyCount; i++) {
-            const fallecido = this.$(`input[name="famFallecido_${i}"]`).is(":checked");
-            if (!fallecido) {
-                const valid = this._validateFamilyFields(i);
-                if (!valid) {
-                    familyValid = false;
-                }
-            } else {
-                this.$(`#family_container input[name^="famApellidoPaterno_${i}"],
-                        #family_container input[name^="famApellidoMaterno_${i}"],
-                        #family_container input[name^="famPrimerNombre_${i}"],
-                        #family_container input[name^="famCedula_${i}"],
-                        #family_container input[name^="famFecha_${i}"],
-                        #family_container input[name^="famTelefono_${i}"],
-                        #family_container input[name^="famOcupacion_${i}"]`).removeClass("is-invalid");
+            const valid = this._validateFamilyFields(i);
+            if (!valid) {
+                familyValid = false;
             }
         }
 
@@ -1011,8 +957,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             !medicacionDetalle ||
             !enfermedadLaboralDetalle ||
             !cirugiaDetalle ||
-            !tipoSangre ||
-            !familyValid
+            !tipoSangre 
         ) {
             this._scrollToFirstError();
             return false;
@@ -1210,6 +1155,52 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         const ok = !!file && file.type === "application/pdf";
         $fileInput.toggleClass('is-invalid', !ok);
     },
+
+    // _toggleFamilyDisability(i) {
+    //     const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
+    //     const $tipo = this.$(`input[name="famDiscTipo_${i}"]`);
+    //     const $porcentaje = this.$(`input[name="famDiscPorcentaje_${i}"]`);
+    //     const $errorTipo = $tipo.siblings('.fam-disc-type-error');
+    //     const $errorRadio = this.$(`input[name="famDisc_${i}"]`)
+    //         .closest('.col-md-3')
+    //         .find('.fam-disc-error');
+
+    //     if (discValue === 'si') {
+    //         $tipo.prop('disabled', false);
+    //         $porcentaje.prop('disabled', false);
+
+    //         if (!$tipo.val().trim()) {
+    //             $tipo.addClass('is-invalid');
+    //         } else {
+    //             $tipo.removeClass('is-invalid');
+    //         }
+
+    //         const val = $porcentaje.val();
+    //         const isValid = val && !isNaN(val) && val >= 0 && val <= 100;
+    //         if (!isValid) {
+    //             $porcentaje.addClass('is-invalid');
+    //         } else {
+    //             $porcentaje.removeClass('is-invalid');
+    //         }
+
+    //     } else if (discValue === 'no') {
+    //         $tipo.prop('disabled', true)
+    //             .val('')
+    //             .removeClass('is-invalid');
+    //         $porcentaje.prop('disabled', true)
+    //             .val('')
+    //             .removeClass('is-invalid');
+
+    //         $errorTipo.addClass('d-none');
+    //         $errorRadio.addClass('d-none');
+    //     }
+
+    //     if (!discValue) {
+    //         $errorRadio.removeClass('d-none');
+    //     } else {
+    //         $errorRadio.addClass('d-none');
+    //     }
+    // },
 
     _toggleFamilyDisability(i) {
         const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
@@ -1689,8 +1680,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     _validateReferenceField(ev) {
         const $field = $(ev.currentTarget);
         const $error = $field.siblings('.error-message'); 
-        const value = $field.val();
+        if ($field.prop("disabled")) {
+            $error.hide();
+            $field.removeClass('is-invalid');
+            return true; 
+        }
 
+        const value = $field.val();
         if (value.trim() === '') {
             $error.text("Campo obligatorio").show();
             $field.addClass('is-invalid');
@@ -1887,35 +1883,20 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
-    // _onChangeFamilyDocType(ev) {
-    //     const $select = $(ev.currentTarget);
-    //     const index = $select.attr("name").split("_")[1];
-    //     const value = $select.val();
-
-    //     const $cedula = this.$(`input[name="famCedula_${index}"]`);
-    //     const $archivo = this.$(`input[name="famArchivo_${index}"]`);
-
-    //     if (value === "part_naci") {
-    //         $cedula.prop("disabled", true).prop("required", false).val("");
-    //         $archivo.removeClass("d-none").prop("disabled", false).prop("required", true);
-    //     } else {
-    //         $cedula.prop("disabled", false).prop("required", true);
-    //         $archivo.addClass("d-none").prop("disabled", true).prop("required", false).val("");
-    //     }
-    // },
-
     _onChangeFamilyDocType(ev) {
         const $select = $(ev.currentTarget);
-        const index = $select.attr("name").split("_")[1]; 
-        const $numDoc = this.$(`input[name="famCedula_${index}"]`);
-        const $archivoDoc = this.$(`input[name="famArchivo_${index}"]`);
+        const index = $select.attr("name").split("_")[1];
+        const value = $select.val();
 
-        if ($select.val() === "part_naci") {
-            $archivoDoc.removeClass("d-none").prop("disabled", false).attr("required", true);
-            $numDoc.prop("disabled", true).removeAttr("required").val("").removeClass("is-invalid");
+        const $cedula = this.$(`input[name="famCedula_${index}"]`);
+        const $archivo = this.$(`input[name="famArchivo_${index}"]`);
+
+        if (value === "part_naci") {
+            $cedula.prop("disabled", true).prop("required", false).val("");
+            $archivo.removeClass("d-none").prop("disabled", false).prop("required", true);
         } else {
-            $numDoc.prop("disabled", false).attr("required", true);
-            $archivoDoc.addClass("d-none").prop("disabled", true).removeAttr("required").val("").removeClass("is-invalid");
+            $cedula.prop("disabled", false).prop("required", true);
+            $archivo.addClass("d-none").prop("disabled", true).prop("required", false).val("");
         }
     },
 
@@ -1936,34 +1917,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Handlers
     //----------------------------------------------------------------------
 
-    // _onNextClick(ev) {
-    //     ev.preventDefault();
+    _onNextStep2(ev) {
+        ev.preventDefault();
 
-    //     if (this._validateCurrentStep1()) {
-    //         this.$('#form-step-1').addClass('d-none');
-    //         this.$('#form-step-2').removeClass('d-none');
-    //         const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
-    //         this.$('.family-block[data-type="Hijo"]').remove();
-
-    //         if (!isNaN(numHijos) && numHijos > 0) {
-    //             for (let i = 0; i < numHijos; i++) {
-    //                 this.familyCount++;
-    //                 const index = this.familyCount;
-    //                 this._getFamilyBlock("Hijo").then(blockHtml => {
-    //                     const block = $(blockHtml);
-
-    //                     block.append(`<input type="hidden" name="famTipo_${index}" value="5"/>`);
-    //                     this.$('#family_container').append(block);
-    //                     this.$(`input[name="famDisc_${index}"]`).on('change', () => {
-    //                         this._toggleFamilyDisability(index);
-    //                     });
-
-    //                     this._toggleFamilyDisability(index);
-    //                 });
-    //             }
-    //         }
-    //     }
-    // },
+        if (this._validateCurrentStep2()) {
+            this.$('#form-step-2').addClass('d-none');
+            this.$('#form-step-3').removeClass('d-none');
+        }
+    },
 
     _onNextClick(ev) {
         ev.preventDefault();
@@ -1971,26 +1932,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         if (this._validateCurrentStep1()) {
             this.$('#form-step-1').addClass('d-none');
             this.$('#form-step-2').removeClass('d-none');
-            const fixedTypes = ['Padre', 'Madre', 'Conyugue'];
-            fixedTypes.forEach(async (tipo, idx) => {
-                this.familyCount++;
-                const index = this.familyCount;
-                const blockHtml = await this._getFamilyBlock(tipo);
-                const block = $(blockHtml);
-
-                block.append(`<input type="hidden" name="famTipo_${index}" value="${tipo}"/>`);
-                this.$('#family_container').append(block);
-                this.$(`input[name="famDisc_${index}"]`).on('change', () => {
-                    this._toggleFamilyDisability(index);
-                });
-                this.$(`input[name="famDepende_${index}"]`).on('change', (ev) => {
-                    const name = $(ev.currentTarget).attr('name');
-                    this.$(`input[name="${name}"]`).removeClass('is-invalid');
-                });
-
-                this._toggleFamilyDisability(index);
-            });
-
             const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
             this.$('.family-block[data-type="Hijo"]').remove();
 
@@ -2000,9 +1941,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     const index = this.familyCount;
                     this._getFamilyBlock("Hijo").then(blockHtml => {
                         const block = $(blockHtml);
-                        block.append(`<input type="hidden" name="famTipo_${index}" value="Hijo"/>`);
-                        this.$('#family_container').append(block);
 
+                        block.append(`<input type="hidden" name="famTipo_${index}" value="5"/>`);
+                        this.$('#family_container').append(block);
                         this.$(`input[name="famDisc_${index}"]`).on('change', () => {
                             this._toggleFamilyDisability(index);
                         });
@@ -2013,28 +1954,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             }
         }
     },
-
-    _onNextStep2(ev) {
-        ev.preventDefault();
-
-        if (this._validateCurrentStep2()) {
-            this.$('select[name^="famTipoDoc_"]').each((_, el) => {
-                this._onChangeFamilyDocType({ currentTarget: el });
-            });
-
-            this.$('#form-step-2').addClass('d-none');
-            this.$('#form-step-3').removeClass('d-none');
-        }
-    },
-
-    // _onNextStep2(ev) {
-    //     ev.preventDefault();
-
-    //     if (this._validateCurrentStep2()) {
-    //         this.$('#form-step-2').addClass('d-none');
-    //         this.$('#form-step-3').removeClass('d-none');
-    //     }
-    // },
 
     _onPrevClick(ev) {
         ev.preventDefault();
@@ -2153,42 +2072,13 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._addFamilyBlock(parentesco); 
     },
 
-
-    // async _addFamilyBlock(parentesco) {
-    //     const FAMILY_TYPES_MAP = {
-    //         '1': 'Padre',
-    //         '2': 'Madre',
-    //         '3': 'Hermano(a)',
-    //         '4': 'Conyugue',
-    //         '5': 'Hijo(a)'
-    //     };
-
-    //     const UNIQUE_TYPES = ['Padre', 'Madre', 'Conyugue']; 
-    //     const label = FAMILY_TYPES_MAP[parentesco] || parentesco;
-
-    //     if (UNIQUE_TYPES.includes(label) &&
-    //         this.$(`#family_container .family-block[data-type="${label}"]`).length > 0) {
-    //         $('#familyMessageText').text(`Ya existe un bloque para ${label}`);
-    //         $('#familyMessage').removeClass('d-none');
-    //         return;
-    //     }
-
-    //     this.familyCount++;
-    //     const html = await this._getFamilyBlock(label);
-    //     this.$('#family_container').append(html);
-    //     this.$(`#family_container .family-block:last`).append(`
-    //         <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
-    //     `);
-
-    //     const i = this.familyCount;
-    //     this.$(`input[name="famDisc_${i}"]`).on('change', () => {
-    //         this._toggleFamilyDisability(i);
-    //     });
-    //     this.$(`input[name="famDepende_${i}"]`).on('change', (ev) => {
-    //         const name = $(ev.currentTarget).attr('name');
-    //         this.$(`input[name="${name}"]`).removeClass('is-invalid');
-    //     });
-    // },
+    async _onChangeNumHermanos(ev) {
+        const cantidad = parseInt($(ev.currentTarget).val(), 10) || 0;
+        this.$('#family_container .family-block[data-type="Hermano(a)"]').remove();
+        for (let j = 0; j < cantidad; j++) {
+            await this._addFamilyBlock('3'); 
+        }
+    },
 
     async _addFamilyBlock(parentesco) {
         const FAMILY_TYPES_MAP = {
@@ -2217,36 +2107,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         `);
 
         const i = this.familyCount;
-        this._bindFallecido(i, label);
         this.$(`input[name="famDisc_${i}"]`).on('change', () => {
             this._toggleFamilyDisability(i);
         });
         this.$(`input[name="famDepende_${i}"]`).on('change', (ev) => {
             const name = $(ev.currentTarget).attr('name');
             this.$(`input[name="${name}"]`).removeClass('is-invalid');
-        });
-    },
-
-    _bindFallecido(i, parentesco) {
-        if (!['Padre','Madre'].includes(parentesco)) return;
-
-        const fallecidoCheck = this.$(`input[name="famFallecido_${i}"]`);
-        fallecidoCheck.on("change", () => {
-            const disabled = fallecidoCheck.is(":checked");
-            const $fields = this.$(`.family-block[data-type="${parentesco}"]`)
-                .find("input:not([name='famFallecido_"+i+"']), select");
-
-            $fields.each(function() {
-                const $f = $(this);
-                if (disabled) {
-                    $f.prop("disabled", true).prop("required", false).removeClass("is-invalid").val("");
-                } else {
-                    $f.prop("disabled", false);
-                    if ($f.attr("required") !== undefined) {
-                        $f.prop("required", true);
-                    }
-                }
-            });
         });
     },
 
