@@ -155,6 +155,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this._addReferenceBlock();
         }
 
+        this._addFamilyBlock('1'); // Padre
+        this._addFamilyBlock('2'); // Madre
+        this._addFamilyBlock('4'); // Conyugue
+        this._addFamilyBlock('3'); // Hermano(a)
+
         return this._super();
     },
 
