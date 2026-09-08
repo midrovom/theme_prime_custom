@@ -1887,20 +1887,35 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
     },
 
+    // _onChangeFamilyDocType(ev) {
+    //     const $select = $(ev.currentTarget);
+    //     const index = $select.attr("name").split("_")[1];
+    //     const value = $select.val();
+
+    //     const $cedula = this.$(`input[name="famCedula_${index}"]`);
+    //     const $archivo = this.$(`input[name="famArchivo_${index}"]`);
+
+    //     if (value === "part_naci") {
+    //         $cedula.prop("disabled", true).prop("required", false).val("");
+    //         $archivo.removeClass("d-none").prop("disabled", false).prop("required", true);
+    //     } else {
+    //         $cedula.prop("disabled", false).prop("required", true);
+    //         $archivo.addClass("d-none").prop("disabled", true).prop("required", false).val("");
+    //     }
+    // },
+
     _onChangeFamilyDocType(ev) {
         const $select = $(ev.currentTarget);
-        const index = $select.attr("name").split("_")[1];
-        const value = $select.val();
+        const index = $select.attr("name").split("_")[1]; 
+        const $numDoc = this.$(`input[name="famCedula_${index}"]`);
+        const $archivoDoc = this.$(`input[name="famArchivo_${index}"]`);
 
-        const $cedula = this.$(`input[name="famCedula_${index}"]`);
-        const $archivo = this.$(`input[name="famArchivo_${index}"]`);
-
-        if (value === "part_naci") {
-            $cedula.prop("disabled", true).prop("required", false).val("");
-            $archivo.removeClass("d-none").prop("disabled", false).prop("required", true);
+        if ($select.val() === "part_naci") {
+            $archivoDoc.removeClass("d-none").prop("disabled", false).attr("required", true);
+            $numDoc.prop("disabled", true).removeAttr("required").val("").removeClass("is-invalid");
         } else {
-            $cedula.prop("disabled", false).prop("required", true);
-            $archivo.addClass("d-none").prop("disabled", true).prop("required", false).val("");
+            $numDoc.prop("disabled", false).attr("required", true);
+            $archivoDoc.addClass("d-none").prop("disabled", true).removeAttr("required").val("").removeClass("is-invalid");
         }
     },
 
