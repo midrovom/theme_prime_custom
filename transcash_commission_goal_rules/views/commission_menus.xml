@@ -1,0 +1,14 @@
+<odoo>
+    <!-- Oculta el menú antiguo de regla genérica por administrador para evitar
+         mezclarlo con la nueva regla específica Administrador + Vendedor. -->
+    <record id="transcash_commission.menu_commission_manager_rule" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+
+    <menuitem id="menu_commission_manager_seller_rule"
+              name="Gestión administradores"
+              parent="transcash_commission.menu_commission_rules"
+              action="action_commission_manager_seller_rule"
+              sequence="30"
+              groups="transcash_commission.group_commission_manager"/>
+</odoo>

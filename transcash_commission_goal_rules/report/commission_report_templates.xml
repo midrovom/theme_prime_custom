@@ -1,0 +1,195 @@
+<odoo>
+    <template id="report_commission_settlement_total">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            .tc-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+                            .tc-meta { font-size: 11px; margin-bottom: 10px; }
+                            .tc-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+                            .tc-table th { background: #eeeeee; font-weight: 700; padding: 5px 3px; border: 1px solid #bdbdbd; }
+                            .tc-table td { padding: 4px 3px; border: 1px solid #d5d5d5; }
+                            .tc-num { text-align: right; white-space: nowrap; }
+                            .tc-total { font-weight: 700; background: #f4f4f4; }
+                            .tc-summary { width: 55%; margin: 10px 0 14px auto; border-collapse: collapse; font-size: 10px; }
+                            .tc-summary td { border: 1px solid #d5d5d5; padding: 5px; }
+                        </style>
+
+                        <div class="tc-title">Liquidación total de comisiones</div>
+                        <div class="tc-meta">
+                            <strong>Liquidación:</strong> <span t-field="o.name"/>
+                            &amp;nbsp;&amp;nbsp; <strong>Período:</strong> <span t-field="o.period_id.name"/>
+                            &amp;nbsp;&amp;nbsp; <strong>Desde:</strong> <span t-field="o.period_id.date_start"/>
+                            &amp;nbsp;&amp;nbsp; <strong>Hasta:</strong> <span t-field="o.period_id.date_end"/>
+                            <t t-if="o.calculated_at">
+                                &amp;nbsp;&amp;nbsp; <strong>Calculado:</strong> <span t-field="o.calculated_at"/>
+                            </t>
+                        </div>
+
+                        <table class="tc-summary">
+                            <tr>
+                                <td><strong>Vendedores liquidados</strong></td>
+                                <td class="tc-num"><span t-esc="len(o.result_ids)"/></td>
+                                <td><strong>Líneas de venta</strong></td>
+                                <td class="tc-num"><span t-field="o.sales_count"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ventas netas</strong></td>
+                                <td class="tc-num"><span t-field="o.total_sales" t-options='{"widget": "float", "precision": 2}'/></td>
+                                <td><strong>Total comisión</strong></td>
+                                <td class="tc-num"><span t-field="o.total_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                            </tr>
+                        </table>
+
+                        <table class="tc-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Vendedor</th>
+                                    <th class="tc-num">Ventas</th>
+                                    <th class="tc-num">Meta</th>
+                                    <th class="tc-num">Cumpl. %</th>
+                                    <th class="tc-num">Com. propia</th>
+                                    <th class="tc-num">Proyectos</th>
+                                    <th class="tc-num">Gestión</th>
+                                    <th class="tc-num">Bono liq.</th>
+                                    <th class="tc-num">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="o.result_ids.sorted(lambda r: (r.seller_id.code or '', r.seller_id.name or ''))" t-as="r">
+                                    <td><span t-field="r.seller_id.code"/></td>
+                                    <td><span t-field="r.seller_id.name"/></td>
+                                    <td class="tc-num"><span t-field="r.total_sales" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="tc-num"><span t-field="r.target_amount" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="tc-num"><span t-field="r.achievement_percent" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="tc-num"><span t-field="r.standard_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="tc-num"><span t-field="r.project_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="tc-num"><span t-field="r.management_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="tc-num"><span t-field="r.liquidation_bonus" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="tc-num"><strong><span t-field="r.total_commission" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                                </tr>
+                                <tr class="tc-total">
+                                    <td colspan="5">TOTALES</td>
+                                    <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('standard_commission'))"/></td>
+                                    <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('project_commission'))"/></td>
+                                    <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('management_commission'))"/></td>
+                                    <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('liquidation_bonus'))"/></td>
+                                    <td class="tc-num"><span t-field="o.total_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p style="font-size:9px; margin-top:10px;">
+                            Este reporte incluye únicamente vendedores con una meta activa configurada en el período.
+                        </p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_commission_result_individual">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            .tc-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+                            .tc-block { border: 1px solid #d5d5d5; padding: 8px; margin-bottom: 10px; }
+                            .tc-grid { width: 100%; border-collapse: collapse; font-size: 10px; }
+                            .tc-grid td { padding: 4px; border-bottom: 1px solid #eeeeee; }
+                            .tc-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+                            .tc-table th { background: #eeeeee; font-weight: 700; padding: 5px 3px; border: 1px solid #bdbdbd; }
+                            .tc-table td { padding: 4px 3px; border: 1px solid #d5d5d5; }
+                            .tc-num { text-align: right; white-space: nowrap; }
+                            .tc-total { font-size: 15px; font-weight: 700; }
+                        </style>
+
+                        <div class="tc-title">Liquidación individual de comisión</div>
+                        <div class="tc-block">
+                            <table class="tc-grid">
+                                <tr>
+                                    <td><strong>Vendedor</strong></td>
+                                    <td><span t-field="o.seller_id.name"/></td>
+                                    <td><strong>Código</strong></td>
+                                    <td><span t-field="o.seller_id.code"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Liquidación</strong></td>
+                                    <td><span t-field="o.settlement_id.name"/></td>
+                                    <td><strong>Período</strong></td>
+                                    <td><span t-field="o.settlement_id.period_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Desde</strong></td>
+                                    <td><span t-field="o.settlement_id.period_id.date_start"/></td>
+                                    <td><strong>Hasta</strong></td>
+                                    <td><span t-field="o.settlement_id.period_id.date_end"/></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="tc-block">
+                            <table class="tc-grid">
+                                <tr>
+                                    <td><strong>Ventas netas</strong></td>
+                                    <td class="tc-num"><span t-field="o.total_sales" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td><strong>Meta</strong></td>
+                                    <td class="tc-num"><span t-field="o.target_amount" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td><strong>Cumplimiento</strong></td>
+                                    <td class="tc-num"><span t-field="o.achievement_percent" t-options='{"widget": "float", "precision": 2}'/>%</td>
+                                </tr>
+                                <tr>
+                                    <td>Comisión propia</td>
+                                    <td class="tc-num"><span t-field="o.standard_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td>Comisión proyectos</td>
+                                    <td class="tc-num"><span t-field="o.project_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td>Comisión gestión</td>
+                                    <td class="tc-num"><span t-field="o.management_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                </tr>
+                                <tr>
+                                    <td>Bono liquidación</td>
+                                    <td class="tc-num"><span t-field="o.liquidation_bonus" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td colspan="3"><strong>Total comisión</strong></td>
+                                    <td class="tc-num tc-total"><span t-field="o.total_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <h4>Detalle de cálculo</h4>
+                        <table class="tc-table">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th>Vendedor gestionado</th>
+                                    <th>Local</th>
+                                    <th class="tc-num">Base</th>
+                                    <th class="tc-num">Cant./m²</th>
+                                    <th class="tc-num">% / tarifa</th>
+                                    <th>Cumple</th>
+                                    <th class="tc-num">Comisión</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="o.detail_ids" t-as="d">
+                                    <td><span t-field="d.detail_type"/></td>
+                                    <td><span t-field="d.description"/></td>
+                                    <td><span t-if="d.managed_seller_id" t-field="d.managed_seller_id.name"/></td>
+                                    <td><span t-if="d.location_id" t-field="d.location_id.name"/></td>
+                                    <td class="tc-num"><span t-field="d.basis_amount" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="tc-num"><span t-field="d.quantity" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="tc-num"><span t-field="d.rate" t-options='{"widget": "float", "precision": 4}'/></td>
+                                    <td><span t-esc="'Sí' if d.eligible else 'No'"/></td>
+                                    <td class="tc-num"><span t-field="d.amount" t-options='{"widget": "float", "precision": 2}'/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

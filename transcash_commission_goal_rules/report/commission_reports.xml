@@ -1,0 +1,53 @@
+<odoo>
+    <record id="paperformat_commission_total" model="report.paperformat">
+        <field name="name">Comisiones Transcash Total A4</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">12</field>
+        <field name="margin_bottom">12</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">8</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="paperformat_commission_individual" model="report.paperformat">
+        <field name="name">Comisiones Transcash Individual A4</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">12</field>
+        <field name="margin_bottom">12</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">8</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_commission_settlement_total" model="ir.actions.report">
+        <field name="name">Liquidación total</field>
+        <field name="model">commission.settlement</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">transcash_commission_goal_rules.report_commission_settlement_total</field>
+        <field name="report_file">transcash_commission_goal_rules.report_commission_settlement_total</field>
+        <field name="binding_model_id" ref="transcash_commission.model_commission_settlement"/>
+        <field name="binding_view_types">form</field>
+        <field name="paperformat_id" ref="paperformat_commission_total"/>
+        <field name="print_report_name">'Liquidacion_Total_%s' % (object.name or '')</field>
+    </record>
+
+    <record id="action_report_commission_result_individual" model="ir.actions.report">
+        <field name="name">Liquidación individual</field>
+        <field name="model">commission.result</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">transcash_commission_goal_rules.report_commission_result_individual</field>
+        <field name="report_file">transcash_commission_goal_rules.report_commission_result_individual</field>
+        <field name="binding_model_id" ref="transcash_commission.model_commission_result"/>
+        <field name="binding_view_types">form</field>
+        <field name="paperformat_id" ref="paperformat_commission_individual"/>
+        <field name="print_report_name">'Liquidacion_%s_%s' % (object.settlement_id.name or '', object.seller_id.code or object.seller_id.name or '')</field>
+    </record>
+</odoo>

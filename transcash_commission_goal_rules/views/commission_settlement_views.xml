@@ -1,0 +1,32 @@
+<odoo>
+    <record id="view_commission_settlement_form_goal_rules" model="ir.ui.view">
+        <field name="name">commission.settlement.form.goal.rules</field>
+        <field name="model">commission.settlement</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_settlement_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/header/field[@name='state']" position="before">
+                <button name="action_print_settlement"
+                        type="object"
+                        string="Imprimir liquidación total"
+                        class="btn-secondary"
+                        invisible="state == 'draft'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_result_form_goal_rules" model="ir.ui.view">
+        <field name="name">commission.result.form.goal.rules</field>
+        <field name="model">commission.result</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_result_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet" position="before">
+                <header>
+                    <button name="action_print_individual"
+                            type="object"
+                            string="Imprimir liquidación individual"
+                            class="btn-secondary"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+</odoo>
