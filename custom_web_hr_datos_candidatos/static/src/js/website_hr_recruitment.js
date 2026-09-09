@@ -357,8 +357,8 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 if (fallecidoCheck.length) {
                     fallecidoCheck.on("change", () => {
                         const disabled = fallecidoCheck.is(":checked");
-                        const $fields = this.$(`#family_container .family-block[data-type="${parentesco}"] input:not([name="famFallecido_${i}"]), 
-                                                #family_container .family-block[data-type="${parentesco}"] select`);
+
+                        const $fields = block.find("input:not([name^='famFallecido_']):not([name^='famNombre_']), select");
                         $fields.prop("disabled", disabled);
                         $fields.prop("required", !disabled);
 
@@ -366,6 +366,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                             $fields.val("");
                             $fields.removeClass("is-invalid");
                             $fields.siblings(".error-message").hide();
+                            block.find(`input[name="famNombre_${index}"]`).val("FALLECIDO");
+                        } else {
+                            block.find(`input[name="famNombre_${index}"]`).val("");
                         }
                     });
                 }
