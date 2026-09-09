@@ -150,13 +150,13 @@ class WebsiteHRRecruitment(http.Controller):
             applicant_values['medical_ids'] = medical_lines
 
             # ---------------- Familiares ----------------
-
             family_lines = []
             k = 1
 
             while kwargs.get(f'famTipo_{k}') is not None:
                 tipo = kwargs.get(f"famTipo_{k}")
                 fallecido = kwargs.get(f"famFallecido_{k}") == "1"
+                name = kwargs.get(f"famNombre_{k}") or False
 
                 if fallecido:
                     name = "FALLECIDO"
@@ -165,18 +165,19 @@ class WebsiteHRRecruitment(http.Controller):
                     "name": name,
                     "familiar_type": str(tipo) if tipo else False,
                     "fallecido": fallecido,
-                    "document_type": False if fallecido else kwargs.get(f"famTipoDoc_{k}"),
-                    "birthdate": False if fallecido else kwargs.get(f"famFecha_{k}"),
-                    "phone": False if fallecido else kwargs.get(f"famTelefono_{k}"),
-                    "occupation": False if fallecido else kwargs.get(f"famOcupacion_{k}"),
-                    "economically_dependent": False if fallecido else kwargs.get(f"famDepende_{k}"),
-                    "disability": False if fallecido else kwargs.get(f"famDisc_{k}"),
-                    "disability_type": False if fallecido else kwargs.get(f"famDiscTipo_{k}"),
-                    "disability_percentage": False if fallecido else kwargs.get(f"famDiscPorcentaje_{k}"),
-                    "cedula": False if fallecido else kwargs.get(f"famCedula_{k}"),
+                    "document_type": (False if fallecido else kwargs.get(f"famTipoDoc_{k}")),
+                    "birthdate": (False if fallecido else kwargs.get(f"famFecha_{k}")),
+                    "phone": (False if fallecido else kwargs.get(f"famTelefono_{k}")),
+                    "occupation": (False if fallecido else kwargs.get(f"famOcupacion_{k}")),
+                    "economically_dependent": (False if fallecido else kwargs.get(f"famDepende_{k}")),
+                    "disability": (False if fallecido else kwargs.get(f"famDisc_{k}")),
+                    "disability_type": (False if fallecido else kwargs.get(f"famDiscTipo_{k}")),
+                    "disability_percentage": (False if fallecido else kwargs.get(f"famDiscPorcentaje_{k}")),
+                    "cedula": (False if fallecido else kwargs.get(f"famCedula_{k}")),
                     "filename": False,
                     "document_file": False,
                 }))
+
                 k += 1
 
             if family_lines:

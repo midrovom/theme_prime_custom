@@ -1873,57 +1873,20 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Handlers
     //----------------------------------------------------------------------
 
-    // _onNextClick(ev) {
-    //     ev.preventDefault();
-
-    //     if (this._validateCurrentStep1()) {
-    //         this.$('#form-step-1').addClass('d-none');
-    //         this.$('#form-step-2').removeClass('d-none');
-    //         const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
-    //         this.$('.family-block[data-type="Hijo"]').remove();
-
-    //         if (!isNaN(numHijos) && numHijos > 0) {
-    //             for (let i = 0; i < numHijos; i++) {
-    //                 this.familyCount++;
-    //                 const index = this.familyCount;
-    //                 this._getFamilyBlock("Hijo").then(blockHtml => {
-    //                     const block = $(blockHtml);
-
-    //                     block.append(`<input type="hidden" name="famTipo_${index}" value="5"/>`);
-    //                     this.$('#family_container').append(block);
-    //                     this.$(`input[name="famDisc_${index}"]`).on('change', () => {
-    //                         this._toggleFamilyDisability(index);
-    //                     });
-
-    //                     this._toggleFamilyDisability(index);
-    //                 });
-    //             }
-    //         }
-    //     }
-    // },
-
     _onNextClick(ev) {
         ev.preventDefault();
 
         if (this._validateCurrentStep1()) {
             this.$('#form-step-1').addClass('d-none');
             this.$('#form-step-2').removeClass('d-none');
-
             const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
-
-            // Eliminar hijos generados anteriormente
             this.$('.family-block[data-type="Hijo"]').remove();
-
             const AUTO_FAMILY = ["Padre", "Madre", "Conyugue"];
-
             AUTO_FAMILY.forEach(tipo => {
                 if (this.$(`.family-block[data-type="${tipo}"]`).length === 0) {
-
                     this.familyCount++;
                     const index = this.familyCount;
-
                     this._getFamilyBlock(tipo).then(blockHtml => {
-
                         const block = $(blockHtml);
 
                         // =====================================================
@@ -1946,53 +1909,32 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
                         this.$('#family_container').append(block);
 
-                        // =====================================================
                         // FALLECIDO
-                        // =====================================================
+
                         const fallecidoCheck = block.find(
                             `input[name="famFallecido_${index}"]`
                         );
 
                         if (fallecidoCheck.length) {
-
                             fallecidoCheck.on("change", () => {
-
                                 const disabled = fallecidoCheck.is(":checked");
-
-                                // IMPORTANTE:
-                                // No tocar inputs hidden como famTipo_X
-                                const $fields = block.find(
-                                    "input:not([type='hidden']):not([name^='famFallecido_']), select, textarea"
-                                );
-
+                                const $fields = block.find("input:not([type='hidden']):not([name^='famFallecido_']), select, textarea");
                                 $fields.prop("disabled", disabled);
                                 $fields.prop("required", !disabled);
 
                                 if (disabled) {
 
                                     $fields.val("");
-
                                     $fields.removeClass("is-invalid");
-
                                     $fields.siblings(".error-message").hide();
-
-                                    // El nombre queda como FALLECIDO
-                                    block.find(
-                                        `input[name="famNombre_${index}"]`
-                                    ).val("FALLECIDO");
+                                    block.find(`input[name="famNombre_${index}"]`).val("FALLECIDO");
 
                                 } else {
-
-                                    block.find(
-                                        `input[name="famNombre_${index}"]`
-                                    ).val("");
+                                    block.find(`input[name="famNombre_${index}"]`).val("");
                                 }
                             });
                         }
 
-                        // =====================================================
-                        // DISCAPACIDAD
-                        // =====================================================
                         this.$(`input[name="famDisc_${index}"]`).on(
                             'change',
                             () => {
@@ -2005,24 +1947,14 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 }
             });
 
-            // =============================================================
             // HIJOS
-            // =============================================================
+
             if (!isNaN(numHijos) && numHijos > 0) {
-
                 for (let i = 0; i < numHijos; i++) {
-
                     this.familyCount++;
                     const index = this.familyCount;
-
                     this._getFamilyBlock("Hijo").then(blockHtml => {
-
                         const block = $(blockHtml);
-
-                        // =================================================
-                        // TIPO HIJO
-                        // Siempre se envía como tipo 5
-                        // =================================================
                         block.prepend(`
                             <input
                                 type="hidden"
@@ -2032,10 +1964,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         `);
 
                         this.$('#family_container').append(block);
-
-                        // =================================================
-                        // DISCAPACIDAD
-                        // =================================================
                         this.$(`input[name="famDisc_${index}"]`).on(
                             'change',
                             () => {
