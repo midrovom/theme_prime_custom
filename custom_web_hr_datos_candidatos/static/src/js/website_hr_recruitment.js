@@ -2212,15 +2212,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return;
         }
 
-        const cantidadHermanos = parseInt(numHermanos, 10);
-
-        if (isNaN(cantidadHermanos) || cantidadHermanos < 1 || cantidadHermanos > 10) {
-            $numHermanos.addClass('is-invalid');
-            $errorNum.text('Ingrese un número entre 1 y 10.').show();
-            $numHermanos.focus();
-            return;
-        }
-
         $numHermanos.removeClass('is-invalid');
         $errorNum.hide();
 
@@ -2238,6 +2229,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     .prop('required', false)
                     .removeAttr('required')
                     .removeClass('is-invalid');
+
                 $block.find('.invalid-feedback, .error-message, .text-danger').hide();
                 return;
             }
@@ -2247,6 +2239,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 if ($campo.attr('type') === 'hidden' || $campo.prop('disabled')) return;
 
                 let tieneValor;
+
                 if ($campo.is(':radio, :checkbox')) {
                     const name = $campo.attr('name');
                     tieneValor = $block.find(`input[name="${name}"]:checked`).length > 0;
@@ -2264,10 +2257,15 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
         if (!familiaresValidos) {
             const $primerError = this.$('#family_container .is-invalid:first');
+
             if ($primerError.length) {
-                $('html, body').animate({scrollTop: $primerError.offset().top - 100}, 300);
+                $('html, body').animate({
+                    scrollTop: $primerError.offset().top - 100
+                }, 300);
+
                 $primerError.focus();
             }
+
             return;
         }
 
@@ -2283,20 +2281,20 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     .removeClass('is-invalid')
                     .prop('required', false)
                     .removeAttr('required');
+
                 $block.find('.invalid-feedback, .error-message, .text-danger').hide();
                 return;
             }
 
             const $tipoDoc = $block.find('select[name^="famTipoDoc_"]');
             if (!$tipoDoc.length) return;
-
             const tipoDoc = $tipoDoc.find('option:selected').text().trim().toLowerCase();
             if (tipoDoc !== 'partida de nacimiento') return;
-
             const $archivo = $block.find('input[name^="famArchivo_"]').first();
             if (!$archivo.length) return;
-
-            const tieneArchivo = $archivo[0].files && $archivo[0].files.length > 0;
+            const tieneArchivo =
+                $archivo[0].files &&
+                $archivo[0].files.length > 0;
 
             if (!tieneArchivo) {
                 documentosValidos = false;
@@ -2306,17 +2304,143 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
 
         if (!documentosValidos) {
-            const $primerDocumentoError = this.$('#family_container input[type="file"].is-invalid:first');
+            const $primerDocumentoError =
+                this.$('#family_container input[type="file"].is-invalid:first');
+
             if ($primerDocumentoError.length) {
-                $('html, body').animate({scrollTop: $primerDocumentoError.offset().top - 100}, 300);
+                $('html, body').animate({
+                    scrollTop: $primerDocumentoError.offset().top - 100
+                }, 300);
+
                 $primerDocumentoError.focus();
             }
+
             return;
         }
 
         this.$('#form-step-2').addClass('d-none');
         this.$('#form-step-3').removeClass('d-none');
     },
+
+    // _onNextStep2(ev) {
+    //     ev.preventDefault();
+
+    //     const $numHermanos = this.$('#famNumHermanos');
+    //     const numHermanos = $.trim($numHermanos.val() || '');
+    //     const $errorNum = $numHermanos.closest('div').find('.invalid-feedback');
+
+    //     if (!numHermanos) {
+    //         $numHermanos.addClass('is-invalid');
+    //         $errorNum.text('Campo obligatorio.').show();
+    //         $numHermanos.focus();
+    //         return;
+    //     }
+
+    //     const cantidadHermanos = parseInt(numHermanos, 10);
+
+    //     if (isNaN(cantidadHermanos) || cantidadHermanos < 1 || cantidadHermanos > 10) {
+    //         $numHermanos.addClass('is-invalid');
+    //         $errorNum.text('Ingrese un número entre 1 y 10.').show();
+    //         $numHermanos.focus();
+    //         return;
+    //     }
+
+    //     $numHermanos.removeClass('is-invalid');
+    //     $errorNum.hide();
+
+    //     if (!this._validateCurrentStep2()) return;
+
+    //     let familiaresValidos = true;
+
+    //     this.$('#family_container .family-block').each(function() {
+    //         const $block = $(this);
+    //         const fallecido = $block.find('input[name^="famFallecido_"]').is(':checked');
+    //         const noTiene = $block.find('input[name^="famNoTiene_"]').is(':checked');
+
+    //         if (fallecido || noTiene) {
+    //             $block.find('input, select, textarea')
+    //                 .prop('required', false)
+    //                 .removeAttr('required')
+    //                 .removeClass('is-invalid');
+    //             $block.find('.invalid-feedback, .error-message, .text-danger').hide();
+    //             return;
+    //         }
+
+    //         $block.find('input[required], select[required], textarea[required]').each(function() {
+    //             const $campo = $(this);
+    //             if ($campo.attr('type') === 'hidden' || $campo.prop('disabled')) return;
+
+    //             let tieneValor;
+    //             if ($campo.is(':radio, :checkbox')) {
+    //                 const name = $campo.attr('name');
+    //                 tieneValor = $block.find(`input[name="${name}"]:checked`).length > 0;
+    //             } else {
+    //                 tieneValor = $.trim($campo.val() || '') !== '';
+    //             }
+
+    //             if (!tieneValor) {
+    //                 familiaresValidos = false;
+    //                 $campo.addClass('is-invalid');
+    //                 $campo.siblings('.invalid-feedback, .error-message').show();
+    //             }
+    //         });
+    //     });
+
+    //     if (!familiaresValidos) {
+    //         const $primerError = this.$('#family_container .is-invalid:first');
+    //         if ($primerError.length) {
+    //             $('html, body').animate({scrollTop: $primerError.offset().top - 100}, 300);
+    //             $primerError.focus();
+    //         }
+    //         return;
+    //     }
+
+    //     let documentosValidos = true;
+
+    //     this.$('#family_container .family-block').each(function() {
+    //         const $block = $(this);
+    //         const fallecido = $block.find('input[name^="famFallecido_"]').is(':checked');
+    //         const noTiene = $block.find('input[name^="famNoTiene_"]').is(':checked');
+
+    //         if (fallecido || noTiene) {
+    //             $block.find('input[type="file"]')
+    //                 .removeClass('is-invalid')
+    //                 .prop('required', false)
+    //                 .removeAttr('required');
+    //             $block.find('.invalid-feedback, .error-message, .text-danger').hide();
+    //             return;
+    //         }
+
+    //         const $tipoDoc = $block.find('select[name^="famTipoDoc_"]');
+    //         if (!$tipoDoc.length) return;
+
+    //         const tipoDoc = $tipoDoc.find('option:selected').text().trim().toLowerCase();
+    //         if (tipoDoc !== 'partida de nacimiento') return;
+
+    //         const $archivo = $block.find('input[name^="famArchivo_"]').first();
+    //         if (!$archivo.length) return;
+
+    //         const tieneArchivo = $archivo[0].files && $archivo[0].files.length > 0;
+
+    //         if (!tieneArchivo) {
+    //             documentosValidos = false;
+    //             $archivo.addClass('is-invalid');
+    //             $archivo.siblings('.invalid-feedback').show();
+    //         }
+    //     });
+
+    //     if (!documentosValidos) {
+    //         const $primerDocumentoError = this.$('#family_container input[type="file"].is-invalid:first');
+    //         if ($primerDocumentoError.length) {
+    //             $('html, body').animate({scrollTop: $primerDocumentoError.offset().top - 100}, 300);
+    //             $primerDocumentoError.focus();
+    //         }
+    //         return;
+    //     }
+
+    //     this.$('#form-step-2').addClass('d-none');
+    //     this.$('#form-step-3').removeClass('d-none');
+    // },
 
     _onPrevClick(ev) {
         ev.preventDefault();
