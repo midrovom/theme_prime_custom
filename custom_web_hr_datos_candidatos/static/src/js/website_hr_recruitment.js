@@ -178,7 +178,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._checkEducationFieldsFilled();
     },
 
-    async _getFamilyBlock(parentesco) {
+    async _getFamilyBlock(parentesco, index) {
 
         const fallecidoBlock = (["Padre","Madre"].includes(parentesco)) ? `
             <div class="col-md-3 d-flex align-items-center">
