@@ -156,15 +156,18 @@ class WebsiteHRRecruitment(http.Controller):
             while kwargs.get(f'famTipo_{k}') is not None:
                 tipo = kwargs.get(f"famTipo_{k}")
                 fallecido = kwargs.get(f"famFallecido_{k}") == "1"
+                no_tiene = kwargs.get(f"famNoTiene_{k}") == "1"
                 name = kwargs.get(f"famNombre_{k}") or False
 
                 if fallecido:
                     name = "FALLECIDO"
+                elif no_tiene: name = "NO TIENE"
 
                 family_lines.append((0, 0, {
                     "name": name,
                     "familiar_type": str(tipo) if tipo else False,
                     "fallecido": fallecido,
+                    "no_tiene": no_tiene,
                     "document_type": (False if fallecido else kwargs.get(f"famTipoDoc_{k}")),
                     "birthdate": (False if fallecido else kwargs.get(f"famFecha_{k}")),
                     "phone": (False if fallecido else kwargs.get(f"famTelefono_{k}")),
