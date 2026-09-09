@@ -27,7 +27,7 @@
                 <field name="minimum_achievement" invisible="calculation_mode != 'proportional'"/>
                 <field name="full_commission_percent" invisible="calculation_mode != 'proportional'"/>
             </xpath>
-            <xpath expr="//separator[@string='Rangos de cumplimiento']" position="attributes">
+            <xpath expr="//sheet//separator[1]" position="attributes">
                 <attribute name="invisible">calculation_mode == 'proportional'</attribute>
             </xpath>
             <xpath expr="//field[@name='tier_ids']" position="attributes">
