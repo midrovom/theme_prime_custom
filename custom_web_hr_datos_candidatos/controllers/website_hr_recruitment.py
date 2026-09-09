@@ -155,31 +155,28 @@ class WebsiteHRRecruitment(http.Controller):
             k = 1
 
             while kwargs.get(f'famTipo_{k}') is not None:
-                tipo = kwargs.get(f'famTipo_{k}')
-                fallecido = kwargs.get(f'famFallecido_{k}') == '1'
-                name = kwargs.get(f'famNombre_{k}')
+                tipo = kwargs.get(f"famTipo_{k}")
+                fallecido = kwargs.get(f"famFallecido_{k}") == "1"
 
                 if fallecido:
                     name = "FALLECIDO"
 
-                if name or fallecido:
-                    family_lines.append((0, 0, {
-                        'name': name,
-                        'familiar_type': str(tipo) if tipo else None,
-                        'fallecido': fallecido,
-                        # Los demás campos vacíos si fallecido
-                        'document_type': None if fallecido else kwargs.get(f'famTipoDoc_{k}'),
-                        'birthdate': None if fallecido else kwargs.get(f'famFecha_{k}'),
-                        'phone': None if fallecido else kwargs.get(f'famTelefono_{k}'),
-                        'occupation': None if fallecido else kwargs.get(f'famOcupacion_{k}'),
-                        'economically_dependent': None if fallecido else kwargs.get(f'famDepende_{k}'),
-                        'disability': None if fallecido else kwargs.get(f'famDisc_{k}'),
-                        'disability_type': None if fallecido else kwargs.get(f'famDiscTipo_{k}'),
-                        'disability_percentage': None if fallecido else kwargs.get(f'famDiscPorcentaje_{k}'),
-                        'cedula': None if fallecido else kwargs.get(f'famCedula_{k}'),
-                        'filename': None,
-                        'document_file': None,
-                    }))
+                family_lines.append((0, 0, {
+                    "name": name,
+                    "familiar_type": str(tipo) if tipo else False,
+                    "fallecido": fallecido,
+                    "document_type": False if fallecido else kwargs.get(f"famTipoDoc_{k}"),
+                    "birthdate": False if fallecido else kwargs.get(f"famFecha_{k}"),
+                    "phone": False if fallecido else kwargs.get(f"famTelefono_{k}"),
+                    "occupation": False if fallecido else kwargs.get(f"famOcupacion_{k}"),
+                    "economically_dependent": False if fallecido else kwargs.get(f"famDepende_{k}"),
+                    "disability": False if fallecido else kwargs.get(f"famDisc_{k}"),
+                    "disability_type": False if fallecido else kwargs.get(f"famDiscTipo_{k}"),
+                    "disability_percentage": False if fallecido else kwargs.get(f"famDiscPorcentaje_{k}"),
+                    "cedula": False if fallecido else kwargs.get(f"famCedula_{k}"),
+                    "filename": False,
+                    "document_file": False,
+                }))
                 k += 1
 
             if family_lines:
