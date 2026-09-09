@@ -2322,126 +2322,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-3').removeClass('d-none');
     },
 
-    // _onNextStep2(ev) {
-    //     ev.preventDefault();
-
-    //     const $numHermanos = this.$('#famNumHermanos');
-    //     const numHermanos = $.trim($numHermanos.val() || '');
-    //     const $errorNum = $numHermanos.closest('div').find('.invalid-feedback');
-
-    //     if (!numHermanos) {
-    //         $numHermanos.addClass('is-invalid');
-    //         $errorNum.text('Campo obligatorio.').show();
-    //         $numHermanos.focus();
-    //         return;
-    //     }
-
-    //     const cantidadHermanos = parseInt(numHermanos, 10);
-
-    //     if (isNaN(cantidadHermanos) || cantidadHermanos < 1 || cantidadHermanos > 10) {
-    //         $numHermanos.addClass('is-invalid');
-    //         $errorNum.text('Ingrese un número entre 1 y 10.').show();
-    //         $numHermanos.focus();
-    //         return;
-    //     }
-
-    //     $numHermanos.removeClass('is-invalid');
-    //     $errorNum.hide();
-
-    //     if (!this._validateCurrentStep2()) return;
-
-    //     let familiaresValidos = true;
-
-    //     this.$('#family_container .family-block').each(function() {
-    //         const $block = $(this);
-    //         const fallecido = $block.find('input[name^="famFallecido_"]').is(':checked');
-    //         const noTiene = $block.find('input[name^="famNoTiene_"]').is(':checked');
-
-    //         if (fallecido || noTiene) {
-    //             $block.find('input, select, textarea')
-    //                 .prop('required', false)
-    //                 .removeAttr('required')
-    //                 .removeClass('is-invalid');
-    //             $block.find('.invalid-feedback, .error-message, .text-danger').hide();
-    //             return;
-    //         }
-
-    //         $block.find('input[required], select[required], textarea[required]').each(function() {
-    //             const $campo = $(this);
-    //             if ($campo.attr('type') === 'hidden' || $campo.prop('disabled')) return;
-
-    //             let tieneValor;
-    //             if ($campo.is(':radio, :checkbox')) {
-    //                 const name = $campo.attr('name');
-    //                 tieneValor = $block.find(`input[name="${name}"]:checked`).length > 0;
-    //             } else {
-    //                 tieneValor = $.trim($campo.val() || '') !== '';
-    //             }
-
-    //             if (!tieneValor) {
-    //                 familiaresValidos = false;
-    //                 $campo.addClass('is-invalid');
-    //                 $campo.siblings('.invalid-feedback, .error-message').show();
-    //             }
-    //         });
-    //     });
-
-    //     if (!familiaresValidos) {
-    //         const $primerError = this.$('#family_container .is-invalid:first');
-    //         if ($primerError.length) {
-    //             $('html, body').animate({scrollTop: $primerError.offset().top - 100}, 300);
-    //             $primerError.focus();
-    //         }
-    //         return;
-    //     }
-
-    //     let documentosValidos = true;
-
-    //     this.$('#family_container .family-block').each(function() {
-    //         const $block = $(this);
-    //         const fallecido = $block.find('input[name^="famFallecido_"]').is(':checked');
-    //         const noTiene = $block.find('input[name^="famNoTiene_"]').is(':checked');
-
-    //         if (fallecido || noTiene) {
-    //             $block.find('input[type="file"]')
-    //                 .removeClass('is-invalid')
-    //                 .prop('required', false)
-    //                 .removeAttr('required');
-    //             $block.find('.invalid-feedback, .error-message, .text-danger').hide();
-    //             return;
-    //         }
-
-    //         const $tipoDoc = $block.find('select[name^="famTipoDoc_"]');
-    //         if (!$tipoDoc.length) return;
-
-    //         const tipoDoc = $tipoDoc.find('option:selected').text().trim().toLowerCase();
-    //         if (tipoDoc !== 'partida de nacimiento') return;
-
-    //         const $archivo = $block.find('input[name^="famArchivo_"]').first();
-    //         if (!$archivo.length) return;
-
-    //         const tieneArchivo = $archivo[0].files && $archivo[0].files.length > 0;
-
-    //         if (!tieneArchivo) {
-    //             documentosValidos = false;
-    //             $archivo.addClass('is-invalid');
-    //             $archivo.siblings('.invalid-feedback').show();
-    //         }
-    //     });
-
-    //     if (!documentosValidos) {
-    //         const $primerDocumentoError = this.$('#family_container input[type="file"].is-invalid:first');
-    //         if ($primerDocumentoError.length) {
-    //             $('html, body').animate({scrollTop: $primerDocumentoError.offset().top - 100}, 300);
-    //             $primerDocumentoError.focus();
-    //         }
-    //         return;
-    //     }
-
-    //     this.$('#form-step-2').addClass('d-none');
-    //     this.$('#form-step-3').removeClass('d-none');
-    // },
-
     _onPrevClick(ev) {
         ev.preventDefault();
 
@@ -2456,17 +2336,101 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-1').removeClass('d-none');
     },
 
+    // _onSubmitForm(ev) {
+    //     ev.preventDefault();
+    //     let valid = true;
+
+    //     if (!this._validateCurrentStep3()) return;
+    //     const totalExperiences = parseInt(this.$('#total_experiences').val(), 10);
+    //     if (!isNaN(totalExperiences) && totalExperiences > 3) {
+    //         $('#experienceMessageText').text("Debe ingresar mínimo 3 experiencias laborales.");
+    //         $('#experienceMessage').removeClass('d-none');
+    //         return;
+    //     }
+
+    //     this.$('#experience_container .experience-block').each((i, block) => {
+    //         const $block = $(block);
+    //         const noAplica = $block.find('.no-aplica-exp').is(':checked');
+
+    //         if (!noAplica) {
+    //             $block.find('input, select').each((j, el) => {
+    //                 if (!$(el).val()) {
+    //                     $(el).addClass('is-invalid');
+    //                     valid = false;
+    //                 } else {
+    //                     $(el).removeClass('is-invalid');
+    //                 }
+    //             });
+    //         } else {
+    //             $block.find('input, select').removeClass('is-invalid').prop('disabled', true);
+    //         }
+    //     });
+
+    //     if (!valid) {
+    //         $('#experienceMessageText').text("Complete todos los campos de experiencia o marque 'No aplica'.");
+    //         $('#experienceMessage').removeClass('d-none');
+    //         return;
+    //     }
+
+    //     this.$('.family-block').each((index, block) => {
+    //         const i = $(block).find('input[name^="famApellidoPaterno_"]').attr('name').split('_')[1];
+    //         const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val()?.trim() || "";
+    //         const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
+    //         const primer  = this.$(`input[name="famPrimerNombre_${i}"]`).val()?.trim() || "";
+    //         const segundo = this.$(`input[name="famSegundoNombre_${i}"]`).val()?.trim() || "";
+
+    //         const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
+    //         this.$(`input[name="famNombre_${i}"]`).val(fullName);
+
+    //         // NUEVO
+    //         const docType = this.$(`select[name="famTipoDoc_${i}"]`).val();
+    //         const $numDoc = this.$(`input[name="famCedula_${i}"]`);
+    //         const $archivoDoc = this.$(`input[name="famArchivo_${i}"]`);
+    //         const $porcentaje = this.$(`input[name="famDiscPorcentaje_${i}"]`);
+    //         const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
+
+    //         if (docType === 'part_naci') {
+    //             $archivoDoc.prop('disabled', false);   
+    //             $numDoc.prop('disabled', true).val(''); 
+    //         } else {
+    //             $numDoc.prop('disabled', false);       
+    //             $archivoDoc.prop('disabled', true).val(''); 
+    //         }
+
+    //         if (discValue === 'si') {
+    //             $porcentaje.prop('disabled', false);
+    //         } else {
+    //             $porcentaje.prop('disabled', true).val('');
+    //         }
+    //     });
+
+    //     this.$('#submit-form')
+    //         .prop('disabled', true)
+    //         .text('Enviando...');
+
+    //     this.el.submit();
+    // },
+
     _onSubmitForm(ev) {
         ev.preventDefault();
+
         let valid = true;
 
-        if (!this._validateCurrentStep3()) return;
-        const totalExperiences = parseInt(this.$('#total_experiences').val(), 10);
-        if (!isNaN(totalExperiences) && totalExperiences > 3) {
-            $('#experienceMessageText').text("Debe ingresar mínimo 3 experiencias laborales.");
-            $('#experienceMessage').removeClass('d-none');
+        const $totalExperiences = this.$('#total_experiences');
+        const totalExperiences = $.trim($totalExperiences.val() || '');
+        const $errorExperiences = $totalExperiences.closest('div').find('.invalid-feedback');
+
+        if (!totalExperiences) {
+            $totalExperiences.addClass('is-invalid');
+            $errorExperiences.text('Campo obligatorio.').show();
+            $totalExperiences.focus();
             return;
         }
+
+        $totalExperiences.removeClass('is-invalid');
+        $errorExperiences.hide();
+
+        if (!this._validateCurrentStep3()) return;
 
         this.$('#experience_container .experience-block').each((i, block) => {
             const $block = $(block);
@@ -2493,16 +2457,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
 
         this.$('.family-block').each((index, block) => {
-            const i = $(block).find('input[name^="famApellidoPaterno_"]').attr('name').split('_')[1];
+            const name = $(block).find('input[name^="famApellidoPaterno_"]').attr('name');
+            if (!name) return;
+
+            const i = name.split('_')[1];
             const paterno = this.$(`input[name="famApellidoPaterno_${i}"]`).val()?.trim() || "";
             const materno = this.$(`input[name="famApellidoMaterno_${i}"]`).val()?.trim() || "";
-            const primer  = this.$(`input[name="famPrimerNombre_${i}"]`).val()?.trim() || "";
+            const primer = this.$(`input[name="famPrimerNombre_${i}"]`).val()?.trim() || "";
             const segundo = this.$(`input[name="famSegundoNombre_${i}"]`).val()?.trim() || "";
 
             const fullName = `${paterno} ${materno} ${primer} ${segundo}`.trim();
             this.$(`input[name="famNombre_${i}"]`).val(fullName);
 
-            // NUEVO
             const docType = this.$(`select[name="famTipoDoc_${i}"]`).val();
             const $numDoc = this.$(`input[name="famCedula_${i}"]`);
             const $archivoDoc = this.$(`input[name="famArchivo_${i}"]`);
@@ -2510,11 +2476,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             const discValue = this.$(`input[name="famDisc_${i}"]:checked`).val();
 
             if (docType === 'part_naci') {
-                $archivoDoc.prop('disabled', false);   
-                $numDoc.prop('disabled', true).val(''); 
+                $archivoDoc.prop('disabled', false);
+                $numDoc.prop('disabled', true).val('');
             } else {
-                $numDoc.prop('disabled', false);       
-                $archivoDoc.prop('disabled', true).val(''); 
+                $numDoc.prop('disabled', false);
+                $archivoDoc.prop('disabled', true).val('');
             }
 
             if (discValue === 'si') {
@@ -2524,10 +2490,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             }
         });
 
-        this.$('#submit-form')
-            .prop('disabled', true)
-            .text('Enviando...');
-
+        this.$('#submit-form').prop('disabled', true).text('Enviando...');
         this.el.submit();
     },
 
