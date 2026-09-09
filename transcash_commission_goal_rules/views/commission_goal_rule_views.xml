@@ -104,4 +104,26 @@
         <field name="view_mode">list,form</field>
         <field name="context">{}</field>
     </record>
+    <record id="view_commission_project_rule_form_goal_rules" model="ir.ui.view">
+        <field name="name">commission.project.rule.form.goal.rules</field>
+        <field name="model">commission.project.rule</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_project_rule_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="duplicate">false</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_liquidation_rule_form_goal_rules" model="ir.ui.view">
+        <field name="name">commission.liquidation.rule.form.goal.rules</field>
+        <field name="model">commission.liquidation.rule</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_liquidation_rule_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="duplicate">false</attribute>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>

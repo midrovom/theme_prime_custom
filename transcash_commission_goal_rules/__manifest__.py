@@ -1,7 +1,7 @@
 {
     "name": "Transcash Commissions - Metas y Liquidaciones",
-    "summary": "Metas, gestión automática de administradores, duplicación controlada y PDF",
-    "version": "18.0.1.3.0",
+    "summary": "Configuración mensual unificada de metas, proyectos, administradores y PDF",
+    "version": "18.0.1.4.0",
     "category": "Sales/Commissions",
     "author": "Transcash",
     "license": "LGPL-3",

@@ -1,6 +1,19 @@
 <odoo>
-    <!-- Oculta la regla genérica del módulo base. -->
+    <!-- Las reglas mensuales se administran dentro del Período. Los modelos y
+         acciones originales permanecen disponibles técnicamente. -->
+    <record id="transcash_commission.menu_commission_seller_target" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="transcash_commission.menu_commission_location_target" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
     <record id="transcash_commission.menu_commission_manager_rule" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="transcash_commission.menu_commission_project_rule" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="transcash_commission.menu_commission_liquidation_rule" model="ir.ui.menu">
         <field name="active" eval="False"/>
     </record>
 
@@ -9,5 +22,6 @@
               parent="transcash_commission.menu_commission_rules"
               action="action_commission_manager_goal_rule"
               sequence="30"
+              active="False"
               groups="transcash_commission.group_commission_manager"/>
 </odoo>

@@ -48,7 +48,7 @@
                                     <th>Código</th>
                                     <th>Vendedor</th>
                                     <th class="tc-num">Ventas</th>
-                                    <th class="tc-num">Meta</th>
+                                    <th class="tc-num">Meta retail</th>
                                     <th class="tc-num">Cumpl. %</th>
                                     <th class="tc-num">Com. propia</th>
                                     <th class="tc-num">Proyectos</th>
@@ -82,7 +82,7 @@
                         </table>
 
                         <p style="font-size:9px; margin-top:10px;">
-                            Este reporte incluye únicamente vendedores con una meta activa configurada en el período.
+                            Este reporte incluye únicamente vendedores o administradores con una parametrización activa de comisión aplicable al período (meta, proyecto, gestión o bono específico).
                         </p>
                     </div>
                 </t>
@@ -136,9 +136,9 @@
                                 <tr>
                                     <td><strong>Ventas netas</strong></td>
                                     <td class="tc-num"><span t-field="o.total_sales" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td><strong>Meta</strong></td>
+                                    <td><strong>Meta retail</strong></td>
                                     <td class="tc-num"><span t-field="o.target_amount" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td><strong>Cumplimiento</strong></td>
+                                    <td><strong>Cumplimiento meta</strong></td>
                                     <td class="tc-num"><span t-field="o.achievement_percent" t-options='{"widget": "float", "precision": 2}'/>%</td>
                                 </tr>
                                 <tr>

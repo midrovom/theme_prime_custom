@@ -5,13 +5,36 @@
         <field name="inherit_id" ref="transcash_commission.view_commission_period_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header/field[@name='state']" position="before">
-                <button name="action_duplicate_period" type="object" string="Duplicar período y metas" class="btn-secondary" groups="transcash_commission.group_commission_manager"/>
+                <button name="action_duplicate_period" type="object" string="Duplicar período y configuración" class="btn-secondary" groups="transcash_commission.group_commission_manager"/>
             </xpath>
 
+            <!-- La meta propia del vendedor es global al período. -->
             <xpath expr="//page[.//field[@name='target_ids']]//field[@name='location_id']" position="replace"/>
+            <xpath expr="//page[.//field[@name='target_ids']]" position="attributes">
+                <attribute name="string">Metas vendedores</attribute>
+            </xpath>
 
+            <!-- Proyectos pasan a formar parte de la misma configuración mensual. -->
+            <xpath expr="//page[.//field[@name='target_ids']]" position="after">
+                <page string="Proyectos por origen">
+                    <field name="project_rule_ids" context="{'default_period_id': id}">
+                        <list editable="bottom">
+                            <field name="seller_id"/>
+                            <field name="origin"/>
+                            <field name="basis"/>
+                            <field name="commission_percent"/>
+                            <field name="active"/>
+                        </list>
+                    </field>
+                    <div class="alert alert-info mt-2" role="alert">
+                        Un vendedor de proyectos con una regla activa en esta pestaña se incluirá en la liquidación aunque no tenga meta retail. Solo se excluyen vendedores sin ningún parámetro de comisión aplicable.
+                    </div>
+                </page>
+            </xpath>
+
+            <!-- Sustituye la regla legacy por una cabecera de administrador + detalle. -->
             <xpath expr="//page[.//field[@name='manager_rule_ids']]" position="replace">
-                <page string="Administradores">
+                <page string="Gestión administradores">
                     <field name="manager_goal_rule_ids" context="{'default_period_id': id}">
                         <list>
                             <field name="manager_id"/>
@@ -20,10 +43,19 @@
                         </list>
                     </field>
                     <div class="alert alert-info mt-2" role="alert">
-                        Abra un registro de administrador para configurar debajo todos sus vendedores a cargo, el mínimo de venta de cada uno y el porcentaje específico de comisión de gestión.
+                        Abra el administrador para revisar sus vendedores relacionados. Cada vendedor tiene su mínimo administrativo y su porcentaje específico; el local de la cabecera debe cumplir su meta.
                     </div>
                 </page>
             </xpath>
+
+            <xpath expr="//page[.//field[@name='liquidation_rule_ids']]" position="attributes">
+                <attribute name="string">Bono liquidación</attribute>
+            </xpath>
         </field>
+    </record>
+
+    <!-- El período es el único punto de entrada para la configuración mensual. -->
+    <record id="transcash_commission.menu_commission_period" model="ir.ui.menu">
+        <field name="name">Períodos y metas</field>
     </record>
 </odoo>

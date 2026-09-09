@@ -1,11 +1,22 @@
-from datetime import timedelta
+from calendar import monthrange
+from datetime import date, timedelta
 
-from odoo import _, api, fields, models
+from odoo import _, fields, models
 
 
 class CommissionPeriod(models.Model):
     _inherit = "commission.period"
 
+    project_rule_ids = fields.One2many(
+        "commission.project.rule",
+        "period_id",
+        string="Proyectos por origen",
+        help=(
+            "Reglas de comisión de vendedores de proyectos aplicables a este "
+            "período. Una regla activa de proyecto también habilita al vendedor "
+            "para aparecer en la liquidación, aunque no tenga meta retail."
+        ),
+    )
     manager_goal_rule_ids = fields.One2many(
         "commission.manager.goal.rule",
         "period_id",
@@ -20,16 +31,33 @@ class CommissionPeriod(models.Model):
     )
 
     def _next_available_copy_dates(self):
-        """Devuelve un rango consecutivo sin solaparse con otros períodos.
+        """Devuelve el siguiente rango libre, respetando meses calendario.
 
-        Odoo guarda el duplicado inmediatamente. Por eso no podemos copiar las
-        mismas fechas: la restricción del módulo base impediría crear el nuevo
-        período. Conservamos la duración y buscamos el primer rango libre.
+        Si el origen es un mes completo (01 al último día), la copia también
+        será un mes completo. Para otros rangos conserva la duración original.
         """
         self.ensure_one()
         duration = self.date_end - self.date_start
-        candidate_start = self.date_end + timedelta(days=1)
-        candidate_end = candidate_start + duration
+        source_is_calendar_month = (
+            self.date_start.year == self.date_end.year
+            and self.date_start.month == self.date_end.month
+            and self.date_start.day == 1
+            and self.date_end.day
+            == monthrange(self.date_end.year, self.date_end.month)[1]
+        )
+
+        def next_calendar_month(after_date):
+            year = after_date.year + (1 if after_date.month == 12 else 0)
+            month = 1 if after_date.month == 12 else after_date.month + 1
+            start = date(year, month, 1)
+            end = date(year, month, monthrange(year, month)[1])
+            return start, end
+
+        if source_is_calendar_month:
+            candidate_start, candidate_end = next_calendar_month(self.date_start)
+        else:
+            candidate_start = self.date_end + timedelta(days=1)
+            candidate_end = candidate_start + duration
 
         while True:
             overlap = self.search([
@@ -40,8 +68,11 @@ class CommissionPeriod(models.Model):
             ], order="date_end desc", limit=1)
             if not overlap:
                 return candidate_start, candidate_end
-            candidate_start = overlap.date_end + timedelta(days=1)
-            candidate_end = candidate_start + duration
+            if source_is_calendar_month:
+                candidate_start, candidate_end = next_calendar_month(candidate_start)
+            else:
+                candidate_start = overlap.date_end + timedelta(days=1)
+                candidate_end = candidate_start + duration
 
     def action_duplicate_period(self):
         self.ensure_one()
@@ -55,15 +86,16 @@ class CommissionPeriod(models.Model):
         }
 
     def copy(self, default=None):
-        """Duplica el período junto con toda la parametrización de metas.
+        """Duplica la configuración mensual completa, nunca la liquidación.
 
-        Se copian:
+        Se copian como una sola plantilla mensual:
         - metas de vendedores y sus rangos;
+        - reglas de proyectos/origen del período;
         - metas de locales;
-        - gestión de administradores y sus vendedores a cargo.
+        - gestión de administradores y detalle de vendedores;
+        - reglas de bono de liquidación.
 
-        Las liquidaciones no se copian. El nuevo período siempre queda en
-        borrador y con un rango de fechas consecutivo disponible.
+        No se copian resultados ni liquidaciones calculadas.
         """
         self.ensure_one()
         default = dict(default or {})
@@ -77,21 +109,26 @@ class CommissionPeriod(models.Model):
         default.update({
             "state": "draft",
             "settlement_id": False,
-            # Evita que copy_data replique automáticamente relaciones antes de
-            # que podamos controlar duplicados y orden de creación.
+            # Se copian manualmente para controlar duplicidades y referencias.
             "target_ids": [],
+            "project_rule_ids": [],
             "location_target_ids": [],
-            "manager_rule_ids": [],
+            "manager_rule_ids": [],  # regla legacy del módulo base
             "manager_goal_rule_ids": [],
+            "liquidation_rule_ids": [],
         })
 
         new_period = super().copy(default)
 
         for target in self.target_ids:
             target.copy_to_period(new_period)
+        for project_rule in self.project_rule_ids:
+            project_rule.copy_to_period(new_period)
         for location_target in self.location_target_ids:
             location_target.copy_to_period(new_period)
         for management in self.manager_goal_rule_ids:
             management.copy_to_period(new_period)
+        for liquidation_rule in self.liquidation_rule_ids:
+            liquidation_rule.copy_to_period(new_period)
 
         return new_period

@@ -8,7 +8,7 @@ class CommissionSettlement(models.Model):
     _inherit = "commission.settlement"
 
     def _calculate_results(self):
-        """Genera resultados únicamente para vendedores con meta activa."""
+        """Genera resultados solo para personas con parametrización activa."""
         self.ensure_one()
         period = self.period_id
         Sale = self.env["commission.sale"]
@@ -69,11 +69,44 @@ class CommissionSettlement(models.Model):
                 "Debe existir una sola meta activa por vendedor y período. Revise: %s"
             ) % names)
 
-        # Requisito funcional: vendedores sin meta activa no aparecen en la
-        # liquidación, aunque tengan ventas sincronizadas.
+        # Solo aparecen personas con una parametrización activa de comisión.
+        # Esto evita listar vendedores creados desde la API sin configuración,
+        # pero permite liquidar vendedores de proyectos aunque no tengan una
+        # meta retail estándar.
         sellers = active_targets.mapped("seller_id")
 
-        for seller in sellers:
+        # Reglas mensuales de proyecto son parte de la configuración del
+        # período. Las reglas generales del módulo base se conservan y solo
+        # incorporan al vendedor cuando realmente tiene ventas de ese origen.
+        period_project_rules = period.project_rule_ids.filtered("active")
+        sellers |= period_project_rules.mapped("seller_id")
+
+        global_project_rules = self.env["commission.project.rule"].search([
+            ("active", "=", True),
+            ("period_id", "=", False),
+        ])
+        for rule in global_project_rules:
+            origin_key = (rule.origin or "").strip().lower()
+            has_matching_sales = any(
+                (line.origin or "").strip().lower() == origin_key
+                for line in by_seller[rule.seller_id.id]
+            )
+            if has_matching_sales:
+                sellers |= rule.seller_id
+
+        # Un administrador con gestión configurada debe poder recibir su
+        # comisión de equipo aun cuando no tenga meta de venta propia.
+        active_management = period.manager_goal_rule_ids.filtered("active")
+        sellers |= active_management.mapped("manager_id")
+
+        # Una regla de bono específica también constituye parametrización.
+        sellers |= period.liquidation_rule_ids.filtered(
+            lambda rule: bool(rule.seller_id)
+        ).mapped("seller_id")
+
+        sellers = sellers.filtered("active")
+
+        for seller in sellers.sorted(lambda s: (s.code or "", s.name or "")):
             seller_sales = by_seller[seller.id]
             result = Result.create({
                 "settlement_id": self.id,

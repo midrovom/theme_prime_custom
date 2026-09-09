@@ -30,6 +30,11 @@ class TestCommissionGoalRules(TransactionCase):
             "role": "seller",
             "manager_id": self.manager.id,
         })
+        self.project_seller = self.Seller.create({
+            "code": "GR-PROY",
+            "name": "Vendedor Proyecto",
+            "role": "project",
+        })
         self.no_target = self.Seller.create({
             "code": "GR-SIN",
             "name": "Sin Meta",
@@ -55,7 +60,7 @@ class TestCommissionGoalRules(TransactionCase):
         })
         return target
 
-    def _sale(self, code, seller, location, net):
+    def _sale(self, code, seller, location, net, origin=None):
         return self.Sale.create({
             "fingerprint": code,
             "registration_date": "2026-05-10",
@@ -65,6 +70,7 @@ class TestCommissionGoalRules(TransactionCase):
             "number": code,
             "invoice": code,
             "product_code": code,
+            "origin": origin or "",
             "quantity": 1.0,
             "total_price": net,
             "total_net": net,
@@ -113,6 +119,44 @@ class TestCommissionGoalRules(TransactionCase):
         sellers = settlement.result_ids.mapped("seller_id")
         self.assertIn(self.seller_1, sellers)
         self.assertNotIn(self.no_target, sellers)
+
+    def test_project_seller_without_retail_target_is_listed(self):
+        self.env["commission.project.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.project_seller.id,
+            "origin": "Importado",
+            "basis": "net",
+            "commission_percent": 2.0,
+            "active": True,
+        })
+        self._sale(
+            "GR-PROY-1", self.project_seller, self.loc_a, 1000.0, origin="Importado"
+        )
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(
+            lambda r: r.seller_id == self.project_seller
+        )
+        self.assertTrue(result)
+        self.assertAlmostEqual(result.standard_commission, 0.0, places=4)
+        self.assertAlmostEqual(result.project_commission, 20.0, places=4)
+
+    def test_manager_with_management_parameter_does_not_need_own_target(self):
+        self._target(self.seller_1, amount=1000.0, rate=0.0)
+        self._location_target(amount=500.0)
+        self._management([{
+            "seller_id": self.seller_1.id,
+            "minimum_type": "fixed",
+            "minimum_amount": 500.0,
+            "commission_percent": 1.0,
+            "basis": "net",
+        }])
+        self._sale("GR-MGR-1", self.seller_1, self.loc_a, 600.0)
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.manager)
+        self.assertTrue(result)
+        self.assertAlmostEqual(result.management_commission, 6.0, places=4)
 
     def test_one_management_header_has_multiple_sellers(self):
         self._target(self.seller_1, 1000.0)
@@ -241,16 +285,37 @@ class TestCommissionGoalRules(TransactionCase):
             "commission_percent": 0.75,
             "basis": "net",
         }])
+        project_rule = self.env["commission.project.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.project_seller.id,
+            "origin": "Importado",
+            "basis": "net",
+            "commission_percent": 1.25,
+            "active": True,
+        })
+        liquidation_rule = self.env["commission.liquidation.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "location_id": self.loc_a.id,
+            "indicator_value": 3.0,
+            "min_sales_amount": 200.0,
+            "amount_per_m2": 0.25,
+            "basis": "net",
+        })
 
         new_period = self.period.copy()
 
         self.assertEqual(new_period.state, "draft")
-        self.assertEqual(new_period.date_start, self.period.date_end + timedelta(days=1))
+        self.assertEqual(new_period.date_start.isoformat(), "2026-06-01")
+        self.assertEqual(new_period.date_end.isoformat(), "2026-06-30")
         self.assertFalse(new_period.settlement_id)
         self.assertEqual(len(new_period.target_ids), 1)
         self.assertEqual(new_period.target_ids.seller_id, self.seller_1)
         self.assertEqual(new_period.target_ids.target_amount, target.target_amount)
         self.assertEqual(len(new_period.target_ids.tier_ids), len(target.tier_ids))
+        self.assertEqual(len(new_period.project_rule_ids), 1)
+        self.assertEqual(new_period.project_rule_ids.seller_id, project_rule.seller_id)
+        self.assertEqual(new_period.project_rule_ids.origin, project_rule.origin)
         self.assertEqual(len(new_period.location_target_ids), 1)
         self.assertEqual(len(new_period.manager_goal_rule_ids), 1)
         copied_management = new_period.manager_goal_rule_ids
@@ -258,6 +323,12 @@ class TestCommissionGoalRules(TransactionCase):
         self.assertEqual(copied_management.location_id, management.location_id)
         self.assertEqual(len(copied_management.line_ids), 1)
         self.assertAlmostEqual(copied_management.line_ids.commission_percent, 0.75, places=4)
+        self.assertEqual(len(new_period.liquidation_rule_ids), 1)
+        self.assertAlmostEqual(
+            new_period.liquidation_rule_ids.amount_per_m2,
+            liquidation_rule.amount_per_m2,
+            places=4,
+        )
 
     def test_copy_single_target_to_other_period(self):
         target = self._target(self.seller_1, amount=1200.0, rate=1.5)

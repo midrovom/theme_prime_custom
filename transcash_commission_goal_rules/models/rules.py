@@ -657,3 +657,77 @@ class CommissionManagerSellerRule(models.Model):
                 raise ValidationError(_("El porcentaje mínimo sobre la meta no puede ser negativo."))
             if rec.commission_percent < 0:
                 raise ValidationError(_("El porcentaje de comisión no puede ser negativo."))
+
+
+class CommissionProjectRuleGoalRules(models.Model):
+    _inherit = "commission.project.rule"
+
+    @api.constrains("period_id", "seller_id", "origin")
+    def _check_unique_project_parameter_normalized(self):
+        """Evita duplicar el mismo origen por espacios o diferencias de mayúsculas."""
+        for rec in self:
+            if not rec.seller_id or not rec.origin:
+                continue
+            normalized = rec.origin.strip()
+            domain = [
+                ("id", "!=", rec.id),
+                ("seller_id", "=", rec.seller_id.id),
+                ("origin", "=ilike", normalized),
+                ("period_id", "=", rec.period_id.id if rec.period_id else False),
+            ]
+            if self.search_count(domain):
+                raise ValidationError(_(
+                    "Ya existe una regla de proyecto para %(seller)s / %(origin)s "
+                    "en este período."
+                ) % {
+                    "seller": rec.seller_id.display_name,
+                    "origin": normalized,
+                })
+
+    def copy_to_period(self, destination_period):
+        self.ensure_one()
+        existing = self.search([
+            ("period_id", "=", destination_period.id),
+            ("seller_id", "=", self.seller_id.id),
+            ("origin", "=ilike", (self.origin or "").strip()),
+        ], limit=1)
+        if existing:
+            raise ValidationError(_(
+                "El período destino ya tiene la regla de proyecto %(seller)s / %(origin)s."
+            ) % {
+                "seller": self.seller_id.display_name,
+                "origin": self.origin,
+            })
+        return self.create({
+            "period_id": destination_period.id,
+            "seller_id": self.seller_id.id,
+            "origin": self.origin,
+            "commission_percent": self.commission_percent,
+            "basis": self.basis,
+            "active": self.active,
+        })
+
+
+class CommissionLiquidationRuleGoalRules(models.Model):
+    _inherit = "commission.liquidation.rule"
+
+    def copy_to_period(self, destination_period):
+        self.ensure_one()
+        existing = self.search([
+            ("period_id", "=", destination_period.id),
+            ("seller_id", "=", self.seller_id.id if self.seller_id else False),
+            ("location_id", "=", self.location_id.id if self.location_id else False),
+        ], limit=1)
+        if existing:
+            raise ValidationError(_(
+                "El período destino ya tiene una regla de bono equivalente."
+            ))
+        return self.create({
+            "period_id": destination_period.id,
+            "seller_id": self.seller_id.id or False,
+            "location_id": self.location_id.id or False,
+            "indicator_value": self.indicator_value,
+            "min_sales_amount": self.min_sales_amount,
+            "amount_per_m2": self.amount_per_m2,
+            "basis": self.basis,
+        })
