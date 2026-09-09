@@ -2200,12 +2200,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
 
     _onNextStep2(ev) {
         ev.preventDefault();
+
+        // ============================================================
+        // VALIDAR NÚMERO DE HERMANOS
+        // ============================================================
         const $numHermanos = this.$('#famNumHermanos');
         const numHermanos = $.trim($numHermanos.val() || '');
+
         if (!numHermanos) {
             $numHermanos.addClass('is-invalid');
 
             const $error = $numHermanos.siblings('.error-message');
+
             if ($error.length) {
                 $error.show();
             }
@@ -2215,43 +2221,72 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return;
         }
 
+        // ============================================================
+        // VALIDACIÓN EXISTENTE DEL FORMULARIO 2
+        // IMPORTANTE:
+        // Aquí se mantiene la validación de discapacidad.
+        // ============================================================
         if (!this._validateCurrentStep2()) {
             return;
         }
 
+        // ============================================================
+        // VALIDAR BLOQUES DE FAMILIARES
+        // ============================================================
         let familiaresValidos = true;
+
         this.$('#family_container .family-block').each(function () {
 
             const $block = $(this);
+
             const fallecido = $block.find(
                 'input[name^="famFallecido_"]'
             ).is(':checked');
+
             const noTiene = $block.find(
                 'input[name^="famNoTiene_"]'
             ).is(':checked');
 
+            // --------------------------------------------------------
+            // PADRE / MADRE / CÓNYUGE
+            // Si está marcado Fallecido o No tiene,
+            // no se validan los campos normales.
+            // --------------------------------------------------------
             if (fallecido || noTiene) {
                 return;
             }
 
-            const camposObligatorios = $block.find('input[required], select[required], textarea[required]');
+            // --------------------------------------------------------
+            // CAMPOS OBLIGATORIOS DEL FAMILIAR
+            // --------------------------------------------------------
+            const camposObligatorios = $block.find(
+                'input[required], select[required], textarea[required]'
+            );
 
             camposObligatorios.each(function () {
+
                 const $campo = $(this);
+
+                // Ignorar hidden
                 if ($campo.attr('type') === 'hidden') {
                     return;
                 }
 
+                // Ignorar campos deshabilitados
                 if ($campo.prop('disabled')) {
                     return;
                 }
 
                 let tieneValor = true;
 
+                // ----------------------------------------------------
+                // RADIO / CHECKBOX
+                // ----------------------------------------------------
                 if (
                     $campo.attr('type') === 'radio' ||
                     $campo.attr('type') === 'checkbox'
                 ) {
+
                     const name = $campo.attr('name');
 
                     tieneValor = $block.find(
@@ -2259,16 +2294,25 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     ).length > 0;
 
                 } else {
+
+                    // ------------------------------------------------
+                    // INPUT / SELECT / TEXTAREA
+                    // ------------------------------------------------
                     tieneValor =
                         $.trim($campo.val() || '') !== '';
                 }
 
+                // ----------------------------------------------------
+                // CAMPO VACÍO
+                // ----------------------------------------------------
                 if (!tieneValor) {
+
                     familiaresValidos = false;
 
                     $campo.addClass('is-invalid');
 
                     const $error = $campo.siblings('.error-message');
+
                     if ($error.length) {
                         $error.show();
                     }
@@ -2276,8 +2320,15 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             });
         });
 
+        // ============================================================
+        // SI HAY ERRORES EN LOS FAMILIARES, NO AVANZAR
+        // ============================================================
         if (!familiaresValidos) {
-            const $primerError = this.$('#family_container .is-invalid:first');
+
+            const $primerError = this.$(
+                '#family_container .is-invalid:first'
+            );
+
             if ($primerError.length) {
 
                 $('html, body').animate({
@@ -2290,6 +2341,120 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             return;
         }
 
+        // ============================================================
+        // VALIDAR DOCUMENTOS DE LOS FAMILIARES
+        //
+        // SOLO SE VALIDA EL ARCHIVO CUANDO EL TIPO DE DOCUMENTO
+        // ES "PARTIDA DE NACIMIENTO".
+        // ============================================================
+        let documentosValidos = true;
+
+        this.$('#family_container .family-block').each(function () {
+
+            const $block = $(this);
+
+            // Si el familiar está fallecido o no tiene,
+            // no se valida documentación.
+            const fallecido = $block.find(
+                'input[name^="famFallecido_"]'
+            ).is(':checked');
+
+            const noTiene = $block.find(
+                'input[name^="famNoTiene_"]'
+            ).is(':checked');
+
+            if (fallecido || noTiene) {
+                return;
+            }
+
+            // Buscar el tipo de documento del familiar
+            const $tipoDoc = $block.find(
+                'select[name^="famTipoDoc_"]'
+            );
+
+            if (!$tipoDoc.length) {
+                return;
+            }
+
+            const tipoDoc = $tipoDoc.val();
+
+            // --------------------------------------------------------
+            // IMPORTANTE:
+            // Ajusta "Partida de nacimiento" al value real de tu
+            // select si utiliza un código en lugar del texto.
+            // --------------------------------------------------------
+            const textoTipoDoc = $tipoDoc
+                .find('option:selected')
+                .text()
+                .trim()
+                .toLowerCase();
+
+            const esPartidaNacimiento =
+                textoTipoDoc === 'partida de nacimiento';
+
+            // Si NO es partida de nacimiento:
+            // no exigimos archivo.
+            if (!esPartidaNacimiento) {
+                return;
+            }
+
+            // --------------------------------------------------------
+            // PARTIDA DE NACIMIENTO:
+            // aquí sí debe existir el archivo.
+            // --------------------------------------------------------
+            const $archivo = $block.find(
+                'input[type="file"][name^="famDocumento_"], ' +
+                'input[type="file"][name^="famFile_"], ' +
+                'input[type="file"]'
+            ).first();
+
+            if (!$archivo.length) {
+                return;
+            }
+
+            const tieneArchivo =
+                $archivo[0].files &&
+                $archivo[0].files.length > 0;
+
+            if (!tieneArchivo) {
+
+                documentosValidos = false;
+
+                $archivo.addClass('is-invalid');
+
+                const $error = $archivo.siblings('.error-message');
+
+                if ($error.length) {
+                    $error.show();
+                }
+            }
+        });
+
+        // ============================================================
+        // SI FALTA PARTIDA DE NACIMIENTO, NO AVANZAR
+        // ============================================================
+        if (!documentosValidos) {
+
+            const $primerDocumentoError = this.$(
+                '#family_container input[type="file"].is-invalid:first'
+            );
+
+            if ($primerDocumentoError.length) {
+
+                $('html, body').animate({
+                    scrollTop:
+                        $primerDocumentoError.offset().top - 100
+                }, 300);
+
+                $primerDocumentoError.focus();
+            }
+
+            return;
+        }
+
+        // ============================================================
+        // PASAR AL FORMULARIO 3
+        // ============================================================
         this.$('#form-step-2').addClass('d-none');
         this.$('#form-step-3').removeClass('d-none');
     },
