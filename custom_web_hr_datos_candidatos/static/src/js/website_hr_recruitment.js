@@ -1885,318 +1885,115 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Handlers
     //----------------------------------------------------------------------
 
-    _onNextClick(ev) {
-        ev.preventDefault();
+    // _onNextStep2(ev) {
+    //     ev.preventDefault();
 
-        if (this._validateCurrentStep1()) {
+    //     const $numHermanos = this.$('#famNumHermanos');
+    //     const numHermanos = $.trim($numHermanos.val() || '');
+    //     const $errorNum = $numHermanos.siblings('.invalid-feedback');
 
-            this.$('#form-step-1').addClass('d-none');
-            this.$('#form-step-2').removeClass('d-none');
-            const numHijos = parseInt(
-                this.$('#hr-hijos').val(),
-                10
-            );
+    //     if (!numHermanos) {
+    //         $numHermanos.addClass('is-invalid');
+    //         $errorNum.text('Campo obligatorio.').show();
+    //         $numHermanos.focus();
+    //         return;
+    //     }
 
-            this.$('.family-block[data-type="Hijo"]').remove();
-            const AUTO_FAMILY = ["Padre", "Madre", "Conyugue"];
-            AUTO_FAMILY.forEach(tipo => {
+    //     const cantidadHermanos = parseInt(numHermanos, 10);
+    //     if (isNaN(cantidadHermanos) || cantidadHermanos < 1 || cantidadHermanos > 10) {
+    //         $numHermanos.addClass('is-invalid');
+    //         $errorNum.text('Ingrese un número entre 1 y 10.').show();
+    //         $numHermanos.focus();
+    //         return;
+    //     }
 
-                if (
-                    this.$(
-                        `.family-block[data-type="${tipo}"]`
-                    ).length === 0
-                ) {
+    //     $numHermanos.removeClass('is-invalid');
+    //     $errorNum.hide();
 
-                    this.familyCount++;
-                    const index = this.familyCount;
-                    this._getFamilyBlock(
-                        tipo,
-                        index
-                    ).then(blockHtml => {
+    //     if (!this._validateCurrentStep2()) return;
 
-                        const block = $(blockHtml);
-                        const tipoVal =
-                            tipo === "Padre" ? "1" :
-                            tipo === "Madre" ? "2" :
-                            tipo === "Conyugue" ? "4" :
-                            tipo;
+    //     let familiaresValidos = true;
 
-                        block.prepend(`
-                            <input
-                                type="hidden"
-                                name="famTipo_${index}"
-                                value="${tipoVal}"
-                            />
-                        `);
+    //     this.$('#family_container .family-block').each(function() {
+    //         const $block = $(this);
+    //         const fallecido = $block.find('input[name^="famFallecido_"]').is(':checked');
+    //         const noTiene = $block.find('input[name^="famNoTiene_"]').is(':checked');
 
-                        this.$(
-                            '#family_container'
-                        ).append(block);
+    //         if (fallecido || noTiene) {
+    //             $block.find('input, select, textarea').prop('required', false).removeAttr('required').removeClass('is-invalid');
+    //             $block.find('.invalid-feedback, .error-message, .text-danger').hide();
+    //             return;
+    //         }
 
-                        const $fallecidoCheck = block.find(`input[name="famFallecido_${index}"]`);
-                        const $noTieneCheck = block.find(`input[name="famNoTiene_${index}"]`);
-                        const aplicarEstadoFamiliar = () => {
-                            const fallecido =
-                                $fallecidoCheck.is(":checked");
+    //         $block.find('input[required], select[required], textarea[required]').each(function() {
+    //             const $campo = $(this);
+    //             if ($campo.attr('type') === 'hidden' || $campo.prop('disabled')) return;
 
-                            const noTiene =
-                                $noTieneCheck.is(":checked");
+    //             let tieneValor;
+    //             if ($campo.is(':radio, :checkbox')) {
+    //                 const name = $campo.attr('name');
+    //                 tieneValor = $block.find(`input[name="${name}"]:checked`).length > 0;
+    //             } else {
+    //                 tieneValor = $.trim($campo.val() || '') !== '';
+    //             }
 
-                            if (fallecido) {
-                                $noTieneCheck.prop(
-                                    "checked",
-                                    false
-                                );
-                            }
+    //             if (!tieneValor) {
+    //                 familiaresValidos = false;
+    //                 $campo.addClass('is-invalid');
+    //                 $campo.siblings('.invalid-feedback, .error-message').show();
+    //             }
+    //         });
+    //     });
 
-                            if (noTiene) {
-                                $fallecidoCheck.prop(
-                                    "checked",
-                                    false
-                                );
-                            }
+    //     if (!familiaresValidos) {
+    //         const $primerError = this.$('#family_container .is-invalid:first');
+    //         if ($primerError.length) {
+    //             $('html, body').animate({scrollTop: $primerError.offset().top - 100}, 300);
+    //             $primerError.focus();
+    //         }
+    //         return;
+    //     }
 
-                            const estadoFallecido =
-                                $fallecidoCheck.is(":checked");
+    //     let documentosValidos = true;
 
-                            const estadoNoTiene =
-                                $noTieneCheck.is(":checked");
+    //     this.$('#family_container .family-block').each(function() {
+    //         const $block = $(this);
+    //         const fallecido = $block.find('input[name^="famFallecido_"]').is(':checked');
+    //         const noTiene = $block.find('input[name^="famNoTiene_"]').is(':checked');
 
-                            const bloqueado =
-                                estadoFallecido ||
-                                estadoNoTiene;
+    //         if (fallecido || noTiene) {
+    //             $block.find('input[type="file"]').removeClass('is-invalid').prop('required', false).removeAttr('required');
+    //             $block.find('.invalid-feedback, .error-message, .text-danger').hide();
+    //             return;
+    //         }
 
-                            const $fields = block.find(
-                                "input:not([type='hidden']), select, textarea"
-                            ).filter(function () {
+    //         const $tipoDoc = $block.find('select[name^="famTipoDoc_"]');
+    //         if (!$tipoDoc.length || $tipoDoc.find('option:selected').text().trim().toLowerCase() !== 'partida de nacimiento') return;
 
-                                const name =
-                                    $(this).attr("name") || "";
+    //         const $archivo = $block.find('input[name^="famArchivo_"]').first();
+    //         if (!$archivo.length) return;
 
-                                return (
-                                    !name.startsWith(
-                                        "famFallecido_"
-                                    ) &&
-                                    !name.startsWith(
-                                        "famNoTiene_"
-                                    )
-                                );
-                            });
+    //         const tieneArchivo = $archivo[0].files && $archivo[0].files.length > 0;
 
+    //         if (!tieneArchivo) {
+    //             documentosValidos = false;
+    //             $archivo.addClass('is-invalid');
+    //             $archivo.siblings('.invalid-feedback').show();
+    //         }
+    //     });
 
-                            $fields.prop(
-                                "disabled",
-                                bloqueado
-                            );
+    //     if (!documentosValidos) {
+    //         const $primerDocumentoError = this.$('#family_container input[type="file"].is-invalid:first');
+    //         if ($primerDocumentoError.length) {
+    //             $('html, body').animate({scrollTop: $primerDocumentoError.offset().top - 100}, 300);
+    //             $primerDocumentoError.focus();
+    //         }
+    //         return;
+    //     }
 
-                            if (bloqueado) {
-
-                                $fields.prop(
-                                    "required",
-                                    false
-                                );
-
-
-                                $fields.val("");
-
-                                $fields
-                                    .filter(":radio, :checkbox")
-                                    .prop(
-                                        "checked",
-                                        false
-                                    );
-
-                                $fields.removeClass(
-                                    "is-invalid"
-                                );
-
-                                $fields
-                                    .siblings(
-                                        ".error-message"
-                                    )
-                                    .hide();
-
-                            } else {
-
-                                // =========================================
-                                // RESTAURAR REQUIRED
-                                // =========================================
-
-                                block.find(
-                                    `input[name="famApellidoPaterno_${index}"]`
-                                ).prop(
-                                    "required",
-                                    true
-                                );
-
-                                block.find(
-                                    `input[name="famApellidoMaterno_${index}"]`
-                                ).prop(
-                                    "required",
-                                    true
-                                );
-
-                                block.find(
-                                    `input[name="famPrimerNombre_${index}"]`
-                                ).prop(
-                                    "required",
-                                    true
-                                );
-
-                                block.find(
-                                    `select[name="famTipoDoc_${index}"]`
-                                ).prop(
-                                    "required",
-                                    true
-                                );
-
-                                block.find(
-                                    `input[name="famFecha_${index}"]`
-                                ).prop(
-                                    "required",
-                                    true
-                                );
-
-                                block.find(
-                                    `input[name="famTelefono_${index}"]`
-                                ).prop(
-                                    "required",
-                                    true
-                                );
-
-                                block.find(
-                                    `input[name="famOcupacion_${index}"]`
-                                ).prop(
-                                    "required",
-                                    true
-                                );
-
-                                block.find(
-                                    `input[name="famDepende_${index}"]`
-                                ).prop(
-                                    "required",
-                                    true
-                                );
-
-                                block.find(
-                                    `input[name="famDisc_${index}"]`
-                                ).prop(
-                                    "required",
-                                    true
-                                );
-                            }
-
-                            // =============================================
-                            // NOMBRE OCULTO
-                            // =============================================
-
-                            const $nombre = block.find(
-                                `input[name="famNombre_${index}"]`
-                            );
-
-                            if (estadoFallecido) {
-
-                                $nombre.val(
-                                    "FALLECIDO"
-                                );
-
-                            } else if (estadoNoTiene) {
-
-                                $nombre.val(
-                                    "NO TIENE"
-                                );
-
-                            } else {
-
-                                $nombre.val("");
-                            }
-                        };
-
-                        // =================================================
-                        // EVENTO FALLECIDO
-                        // =================================================
-
-                        if ($fallecidoCheck.length) {
-
-                            $fallecidoCheck.on(
-                                "change",
-                                aplicarEstadoFamiliar
-                            );
-                        }
-
-                        // =================================================
-                        // EVENTO NO TIENE
-                        // =================================================
-
-                        if ($noTieneCheck.length) {
-
-                            $noTieneCheck.on(
-                                "change",
-                                aplicarEstadoFamiliar
-                            );
-                        }
-
-                        // =================================================
-                        // DISCAPACIDAD
-                        // =================================================
-
-                        block.find(
-                            `input[name="famDisc_${index}"]`
-                        ).on(
-                            "change",
-                            () => {
-
-                                this._toggleFamilyDisability(
-                                    index
-                                );
-                            }
-                        );
-
-                        this._toggleFamilyDisability(
-                            index
-                        );
-                    });
-                }
-            });
-
-            if (!isNaN(numHijos) && numHijos > 0) {
-                for (let i = 0; i < numHijos; i++) {
-                    this.familyCount++;
-                    const index = this.familyCount;
-                    this._getFamilyBlock(
-                        "Hijo",
-                        index
-                    ).then(blockHtml => {
-                        const block = $(blockHtml);
-                        block.prepend(`
-                            <input
-                                type="hidden"
-                                name="famTipo_${index}"
-                                value="5"
-                            />
-                        `);
-
-                        this.$('#family_container').append(block);
-                        block.find(
-                            `input[name="famDisc_${index}"]`
-                        ).on(
-                            "change",
-                            () => {
-
-                                this._toggleFamilyDisability(
-                                    index
-                                );
-                            }
-                        );
-
-                        this._toggleFamilyDisability(
-                            index
-                        );
-                    });
-                }
-            }
-        }
-    },
+    //     this.$('#form-step-2').addClass('d-none');
+    //     this.$('#form-step-3').removeClass('d-none');
+    // },
 
     _onNextStep2(ev) {
         ev.preventDefault();
@@ -2308,192 +2105,115 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-3').removeClass('d-none');
     },
 
-    // _onNextStep2(ev) {
-    //     ev.preventDefault();
-    //     const $numHermanos = this.$('#famNumHermanos');
-    //     const numHermanos = $.trim($numHermanos.val() || '');
-    //     if (!numHermanos) {
-    //         $numHermanos.addClass('is-invalid');
-    //         const $error = $numHermanos.siblings('.error-message');
-    //         if ($error.length) {
-    //             $error.show();
-    //         }
+    _onNextStep2(ev) {
+        ev.preventDefault();
 
-    //         $numHermanos.focus();
+        const $numHermanos = this.$('#famNumHermanos');
+        const numHermanos = $.trim($numHermanos.val() || '');
+        const $errorNum = $numHermanos.siblings('.invalid-feedback');
 
-    //         return;
-    //     }
+        if (!numHermanos) {
+            $numHermanos.addClass('is-invalid');
+            $errorNum.text('Campo obligatorio.').show();
+            $numHermanos.focus();
+            return;
+        }
 
-    //     if (!this._validateCurrentStep2()) {
-    //         return;
-    //     }
+        const cantidadHermanos = parseInt(numHermanos, 10);
+        if (isNaN(cantidadHermanos) || cantidadHermanos < 1 || cantidadHermanos > 10) {
+            $numHermanos.addClass('is-invalid');
+            $errorNum.text('Ingrese un número entre 1 y 10.').show();
+            $numHermanos.focus();
+            return;
+        }
 
-    //     let familiaresValidos = true;
-    //     this.$('#family_container .family-block').each(function () {
-    //         const $block = $(this);
-    //         const fallecido = $block.find(
-    //             'input[name^="famFallecido_"]'
-    //         ).is(':checked');
-    //         const noTiene = $block.find(
-    //             'input[name^="famNoTiene_"]'
-    //         ).is(':checked');
+        $numHermanos.removeClass('is-invalid');
+        $errorNum.hide();
 
-    //         if (fallecido || noTiene) {
+        if (!this._validateCurrentStep2()) return;
 
-    //             $block.find(
-    //                 'input, select, textarea'
-    //             )
-    //             .prop('required', false)
-    //             .removeAttr('required')
-    //             .removeClass('is-invalid');
+        let familiaresValidos = true;
 
+        this.$('#family_container .family-block').each(function() {
+            const $block = $(this);
+            const fallecido = $block.find('input[name^="famFallecido_"]').is(':checked');
+            const noTiene = $block.find('input[name^="famNoTiene_"]').is(':checked');
 
-    //             $block.find('.error-message').hide();
-    //             $block.find('.text-danger').hide();
+            if (fallecido || noTiene) {
+                $block.find('input, select, textarea').prop('required', false).removeAttr('required').removeClass('is-invalid');
+                $block.find('.invalid-feedback, .error-message, .text-danger').hide();
+                return;
+            }
 
-    //             return;
-    //         }
+            $block.find('input[required], select[required], textarea[required]').each(function() {
+                const $campo = $(this);
+                if ($campo.attr('type') === 'hidden' || $campo.prop('disabled')) return;
 
-    //         const camposObligatorios = $block.find(
-    //             'input[required], select[required], textarea[required]'
-    //         );
+                let tieneValor;
+                if ($campo.is(':radio, :checkbox')) {
+                    const name = $campo.attr('name');
+                    tieneValor = $block.find(`input[name="${name}"]:checked`).length > 0;
+                } else {
+                    tieneValor = $.trim($campo.val() || '') !== '';
+                }
 
-    //         camposObligatorios.each(function () {
-    //             const $campo = $(this);
-    //             if ($campo.attr('type') === 'hidden') {
-    //                 return;
-    //             }
+                if (!tieneValor) {
+                    familiaresValidos = false;
+                    $campo.addClass('is-invalid');
+                    $campo.siblings('.invalid-feedback, .error-message').show();
+                }
+            });
+        });
 
-    //             if ($campo.prop('disabled')) {
-    //                 return;
-    //             }
+        if (!familiaresValidos) {
+            const $primerError = this.$('#family_container .is-invalid:first');
+            if ($primerError.length) {
+                $('html, body').animate({scrollTop: $primerError.offset().top - 100}, 300);
+                $primerError.focus();
+            }
+            return;
+        }
 
-    //             let tieneValor = true;
+        let documentosValidos = true;
 
-    //             if (
-    //                 $campo.attr('type') === 'radio' ||
-    //                 $campo.attr('type') === 'checkbox'
-    //             ) {
+        this.$('#family_container .family-block').each(function() {
+            const $block = $(this);
+            const fallecido = $block.find('input[name^="famFallecido_"]').is(':checked');
+            const noTiene = $block.find('input[name^="famNoTiene_"]').is(':checked');
 
-    //                 const name = $campo.attr('name');
-    //                 tieneValor = $block.find(
-    //                     `input[name="${name}"]:checked`
-    //                 ).length > 0;
+            if (fallecido || noTiene) {
+                $block.find('input[type="file"]').removeClass('is-invalid').prop('required', false).removeAttr('required');
+                $block.find('.invalid-feedback, .error-message, .text-danger').hide();
+                return;
+            }
 
-    //             } else {
+            const $tipoDoc = $block.find('select[name^="famTipoDoc_"]');
+            if (!$tipoDoc.length || $tipoDoc.find('option:selected').text().trim().toLowerCase() !== 'partida de nacimiento') return;
 
-    //                 tieneValor = $.trim($campo.val() || '') !== '';
-    //             }
+            const $archivo = $block.find('input[name^="famArchivo_"]').first();
+            if (!$archivo.length) return;
 
-    //             if (!tieneValor) {
+            const tieneArchivo = $archivo[0].files && $archivo[0].files.length > 0;
 
-    //                 familiaresValidos = false;
+            if (!tieneArchivo) {
+                documentosValidos = false;
+                $archivo.addClass('is-invalid');
+                $archivo.siblings('.invalid-feedback').show();
+            }
+        });
 
-    //                 $campo.addClass('is-invalid');
+        if (!documentosValidos) {
+            const $primerDocumentoError = this.$('#family_container input[type="file"].is-invalid:first');
+            if ($primerDocumentoError.length) {
+                $('html, body').animate({scrollTop: $primerDocumentoError.offset().top - 100}, 300);
+                $primerDocumentoError.focus();
+            }
+            return;
+        }
 
-    //                 const $error = $campo.siblings('.error-message');
-
-    //                 if ($error.length) {
-    //                     $error.show();
-    //                 }
-    //             }
-    //         });
-    //     });
-
-    //     if (!familiaresValidos) {
-    //         const $primerError = this.$('#family_container .is-invalid:first');
-    //         if ($primerError.length) {
-    //             $('html, body').animate({
-    //                 scrollTop: $primerError.offset().top - 100
-    //             }, 300);
-    //             $primerError.focus();
-    //         }
-
-    //         return;
-    //     }
-
-    //     let documentosValidos = true;
-    //     this.$('#family_container .family-block').each(function () {
-    //         const $block = $(this);
-    //         const fallecido = $block.find(
-    //             'input[name^="famFallecido_"]'
-    //         ).is(':checked');
-    //         const noTiene = $block.find(
-    //             'input[name^="famNoTiene_"]'
-    //         ).is(':checked');
-
-    //         if (fallecido || noTiene) {
-
-    //             $block.find('input[type="file"]')
-    //                 .removeClass('is-invalid');
-
-    //             $block.find('.error-message').hide();
-
-    //             return;
-    //         }
-
-    //         const $tipoDoc = $block.find('select[name^="famTipoDoc_"]');
-    //         if (!$tipoDoc.length) {
-    //             return;
-    //         }
-
-    //         const textoTipoDoc = $tipoDoc
-    //             .find('option:selected')
-    //             .text()
-    //             .trim()
-    //             .toLowerCase();
-
-    //         const esPartidaNacimiento =
-    //             textoTipoDoc === 'partida de nacimiento';
-
-    //         if (!esPartidaNacimiento) {
-    //             return;
-    //         }
-
-    //         const $archivo = $block.find(
-    //             'input[type="file"][name^="famDocumento_"], ' +
-    //             'input[type="file"][name^="famFile_"], ' +
-    //             'input[type="file"]'
-    //         ).first();
-
-    //         if (!$archivo.length) {
-    //             return;
-    //         }
-
-    //         const tieneArchivo =
-    //             $archivo[0].files &&
-    //             $archivo[0].files.length > 0;
-
-    //         if (!tieneArchivo) {
-
-    //             documentosValidos = false;
-
-    //             $archivo.addClass('is-invalid');
-
-    //             const $error = $archivo.siblings('.error-message');
-
-    //             if ($error.length) {
-    //                 $error.show();
-    //             }
-    //         }
-    //     });
-
-    //     if (!documentosValidos) {
-    //         const $primerDocumentoError = this.$('#family_container input[type="file"].is-invalid:first');
-    //         if ($primerDocumentoError.length) {
-    //             $('html, body').animate({
-    //                 scrollTop:
-    //                     $primerDocumentoError.offset().top - 100
-    //             }, 300);
-    //             $primerDocumentoError.focus();
-    //         }
-
-    //         return;
-    //     }
-
-    //     this.$('#form-step-2').addClass('d-none');
-    //     this.$('#form-step-3').removeClass('d-none');
-    // },
+        this.$('#form-step-2').addClass('d-none');
+        this.$('#form-step-3').removeClass('d-none');
+    },
 
     _onPrevClick(ev) {
         ev.preventDefault();
