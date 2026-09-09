@@ -155,13 +155,14 @@ class WebsiteHRRecruitment(http.Controller):
             k = 1
 
             while kwargs.get(f'famNombre_{k}') is not None:
-                name = kwargs.get(f'famNombre_{k}')
                 tipo = kwargs.get(f'famTipo_{k}')
-                doc_type = kwargs.get(f'famTipoDoc_{k}')
+                fallecido = kwargs.get(f'famFallecido_{k}') == '1'
+                name = kwargs.get(f'famNombre_{k}')
+                if fallecido:
+                    name = "FALLECIDO"
 
                 if name:
                     family_file = kwargs.get(f'famArchivo_{k}')
-
                     document_file = False
                     filename = False
 
@@ -171,29 +172,68 @@ class WebsiteHRRecruitment(http.Controller):
 
                     family_lines.append((0, 0, {
                         'name': name,
-                        'document_type': doc_type,
-                        'birthdate': kwargs.get(f'famFecha_{k}'),
-                        'phone': kwargs.get(f'famTelefono_{k}'),
-                        'occupation': kwargs.get(f'famOcupacion_{k}'),
-                        'economically_dependent': kwargs.get(f'famDepende_{k}'),
-                        'disability': kwargs.get(f'famDisc_{k}'),
-                        'disability_type': kwargs.get(f'famDiscTipo_{k}'),
-                        'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}') or None,
+                        'document_type': None if fallecido else kwargs.get(f'famTipoDoc_{k}'),
+                        'birthdate': None if fallecido else kwargs.get(f'famFecha_{k}'),
+                        'phone': None if fallecido else kwargs.get(f'famTelefono_{k}'),
+                        'occupation': None if fallecido else kwargs.get(f'famOcupacion_{k}'),
+                        'economically_dependent': None if fallecido else kwargs.get(f'famDepende_{k}'),
+                        'disability': None if fallecido else kwargs.get(f'famDisc_{k}'),
+                        'disability_type': None if fallecido else kwargs.get(f'famDiscTipo_{k}'),
+                        'disability_percentage': None if fallecido else kwargs.get(f'famDiscPorcentaje_{k}'),
                         'familiar_type': str(tipo) if tipo else None,
                         'filename': filename,
                         'document_file': document_file,
-                        'cedula': (
-                            None
-                            if doc_type == 'part_naci'
-                            else kwargs.get(f'famCedula_{k}')
-                        ),
-                        'fallecido': kwargs.get(f'famFallecido_{k}') == '1'
+                        'cedula': None if fallecido else kwargs.get(f'famCedula_{k}'),
+                        'fallecido': fallecido,
                     }))
-
                 k += 1
 
             if family_lines:
                 applicant_values['family_ids'] = family_lines
+
+            # family_lines = []
+            # k = 1
+
+            # while kwargs.get(f'famNombre_{k}') is not None:
+            #     name = kwargs.get(f'famNombre_{k}')
+            #     tipo = kwargs.get(f'famTipo_{k}')
+            #     doc_type = kwargs.get(f'famTipoDoc_{k}')
+
+            #     if name:
+            #         family_file = kwargs.get(f'famArchivo_{k}')
+
+            #         document_file = False
+            #         filename = False
+
+            #         if family_file:
+            #             filename = family_file.filename
+            #             document_file = base64.b64encode(family_file.read())
+
+            #         family_lines.append((0, 0, {
+            #             'name': name,
+            #             'document_type': doc_type,
+            #             'birthdate': kwargs.get(f'famFecha_{k}'),
+            #             'phone': kwargs.get(f'famTelefono_{k}'),
+            #             'occupation': kwargs.get(f'famOcupacion_{k}'),
+            #             'economically_dependent': kwargs.get(f'famDepende_{k}'),
+            #             'disability': kwargs.get(f'famDisc_{k}'),
+            #             'disability_type': kwargs.get(f'famDiscTipo_{k}'),
+            #             'disability_percentage': kwargs.get(f'famDiscPorcentaje_{k}') or None,
+            #             'familiar_type': str(tipo) if tipo else None,
+            #             'filename': filename,
+            #             'document_file': document_file,
+            #             'cedula': (
+            #                 None
+            #                 if doc_type == 'part_naci'
+            #                 else kwargs.get(f'famCedula_{k}')
+            #             ),
+            #             'fallecido': kwargs.get(f'famFallecido_{k}') == '1'
+            #         }))
+
+            #     k += 1
+
+            # if family_lines:
+            #     applicant_values['family_ids'] = family_lines
 
             # ---------------- Funcion para parseo de localizacion Pais/Ciudad ----------------
 
