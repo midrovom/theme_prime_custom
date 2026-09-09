@@ -273,10 +273,10 @@
                     </div>
 
                     <div class="col-12 col-md-4 mb-4">
-                        <div>
-                            <label for="hr-number-doc" class="fs-6">Número de documento: <span class="text-danger">*</span></label>
-                            <input type="text" name="documentNumber" class="form-control rounded-pill py-2" id="hr-number-doc" required="required"/>
-                            <div class="invalid-feedback" id="doc-error"></div>
+                        <label for="famNumHermanos" class="me-2 fs-6 mt-2">Numero de Hermanos:</label> 
+                        <div> 
+                            <input type="number" id="famNumHermanos" class="form-control rounded-pill px-3" min="1" max="10" style="width:100px;" /> 
+                            <div class="invalid-feedback">Campo obligatorio.</div> 
                         </div>
                     </div>
 
