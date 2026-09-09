@@ -1,0 +1,24 @@
+<odoo>
+    <record id="view_commission_goal_copy_wizard_form" model="ir.ui.view">
+        <field name="name">commission.goal.copy.wizard.form</field>
+        <field name="model">commission.goal.copy.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Duplicar parámetro a otro período">
+                <group>
+                    <field name="source_model"/>
+                    <field name="source_name"/>
+                    <field name="source_period_id"/>
+                    <field name="source_id" invisible="1"/>
+                    <field name="destination_period_id" options="{'no_create': True}"/>
+                </group>
+                <div class="alert alert-info" role="alert">
+                    El sistema no permite duplicar el mismo parámetro dentro del mismo período. Seleccione otro período en borrador.
+                </div>
+                <footer>
+                    <button name="action_duplicate" type="object" string="Duplicar" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

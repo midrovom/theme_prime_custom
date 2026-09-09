@@ -1,13 +1,14 @@
 {
     "name": "Transcash Commissions - Metas y Liquidaciones",
-    "summary": "Metas sin localidad, gestión de administradores con detalle de vendedores y PDF",
-    "version": "18.0.1.2.0",
+    "summary": "Metas, gestión automática de administradores, duplicación controlada y PDF",
+    "version": "18.0.1.3.0",
     "category": "Sales/Commissions",
     "author": "Transcash",
     "license": "LGPL-3",
     "depends": ["transcash_commission", "web"],
     "data": [
         "security/ir.model.access.csv",
+        "wizard/commission_goal_copy_wizard_views.xml",
         "views/commission_goal_rule_views.xml",
         "views/commission_period_views.xml",
         "views/commission_settlement_views.xml",

@@ -13,7 +13,31 @@
         <field name="model">commission.seller.target</field>
         <field name="inherit_id" ref="transcash_commission.view_commission_seller_target_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="duplicate">false</attribute>
+            </xpath>
             <xpath expr="//field[@name='location_id']" position="replace"/>
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_open_copy_wizard" type="object" string="Duplicar a otro período" class="btn-secondary"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_location_target_form_goal_rules" model="ir.ui.view">
+        <field name="name">commission.location.target.form.goal.rules</field>
+        <field name="model">commission.location.target</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_location_target_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="duplicate">false</attribute>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_open_copy_wizard" type="object" string="Duplicar a otro período" class="btn-secondary"/>
+                </header>
+            </xpath>
         </field>
     </record>
 
@@ -34,7 +58,11 @@
         <field name="name">commission.manager.goal.rule.form</field>
         <field name="model">commission.manager.goal.rule</field>
         <field name="arch" type="xml">
-            <form string="Gestión de comisión de administrador">
+            <form string="Gestión de comisión de administrador" duplicate="false">
+                <header>
+                    <button name="action_load_related_sellers" type="object" string="Cargar vendedores relacionados" class="btn-secondary" invisible="not manager_id"/>
+                    <button name="action_open_copy_wizard" type="object" string="Duplicar a otro período" class="btn-secondary"/>
+                </header>
                 <sheet>
                     <group>
                         <group string="Administrador">
@@ -63,7 +91,7 @@
                     </field>
 
                     <div class="alert alert-info mt-2" role="alert">
-                        Cada vendedor tiene su propio mínimo de venta y su propio porcentaje de comisión para el administrador. El mínimo puede ser un monto fijo o un porcentaje de la meta del vendedor. Además, el local seleccionado arriba debe cumplir su meta para habilitar el pago de gestión.
+                        Al seleccionar el administrador se cargan automáticamente los vendedores relacionados en su maestro. Cada vendedor conserva su propio mínimo y porcentaje de comisión. El local seleccionado debe cumplir su meta para habilitar el pago de gestión.
                     </div>
                 </sheet>
             </form>

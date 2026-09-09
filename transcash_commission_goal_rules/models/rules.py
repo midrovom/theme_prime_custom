@@ -1,4 +1,4 @@
-from odoo import api, fields, models, _
+from odoo import Command, api, fields, models, _
 from odoo.exceptions import ValidationError
 
 
@@ -20,6 +20,25 @@ class CommissionSellerTarget(models.Model):
         vals["location_id"] = False
         return super().write(vals)
 
+    @api.constrains("period_id", "seller_id")
+    def _check_unique_target(self):
+        """Una sola parametrización de meta por vendedor y período."""
+        for rec in self:
+            if not rec.period_id or not rec.seller_id:
+                continue
+            duplicate = self.search_count([
+                ("id", "!=", rec.id),
+                ("period_id", "=", rec.period_id.id),
+                ("seller_id", "=", rec.seller_id.id),
+            ])
+            if duplicate:
+                raise ValidationError(_(
+                    "Ya existe una meta para el vendedor %(seller)s en el período %(period)s."
+                ) % {
+                    "seller": rec.seller_id.display_name,
+                    "period": rec.period_id.display_name,
+                })
+
     @api.constrains("period_id", "seller_id", "active")
     def _check_one_active_target_per_seller(self):
         for rec in self.filtered("active"):
@@ -33,6 +52,96 @@ class CommissionSellerTarget(models.Model):
                 raise ValidationError(_(
                     "Solo puede existir una meta activa por vendedor y período."
                 ))
+
+    def action_open_copy_wizard(self):
+        self.ensure_one()
+        return self.env["commission.goal.copy.wizard"].open_for(self)
+
+    def copy_to_period(self, destination_period):
+        self.ensure_one()
+        existing = self.search([
+            ("period_id", "=", destination_period.id),
+            ("seller_id", "=", self.seller_id.id),
+        ], limit=1)
+        if existing:
+            raise ValidationError(_(
+                "El período destino ya tiene una meta para %(seller)s."
+            ) % {"seller": self.seller_id.display_name})
+
+        new_target = self.create({
+            "period_id": destination_period.id,
+            "seller_id": self.seller_id.id,
+            "target_amount": self.target_amount,
+            "basis": self.basis,
+            "active": self.active,
+        })
+        for tier in self.tier_ids:
+            tier.copy({"target_id": new_target.id})
+        return new_target
+
+
+class CommissionSellerTargetTier(models.Model):
+    _inherit = "commission.seller.target.tier"
+
+    @api.constrains("target_id", "min_achievement", "max_achievement")
+    def _check_unique_range(self):
+        for rec in self:
+            if not rec.target_id:
+                continue
+            duplicate = self.search_count([
+                ("id", "!=", rec.id),
+                ("target_id", "=", rec.target_id.id),
+                ("min_achievement", "=", rec.min_achievement),
+                ("max_achievement", "=", rec.max_achievement),
+            ])
+            if duplicate:
+                raise ValidationError(_(
+                    "Ya existe un rango con el mismo cumplimiento mínimo y máximo en esta meta."
+                ))
+
+
+class CommissionLocationTarget(models.Model):
+    _inherit = "commission.location.target"
+
+    @api.constrains("period_id", "location_id")
+    def _check_unique_location_target_goal_rules(self):
+        for rec in self:
+            if not rec.period_id or not rec.location_id:
+                continue
+            duplicate = self.search_count([
+                ("id", "!=", rec.id),
+                ("period_id", "=", rec.period_id.id),
+                ("location_id", "=", rec.location_id.id),
+            ])
+            if duplicate:
+                raise ValidationError(_(
+                    "Ya existe una meta para el local %(location)s en el período %(period)s."
+                ) % {
+                    "location": rec.location_id.display_name,
+                    "period": rec.period_id.display_name,
+                })
+
+    def action_open_copy_wizard(self):
+        self.ensure_one()
+        return self.env["commission.goal.copy.wizard"].open_for(self)
+
+    def copy_to_period(self, destination_period):
+        self.ensure_one()
+        existing = self.search([
+            ("period_id", "=", destination_period.id),
+            ("location_id", "=", self.location_id.id),
+        ], limit=1)
+        if existing:
+            raise ValidationError(_(
+                "El período destino ya tiene una meta para el local %(location)s."
+            ) % {"location": self.location_id.display_name})
+        return self.create({
+            "period_id": destination_period.id,
+            "location_id": self.location_id.id,
+            "target_amount": self.target_amount,
+            "basis": self.basis,
+            "required_achievement": self.required_achievement,
+        })
 
 
 class CommissionManagerGoalRule(models.Model):
@@ -96,6 +205,107 @@ class CommissionManagerGoalRule(models.Model):
             ]
             rec.name = " - ".join(parts)
 
+    def _related_sellers(self):
+        self.ensure_one()
+        if not self.manager_id:
+            return self.env["commission.seller"]
+        return self.env["commission.seller"].search([
+            ("manager_id", "=", self.manager_id.id),
+            ("active", "=", True),
+            ("id", "!=", self.manager_id.id),
+        ], order="code, name")
+
+    def _seller_line_commands(self):
+        """Prepara líneas de vendedores relacionados aún no asignados."""
+        self.ensure_one()
+        sellers = self._related_sellers()
+        if not sellers:
+            return []
+
+        # No precarga un vendedor que ya esté asignado a otra gestión activa
+        # del mismo período. Así evitamos que el usuario llegue a un error al
+        # guardar por una duplicidad que podíamos anticipar en la pantalla.
+        if self.period_id:
+            domain = [
+                ("period_id", "=", self.period_id.id),
+                ("seller_id", "in", sellers.ids),
+                ("active", "=", True),
+                "|",
+                ("management_id", "=", False),
+                ("management_id.active", "=", True),
+            ]
+            if self._origin.id:
+                domain.append(("management_id", "!=", self._origin.id))
+            assigned = self.env["commission.manager.seller.rule"].search(domain).mapped("seller_id")
+            sellers -= assigned
+
+        return [
+            Command.create({
+                "seller_id": seller.id,
+                "minimum_type": "fixed",
+                "minimum_amount": 0.0,
+                "minimum_target_percent": 80.0,
+                "commission_percent": 0.0,
+                "basis": "net",
+                "active": True,
+            })
+            for seller in sellers
+        ]
+
+    @api.onchange("manager_id")
+    def _onchange_manager_id_load_sellers(self):
+        for rec in self:
+            # Cambiar administrador reemplaza el detalle por los vendedores
+            # actualmente relacionados al nuevo administrador.
+            rec.line_ids = [Command.clear()] + rec._seller_line_commands()
+
+    @api.onchange("period_id")
+    def _onchange_period_id_reload_available_sellers(self):
+        for rec in self:
+            if rec.manager_id and not rec._origin.id:
+                rec.line_ids = [Command.clear()] + rec._seller_line_commands()
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        clean_vals = []
+        Seller = self.env["commission.seller"]
+        RuleLine = self.env["commission.manager.seller.rule"]
+        for vals in vals_list:
+            vals = dict(vals)
+            # Para creaciones por código/API sin detalle explícito, aplica el
+            # mismo comportamiento que la pantalla: carga el equipo relacionado.
+            if vals.get("manager_id") and "line_ids" not in vals:
+                manager = Seller.browse(vals["manager_id"])
+                sellers = Seller.search([
+                    ("manager_id", "=", manager.id),
+                    ("active", "=", True),
+                    ("id", "!=", manager.id),
+                ], order="code, name")
+                if vals.get("period_id") and sellers:
+                    assigned_ids = RuleLine.search([
+                        ("period_id", "=", vals["period_id"]),
+                        ("seller_id", "in", sellers.ids),
+                        ("active", "=", True),
+                        "|",
+                        ("management_id", "=", False),
+                        ("management_id.active", "=", True),
+                    ]).mapped("seller_id").ids
+                    sellers = sellers.filtered(lambda s: s.id not in assigned_ids)
+                vals["line_ids"] = [
+                    Command.create({
+                        "seller_id": seller.id,
+                        "minimum_type": "fixed",
+                        "minimum_amount": 0.0,
+                        "minimum_target_percent": 80.0,
+                        "commission_percent": 0.0,
+                        "basis": "net",
+                        "active": True,
+                    })
+                    for seller in sellers
+                ]
+            clean_vals.append(vals)
+        return super().create(clean_vals)
+
     def write(self, vals):
         res = super().write(vals)
         if {"period_id", "manager_id", "location_id"} & set(vals):
@@ -109,6 +319,26 @@ class CommissionManagerGoalRule(models.Model):
             self.mapped("line_ids")._check_unique_active_seller_assignment()
         return res
 
+    @api.constrains("period_id", "manager_id", "location_id")
+    def _check_unique_management_parameter(self):
+        for rec in self:
+            if not rec.period_id or not rec.manager_id or not rec.location_id:
+                continue
+            duplicate = self.search_count([
+                ("id", "!=", rec.id),
+                ("period_id", "=", rec.period_id.id),
+                ("manager_id", "=", rec.manager_id.id),
+                ("location_id", "=", rec.location_id.id),
+            ])
+            if duplicate:
+                raise ValidationError(_(
+                    "Ya existe la gestión del administrador %(manager)s para el local %(location)s en el período %(period)s."
+                ) % {
+                    "manager": rec.manager_id.display_name,
+                    "location": rec.location_id.display_name,
+                    "period": rec.period_id.display_name,
+                })
+
     @api.constrains("manager_id", "line_ids")
     def _check_manager_not_in_lines(self):
         for rec in self:
@@ -116,6 +346,81 @@ class CommissionManagerGoalRule(models.Model):
                 raise ValidationError(_(
                     "El administrador no puede estar incluido como vendedor a su propio cargo."
                 ))
+
+    def action_load_related_sellers(self):
+        """Permite refrescar manualmente el equipo después de cambios maestros."""
+        self.ensure_one()
+        existing = self.line_ids.mapped("seller_id")
+        sellers = self._related_sellers() - existing
+
+        if self.period_id and sellers:
+            assigned = self.env["commission.manager.seller.rule"].search([
+                ("period_id", "=", self.period_id.id),
+                ("seller_id", "in", sellers.ids),
+                ("active", "=", True),
+                "|",
+                ("management_id", "=", False),
+                ("management_id.active", "=", True),
+                ("management_id", "!=", self.id),
+            ]).mapped("seller_id")
+            sellers -= assigned
+
+        if not sellers:
+            return True
+        self.write({
+            "line_ids": [
+                Command.create({
+                    "seller_id": seller.id,
+                    "minimum_type": "fixed",
+                    "minimum_amount": 0.0,
+                    "minimum_target_percent": 80.0,
+                    "commission_percent": 0.0,
+                    "basis": "net",
+                    "active": True,
+                })
+                for seller in sellers
+            ]
+        })
+        return True
+
+    def action_open_copy_wizard(self):
+        self.ensure_one()
+        return self.env["commission.goal.copy.wizard"].open_for(self)
+
+    def copy_to_period(self, destination_period):
+        self.ensure_one()
+        existing = self.search([
+            ("period_id", "=", destination_period.id),
+            ("manager_id", "=", self.manager_id.id),
+            ("location_id", "=", self.location_id.id),
+        ], limit=1)
+        if existing:
+            raise ValidationError(_(
+                "El período destino ya tiene una gestión para %(manager)s / %(location)s."
+            ) % {
+                "manager": self.manager_id.display_name,
+                "location": self.location_id.display_name,
+            })
+
+        line_commands = []
+        for line in self.line_ids:
+            line_commands.append(Command.create({
+                "seller_id": line.seller_id.id,
+                "minimum_type": line.minimum_type,
+                "minimum_amount": line.minimum_amount,
+                "minimum_target_percent": line.minimum_target_percent,
+                "commission_percent": line.commission_percent,
+                "basis": line.basis,
+                "active": line.active,
+            }))
+
+        return self.create({
+            "period_id": destination_period.id,
+            "manager_id": self.manager_id.id,
+            "location_id": self.location_id.id,
+            "active": self.active,
+            "line_ids": line_commands,
+        })
 
 
 class CommissionManagerSellerRule(models.Model):
@@ -246,7 +551,9 @@ class CommissionManagerSellerRule(models.Model):
                     "location_id": management.location_id.id,
                 })
             clean_vals.append(vals)
-        return super().create(clean_vals)
+        records = super().create(clean_vals)
+        records._check_unique_active_seller_assignment()
+        return records
 
     def write(self, vals):
         vals = dict(vals)
@@ -266,6 +573,7 @@ class CommissionManagerSellerRule(models.Model):
             }
             if current != expected:
                 super(CommissionManagerSellerRule, rec).write(expected)
+        self._check_unique_active_seller_assignment()
         return res
 
     @api.depends(

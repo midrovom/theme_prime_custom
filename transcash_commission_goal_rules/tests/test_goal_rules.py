@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from odoo.tests.common import TransactionCase
 
 
@@ -205,3 +207,77 @@ class TestCommissionGoalRules(TransactionCase):
         result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
         self.assertEqual(settlement.action_print_settlement()["type"], "ir.actions.report")
         self.assertEqual(result.action_print_individual()["type"], "ir.actions.report")
+
+    def test_selecting_manager_loads_related_sellers(self):
+        management = self.env["commission.manager.goal.rule"].new({
+            "period_id": self.period.id,
+            "location_id": self.loc_a.id,
+        })
+        management.manager_id = self.manager
+        management._onchange_manager_id_load_sellers()
+        self.assertEqual(
+            set(management.line_ids.mapped("seller_id").ids),
+            {self.seller_1.id, self.seller_2.id},
+        )
+
+    def test_create_management_without_lines_loads_related_sellers(self):
+        management = self.env["commission.manager.goal.rule"].create({
+            "period_id": self.period.id,
+            "manager_id": self.manager.id,
+            "location_id": self.loc_a.id,
+        })
+        self.assertEqual(
+            set(management.line_ids.mapped("seller_id").ids),
+            {self.seller_1.id, self.seller_2.id},
+        )
+
+    def test_duplicate_period_copies_all_goal_parameters(self):
+        target = self._target(self.seller_1, amount=1500.0, rate=2.0)
+        self._location_target(amount=5000.0)
+        management = self._management([{
+            "seller_id": self.seller_1.id,
+            "minimum_type": "fixed",
+            "minimum_amount": 600.0,
+            "commission_percent": 0.75,
+            "basis": "net",
+        }])
+
+        new_period = self.period.copy()
+
+        self.assertEqual(new_period.state, "draft")
+        self.assertEqual(new_period.date_start, self.period.date_end + timedelta(days=1))
+        self.assertFalse(new_period.settlement_id)
+        self.assertEqual(len(new_period.target_ids), 1)
+        self.assertEqual(new_period.target_ids.seller_id, self.seller_1)
+        self.assertEqual(new_period.target_ids.target_amount, target.target_amount)
+        self.assertEqual(len(new_period.target_ids.tier_ids), len(target.tier_ids))
+        self.assertEqual(len(new_period.location_target_ids), 1)
+        self.assertEqual(len(new_period.manager_goal_rule_ids), 1)
+        copied_management = new_period.manager_goal_rule_ids
+        self.assertEqual(copied_management.manager_id, management.manager_id)
+        self.assertEqual(copied_management.location_id, management.location_id)
+        self.assertEqual(len(copied_management.line_ids), 1)
+        self.assertAlmostEqual(copied_management.line_ids.commission_percent, 0.75, places=4)
+
+    def test_copy_single_target_to_other_period(self):
+        target = self._target(self.seller_1, amount=1200.0, rate=1.5)
+        destination = self.Period.create({
+            "name": "Destino copia",
+            "date_start": "2026-06-01",
+            "date_end": "2026-06-30",
+        })
+        copied = target.copy_to_period(destination)
+        self.assertEqual(copied.period_id, destination)
+        self.assertEqual(copied.seller_id, self.seller_1)
+        self.assertAlmostEqual(copied.target_amount, 1200.0, places=4)
+        self.assertEqual(len(copied.tier_ids), 1)
+
+    def test_duplicate_seller_target_same_period_is_blocked(self):
+        self._target(self.seller_1, amount=1000.0)
+        with self.assertRaises(Exception):
+            self.env["commission.seller.target"].create({
+                "period_id": self.period.id,
+                "seller_id": self.seller_1.id,
+                "target_amount": 2000.0,
+                "basis": "net",
+            })

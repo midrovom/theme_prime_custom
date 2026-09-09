@@ -1,46 +1,83 @@
 # Transcash Commissions - Metas y Liquidaciones
 
-Módulo de extensión para Odoo 18. Depende únicamente de `transcash_commission` y modifica la lógica de metas, gestión de administradores y reportes de liquidación.
+Extensión para Odoo 18 que se instala sobre `transcash_commission`. Esta versión mantiene la lógica trabajada de metas y liquidaciones e incorpora carga automática de vendedores relacionados y duplicación controlada de parámetros.
 
-## Funcionalidad
+## Funcionalidad vigente
 
-- La meta del vendedor es global al período y **no depende de localidad**.
-- Solo vendedores con meta activa generan una fila en la liquidación.
-- La gestión del administrador se configura en una cabecera por **Período + Administrador + Local**.
-- En la cabecera se agregan los vendedores a cargo como líneas.
-- Cada vendedor puede tener su propio mínimo administrativo:
-  - monto fijo; o
-  - porcentaje de su propia meta.
-- Cada vendedor tiene un porcentaje específico de comisión para el administrador.
-- El vendedor debe superar su mínimo administrativo y el local de la cabecera debe cumplir su meta.
-- Las ventas usadas para comprobar el mínimo y calcular la gestión son todas las ventas del vendedor en el período; la localidad solo se usa como condición de habilitación.
-- Se evita que el mismo vendedor quede asignado activamente más de una vez en un mismo período.
-- Incluye PDF consolidado de liquidación y PDF individual por vendedor.
+### Metas de vendedores
+- La meta del vendedor es global al período; no depende de localidad.
+- Todas las ventas del vendedor dentro del período participan en su cumplimiento.
+- Solo puede existir una meta por vendedor y período.
+- Los rangos de cumplimiento no pueden repetirse dentro de la misma meta.
+- Los vendedores sin meta no se generan en la liquidación ni aparecen en los PDF.
 
-## Corrección de actualización 18.0.1.2.0
+### Gestión de administradores
+La cabecera se configura por:
+- período;
+- administrador;
+- local cuya meta debe cumplirse.
 
-La versión anterior intentaba agrupar reglas históricas desde `model.init()`. Durante la actualización del registro de Odoo, ese código podía ejecutarse antes de que PostgreSQL creara la columna nueva `management_id`, produciendo:
+Al seleccionar el administrador, el detalle carga automáticamente todos los vendedores activos cuyo campo `Administrador responsable` (`commission.seller.manager_id`) apunta a ese administrador.
 
-`psycopg2.errors.UndefinedColumn: column r.management_id does not exist`
+Cada vendedor del detalle tiene sus propios parámetros:
+- tipo de mínimo: monto fijo o porcentaje de su meta;
+- mínimo de venta / porcentaje mínimo;
+- porcentaje específico de comisión para el administrador;
+- base de cálculo;
+- activo.
 
-En `18.0.1.2.0` se eliminó completamente esa migración de `init()` y se movió a:
+El administrador cobra por un vendedor únicamente cuando:
+1. el vendedor supera el mínimo administrativo configurado en su línea; y
+2. el local de la cabecera cumple su meta.
 
-`upgrades/18.0.1.2.0/post-10-group-manager-lines.py`
+La meta propia del vendedor sigue siendo independiente de esta condición, salvo cuando el tipo de mínimo se define expresamente como `% de la meta del vendedor`.
 
-La fase `post` se ejecuta después de que Odoo haya cargado y actualizado el esquema del módulo. El script verifica además que la tabla y la columna existan antes de migrar y es seguro ante reintentos.
+El botón **Cargar vendedores relacionados** permite agregar nuevos vendedores que hayan sido relacionados al administrador después de crear la configuración.
 
-## Cómo actualizar después del RPC_ERROR
+## Duplicación
 
-1. Reemplazar la carpeta `transcash_commission_goal_rules` del servidor por la incluida en este ZIP.
-2. Reiniciar el servicio de Odoo para que cargue el código nuevo.
-3. Actualizar la lista de aplicaciones si fuera necesario.
-4. Ejecutar **Actualizar** sobre `Transcash Commissions - Metas y Liquidaciones`.
+### Duplicar período y metas
+En el formulario del período existe el botón **Duplicar período y metas**.
 
-No es necesario crear manualmente `management_id` ni ejecutar SQL en PostgreSQL.
+El sistema:
+1. crea un nuevo período en borrador;
+2. mantiene la misma duración;
+3. busca automáticamente el siguiente rango de fechas disponible para evitar solapamientos;
+4. copia las metas de vendedores con todos sus rangos;
+5. copia las metas locales;
+6. copia las configuraciones de gestión de administradores con todos sus vendedores y porcentajes;
+7. no copia ninguna liquidación calculada.
 
-## Dependencia
+### Duplicar un parámetro individual
+En las metas de vendedor, metas de local y gestión de administrador aparece **Duplicar a otro período**.
 
-- `transcash_commission`
-- `web`
+Se utiliza un asistente para escoger el período destino. El destino debe estar en borrador y ser diferente del período origen.
 
-Versión: `18.0.1.2.0`
+No se permite duplicar el mismo parámetro dentro del mismo período. Esto evita crear configuraciones ambiguas al usar la función estándar de Odoo `Duplicar`.
+
+## Validaciones contra duplicados
+
+El módulo impide guardar:
+- dos metas para el mismo vendedor y período;
+- dos metas para el mismo local y período;
+- dos gestiones para el mismo administrador + local + período;
+- el mismo vendedor dos veces dentro de una gestión;
+- el mismo vendedor en dos gestiones activas del mismo período;
+- dos rangos idénticos de cumplimiento dentro de una meta de vendedor.
+
+## Reportes
+- PDF consolidado de la liquidación.
+- PDF individual por vendedor.
+- Los vendedores sin meta se excluyen de ambos procesos de liquidación.
+
+## Actualización
+
+Versión técnica: `18.0.1.3.0`.
+
+Para actualizar desde la versión anterior:
+1. reemplazar la carpeta `transcash_commission_goal_rules`;
+2. reiniciar Odoo;
+3. actualizar la lista de aplicaciones si corresponde;
+4. ejecutar **Actualizar** sobre el módulo.
+
+No es necesario ejecutar SQL manual.
