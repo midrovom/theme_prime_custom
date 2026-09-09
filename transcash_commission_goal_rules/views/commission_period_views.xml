@@ -13,6 +13,11 @@
             <xpath expr="//page[.//field[@name='target_ids']]" position="attributes">
                 <attribute name="string">Metas vendedores</attribute>
             </xpath>
+            <xpath expr="//page[.//field[@name='target_ids']]//field[@name='target_amount']" position="after">
+                <field name="calculation_mode"/>
+                <field name="minimum_achievement" optional="show"/>
+                <field name="full_commission_percent" optional="show"/>
+            </xpath>
 
             <!-- Proyectos pasan a formar parte de la misma configuración mensual. -->
             <xpath expr="//page[.//field[@name='target_ids']]" position="after">

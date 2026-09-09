@@ -142,18 +142,47 @@ class CommissionSettlement(models.Model):
             if target.target_amount
             else 0.0
         )
-        tiers = target.tier_ids.sorted(lambda tier: tier.min_achievement)
-        eligible_tiers = tiers.filtered(
-            lambda tier: achievement >= tier.min_achievement
-            and (not tier.max_achievement or achievement <= tier.max_achievement)
-        )
-        tier = (
-            eligible_tiers[-1]
-            if eligible_tiers
-            else self.env["commission.seller.target.tier"]
-        )
-        rate = tier.commission_percent if tier else 0.0
-        commission = basis_amount * rate / 100.0
+        if target.calculation_mode == "proportional":
+            eligible = achievement >= target.minimum_achievement
+            capped_achievement = min(max(achievement, 0.0), 100.0)
+            rate = (
+                target.full_commission_percent * capped_achievement / 100.0
+                if eligible
+                else 0.0
+            )
+            commission = basis_amount * rate / 100.0
+            description = _(
+                "Meta %(target).2f - cumplimiento %(achievement).2f%% - "
+                "mínimo %(minimum).2f%% - comisión al 100%% %(full_rate).4f%% - "
+                "tasa efectiva %(rate).4f%% - todas las localidades"
+            ) % {
+                "target": target.target_amount,
+                "achievement": achievement,
+                "minimum": target.minimum_achievement,
+                "full_rate": target.full_commission_percent,
+                "rate": rate,
+            }
+        else:
+            tiers = target.tier_ids.sorted(lambda tier: tier.min_achievement)
+            eligible_tiers = tiers.filtered(
+                lambda tier: achievement >= tier.min_achievement
+                and (not tier.max_achievement or achievement <= tier.max_achievement)
+            )
+            tier = (
+                eligible_tiers[-1]
+                if eligible_tiers
+                else self.env["commission.seller.target.tier"]
+            )
+            eligible = bool(tier)
+            rate = tier.commission_percent if tier else 0.0
+            commission = basis_amount * rate / 100.0
+            description = _(
+                "Meta %(target).2f - cumplimiento %(achievement).2f%% - "
+                "cálculo por rangos - todas las localidades"
+            ) % {
+                "target": target.target_amount,
+                "achievement": achievement,
+            }
 
         result.standard_sales = basis_amount
         result.target_amount = target.target_amount
@@ -163,16 +192,11 @@ class CommissionSettlement(models.Model):
         Detail.create({
             "result_id": result.id,
             "detail_type": "standard",
-            "description": _(
-                "Meta %(target).2f - cumplimiento %(achievement).2f%% - todas las localidades"
-            ) % {
-                "target": target.target_amount,
-                "achievement": achievement,
-            },
+            "description": description,
             "basis_amount": basis_amount,
             "rate": rate,
             "amount": commission,
-            "eligible": bool(tier),
+            "eligible": eligible,
         })
 
     def _calculate_manager_commission(

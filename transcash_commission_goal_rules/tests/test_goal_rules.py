@@ -352,3 +352,82 @@ class TestCommissionGoalRules(TransactionCase):
                 "target_amount": 2000.0,
                 "basis": "net",
             })
+
+    def test_proportional_target_pays_equivalent_rate_after_minimum(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 35000.0,
+            "basis": "net",
+            "calculation_mode": "proportional",
+            "minimum_achievement": 80.0,
+            "full_commission_percent": 2.0,
+        })
+        self.assertEqual(target.calculation_mode, "proportional")
+        self._sale("GR-PROP-1", self.seller_1, self.loc_a, 32000.0)
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+
+        achievement = 32000.0 / 35000.0 * 100.0
+        effective_rate = 2.0 * achievement / 100.0
+        expected_commission = 32000.0 * effective_rate / 100.0
+        self.assertAlmostEqual(result.achievement_percent, achievement, places=4)
+        self.assertAlmostEqual(result.standard_commission, expected_commission, places=4)
+        detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
+        self.assertAlmostEqual(detail.rate, effective_rate, places=4)
+        self.assertTrue(detail.eligible)
+
+    def test_proportional_target_does_not_pay_below_minimum(self):
+        self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 35000.0,
+            "basis": "net",
+            "calculation_mode": "proportional",
+            "minimum_achievement": 80.0,
+            "full_commission_percent": 2.0,
+        })
+        self._sale("GR-PROP-MIN", self.seller_1, self.loc_a, 27000.0)
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+        self.assertAlmostEqual(result.standard_commission, 0.0, places=4)
+        detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
+        self.assertFalse(detail.eligible)
+
+    def test_proportional_target_caps_rate_at_full_commission(self):
+        self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 35000.0,
+            "basis": "net",
+            "calculation_mode": "proportional",
+            "minimum_achievement": 80.0,
+            "full_commission_percent": 2.0,
+        })
+        self._sale("GR-PROP-CAP", self.seller_1, self.loc_a, 42000.0)
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+        self.assertAlmostEqual(result.achievement_percent, 120.0, places=4)
+        self.assertAlmostEqual(result.standard_commission, 840.0, places=4)
+        detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
+        self.assertAlmostEqual(detail.rate, 2.0, places=4)
+
+    def test_duplicate_period_copies_proportional_target_configuration(self):
+        self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 35000.0,
+            "basis": "net",
+            "calculation_mode": "proportional",
+            "minimum_achievement": 80.0,
+            "full_commission_percent": 2.0,
+        })
+
+        new_period = self.period.copy()
+        copied = new_period.target_ids.filtered(lambda t: t.seller_id == self.seller_1)
+        self.assertEqual(copied.calculation_mode, "proportional")
+        self.assertAlmostEqual(copied.minimum_achievement, 80.0, places=4)
+        self.assertAlmostEqual(copied.full_commission_percent, 2.0, places=4)

@@ -5,6 +5,50 @@ from odoo.exceptions import ValidationError
 class CommissionSellerTarget(models.Model):
     _inherit = "commission.seller.target"
 
+    calculation_mode = fields.Selection(
+        [
+            ("tier", "Por rangos"),
+            ("proportional", "Proporcional desde mínimo"),
+        ],
+        string="Cálculo de comisión",
+        default="tier",
+        required=True,
+        help=(
+            "Por rangos conserva la lógica tradicional. Proporcional desde mínimo "
+            "paga una fracción del porcentaje acordado según el cumplimiento de la meta."
+        ),
+    )
+    minimum_achievement = fields.Float(
+        string="Cumplimiento mínimo (%)",
+        default=80.0,
+        digits=(16, 4),
+        help=(
+            "En modo proporcional, por debajo de este cumplimiento no se paga comisión. "
+            "Ej.: 80 significa que debe alcanzar al menos 80% de la meta."
+        ),
+    )
+    full_commission_percent = fields.Float(
+        string="Comisión al 100% (%)",
+        default=0.0,
+        digits=(16, 4),
+        help=(
+            "Porcentaje acordado cuando el vendedor alcanza o supera el 100% de su meta. "
+            "Entre el mínimo y el 100%, se paga proporcionalmente al cumplimiento."
+        ),
+    )
+
+    @api.constrains("calculation_mode", "minimum_achievement", "full_commission_percent")
+    def _check_proportional_configuration(self):
+        for rec in self:
+            if rec.minimum_achievement < 0 or rec.minimum_achievement > 100:
+                raise ValidationError(_(
+                    "El cumplimiento mínimo debe estar entre 0% y 100%."
+                ))
+            if rec.full_commission_percent < 0:
+                raise ValidationError(_(
+                    "El porcentaje de comisión al 100% no puede ser negativo."
+                ))
+
     @api.model_create_multi
     def create(self, vals_list):
         # La meta del vendedor es global al período y no depende de localidad.
@@ -73,6 +117,9 @@ class CommissionSellerTarget(models.Model):
             "seller_id": self.seller_id.id,
             "target_amount": self.target_amount,
             "basis": self.basis,
+            "calculation_mode": self.calculation_mode,
+            "minimum_achievement": self.minimum_achievement,
+            "full_commission_percent": self.full_commission_percent,
             "active": self.active,
         })
         for tier in self.tier_ids:

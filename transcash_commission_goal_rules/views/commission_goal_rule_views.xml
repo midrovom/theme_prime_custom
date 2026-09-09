@@ -5,6 +5,11 @@
         <field name="inherit_id" ref="transcash_commission.view_commission_seller_target_list"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='location_id']" position="replace"/>
+            <xpath expr="//field[@name='target_amount']" position="after">
+                <field name="calculation_mode"/>
+                <field name="minimum_achievement" optional="show"/>
+                <field name="full_commission_percent" optional="show"/>
+            </xpath>
         </field>
     </record>
 
@@ -17,6 +22,17 @@
                 <attribute name="duplicate">false</attribute>
             </xpath>
             <xpath expr="//field[@name='location_id']" position="replace"/>
+            <xpath expr="//field[@name='target_amount']" position="after">
+                <field name="calculation_mode"/>
+                <field name="minimum_achievement" invisible="calculation_mode != 'proportional'"/>
+                <field name="full_commission_percent" invisible="calculation_mode != 'proportional'"/>
+            </xpath>
+            <xpath expr="//separator[@string='Rangos de cumplimiento']" position="attributes">
+                <attribute name="invisible">calculation_mode == 'proportional'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='tier_ids']" position="attributes">
+                <attribute name="invisible">calculation_mode == 'proportional'</attribute>
+            </xpath>
             <xpath expr="//sheet" position="before">
                 <header>
                     <button name="action_open_copy_wizard" type="object" string="Duplicar a otro período" class="btn-secondary"/>
