@@ -27,7 +27,7 @@
                 <field name="minimum_achievement" invisible="calculation_mode != 'proportional'"/>
                 <field name="full_commission_percent" invisible="calculation_mode != 'proportional'"/>
             </xpath>
-            <xpath expr="//sheet//separator[1]" position="attributes">
+            <xpath expr="//separator[@string='Rangos de cumplimiento']" position="attributes">
                 <attribute name="invisible">calculation_mode == 'proportional'</attribute>
             </xpath>
             <xpath expr="//field[@name='tier_ids']" position="attributes">
@@ -131,6 +131,15 @@
         </field>
     </record>
 
+    <record id="view_commission_liquidation_rule_list_goal_rules" model="ir.ui.view">
+        <field name="name">commission.liquidation.rule.list.goal.rules</field>
+        <field name="model">commission.liquidation.rule</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_liquidation_rule_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='location_id']" position="replace"/>
+        </field>
+    </record>
+
     <record id="view_commission_liquidation_rule_form_goal_rules" model="ir.ui.view">
         <field name="name">commission.liquidation.rule.form.goal.rules</field>
         <field name="model">commission.liquidation.rule</field>
@@ -139,6 +148,7 @@
             <xpath expr="//form" position="attributes">
                 <attribute name="duplicate">false</attribute>
             </xpath>
+            <xpath expr="//field[@name='location_id']" position="replace"/>
         </field>
     </record>
 

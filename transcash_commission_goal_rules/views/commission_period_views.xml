@@ -56,6 +56,12 @@
             <xpath expr="//page[.//field[@name='liquidation_rule_ids']]" position="attributes">
                 <attribute name="string">Bono liquidación</attribute>
             </xpath>
+            <xpath expr="//page[.//field[@name='liquidation_rule_ids']]//field[@name='location_id']" position="replace"/>
+            <xpath expr="//page[.//field[@name='liquidation_rule_ids']]//field[@name='liquidation_rule_ids']" position="after">
+                <div class="alert alert-info mt-2" role="alert">
+                    El bono de liquidación se calcula con las ventas y m² del vendedor en todas las localidades. La localidad no interviene en la elegibilidad ni en el cálculo.
+                </div>
+            </xpath>
         </field>
     </record>
 

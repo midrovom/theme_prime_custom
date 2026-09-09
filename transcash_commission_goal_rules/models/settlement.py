@@ -124,7 +124,18 @@ class CommissionSettlement(models.Model):
             result._recompute_total()
 
     def _calculate_standard_commission(self, result, seller, seller_sales, Detail):
-        """La meta/comisión propia del vendedor no depende de localidad."""
+        """Seller commission is always proportional once the minimum is reached.
+
+        The seller target is global for the period (all locations). The
+        effective commission rate is:
+
+            full commission rate * min(achievement, 100%) / 100
+
+        Below the configured minimum achievement the commission is zero.
+        Legacy tier configurations are interpreted as configuration sources by
+        ``_get_proportional_parameters`` so old periods also recalculate with
+        the proportional business rule.
+        """
         targets = self.period_id.target_ids.filtered(
             lambda target: target.seller_id == seller and target.active
         )
@@ -142,47 +153,28 @@ class CommissionSettlement(models.Model):
             if target.target_amount
             else 0.0
         )
-        if target.calculation_mode == "proportional":
-            eligible = achievement >= target.minimum_achievement
-            capped_achievement = min(max(achievement, 0.0), 100.0)
-            rate = (
-                target.full_commission_percent * capped_achievement / 100.0
-                if eligible
-                else 0.0
-            )
-            commission = basis_amount * rate / 100.0
-            description = _(
-                "Meta %(target).2f - cumplimiento %(achievement).2f%% - "
-                "mínimo %(minimum).2f%% - comisión al 100%% %(full_rate).4f%% - "
-                "tasa efectiva %(rate).4f%% - todas las localidades"
-            ) % {
-                "target": target.target_amount,
-                "achievement": achievement,
-                "minimum": target.minimum_achievement,
-                "full_rate": target.full_commission_percent,
-                "rate": rate,
-            }
-        else:
-            tiers = target.tier_ids.sorted(lambda tier: tier.min_achievement)
-            eligible_tiers = tiers.filtered(
-                lambda tier: achievement >= tier.min_achievement
-                and (not tier.max_achievement or achievement <= tier.max_achievement)
-            )
-            tier = (
-                eligible_tiers[-1]
-                if eligible_tiers
-                else self.env["commission.seller.target.tier"]
-            )
-            eligible = bool(tier)
-            rate = tier.commission_percent if tier else 0.0
-            commission = basis_amount * rate / 100.0
-            description = _(
-                "Meta %(target).2f - cumplimiento %(achievement).2f%% - "
-                "cálculo por rangos - todas las localidades"
-            ) % {
-                "target": target.target_amount,
-                "achievement": achievement,
-            }
+
+        minimum_achievement, full_rate = target._get_proportional_parameters()
+        eligible = achievement >= minimum_achievement and full_rate > 0.0
+        capped_achievement = min(max(achievement, 0.0), 100.0)
+        rate = (
+            full_rate * capped_achievement / 100.0
+            if eligible
+            else 0.0
+        )
+        commission = basis_amount * rate / 100.0
+
+        description = _(
+            "Meta %(target).2f - cumplimiento %(achievement).2f%% - "
+            "mínimo %(minimum).2f%% - comisión al 100%% %(full_rate).4f%% - "
+            "tasa proporcional %(rate).4f%% - todas las localidades"
+        ) % {
+            "target": target.target_amount,
+            "achievement": achievement,
+            "minimum": minimum_achievement,
+            "full_rate": full_rate,
+            "rate": rate,
+        }
 
         result.standard_sales = basis_amount
         result.target_amount = target.target_amount
@@ -196,6 +188,54 @@ class CommissionSettlement(models.Model):
             "basis_amount": basis_amount,
             "rate": rate,
             "amount": commission,
+            "eligible": eligible,
+        })
+
+    def _calculate_liquidation_bonus(self, result, seller, seller_sales, Detail):
+        """Liquidation bonus is global per seller and never depends on location."""
+        period = self.period_id
+        rules = period.liquidation_rule_ids.filtered(
+            lambda rule: not rule.seller_id or rule.seller_id == seller
+        )
+        if not rules:
+            return
+
+        # A seller-specific rule wins over a generic rule. Legacy databases may
+        # contain several historical location-specific rows; location is ignored
+        # and only the latest applicable rule is used to prevent double payment.
+        rule = rules.sorted(lambda r: (bool(r.seller_id), r.id))[-1]
+
+        lines = seller_sales.filtered(
+            lambda line: abs((line.price_indicator or 0.0) - rule.indicator_value) < 0.000001
+        )
+        sales_amount = sum(line.amount_for_basis(rule.basis) for line in lines)
+        m2 = sum(
+            (line.quantity or 0.0) * (line.document_sign or 1.0)
+            for line in lines
+        )
+        eligible = sales_amount >= rule.min_sales_amount
+        bonus = max(m2, 0.0) * rule.amount_per_m2 if eligible else 0.0
+
+        result.liquidation_sales += sales_amount
+        result.liquidation_m2 += m2
+        result.liquidation_bonus += bonus
+
+        Detail.create({
+            "result_id": result.id,
+            "detail_type": "liquidation",
+            "description": _(
+                "Liquidación (todas las localidades): mínimo %(minimum).2f; "
+                "ventas %(sales).2f; m² %(m2).2f"
+            ) % {
+                "minimum": rule.min_sales_amount,
+                "sales": sales_amount,
+                "m2": m2,
+            },
+            "location_id": False,
+            "basis_amount": sales_amount,
+            "quantity": m2,
+            "rate": rule.amount_per_m2,
+            "amount": bonus,
             "eligible": eligible,
         })
 

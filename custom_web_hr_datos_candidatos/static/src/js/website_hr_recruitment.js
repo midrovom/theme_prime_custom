@@ -187,6 +187,27 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             </div>
         ` : "";
 
+        const noTieneBlock = `
+            <div class="form-check">
+                <input
+                    class="form-check-input fam-no-tiene"
+                    type="checkbox"
+                    name="famNoTiene_${this.familyCount}"
+                    value="1"
+                />
+                <label class="form-check-label fs-6">
+                    No tiene
+                </label>
+            </div>
+        `;
+
+        const estadoFamiliarBlock = `
+            <div class="col-12 d-flex align-items-center mb-3">
+                ${fallecidoBlock}
+                ${noTieneBlock}
+            </div>
+        `;
+
         const block = `
             <div class="row d-flex justify-content-center family-block" data-type="${parentesco}">
                 <div class="col-12 col-md-10">
@@ -194,7 +215,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <span class="fw-normal fs-4 text-info">${parentesco}</span>
                     </div>
 
-                    ${fallecidoBlock}
+                    ${estadoFamiliarBlock}
 
                     <div class="row g-3">
                         <!-- Apellido paterno -->
@@ -1873,6 +1894,111 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Handlers
     //----------------------------------------------------------------------
 
+    // _onNextClick(ev) {
+    //     ev.preventDefault();
+
+    //     if (this._validateCurrentStep1()) {
+    //         this.$('#form-step-1').addClass('d-none');
+    //         this.$('#form-step-2').removeClass('d-none');
+    //         const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
+    //         this.$('.family-block[data-type="Hijo"]').remove();
+    //         const AUTO_FAMILY = ["Padre", "Madre", "Conyugue"];
+    //         AUTO_FAMILY.forEach(tipo => {
+    //             if (this.$(`.family-block[data-type="${tipo}"]`).length === 0) {
+    //                 this.familyCount++;
+    //                 const index = this.familyCount;
+    //                 this._getFamilyBlock(tipo).then(blockHtml => {
+    //                     const block = $(blockHtml);
+
+    //                     // =====================================================
+    //                     // TIPO DE FAMILIAR
+    //                     // Siempre debe enviarse, incluso si está fallecido
+    //                     // =====================================================
+    //                     const tipoVal =
+    //                         tipo === "Padre" ? "1" :
+    //                         tipo === "Madre" ? "2" :
+    //                         tipo === "Conyugue" ? "4" :
+    //                         tipo;
+
+    //                     block.prepend(`
+    //                         <input
+    //                             type="hidden"
+    //                             name="famTipo_${index}"
+    //                             value="${tipoVal}"
+    //                         />
+    //                     `);
+
+    //                     this.$('#family_container').append(block);
+
+    //                     // FALLECIDO
+
+    //                     const fallecidoCheck = block.find(
+    //                         `input[name="famFallecido_${index}"]`
+    //                     );
+
+    //                     if (fallecidoCheck.length) {
+    //                         fallecidoCheck.on("change", () => {
+    //                             const disabled = fallecidoCheck.is(":checked");
+    //                             const $fields = block.find("input:not([type='hidden']):not([name^='famFallecido_']), select, textarea");
+    //                             $fields.prop("disabled", disabled);
+    //                             $fields.prop("required", !disabled);
+
+    //                             if (disabled) {
+
+    //                                 $fields.val("");
+    //                                 $fields.removeClass("is-invalid");
+    //                                 $fields.siblings(".error-message").hide();
+    //                                 block.find(`input[name="famNombre_${index}"]`).val("FALLECIDO");
+
+    //                             } else {
+    //                                 block.find(`input[name="famNombre_${index}"]`).val("");
+    //                             }
+    //                         });
+    //                     }
+
+    //                     this.$(`input[name="famDisc_${index}"]`).on(
+    //                         'change',
+    //                         () => {
+    //                             this._toggleFamilyDisability(index);
+    //                         }
+    //                     );
+
+    //                     this._toggleFamilyDisability(index);
+    //                 });
+    //             }
+    //         });
+
+    //         // HIJOS
+
+    //         if (!isNaN(numHijos) && numHijos > 0) {
+    //             for (let i = 0; i < numHijos; i++) {
+    //                 this.familyCount++;
+    //                 const index = this.familyCount;
+    //                 this._getFamilyBlock("Hijo").then(blockHtml => {
+    //                     const block = $(blockHtml);
+    //                     block.prepend(`
+    //                         <input
+    //                             type="hidden"
+    //                             name="famTipo_${index}"
+    //                             value="5"
+    //                         />
+    //                     `);
+
+    //                     this.$('#family_container').append(block);
+    //                     this.$(`input[name="famDisc_${index}"]`).on(
+    //                         'change',
+    //                         () => {
+    //                             this._toggleFamilyDisability(index);
+    //                         }
+    //                     );
+
+    //                     this._toggleFamilyDisability(index);
+    //                 });
+    //             }
+    //         }
+    //     }
+    // },
+
     _onNextClick(ev) {
         ev.preventDefault();
 
@@ -1881,18 +2007,22 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$('#form-step-2').removeClass('d-none');
             const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
             this.$('.family-block[data-type="Hijo"]').remove();
-            const AUTO_FAMILY = ["Padre", "Madre", "Conyugue"];
+            const AUTO_FAMILY = [
+                "Padre",
+                "Madre",
+                "Conyugue"
+            ];
+
             AUTO_FAMILY.forEach(tipo => {
-                if (this.$(`.family-block[data-type="${tipo}"]`).length === 0) {
+
+                if (
+                    this.$(`.family-block[data-type="${tipo}"]`).length === 0
+                ) {
+
                     this.familyCount++;
                     const index = this.familyCount;
-                    this._getFamilyBlock(tipo).then(blockHtml => {
+                    this._getFamilyBlock(tipo, index).then(blockHtml => {
                         const block = $(blockHtml);
-
-                        // =====================================================
-                        // TIPO DE FAMILIAR
-                        // Siempre debe enviarse, incluso si está fallecido
-                        // =====================================================
                         const tipoVal =
                             tipo === "Padre" ? "1" :
                             tipo === "Madre" ? "2" :
@@ -1908,35 +2038,121 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         `);
 
                         this.$('#family_container').append(block);
+                        const $fallecidoCheck = block.find(`input[name="famFallecido_${index}"]`);
+                        const $noTieneCheck = block.find(`input[name="famNoTiene_${index}"]`);
+                        const aplicarEstadoFamiliar = () => {
+                            const fallecido = $fallecidoCheck.is(":checked");
+                            const noTiene = $noTieneCheck.is(":checked");
+                            if (fallecido) {
+                                $noTieneCheck.prop("checked", false);
+                            }
 
-                        // FALLECIDO
+                            if (noTiene) {
+                                $fallecidoCheck.prop("checked", false);
+                            }
 
-                        const fallecidoCheck = block.find(
-                            `input[name="famFallecido_${index}"]`
-                        );
+                            const bloqueado = fallecido || noTiene;
+                            const $fields = block.find(
+                                "input:not([type='hidden']), select, textarea"
+                            ).filter(function () {
 
-                        if (fallecidoCheck.length) {
-                            fallecidoCheck.on("change", () => {
-                                const disabled = fallecidoCheck.is(":checked");
-                                const $fields = block.find("input:not([type='hidden']):not([name^='famFallecido_']), select, textarea");
-                                $fields.prop("disabled", disabled);
-                                $fields.prop("required", !disabled);
-
-                                if (disabled) {
-
-                                    $fields.val("");
-                                    $fields.removeClass("is-invalid");
-                                    $fields.siblings(".error-message").hide();
-                                    block.find(`input[name="famNombre_${index}"]`).val("FALLECIDO");
-
-                                } else {
-                                    block.find(`input[name="famNombre_${index}"]`).val("");
-                                }
+                                const name = $(this).attr("name") || "";
+                                return (
+                                    !name.startsWith("famFallecido_") &&
+                                    !name.startsWith("famNoTiene_")
+                                );
                             });
+
+                            $fields.prop("disabled", bloqueado);
+                            if (bloqueado) {
+
+                                $fields.prop("required", false);
+                                $fields.val("");
+                                $fields
+                                    .filter(":radio, :checkbox")
+                                    .prop("checked", false);
+
+                                $fields.removeClass("is-invalid");
+                                $fields
+                                    .siblings(".error-message")
+                                    .hide();
+
+                            } else {
+
+                                block.find(
+                                    `input[name="famApellidoPaterno_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famApellidoMaterno_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famPrimerNombre_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `select[name="famTipoDoc_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famFecha_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famTelefono_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famOcupacion_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famDepende_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famDisc_${index}"]`
+                                ).prop("required", true);
+                            }
+
+                            const $nombre = block.find(`input[name="famNombre_${index}"]`);
+
+                            if (fallecido) {
+
+                                $nombre.val("FALLECIDO");
+
+                            } else if (noTiene) {
+
+                                $nombre.val("NO TIENE");
+
+                            } else {
+
+                                $nombre.val("");
+
+                            }
+                        };
+
+                        if ($fallecidoCheck.length) {
+
+                            $fallecidoCheck.on(
+                                "change",
+                                aplicarEstadoFamiliar
+                            );
                         }
 
-                        this.$(`input[name="famDisc_${index}"]`).on(
-                            'change',
+                        if ($noTieneCheck.length) {
+
+                            $noTieneCheck.on(
+                                "change",
+                                aplicarEstadoFamiliar
+                            );
+                        }
+
+                        block.find(
+                            `input[name="famDisc_${index}"]`
+                        ).on(
+                            "change",
                             () => {
                                 this._toggleFamilyDisability(index);
                             }
@@ -1947,13 +2163,11 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 }
             });
 
-            // HIJOS
-
             if (!isNaN(numHijos) && numHijos > 0) {
                 for (let i = 0; i < numHijos; i++) {
                     this.familyCount++;
                     const index = this.familyCount;
-                    this._getFamilyBlock("Hijo").then(blockHtml => {
+                    this._getFamilyBlock("Hijo", index).then(blockHtml => {
                         const block = $(blockHtml);
                         block.prepend(`
                             <input
@@ -1964,8 +2178,153 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         `);
 
                         this.$('#family_container').append(block);
-                        this.$(`input[name="famDisc_${index}"]`).on(
-                            'change',
+                        const $noTieneCheck = block.find(`input[name="famNoTiene_${index}"]`);
+                        const $fallecidoCheck = block.find(`input[name="famFallecido_${index}"]`);
+                        const aplicarEstadoFamiliar = () => {
+                            const fallecido =
+                                $fallecidoCheck.is(":checked");
+                            const noTiene =
+                                $noTieneCheck.is(":checked");
+
+                            if (fallecido) {
+                                $noTieneCheck.prop("checked", false);
+                            }
+
+                            if (noTiene) {
+                                $fallecidoCheck.prop("checked", false);
+                            }
+
+                            const bloqueado =
+                                fallecido || noTiene;
+
+                            const $fields = block.find(
+                                "input:not([type='hidden']), select, textarea"
+                            ).filter(function () {
+
+                                const name =
+                                    $(this).attr("name") || "";
+
+                                return (
+                                    !name.startsWith("famFallecido_") &&
+                                    !name.startsWith("famNoTiene_")
+                                );
+                            });
+
+                            $fields.prop(
+                                "disabled",
+                                bloqueado
+                            );
+
+                            if (bloqueado) {
+
+                                $fields.prop(
+                                    "required",
+                                    false
+                                );
+
+                                $fields.val("");
+
+                                $fields
+                                    .filter(":radio, :checkbox")
+                                    .prop("checked", false);
+
+                                $fields.removeClass(
+                                    "is-invalid"
+                                );
+
+                                $fields
+                                    .siblings(".error-message")
+                                    .hide();
+
+                            } else {
+
+                                block.find(
+                                    `input[name="famApellidoPaterno_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famApellidoMaterno_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famPrimerNombre_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `select[name="famTipoDoc_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famFecha_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famTelefono_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famOcupacion_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famDepende_${index}"]`
+                                ).prop("required", true);
+
+                                block.find(
+                                    `input[name="famDisc_${index}"]`
+                                ).prop("required", true);
+                            }
+
+                            // =================================================
+                            // NOMBRE
+                            // =================================================
+
+                            const $nombre = block.find(
+                                `input[name="famNombre_${index}"]`
+                            );
+
+                            if (fallecido) {
+
+                                $nombre.val("FALLECIDO");
+
+                            } else if (noTiene) {
+
+                                $nombre.val("NO TIENE");
+
+                            } else {
+
+                                $nombre.val("");
+
+                            }
+                        };
+
+                        // =================================================
+                        // EVENTO NO TIENE
+                        // =================================================
+
+                        if ($noTieneCheck.length) {
+
+                            $noTieneCheck.on(
+                                "change",
+                                aplicarEstadoFamiliar
+                            );
+                        }
+
+                        // EVENTO FALLECIDO
+
+                        if ($fallecidoCheck.length) {
+                            $fallecidoCheck.on(
+                                "change",
+                                aplicarEstadoFamiliar
+                            );
+                        }
+
+                        // DISCAPACIDAD
+
+                        block.find(
+                            `input[name="famDisc_${index}"]`
+                        ).on(
+                            "change",
                             () => {
                                 this._toggleFamilyDisability(index);
                             }

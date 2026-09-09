@@ -431,3 +431,85 @@ class TestCommissionGoalRules(TransactionCase):
         self.assertEqual(copied.calculation_mode, "proportional")
         self.assertAlmostEqual(copied.minimum_achievement, 80.0, places=4)
         self.assertAlmostEqual(copied.full_commission_percent, 2.0, places=4)
+
+    def test_legacy_tier_target_is_paid_proportionally(self):
+        """A legacy range must not pay the full tier rate at 93.43%."""
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 35000.0,
+            "basis": "net",
+            "calculation_mode": "tier",
+            "minimum_achievement": 80.0,
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "min_achievement": 80.0,
+            "max_achievement": 0.0,
+            "commission_percent": 1.0,
+        })
+        self._sale("GR-LEG-PROP", self.seller_1, self.loc_a, 32700.47)
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+        achievement = 32700.47 / 35000.0 * 100.0
+        expected_rate = 1.0 * achievement / 100.0
+        expected_commission = 32700.47 * expected_rate / 100.0
+
+        self.assertAlmostEqual(result.achievement_percent, achievement, places=4)
+        self.assertAlmostEqual(result.standard_commission, expected_commission, places=4)
+        detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
+        self.assertAlmostEqual(detail.rate, expected_rate, places=4)
+        self.assertIn("tasa proporcional", detail.description)
+
+    def test_liquidation_bonus_ignores_location(self):
+        self.env["commission.liquidation.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "location_id": self.loc_a.id,  # legado: debe ignorarse
+            "indicator_value": 3.0,
+            "min_sales_amount": 200.0,
+            "amount_per_m2": 0.30,
+            "basis": "net",
+        })
+        self.Sale.create({
+            "fingerprint": "GR-LIQ-A",
+            "registration_date": "2026-05-10",
+            "seller_id": self.seller_1.id,
+            "location_id": self.loc_a.id,
+            "document_type": "FA",
+            "number": "GR-LIQ-A",
+            "invoice": "GR-LIQ-A",
+            "product_code": "GR-LIQ-A",
+            "quantity": 2.0,
+            "price_indicator": 3.0,
+            "total_price": 100.0,
+            "total_net": 100.0,
+            "profit": 30.0,
+            "document_sign": 1.0,
+        })
+        self.Sale.create({
+            "fingerprint": "GR-LIQ-B",
+            "registration_date": "2026-05-10",
+            "seller_id": self.seller_1.id,
+            "location_id": self.loc_b.id,
+            "document_type": "FA",
+            "number": "GR-LIQ-B",
+            "invoice": "GR-LIQ-B",
+            "product_code": "GR-LIQ-B",
+            "quantity": 3.0,
+            "price_indicator": 3.0,
+            "total_price": 150.0,
+            "total_net": 150.0,
+            "profit": 45.0,
+            "document_sign": 1.0,
+        })
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+        self.assertAlmostEqual(result.liquidation_sales, 250.0, places=4)
+        self.assertAlmostEqual(result.liquidation_m2, 5.0, places=4)
+        self.assertAlmostEqual(result.liquidation_bonus, 1.50, places=4)
+        detail = result.detail_ids.filtered(lambda d: d.detail_type == "liquidation")
+        self.assertFalse(detail.location_id)
+        self.assertIn("todas las localidades", detail.description)

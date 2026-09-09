@@ -7,15 +7,15 @@ class CommissionSellerTarget(models.Model):
 
     calculation_mode = fields.Selection(
         [
-            ("tier", "Por rangos"),
+            ("tier", "Rangos heredados (pago proporcional)"),
             ("proportional", "Proporcional desde mínimo"),
         ],
         string="Cálculo de comisión",
-        default="tier",
+        default="proportional",
         required=True,
         help=(
-            "Por rangos conserva la lógica tradicional. Proporcional desde mínimo "
-            "paga una fracción del porcentaje acordado según el cumplimiento de la meta."
+            "La regla vigente paga proporcionalmente desde el mínimo. La opción de rangos "
+            "se conserva únicamente para interpretar configuraciones históricas."
         ),
     )
     minimum_achievement = fields.Float(
@@ -36,6 +36,39 @@ class CommissionSellerTarget(models.Model):
             "Entre el mínimo y el 100%, se paga proporcionalmente al cumplimiento."
         ),
     )
+
+    def _get_proportional_parameters(self):
+        """Return (minimum achievement %, full commission %) for proportional payout.
+
+        New configurations use ``minimum_achievement`` and
+        ``full_commission_percent`` directly. Legacy tier configurations are
+        still accepted as a source so an old target can be recalculated safely
+        even before/without data migration:
+
+        * minimum = first tier with a positive commission;
+        * full rate = commission tier applicable at 100% (or the highest tier).
+        """
+        self.ensure_one()
+        minimum = self.minimum_achievement or 0.0
+        full_rate = self.full_commission_percent or 0.0
+
+        tiers = self.tier_ids.sorted(lambda tier: (tier.min_achievement, tier.id))
+        positive_tiers = tiers.filtered(lambda tier: tier.commission_percent > 0)
+
+        if self.calculation_mode == "tier" or full_rate <= 0.0:
+            if positive_tiers:
+                minimum = min(positive_tiers.mapped("min_achievement"))
+
+            at_100 = tiers.filtered(
+                lambda tier: 100.0 >= tier.min_achievement
+                and (not tier.max_achievement or 100.0 <= tier.max_achievement)
+            )
+            if at_100:
+                full_rate = at_100[-1].commission_percent
+            elif tiers:
+                full_rate = tiers[-1].commission_percent
+
+        return minimum, full_rate
 
     @api.constrains("calculation_mode", "minimum_achievement", "full_commission_percent")
     def _check_proportional_configuration(self):
@@ -758,21 +791,38 @@ class CommissionProjectRuleGoalRules(models.Model):
 class CommissionLiquidationRuleGoalRules(models.Model):
     _inherit = "commission.liquidation.rule"
 
+    @api.constrains("period_id", "seller_id")
+    def _check_unique_liquidation_rule_without_location(self):
+        """There is only one bonus rule per period/seller, regardless of location."""
+        for rec in self:
+            if not rec.period_id:
+                continue
+            duplicate = self.search_count([
+                ("id", "!=", rec.id),
+                ("period_id", "=", rec.period_id.id),
+                ("seller_id", "=", rec.seller_id.id if rec.seller_id else False),
+            ])
+            if duplicate:
+                raise ValidationError(_(
+                    "Ya existe una regla de bono de liquidación para ese período y vendedor. "
+                    "La localidad no interviene en este bono."
+                ))
+
     def copy_to_period(self, destination_period):
         self.ensure_one()
         existing = self.search([
             ("period_id", "=", destination_period.id),
             ("seller_id", "=", self.seller_id.id if self.seller_id else False),
-            ("location_id", "=", self.location_id.id if self.location_id else False),
         ], limit=1)
         if existing:
-            raise ValidationError(_(
-                "El período destino ya tiene una regla de bono equivalente."
-            ))
+            # Legacy databases may contain one rule per location. Since location
+            # no longer participates in the bonus, keep the first copied rule
+            # and silently reuse it while duplicating the monthly configuration.
+            return existing
         return self.create({
             "period_id": destination_period.id,
             "seller_id": self.seller_id.id or False,
-            "location_id": self.location_id.id or False,
+            "location_id": False,
             "indicator_value": self.indicator_value,
             "min_sales_amount": self.min_sales_amount,
             "amount_per_m2": self.amount_per_m2,

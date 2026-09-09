@@ -1,74 +1,60 @@
 # Transcash Commissions - Metas y Liquidaciones
 
-Extensión de `transcash_commission` para Odoo 18. Versión 18.0.1.4.0.
+Extensión para `transcash_commission` que concentra la configuración mensual de metas y liquidaciones.
 
-## Configuración mensual unificada
+## Versión 18.0.1.6.0
 
-El registro maestro es `commission.period`. Dentro del formulario del período se administran:
+### Comisión de vendedor proporcional
 
-1. Metas de vendedores y rangos de comisión.
-2. Proyectos por origen (`commission.project.rule`) específicos del período.
-3. Metas de locales.
-4. Gestión de administradores, con detalle por vendedor.
-5. Bono de liquidación.
-6. Notas.
+La comisión propia del vendedor se paga proporcionalmente una vez alcanzado el cumplimiento mínimo.
 
-Los menús separados de parámetros mensuales se ocultan para evitar mantener la misma configuración desde varios lugares. Los modelos originales no se eliminan.
+Fórmula:
 
-## Vendedores de proyectos en liquidación
+```
+cumplimiento = ventas / meta * 100
+tasa_efectiva = comisión_al_100 * min(cumplimiento, 100) / 100
+comisión = ventas * tasa_efectiva / 100
+```
 
-La liquidación ya no exige exclusivamente una meta retail. Se incluye una persona cuando tiene al menos una parametrización activa aplicable:
+Si el cumplimiento es menor al mínimo configurado, la comisión es cero.
 
-- meta de vendedor activa; o
-- regla activa de proyecto por origen (del período o general); o
-- es administrador con gestión activa; o
-- tiene una regla específica de bono de liquidación.
+Ejemplo con meta 35.000, ventas 32.700,47 y comisión al 100% de 1%:
 
-Por tanto, un vendedor de proyectos con reglas `Local`, `Importado`, etc. puede aparecer y cobrar comisión de proyecto aunque no tenga una meta retail. Un vendedor sincronizado desde la API sin ninguna configuración sigue excluido.
+- cumplimiento: 93,4299%
+- tasa efectiva: 0,934299%
+- comisión: 305,52
 
-## Duplicación mensual
+Las configuraciones históricas por rangos también se interpretan proporcionalmente. Durante el upgrade se convierten a modo proporcional tomando:
 
-El botón **Duplicar período y configuración** crea el siguiente período disponible y copia:
+- el primer rango con comisión positiva como cumplimiento mínimo;
+- el porcentaje aplicable al 100% como comisión completa.
 
-- metas de vendedores + rangos;
-- proyectos/orígenes del período;
-- metas locales;
-- cabeceras y detalle de gestión administrativa;
-- bonos de liquidación.
+Los rangos históricos no se eliminan.
 
-No copia liquidación, resultados ni estado calculado/aprobado/pagado. El nuevo período queda en borrador.
+### Bono de liquidación sin localidad
 
-## Gestión de administradores
+La localidad ya no interviene en el bono de liquidación. Para cada vendedor se consideran conjuntamente todas sus ventas del período con `Indica_Precio = 3` (o el indicador parametrizado), se valida el mínimo global y se pagan los m² globales.
 
-Cada cabecera corresponde a Período + Administrador + Local. Debajo están sus vendedores relacionados, con mínimo administrativo (monto fijo o % de la meta propia) y porcentaje específico de gestión. La meta local es una condición independiente para habilitar el pago al administrador.
+El campo localidad se oculta de las pantallas de bono. En bases antiguas donde existan filas por localidad, el cálculo ignora esa localidad y selecciona una sola regla aplicable para evitar doble pago.
 
-## Reportes
+### Funcionalidades que se mantienen
 
-Se mantienen el PDF consolidado de liquidación y el PDF individual.
+- meta de vendedor independiente de localidad;
+- vendedores de proyectos liquidables por reglas de origen aunque no tengan meta retail;
+- vendedores sin parametrización fuera de la liquidación;
+- gestión de administradores con cabecera y vendedores a cargo;
+- mínimo administrativo fijo o como porcentaje de meta;
+- meta del local como condición exclusiva de la gestión administrativa;
+- período como registro maestro de metas, proyectos, locales, administradores y bono;
+- duplicación mensual de toda la configuración;
+- PDF consolidado e individual.
 
 ## Actualización
 
-Reemplazar la carpeta `transcash_commission_goal_rules`, reiniciar Odoo y actualizar el módulo desde Apps. No ejecutar SQL manual.
+1. Reemplazar la carpeta `transcash_commission_goal_rules` por esta versión.
+2. Reiniciar Odoo.
+3. Actualizar la lista de aplicaciones si corresponde.
+4. Ejecutar **Actualizar** sobre el módulo.
+5. Recalcular la liquidación del período para regenerar los valores con la fórmula proporcional.
 
-## Pago proporcional de metas de vendedores (18.0.1.5.0)
-
-Las metas de vendedores tienen ahora dos modos de cálculo:
-
-- **Por rangos:** conserva el comportamiento anterior mediante los rangos de cumplimiento.
-- **Proporcional desde mínimo:** configura un `Cumplimiento mínimo (%)` y una `Comisión al 100% (%)`.
-
-En modo proporcional:
-
-1. Si el vendedor no alcanza el mínimo, la comisión propia es cero.
-2. Si alcanza el mínimo pero todavía no llega al 100%, la tasa efectiva se calcula proporcionalmente al cumplimiento.
-3. Al alcanzar o superar el 100%, la tasa queda topada en el porcentaje de comisión acordado al 100%.
-
-Fórmula entre el mínimo y el 100%:
-
-`Tasa efectiva = Comisión al 100% × Cumplimiento / 100`
-
-`Comisión = Base de ventas × Tasa efectiva / 100`
-
-Ejemplo: meta 35.000, ventas 32.000, mínimo 80% y comisión al 100% de 2%. El cumplimiento real es 91,4286%, la tasa efectiva es 1,8286% y la comisión sobre 32.000 es 585,14.
-
-La configuración se copia cuando se duplica el período o cuando se usa `Duplicar a otro período` sobre una meta.
+No ejecutar SQL manual.
