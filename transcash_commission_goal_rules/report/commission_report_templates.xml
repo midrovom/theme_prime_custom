@@ -7,7 +7,7 @@
                         <style>
                             .tc-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
                             .tc-meta { font-size: 11px; margin-bottom: 10px; }
-                            .tc-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+                            .tc-table { width: 100%; border-collapse: collapse; font-size: 8.5px; }
                             .tc-table th { background: #eeeeee; font-weight: 700; padding: 5px 3px; border: 1px solid #bdbdbd; }
                             .tc-table td { padding: 4px 3px; border: 1px solid #d5d5d5; }
                             .tc-num { text-align: right; white-space: nowrap; }
@@ -54,6 +54,7 @@
                                     <th class="tc-num">Proyectos</th>
                                     <th class="tc-num">Gestión</th>
                                     <th class="tc-num">Bono liq.</th>
+                                    <th class="tc-num">Desc. liq.</th>
                                     <th class="tc-num">Total</th>
                                 </tr>
                             </thead>
@@ -68,6 +69,7 @@
                                     <td class="tc-num"><span t-field="r.project_commission" t-options='{"widget": "float", "precision": 2}'/></td>
                                     <td class="tc-num"><span t-field="r.management_commission" t-options='{"widget": "float", "precision": 2}'/></td>
                                     <td class="tc-num"><span t-field="r.liquidation_bonus" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="tc-num"><span t-field="r.liquidation_penalty" t-options='{"widget": "float", "precision": 2}'/></td>
                                     <td class="tc-num"><strong><span t-field="r.total_commission" t-options='{"widget": "float", "precision": 2}'/></strong></td>
                                 </tr>
                                 <tr class="tc-total">
@@ -76,6 +78,7 @@
                                     <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('project_commission'))"/></td>
                                     <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('management_commission'))"/></td>
                                     <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('liquidation_bonus'))"/></td>
+                                    <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('liquidation_penalty'))"/></td>
                                     <td class="tc-num"><span t-field="o.total_commission" t-options='{"widget": "float", "precision": 2}'/></td>
                                 </tr>
                             </tbody>
@@ -152,8 +155,18 @@
                                 <tr>
                                     <td>Bono liquidación</td>
                                     <td class="tc-num"><span t-field="o.liquidation_bonus" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td colspan="3"><strong>Total comisión</strong></td>
+                                    <td>Descuento meta liquidación</td>
+                                    <td class="tc-num"><span t-field="o.liquidation_penalty" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td><strong>Total comisión</strong></td>
                                     <td class="tc-num tc-total"><span t-field="o.total_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                </tr>
+                                <tr t-if="o.liquidation_penalty_base or not o.liquidation_target_met">
+                                    <td>Cumple meta liquidación</td>
+                                    <td><span t-esc="'Sí' if o.liquidation_target_met else 'No'"/></td>
+                                    <td>Comisión sujeta a reducción</td>
+                                    <td class="tc-num"><span t-field="o.liquidation_penalty_base" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td>% reducción aplicado</td>
+                                    <td class="tc-num"><span t-field="o.liquidation_penalty_percent" t-options='{"widget": "float", "precision": 2}'/>%</td>
                                 </tr>
                             </table>
                         </div>

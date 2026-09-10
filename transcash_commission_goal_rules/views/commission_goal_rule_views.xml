@@ -32,7 +32,7 @@
                 <field name="minimum_sales_to_commission" readonly="1"/>
                 <field name="maximum_tier_commission_percent" readonly="1"/>
             </xpath>
-            <xpath expr="//separator[@string='Rangos de cumplimiento']" position="attributes">
+            <xpath expr="//field[@name='tier_ids']/preceding-sibling::separator[1]" position="attributes">
                 <attribute name="string">Rangos por monto de ventas</attribute>
             </xpath>
             <xpath expr="//field[@name='tier_ids']//field[@name='min_achievement']" position="replace">

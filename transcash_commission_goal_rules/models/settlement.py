@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from odoo import models, _, api
+from odoo import fields, models, _, api
 from odoo.exceptions import UserError
 
 
@@ -120,6 +120,9 @@ class CommissionSettlement(models.Model):
             self._calculate_liquidation_bonus(result, seller, seller_sales, Detail)
             self._calculate_manager_commission(
                 result, seller, by_seller, location_target_status, Detail
+            )
+            self._apply_liquidation_commission_penalty(
+                result, seller, seller_sales, Detail
             )
             result._recompute_total()
 
@@ -323,6 +326,126 @@ class CommissionSettlement(models.Model):
                 "eligible": eligible,
             })
 
+    def _get_liquidation_rule_evaluations(self, seller, seller_sales):
+        """Evalúa las mismas metas de liquidación utilizadas por el bono.
+
+        La regla específica del vendedor prevalece sobre la general para una
+        misma localidad, exactamente igual que en el cálculo del bono base.
+        """
+        self.ensure_one()
+        rules = self.period_id.liquidation_rule_ids.filtered(
+            lambda rule: not rule.seller_id or rule.seller_id == seller
+        )
+        best_by_location = {}
+        for rule in rules.sorted(lambda rule: (bool(rule.seller_id), rule.id)):
+            best_by_location[rule.location_id.id or 0] = rule
+
+        evaluations = []
+        for rule in best_by_location.values():
+            lines = seller_sales.filtered(
+                lambda line: abs(
+                    (line.price_indicator or 0.0) - rule.indicator_value
+                ) < 0.000001
+                and (not rule.location_id or line.location_id == rule.location_id)
+            )
+            sales_amount = sum(
+                line.amount_for_basis(rule.basis) for line in lines
+            )
+            evaluations.append({
+                "rule": rule,
+                "sales": sales_amount,
+                "minimum": rule.min_sales_amount,
+                "met": sales_amount >= rule.min_sales_amount,
+            })
+        return evaluations
+
+    def _apply_liquidation_commission_penalty(
+        self, result, seller, seller_sales, Detail
+    ):
+        """Reduce comisión de ventas si no se alcanza la meta de liquidación.
+
+        La reducción se aplica una sola vez, aunque existan varias metas de
+        liquidación. Si hay varias reglas aplicables, basta que una no se cumpla
+        para activar la restricción. Vendedores incluidos en la lista de exentos
+        del período no reciben descuento.
+
+        Base penalizable = comisión propia + comisión de proyectos.
+        No se afecta la comisión de gestión del administrador ni el bono de
+        liquidación (que ya se paga únicamente cuando su meta se cumple).
+        """
+        self.ensure_one()
+        period = self.period_id
+        evaluations = self._get_liquidation_rule_evaluations(
+            seller, seller_sales
+        )
+        if not evaluations:
+            return
+
+        unmet = [evaluation for evaluation in evaluations if not evaluation["met"]]
+        result.liquidation_target_met = not bool(unmet)
+        if not unmet:
+            return
+
+        commission_base = max(
+            (result.standard_commission or 0.0)
+            + (result.project_commission or 0.0),
+            0.0,
+        )
+        is_exempt = seller in period.liquidation_penalty_exempt_seller_ids
+        configured_percent = period.liquidation_commission_penalty_percent or 0.0
+        applied_percent = 0.0 if is_exempt else configured_percent
+        penalty = commission_base * applied_percent / 100.0
+
+        result.liquidation_penalty_base = commission_base
+        result.liquidation_penalty_percent = applied_percent
+        result.liquidation_penalty = penalty
+        result.liquidation_penalty_applied = bool(penalty)
+
+        failed_parts = []
+        for evaluation in unmet:
+            rule = evaluation["rule"]
+            location = (
+                rule.location_id.display_name
+                if rule.location_id
+                else _("Todas las localidades")
+            )
+            failed_parts.append(
+                _("%(location)s: %(sales).2f / %(minimum).2f") % {
+                    "location": location,
+                    "sales": evaluation["sales"],
+                    "minimum": evaluation["minimum"],
+                }
+            )
+
+        if is_exempt:
+            description = _(
+                "Meta de liquidación no cumplida, pero el vendedor está exento "
+                "de la restricción. Metas incumplidas: %(failed)s"
+            ) % {"failed": "; ".join(failed_parts)}
+        elif configured_percent <= 0.0:
+            description = _(
+                "Meta de liquidación no cumplida. La reducción del período está "
+                "configurada en 0%%. Metas incumplidas: %(failed)s"
+            ) % {"failed": "; ".join(failed_parts)}
+        else:
+            description = _(
+                "Meta de liquidación no cumplida. Reducción %(percent).2f%% "
+                "sobre comisión propia + proyectos. Metas incumplidas: %(failed)s"
+            ) % {
+                "percent": configured_percent,
+                "failed": "; ".join(failed_parts),
+            }
+
+        Detail.create({
+            "result_id": result.id,
+            "detail_type": "liquidation_penalty",
+            "description": description,
+            "basis_amount": commission_base,
+            "rate": applied_percent,
+            "amount": -penalty,
+            "eligible": False,
+        })
+
     def action_print_settlement(self):
         self.ensure_one()
         return self.env.ref(
@@ -333,8 +456,45 @@ class CommissionSettlement(models.Model):
 class CommissionResult(models.Model):
     _inherit = "commission.result"
 
+    liquidation_target_met = fields.Boolean(
+        string="Cumple meta liquidación",
+        default=True,
+    )
+    liquidation_penalty_base = fields.Float(
+        string="Comisión sujeta a reducción",
+        digits=(16, 4),
+    )
+    liquidation_penalty_percent = fields.Float(
+        string="Reducción liquidación (%)",
+        digits=(16, 4),
+    )
+    liquidation_penalty = fields.Float(
+        string="Descuento por meta liquidación",
+        digits=(16, 4),
+    )
+    liquidation_penalty_applied = fields.Boolean(
+        string="Reducción aplicada",
+    )
+
+    def _recompute_total(self):
+        res = super()._recompute_total()
+        for rec in self:
+            rec.total_commission -= rec.liquidation_penalty or 0.0
+        return res
+
     def action_print_individual(self):
         self.ensure_one()
         return self.env.ref(
             "transcash_commission_goal_rules.action_report_commission_result_individual"
         ).report_action(self)
+
+
+class CommissionResultDetail(models.Model):
+    _inherit = "commission.result.detail"
+
+    detail_type = fields.Selection(
+        selection_add=[
+            ("liquidation_penalty", "Reducción por meta de liquidación"),
+        ],
+        ondelete={"liquidation_penalty": "cascade"},
+    )

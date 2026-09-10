@@ -60,7 +60,9 @@ class TestCommissionGoalRules(TransactionCase):
         })
         return target
 
-    def _sale(self, code, seller, location, net, origin=None):
+    def _sale(
+        self, code, seller, location, net, origin=None, price_indicator=0.0, quantity=1.0
+    ):
         return self.Sale.create({
             "fingerprint": code,
             "registration_date": "2026-05-10",
@@ -71,7 +73,8 @@ class TestCommissionGoalRules(TransactionCase):
             "invoice": code,
             "product_code": code,
             "origin": origin or "",
-            "quantity": 1.0,
+            "price_indicator": price_indicator,
+            "quantity": quantity,
             "total_price": net,
             "total_net": net,
             "profit": net * 0.30,
@@ -535,3 +538,142 @@ class TestCommissionGoalRules(TransactionCase):
             sorted(copied.tier_ids.mapped("sales_threshold")),
             [10000.0, 15000.0],
         )
+
+    def test_liquidation_target_failure_reduces_seller_commission(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 1000.0,
+            "basis": "net",
+            "calculation_mode": "sales_tier",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 0.0,
+            "commission_percent": 2.0,
+        })
+        self.period.liquidation_commission_penalty_percent = 25.0
+        self.env["commission.liquidation.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "indicator_value": 3.0,
+            "min_sales_amount": 200.0,
+            "amount_per_m2": 0.30,
+            "basis": "net",
+        })
+        self._sale("GR-LP-NORMAL", self.seller_1, self.loc_a, 900.0)
+        self._sale(
+            "GR-LP-LIQ", self.seller_1, self.loc_a, 100.0,
+            price_indicator=3.0, quantity=10.0,
+        )
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+
+        self.assertAlmostEqual(result.standard_commission, 20.0, places=4)
+        self.assertFalse(result.liquidation_target_met)
+        self.assertAlmostEqual(result.liquidation_penalty_base, 20.0, places=4)
+        self.assertAlmostEqual(result.liquidation_penalty_percent, 25.0, places=4)
+        self.assertAlmostEqual(result.liquidation_penalty, 5.0, places=4)
+        self.assertAlmostEqual(result.liquidation_bonus, 0.0, places=4)
+        self.assertAlmostEqual(result.total_commission, 15.0, places=4)
+        detail = result.detail_ids.filtered(
+            lambda d: d.detail_type == "liquidation_penalty"
+        )
+        self.assertTrue(detail)
+        self.assertAlmostEqual(detail.amount, -5.0, places=4)
+
+    def test_liquidation_penalty_exempt_seller_is_not_reduced(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 1000.0,
+            "basis": "net",
+            "calculation_mode": "sales_tier",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 0.0,
+            "commission_percent": 2.0,
+        })
+        self.period.write({
+            "liquidation_commission_penalty_percent": 25.0,
+            "liquidation_penalty_exempt_seller_ids": [(6, 0, [self.seller_1.id])],
+        })
+        self.env["commission.liquidation.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "indicator_value": 3.0,
+            "min_sales_amount": 200.0,
+            "amount_per_m2": 0.30,
+            "basis": "net",
+        })
+        self._sale("GR-EX-NORMAL", self.seller_1, self.loc_a, 900.0)
+        self._sale(
+            "GR-EX-LIQ", self.seller_1, self.loc_a, 100.0,
+            price_indicator=3.0, quantity=10.0,
+        )
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+
+        self.assertFalse(result.liquidation_target_met)
+        self.assertAlmostEqual(result.liquidation_penalty, 0.0, places=4)
+        self.assertAlmostEqual(result.total_commission, 20.0, places=4)
+        detail = result.detail_ids.filtered(
+            lambda d: d.detail_type == "liquidation_penalty"
+        )
+        self.assertTrue(detail)
+        self.assertIn("exento", detail.description.lower())
+
+    def test_liquidation_target_met_does_not_reduce_commission(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 1000.0,
+            "basis": "net",
+            "calculation_mode": "sales_tier",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 0.0,
+            "commission_percent": 2.0,
+        })
+        self.period.liquidation_commission_penalty_percent = 25.0
+        self.env["commission.liquidation.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "indicator_value": 3.0,
+            "min_sales_amount": 200.0,
+            "amount_per_m2": 0.30,
+            "basis": "net",
+        })
+        self._sale("GR-MET-NORMAL", self.seller_1, self.loc_a, 800.0)
+        self._sale(
+            "GR-MET-LIQ", self.seller_1, self.loc_a, 200.0,
+            price_indicator=3.0, quantity=10.0,
+        )
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+
+        self.assertTrue(result.liquidation_target_met)
+        self.assertAlmostEqual(result.liquidation_penalty, 0.0, places=4)
+        self.assertAlmostEqual(result.liquidation_bonus, 3.0, places=4)
+        self.assertAlmostEqual(result.total_commission, 23.0, places=4)
+
+    def test_duplicate_period_copies_liquidation_penalty_configuration(self):
+        self.period.write({
+            "liquidation_commission_penalty_percent": 15.0,
+            "liquidation_penalty_exempt_seller_ids": [(6, 0, [self.seller_1.id])],
+        })
+        new_period = self.period.copy()
+        self.assertAlmostEqual(
+            new_period.liquidation_commission_penalty_percent, 15.0, places=4
+        )
+        self.assertIn(self.seller_1, new_period.liquidation_penalty_exempt_seller_ids)
+
+    def test_liquidation_penalty_percent_must_be_valid(self):
+        with self.assertRaises(Exception):
+            self.period.liquidation_commission_penalty_percent = 120.0
+

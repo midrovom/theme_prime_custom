@@ -1,6 +1,6 @@
 # Transcash Commissions - Metas y Liquidaciones
 
-Versión: **18.0.1.6.0**  
+Versión: **18.0.1.7.0**  
 Dependencia: `transcash_commission`
 
 ## Cambio principal 1.6.0: metas de vendedores por rangos de venta
@@ -81,3 +81,46 @@ La versión incluye una migración `post` que transforma configuraciones anterio
 Después de actualizar es recomendable revisar los rangos de vendedores para ajustarlos a la nueva política comercial exacta.
 
 No ejecutar SQL manual para la actualización.
+
+
+## Corrección 18.0.1.6.1
+
+Se corrige la herencia de la vista de metas de vendedor para Odoo 18.
+La versión 18.0.1.6.0 utilizaba `@string` como selector XPath sobre el separador
+`Rangos de cumplimiento`; Odoo 18 rechaza ese patrón con
+`View inheritance may not use attribute 'string' as a selector`.
+Ahora el separador se localiza estructuralmente como el hermano inmediatamente
+anterior a `tier_ids`, sin depender de etiquetas traducibles.
+## Cambio 18.0.1.7.0: reducción por incumplir meta de liquidación
+
+El período incorpora dos parámetros en la pestaña **Bono liquidación**:
+
+- `Reducción de comisión por no cumplir liquidación (%)`: porcentaje que se descuenta cuando un vendedor no alcanza una meta de liquidación aplicable.
+- `Vendedores exentos de restricción`: vendedores a los que no se les aplica la reducción aunque no alcancen la meta.
+
+La meta de liquidación continúa siendo el `Monto mínimo de ventas` configurado en las reglas de bono de liquidación. La regla específica del vendedor prevalece sobre la regla general para la misma localidad, igual que en el cálculo del bono.
+
+Si existen varias metas de liquidación aplicables y al menos una no se cumple, la reducción se aplica **una sola vez**.
+
+La base de reducción es:
+
+`Comisión propia + Comisión de proyectos`
+
+No se reduce la comisión de gestión del administrador. El bono de liquidación ya queda en cero para la regla que no alcanza su mínimo.
+
+Ejemplo:
+
+- comisión propia: 500,00;
+- comisión proyectos: 100,00;
+- reducción del período: 20%;
+- meta de liquidación incumplida;
+- vendedor no exento.
+
+Base sujeta a reducción = 600,00. Reducción = 120,00. La liquidación resta esos 120,00 del total.
+
+Si el mismo vendedor está en `Vendedores exentos de restricción`, la reducción es 0,00 y el PDF deja la situación registrada en el detalle de auditoría.
+
+Al duplicar el período se copian tanto el porcentaje de reducción como la lista de vendedores exentos.
+
+Los PDF consolidado e individual muestran el descuento por meta de liquidación y el cálculo queda registrado como una línea de auditoría.
+

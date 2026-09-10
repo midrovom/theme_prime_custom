@@ -1,7 +1,8 @@
 from calendar import monthrange
 from datetime import date, timedelta
 
-from odoo import _, fields, models
+from odoo import Command, _, api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class CommissionPeriod(models.Model):
@@ -29,6 +30,37 @@ class CommissionPeriod(models.Model):
         "period_id",
         string="Detalles de gestión (compatibilidad)",
     )
+
+    liquidation_commission_penalty_percent = fields.Float(
+        string="Reducción de comisión por no cumplir liquidación (%)",
+        digits=(16, 4),
+        default=0.0,
+        help=(
+            "Si un vendedor no alcanza una meta de liquidación aplicable, se "
+            "descuenta este porcentaje de su comisión de ventas (comisión propia "
+            "+ proyectos). La comisión de gestión del administrador no se reduce."
+        ),
+    )
+    liquidation_penalty_exempt_seller_ids = fields.Many2many(
+        "commission.seller",
+        "commission_period_liq_penalty_exempt_rel",
+        "period_id",
+        "seller_id",
+        string="Vendedores exentos de restricción",
+        domain=[("active", "=", True), ("role", "in", ["seller", "project", "hybrid"])],
+        help=(
+            "Estos vendedores no reciben reducción de comisión aunque no alcancen "
+            "la meta de liquidación del período."
+        ),
+    )
+
+    @api.constrains("liquidation_commission_penalty_percent")
+    def _check_liquidation_commission_penalty_percent(self):
+        for rec in self:
+            if not 0.0 <= rec.liquidation_commission_penalty_percent <= 100.0:
+                raise ValidationError(
+                    _("La reducción por incumplir la meta de liquidación debe estar entre 0% y 100%.")
+                )
 
     def _next_available_copy_dates(self):
         """Devuelve el siguiente rango libre, respetando meses calendario.
@@ -106,6 +138,14 @@ class CommissionPeriod(models.Model):
             default.setdefault("date_end", next_end)
 
         default.setdefault("name", _("%s (copia)") % self.name)
+        default.setdefault(
+            "liquidation_commission_penalty_percent",
+            self.liquidation_commission_penalty_percent,
+        )
+        default.setdefault(
+            "liquidation_penalty_exempt_seller_ids",
+            [Command.set(self.liquidation_penalty_exempt_seller_ids.ids)],
+        )
         default.update({
             "state": "draft",
             "settlement_id": False,
