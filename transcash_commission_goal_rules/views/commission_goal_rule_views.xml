@@ -5,8 +5,8 @@
         <field name="inherit_id" ref="transcash_commission.view_commission_seller_target_list"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='location_id']" position="replace"/>
-            <xpath expr="//field[@name='target_amount']" position="replace">
-                <field name="target_amount" string="Meta referencial"/>
+            <xpath expr="//field[@name='target_amount']" position="attributes">
+                <attribute name="string">Meta referencial</attribute>
             </xpath>
             <xpath expr="//field[@name='target_amount']" position="after">
                 <field name="minimum_sales_to_commission" optional="show"/>
