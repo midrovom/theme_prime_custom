@@ -13,10 +13,12 @@
             <xpath expr="//page[.//field[@name='target_ids']]" position="attributes">
                 <attribute name="string">Metas vendedores</attribute>
             </xpath>
+            <xpath expr="//page[.//field[@name='target_ids']]//field[@name='target_amount']" position="attributes">
+                <attribute name="string">Meta referencial</attribute>
+            </xpath>
             <xpath expr="//page[.//field[@name='target_ids']]//field[@name='target_amount']" position="after">
-                <field name="calculation_mode"/>
-                <field name="minimum_achievement" optional="show"/>
-                <field name="full_commission_percent" optional="show"/>
+                <field name="minimum_sales_to_commission" optional="show"/>
+                <field name="maximum_tier_commission_percent" optional="show"/>
             </xpath>
 
             <!-- Proyectos pasan a formar parte de la misma configuración mensual. -->
@@ -55,12 +57,6 @@
 
             <xpath expr="//page[.//field[@name='liquidation_rule_ids']]" position="attributes">
                 <attribute name="string">Bono liquidación</attribute>
-            </xpath>
-            <xpath expr="//page[.//field[@name='liquidation_rule_ids']]//field[@name='location_id']" position="replace"/>
-            <xpath expr="//page[.//field[@name='liquidation_rule_ids']]//field[@name='liquidation_rule_ids']" position="after">
-                <div class="alert alert-info mt-2" role="alert">
-                    El bono de liquidación se calcula con las ventas y m² del vendedor en todas las localidades. La localidad no interviene en la elegibilidad ni en el cálculo.
-                </div>
             </xpath>
         </field>
     </record>

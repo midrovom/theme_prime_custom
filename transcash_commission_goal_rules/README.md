@@ -1,60 +1,83 @@
 # Transcash Commissions - Metas y Liquidaciones
 
-Extensión para `transcash_commission` que concentra la configuración mensual de metas y liquidaciones.
+Versión: **18.0.1.6.0**  
+Dependencia: `transcash_commission`
 
-## Versión 18.0.1.6.0
+## Cambio principal 1.6.0: metas de vendedores por rangos de venta
 
-### Comisión de vendedor proporcional
+La comisión propia del vendedor se calcula ahora por **escalones de monto vendido**. Cada meta de vendedor conserva una **meta referencial** para mostrar el porcentaje de cumplimiento y para reglas administrativas que usen "% de la meta", pero el porcentaje de comisión se selecciona exclusivamente por los rangos configurados.
 
-La comisión propia del vendedor se paga proporcionalmente una vez alcanzado el cumplimiento mínimo.
+Ejemplo de rangos:
 
-Fórmula:
+| Venta mínima del rango | Comisión |
+| ---: | ---: |
+| 10.000 | 1,00% |
+| 15.000 | 1,50% |
+| 25.000 | 2,00% |
 
-```
-cumplimiento = ventas / meta * 100
-tasa_efectiva = comisión_al_100 * min(cumplimiento, 100) / 100
-comisión = ventas * tasa_efectiva / 100
-```
+Resultado:
 
-Si el cumplimiento es menor al mínimo configurado, la comisión es cero.
+- ventas de 9.999: 0%;
+- ventas de 10.000 a 14.999,99: 1%;
+- ventas de 15.000 a 24.999,99: 1,5%;
+- ventas desde 25.000: 2%.
 
-Ejemplo con meta 35.000, ventas 32.700,47 y comisión al 100% de 1%:
+El porcentaje del rango alcanzado se aplica sobre **toda la base de ventas** definida en la meta (`Total neto`, `Total precio` o `Utilidad`). No es un cálculo marginal por tramo.
 
-- cumplimiento: 93,4299%
-- tasa efectiva: 0,934299%
-- comisión: 305,52
+El mínimo para empezar a comisionar queda determinado naturalmente por el primer rango. Si el primer rango es 10.000, cualquier venta inferior a 10.000 paga 0.
 
-Las configuraciones históricas por rangos también se interpretan proporcionalmente. Durante el upgrade se convierten a modo proporcional tomando:
+## Meta referencial
 
-- el primer rango con comisión positiva como cumplimiento mínimo;
-- el porcentaje aplicable al 100% como comisión completa.
+El campo `Meta referencial` se mantiene porque se utiliza para:
 
-Los rangos históricos no se eliminan.
+- mostrar el porcentaje de cumplimiento en la liquidación y PDF;
+- calcular un mínimo administrativo cuando una línea de gestión está configurada como `% de la meta del vendedor`.
 
-### Bono de liquidación sin localidad
+La meta referencial **no selecciona el porcentaje de comisión propia**; esa selección la hacen los rangos por monto de ventas.
 
-La localidad ya no interviene en el bono de liquidación. Para cada vendedor se consideran conjuntamente todas sus ventas del período con `Indica_Precio = 3` (o el indicador parametrizado), se valida el mínimo global y se pagan los m² globales.
+## Configuración mensual unificada
 
-El campo localidad se oculta de las pantallas de bono. En bases antiguas donde existan filas por localidad, el cálculo ignora esa localidad y selecciona una sola regla aplicable para evitar doble pago.
+El período continúa siendo el registro principal y agrupa:
 
-### Funcionalidades que se mantienen
+- metas de vendedores y sus rangos;
+- proyectos por origen;
+- metas locales;
+- gestión de administradores y vendedores a cargo;
+- bono de liquidación;
+- notas.
 
-- meta de vendedor independiente de localidad;
-- vendedores de proyectos liquidables por reglas de origen aunque no tengan meta retail;
-- vendedores sin parametrización fuera de la liquidación;
-- gestión de administradores con cabecera y vendedores a cargo;
-- mínimo administrativo fijo o como porcentaje de meta;
-- meta del local como condición exclusiva de la gestión administrativa;
-- período como registro maestro de metas, proyectos, locales, administradores y bono;
-- duplicación mensual de toda la configuración;
-- PDF consolidado e individual.
+`Duplicar período y configuración` copia la parametrización al siguiente período sin copiar resultados ni liquidaciones calculadas.
 
-## Actualización
+## Vendedores de proyectos
 
-1. Reemplazar la carpeta `transcash_commission_goal_rules` por esta versión.
-2. Reiniciar Odoo.
-3. Actualizar la lista de aplicaciones si corresponde.
-4. Ejecutar **Actualizar** sobre el módulo.
-5. Recalcular la liquidación del período para regenerar los valores con la fórmula proporcional.
+Un vendedor con una regla activa de proyecto/origen puede aparecer en la liquidación aunque no tenga meta retail. Un vendedor sin ninguna parametrización aplicable permanece fuera de la liquidación.
 
-No ejecutar SQL manual.
+## Gestión de administradores
+
+Cada cabecera contiene administrador + período + local. Debajo se parametrizan sus vendedores a cargo con:
+
+- mínimo fijo o mínimo como porcentaje de la meta referencial del vendedor;
+- porcentaje específico que gana el administrador;
+- base de cálculo.
+
+El vendedor debe superar su mínimo administrativo y el local asignado debe cumplir su meta.
+
+## Reportes
+
+Se mantienen:
+
+- PDF consolidado de liquidación;
+- PDF individual por vendedor;
+- detalle auditable del porcentaje aplicado.
+
+## Actualización desde 1.5.0 o anterior
+
+La versión incluye una migración `post` que transforma configuraciones anteriores a rangos por monto:
+
+- rangos por porcentaje de cumplimiento se convierten a umbrales monetarios usando `meta x porcentaje / 100`;
+- metas proporcionales sin rangos reciben escalones iniciales en el mínimo anterior y en el 100% de la meta;
+- todas las metas quedan en modo `Por rangos de venta`.
+
+Después de actualizar es recomendable revisar los rangos de vendedores para ajustarlos a la nueva política comercial exacta.
+
+No ejecutar SQL manual para la actualización.

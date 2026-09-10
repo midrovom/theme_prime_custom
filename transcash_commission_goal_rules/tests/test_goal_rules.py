@@ -432,84 +432,106 @@ class TestCommissionGoalRules(TransactionCase):
         self.assertAlmostEqual(copied.minimum_achievement, 80.0, places=4)
         self.assertAlmostEqual(copied.full_commission_percent, 2.0, places=4)
 
-    def test_legacy_tier_target_is_paid_proportionally(self):
-        """A legacy range must not pay the full tier rate at 93.43%."""
+    def test_sales_tiers_apply_last_reached_threshold(self):
         target = self.env["commission.seller.target"].create({
             "period_id": self.period.id,
             "seller_id": self.seller_1.id,
-            "target_amount": 35000.0,
+            "target_amount": 20000.0,
             "basis": "net",
-            "calculation_mode": "tier",
-            "minimum_achievement": 80.0,
+            "calculation_mode": "sales_tier",
+        })
+        Tier = self.env["commission.seller.target.tier"]
+        Tier.create({
+            "target_id": target.id,
+            "sales_threshold": 10000.0,
+            "commission_percent": 1.0,
+        })
+        Tier.create({
+            "target_id": target.id,
+            "sales_threshold": 15000.0,
+            "commission_percent": 1.5,
+        })
+        Tier.create({
+            "target_id": target.id,
+            "sales_threshold": 20000.0,
+            "commission_percent": 2.0,
+        })
+        self._sale("GR-TIER-AMOUNT", self.seller_1, self.loc_a, 17000.0)
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+        self.assertAlmostEqual(result.standard_commission, 255.0, places=4)
+        detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
+        self.assertAlmostEqual(detail.rate, 1.5, places=4)
+        self.assertTrue(detail.eligible)
+
+    def test_sales_tiers_pay_zero_below_first_threshold(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 15000.0,
+            "basis": "net",
+            "calculation_mode": "sales_tier",
         })
         self.env["commission.seller.target.tier"].create({
             "target_id": target.id,
-            "min_achievement": 80.0,
-            "max_achievement": 0.0,
+            "sales_threshold": 10000.0,
             "commission_percent": 1.0,
         })
-        self._sale("GR-LEG-PROP", self.seller_1, self.loc_a, 32700.47)
+        self._sale("GR-TIER-BELOW", self.seller_1, self.loc_a, 9999.0)
 
         settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
         result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
-        achievement = 32700.47 / 35000.0 * 100.0
-        expected_rate = 1.0 * achievement / 100.0
-        expected_commission = 32700.47 * expected_rate / 100.0
-
-        self.assertAlmostEqual(result.achievement_percent, achievement, places=4)
-        self.assertAlmostEqual(result.standard_commission, expected_commission, places=4)
+        self.assertAlmostEqual(result.standard_commission, 0.0, places=4)
         detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
-        self.assertAlmostEqual(detail.rate, expected_rate, places=4)
-        self.assertIn("tasa proporcional", detail.description)
+        self.assertAlmostEqual(detail.rate, 0.0, places=4)
+        self.assertFalse(detail.eligible)
 
-    def test_liquidation_bonus_ignores_location(self):
-        self.env["commission.liquidation.rule"].create({
+    def test_sales_tier_duplicate_threshold_is_blocked(self):
+        target = self.env["commission.seller.target"].create({
             "period_id": self.period.id,
             "seller_id": self.seller_1.id,
-            "location_id": self.loc_a.id,  # legado: debe ignorarse
-            "indicator_value": 3.0,
-            "min_sales_amount": 200.0,
-            "amount_per_m2": 0.30,
+            "target_amount": 15000.0,
             "basis": "net",
+            "calculation_mode": "sales_tier",
         })
-        self.Sale.create({
-            "fingerprint": "GR-LIQ-A",
-            "registration_date": "2026-05-10",
-            "seller_id": self.seller_1.id,
-            "location_id": self.loc_a.id,
-            "document_type": "FA",
-            "number": "GR-LIQ-A",
-            "invoice": "GR-LIQ-A",
-            "product_code": "GR-LIQ-A",
-            "quantity": 2.0,
-            "price_indicator": 3.0,
-            "total_price": 100.0,
-            "total_net": 100.0,
-            "profit": 30.0,
-            "document_sign": 1.0,
+        Tier = self.env["commission.seller.target.tier"]
+        Tier.create({
+            "target_id": target.id,
+            "sales_threshold": 10000.0,
+            "commission_percent": 1.0,
         })
-        self.Sale.create({
-            "fingerprint": "GR-LIQ-B",
-            "registration_date": "2026-05-10",
+        with self.assertRaises(Exception):
+            Tier.create({
+                "target_id": target.id,
+                "sales_threshold": 10000.0,
+                "commission_percent": 1.5,
+            })
+
+    def test_duplicate_period_copies_sales_thresholds(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
             "seller_id": self.seller_1.id,
-            "location_id": self.loc_b.id,
-            "document_type": "FA",
-            "number": "GR-LIQ-B",
-            "invoice": "GR-LIQ-B",
-            "product_code": "GR-LIQ-B",
-            "quantity": 3.0,
-            "price_indicator": 3.0,
-            "total_price": 150.0,
-            "total_net": 150.0,
-            "profit": 45.0,
-            "document_sign": 1.0,
+            "target_amount": 20000.0,
+            "basis": "net",
+            "calculation_mode": "sales_tier",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 10000.0,
+            "commission_percent": 1.0,
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 15000.0,
+            "commission_percent": 1.5,
         })
 
-        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
-        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
-        self.assertAlmostEqual(result.liquidation_sales, 250.0, places=4)
-        self.assertAlmostEqual(result.liquidation_m2, 5.0, places=4)
-        self.assertAlmostEqual(result.liquidation_bonus, 1.50, places=4)
-        detail = result.detail_ids.filtered(lambda d: d.detail_type == "liquidation")
-        self.assertFalse(detail.location_id)
-        self.assertIn("todas las localidades", detail.description)
+        new_period = self.period.copy()
+        copied = new_period.target_ids.filtered(lambda t: t.seller_id == self.seller_1)
+        self.assertEqual(copied.calculation_mode, "sales_tier")
+        self.assertEqual(len(copied.tier_ids), 2)
+        self.assertEqual(
+            sorted(copied.tier_ids.mapped("sales_threshold")),
+            [10000.0, 15000.0],
+        )

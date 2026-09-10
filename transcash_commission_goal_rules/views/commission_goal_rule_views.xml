@@ -5,10 +5,12 @@
         <field name="inherit_id" ref="transcash_commission.view_commission_seller_target_list"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='location_id']" position="replace"/>
+            <xpath expr="//field[@name='target_amount']" position="attributes">
+                <attribute name="string">Meta referencial</attribute>
+            </xpath>
             <xpath expr="//field[@name='target_amount']" position="after">
-                <field name="calculation_mode"/>
-                <field name="minimum_achievement" optional="show"/>
-                <field name="full_commission_percent" optional="show"/>
+                <field name="minimum_sales_to_commission" optional="show"/>
+                <field name="maximum_tier_commission_percent" optional="show"/>
             </xpath>
         </field>
     </record>
@@ -22,21 +24,30 @@
                 <attribute name="duplicate">false</attribute>
             </xpath>
             <xpath expr="//field[@name='location_id']" position="replace"/>
+            <xpath expr="//field[@name='target_amount']" position="attributes">
+                <attribute name="string">Meta referencial</attribute>
+            </xpath>
             <xpath expr="//field[@name='target_amount']" position="after">
-                <field name="calculation_mode"/>
-                <field name="minimum_achievement" invisible="calculation_mode != 'proportional'"/>
-                <field name="full_commission_percent" invisible="calculation_mode != 'proportional'"/>
+                <field name="calculation_mode" invisible="1"/>
+                <field name="minimum_sales_to_commission" readonly="1"/>
+                <field name="maximum_tier_commission_percent" readonly="1"/>
             </xpath>
-            <xpath expr="//sheet//separator[1]" position="attributes">
-                <attribute name="invisible">calculation_mode == 'proportional'</attribute>
+            <xpath expr="//separator[@string='Rangos de cumplimiento']" position="attributes">
+                <attribute name="string">Rangos por monto de ventas</attribute>
             </xpath>
-            <xpath expr="//field[@name='tier_ids']" position="attributes">
-                <attribute name="invisible">calculation_mode == 'proportional'</attribute>
+            <xpath expr="//field[@name='tier_ids']//field[@name='min_achievement']" position="replace">
+                <field name="sales_threshold"/>
             </xpath>
+            <xpath expr="//field[@name='tier_ids']//field[@name='max_achievement']" position="replace"/>
             <xpath expr="//sheet" position="before">
                 <header>
                     <button name="action_open_copy_wizard" type="object" string="Duplicar a otro período" class="btn-secondary"/>
                 </header>
+            </xpath>
+            <xpath expr="//field[@name='tier_ids']" position="after">
+                <div class="alert alert-info mt-2" role="alert">
+                    Configure los rangos por venta mínima. Ejemplo: desde 10.000 = 1%; desde 15.000 = 1,5%. Se aplica a todas las ventas el porcentaje del último rango alcanzado. Por debajo del primer rango la comisión es cero.
+                </div>
             </xpath>
         </field>
     </record>
@@ -131,15 +142,6 @@
         </field>
     </record>
 
-    <record id="view_commission_liquidation_rule_list_goal_rules" model="ir.ui.view">
-        <field name="name">commission.liquidation.rule.list.goal.rules</field>
-        <field name="model">commission.liquidation.rule</field>
-        <field name="inherit_id" ref="transcash_commission.view_commission_liquidation_rule_list"/>
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='location_id']" position="replace"/>
-        </field>
-    </record>
-
     <record id="view_commission_liquidation_rule_form_goal_rules" model="ir.ui.view">
         <field name="name">commission.liquidation.rule.form.goal.rules</field>
         <field name="model">commission.liquidation.rule</field>
@@ -148,7 +150,6 @@
             <xpath expr="//form" position="attributes">
                 <attribute name="duplicate">false</attribute>
             </xpath>
-            <xpath expr="//field[@name='location_id']" position="replace"/>
         </field>
     </record>
 
