@@ -146,17 +146,13 @@ class CommissionSettlement(models.Model):
             else 0.0
         )
         if target.calculation_mode == "sales_tier":
-            tiers = target.tier_ids.sorted(lambda tier: tier.sales_threshold)
-            eligible_tiers = tiers.filtered(
-                lambda tier: basis_amount >= tier.sales_threshold
-            )
-            tier = (
-                eligible_tiers[-1]
-                if eligible_tiers
-                else self.env["commission.seller.target.tier"]
-            )
+            tiers = target.tier_ids.sorted(lambda tier: (tier.sales_threshold, tier.id))
+            tier = target._get_applicable_sales_tier(basis_amount)
             eligible = bool(tier)
             rate = tier.commission_percent if tier else 0.0
+            # El porcentaje del ÚLTIMO umbral alcanzado se aplica a TODA la
+            # base de ventas. No se interpola entre rangos y no se calcula
+            # comisión marginal por tramos.
             commission = basis_amount * rate / 100.0
             minimum_required = (
                 tiers[0].sales_threshold if tiers else 0.0

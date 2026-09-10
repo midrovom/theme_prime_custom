@@ -1,5 +1,13 @@
 # Transcash Commissions - Metas y Liquidaciones
 
+## Corrección 1.8.1: rangos estrictamente escalonados
+
+La comisión de vendedor se determina por el **último umbral de venta alcanzado** y ese porcentaje se aplica a **toda la base de ventas**. No existe interpolación proporcional entre rangos ni cálculo marginal por tramos.
+
+Ejemplo: 32.000 = 0,8%; 34.000 = 0,8%; 39.999 = 0,8%; 40.000 = 1,0%. Con 34.000 la comisión antes de cualquier ajuste de liquidación es 34.000 x 0,8% = 272.
+
+La versión fuerza todas las metas de vendedor al modo `sales_tier` para impedir que configuraciones legadas proporcionales vuelvan a intervenir en el cálculo.
+
 Versión: **18.0.1.8.0**  
 Dependencia: `transcash_commission`
 

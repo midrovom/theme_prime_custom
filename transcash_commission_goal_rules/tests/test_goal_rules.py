@@ -766,4 +766,60 @@ class TestCommissionGoalRules(TransactionCase):
     def test_liquidation_penalty_percent_must_be_valid(self):
         with self.assertRaises(Exception):
             self.period.liquidation_commission_rate_reduction = 120.0
+    def test_sales_tiers_are_stepwise_not_proportional_32_34_40(self):
+        """32k and 34k stay at 0.8%; only 40k moves to 1%."""
+        scenarios = [
+            ("GR-R32", 32000.0, 0.8, 256.0),
+            ("GR-R34", 34000.0, 0.8, 272.0),
+            ("GR-R39999", 39999.0, 0.8, 319.992),
+            ("GR-R40", 40000.0, 1.0, 400.0),
+        ]
+        sellers = []
+        for code, sales, expected_rate, expected_commission in scenarios:
+            seller = self.Seller.create({
+                "code": code,
+                "name": code,
+                "role": "seller",
+            })
+            sellers.append((seller, expected_rate, expected_commission))
+            target = self.env["commission.seller.target"].create({
+                "period_id": self.period.id,
+                "seller_id": seller.id,
+                "target_amount": 40000.0,
+                "basis": "net",
+            })
+            self.env["commission.seller.target.tier"].create([
+                {
+                    "target_id": target.id,
+                    "sales_threshold": 32000.0,
+                    "commission_percent": 0.8,
+                },
+                {
+                    "target_id": target.id,
+                    "sales_threshold": 40000.0,
+                    "commission_percent": 1.0,
+                },
+            ])
+            self._sale(code + "-SALE", seller, self.loc_a, sales)
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        for seller, expected_rate, expected_commission in sellers:
+            result = settlement.result_ids.filtered(lambda r: r.seller_id == seller)
+            detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
+            self.assertAlmostEqual(detail.rate, expected_rate, places=4)
+            self.assertAlmostEqual(
+                result.standard_commission, expected_commission, places=3
+            )
+
+    def test_seller_target_forces_sales_tier_mode(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 40000.0,
+            "basis": "net",
+            "calculation_mode": "proportional",
+        })
+        self.assertEqual(target.calculation_mode, "sales_tier")
+        target.write({"calculation_mode": "tier"})
+        self.assertEqual(target.calculation_mode, "sales_tier")
 

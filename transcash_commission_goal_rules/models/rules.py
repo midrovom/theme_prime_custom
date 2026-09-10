@@ -51,6 +51,19 @@ class CommissionSellerTarget(models.Model):
                 tiers.mapped("commission_percent") or [0.0]
             )
 
+    def _get_applicable_sales_tier(self, sales_amount):
+        """Return the highest sales threshold reached by ``sales_amount``.
+
+        The rate from that single tier applies to the ENTIRE commission basis.
+        There is no proportional interpolation and no marginal calculation by
+        bracket. Example: 32,000 -> 0.8%, 34,000 -> 0.8%, 40,000 -> 1%.
+        """
+        self.ensure_one()
+        eligible = self.tier_ids.filtered(
+            lambda tier: sales_amount >= tier.sales_threshold
+        ).sorted(lambda tier: (tier.sales_threshold, tier.id))
+        return eligible[-1] if eligible else self.env["commission.seller.target.tier"]
+
     @api.constrains("calculation_mode", "minimum_achievement", "full_commission_percent")
     def _check_proportional_configuration(self):
         for rec in self:
@@ -70,13 +83,17 @@ class CommissionSellerTarget(models.Model):
         for vals in vals_list:
             vals = dict(vals)
             vals["location_id"] = False
-            vals.setdefault("calculation_mode", "sales_tier")
+            # Política vigente: la comisión propia siempre usa escalones por
+            # monto de ventas. No se permite reactivar modos proporcionales
+            # desde integraciones, copias o datos importados.
+            vals["calculation_mode"] = "sales_tier"
             clean_vals.append(vals)
         return super().create(clean_vals)
 
     def write(self, vals):
         vals = dict(vals)
         vals["location_id"] = False
+        vals["calculation_mode"] = "sales_tier"
         return super().write(vals)
 
     @api.constrains("period_id", "seller_id")
