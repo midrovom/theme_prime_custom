@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='location_id']" position="replace"/>
             <xpath expr="//field[@name='target_amount']" position="attributes">
-                <attribute name="string">Meta referencial</attribute>
+                <attribute name="string" replace="Meta referencial"/>
             </xpath>
             <xpath expr="//field[@name='target_amount']" position="after">
                 <field name="minimum_sales_to_commission" optional="show"/>
