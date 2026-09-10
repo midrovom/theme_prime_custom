@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from odoo import Command
 from odoo.tests.common import TransactionCase
 
 
@@ -434,6 +435,55 @@ class TestCommissionGoalRules(TransactionCase):
         self.assertEqual(copied.calculation_mode, "proportional")
         self.assertAlmostEqual(copied.minimum_achievement, 80.0, places=4)
         self.assertAlmostEqual(copied.full_commission_percent, 2.0, places=4)
+
+    def test_sales_tier_sets_legacy_required_achievement_automatically(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 20000.0,
+            "basis": "net",
+            "calculation_mode": "sales_tier",
+        })
+        tier = self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 10000.0,
+            "commission_percent": 1.0,
+        })
+        self.assertEqual(tier.min_achievement, 0.0)
+        self.assertEqual(tier.max_achievement, 0.0)
+
+    def test_sales_tier_inline_one2many_create_sets_legacy_required_field(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 20000.0,
+            "basis": "net",
+            "calculation_mode": "sales_tier",
+            "tier_ids": [Command.create({
+                "sales_threshold": 10000.0,
+                "commission_percent": 1.0,
+            })],
+        })
+        self.assertEqual(len(target.tier_ids), 1)
+        self.assertEqual(target.tier_ids.min_achievement, 0.0)
+        self.assertEqual(target.tier_ids.max_achievement, 0.0)
+
+    def test_sales_tier_copy_keeps_legacy_required_field_valid(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 20000.0,
+            "basis": "net",
+            "calculation_mode": "sales_tier",
+        })
+        tier = self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 10000.0,
+            "commission_percent": 1.0,
+        })
+        copied = tier.copy({"sales_threshold": 15000.0})
+        self.assertEqual(copied.min_achievement, 0.0)
+        self.assertEqual(copied.max_achievement, 0.0)
 
     def test_sales_tiers_apply_last_reached_threshold(self):
         target = self.env["commission.seller.target"].create({

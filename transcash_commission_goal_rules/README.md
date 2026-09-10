@@ -124,3 +124,11 @@ Al duplicar el período se copian tanto el porcentaje de reducción como la list
 
 Los PDF consolidado e individual muestran el descuento por meta de liquidación y el cálculo queda registrado como una línea de auditoría.
 
+
+## Corrección 18.0.1.7.1
+
+Los rangos vigentes se configuran por `sales_threshold`, pero el módulo base conserva
+`min_achievement` como campo obligatorio. Desde esta versión toda línea nueva de
+`commission.seller.target.tier` asigna internamente `min_achievement = 0.0` y
+`max_achievement = 0.0`. Esto evita el error de campo obligatorio al crear rangos
+por monto desde la interfaz, APIs, duplicación de metas o duplicación del período.

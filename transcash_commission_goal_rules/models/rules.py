@@ -144,6 +144,23 @@ class CommissionSellerTarget(models.Model):
 
 class CommissionSellerTargetTier(models.Model):
     _inherit = "commission.seller.target.tier"
+    _order = "sales_threshold asc, id asc"
+
+    # Campo legado del módulo base. Aunque ya no participa en el cálculo por
+    # monto vendido, el modelo original lo define como obligatorio. Le damos
+    # un valor técnico por defecto para que las nuevas líneas creadas desde la
+    # vista de rangos por ventas siempre sean válidas.
+    min_achievement = fields.Float(
+        string="Cumplimiento mínimo (%) [legado]",
+        required=True,
+        default=0.0,
+        help="Campo técnico conservado por compatibilidad. En rangos por venta se mantiene en 0.",
+    )
+    max_achievement = fields.Float(
+        string="Cumplimiento máximo (%) [legado]",
+        default=0.0,
+        help="Campo técnico conservado por compatibilidad con el módulo base.",
+    )
 
     sales_threshold = fields.Float(
         string="Venta mínima del rango",
@@ -154,6 +171,28 @@ class CommissionSellerTargetTier(models.Model):
             "1% significa que desde 10.000 y hasta antes del siguiente rango se aplica 1%."
         ),
     )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        clean_vals = []
+        for vals in vals_list:
+            vals = dict(vals)
+            # Defensive compatibility: min_achievement is required in the
+            # original model but no longer shown to the user in sales tiers.
+            vals.setdefault("min_achievement", 0.0)
+            vals.setdefault("max_achievement", 0.0)
+            clean_vals.append(vals)
+        return super().create(clean_vals)
+
+    def write(self, vals):
+        vals = dict(vals)
+        # If an integration explicitly clears the legacy field, keep a valid
+        # numeric value so Odoo never violates the base required constraint.
+        if "min_achievement" in vals and vals.get("min_achievement") is False:
+            vals["min_achievement"] = 0.0
+        if "max_achievement" in vals and vals.get("max_achievement") is False:
+            vals["max_achievement"] = 0.0
+        return super().write(vals)
 
     @api.constrains("target_id", "sales_threshold", "commission_percent")
     def _check_sales_range(self):
