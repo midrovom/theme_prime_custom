@@ -1,6 +1,6 @@
 # Transcash Commissions - Metas y Liquidaciones
 
-Versión: **18.0.1.7.0**  
+Versión: **18.0.1.8.0**  
 Dependencia: `transcash_commission`
 
 ## Cambio principal 1.6.0: metas de vendedores por rangos de venta
@@ -91,9 +91,11 @@ La versión 18.0.1.6.0 utilizaba `@string` como selector XPath sobre el separado
 `View inheritance may not use attribute 'string' as a selector`.
 Ahora el separador se localiza estructuralmente como el hermano inmediatamente
 anterior a `tier_ids`, sin depender de etiquetas traducibles.
-## Cambio 18.0.1.7.0: reducción por incumplir meta de liquidación
+## Histórico 18.0.1.7.0: reducción sobre el valor de comisión (reemplazado en 1.8.0)
 
-El período incorpora dos parámetros en la pestaña **Bono liquidación**:
+Esta sección describe el comportamiento anterior y se conserva solo como referencia de actualización. Desde 1.8.0 la reducción ya no se calcula sobre el valor comisionado.
+
+El período incorporaba dos parámetros en la pestaña **Bono liquidación**:
 
 - `Reducción de comisión por no cumplir liquidación (%)`: porcentaje que se descuenta cuando un vendedor no alcanza una meta de liquidación aplicable.
 - `Vendedores exentos de restricción`: vendedores a los que no se les aplica la reducción aunque no alcancen la meta.
@@ -132,3 +134,24 @@ Los rangos vigentes se configuran por `sales_threshold`, pero el módulo base co
 `commission.seller.target.tier` asigna internamente `min_achievement = 0.0` y
 `max_achievement = 0.0`. Esto evita el error de campo obligatorio al crear rangos
 por monto desde la interfaz, APIs, duplicación de metas o duplicación del período.
+
+
+## Cambio 18.0.1.8.0: la liquidación reduce la tasa, no el valor ya comisionado
+
+La restricción por incumplir la meta de liquidación ahora se expresa en **puntos porcentuales (p.p.)** y se resta directamente de la tasa de comisión obtenida por ventas.
+
+Ejemplo:
+
+- rango alcanzado: 2,00%;
+- reducción de tasa por liquidación: 0,50 p.p.;
+- tasa efectiva: 1,50%;
+- ventas base: 32.000,00;
+- comisión efectiva: 32.000 x 1,50% = 480,00.
+
+No se calcula `comisión x porcentaje de descuento`. La tasa efectiva nunca puede bajar de 0%.
+
+La misma mecánica aplica a cada línea de comisión de proyectos/origen. La comisión de gestión del administrador y el bono de liquidación no se reducen. Los vendedores incluidos como exentos mantienen sus tasas originales.
+
+Para proteger datos históricos, el parámetro anterior `Reducción sobre comisión (%)` se conserva como campo legado oculto y **no se reutiliza** con la nueva semántica. Debe configurarse el nuevo campo `Reducción de tasa por no cumplir liquidación (p.p.)`. Esto evita interpretar accidentalmente un valor histórico como 20% como una resta de 20 puntos porcentuales.
+
+En la auditoría de la liquidación, las líneas de comisión muestran la tasa efectiva y su descripción registra la tasa original, los puntos restados y la tasa final. El campo de reducción monetaria es informativo; el total no lo vuelve a restar porque la comisión propia/proyecto ya fue recalculada con la tasa efectiva.

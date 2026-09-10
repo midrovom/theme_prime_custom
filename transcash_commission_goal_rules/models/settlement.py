@@ -362,16 +362,15 @@ class CommissionSettlement(models.Model):
     def _apply_liquidation_commission_penalty(
         self, result, seller, seller_sales, Detail
     ):
-        """Reduce comisión de ventas si no se alcanza la meta de liquidación.
+        """Resta puntos porcentuales a la tasa ganada por ventas.
 
-        La reducción se aplica una sola vez, aunque existan varias metas de
-        liquidación. Si hay varias reglas aplicables, basta que una no se cumpla
-        para activar la restricción. Vendedores incluidos en la lista de exentos
-        del período no reciben descuento.
+        Si el vendedor incumple una meta de liquidación aplicable, la reducción
+        configurada se resta DIRECTAMENTE de cada tasa de comisión de ventas
+        obtenida (comisión propia y proyectos). Ejemplo: 2,00% - 0,50 p.p.
+        = 1,50%. La tasa nunca puede quedar por debajo de 0%.
 
-        Base penalizable = comisión propia + comisión de proyectos.
-        No se afecta la comisión de gestión del administrador ni el bono de
-        liquidación (que ya se paga únicamente cuando su meta se cumple).
+        No se reduce un porcentaje del valor ya comisionado. La comisión de
+        gestión del administrador y el bono de liquidación tampoco se alteran.
         """
         self.ensure_one()
         period = self.period_id
@@ -385,21 +384,6 @@ class CommissionSettlement(models.Model):
         result.liquidation_target_met = not bool(unmet)
         if not unmet:
             return
-
-        commission_base = max(
-            (result.standard_commission or 0.0)
-            + (result.project_commission or 0.0),
-            0.0,
-        )
-        is_exempt = seller in period.liquidation_penalty_exempt_seller_ids
-        configured_percent = period.liquidation_commission_penalty_percent or 0.0
-        applied_percent = 0.0 if is_exempt else configured_percent
-        penalty = commission_base * applied_percent / 100.0
-
-        result.liquidation_penalty_base = commission_base
-        result.liquidation_penalty_percent = applied_percent
-        result.liquidation_penalty = penalty
-        result.liquidation_penalty_applied = bool(penalty)
 
         failed_parts = []
         for evaluation in unmet:
@@ -417,32 +401,107 @@ class CommissionSettlement(models.Model):
                 }
             )
 
+        is_exempt = seller in period.liquidation_penalty_exempt_seller_ids
+        configured_points = period.liquidation_commission_rate_reduction or 0.0
+        applied_points = 0.0 if is_exempt else configured_points
+
+        commission_details = result.detail_ids.filtered(
+            lambda detail: detail.detail_type in ("standard", "project")
+            and (detail.amount or 0.0) > 0.0
+            and (detail.rate or 0.0) > 0.0
+        )
+        original_commission = sum(commission_details.mapped("amount"))
+        monetary_reduction = 0.0
+
+        if applied_points > 0.0:
+            for detail in commission_details:
+                original_rate = detail.rate or 0.0
+                detail_reduction = min(applied_points, original_rate)
+                effective_rate = max(original_rate - applied_points, 0.0)
+                original_amount = detail.amount or 0.0
+                effective_amount = (
+                    (detail.basis_amount or 0.0) * effective_rate / 100.0
+                )
+                monetary_reduction += max(
+                    original_amount - effective_amount, 0.0
+                )
+                detail.write({
+                    "original_rate": original_rate,
+                    "liquidation_rate_reduction": detail_reduction,
+                    "rate": effective_rate,
+                    "amount": effective_amount,
+                    "description": (
+                        "%s | %s" % (
+                            detail.description or "",
+                            _(
+                                "Ajuste liquidación: %(original).4f%% - "
+                                "%(reduction).4f p.p. = %(effective).4f%%"
+                            ) % {
+                                "original": original_rate,
+                                "reduction": detail_reduction,
+                                "effective": effective_rate,
+                            },
+                        )
+                    ).strip(" |"),
+                })
+
+            # Los importes principales quedan ya calculados con la tasa efectiva.
+            # Por ello el descuento monetario NO se vuelve a restar al total.
+            result.standard_commission = sum(
+                result.detail_ids.filtered(
+                    lambda detail: detail.detail_type == "standard"
+                ).mapped("amount")
+            )
+            result.project_commission = sum(
+                result.detail_ids.filtered(
+                    lambda detail: detail.detail_type == "project"
+                ).mapped("amount")
+            )
+
+        result.liquidation_penalty_base = original_commission
+        result.liquidation_penalty_percent = 0.0  # campo legado 1.7.x
+        result.liquidation_rate_reduction = applied_points
+        result.liquidation_penalty = monetary_reduction
+        result.liquidation_rate_adjusted = bool(monetary_reduction)
+        result.liquidation_penalty_applied = bool(monetary_reduction)
+
         if is_exempt:
             description = _(
                 "Meta de liquidación no cumplida, pero el vendedor está exento "
-                "de la restricción. Metas incumplidas: %(failed)s"
+                "del ajuste de tasa. Metas incumplidas: %(failed)s"
             ) % {"failed": "; ".join(failed_parts)}
-        elif configured_percent <= 0.0:
+        elif configured_points <= 0.0:
             description = _(
-                "Meta de liquidación no cumplida. La reducción del período está "
-                "configurada en 0%%. Metas incumplidas: %(failed)s"
+                "Meta de liquidación no cumplida. La reducción de tasa está "
+                "configurada en 0 p.p. Metas incumplidas: %(failed)s"
             ) % {"failed": "; ".join(failed_parts)}
         else:
+            adjusted_commission = max(
+                original_commission - monetary_reduction, 0.0
+            )
             description = _(
-                "Meta de liquidación no cumplida. Reducción %(percent).2f%% "
-                "sobre comisión propia + proyectos. Metas incumplidas: %(failed)s"
+                "Meta de liquidación no cumplida. Se restan %(points).4f puntos "
+                "porcentuales a cada tasa de comisión propia/proyecto, sin bajar "
+                "de 0%%. Comisión antes del ajuste %(before).2f; después %(after).2f; "
+                "reducción monetaria %(amount).2f. Metas incumplidas: %(failed)s"
             ) % {
-                "percent": configured_percent,
+                "points": configured_points,
+                "before": original_commission,
+                "after": adjusted_commission,
+                "amount": monetary_reduction,
                 "failed": "; ".join(failed_parts),
             }
 
+        # Línea informativa: el importe de la reducción ya está incorporado en
+        # las líneas standard/project mediante su nueva tasa efectiva; por eso
+        # aquí amount=0 evita descontarlo una segunda vez en cualquier auditoría.
         Detail.create({
             "result_id": result.id,
             "detail_type": "liquidation_penalty",
             "description": description,
-            "basis_amount": commission_base,
-            "rate": applied_percent,
-            "amount": -penalty,
+            "basis_amount": original_commission,
+            "rate": applied_points,
+            "amount": 0.0,
             "eligible": False,
         })
 
@@ -461,16 +520,28 @@ class CommissionResult(models.Model):
         default=True,
     )
     liquidation_penalty_base = fields.Float(
-        string="Comisión sujeta a reducción",
+        string="Comisión antes del ajuste de tasa",
         digits=(16, 4),
     )
     liquidation_penalty_percent = fields.Float(
-        string="Reducción liquidación (%)",
+        string="Reducción sobre comisión (%) [legado]",
+        digits=(16, 4),
+        help="Campo histórico de versiones 1.7.x.",
+    )
+    liquidation_rate_reduction = fields.Float(
+        string="Reducción de tasa liquidación (p.p.)",
         digits=(16, 4),
     )
     liquidation_penalty = fields.Float(
-        string="Descuento por meta liquidación",
+        string="Reducción monetaria (ya aplicada)",
         digits=(16, 4),
+    )
+    liquidation_rate_adjusted = fields.Boolean(
+        string="Tasa ajustada directamente",
+        help=(
+            "Indica que la reducción monetaria ya está incorporada en las tasas "
+            "efectivas de comisión y no debe restarse nuevamente al total."
+        ),
     )
     liquidation_penalty_applied = fields.Boolean(
         string="Reducción aplicada",
@@ -479,7 +550,11 @@ class CommissionResult(models.Model):
     def _recompute_total(self):
         res = super()._recompute_total()
         for rec in self:
-            rec.total_commission -= rec.liquidation_penalty or 0.0
+            # Compatibilidad con liquidaciones históricas 1.7.x: esas versiones
+            # calculaban primero la comisión completa y luego restaban un monto.
+            # Las nuevas liquidaciones ya guardan standard/project con tasa neta.
+            if rec.liquidation_penalty and not rec.liquidation_rate_adjusted:
+                rec.total_commission -= rec.liquidation_penalty
         return res
 
     def action_print_individual(self):
@@ -497,4 +572,13 @@ class CommissionResultDetail(models.Model):
             ("liquidation_penalty", "Reducción por meta de liquidación"),
         ],
         ondelete={"liquidation_penalty": "cascade"},
+    )
+    original_rate = fields.Float(
+        string="Tasa original (%)",
+        digits=(16, 4),
+        help="Tasa antes de aplicar la reducción por incumplir liquidación.",
+    )
+    liquidation_rate_reduction = fields.Float(
+        string="Reducción de tasa (p.p.)",
+        digits=(16, 4),
     )

@@ -54,7 +54,7 @@
                                     <th class="tc-num">Proyectos</th>
                                     <th class="tc-num">Gestión</th>
                                     <th class="tc-num">Bono liq.</th>
-                                    <th class="tc-num">Desc. liq.</th>
+                                    <th class="tc-num">Reducc. tasa*</th>
                                     <th class="tc-num">Total</th>
                                 </tr>
                             </thead>
@@ -85,7 +85,8 @@
                         </table>
 
                         <p style="font-size:9px; margin-top:10px;">
-                            Este reporte incluye únicamente vendedores o administradores con una parametrización activa de comisión aplicable al período (meta, proyecto, gestión o bono específico).
+                            Este reporte incluye únicamente vendedores o administradores con una parametrización activa de comisión aplicable al período (meta, proyecto, gestión o bono específico).<br/>
+                            * La reducción monetaria por liquidación es informativa: ya está incorporada en Comisión propia/Proyectos mediante la tasa efectiva y no debe restarse nuevamente del total.
                         </p>
                     </div>
                 </t>
@@ -155,7 +156,7 @@
                                 <tr>
                                     <td>Bono liquidación</td>
                                     <td class="tc-num"><span t-field="o.liquidation_bonus" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td>Descuento meta liquidación</td>
+                                    <td>Reducción monetaria (ya aplicada)</td>
                                     <td class="tc-num"><span t-field="o.liquidation_penalty" t-options='{"widget": "float", "precision": 2}'/></td>
                                     <td><strong>Total comisión</strong></td>
                                     <td class="tc-num tc-total"><span t-field="o.total_commission" t-options='{"widget": "float", "precision": 2}'/></td>
@@ -163,10 +164,10 @@
                                 <tr t-if="o.liquidation_penalty_base or not o.liquidation_target_met">
                                     <td>Cumple meta liquidación</td>
                                     <td><span t-esc="'Sí' if o.liquidation_target_met else 'No'"/></td>
-                                    <td>Comisión sujeta a reducción</td>
+                                    <td>Comisión antes del ajuste</td>
                                     <td class="tc-num"><span t-field="o.liquidation_penalty_base" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td>% reducción aplicado</td>
-                                    <td class="tc-num"><span t-field="o.liquidation_penalty_percent" t-options='{"widget": "float", "precision": 2}'/>%</td>
+                                    <td>Reducción de tasa</td>
+                                    <td class="tc-num"><span t-field="o.liquidation_rate_reduction" t-options='{"widget": "float", "precision": 4}'/> p.p.</td>
                                 </tr>
                             </table>
                         </div>
@@ -181,7 +182,7 @@
                                     <th>Local</th>
                                     <th class="tc-num">Base</th>
                                     <th class="tc-num">Cant./m²</th>
-                                    <th class="tc-num">% / tarifa</th>
+                                    <th class="tc-num">Tasa efectiva / tarifa</th>
                                     <th>Cumple</th>
                                     <th class="tc-num">Comisión</th>
                                 </tr>

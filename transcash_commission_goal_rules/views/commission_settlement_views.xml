@@ -12,7 +12,7 @@
                         invisible="state == 'draft'"/>
             </xpath>
             <xpath expr="//field[@name='result_ids']//field[@name='liquidation_bonus']" position="after">
-                <field name="liquidation_penalty" sum="Total reducción"/>
+                <field name="liquidation_penalty" sum="Reducción monetaria total"/>
             </xpath>
         </field>
     </record>
@@ -33,7 +33,7 @@
             <xpath expr="//field[@name='liquidation_bonus']" position="after">
                 <field name="liquidation_target_met" readonly="1"/>
                 <field name="liquidation_penalty_base" readonly="1"/>
-                <field name="liquidation_penalty_percent" readonly="1"/>
+                <field name="liquidation_rate_reduction" readonly="1"/>
                 <field name="liquidation_penalty" readonly="1"/>
                 <field name="liquidation_penalty_applied" readonly="1"/>
             </xpath>
@@ -46,7 +46,7 @@
         <field name="inherit_id" ref="transcash_commission.view_commission_result_list"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='liquidation_bonus']" position="after">
-                <field name="liquidation_penalty" sum="Total reducción"/>
+                <field name="liquidation_penalty" sum="Reducción monetaria total"/>
             </xpath>
         </field>
     </record>

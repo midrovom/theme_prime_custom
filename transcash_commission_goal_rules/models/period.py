@@ -31,14 +31,27 @@ class CommissionPeriod(models.Model):
         string="Detalles de gestión (compatibilidad)",
     )
 
+    # Campo legado de 1.7.x. Se conserva para no alterar datos históricos,
+    # pero el cálculo nuevo NO lo utiliza porque representaba un porcentaje
+    # sobre el valor de la comisión ya calculada.
     liquidation_commission_penalty_percent = fields.Float(
-        string="Reducción de comisión por no cumplir liquidación (%)",
+        string="Reducción sobre comisión (%) [legado]",
         digits=(16, 4),
         default=0.0,
         help=(
-            "Si un vendedor no alcanza una meta de liquidación aplicable, se "
-            "descuenta este porcentaje de su comisión de ventas (comisión propia "
-            "+ proyectos). La comisión de gestión del administrador no se reduce."
+            "Campo conservado únicamente por compatibilidad con versiones 1.7.x. "
+            "La lógica vigente utiliza puntos porcentuales a restar de la tasa."
+        ),
+    )
+    liquidation_commission_rate_reduction = fields.Float(
+        string="Reducción de tasa por no cumplir liquidación (p.p.)",
+        digits=(16, 4),
+        default=0.0,
+        help=(
+            "Puntos porcentuales que se restan directamente de la tasa de comisión "
+            "obtenida por ventas. Ej.: tasa ganada 2,00% y reducción 0,50 p.p. "
+            "=> tasa efectiva 1,50%. Nunca reduce la tasa por debajo de 0%. "
+            "Aplica a comisión propia y proyectos; no afecta gestión ni bono."
         ),
     )
     liquidation_penalty_exempt_seller_ids = fields.Many2many(
@@ -54,12 +67,19 @@ class CommissionPeriod(models.Model):
         ),
     )
 
-    @api.constrains("liquidation_commission_penalty_percent")
+    @api.constrains(
+        "liquidation_commission_penalty_percent",
+        "liquidation_commission_rate_reduction",
+    )
     def _check_liquidation_commission_penalty_percent(self):
         for rec in self:
             if not 0.0 <= rec.liquidation_commission_penalty_percent <= 100.0:
                 raise ValidationError(
-                    _("La reducción por incumplir la meta de liquidación debe estar entre 0% y 100%.")
+                    _("La reducción histórica sobre comisión debe estar entre 0% y 100%.")
+                )
+            if not 0.0 <= rec.liquidation_commission_rate_reduction <= 100.0:
+                raise ValidationError(
+                    _("La reducción de tasa por liquidación debe estar entre 0 y 100 puntos porcentuales.")
                 )
 
     def _next_available_copy_dates(self):
@@ -138,9 +158,11 @@ class CommissionPeriod(models.Model):
             default.setdefault("date_end", next_end)
 
         default.setdefault("name", _("%s (copia)") % self.name)
+        # No arrastramos la semántica histórica 1.7.x a períodos nuevos.
+        default.setdefault("liquidation_commission_penalty_percent", 0.0)
         default.setdefault(
-            "liquidation_commission_penalty_percent",
-            self.liquidation_commission_penalty_percent,
+            "liquidation_commission_rate_reduction",
+            self.liquidation_commission_rate_reduction,
         )
         default.setdefault(
             "liquidation_penalty_exempt_seller_ids",
