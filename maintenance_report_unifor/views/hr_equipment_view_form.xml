@@ -15,7 +15,7 @@
         <field name="model">maintenance.equipment</field>
         <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//notebook/page[@string='Información del producto']//field[@name='serial_no']" position="after">
+            <xpath expr="//page[@name='product_information']//field[@name='serial_no']" position="after">
                 <field name="talla"/>
             </xpath>
         </field>
