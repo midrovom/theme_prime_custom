@@ -15,7 +15,7 @@
 
                 <!-- Texto inicial -->
                 <p style="margin-top:15px; text-align:justify;">
-                    El trabajador <strong><span t-out="docs[0].employee_id.name"/></strong> recibe de la empresa el uniforme en perfectas condiciones:
+                    El trabajador <strong><span t-out="docs[0].employee_id.name"/></strong> recibe de la empresa <strong><span t-out="docs[0].partner_id.name"/></strong> el uniforme en perfectas condiciones:
                 </p>
 
                 <!-- Tabla de uniformes -->
