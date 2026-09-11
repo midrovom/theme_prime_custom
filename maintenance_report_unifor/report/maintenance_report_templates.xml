@@ -25,8 +25,8 @@
                             <th style="padding:5px; font-weight:bold;">Cantidad</th>
                             <th style="padding:5px; font-weight:bold;">Uniforme</th>
                             <th style="padding:5px; font-weight:bold;">Detalle</th>
-                            <th style="padding:5px; font-weight:bold;">talla</th>
-                            <th style="padding:5px; font-weight:bold;" >estado</th>
+                            <th style="padding:5px; font-weight:bold;">Talla</th>
+                            <th style="padding:5px; font-weight:bold;" >Estado</th>
                         </tr>
                     </thead>
                     <tbody>
