@@ -24,6 +24,7 @@
                         <tr style="background-color:#f0f0f0; text-align:center;">
                             <th style="padding:5px;">Uniforme</th>
                             <th style="padding:5px;">Detalle</th>
+                            <th style="padding:5px;">Talla</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -32,6 +33,7 @@
                                 <tr>
                                     <td style="padding:5px;"><span t-out="equipment.name"/></td>
                                     <td style="padding:5px;"><span t-out="equipment.note or ''"/></td>
+                                    <td style="padding:5px;"><span t-out="equipment.talla or ''"/></td>
                                 </tr>
                             </t>
                         </t>
