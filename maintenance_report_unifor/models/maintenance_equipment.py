@@ -8,10 +8,15 @@ class MaintenanceProductCategory(models.Model):
     description = fields.Text(string='Descripción')
 
 
+from odoo import models, fields, api
+import re
+
 class MaintenanceEquipment(models.Model):
     _inherit = 'maintenance.equipment'
 
-    product_category_id = fields.Many2one('maintenance.product.category', string='Tipo de producto',
+    product_category_id = fields.Many2one(
+        'maintenance.product.category',
+        string='Tipo de producto',
         tracking=True
     )
 
@@ -23,11 +28,11 @@ class MaintenanceEquipment(models.Model):
 
     @api.onchange('category_id', 'department_id')
     def _onchange_category_department(self):
-        """Genera el código preliminar mientras se llenan los campos."""
+        """Genera un código preliminar mientras se llenan los campos."""
         if self.category_id and self.department_id:
             cat = (self.category_id.name or '')[:3].capitalize()
             dept = (self.department_id.name or '')[:3].capitalize()
-            self.name = f"{cat}-{dept}-XXX"  
+            self.name = f"{cat}-{dept}-XXX"
 
     @api.model
     def create(self, vals):
@@ -40,8 +45,21 @@ class MaintenanceEquipment(models.Model):
             dept_rec = self.env['hr.department'].browse(vals['department_id'])
             department = (dept_rec.name or '')[:3].capitalize()
 
-        seq = self.env['ir.sequence'].next_by_code('maintenance.equipment.code') or '000'
-        vals['name'] = f"{category}-{department}-{seq}"
+        prefix = f"{category}-{department}-"
+        last_equipment = self.search([('name', 'like', prefix)], order='name desc', limit=1)
+
+        next_seq = 1
+        if last_equipment:
+            match = re.search(rf"{prefix}(\d+)", last_equipment.name)
+            if match:
+                last_num = int(match.group(1))
+                next_seq = last_num + 1
+
+        # Formatear con padding de 3 dígitos
+        seq_str = str(next_seq).zfill(3)
+
+        vals['name'] = f"{prefix}{seq_str}"
 
         return super(MaintenanceEquipment, self).create(vals)
+
 
