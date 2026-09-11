@@ -22,9 +22,11 @@
                 <table style="margin-top:20px; width:100%; border-collapse:collapse; font-size:12px;" border="1">
                     <thead>
                         <tr style="background-color:#f0f0f0; text-align:center;">
-                            <th style="padding:5px;">Uniforme</th>
+                            <th style="padding:5px;">Cantidad</th>
+                            <th style="padding:5px;">Codigo</th>
                             <th style="padding:5px;">Detalle</th>
-                            <th style="padding:5px;">Talla</th>
+                            <th style="padding:5px;">talla</th>
+                            <th style="padding:5px;">estado</th>
                         </tr>
                     </thead>
                     <tbody>
