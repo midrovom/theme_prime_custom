@@ -13,7 +13,8 @@
     'data': [
         'report/maintenance_report_views.xml',
         'report/maintenance_report_templates.xml',
-        'views/maintenance_report_views.xml',
+        'views/hr_equipment_view_form.xml',
+        'views/maintenance_product_category_view.xml',
     ],
     'assets': {
         'web.assets_frontend': [
