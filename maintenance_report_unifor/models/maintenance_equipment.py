@@ -97,6 +97,18 @@ class MaintenanceProductCategory(models.Model):
 class MaintenanceEquipment(models.Model):
     _inherit = 'maintenance.equipment'
 
+    product_category_id = fields.Many2one(
+        'maintenance.product.category',
+        string='Tipo de producto',
+        tracking=True
+    )
+
+    cantidad = fields.Char(string='Cantidad')
+    talla = fields.Char(string='Talla')
+    estado = fields.Char(string='Estado')
+
+    name = fields.Char('Name', translate=True)
+
     @api.onchange('category_id', 'partner_id')
     def _onchange_category_partner(self):
         """Previsualiza el código mientras se llenan los campos."""
