@@ -1,3 +1,4 @@
+import base64
 from datetime import timedelta
 
 from odoo import Command
@@ -62,7 +63,8 @@ class TestCommissionGoalRules(TransactionCase):
         return target
 
     def _sale(
-        self, code, seller, location, net, origin=None, price_indicator=0.0, quantity=1.0
+        self, code, seller, location, net, origin=None, price_indicator=0.0,
+        quantity=1.0, product_name=None
     ):
         return self.Sale.create({
             "fingerprint": code,
@@ -73,6 +75,7 @@ class TestCommissionGoalRules(TransactionCase):
             "number": code,
             "invoice": code,
             "product_code": code,
+            "product_name": product_name or code,
             "origin": origin or "",
             "price_indicator": price_indicator,
             "quantity": quantity,
@@ -80,6 +83,13 @@ class TestCommissionGoalRules(TransactionCase):
             "total_net": net,
             "profit": net * 0.30,
             "document_sign": 1.0,
+        })
+
+    def _promotion(self, name, code="CORTADO"):
+        return self.env["commission.period.promotion.product"].create({
+            "period_id": self.period.id,
+            "product_name": name,
+            "source_code": code,
         })
 
     def _location_target(self, amount=1000.0):
@@ -306,6 +316,7 @@ class TestCommissionGoalRules(TransactionCase):
             "amount_per_m2": 0.25,
             "basis": "net",
         })
+        promotion = self._promotion("CERÁMICA PROMO 60X60", code="00123")
 
         new_period = self.period.copy()
 
@@ -333,6 +344,9 @@ class TestCommissionGoalRules(TransactionCase):
             liquidation_rule.amount_per_m2,
             places=4,
         )
+        self.assertEqual(len(new_period.promotion_product_ids), 1)
+        self.assertEqual(new_period.promotion_product_ids.product_name, promotion.product_name)
+        self.assertFalse(new_period.promotion_file)
 
     def test_copy_single_target_to_other_period(self):
         target = self._target(self.seller_1, amount=1200.0, rate=1.5)
@@ -357,7 +371,7 @@ class TestCommissionGoalRules(TransactionCase):
                 "basis": "net",
             })
 
-    def test_proportional_target_pays_equivalent_rate_after_minimum(self):
+    def test_legacy_proportional_input_is_forced_to_sales_tier(self):
         target = self.env["commission.seller.target"].create({
             "period_id": self.period.id,
             "seller_id": self.seller_1.id,
@@ -367,74 +381,7 @@ class TestCommissionGoalRules(TransactionCase):
             "minimum_achievement": 80.0,
             "full_commission_percent": 2.0,
         })
-        self.assertEqual(target.calculation_mode, "proportional")
-        self._sale("GR-PROP-1", self.seller_1, self.loc_a, 32000.0)
-
-        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
-        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
-
-        achievement = 32000.0 / 35000.0 * 100.0
-        effective_rate = 2.0 * achievement / 100.0
-        expected_commission = 32000.0 * effective_rate / 100.0
-        self.assertAlmostEqual(result.achievement_percent, achievement, places=4)
-        self.assertAlmostEqual(result.standard_commission, expected_commission, places=4)
-        detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
-        self.assertAlmostEqual(detail.rate, effective_rate, places=4)
-        self.assertTrue(detail.eligible)
-
-    def test_proportional_target_does_not_pay_below_minimum(self):
-        self.env["commission.seller.target"].create({
-            "period_id": self.period.id,
-            "seller_id": self.seller_1.id,
-            "target_amount": 35000.0,
-            "basis": "net",
-            "calculation_mode": "proportional",
-            "minimum_achievement": 80.0,
-            "full_commission_percent": 2.0,
-        })
-        self._sale("GR-PROP-MIN", self.seller_1, self.loc_a, 27000.0)
-
-        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
-        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
-        self.assertAlmostEqual(result.standard_commission, 0.0, places=4)
-        detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
-        self.assertFalse(detail.eligible)
-
-    def test_proportional_target_caps_rate_at_full_commission(self):
-        self.env["commission.seller.target"].create({
-            "period_id": self.period.id,
-            "seller_id": self.seller_1.id,
-            "target_amount": 35000.0,
-            "basis": "net",
-            "calculation_mode": "proportional",
-            "minimum_achievement": 80.0,
-            "full_commission_percent": 2.0,
-        })
-        self._sale("GR-PROP-CAP", self.seller_1, self.loc_a, 42000.0)
-
-        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
-        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
-        self.assertAlmostEqual(result.achievement_percent, 120.0, places=4)
-        self.assertAlmostEqual(result.standard_commission, 840.0, places=4)
-        detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
-        self.assertAlmostEqual(detail.rate, 2.0, places=4)
-
-    def test_duplicate_period_copies_proportional_target_configuration(self):
-        self.env["commission.seller.target"].create({
-            "period_id": self.period.id,
-            "seller_id": self.seller_1.id,
-            "target_amount": 35000.0,
-            "basis": "net",
-            "calculation_mode": "proportional",
-            "minimum_achievement": 80.0,
-            "full_commission_percent": 2.0,
-        })
-
-        new_period = self.period.copy()
-        copied = new_period.target_ids.filtered(lambda t: t.seller_id == self.seller_1)
-        self.assertEqual(copied.calculation_mode, "proportional")
-        self.assertAlmostEqual(copied.minimum_achievement, 80.0, places=4)
-        self.assertAlmostEqual(copied.full_commission_percent, 2.0, places=4)
+        self.assertEqual(target.calculation_mode, "sales_tier")
 
     def test_sales_tier_sets_legacy_required_achievement_automatically(self):
         target = self.env["commission.seller.target"].create({
@@ -603,6 +550,7 @@ class TestCommissionGoalRules(TransactionCase):
             "commission_percent": 2.0,
         })
         self.period.liquidation_commission_rate_reduction = 0.5
+        self._promotion("CERAMICA PROMO GR-LP")
         self.env["commission.liquidation.rule"].create({
             "period_id": self.period.id,
             "seller_id": self.seller_1.id,
@@ -611,10 +559,15 @@ class TestCommissionGoalRules(TransactionCase):
             "amount_per_m2": 0.30,
             "basis": "net",
         })
-        self._sale("GR-LP-NORMAL", self.seller_1, self.loc_a, 900.0)
+        # Indica_Precio=3 en un producto NO promocional ya no lo incluye.
+        self._sale(
+            "GR-LP-NORMAL", self.seller_1, self.loc_a, 900.0,
+            price_indicator=3.0, product_name="PRODUCTO NORMAL"
+        )
+        # El producto promocional sí entra aun con Indica_Precio=0.
         self._sale(
             "GR-LP-LIQ", self.seller_1, self.loc_a, 100.0,
-            price_indicator=3.0, quantity=10.0,
+            price_indicator=0.0, quantity=10.0, product_name="Cerámica Promo GR LP"
         )
 
         settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
@@ -654,6 +607,7 @@ class TestCommissionGoalRules(TransactionCase):
             "liquidation_commission_rate_reduction": 0.5,
             "liquidation_penalty_exempt_seller_ids": [(6, 0, [self.seller_1.id])],
         })
+        self._promotion("PROMO EXENTA")
         self.env["commission.liquidation.rule"].create({
             "period_id": self.period.id,
             "seller_id": self.seller_1.id,
@@ -665,7 +619,7 @@ class TestCommissionGoalRules(TransactionCase):
         self._sale("GR-EX-NORMAL", self.seller_1, self.loc_a, 900.0)
         self._sale(
             "GR-EX-LIQ", self.seller_1, self.loc_a, 100.0,
-            price_indicator=3.0, quantity=10.0,
+            price_indicator=0.0, quantity=10.0, product_name="Promo Exenta",
         )
 
         settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
@@ -694,6 +648,7 @@ class TestCommissionGoalRules(TransactionCase):
             "commission_percent": 2.0,
         })
         self.period.liquidation_commission_rate_reduction = 0.5
+        self._promotion("PROMO META CUMPLIDA")
         self.env["commission.liquidation.rule"].create({
             "period_id": self.period.id,
             "seller_id": self.seller_1.id,
@@ -705,7 +660,7 @@ class TestCommissionGoalRules(TransactionCase):
         self._sale("GR-MET-NORMAL", self.seller_1, self.loc_a, 800.0)
         self._sale(
             "GR-MET-LIQ", self.seller_1, self.loc_a, 200.0,
-            price_indicator=3.0, quantity=10.0,
+            price_indicator=0.0, quantity=10.0, product_name="Promo Meta Cumplida",
         )
 
         settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
@@ -719,6 +674,7 @@ class TestCommissionGoalRules(TransactionCase):
     def test_liquidation_failure_reduces_project_rate_in_percentage_points(self):
         self.seller_1.role = "project"
         self.period.liquidation_commission_rate_reduction = 0.25
+        self._promotion("PROMO SIN VENTA")
         self.env["commission.project.rule"].create({
             "period_id": self.period.id,
             "seller_id": self.seller_1.id,
@@ -751,6 +707,58 @@ class TestCommissionGoalRules(TransactionCase):
         project_detail = result.detail_ids.filtered(lambda d: d.detail_type == "project")
         self.assertAlmostEqual(project_detail.original_rate, 1.5, places=4)
         self.assertAlmostEqual(project_detail.rate, 1.25, places=4)
+
+    def test_promotion_csv_import_uses_name_and_ignores_truncated_code(self):
+        content = (
+            "Codproducto;Descripción Producto\n"
+            "002006;CERÁMICA CSL CUBIC GREY C1 (27*45) 1.70 M2\n"
+            "002;OTRO PRODUCTO\n"
+        ).encode("utf-8")
+        self.period.write({
+            "promotion_filename": "promociones.csv",
+            "promotion_file": base64.b64encode(content),
+        })
+        self.period.action_import_promotion_products()
+        self.assertEqual(self.period.promotion_product_count, 2)
+        promo = self.period.promotion_product_ids.filtered(
+            lambda p: "CUBIC GREY" in p.product_name
+        )
+        self.assertTrue(promo)
+        self.assertEqual(promo.source_code, "002006")
+
+    def test_liquidation_requires_promotion_list_when_rules_exist(self):
+        self._target(self.seller_1, amount=1000.0, rate=1.0)
+        self.env["commission.liquidation.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "min_sales_amount": 100.0,
+            "amount_per_m2": 0.2,
+            "basis": "net",
+        })
+        self._sale("GR-NO-PROMO", self.seller_1, self.loc_a, 500.0)
+        with self.assertRaises(Exception):
+            self.env["commission.settlement"].create_or_recalculate(self.period)
+
+    def test_promotion_name_normalization_matches_sale_product_name(self):
+        self._target(self.seller_1, amount=1000.0, rate=0.0)
+        self._promotion("CERÁMICA CSL CUBIC GREY C1 (27*45) 1.70 M2", code="COD-CORTADO")
+        self.env["commission.liquidation.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "min_sales_amount": 200.0,
+            "amount_per_m2": 0.5,
+            "basis": "net",
+        })
+        self._sale(
+            "GR-NAME-MATCH", self.seller_1, self.loc_a, 250.0,
+            quantity=10.0, price_indicator=0.0,
+            product_name="ceramica  csl cubic grey c1 27 45 1.70 m2",
+        )
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+        self.assertAlmostEqual(result.liquidation_sales, 250.0, places=4)
+        self.assertAlmostEqual(result.liquidation_m2, 10.0, places=4)
+        self.assertAlmostEqual(result.liquidation_bonus, 5.0, places=4)
 
     def test_duplicate_period_copies_liquidation_penalty_configuration(self):
         self.period.write({

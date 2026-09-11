@@ -3,6 +3,8 @@ from collections import defaultdict
 from odoo import fields, models, _, api
 from odoo.exceptions import UserError
 
+from .promotion_utils import normalize_product_name
+
 
 class CommissionSettlement(models.Model):
     _inherit = "commission.settlement"
@@ -11,6 +13,11 @@ class CommissionSettlement(models.Model):
         """Genera resultados solo para personas con parametrización activa."""
         self.ensure_one()
         period = self.period_id
+        if period.liquidation_rule_ids and not period.promotion_product_ids:
+            raise UserError(_(
+                "El período tiene reglas de liquidación, pero no tiene productos en promoción cargados. "
+                "Cargue el archivo de promociones en la pestaña Bono liquidación antes de calcular."
+            ))
         Sale = self.env["commission.sale"]
         Result = self.env["commission.result"]
         Detail = self.env["commission.result.detail"]
@@ -228,6 +235,74 @@ class CommissionSettlement(models.Model):
             "eligible": eligible,
         })
 
+    def _promotion_name_set(self):
+        self.ensure_one()
+        return {
+            name for name in self.period_id.promotion_product_ids.mapped("normalized_name")
+            if name
+        }
+
+    def _promotion_lines_for_rule(self, seller_sales, rule):
+        """Ventas del vendedor cuyo nombre coincide con el archivo promocional.
+
+        El código de producto y ``Indica_Precio`` se ignoran deliberadamente.
+        La comparación es exacta sobre el nombre normalizado (mayúsculas,
+        acentos, puntuación y espacios no generan diferencias).
+        """
+        promotion_names = self._promotion_name_set()
+        if not promotion_names:
+            return seller_sales.browse([])
+        return seller_sales.filtered(
+            lambda line: (
+                (line.promotion_match_name or normalize_product_name(line.product_name))
+                in promotion_names
+                and (not rule.location_id or line.location_id == rule.location_id)
+            )
+        )
+
+    def _calculate_liquidation_bonus(self, result, seller, seller_sales, Detail):
+        """Calcula bono usando exclusivamente productos cargados en el período."""
+        period = self.period_id
+        rules = period.liquidation_rule_ids.filtered(
+            lambda rule: not rule.seller_id or rule.seller_id == seller
+        )
+        # La regla específica del vendedor prevalece sobre la general por local.
+        best_by_location = {}
+        for rule in rules.sorted(lambda rule: (bool(rule.seller_id), rule.id)):
+            best_by_location[rule.location_id.id or 0] = rule
+
+        for rule in best_by_location.values():
+            lines = self._promotion_lines_for_rule(seller_sales, rule)
+            sales_amount = sum(line.amount_for_basis(rule.basis) for line in lines)
+            m2 = sum(
+                (line.quantity or 0.0) * (line.document_sign or 1.0)
+                for line in lines
+            )
+            eligible = sales_amount >= rule.min_sales_amount
+            bonus = max(m2, 0.0) * rule.amount_per_m2 if eligible else 0.0
+            result.liquidation_sales += sales_amount
+            result.liquidation_m2 += m2
+            result.liquidation_bonus += bonus
+            Detail.create({
+                "result_id": result.id,
+                "detail_type": "liquidation",
+                "description": _(
+                    "Promoción por nombre: mínimo %(minimum).2f; ventas %(sales).2f; "
+                    "m² %(m2).2f; productos coincidentes %(count)s"
+                ) % {
+                    "minimum": rule.min_sales_amount,
+                    "sales": sales_amount,
+                    "m2": m2,
+                    "count": len(lines),
+                },
+                "location_id": rule.location_id.id or False,
+                "basis_amount": sales_amount,
+                "quantity": m2,
+                "rate": rule.amount_per_m2,
+                "amount": bonus,
+                "eligible": eligible,
+            })
+
     def _calculate_manager_commission(
         self, result, manager, by_seller, location_target_status, Detail
     ):
@@ -323,10 +398,11 @@ class CommissionSettlement(models.Model):
             })
 
     def _get_liquidation_rule_evaluations(self, seller, seller_sales):
-        """Evalúa las mismas metas de liquidación utilizadas por el bono.
+        """Evalúa metas de liquidación sobre ventas de productos promocionales.
 
-        La regla específica del vendedor prevalece sobre la general para una
-        misma localidad, exactamente igual que en el cálculo del bono base.
+        Los productos se identifican por coincidencia del nombre normalizado
+        contra la lista cargada en el período. ``Indica_Precio`` ya no participa.
+        La regla específica del vendedor prevalece sobre la general por local.
         """
         self.ensure_one()
         rules = self.period_id.liquidation_rule_ids.filtered(
@@ -338,12 +414,7 @@ class CommissionSettlement(models.Model):
 
         evaluations = []
         for rule in best_by_location.values():
-            lines = seller_sales.filtered(
-                lambda line: abs(
-                    (line.price_indicator or 0.0) - rule.indicator_value
-                ) < 0.000001
-                and (not rule.location_id or line.location_id == rule.location_id)
-            )
+            lines = self._promotion_lines_for_rule(seller_sales, rule)
             sales_amount = sum(
                 line.amount_for_basis(rule.basis) for line in lines
             )
@@ -352,6 +423,7 @@ class CommissionSettlement(models.Model):
                 "sales": sales_amount,
                 "minimum": rule.min_sales_amount,
                 "met": sales_amount >= rule.min_sales_amount,
+                "matching_lines": len(lines),
             })
         return evaluations
 

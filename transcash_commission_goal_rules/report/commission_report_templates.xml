@@ -22,6 +22,7 @@
                             &amp;nbsp;&amp;nbsp; <strong>Período:</strong> <span t-field="o.period_id.name"/>
                             &amp;nbsp;&amp;nbsp; <strong>Desde:</strong> <span t-field="o.period_id.date_start"/>
                             &amp;nbsp;&amp;nbsp; <strong>Hasta:</strong> <span t-field="o.period_id.date_end"/>
+                            &amp;nbsp;&amp;nbsp; <strong>Productos promoción:</strong> <span t-esc="o.period_id.promotion_product_count"/>
                             <t t-if="o.calculated_at">
                                 &amp;nbsp;&amp;nbsp; <strong>Calculado:</strong> <span t-field="o.calculated_at"/>
                             </t>
@@ -86,7 +87,7 @@
 
                         <p style="font-size:9px; margin-top:10px;">
                             Este reporte incluye únicamente vendedores o administradores con una parametrización activa de comisión aplicable al período (meta, proyecto, gestión o bono específico).<br/>
-                            * La reducción monetaria por liquidación es informativa: ya está incorporada en Comisión propia/Proyectos mediante la tasa efectiva y no debe restarse nuevamente del total.
+                            * La liquidación/promoción se determina por coincidencia del nombre del producto contra la lista cargada en el período; Indica_Precio no se utiliza. La reducción monetaria es informativa: ya está incorporada en Comisión propia/Proyectos mediante la tasa efectiva y no debe restarse nuevamente del total.
                         </p>
                     </div>
                 </t>
@@ -131,6 +132,12 @@
                                     <td><span t-field="o.settlement_id.period_id.date_start"/></td>
                                     <td><strong>Hasta</strong></td>
                                     <td><span t-field="o.settlement_id.period_id.date_end"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Productos promoción</strong></td>
+                                    <td><span t-esc="o.settlement_id.period_id.promotion_product_count"/></td>
+                                    <td></td>
+                                    <td></td>
                                 </tr>
                             </table>
                         </div>

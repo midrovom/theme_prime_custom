@@ -1,0 +1,11 @@
+<odoo>
+    <record id="view_commission_sale_search_goal_rules" model="ir.ui.view">
+        <field name="name">commission.sale.search.goal.rules</field>
+        <field name="model">commission.sale</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_sale_search"/>
+        <field name="arch" type="xml">
+            <!-- Indica_Precio=3 ya no identifica promociones desde 18.0.1.9.0. -->
+            <xpath expr="//filter[@name='liquidation']" position="replace"/>
+        </field>
+    </record>
+</odoo>

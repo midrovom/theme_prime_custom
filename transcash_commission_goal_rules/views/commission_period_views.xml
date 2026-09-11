@@ -58,7 +58,30 @@
             <xpath expr="//page[.//field[@name='liquidation_rule_ids']]" position="attributes">
                 <attribute name="string">Bono liquidación</attribute>
             </xpath>
+            <xpath expr="//page[.//field[@name='liquidation_rule_ids']]//field[@name='indicator_value']" position="replace"/>
             <xpath expr="//page[.//field[@name='liquidation_rule_ids']]//field[@name='liquidation_rule_ids']" position="before">
+                <group string="Productos en promoción">
+                    <group>
+                        <field name="promotion_filename" invisible="1"/>
+                        <field name="promotion_file" filename="promotion_filename" readonly="state in ['approved', 'paid']"/>
+                        <button name="action_import_promotion_products" type="object" string="Cargar / reemplazar productos" class="btn-primary" invisible="state in ['approved', 'paid']"/>
+                        <button name="action_clear_promotion_products" type="object" string="Limpiar lista" class="btn-secondary" confirm="Se eliminará la lista de productos promocionales del período. ¿Continuar?" invisible="not promotion_product_ids or state in ['approved', 'paid']"/>
+                    </group>
+                    <group>
+                        <field name="promotion_product_count" readonly="1"/>
+                        <field name="promotion_imported_at" readonly="1"/>
+                    </group>
+                </group>
+                <field name="promotion_product_ids" readonly="state in ['approved', 'paid']">
+                    <list editable="bottom">
+                        <field name="product_name"/>
+                        <field name="source_code" optional="hide"/>
+                        <field name="source_row" optional="hide"/>
+                    </list>
+                </field>
+                <div class="alert alert-info mb-2" role="alert">
+                    La liquidación identifica las ventas promocionales únicamente por el nombre del producto. El código del archivo se conserva solo como referencia y no se compara. Se normalizan mayúsculas/minúsculas, acentos, signos, saltos de línea y espacios; el nombre completo normalizado debe coincidir con nProducto de la venta. Indica_Precio ya no interviene en este cálculo.
+                </div>
                 <group string="Restricción por meta de liquidación">
                     <group>
                         <field name="liquidation_commission_rate_reduction"/>
@@ -68,7 +91,7 @@
                     </group>
                 </group>
                 <div class="alert alert-info mb-2" role="alert">
-                    Si un vendedor no alcanza una meta de liquidación aplicable, el sistema resta los puntos porcentuales configurados directamente de la tasa que ganó por comisión propia y proyectos. Ej.: 2,00% - 0,50 p.p. = 1,50%. Nunca baja de 0%. Los vendedores exentos no reciben el ajuste y la comisión de gestión del administrador no se afecta.
+                    El monto mínimo de liquidación se valida solo con ventas de productos que coincidan con la lista promocional. Si no se alcanza, se restan los puntos porcentuales configurados de la tasa de comisión propia/proyectos. Los vendedores exentos no reciben el ajuste y la gestión del administrador no se afecta.
                 </div>
             </xpath>
         </field>

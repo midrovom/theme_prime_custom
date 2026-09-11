@@ -843,6 +843,16 @@ class CommissionProjectRuleGoalRules(models.Model):
 class CommissionLiquidationRuleGoalRules(models.Model):
     _inherit = "commission.liquidation.rule"
 
+    indicator_value = fields.Float(
+        string="Indica_Precio [legado]",
+        default=3.0,
+        required=True,
+        help=(
+            "Campo histórico conservado por compatibilidad. Desde 18.0.1.9.0 "
+            "los productos de promoción se identifican por nombre usando el archivo cargado en el período."
+        ),
+    )
+
     def copy_to_period(self, destination_period):
         self.ensure_one()
         existing = self.search([

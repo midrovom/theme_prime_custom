@@ -150,6 +150,21 @@
             <xpath expr="//form" position="attributes">
                 <attribute name="duplicate">false</attribute>
             </xpath>
+            <xpath expr="//field[@name='indicator_value']" position="replace"/>
+            <xpath expr="//field[@name='location_id']" position="after">
+                <div class="alert alert-info" role="alert">
+                    Los productos se identifican por nombre usando la lista cargada dentro del período. Indica_Precio ya no se utiliza.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_liquidation_rule_list_goal_rules" model="ir.ui.view">
+        <field name="name">commission.liquidation.rule.list.goal.rules</field>
+        <field name="model">commission.liquidation.rule</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_liquidation_rule_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='indicator_value']" position="replace"/>
         </field>
     </record>
 

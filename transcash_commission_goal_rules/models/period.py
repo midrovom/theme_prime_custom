@@ -145,7 +145,8 @@ class CommissionPeriod(models.Model):
         - reglas de proyectos/origen del período;
         - metas de locales;
         - gestión de administradores y detalle de vendedores;
-        - reglas de bono de liquidación.
+        - reglas de bono de liquidación;
+        - lista de productos en promoción (comparación por nombre).
 
         No se copian resultados ni liquidaciones calculadas.
         """
@@ -171,6 +172,13 @@ class CommissionPeriod(models.Model):
         default.update({
             "state": "draft",
             "settlement_id": False,
+            # El archivo binario no se arrastra al nuevo mes, pero sí la lista
+            # de productos resultante para que el período siga siendo una
+            # plantilla mensual completa. Puede reemplazarse cargando otro archivo.
+            "promotion_file": False,
+            "promotion_filename": False,
+            "promotion_imported_at": False,
+            "promotion_product_ids": [],
             # Se copian manualmente para controlar duplicidades y referencias.
             "target_ids": [],
             "project_rule_ids": [],
@@ -192,5 +200,16 @@ class CommissionPeriod(models.Model):
             management.copy_to_period(new_period)
         for liquidation_rule in self.liquidation_rule_ids:
             liquidation_rule.copy_to_period(new_period)
+
+        if self.promotion_product_ids:
+            self.env["commission.period.promotion.product"].create([
+                {
+                    "period_id": new_period.id,
+                    "product_name": product.product_name,
+                    "source_code": product.source_code,
+                    "source_row": product.source_row,
+                }
+                for product in self.promotion_product_ids
+            ])
 
         return new_period
