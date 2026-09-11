@@ -62,4 +62,36 @@ class MaintenanceEquipment(models.Model):
 
         return super(MaintenanceEquipment, self).create(vals)
 
+    def write(self, vals):
+        """Recalcula el código si cambian categoría o departamento."""
+        for rec in self:
+            if vals.get('category_id') or vals.get('department_id'):
+                category = ''
+                department = ''
+                if vals.get('category_id'):
+                    category_rec = self.env['maintenance.equipment.category'].browse(vals['category_id'])
+                    category = (category_rec.name or '')[:3].capitalize()
+                else:
+                    category = (rec.category_id.name or '')[:3].capitalize()
 
+                if vals.get('department_id'):
+                    dept_rec = self.env['hr.department'].browse(vals['department_id'])
+                    department = (dept_rec.name or '')[:3].capitalize()
+                else:
+                    department = (rec.department_id.name or '')[:3].capitalize()
+
+                prefix = f"{category}-{department}-"
+
+                # Buscar último registro con ese prefijo
+                last_equipment = self.search([('name', 'like', prefix)], order='name desc', limit=1)
+                next_seq = 1
+                if last_equipment:
+                    match = re.search(rf"{prefix}(\d+)", last_equipment.name)
+                    if match:
+                        last_num = int(match.group(1))
+                        next_seq = last_num + 1
+
+                seq_str = str(next_seq).zfill(3)
+                vals['name'] = f"{prefix}{seq_str}"
+
+        return super(MaintenanceEquipment, self).write(vals)
