@@ -19,6 +19,8 @@ class MaintenanceEquipment(models.Model):
     talla = fields.Char(string='Talla')
     estado = fields.Char(string='Estado')
 
+    name = fields.Char('Name', translate=True)
+
     @api.onchange('category_id', 'department_id')
     def _onchange_category_department(self):
         """Genera el código preliminar mientras se llenan los campos."""
