@@ -16,7 +16,9 @@
         <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='product_information']//field[@name='serial_no']" position="after">
+                <field name="cantidad"/>
                 <field name="talla"/>
+                <field name="estado"/>
             </xpath>
         </field>
     </record>

@@ -15,4 +15,6 @@ class MaintenanceEquipment(models.Model):
         tracking=True
     )
 
+    cantidad = fields.Char(string='Cantidad')
     talla = fields.Char(string='Talla')
+    estado = fields.Char(string='Estado')

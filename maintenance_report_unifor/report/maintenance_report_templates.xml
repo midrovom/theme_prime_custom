@@ -31,9 +31,11 @@
                         <t t-foreach="docs" t-as="equipment">
                             <t t-if="equipment.product_category_id.name == 'Uniforme'">
                                 <tr>
+                                    <td style="padding:5px;"><span t-out="equipment.cantidad"/></td>
                                     <td style="padding:5px;"><span t-out="equipment.name"/></td>
                                     <td style="padding:5px;"><span t-out="equipment.note or ''"/></td>
                                     <td style="padding:5px;"><span t-out="equipment.talla or ''"/></td>
+                                    <td style="padding:5px;"><span t-out="equipment.estado"/></td>
                                 </tr>
                             </t>
                         </t>
