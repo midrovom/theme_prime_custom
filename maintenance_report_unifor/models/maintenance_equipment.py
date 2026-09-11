@@ -14,3 +14,5 @@ class MaintenanceEquipment(models.Model):
     product_category_id = fields.Many2one('maintenance.product.category', string='Tipo de producto',
         tracking=True
     )
+
+    talla = fields.Char(string='Talla')

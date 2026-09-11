@@ -9,4 +9,16 @@
             </xpath>
         </field>
     </record>
+
+    <record id="view_equipment_form_inherit_talla" model="ir.ui.view">
+        <field name="name">maintenance.equipment.form.inherit.talla</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
+        <field name="arch" type="xml">
+            <field name="serial_no" position="after">
+                <field name="talla"/>
+            </field>
+        </field>
+    </record>
+
 </odoo>
