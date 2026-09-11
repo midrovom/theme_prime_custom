@@ -106,7 +106,6 @@ class MaintenanceEquipment(models.Model):
     cantidad = fields.Char(string='Cantidad')
     talla = fields.Char(string='Talla')
     estado = fields.Char(string='Estado')
-
     name = fields.Char('Nombre de categoría', translate=True, required=True)
 
     @api.onchange('category_id', 'department_id')
@@ -117,17 +116,8 @@ class MaintenanceEquipment(models.Model):
             dept = (self.department_id.name or '')[:3].capitalize()
             self.name = f"{cat}-{dept}-XXX"
 
-    @api.model
-    def create(self, vals):
-        category = ''
-        department = ''
-        if vals.get('category_id'):
-            category_rec = self.env['maintenance.equipment.category'].browse(vals['category_id'])
-            category = (category_rec.name or '')[:3].capitalize()
-        if vals.get('department_id'):
-            dept_rec = self.env['hr.department'].browse(vals['department_id'])
-            department = (dept_rec.name or '')[:3].capitalize()
-
+    def _build_name(self, category, department, user_text):
+        """Construye el nombre con prefijo, secuencia y texto adicional."""
         prefix = f"{category}-{department}-"
 
         # Buscar último registro con ese prefijo
@@ -141,47 +131,31 @@ class MaintenanceEquipment(models.Model):
 
         seq_str = str(next_seq).zfill(3)
 
-        # Conservar texto adicional si el usuario lo escribió
-        user_text = vals.get('name', '')
-        extra_text = re.sub(rf"^{prefix}\d+\s*", "", user_text).strip()
-        vals['name'] = f"{prefix}{seq_str} {extra_text}".strip()
+        # Eliminar cualquier prefijo viejo del texto del usuario
+        extra_text = re.sub(rf"^{prefix}\d+\s*", "", user_text or "").strip()
 
+        return f"{prefix}{seq_str} {extra_text}".strip()
+
+    @api.model
+    def create(self, vals):
+        category = ''
+        department = ''
+        if vals.get('category_id'):
+            category_rec = self.env['maintenance.equipment.category'].browse(vals['category_id'])
+            category = (category_rec.name or '')[:3].capitalize()
+        if vals.get('department_id'):
+            dept_rec = self.env['hr.department'].browse(vals['department_id'])
+            department = (dept_rec.name or '')[:3].capitalize()
+
+        vals['name'] = self._build_name(category, department, vals.get('name'))
         return super(MaintenanceEquipment, self).create(vals)
 
     def write(self, vals):
-        """Recalcula el código si cambian categoría o departamento, conservando texto adicional."""
         for rec in self:
-            if vals.get('category_id') or vals.get('department_id'):
-                category = ''
-                department = ''
-                if vals.get('category_id'):
-                    category_rec = self.env['maintenance.equipment.category'].browse(vals['category_id'])
-                    category = (category_rec.name or '')[:3].capitalize()
-                else:
-                    category = (rec.category_id.name or '')[:3].capitalize()
-
-                if vals.get('department_id'):
-                    dept_rec = self.env['hr.department'].browse(vals['department_id'])
-                    department = (dept_rec.name or '')[:3].capitalize()
-                else:
-                    department = (rec.department_id.name or '')[:3].capitalize()
-
-                prefix = f"{category}-{department}-"
-
-                last_equipment = self.search([('name', 'like', prefix)], order='name desc', limit=1)
-                next_seq = 1
-                if last_equipment:
-                    match = re.search(rf"{prefix}(\d+)", last_equipment.name)
-                    if match:
-                        last_num = int(match.group(1))
-                        next_seq = last_num + 1
-
-                seq_str = str(next_seq).zfill(3)
-
-                # Conservar texto adicional ya existente
+            if vals.get('category_id') or vals.get('department_id') or vals.get('name'):
+                category = (self.env['maintenance.equipment.category'].browse(vals.get('category_id')) if vals.get('category_id') else rec.category_id).name[:3].capitalize()
+                department = (self.env['hr.department'].browse(vals.get('department_id')) if vals.get('department_id') else rec.department_id).name[:3].capitalize()
                 user_text = vals.get('name', rec.name)
-                extra_text = re.sub(rf"^{prefix}\d+\s*", "", user_text).strip()
-                vals['name'] = f"{prefix}{seq_str} {extra_text}".strip()
-
+                vals['name'] = self._build_name(category, department, user_text)
         return super(MaintenanceEquipment, self).write(vals)
 
