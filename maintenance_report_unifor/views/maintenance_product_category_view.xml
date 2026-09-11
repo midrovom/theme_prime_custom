@@ -1,0 +1,38 @@
+<odoo>
+    <record id="view_maintenance_product_category_form" model="ir.ui.view">
+        <field name="name">maintenance.product.category.form</field>
+        <field name="model">maintenance.product.category</field>
+        <field name="arch" type="xml">
+            <form string="Categoría de Producto">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_maintenance_product_category_list" model="ir.ui.view">
+        <field name="name">maintenance.product.category.list</field>
+        <field name="model">maintenance.product.category</field>
+        <field name="arch" type="xml">
+            <list string="Categorías de Producto">
+                <field name="name"/>
+                <field name="description"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_maintenance_product_category" model="ir.actions.act_window">
+        <field name="name">Categorías de Producto</field>
+        <field name="res_model">maintenance.product.category</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_maintenance_product_category"
+                name="Categorías de Producto"
+                parent="maintenance.menu_maintenance_configuration"
+                action="action_maintenance_product_category"/>
+</odoo>

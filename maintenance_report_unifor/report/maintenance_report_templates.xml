@@ -1,0 +1,76 @@
+<odoo>
+
+    <!-- Acta de Entrega de Uniforme -->
+    <template id="report_equipment_uniform">
+        <t t-call="web.basic_layout">
+            <div class="page" style="font-family: 'Times New Roman', serif; font-size:13px; line-height:1.6;">
+                <h2 style="text-align:center; margin-bottom:10px; text-transform:uppercase; font-weight:bold;">
+                    Acta de Entrega de Uniforme
+                </h2>
+
+                <!-- Fecha -->
+                <p style="margin-top:25px; text-align:justify;">
+                    <strong>Guayaquil, <span t-esc="datetime.date.today().strftime('%d/%m/%Y')"/></strong>
+                </p>
+
+                <!-- Texto inicial -->
+                <p style="margin-top:15px; text-align:justify;">
+                    El trabajador <strong><span t-out="docs[0].employee_id.name"/></strong> recibe de la empresa el uniforme en perfectas condiciones:
+                </p>
+
+                <!-- Tabla de uniformes -->
+                <table style="margin-top:20px; width:100%; border-collapse:collapse; font-size:12px;" border="1">
+                    <thead>
+                        <tr style="background-color:#f0f0f0; text-align:center;">
+                            <th style="padding:5px;">Uniforme</th>
+                            <th style="padding:5px;">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="docs" t-as="equipment">
+                            <t t-if="equipment.product_category_id.name == 'Uniforme'">
+                                <tr>
+                                    <td style="padding:5px;"><span t-out="equipment.name"/></td>
+                                    <td style="padding:5px;"><span t-out="equipment.note or ''"/></td>
+                                </tr>
+                            </t>
+                        </t>
+                    </tbody>
+                </table>
+
+                <!-- Compromiso -->
+                <p style="margin-top:25px; text-align:justify;">
+                    <strong> El trabajador manifiesta que: </strong>
+                </p>
+
+                <p> 
+                    Hago constar que el uniforme lo recibo nuevo, en perfectas condiciones para su uso y de forma gratuita, obligandome a conservarlo
+                    en buen estado, utilizarlo para lo que esta destinado dentro de mi trabajo y a devolverlo cuando sea requerido por el empleador, por lo cual
+                    estoy consciente que el uso del uniforme es obligatorio y si en el caso de no utilizarlo me sometere a las sanciones respectivas desde la primera
+                    infraccion a este requerimiento, en el caso de perder el uniforme o terminar mi relacion con la empresa sino lo devuelvo asumire el descuento respectivo.
+                </p>
+
+                <!-- Firmas -->
+                <div style="margin-top:50px; text-align:center;">
+                    <div style="display:inline-block; margin-right:190px;">
+                        <div style="text-align:center;">_______________________________</div>
+                        <div style="margin-top:5px; text-align:left;">
+                            <strong>ENTREGUE CONFORME:</strong><br/>
+                            <span t-out="docs[0].entregado_por_id.name"/><br/>
+                            C.I. <span t-out="docs[0].entregado_por_id.identification_id"/>
+                        </div>
+                    </div>
+                    <div style="display:inline-block;">
+                        <div style="text-align:center;">_______________________________</div>
+                        <div style="margin-top:5px; text-align:left;">
+                            <strong>RECIBÍ CONFORME:</strong><br/>
+                            <span t-out="docs[0].employee_id.name"/><br/>
+                            C.I. <span t-out="docs[0].employee_id.identification_id"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>
