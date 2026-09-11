@@ -16,6 +16,7 @@
         'report/maintenance_report_templates.xml',
         'views/hr_equipment_view_form.xml',
         'views/maintenance_product_category_view.xml',
+        'data/ir_sequence.xml',
     ],
     'assets': {
         'web.assets_frontend': [

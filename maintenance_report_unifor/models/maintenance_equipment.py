@@ -1,4 +1,4 @@
-from odoo import models, fields
+from odoo import models, fields, api
 
 class MaintenanceProductCategory(models.Model):
     _name = 'maintenance.product.category'
@@ -18,3 +18,19 @@ class MaintenanceEquipment(models.Model):
     cantidad = fields.Char(string='Cantidad')
     talla = fields.Char(string='Talla')
     estado = fields.Char(string='Estado')
+
+    @api.model
+    def create(self, vals):
+        category = ''
+        department = ''
+        if vals.get('category_id'):
+            category_rec = self.env['maintenance.equipment.category'].browse(vals['category_id'])
+            category = (category_rec.name or '')[:3].capitalize()
+        if vals.get('department_id'):
+            dept_rec = self.env['erp.request.department'].browse(vals['department_id'])
+            department = (dept_rec.name or '')[:3].capitalize()
+
+        seq = self.env['ir.sequence'].next_by_code('maintenance.equipment.code') or '000'
+        vals['name'] = f"{category}-{department}-{seq}"
+
+        return super(MaintenanceEquipment, self).create(vals)
