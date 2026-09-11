@@ -19,6 +19,14 @@ class MaintenanceEquipment(models.Model):
     talla = fields.Char(string='Talla')
     estado = fields.Char(string='Estado')
 
+    @api.onchange('category_id', 'department_id')
+    def _onchange_category_department(self):
+        """Genera el código preliminar mientras se llenan los campos."""
+        if self.category_id and self.department_id:
+            cat = (self.category_id.name or '')[:3].capitalize()
+            dept = (self.department_id.name or '')[:3].capitalize()
+            self.name = f"{cat}-{dept}-XXX"  
+
     @api.model
     def create(self, vals):
         category = ''
@@ -34,3 +42,4 @@ class MaintenanceEquipment(models.Model):
         vals['name'] = f"{category}-{department}-{seq}"
 
         return super(MaintenanceEquipment, self).create(vals)
+
