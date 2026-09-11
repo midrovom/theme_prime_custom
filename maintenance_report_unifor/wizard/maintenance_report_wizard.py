@@ -24,7 +24,7 @@ class MaintenanceReportWizard(models.TransientModel):
             report = self.env.ref('maintenance_report.maintenance_equipment_return_report')
         elif self.report_type == 'uniform':
             # Reporte definido en tu módulo personalizado
-            report = self.env.ref('maintenance_report_unifor.maintenance_equipment_uniform_report')
+            report = self.env.ref('maintenance_report.maintenance_equipment_uniform_report')
         else:
             raise UserError(_("Tipo de reporte no soportado."))
 
