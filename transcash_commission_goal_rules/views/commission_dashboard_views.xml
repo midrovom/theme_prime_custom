@@ -1,0 +1,179 @@
+<odoo>
+    <record id="view_commission_dashboard_line_search" model="ir.ui.view">
+        <field name="name">commission.dashboard.line.search</field>
+        <field name="model">commission.dashboard.line</field>
+        <field name="arch" type="xml">
+            <search string="Dashboard de comisiones">
+                <field name="period_id"/>
+                <field name="commission_recipient_id"/>
+                <field name="source_seller_id"/>
+                <field name="product_line"/>
+                <field name="warehouse"/>
+                <field name="location_id"/>
+                <field name="origin"/>
+                <field name="client"/>
+                <field name="component"/>
+                <filter name="client_excluded" string="Clientes excluidos" domain="[('client_excluded', '=', True)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="group_month" string="Mes" context="{'group_by': 'period_month:month'}"/>
+                    <filter name="group_recipient" string="Comisionista" context="{'group_by': 'commission_recipient_id'}"/>
+                    <filter name="group_source_seller" string="Vendedor venta" context="{'group_by': 'source_seller_id'}"/>
+                    <filter name="group_product_line" string="Línea de producto" context="{'group_by': 'product_line'}"/>
+                    <filter name="group_warehouse" string="Almacén / bodega" context="{'group_by': 'warehouse'}"/>
+                    <filter name="group_location" string="Localidad" context="{'group_by': 'location_id'}"/>
+                    <filter name="group_origin" string="Origen" context="{'group_by': 'origin'}"/>
+                    <filter name="group_component" string="Componente" context="{'group_by': 'component'}"/>
+                    <filter name="group_client" string="Cliente" context="{'group_by': 'client'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_commission_dashboard_line_graph_month" model="ir.ui.view">
+        <field name="name">commission.dashboard.line.graph.month</field>
+        <field name="model">commission.dashboard.line</field>
+        <field name="arch" type="xml">
+            <graph string="Comisiones por mes" type="bar">
+                <field name="period_month" interval="month"/>
+                <field name="commission_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_commission_dashboard_line_graph_seller" model="ir.ui.view">
+        <field name="name">commission.dashboard.line.graph.seller</field>
+        <field name="model">commission.dashboard.line</field>
+        <field name="arch" type="xml">
+            <graph string="Comisiones por vendedor" type="bar">
+                <field name="commission_recipient_id"/>
+                <field name="commission_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_commission_dashboard_line_graph_product_line" model="ir.ui.view">
+        <field name="name">commission.dashboard.line.graph.product.line</field>
+        <field name="model">commission.dashboard.line</field>
+        <field name="arch" type="xml">
+            <graph string="Comisiones por línea de producto" type="bar">
+                <field name="product_line"/>
+                <field name="commission_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_commission_dashboard_line_graph_warehouse" model="ir.ui.view">
+        <field name="name">commission.dashboard.line.graph.warehouse</field>
+        <field name="model">commission.dashboard.line</field>
+        <field name="arch" type="xml">
+            <graph string="Comisiones por almacén" type="bar">
+                <field name="warehouse"/>
+                <field name="commission_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_commission_dashboard_line_pivot" model="ir.ui.view">
+        <field name="name">commission.dashboard.line.pivot</field>
+        <field name="model">commission.dashboard.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Analítica de comisiones">
+                <field name="period_month" type="row" interval="month"/>
+                <field name="commission_recipient_id" type="row"/>
+                <field name="component" type="col"/>
+                <field name="gross_sales" type="measure"/>
+                <field name="target_sales" type="measure"/>
+                <field name="commissionable_sales" type="measure"/>
+                <field name="commission_amount" type="measure"/>
+                <field name="sale_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_commission_dashboard_line_list" model="ir.ui.view">
+        <field name="name">commission.dashboard.line.list</field>
+        <field name="model">commission.dashboard.line</field>
+        <field name="arch" type="xml">
+            <list string="Analítica de comisiones" create="0" edit="0" delete="0">
+                <field name="period_month"/>
+                <field name="commission_recipient_id"/>
+                <field name="source_seller_id" optional="show"/>
+                <field name="component"/>
+                <field name="product_line" optional="show"/>
+                <field name="warehouse" optional="show"/>
+                <field name="location_id" optional="show"/>
+                <field name="origin" optional="hide"/>
+                <field name="client" optional="hide"/>
+                <field name="gross_sales" sum="Ventas brutas"/>
+                <field name="target_sales" sum="Ventas meta"/>
+                <field name="commissionable_sales" sum="Ventas comisionables"/>
+                <field name="commission_amount" sum="Comisión"/>
+                <field name="rate" optional="hide"/>
+                <field name="client_excluded" optional="hide"/>
+                <field name="counts_for_target" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_commission_dashboard_month" model="ir.actions.act_window">
+        <field name="name">Dashboard mensual</field>
+        <field name="res_model">commission.dashboard.line</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_commission_dashboard_line_graph_month"/>
+        <field name="search_view_id" ref="view_commission_dashboard_line_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Calcule una liquidación para generar la analítica.</p>
+            <p>El dashboard se reconstruye al calcular/recalcular cada período.</p>
+        </field>
+    </record>
+
+    <record id="action_commission_dashboard_seller" model="ir.actions.act_window">
+        <field name="name">Por vendedor</field>
+        <field name="res_model">commission.dashboard.line</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_commission_dashboard_line_graph_seller"/>
+        <field name="search_view_id" ref="view_commission_dashboard_line_search"/>
+    </record>
+
+    <record id="action_commission_dashboard_product_line" model="ir.actions.act_window">
+        <field name="name">Por línea de producto</field>
+        <field name="res_model">commission.dashboard.line</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_commission_dashboard_line_graph_product_line"/>
+        <field name="search_view_id" ref="view_commission_dashboard_line_search"/>
+    </record>
+
+    <record id="action_commission_dashboard_warehouse" model="ir.actions.act_window">
+        <field name="name">Por almacén</field>
+        <field name="res_model">commission.dashboard.line</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_commission_dashboard_line_graph_warehouse"/>
+        <field name="search_view_id" ref="view_commission_dashboard_line_search"/>
+    </record>
+
+    <menuitem id="menu_commission_dashboard_root"
+              name="Dashboard"
+              parent="transcash_commission.menu_commission_root"
+              sequence="5"
+              groups="transcash_commission.group_commission_user"/>
+    <menuitem id="menu_commission_dashboard_month"
+              name="Resumen mensual"
+              parent="menu_commission_dashboard_root"
+              action="action_commission_dashboard_month"
+              sequence="10"/>
+    <menuitem id="menu_commission_dashboard_seller"
+              name="Por vendedor"
+              parent="menu_commission_dashboard_root"
+              action="action_commission_dashboard_seller"
+              sequence="20"/>
+    <menuitem id="menu_commission_dashboard_product_line"
+              name="Por línea de producto"
+              parent="menu_commission_dashboard_root"
+              action="action_commission_dashboard_product_line"
+              sequence="30"/>
+    <menuitem id="menu_commission_dashboard_warehouse"
+              name="Por almacén"
+              parent="menu_commission_dashboard_root"
+              action="action_commission_dashboard_warehouse"
+              sequence="40"/>
+</odoo>

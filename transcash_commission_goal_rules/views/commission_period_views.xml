@@ -39,6 +39,26 @@
                 </page>
             </xpath>
 
+            <!-- Clientes que no deben generar comisión durante el período. -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Clientes excluidos">
+                    <group>
+                        <field name="client_exclusion_count" readonly="1"/>
+                    </group>
+                    <field name="client_exclusion_ids" context="{'default_period_id': id}" readonly="state in ['approved', 'paid']">
+                        <list editable="bottom">
+                            <field name="client_name"/>
+                            <field name="count_for_target"/>
+                            <field name="note" optional="hide"/>
+                            <field name="active"/>
+                        </list>
+                    </field>
+                    <div class="alert alert-warning mt-2" role="alert">
+                        Las ventas de estos clientes nunca generan comisión. Si "Contar para metas / mínimos" está activo, sí ayudan a alcanzar rangos de vendedor, metas locales, mínimos administrativos y mínimos de liquidación; la base pagada siempre excluye al cliente.
+                    </div>
+                </page>
+            </xpath>
+
             <!-- Sustituye la regla legacy por una cabecera de administrador + detalle. -->
             <xpath expr="//page[.//field[@name='manager_rule_ids']]" position="replace">
                 <page string="Gestión administradores">

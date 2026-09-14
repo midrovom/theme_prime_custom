@@ -1,7 +1,7 @@
 {
     "name": "Transcash Commissions - Metas y Liquidaciones",
-    "summary": "Metas de vendedores por rangos de venta, gestión, proyectos y liquidaciones",
-    "version": "18.0.1.9.0",
+    "summary": "Metas, exclusiones de clientes, gestión, promociones y dashboard de comisiones",
+    "version": "18.0.1.10.0",
     "category": "Sales/Commissions",
     "author": "Transcash",
     "license": "LGPL-3",
@@ -13,6 +13,7 @@
         "views/commission_sale_views.xml",
         "views/commission_period_views.xml",
         "views/commission_settlement_views.xml",
+        "views/commission_dashboard_views.xml",
         "report/commission_reports.xml",
         "report/commission_report_templates.xml",
         "views/commission_menus.xml",

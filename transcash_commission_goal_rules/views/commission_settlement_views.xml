@@ -10,6 +10,16 @@
                         string="Imprimir liquidación total"
                         class="btn-secondary"
                         invisible="state == 'draft'"/>
+                <button name="action_rebuild_dashboard"
+                        type="object"
+                        string="Actualizar dashboard"
+                        class="btn-secondary"
+                        invisible="state == 'draft'"
+                        groups="transcash_commission.group_commission_manager"/>
+            </xpath>
+            <xpath expr="//field[@name='result_ids']//field[@name='total_sales']" position="after">
+                <field name="qualification_sales" optional="hide" sum="Ventas para metas"/>
+                <field name="excluded_client_sales" optional="hide" sum="Ventas clientes excluidos"/>
             </xpath>
             <xpath expr="//field[@name='result_ids']//field[@name='liquidation_bonus']" position="after">
                 <field name="liquidation_penalty" sum="Reducción monetaria total"/>
@@ -29,6 +39,12 @@
                             string="Imprimir liquidación individual"
                             class="btn-secondary"/>
                 </header>
+            </xpath>
+            <xpath expr="//field[@name='total_sales']" position="after">
+                <field name="gross_sales_before_client_exclusions" readonly="1"/>
+                <field name="qualification_sales" readonly="1"/>
+                <field name="excluded_client_sales" readonly="1"/>
+                <field name="excluded_client_line_count" readonly="1"/>
             </xpath>
             <xpath expr="//field[@name='liquidation_bonus']" position="after">
                 <field name="liquidation_target_met" readonly="1"/>

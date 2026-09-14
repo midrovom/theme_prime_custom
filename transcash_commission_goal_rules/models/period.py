@@ -179,6 +179,7 @@ class CommissionPeriod(models.Model):
             "promotion_filename": False,
             "promotion_imported_at": False,
             "promotion_product_ids": [],
+            "client_exclusion_ids": [],
             # Se copian manualmente para controlar duplicidades y referencias.
             "target_ids": [],
             "project_rule_ids": [],
@@ -200,6 +201,18 @@ class CommissionPeriod(models.Model):
             management.copy_to_period(new_period)
         for liquidation_rule in self.liquidation_rule_ids:
             liquidation_rule.copy_to_period(new_period)
+
+        if self.client_exclusion_ids:
+            self.env["commission.period.client.exclusion"].create([
+                {
+                    "period_id": new_period.id,
+                    "client_name": exclusion.client_name,
+                    "count_for_target": exclusion.count_for_target,
+                    "active": exclusion.active,
+                    "note": exclusion.note,
+                }
+                for exclusion in self.client_exclusion_ids
+            ])
 
         if self.promotion_product_ids:
             self.env["commission.period.promotion.product"].create([

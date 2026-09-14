@@ -64,7 +64,8 @@ class TestCommissionGoalRules(TransactionCase):
 
     def _sale(
         self, code, seller, location, net, origin=None, price_indicator=0.0,
-        quantity=1.0, product_name=None
+        quantity=1.0, product_name=None, client=None, warehouse=None,
+        product_line=None
     ):
         return self.Sale.create({
             "fingerprint": code,
@@ -83,6 +84,9 @@ class TestCommissionGoalRules(TransactionCase):
             "total_net": net,
             "profit": net * 0.30,
             "document_sign": 1.0,
+            "client": client or "CLIENTE GENERAL",
+            "warehouse": warehouse or "BOD-A",
+            "product_line": product_line or "LINEA-A",
         })
 
     def _promotion(self, name, code="CORTADO"):
@@ -830,4 +834,127 @@ class TestCommissionGoalRules(TransactionCase):
         self.assertEqual(target.calculation_mode, "sales_tier")
         target.write({"calculation_mode": "tier"})
         self.assertEqual(target.calculation_mode, "sales_tier")
+
+    def test_excluded_client_can_count_for_target_without_generating_commission(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 1000.0,
+            "basis": "net",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 1000.0,
+            "commission_percent": 1.0,
+        })
+        self.env["commission.period.client.exclusion"].create({
+            "period_id": self.period.id,
+            "client_name": "Cliente Excluido S.A.",
+            "count_for_target": True,
+        })
+        self._sale(
+            "GR-EXC-TARGET", self.seller_1, self.loc_a, 400.0,
+            client="cliente excluido sa"
+        )
+        self._sale(
+            "GR-EXC-OK", self.seller_1, self.loc_a, 700.0,
+            client="Cliente normal"
+        )
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+        detail = result.detail_ids.filtered(lambda d: d.detail_type == "standard")
+        self.assertAlmostEqual(result.qualification_sales, 1100.0, places=4)
+        self.assertAlmostEqual(result.total_sales, 700.0, places=4)
+        self.assertAlmostEqual(result.excluded_client_sales, 400.0, places=4)
+        self.assertAlmostEqual(detail.rate, 1.0, places=4)
+        self.assertAlmostEqual(result.standard_commission, 7.0, places=4)
+
+    def test_excluded_client_not_counting_for_target_cannot_unlock_range(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 1000.0,
+            "basis": "net",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 1000.0,
+            "commission_percent": 1.0,
+        })
+        self.env["commission.period.client.exclusion"].create({
+            "period_id": self.period.id,
+            "client_name": "Cliente Excluido",
+            "count_for_target": False,
+        })
+        self._sale("GR-EXC-NO-1", self.seller_1, self.loc_a, 400.0, client="CLIENTE EXCLUIDO")
+        self._sale("GR-EXC-NO-2", self.seller_1, self.loc_a, 700.0, client="OTRO")
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.seller_1)
+        self.assertAlmostEqual(result.qualification_sales, 700.0, places=4)
+        self.assertAlmostEqual(result.standard_commission, 0.0, places=4)
+
+    def test_excluded_client_never_generates_project_commission(self):
+        self.project_seller.role = "project"
+        self.env["commission.project.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.project_seller.id,
+            "origin": "Importado",
+            "basis": "net",
+            "commission_percent": 2.0,
+            "active": True,
+        })
+        self.env["commission.period.client.exclusion"].create({
+            "period_id": self.period.id,
+            "client_name": "Proyecto Excluido",
+            "count_for_target": True,
+        })
+        self._sale(
+            "GR-PROJ-EXC", self.project_seller, self.loc_a, 1000.0,
+            origin="Importado", client="PROYECTO EXCLUIDO"
+        )
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.project_seller)
+        self.assertAlmostEqual(result.project_commission, 0.0, places=4)
+        self.assertAlmostEqual(result.total_sales, 0.0, places=4)
+
+    def test_period_copy_copies_client_exclusions(self):
+        exclusion = self.env["commission.period.client.exclusion"].create({
+            "period_id": self.period.id,
+            "client_name": "Cliente Especial",
+            "count_for_target": True,
+            "note": "No comisiona",
+        })
+        copied = self.period.copy()
+        self.assertEqual(len(copied.client_exclusion_ids), 1)
+        copied_exclusion = copied.client_exclusion_ids
+        self.assertEqual(copied_exclusion.client_name, exclusion.client_name)
+        self.assertTrue(copied_exclusion.count_for_target)
+
+    def test_dashboard_is_built_with_sales_and_exact_standard_commission(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 1000.0,
+            "basis": "net",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 0.0,
+            "commission_percent": 1.0,
+        })
+        self._sale(
+            "GR-DASH", self.seller_1, self.loc_a, 1000.0,
+            warehouse="ALM-01", product_line="CERAMICA"
+        )
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        lines = self.env["commission.dashboard.line"].search([
+            ("settlement_id", "=", settlement.id)
+        ])
+        self.assertTrue(lines)
+        self.assertAlmostEqual(sum(lines.mapped("gross_sales")), 1000.0, places=4)
+        self.assertAlmostEqual(sum(lines.mapped("commissionable_sales")), 1000.0, places=4)
+        self.assertAlmostEqual(sum(lines.mapped("commission_amount")), 10.0, places=4)
+        self.assertIn("CERAMICA", lines.mapped("product_line"))
+        self.assertIn("ALM-01", lines.mapped("warehouse"))
 

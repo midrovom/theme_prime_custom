@@ -36,10 +36,16 @@
                                 <td class="tc-num"><span t-field="o.sales_count"/></td>
                             </tr>
                             <tr>
-                                <td><strong>Ventas netas</strong></td>
+                                <td><strong>Ventas comisionables</strong></td>
                                 <td class="tc-num"><span t-field="o.total_sales" t-options='{"widget": "float", "precision": 2}'/></td>
                                 <td><strong>Total comisión</strong></td>
                                 <td class="tc-num"><span t-field="o.total_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ventas excluidas por cliente</strong></td>
+                                <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('excluded_client_sales'))"/></td>
+                                <td><strong>Clientes excluidos configurados</strong></td>
+                                <td class="tc-num"><span t-esc="o.period_id.client_exclusion_count"/></td>
                             </tr>
                         </table>
 
@@ -86,7 +92,7 @@
                         </table>
 
                         <p style="font-size:9px; margin-top:10px;">
-                            Este reporte incluye únicamente vendedores o administradores con una parametrización activa de comisión aplicable al período (meta, proyecto, gestión o bono específico).<br/>
+                            Este reporte incluye únicamente vendedores o administradores con una parametrización activa de comisión aplicable al período (meta, proyecto, gestión o bono específico). Las ventas de clientes excluidos nunca generan comisión; según el parámetro del período pueden o no contar para cumplimiento de metas/mínimos.<br/>
                             * La liquidación/promoción se determina por coincidencia del nombre del producto contra la lista cargada en el período; Indica_Precio no se utiliza. La reducción monetaria es informativa: ya está incorporada en Comisión propia/Proyectos mediante la tasa efectiva y no debe restarse nuevamente del total.
                         </p>
                     </div>
@@ -145,12 +151,20 @@
                         <div class="tc-block">
                             <table class="tc-grid">
                                 <tr>
-                                    <td><strong>Ventas netas</strong></td>
+                                    <td><strong>Ventas comisionables</strong></td>
                                     <td class="tc-num"><span t-field="o.total_sales" t-options='{"widget": "float", "precision": 2}'/></td>
                                     <td><strong>Meta retail</strong></td>
                                     <td class="tc-num"><span t-field="o.target_amount" t-options='{"widget": "float", "precision": 2}'/></td>
                                     <td><strong>Cumplimiento meta</strong></td>
                                     <td class="tc-num"><span t-field="o.achievement_percent" t-options='{"widget": "float", "precision": 2}'/>%</td>
+                                </tr>
+                                <tr t-if="o.excluded_client_sales">
+                                    <td>Ventas antes de exclusiones</td>
+                                    <td class="tc-num"><span t-field="o.gross_sales_before_client_exclusions" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td>Ventas excluidas por cliente</td>
+                                    <td class="tc-num"><span t-field="o.excluded_client_sales" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td>Ventas consideradas para metas</td>
+                                    <td class="tc-num"><span t-field="o.qualification_sales" t-options='{"widget": "float", "precision": 2}'/></td>
                                 </tr>
                                 <tr>
                                     <td>Comisión propia</td>
