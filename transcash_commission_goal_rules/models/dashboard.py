@@ -31,7 +31,10 @@ class CommissionDashboardLine(models.Model):
     warehouse = fields.Char(string="Almacén / bodega", index=True)
     product_line = fields.Char(string="Línea de producto", index=True)
     origin = fields.Char(string="Origen", index=True)
-    client = fields.Char(string="Cliente", index=True)
+    client_id = fields.Many2one(
+        "commission.client", string="Cliente", index=True, ondelete="set null"
+    )
+    client = fields.Char(string="Cliente origen", index=True)
     component = fields.Selection(
         [
             ("sales", "Ventas"),

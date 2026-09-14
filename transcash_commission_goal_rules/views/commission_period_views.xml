@@ -47,14 +47,14 @@
                     </group>
                     <field name="client_exclusion_ids" context="{'default_period_id': id}" readonly="state in ['approved', 'paid']">
                         <list editable="bottom">
-                            <field name="client_name"/>
+                            <field name="client_id" required="1" options="{'no_create': True}"/>
                             <field name="count_for_target"/>
                             <field name="note" optional="hide"/>
                             <field name="active"/>
                         </list>
                     </field>
                     <div class="alert alert-warning mt-2" role="alert">
-                        Las ventas de estos clientes nunca generan comisión. Si "Contar para metas / mínimos" está activo, sí ayudan a alcanzar rangos de vendedor, metas locales, mínimos administrativos y mínimos de liquidación; la base pagada siempre excluye al cliente.
+                        Seleccione el cliente desde el maestro creado automáticamente con las ventas. Sus ventas nunca generan comisión. Si "Contar para metas / mínimos" está activo, sí ayudan a alcanzar rangos de vendedor, metas locales, mínimos administrativos y mínimos de liquidación; la base pagada siempre excluye al cliente.
                     </div>
                 </page>
             </xpath>

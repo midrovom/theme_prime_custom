@@ -206,7 +206,8 @@ class CommissionPeriod(models.Model):
             self.env["commission.period.client.exclusion"].create([
                 {
                     "period_id": new_period.id,
-                    "client_name": exclusion.client_name,
+                    "client_id": exclusion.client_id.id or False,
+                    "client_name": exclusion.client_id.name or exclusion.client_name,
                     "count_for_target": exclusion.count_for_target,
                     "active": exclusion.active,
                     "note": exclusion.note,

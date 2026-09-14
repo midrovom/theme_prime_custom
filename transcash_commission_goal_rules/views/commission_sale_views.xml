@@ -6,6 +6,34 @@
         <field name="arch" type="xml">
             <!-- Indica_Precio=3 ya no identifica promociones desde 18.0.1.9.0. -->
             <xpath expr="//filter[@name='liquidation']" position="replace"/>
+            <xpath expr="//field[@name='registration_date']" position="after">
+                <field name="client_id"/>
+            </xpath>
+            <xpath expr="//group/filter[@name='group_seller']" position="before">
+                <filter name="group_client_master" string="Cliente" context="{'group_by': 'client_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_sale_list_goal_rules" model="ir.ui.view">
+        <field name="name">commission.sale.list.goal.rules</field>
+        <field name="model">commission.sale</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_sale_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='invoice']" position="after">
+                <field name="client_id" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_sale_form_goal_rules" model="ir.ui.view">
+        <field name="name">commission.sale.form.goal.rules</field>
+        <field name="model">commission.sale</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_sale_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='client']" position="after">
+                <field name="client_id" readonly="1"/>
+            </xpath>
         </field>
     </record>
 </odoo>

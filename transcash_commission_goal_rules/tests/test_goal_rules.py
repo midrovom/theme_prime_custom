@@ -958,3 +958,62 @@ class TestCommissionGoalRules(TransactionCase):
         self.assertIn("CERAMICA", lines.mapped("product_line"))
         self.assertIn("ALM-01", lines.mapped("warehouse"))
 
+
+    def test_sale_creates_selectable_client_master(self):
+        sale = self._sale(
+            "GR-CLIENT-MASTER", self.seller_1, self.loc_a, 100.0,
+            client="CLIENTE MAESTRO S.A."
+        )
+        self.assertTrue(sale.client_id)
+        self.assertEqual(sale.client_id.name, "CLIENTE MAESTRO S.A.")
+        same = self._sale(
+            "GR-CLIENT-MASTER-2", self.seller_1, self.loc_a, 50.0,
+            client="cliente maestro sa"
+        )
+        self.assertEqual(same.client_id, sale.client_id)
+
+    def test_client_exclusion_uses_selectable_client(self):
+        sale = self._sale(
+            "GR-CLIENT-SELECT", self.seller_1, self.loc_a, 500.0,
+            client="Cliente Seleccionable"
+        )
+        exclusion = self.env["commission.period.client.exclusion"].create({
+            "period_id": self.period.id,
+            "client_id": sale.client_id.id,
+            "count_for_target": True,
+        })
+        self.assertEqual(exclusion.client_id, sale.client_id)
+        self.assertEqual(exclusion.client_name, sale.client_id.name)
+
+    def test_dashboard_aggregates_equal_dimensions(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.seller_1.id,
+            "target_amount": 1000.0,
+            "basis": "net",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 0.0,
+            "commission_percent": 1.0,
+        })
+        self._sale(
+            "GR-DASH-AGG-1", self.seller_1, self.loc_a, 400.0,
+            client="CLIENTE DASH", warehouse="ALM-X", product_line="LINEA-X"
+        )
+        self._sale(
+            "GR-DASH-AGG-2", self.seller_1, self.loc_a, 600.0,
+            client="CLIENTE DASH", warehouse="ALM-X", product_line="LINEA-X"
+        )
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        sales_rows = self.env["commission.dashboard.line"].search([
+            ("settlement_id", "=", settlement.id),
+            ("component", "=", "sales"),
+            ("source_seller_id", "=", self.seller_1.id),
+            ("warehouse", "=", "ALM-X"),
+            ("product_line", "=", "LINEA-X"),
+        ])
+        self.assertEqual(len(sales_rows), 1)
+        self.assertEqual(sales_rows.sale_count, 2)
+        self.assertAlmostEqual(sales_rows.gross_sales, 1000.0, places=4)
+        self.assertTrue(sales_rows.client_id)

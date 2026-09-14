@@ -10,12 +10,11 @@ class CommissionSettlement(models.Model):
     _inherit = "commission.settlement"
 
     def _calculate_results(self):
-        """Calcula la liquidación respetando exclusiones de clientes del período.
+        """Calcula la liquidación con clasificación y reglas precargadas.
 
-        Las ventas de un cliente excluido nunca generan comisión. Si la exclusión
-        tiene ``count_for_target`` activa, esas ventas sí participan en los
-        cumplimientos (rangos del vendedor, metas locales, mínimos de gestión y
-        mínimo de promoción), pero se mantienen fuera de la base comisionable.
+        El cálculo evita búsquedas ORM y uniones de recordsets dentro de bucles
+        por venta. Esto mantiene un comportamiento prácticamente lineal aun en
+        períodos con muchas líneas importadas.
         """
         self.ensure_one()
         period = self.period_id
@@ -24,6 +23,7 @@ class CommissionSettlement(models.Model):
                 "El período tiene reglas de liquidación, pero no tiene productos en promoción cargados. "
                 "Cargue el archivo de promociones en la pestaña Bono liquidación antes de calcular."
             ))
+
         Sale = self.env["commission.sale"]
         Result = self.env["commission.result"]
         Detail = self.env["commission.result.detail"]
@@ -33,23 +33,45 @@ class CommissionSettlement(models.Model):
             period._classify_sales_by_client_exclusion(sales)
         )
 
-        all_by_seller = defaultdict(lambda: Sale.browse())
-        commissionable_by_seller = defaultdict(lambda: Sale.browse())
-        qualification_by_seller = defaultdict(lambda: Sale.browse())
-        qualification_location_sales = defaultdict(lambda: Sale.browse())
+        # Agrupación por IDs: evita ``recordset |= record`` para cada venta.
+        all_ids_by_seller = defaultdict(list)
+        commissionable_ids_by_seller = defaultdict(list)
+        qualification_ids_by_seller = defaultdict(list)
+        qualification_ids_by_location = defaultdict(list)
+        commissionable_origin_by_seller = defaultdict(set)
 
         for sale in sales:
-            all_by_seller[sale.seller_id.id] |= sale
+            if sale.seller_id:
+                all_ids_by_seller[sale.seller_id.id].append(sale.id)
         for sale in commissionable_sales:
-            commissionable_by_seller[sale.seller_id.id] |= sale
+            if sale.seller_id:
+                commissionable_ids_by_seller[sale.seller_id.id].append(sale.id)
+                commissionable_origin_by_seller[sale.seller_id.id].add(
+                    (sale.origin or "").strip().lower()
+                )
         for sale in qualification_sales:
-            qualification_by_seller[sale.seller_id.id] |= sale
+            if sale.seller_id:
+                qualification_ids_by_seller[sale.seller_id.id].append(sale.id)
             if sale.location_id:
-                qualification_location_sales[sale.location_id.id] |= sale
+                qualification_ids_by_location[sale.location_id.id].append(sale.id)
+
+        seller_ids = set(all_ids_by_seller) | set(commissionable_ids_by_seller) | set(qualification_ids_by_seller)
+        all_by_seller = {
+            seller_id: Sale.browse(all_ids_by_seller.get(seller_id, []))
+            for seller_id in seller_ids
+        }
+        commissionable_by_seller = {
+            seller_id: Sale.browse(commissionable_ids_by_seller.get(seller_id, []))
+            for seller_id in seller_ids
+        }
+        qualification_by_seller = {
+            seller_id: Sale.browse(qualification_ids_by_seller.get(seller_id, []))
+            for seller_id in seller_ids
+        }
 
         location_target_status = {}
         for lt in period.location_target_ids:
-            local_lines = qualification_location_sales[lt.location_id.id]
+            local_lines = Sale.browse(qualification_ids_by_location.get(lt.location_id.id, []))
             amount = sum(line.amount_for_basis(lt.basis) for line in local_lines)
             achievement = (amount / lt.target_amount * 100.0) if lt.target_amount else 0.0
             location_target_status[lt.location_id.id] = {
@@ -80,8 +102,10 @@ class CommissionSettlement(models.Model):
 
         active_targets = period.target_ids.filtered("active")
         target_count = defaultdict(int)
+        target_by_seller = {}
         for target in active_targets:
             target_count[target.seller_id.id] += 1
+            target_by_seller[target.seller_id.id] = target
         duplicated = [seller_id for seller_id, count in target_count.items() if count > 1]
         if duplicated:
             names = ", ".join(self.env["commission.seller"].browse(duplicated).mapped("name"))
@@ -89,21 +113,19 @@ class CommissionSettlement(models.Model):
                 "Debe existir una sola meta activa por vendedor y período. Revise: %s"
             ) % names)
 
-        sellers = active_targets.mapped("seller_id")
         period_project_rules = period.project_rule_ids.filtered("active")
-        sellers |= period_project_rules.mapped("seller_id")
-
         global_project_rules = self.env["commission.project.rule"].search([
             ("active", "=", True),
             ("period_id", "=", False),
         ])
+        project_rules_by_seller = defaultdict(lambda: self.env["commission.project.rule"].browse())
+        for rule in global_project_rules | period_project_rules:
+            project_rules_by_seller[rule.seller_id.id] |= rule
+
+        sellers = active_targets.mapped("seller_id") | period_project_rules.mapped("seller_id")
         for rule in global_project_rules:
             origin_key = (rule.origin or "").strip().lower()
-            has_matching_sales = any(
-                (line.origin or "").strip().lower() == origin_key
-                for line in commissionable_by_seller[rule.seller_id.id]
-            )
-            if has_matching_sales:
+            if origin_key in commissionable_origin_by_seller.get(rule.seller_id.id, set()):
                 sellers |= rule.seller_id
 
         active_management = period.manager_goal_rule_ids.filtered("active")
@@ -113,10 +135,13 @@ class CommissionSettlement(models.Model):
         ).mapped("seller_id")
         sellers = sellers.filtered("active")
 
+        promotion_names = self._promotion_name_set()
+        empty_sales = Sale.browse()
+
         for seller in sellers.sorted(lambda s: (s.code or "", s.name or "")):
-            seller_all_sales = all_by_seller[seller.id]
-            seller_commissionable_sales = commissionable_by_seller[seller.id]
-            seller_qualification_sales = qualification_by_seller[seller.id]
+            seller_all_sales = all_by_seller.get(seller.id, empty_sales)
+            seller_commissionable_sales = commissionable_by_seller.get(seller.id, empty_sales)
+            seller_qualification_sales = qualification_by_seller.get(seller.id, empty_sales)
 
             all_net = sum(line.amount_for_basis("net") for line in seller_all_sales)
             commissionable_net = sum(
@@ -125,8 +150,8 @@ class CommissionSettlement(models.Model):
             qualification_net = sum(
                 line.amount_for_basis("net") for line in seller_qualification_sales
             )
-            excluded_ids = set(seller_all_sales.ids) - set(seller_commissionable_sales.ids)
-            excluded_sales = Sale.browse(list(excluded_ids))
+            excluded_client_sales = all_net - commissionable_net
+            excluded_line_count = len(seller_all_sales) - len(seller_commissionable_sales)
 
             result = Result.create({
                 "settlement_id": self.id,
@@ -135,10 +160,8 @@ class CommissionSettlement(models.Model):
                 "total_sales": commissionable_net,
                 "gross_sales_before_client_exclusions": all_net,
                 "qualification_sales": qualification_net,
-                "excluded_client_sales": sum(
-                    line.amount_for_basis("net") for line in excluded_sales
-                ),
-                "excluded_client_line_count": len(excluded_sales),
+                "excluded_client_sales": excluded_client_sales,
+                "excluded_client_line_count": max(excluded_line_count, 0),
             })
 
             self._calculate_standard_commission(
@@ -147,9 +170,16 @@ class CommissionSettlement(models.Model):
                 seller_commissionable_sales,
                 Detail,
                 qualification_sales=seller_qualification_sales,
+                target=target_by_seller.get(seller.id),
             )
             self._calculate_project_commission(
-                result, seller, seller_commissionable_sales, Detail
+                result,
+                seller,
+                seller_commissionable_sales,
+                Detail,
+                rules=project_rules_by_seller.get(
+                    seller.id, self.env["commission.project.rule"].browse()
+                ),
             )
             self._calculate_liquidation_bonus(
                 result,
@@ -157,6 +187,7 @@ class CommissionSettlement(models.Model):
                 seller_commissionable_sales,
                 Detail,
                 qualification_sales=seller_qualification_sales,
+                promotion_names=promotion_names,
             )
             self._calculate_manager_commission(
                 result,
@@ -165,16 +196,27 @@ class CommissionSettlement(models.Model):
                 qualification_by_seller,
                 location_target_status,
                 Detail,
+                target_by_seller=target_by_seller,
             )
             self._apply_liquidation_commission_penalty(
-                result, seller, seller_qualification_sales, Detail
+                result,
+                seller,
+                seller_qualification_sales,
+                Detail,
+                promotion_names=promotion_names,
             )
             result._recompute_total()
 
-        self._rebuild_dashboard_lines(sales, exclusion_by_sale)
+        self._rebuild_dashboard_lines(
+            sales=sales,
+            exclusion_by_sale=exclusion_by_sale,
+            commissionable_sales=commissionable_sales,
+            qualification_sales=qualification_sales,
+            promotion_names=promotion_names,
+        )
 
     def _calculate_standard_commission(
-        self, result, seller, seller_sales, Detail, qualification_sales=None
+        self, result, seller, seller_sales, Detail, qualification_sales=None, target=None
     ):
         """Rango por ventas: califica con una base y comisiona con otra.
 
@@ -183,17 +225,19 @@ class CommissionSettlement(models.Model):
         ventas que sí pueden generar comisión.
         """
         qualification_sales = qualification_sales if qualification_sales is not None else seller_sales
-        targets = self.period_id.target_ids.filtered(
-            lambda target: target.seller_id == seller and target.active
-        )
-        if not targets:
+        if target is None:
+            targets = self.period_id.target_ids.filtered(
+                lambda candidate: candidate.seller_id == seller and candidate.active
+            )
+            if not targets:
+                return
+            if len(targets) > 1:
+                raise UserError(_(
+                    "El vendedor %s tiene más de una meta activa en el período."
+                ) % seller.display_name)
+            target = targets[0]
+        if not target:
             return
-        if len(targets) > 1:
-            raise UserError(_(
-                "El vendedor %s tiene más de una meta activa en el período."
-            ) % seller.display_name)
-
-        target = targets[0]
         qualification_amount = sum(
             line.amount_for_basis(target.basis) for line in qualification_sales
         )
@@ -245,15 +289,16 @@ class CommissionSettlement(models.Model):
             "eligible": eligible,
         })
 
-    def _calculate_project_commission(self, result, seller, seller_sales, Detail):
+    def _calculate_project_commission(self, result, seller, seller_sales, Detail, rules=None):
         """Proyecto/origen sobre ventas comisionables (clientes excluidos no pagan)."""
         if seller.role not in ("project", "hybrid"):
             return
-        rules = self.env["commission.project.rule"].search([
-            ("seller_id", "=", seller.id),
-            ("active", "=", True),
-            "|", ("period_id", "=", self.period_id.id), ("period_id", "=", False),
-        ])
+        if rules is None:
+            rules = self.env["commission.project.rule"].search([
+                ("seller_id", "=", seller.id),
+                ("active", "=", True),
+                "|", ("period_id", "=", self.period_id.id), ("period_id", "=", False),
+            ])
         best_rule = {}
         for rule in rules.sorted(lambda rule: (bool(rule.period_id), rule.id)):
             best_rule[(rule.origin or "").strip().lower()] = rule
@@ -287,14 +332,14 @@ class CommissionSettlement(models.Model):
             if name
         }
 
-    def _promotion_lines_for_rule(self, seller_sales, rule):
+    def _promotion_lines_for_rule(self, seller_sales, rule, promotion_names=None):
         """Ventas del vendedor cuyo nombre coincide con el archivo promocional.
 
         El código de producto y ``Indica_Precio`` se ignoran deliberadamente.
         La comparación es exacta sobre el nombre normalizado (mayúsculas,
         acentos, puntuación y espacios no generan diferencias).
         """
-        promotion_names = self._promotion_name_set()
+        promotion_names = promotion_names if promotion_names is not None else self._promotion_name_set()
         if not promotion_names:
             return seller_sales.browse([])
         return seller_sales.filtered(
@@ -306,7 +351,7 @@ class CommissionSettlement(models.Model):
         )
 
     def _calculate_liquidation_bonus(
-        self, result, seller, seller_sales, Detail, qualification_sales=None
+        self, result, seller, seller_sales, Detail, qualification_sales=None, promotion_names=None
     ):
         """Bono por promoción: el cliente excluido nunca genera m² comisionados.
 
@@ -324,8 +369,12 @@ class CommissionSettlement(models.Model):
             best_by_location[rule.location_id.id or 0] = rule
 
         for rule in best_by_location.values():
-            qualifying_lines = self._promotion_lines_for_rule(qualification_sales, rule)
-            commissionable_lines = self._promotion_lines_for_rule(seller_sales, rule)
+            qualifying_lines = self._promotion_lines_for_rule(
+                qualification_sales, rule, promotion_names=promotion_names
+            )
+            commissionable_lines = self._promotion_lines_for_rule(
+                seller_sales, rule, promotion_names=promotion_names
+            )
             qualifying_sales_amount = sum(
                 line.amount_for_basis(rule.basis) for line in qualifying_lines
             )
@@ -373,6 +422,7 @@ class CommissionSettlement(models.Model):
         qualification_by_seller,
         location_target_status,
         Detail,
+        target_by_seller=None,
     ):
         """Gestión: mínimo con ventas calificables; pago sobre ventas comisionables."""
         if manager.role not in ("manager", "hybrid"):
@@ -387,10 +437,13 @@ class CommissionSettlement(models.Model):
             )
         )
         Target = self.env["commission.seller.target"]
+        target_cache_provided = target_by_seller is not None
+        target_by_seller = target_by_seller or {}
+        empty_sales = self.env["commission.sale"].browse()
 
         for rule in rules:
-            commissionable_lines = commissionable_by_seller[rule.seller_id.id]
-            qualification_lines = qualification_by_seller[rule.seller_id.id]
+            commissionable_lines = commissionable_by_seller.get(rule.seller_id.id, empty_sales)
+            qualification_lines = qualification_by_seller.get(rule.seller_id.id, empty_sales)
             commissionable_basis = sum(
                 line.amount_for_basis(rule.basis) for line in commissionable_lines
             )
@@ -398,11 +451,13 @@ class CommissionSettlement(models.Model):
                 line.amount_for_basis(rule.basis) for line in qualification_lines
             )
 
-            target = Target.search([
-                ("period_id", "=", self.period_id.id),
-                ("seller_id", "=", rule.seller_id.id),
-                ("active", "=", True),
-            ], limit=1)
+            target = target_by_seller.get(rule.seller_id.id)
+            if target is None and not target_cache_provided:
+                target = Target.search([
+                    ("period_id", "=", self.period_id.id),
+                    ("seller_id", "=", rule.seller_id.id),
+                    ("active", "=", True),
+                ], limit=1)
 
             minimum_available = True
             if rule.minimum_type == "target_percent":
@@ -460,7 +515,7 @@ class CommissionSettlement(models.Model):
                 "eligible": eligible,
             })
 
-    def _get_liquidation_rule_evaluations(self, seller, seller_sales):
+    def _get_liquidation_rule_evaluations(self, seller, seller_sales, promotion_names=None):
         """Evalúa metas de liquidación sobre ventas de productos promocionales.
 
         Los productos se identifican por coincidencia del nombre normalizado
@@ -477,7 +532,9 @@ class CommissionSettlement(models.Model):
 
         evaluations = []
         for rule in best_by_location.values():
-            lines = self._promotion_lines_for_rule(seller_sales, rule)
+            lines = self._promotion_lines_for_rule(
+                seller_sales, rule, promotion_names=promotion_names
+            )
             sales_amount = sum(
                 line.amount_for_basis(rule.basis) for line in lines
             )
@@ -491,7 +548,7 @@ class CommissionSettlement(models.Model):
         return evaluations
 
     def _apply_liquidation_commission_penalty(
-        self, result, seller, seller_sales, Detail
+        self, result, seller, seller_sales, Detail, promotion_names=None
     ):
         """Resta puntos porcentuales a la tasa ganada por ventas.
 
@@ -506,7 +563,7 @@ class CommissionSettlement(models.Model):
         self.ensure_one()
         period = self.period_id
         evaluations = self._get_liquidation_rule_evaluations(
-            seller, seller_sales
+            seller, seller_sales, promotion_names=promotion_names
         )
         if not evaluations:
             return
@@ -636,13 +693,20 @@ class CommissionSettlement(models.Model):
             "eligible": False,
         })
 
-    def _rebuild_dashboard_lines(self, sales=None, exclusion_by_sale=None):
-        """Create an auditable analytical snapshot for graph/pivot dashboards.
+    def _rebuild_dashboard_lines(
+        self,
+        sales=None,
+        exclusion_by_sale=None,
+        commissionable_sales=None,
+        qualification_sales=None,
+        promotion_names=None,
+    ):
+        """Reconstruye un snapshot agregado para el dashboard interactivo.
 
-        Sales rows carry sales measures once. Commission rows carry commission
-        measures only, so pivot totals do not duplicate sales when components are
-        grouped. Commission attribution follows the final effective rates after
-        the liquidation adjustment.
+        Desde 1.11.0 no se crea una fila analítica por cada venta y componente.
+        Se agregan en memoria por mes/comisionista/vendedor/local/línea/bodega/
+        origen/cliente/componente. Esto reduce sustancialmente escrituras SQL y
+        mantiene disponibles todas las dimensiones solicitadas por el dashboard.
         """
         self.ensure_one()
         Dashboard = self.env["commission.dashboard.line"]
@@ -650,59 +714,138 @@ class CommissionSettlement(models.Model):
         Dashboard.sudo().search([("settlement_id", "=", self.id)]).unlink()
 
         sales = sales if sales is not None else Sale.search(self._sale_domain())
-        commissionable_sales, qualification_sales, computed_exclusions = (
-            self.period_id._classify_sales_by_client_exclusion(sales)
+        if commissionable_sales is None or qualification_sales is None:
+            computed_commissionable, computed_qualification, computed_exclusions = (
+                self.period_id._classify_sales_by_client_exclusion(sales)
+            )
+            commissionable_sales = (
+                computed_commissionable
+                if commissionable_sales is None else commissionable_sales
+            )
+            qualification_sales = (
+                computed_qualification
+                if qualification_sales is None else qualification_sales
+            )
+            if exclusion_by_sale is None:
+                exclusion_by_sale = computed_exclusions
+        elif exclusion_by_sale is None:
+            _, _, exclusion_by_sale = self.period_id._classify_sales_by_client_exclusion(sales)
+
+        exclusion_by_sale = exclusion_by_sale or {}
+        promotion_names = (
+            promotion_names if promotion_names is not None else self._promotion_name_set()
         )
-        exclusion_by_sale = exclusion_by_sale or computed_exclusions
         commissionable_ids = set(commissionable_sales.ids)
         qualification_ids = set(qualification_sales.ids)
-        commissionable_by_seller = defaultdict(lambda: Sale.browse())
+
+        commissionable_ids_by_seller = defaultdict(list)
         for sale in commissionable_sales:
-            commissionable_by_seller[sale.seller_id.id] |= sale
+            if sale.seller_id:
+                commissionable_ids_by_seller[sale.seller_id.id].append(sale.id)
+        commissionable_by_seller = {
+            seller_id: Sale.browse(ids)
+            for seller_id, ids in commissionable_ids_by_seller.items()
+        }
+        empty_sales = Sale.browse()
 
-        vals_list = []
+        aggregates = {}
 
-        def dimensions(sale):
+        def _base_dimensions(sale):
             return {
                 "period_id": self.period_id.id,
                 "period_month": self.period_id.date_start,
-                "source_seller_id": sale.seller_id.id,
-                "sale_id": sale.id,
+                "source_seller_id": sale.seller_id.id or False,
                 "location_id": sale.location_id.id or False,
                 "warehouse": sale.warehouse or False,
                 "product_line": sale.product_line or False,
                 "origin": sale.origin or False,
-                "client": sale.client or False,
+                "client_id": sale.client_id.id or False,
+                "client": sale.client_id.name or sale.client or False,
             }
 
-        # Base sales rows.
+        def _add(
+            sale,
+            recipient_id,
+            component,
+            result_id=False,
+            gross_sales=0.0,
+            target_sales=0.0,
+            commissionable_value=0.0,
+            commission_amount=0.0,
+            quantity=0.0,
+            rate=0.0,
+            sale_count=0,
+            client_excluded=False,
+            counts_for_target=False,
+        ):
+            dims = _base_dimensions(sale)
+            # Rate is part of the key so two different rates never collapse into
+            # a misleading single analytical row.
+            key = (
+                recipient_id or 0,
+                dims["source_seller_id"] or 0,
+                dims["location_id"] or 0,
+                dims["warehouse"] or "",
+                dims["product_line"] or "",
+                dims["origin"] or "",
+                dims["client_id"] or 0,
+                dims["client"] or "",
+                component,
+                round(rate or 0.0, 8),
+                bool(client_excluded),
+                bool(counts_for_target),
+            )
+            vals = aggregates.get(key)
+            if vals is None:
+                vals = {
+                    **dims,
+                    "settlement_id": self.id,
+                    "result_id": result_id or False,
+                    "commission_recipient_id": recipient_id or False,
+                    "component": component,
+                    "sale_count": 0,
+                    "gross_sales": 0.0,
+                    "target_sales": 0.0,
+                    "commissionable_sales": 0.0,
+                    "commission_amount": 0.0,
+                    "quantity": 0.0,
+                    "rate": rate or 0.0,
+                    "client_excluded": bool(client_excluded),
+                    "counts_for_target": bool(counts_for_target),
+                }
+                aggregates[key] = vals
+            vals["sale_count"] += sale_count
+            vals["gross_sales"] += gross_sales
+            vals["target_sales"] += target_sales
+            vals["commissionable_sales"] += commissionable_value
+            vals["commission_amount"] += commission_amount
+            vals["quantity"] += quantity
+
+        # Una sola pasada para ventas y medidas base.
         for sale in sales:
             exclusion = exclusion_by_sale.get(sale.id)
             net = sale.amount_for_basis("net")
-            vals = dimensions(sale)
-            vals.update({
-                "settlement_id": self.id,
-                "commission_recipient_id": sale.seller_id.id,
-                "component": "sales",
-                "sale_count": 1,
-                "gross_sales": net,
-                "target_sales": net if sale.id in qualification_ids else 0.0,
-                "commissionable_sales": net if sale.id in commissionable_ids else 0.0,
-                "commission_amount": 0.0,
-                "quantity": (sale.quantity or 0.0) * (sale.document_sign or 1.0),
-                "client_excluded": bool(exclusion),
-                "counts_for_target": bool(exclusion and exclusion.count_for_target),
-            })
-            vals_list.append(vals)
+            _add(
+                sale,
+                sale.seller_id.id,
+                "sales",
+                gross_sales=net,
+                target_sales=net if sale.id in qualification_ids else 0.0,
+                commissionable_value=net if sale.id in commissionable_ids else 0.0,
+                quantity=(sale.quantity or 0.0) * (sale.document_sign or 1.0),
+                sale_count=1,
+                client_excluded=bool(exclusion),
+                counts_for_target=bool(exclusion and exclusion.count_for_target),
+            )
 
         for result in self.result_ids:
-            seller_lines = commissionable_by_seller[result.seller_id.id]
+            seller_lines = commissionable_by_seller.get(result.seller_id.id, empty_sales)
             for detail in result.detail_ids.filtered(
                 lambda d: d.detail_type in ("standard", "project", "management", "liquidation")
                 and d.eligible
                 and (d.amount or 0.0) != 0.0
             ):
-                lines = Sale.browse()
+                lines = empty_sales
                 if detail.detail_type == "standard":
                     lines = seller_lines
                 elif detail.detail_type == "project":
@@ -711,45 +854,42 @@ class CommissionSettlement(models.Model):
                         lambda sale: (sale.origin or "").strip().lower() == origin_key
                     )
                 elif detail.detail_type == "management" and detail.managed_seller_id:
-                    lines = commissionable_by_seller[detail.managed_seller_id.id]
+                    lines = commissionable_by_seller.get(
+                        detail.managed_seller_id.id, empty_sales
+                    )
                 elif detail.detail_type == "liquidation":
-                    promo_names = self._promotion_name_set()
                     lines = seller_lines.filtered(
                         lambda sale: (
-                            (sale.promotion_match_name or normalize_product_name(sale.product_name)) in promo_names
+                            (sale.promotion_match_name or normalize_product_name(sale.product_name))
+                            in promotion_names
                             and (not detail.location_id or sale.location_id == detail.location_id)
                         )
                     )
 
                 for sale in lines:
                     if detail.detail_type == "liquidation":
-                        commission_amount = (
-                            (sale.quantity or 0.0)
-                            * (sale.document_sign or 1.0)
-                            * (detail.rate or 0.0)
-                        )
+                        quantity = (sale.quantity or 0.0) * (sale.document_sign or 1.0)
+                        commission_amount = quantity * (detail.rate or 0.0)
                     else:
+                        quantity = 0.0
                         basis = detail.basis_type or "net"
-                        commission_amount = sale.amount_for_basis(basis) * (detail.rate or 0.0) / 100.0
+                        commission_amount = (
+                            sale.amount_for_basis(basis) * (detail.rate or 0.0) / 100.0
+                        )
                     if not commission_amount:
                         continue
-                    vals = dimensions(sale)
-                    vals.update({
-                        "settlement_id": self.id,
-                        "result_id": result.id,
-                        "commission_recipient_id": result.seller_id.id,
-                        "component": detail.detail_type,
-                        "commission_amount": commission_amount,
-                        "rate": detail.rate,
-                        "quantity": (
-                            (sale.quantity or 0.0) * (sale.document_sign or 1.0)
-                            if detail.detail_type == "liquidation" else 0.0
-                        ),
-                    })
-                    vals_list.append(vals)
+                    _add(
+                        sale,
+                        result.seller_id.id,
+                        detail.detail_type,
+                        result_id=result.id,
+                        commission_amount=commission_amount,
+                        quantity=quantity,
+                        rate=detail.rate or 0.0,
+                    )
 
-        if vals_list:
-            Dashboard.sudo().create(vals_list)
+        if aggregates:
+            Dashboard.sudo().create(list(aggregates.values()))
         return True
 
     def action_rebuild_dashboard(self):

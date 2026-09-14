@@ -1,119 +1,76 @@
-# Transcash Commissions - Metas y Liquidaciones
+# Transcash Commission Goal Rules — 18.0.1.11.0
 
-Versión: **18.0.1.10.0**
+Extensión de `transcash_commission` para metas, promociones, exclusiones de clientes, gestión administrativa, liquidaciones y analítica.
 
-Extensión para Odoo 18 sobre el módulo técnico `transcash_commission`.
+## Cambios 1.11.0
 
-## Dependencias Odoo
+### Cliente seleccionable en el período
 
-Solo declara:
+Se incorpora el maestro independiente `commission.client`. El maestro se alimenta automáticamente al crear/importar ventas mediante ORM y no depende de `res.partner`.
 
-- `transcash_commission`
-- `web`
+Cada `commission.sale` conserva el texto original `client` y además queda enlazada mediante `client_id` al cliente maestro normalizado. Al instalar/actualizar esta versión se crean y enlazan los clientes históricos existentes.
 
-No se agregó ningún addon Enterprise ni módulo `board`, `spreadsheet`, `sale`, `account` o similar. El dashboard usa vistas estándar de Odoo (`graph`, `pivot`, `list`) sobre un modelo analítico propio, evitando dependencias adicionales de frontend.
+En **Período → Clientes excluidos** ya no se escribe el nombre manualmente: se selecciona `client_id` desde un Many2one. El texto `client_name` se conserva únicamente por compatibilidad con versiones anteriores.
 
-El lector de promociones sigue usando únicamente la librería estándar de Python para XLSX/CSV. El formato `.xls` antiguo continúa siendo opcional y requiere `xlrd`; no es necesario para `.xlsx` o `.csv`.
+La exclusión mantiene dos comportamientos:
 
-## Exclusiones de clientes por período
+* La venta del cliente seleccionado **nunca genera comisión**.
+* `Contar para metas / mínimos = Sí`: la venta sí interviene en rangos del vendedor, meta local, mínimo administrativo y mínimo promocional.
+* `Contar para metas / mínimos = No`: la venta también se excluye de dichos cumplimientos.
 
-En **Comisiones > Operación > Períodos y metas > Clientes excluidos** se configuran los clientes cuyas ventas no deben generar comisión.
+### Rendimiento del cálculo
 
-Cada línea contiene:
+Se redujeron operaciones costosas dentro de los bucles mensuales:
 
-- Cliente.
-- **Contar para metas / mínimos**.
-- Observación.
-- Activo.
+* clasificación de clientes en una sola pasada y sin uniones crecientes de recordsets;
+* agrupación de ventas por IDs de vendedor/local antes del cálculo;
+* metas de vendedores precargadas en un mapa por vendedor;
+* reglas de proyectos precargadas para el período;
+* nombres promocionales calculados una sola vez y reutilizados;
+* no se vuelve a clasificar el mismo conjunto de ventas al generar el dashboard;
+* el dashboard se materializa **agregado por dimensiones**, en vez de crear una fila por venta y por componente.
 
-La coincidencia se hace por nombre normalizado del campo `Cliente` de `commission.sale`. Se ignoran diferencias de mayúsculas/minúsculas, acentos, signos y espacios repetidos. No se utiliza coincidencia difusa para evitar excluir clientes parecidos por error.
+La analítica conserva mes, comisionista, vendedor origen, local, bodega, línea de producto, origen, cliente y componente.
 
-### Regla de cálculo
+### Dashboard interactivo en una sola vista
 
-Una venta de cliente excluido **nunca genera comisión**, incluso si se marca para contar en metas.
+Menú: **Comisiones → Dashboard → Dashboard interactivo**.
 
-Si **Contar para metas / mínimos = Sí**:
+La vista predeterminada es un Pivot nativo de Odoo:
 
-- cuenta para seleccionar el rango de comisión del vendedor;
-- cuenta para el porcentaje de cumplimiento de su meta;
-- cuenta para metas de local;
-- cuenta para el mínimo del vendedor que habilita comisión al administrador;
-- cuenta para el mínimo de venta de productos promocionales/liquidación;
-- **no** integra la base sobre la cual se paga la comisión;
-- **no** genera comisión de proyecto;
-- **no** genera comisión de gestión del administrador;
-- **no** genera bono por m².
+* panel lateral para seleccionar vendedor/comisionista, período, local y componente;
+* meses en columnas;
+* localidades → bodegas → líneas de producto en filas;
+* medidas de ventas brutas, ventas para metas, ventas comisionables y comisión;
+* cambio directo a gráfico o lista desde la misma acción;
+* el gráfico muestra evolución mensual segmentada por local.
 
-Si **Contar para metas / mínimos = No**, se excluye tanto del pago como de todos esos cumplimientos.
+No se incorpora JavaScript propio, Spreadsheet, `board` ni módulos Enterprise. Se utilizan las vistas estándar `pivot`, `graph`, `list` y `searchpanel` de Odoo 18.
 
-Ejemplo:
+## Dependencias
 
-- rango: desde 35.000 -> 1%;
-- venta normal comisionable: 30.000;
-- cliente excluido: 7.000;
-- `Contar para metas = Sí`.
+Manifest:
 
-El vendedor califica con 37.000 y alcanza el rango de 1%, pero la comisión se calcula solamente sobre 30.000: **300**.
+```python
+"depends": ["transcash_commission", "web"]
+```
 
-## Dashboard de comisiones
+No se añadieron dependencias Odoo adicionales ni paquetes Python opcionales nuevos.
 
-Nuevo menú **Comisiones > Dashboard** con:
+## Instalación / actualización
 
-- Resumen mensual.
-- Por vendedor.
-- Por línea de producto.
-- Por almacén / bodega.
-
-Las vistas son estándar `graph/pivot/list` y permiten además analizar por:
-
-- período/mes;
-- comisionista;
-- vendedor que originó la venta;
-- localidad;
-- línea de producto;
-- almacén/bodega;
-- origen;
-- cliente;
-- componente de comisión.
-
-Medidas disponibles:
-
-- ventas brutas;
-- ventas consideradas para metas;
-- ventas comisionables;
-- comisión;
-- líneas de venta;
-- cantidad/m².
-
-El dashboard se reconstruye automáticamente al calcular/recalcular la liquidación. En una liquidación ya existente se puede usar **Actualizar dashboard** sin recalcular los importes de comisión.
-
-La comisión se distribuye a nivel de venta usando las tasas efectivas finales del cálculo (incluyendo la reducción de tasa por incumplir liquidación), por lo que se puede agrupar por línea de producto y almacén.
-
-## Funciones anteriores preservadas
-
-Se mantienen:
-
-- vendedor independiente de `res.users`;
-- metas del vendedor sin localidad;
-- rangos escalonados por monto de venta, aplicados sobre toda la base comisionable;
-- proyectos por origen sin necesidad de meta retail;
-- gestión de administrador con cabecera y vendedores a cargo;
-- mínimo administrativo fijo o porcentaje de meta;
-- meta local como condición de gestión;
-- lista de productos promocionales por nombre desde XLSX/CSV;
-- bono por m²;
-- reducción de tasa por incumplir la meta promocional;
-- vendedores exentos de esa reducción;
-- vendedores sin parametrización fuera de la liquidación;
-- duplicación integral del período y su configuración;
-- PDF total e individual.
-
-## Actualización
-
-1. Reemplazar la carpeta existente `transcash_commission_goal_rules`.
+1. Reemplazar la carpeta `transcash_commission_goal_rules`.
 2. Reiniciar Odoo.
 3. Actualizar la lista de aplicaciones si corresponde.
-4. Actualizar el módulo **Transcash Commissions - Metas y Liquidaciones**.
+4. Ejecutar **Actualizar** sobre `Transcash Commissions - Metas y Liquidaciones`.
 5. No ejecutar SQL manual.
 
-Las nuevas columnas/modelos son creados por el ORM durante la actualización.
+La actualización `18.0.1.11.0` incluye migración post-esquema para crear el maestro de clientes desde ventas/exclusiones históricas y enlazar `client_id`. Un `post_init_hook` cubre también la instalación inicial del addon sobre una base que ya contenga ventas en `transcash_commission`.
+
+## Funcionalidad preservada
+
+Se mantienen las funcionalidades previas: metas por rangos monetarios, proyectos por origen, gestión de administradores, metas locales, productos promocionales por coincidencia normalizada de nombre, bono por m², reducción de tasa por incumplimiento promocional, vendedores exentos, duplicación integral del período y PDF total/individual.
+
+### Dashboard histórico después de actualizar
+
+Las líneas analíticas 1.10.0 existentes se conservan para no ejecutar una reconstrucción pesada durante el upgrade. Para aprovechar la agregación optimizada en períodos históricos, abra la liquidación y pulse **Actualizar dashboard**. Los nuevos cálculos/recalculos ya generan directamente el formato agregado 1.11.0.
