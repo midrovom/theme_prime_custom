@@ -18,6 +18,21 @@ class CommissionPeriod(models.Model):
             "para aparecer en la liquidación, aunque no tenga meta retail."
         ),
     )
+
+    location_target_exempt_seller_ids = fields.Many2many(
+        "commission.seller",
+        "commission_period_location_target_exempt_rel",
+        "period_id",
+        "seller_id",
+        string="Vendedores que no suman a meta local",
+        domain=[("active", "=", True)],
+        help=(
+            "Las ventas de estos vendedores no se incluyen en el cumplimiento de "
+            "las metas de localidad ni habilitan por sí solas la comisión de gestión "
+            "del administrador. Sus ventas sí conservan su propia meta/comisión y los "
+            "demás cálculos que les correspondan."
+        ),
+    )
     manager_goal_rule_ids = fields.One2many(
         "commission.manager.goal.rule",
         "period_id",
@@ -168,6 +183,10 @@ class CommissionPeriod(models.Model):
         default.setdefault(
             "liquidation_penalty_exempt_seller_ids",
             [Command.set(self.liquidation_penalty_exempt_seller_ids.ids)],
+        )
+        default.setdefault(
+            "location_target_exempt_seller_ids",
+            [Command.set(self.location_target_exempt_seller_ids.ids)],
         )
         default.update({
             "state": "draft",

@@ -14,7 +14,7 @@
                 <attribute name="string">Metas vendedores</attribute>
             </xpath>
             <xpath expr="//page[.//field[@name='target_ids']]//field[@name='target_amount']" position="attributes">
-                <attribute name="string">Meta referencial</attribute>
+                <attribute name="string">Meta global / referencial</attribute>
             </xpath>
             <xpath expr="//page[.//field[@name='target_ids']]//field[@name='target_amount']" position="after">
                 <field name="minimum_sales_to_commission" optional="show"/>
@@ -26,15 +26,16 @@
                 <page string="Proyectos por origen">
                     <field name="project_rule_ids" context="{'default_period_id': id}">
                         <list editable="bottom">
-                            <field name="seller_id"/>
+                            <field name="seller_id" domain="[('role', 'in', ['project', 'hybrid']), ('is_corporate_project', '=', False)]"/>
                             <field name="origin"/>
                             <field name="basis"/>
+                            <field name="rate_mode"/>
                             <field name="commission_percent"/>
                             <field name="active"/>
                         </list>
                     </field>
                     <div class="alert alert-info mt-2" role="alert">
-                        Un vendedor de proyectos con una regla activa en esta pestaña se incluirá en la liquidación aunque no tenga meta retail. Solo se excluyen vendedores sin ningún parámetro de comisión aplicable.
+                        Para vendedores de proyectos no corporativos, cada origen tiene su propio porcentaje al 100% de la meta. En "Cumplimiento global x % del origen" se suman las ventas calificables de todos los orígenes, se valida que el vendedor haya alcanzado al menos su primer rango global y luego se multiplica el porcentaje de cada origen por el cumplimiento real de la meta, con tope en 100%. Ej.: 80% de cumplimiento: Importado 2% se paga a 1,60% y Local 1% a 0,80%. El porcentaje configurado en los rangos del vendedor no se reutiliza como tasa de origen. Los proyectos corporativos se liquidan como vendedores normales.
                     </div>
                 </page>
             </xpath>
@@ -57,6 +58,16 @@
                         Seleccione el cliente desde el maestro creado automáticamente con las ventas. Sus ventas nunca generan comisión. Si "Contar para metas / mínimos" está activo, sí ayudan a alcanzar rangos de vendedor, metas locales, mínimos administrativos y mínimos de liquidación; la base pagada siempre excluye al cliente.
                     </div>
                 </page>
+            </xpath>
+
+            <!-- Excepciones: vendedores cuyas ventas no suman al cumplimiento del local. -->
+            <xpath expr="//page[.//field[@name='location_target_ids']]//field[@name='location_target_ids']" position="before">
+                <group string="Excepciones de meta local">
+                    <field name="location_target_exempt_seller_ids" widget="many2many_tags"/>
+                </group>
+                <div class="alert alert-info mb-2" role="alert">
+                    Las ventas de estos vendedores no se suman a la meta del local donde vendieron. Esta excepción solo afecta el cumplimiento local y, por consecuencia, la habilitación de comisión de gestión del administrador; la meta global y comisión propia/proyecto del vendedor no se eliminan.
+                </div>
             </xpath>
 
             <!-- Sustituye la regla legacy por una cabecera de administrador + detalle. -->

@@ -794,6 +794,33 @@ class CommissionManagerSellerRule(models.Model):
 class CommissionProjectRuleGoalRules(models.Model):
     _inherit = "commission.project.rule"
 
+    rate_mode = fields.Selection(
+        [
+            ("global_tier", "Cumplimiento global x % del origen"),
+            ("fixed", "% fijo por origen (sin ajuste)"),
+        ],
+        string="Cálculo del origen",
+        default="global_tier",
+        help=(
+            "Cumplimiento global x % del origen: cada origen conserva su porcentaje "
+            "propio al 100% de la meta. Si el vendedor queda por debajo del 100%, "
+            "la tasa del origen se multiplica por el porcentaje real de cumplimiento "
+            "global, siempre que haya alcanzado al menos el primer rango monetario. "
+            "% fijo conserva una tasa sin ajuste por cumplimiento."
+        ),
+    )
+    commission_percent = fields.Float(
+        string="Comisión del origen al 100% (%)",
+        required=True,
+        default=0.0,
+        digits=(16, 4),
+        help=(
+            "Porcentaje completo de este origen cuando el vendedor alcanza o supera "
+            "el 100% de su meta global. En modo de cumplimiento global se ajusta "
+            "proporcionalmente al cumplimiento real antes de aplicar otros ajustes."
+        ),
+    )
+
     @api.constrains("period_id", "seller_id", "origin")
     def _check_unique_project_parameter_normalized(self):
         """Evita duplicar el mismo origen por espacios o diferencias de mayúsculas."""
@@ -834,6 +861,7 @@ class CommissionProjectRuleGoalRules(models.Model):
             "period_id": destination_period.id,
             "seller_id": self.seller_id.id,
             "origin": self.origin,
+            "rate_mode": self.rate_mode,
             "commission_percent": self.commission_percent,
             "basis": self.basis,
             "active": self.active,

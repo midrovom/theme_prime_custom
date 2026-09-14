@@ -1,0 +1,30 @@
+<odoo>
+    <record id="view_commission_seller_list_goal_rules" model="ir.ui.view">
+        <field name="name">commission.seller.list.goal.rules</field>
+        <field name="model">commission.seller</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_seller_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='role']" position="after">
+                <field name="is_corporate_project" optional="show"/>
+                <field name="commission_report_group" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_seller_form_goal_rules" model="ir.ui.view">
+        <field name="name">commission.seller.form.goal.rules</field>
+        <field name="model">commission.seller</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_seller_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='role']" position="after">
+                <field name="is_corporate_project"/>
+                <field name="commission_report_group" readonly="1"/>
+            </xpath>
+            <xpath expr="//field[@name='notes']" position="after">
+                <div class="alert alert-info mt-2" role="alert" invisible="not is_corporate_project">
+                    Proyecto corporativo: se calcula como vendedor normal usando la meta global y sus rangos. En el PDF consolidado aparece separado de retail y de proyectos por origen.
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

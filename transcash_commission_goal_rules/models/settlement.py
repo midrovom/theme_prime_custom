@@ -32,6 +32,9 @@ class CommissionSettlement(models.Model):
         commissionable_sales, qualification_sales, exclusion_by_sale = (
             period._classify_sales_by_client_exclusion(sales)
         )
+        location_target_exempt_seller_ids = set(
+            period.location_target_exempt_seller_ids.ids
+        )
 
         # Agrupación por IDs: evita ``recordset |= record`` para cada venta.
         all_ids_by_seller = defaultdict(list)
@@ -52,7 +55,10 @@ class CommissionSettlement(models.Model):
         for sale in qualification_sales:
             if sale.seller_id:
                 qualification_ids_by_seller[sale.seller_id.id].append(sale.id)
-            if sale.location_id:
+            if (
+                sale.location_id
+                and sale.seller_id.id not in location_target_exempt_seller_ids
+            ):
                 qualification_ids_by_location[sale.location_id.id].append(sale.id)
 
         seller_ids = set(all_ids_by_seller) | set(commissionable_ids_by_seller) | set(qualification_ids_by_seller)
@@ -164,6 +170,16 @@ class CommissionSettlement(models.Model):
                 "excluded_client_line_count": max(excluded_line_count, 0),
             })
 
+            seller_project_rules = project_rules_by_seller.get(
+                seller.id, self.env["commission.project.rule"].browse()
+            )
+            uses_origin_project_commission = bool(
+                not seller.is_corporate_project
+                and (
+                    seller.role == "project"
+                    or (seller.role == "hybrid" and seller_project_rules)
+                )
+            )
             self._calculate_standard_commission(
                 result,
                 seller,
@@ -171,15 +187,16 @@ class CommissionSettlement(models.Model):
                 Detail,
                 qualification_sales=seller_qualification_sales,
                 target=target_by_seller.get(seller.id),
+                pay_commission=not uses_origin_project_commission,
             )
             self._calculate_project_commission(
                 result,
                 seller,
                 seller_commissionable_sales,
                 Detail,
-                rules=project_rules_by_seller.get(
-                    seller.id, self.env["commission.project.rule"].browse()
-                ),
+                qualification_sales=seller_qualification_sales,
+                target=target_by_seller.get(seller.id),
+                rules=seller_project_rules,
             )
             self._calculate_liquidation_bonus(
                 result,
@@ -216,7 +233,8 @@ class CommissionSettlement(models.Model):
         )
 
     def _calculate_standard_commission(
-        self, result, seller, seller_sales, Detail, qualification_sales=None, target=None
+        self, result, seller, seller_sales, Detail, qualification_sales=None,
+        target=None, pay_commission=True
     ):
         """Rango por ventas: califica con una base y comisiona con otra.
 
@@ -253,15 +271,22 @@ class CommissionSettlement(models.Model):
         tiers = target.tier_ids.sorted(lambda tier: (tier.sales_threshold, tier.id))
         tier = target._get_applicable_sales_tier(qualification_amount)
         eligible = bool(tier)
-        rate = tier.commission_percent if tier else 0.0
-        commission = commissionable_amount * rate / 100.0
+        tier_rate = tier.commission_percent if tier else 0.0
+        rate = tier_rate if pay_commission else 0.0
+        commission = commissionable_amount * rate / 100.0 if pay_commission else 0.0
         minimum_required = tiers[0].sales_threshold if tiers else 0.0
         selected_threshold = tier.sales_threshold if tier else 0.0
+        if pay_commission:
+            mode_text = _("tasa del rango %(rate).4f%%") % {"rate": rate}
+        else:
+            mode_text = _(
+                "solo calificación global para proyecto; la tasa se define por origen"
+            )
         description = _(
             "Meta referencial %(target).2f - ventas para rango/meta %(qualifying).2f - "
             "base comisionable %(commissionable).2f - cumplimiento %(achievement).2f%% - "
-            "mínimo para comisionar %(minimum).2f - rango aplicado desde %(threshold).2f - "
-            "tasa %(rate).4f%%"
+            "mínimo para comisionar %(minimum).2f - rango alcanzado desde %(threshold).2f - "
+            "%(mode)s"
         ) % {
             "target": target.target_amount,
             "qualifying": qualification_amount,
@@ -269,7 +294,7 @@ class CommissionSettlement(models.Model):
             "achievement": achievement,
             "minimum": minimum_required,
             "threshold": selected_threshold,
-            "rate": rate,
+            "mode": mode_text,
         }
 
         result.standard_sales = qualification_amount
@@ -289,9 +314,29 @@ class CommissionSettlement(models.Model):
             "eligible": eligible,
         })
 
-    def _calculate_project_commission(self, result, seller, seller_sales, Detail, rules=None):
-        """Proyecto/origen sobre ventas comisionables (clientes excluidos no pagan)."""
-        if seller.role not in ("project", "hybrid"):
+    def _calculate_project_commission(
+        self, result, seller, seller_sales, Detail, qualification_sales=None,
+        target=None, rules=None
+    ):
+        """Calcula proyectos por origen con tasa propia y cumplimiento global.
+
+        Regla vigente para vendedores de proyectos no corporativos:
+
+        * la meta es global para el vendedor y se evalúa con todas sus ventas
+          calificables, independientemente del origen;
+        * los rangos monetarios globales se conservan como condición de entrada:
+          por debajo del primer rango no se paga comisión de proyecto;
+        * cada origen mantiene su porcentaje completo propio (por ejemplo Local 1%
+          e Importado 2%);
+        * si el cumplimiento global está entre el mínimo y 100%, la tasa efectiva
+          del origen es ``tasa_origen * cumplimiento_global``;
+        * desde 100% de cumplimiento se paga la tasa completa del origen;
+        * nunca se usa el porcentaje del rango del vendedor como tasa del origen.
+
+        ``rate_mode=fixed`` conserva una tasa fija sin ajuste por cumplimiento.
+        Los proyectos corporativos se liquidan como vendedores normales.
+        """
+        if seller.is_corporate_project or seller.role not in ("project", "hybrid"):
             return
         if rules is None:
             rules = self.env["commission.project.rule"].search([
@@ -299,30 +344,117 @@ class CommissionSettlement(models.Model):
                 ("active", "=", True),
                 "|", ("period_id", "=", self.period_id.id), ("period_id", "=", False),
             ])
+        if not rules:
+            return
+
+        qualification_sales = (
+            qualification_sales if qualification_sales is not None else seller_sales
+        )
         best_rule = {}
         for rule in rules.sorted(lambda rule: (bool(rule.period_id), rule.id)):
             best_rule[(rule.origin or "").strip().lower()] = rule
 
+        sale_ids_by_origin = defaultdict(list)
+        for line in seller_sales:
+            sale_ids_by_origin[(line.origin or "").strip().lower()].append(line.id)
+
+        scaled_rules = [
+            rule for rule in best_rule.values()
+            if (rule.rate_mode or "global_tier") == "global_tier"
+        ]
+        global_qualification_amount = 0.0
+        global_achievement_percent = 0.0
+        global_factor = 0.0
+        global_tier = self.env["commission.seller.target.tier"]
+        minimum_threshold = 0.0
+
+        if scaled_rules:
+            if not target:
+                origins = ", ".join(sorted(rule.origin for rule in scaled_rules))
+                raise UserError(_(
+                    "El vendedor de proyectos %(seller)s usa porcentajes por origen "
+                    "ajustados por cumplimiento global en %(origins)s, pero no tiene "
+                    "una meta activa en el período."
+                ) % {"seller": seller.display_name, "origins": origins})
+            tiers = target.tier_ids.sorted(lambda tier: (tier.sales_threshold, tier.id))
+            if not tiers:
+                origins = ", ".join(sorted(rule.origin for rule in scaled_rules))
+                raise UserError(_(
+                    "El vendedor de proyectos %(seller)s necesita al menos un rango "
+                    "monetario en su meta global para comisionar por los orígenes %(origins)s."
+                ) % {"seller": seller.display_name, "origins": origins})
+
+            global_qualification_amount = sum(
+                line.amount_for_basis(target.basis) for line in qualification_sales
+            )
+            global_achievement_percent = (
+                global_qualification_amount / target.target_amount * 100.0
+                if target.target_amount else 0.0
+            )
+            global_factor = min(max(global_achievement_percent / 100.0, 0.0), 1.0)
+            global_tier = target._get_applicable_sales_tier(global_qualification_amount)
+            minimum_threshold = tiers[0].sales_threshold
+
         for origin_key, rule in best_rule.items():
-            lines = seller_sales.filtered(
-                lambda line: (line.origin or "").strip().lower() == origin_key
+            lines = self.env["commission.sale"].browse(
+                sale_ids_by_origin.get(origin_key, [])
             )
             if not lines:
                 continue
             basis_amount = sum(line.amount_for_basis(rule.basis) for line in lines)
-            commission = basis_amount * rule.commission_percent / 100.0
+
+            if (rule.rate_mode or "global_tier") == "global_tier":
+                full_origin_rate = rule.commission_percent or 0.0
+                if full_origin_rate <= 0.0:
+                    raise UserError(_(
+                        "El vendedor de proyectos %(seller)s tiene ventas del origen "
+                        "%(origin)s, pero la comisión del origen al 100%% no está "
+                        "configurada. Ingrese un porcentaje mayor que cero en el período."
+                    ) % {"seller": seller.display_name, "origin": rule.origin})
+                reached_minimum = bool(global_tier)
+                eligible = reached_minimum
+                rate = full_origin_rate * global_factor if eligible else 0.0
+                qualification_amount = global_qualification_amount
+                threshold = global_tier.sales_threshold if global_tier else 0.0
+                description = _(
+                    "Proyecto / origen %(origin)s | meta global %(target).2f | "
+                    "ventas globales %(qualifying).2f | cumplimiento %(achievement).2f%% | "
+                    "mínimo global %(minimum).2f | rango alcanzado desde %(threshold).2f | "
+                    "tasa origen al 100%% %(full_rate).4f%% | factor global %(factor).4f | "
+                    "tasa efectiva %(effective).4f%%"
+                ) % {
+                    "origin": rule.origin,
+                    "target": target.target_amount if target else 0.0,
+                    "qualifying": qualification_amount,
+                    "achievement": global_achievement_percent,
+                    "minimum": minimum_threshold,
+                    "threshold": threshold,
+                    "full_rate": full_origin_rate,
+                    "factor": global_factor,
+                    "effective": rate,
+                }
+            else:
+                rate = rule.commission_percent
+                eligible = rate > 0.0
+                qualification_amount = basis_amount
+                description = _(
+                    "Proyecto / origen %(origin)s | tasa fija sin ajuste %(rate).4f%%"
+                ) % {"origin": rule.origin, "rate": rate}
+
+            commission = basis_amount * rate / 100.0 if eligible else 0.0
             result.project_sales += basis_amount
             result.project_commission += commission
             Detail.create({
                 "result_id": result.id,
                 "detail_type": "project",
-                "description": _("Proyecto / origen: %s") % rule.origin,
+                "description": description,
                 "basis_amount": basis_amount,
-                "qualification_amount": basis_amount,
+                "qualification_amount": qualification_amount,
                 "basis_type": rule.basis,
                 "project_origin": rule.origin,
-                "rate": rule.commission_percent,
+                "rate": rate,
                 "amount": commission,
+                "eligible": eligible,
             })
 
     def _promotion_name_set(self):
@@ -737,6 +869,9 @@ class CommissionSettlement(models.Model):
         )
         commissionable_ids = set(commissionable_sales.ids)
         qualification_ids = set(qualification_sales.ids)
+        location_target_exempt_seller_ids = set(
+            self.period_id.location_target_exempt_seller_ids.ids
+        )
 
         commissionable_ids_by_seller = defaultdict(list)
         for sale in commissionable_sales:
@@ -770,6 +905,7 @@ class CommissionSettlement(models.Model):
             result_id=False,
             gross_sales=0.0,
             target_sales=0.0,
+            local_target_sales=0.0,
             commissionable_value=0.0,
             commission_amount=0.0,
             quantity=0.0,
@@ -777,6 +913,7 @@ class CommissionSettlement(models.Model):
             sale_count=0,
             client_excluded=False,
             counts_for_target=False,
+            excluded_from_location_target=False,
         ):
             dims = _base_dimensions(sale)
             # Rate is part of the key so two different rates never collapse into
@@ -794,6 +931,7 @@ class CommissionSettlement(models.Model):
                 round(rate or 0.0, 8),
                 bool(client_excluded),
                 bool(counts_for_target),
+                bool(excluded_from_location_target),
             )
             vals = aggregates.get(key)
             if vals is None:
@@ -806,17 +944,20 @@ class CommissionSettlement(models.Model):
                     "sale_count": 0,
                     "gross_sales": 0.0,
                     "target_sales": 0.0,
+                    "local_target_sales": 0.0,
                     "commissionable_sales": 0.0,
                     "commission_amount": 0.0,
                     "quantity": 0.0,
                     "rate": rate or 0.0,
                     "client_excluded": bool(client_excluded),
                     "counts_for_target": bool(counts_for_target),
+                    "excluded_from_location_target": bool(excluded_from_location_target),
                 }
                 aggregates[key] = vals
             vals["sale_count"] += sale_count
             vals["gross_sales"] += gross_sales
             vals["target_sales"] += target_sales
+            vals["local_target_sales"] += local_target_sales
             vals["commissionable_sales"] += commissionable_value
             vals["commission_amount"] += commission_amount
             vals["quantity"] += quantity
@@ -831,11 +972,20 @@ class CommissionSettlement(models.Model):
                 "sales",
                 gross_sales=net,
                 target_sales=net if sale.id in qualification_ids else 0.0,
+                local_target_sales=(
+                    net
+                    if sale.id in qualification_ids
+                    and sale.seller_id.id not in location_target_exempt_seller_ids
+                    else 0.0
+                ),
                 commissionable_value=net if sale.id in commissionable_ids else 0.0,
                 quantity=(sale.quantity or 0.0) * (sale.document_sign or 1.0),
                 sale_count=1,
                 client_excluded=bool(exclusion),
                 counts_for_target=bool(exclusion and exclusion.count_for_target),
+                excluded_from_location_target=(
+                    sale.seller_id.id in location_target_exempt_seller_ids
+                ),
             )
 
         for result in self.result_ids:
@@ -916,6 +1066,12 @@ class CommissionSettlement(models.Model):
 class CommissionResult(models.Model):
     _inherit = "commission.result"
 
+    report_group = fields.Selection(
+        related="seller_id.commission_report_group",
+        string="Sección PDF",
+        store=True,
+        index=True,
+    )
     gross_sales_before_client_exclusions = fields.Float(
         string="Ventas antes de exclusiones de cliente", digits=(16, 4)
     )

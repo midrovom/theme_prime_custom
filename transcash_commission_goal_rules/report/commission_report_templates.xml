@@ -7,7 +7,8 @@
                         <style>
                             .tc-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
                             .tc-meta { font-size: 11px; margin-bottom: 10px; }
-                            .tc-table { width: 100%; border-collapse: collapse; font-size: 8.5px; }
+                            .tc-section { font-size: 13px; font-weight: 700; margin: 12px 0 4px 0; padding: 4px 6px; background: #ececec; border-left: 4px solid #777; }
+                            .tc-table { width: 100%; border-collapse: collapse; font-size: 8.5px; margin-bottom: 7px; }
                             .tc-table th { background: #eeeeee; font-weight: 700; padding: 5px 3px; border: 1px solid #bdbdbd; }
                             .tc-table td { padding: 4px 3px; border: 1px solid #d5d5d5; }
                             .tc-num { text-align: right; white-space: nowrap; }
@@ -30,7 +31,7 @@
 
                         <table class="tc-summary">
                             <tr>
-                                <td><strong>Vendedores liquidados</strong></td>
+                                <td><strong>Comisionistas liquidados</strong></td>
                                 <td class="tc-num"><span t-esc="len(o.result_ids)"/></td>
                                 <td><strong>Líneas de venta</strong></td>
                                 <td class="tc-num"><span t-field="o.sales_count"/></td>
@@ -49,51 +50,69 @@
                             </tr>
                         </table>
 
-                        <table class="tc-table">
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Vendedor</th>
-                                    <th class="tc-num">Ventas</th>
-                                    <th class="tc-num">Meta retail</th>
-                                    <th class="tc-num">Cumpl. %</th>
-                                    <th class="tc-num">Com. propia</th>
-                                    <th class="tc-num">Proyectos</th>
-                                    <th class="tc-num">Gestión</th>
-                                    <th class="tc-num">Bono liq.</th>
-                                    <th class="tc-num">Reducc. tasa*</th>
-                                    <th class="tc-num">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr t-foreach="o.result_ids.sorted(lambda r: (r.seller_id.code or '', r.seller_id.name or ''))" t-as="r">
-                                    <td><span t-field="r.seller_id.code"/></td>
-                                    <td><span t-field="r.seller_id.name"/></td>
-                                    <td class="tc-num"><span t-field="r.total_sales" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td class="tc-num"><span t-field="r.target_amount" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td class="tc-num"><span t-field="r.achievement_percent" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td class="tc-num"><span t-field="r.standard_commission" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td class="tc-num"><span t-field="r.project_commission" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td class="tc-num"><span t-field="r.management_commission" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td class="tc-num"><span t-field="r.liquidation_bonus" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td class="tc-num"><span t-field="r.liquidation_penalty" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td class="tc-num"><strong><span t-field="r.total_commission" t-options='{"widget": "float", "precision": 2}'/></strong></td>
-                                </tr>
-                                <tr class="tc-total">
-                                    <td colspan="5">TOTALES</td>
-                                    <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('standard_commission'))"/></td>
-                                    <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('project_commission'))"/></td>
-                                    <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('management_commission'))"/></td>
-                                    <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('liquidation_bonus'))"/></td>
-                                    <td class="tc-num"><span t-esc="'%.2f' % sum(o.result_ids.mapped('liquidation_penalty'))"/></td>
-                                    <td class="tc-num"><span t-field="o.total_commission" t-options='{"widget": "float", "precision": 2}'/></td>
-                                </tr>
-                            </tbody>
+                        <t t-set="sections" t-value="[('retail', 'VENDEDORES RETAIL'), ('project', 'VENDEDORES DE PROYECTOS'), ('corporate_project', 'PROYECTOS CORPORATIVOS'), ('manager', 'ADMINISTRADORES')]"/>
+                        <t t-foreach="sections" t-as="section">
+                            <t t-set="section_results" t-value="o.result_ids.filtered(lambda r: r.report_group == section[0]).sorted(lambda r: (r.seller_id.code or '', r.seller_id.name or ''))"/>
+                            <t t-if="section_results">
+                                <div class="tc-section"><span t-esc="section[1]"/></div>
+                                <table class="tc-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Vendedor / administrador</th>
+                                            <th class="tc-num">Ventas</th>
+                                            <th class="tc-num">Meta global</th>
+                                            <th class="tc-num">Cumpl. %</th>
+                                            <th class="tc-num">Com. propia</th>
+                                            <th class="tc-num">Proyectos</th>
+                                            <th class="tc-num">Gestión</th>
+                                            <th class="tc-num">Bono liq.</th>
+                                            <th class="tc-num">Reducc. monet.*</th>
+                                            <th class="tc-num">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="section_results" t-as="r">
+                                            <td><span t-field="r.seller_id.code"/></td>
+                                            <td><span t-field="r.seller_id.name"/></td>
+                                            <td class="tc-num"><span t-field="r.total_sales" t-options='{"widget": "float", "precision": 2}'/></td>
+                                            <td class="tc-num"><span t-field="r.target_amount" t-options='{"widget": "float", "precision": 2}'/></td>
+                                            <td class="tc-num"><span t-field="r.achievement_percent" t-options='{"widget": "float", "precision": 2}'/></td>
+                                            <td class="tc-num"><span t-field="r.standard_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                            <td class="tc-num"><span t-field="r.project_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                            <td class="tc-num"><span t-field="r.management_commission" t-options='{"widget": "float", "precision": 2}'/></td>
+                                            <td class="tc-num"><span t-field="r.liquidation_bonus" t-options='{"widget": "float", "precision": 2}'/></td>
+                                            <td class="tc-num"><span t-field="r.liquidation_penalty" t-options='{"widget": "float", "precision": 2}'/></td>
+                                            <td class="tc-num"><strong><span t-field="r.total_commission" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                                        </tr>
+                                        <tr class="tc-total">
+                                            <td colspan="2">SUBTOTAL <span t-esc="section[1]"/></td>
+                                            <td class="tc-num"><span t-esc="'%.2f' % sum(section_results.mapped('total_sales'))"/></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td class="tc-num"><span t-esc="'%.2f' % sum(section_results.mapped('standard_commission'))"/></td>
+                                            <td class="tc-num"><span t-esc="'%.2f' % sum(section_results.mapped('project_commission'))"/></td>
+                                            <td class="tc-num"><span t-esc="'%.2f' % sum(section_results.mapped('management_commission'))"/></td>
+                                            <td class="tc-num"><span t-esc="'%.2f' % sum(section_results.mapped('liquidation_bonus'))"/></td>
+                                            <td class="tc-num"><span t-esc="'%.2f' % sum(section_results.mapped('liquidation_penalty'))"/></td>
+                                            <td class="tc-num"><span t-esc="'%.2f' % sum(section_results.mapped('total_commission'))"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </t>
+                        </t>
+
+                        <table class="tc-summary">
+                            <tr>
+                                <td><strong>TOTAL GENERAL DE COMISIONES</strong></td>
+                                <td class="tc-num"><strong><span t-field="o.total_commission" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                            </tr>
                         </table>
 
                         <p style="font-size:9px; margin-top:10px;">
-                            Este reporte incluye únicamente vendedores o administradores con una parametrización activa de comisión aplicable al período (meta, proyecto, gestión o bono específico). Las ventas de clientes excluidos nunca generan comisión; según el parámetro del período pueden o no contar para cumplimiento de metas/mínimos.<br/>
-                            * La liquidación/promoción se determina por coincidencia del nombre del producto contra la lista cargada en el período; Indica_Precio no se utiliza. La reducción monetaria es informativa: ya está incorporada en Comisión propia/Proyectos mediante la tasa efectiva y no debe restarse nuevamente del total.
+                            El reporte separa retail, proyectos por origen, proyectos corporativos y administradores para facilitar la revisión. Los proyectos por origen usan una meta global y un porcentaje propio por origen. Alcanzado el mínimo global, la tasa de cada origen se multiplica por el cumplimiento real de la meta, con tope en 100%; los proyectos corporativos se liquidan como vendedores normales.<br/>
+                            Las ventas de vendedores marcados como excepción de meta local no suman al cumplimiento de la localidad, pero conservan su propia meta y comisión. Las ventas de clientes excluidos nunca generan comisión; según el parámetro del período pueden o no contar para cumplimiento de metas/mínimos.<br/>
+                            * La reducción monetaria es informativa: ya está incorporada en las tasas efectivas de comisión y no debe restarse nuevamente del total.
                         </p>
                     </div>
                 </t>
@@ -142,8 +161,8 @@
                                 <tr>
                                     <td><strong>Productos promoción</strong></td>
                                     <td><span t-esc="o.settlement_id.period_id.promotion_product_count"/></td>
-                                    <td></td>
-                                    <td></td>
+                                    <td><strong>Grupo</strong></td>
+                                    <td><span t-field="o.report_group"/></td>
                                 </tr>
                             </table>
                         </div>
@@ -153,7 +172,7 @@
                                 <tr>
                                     <td><strong>Ventas comisionables</strong></td>
                                     <td class="tc-num"><span t-field="o.total_sales" t-options='{"widget": "float", "precision": 2}'/></td>
-                                    <td><strong>Meta retail</strong></td>
+                                    <td><strong>Meta global / referencial</strong></td>
                                     <td class="tc-num"><span t-field="o.target_amount" t-options='{"widget": "float", "precision": 2}'/></td>
                                     <td><strong>Cumplimiento meta</strong></td>
                                     <td class="tc-num"><span t-field="o.achievement_percent" t-options='{"widget": "float", "precision": 2}'/>%</td>
@@ -227,4 +246,5 @@
             </t>
         </t>
     </template>
+
 </odoo>

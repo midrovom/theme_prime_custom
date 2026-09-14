@@ -14,6 +14,7 @@
                 <field name="origin"/>
                 <field name="component"/>
                 <filter name="client_excluded" string="Clientes excluidos" domain="[('client_excluded', '=', True)]"/>
+                <filter name="location_target_excluded" string="No suma a meta local" domain="[('excluded_from_location_target', '=', True)]"/>
                 <group expand="0" string="Agrupar por">
                     <filter name="group_month" string="Mes" context="{'group_by': 'period_month:month'}"/>
                     <filter name="group_recipient" string="Comisionista" context="{'group_by': 'commission_recipient_id'}"/>
@@ -48,6 +49,7 @@
                 <field name="period_month" type="col" interval="month"/>
                 <field name="gross_sales" type="measure"/>
                 <field name="target_sales" type="measure"/>
+                <field name="local_target_sales" type="measure"/>
                 <field name="commissionable_sales" type="measure"/>
                 <field name="commission_amount" type="measure"/>
                 <field name="sale_count" type="measure"/>
@@ -82,13 +84,15 @@
                 <field name="client_id" optional="hide"/>
                 <field name="origin" optional="hide"/>
                 <field name="gross_sales" sum="Ventas brutas"/>
-                <field name="target_sales" sum="Ventas meta"/>
+                <field name="target_sales" sum="Ventas meta vendedor"/>
+                <field name="local_target_sales" sum="Ventas meta local"/>
                 <field name="commissionable_sales" sum="Ventas comisionables"/>
                 <field name="commission_amount" sum="Comisión"/>
                 <field name="quantity" sum="Cantidad / m²" optional="hide"/>
                 <field name="rate" optional="hide"/>
                 <field name="client_excluded" optional="hide"/>
                 <field name="counts_for_target" optional="hide"/>
+                <field name="excluded_from_location_target" optional="hide"/>
             </list>
         </field>
     </record>

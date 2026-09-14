@@ -1,5 +1,6 @@
 from . import period
 from . import promotion
+from . import seller
 from . import rules
 from . import settlement
 from . import client_master

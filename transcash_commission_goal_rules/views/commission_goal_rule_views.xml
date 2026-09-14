@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='location_id']" position="replace"/>
             <xpath expr="//field[@name='target_amount']" position="attributes">
-                <attribute name="string">Meta referencial</attribute>
+                <attribute name="string">Meta global / referencial</attribute>
             </xpath>
             <xpath expr="//field[@name='target_amount']" position="after">
                 <field name="minimum_sales_to_commission" optional="show"/>
@@ -25,7 +25,7 @@
             </xpath>
             <xpath expr="//field[@name='location_id']" position="replace"/>
             <xpath expr="//field[@name='target_amount']" position="attributes">
-                <attribute name="string">Meta referencial</attribute>
+                <attribute name="string">Meta global / referencial</attribute>
             </xpath>
             <xpath expr="//field[@name='target_amount']" position="after">
                 <field name="calculation_mode" invisible="1"/>
@@ -138,6 +138,38 @@
         <field name="arch" type="xml">
             <xpath expr="//form" position="attributes">
                 <attribute name="duplicate">false</attribute>
+            </xpath>
+            <xpath expr="//field[@name='seller_id']" position="attributes">
+                <attribute name="domain">[('role', 'in', ['project', 'hybrid']), ('is_corporate_project', '=', False)]</attribute>
+            </xpath>
+            <xpath expr="//field[@name='commission_percent']" position="before">
+                <field name="rate_mode"/>
+            </xpath>
+            <xpath expr="//field[@name='commission_percent']" position="attributes">
+                <attribute name="string">Comisión del origen al 100% (%)</attribute>
+            </xpath>
+            <xpath expr="//sheet" position="inside">
+                <div class="alert alert-info mt-2" role="alert">
+                    En "Cumplimiento global x % del origen", este campo es la tasa completa del origen al 100% de la meta global. Si el vendedor cumple menos del 100%, pero ya alcanzó al menos su primer rango monetario, la tasa efectiva se multiplica por el cumplimiento global real. Ej.: 80% de cumplimiento × 2% Importado = 1,60%. No se paga además una comisión estándar por las mismas ventas.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+
+    <record id="view_commission_project_rule_list_goal_rules" model="ir.ui.view">
+        <field name="name">commission.project.rule.list.goal.rules</field>
+        <field name="model">commission.project.rule</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_project_rule_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='seller_id']" position="attributes">
+                <attribute name="domain">[('role', 'in', ['project', 'hybrid']), ('is_corporate_project', '=', False)]</attribute>
+            </xpath>
+            <xpath expr="//field[@name='commission_percent']" position="before">
+                <field name="rate_mode"/>
+            </xpath>
+            <xpath expr="//field[@name='commission_percent']" position="attributes">
+                <attribute name="string">Comisión del origen al 100% (%)</attribute>
             </xpath>
         </field>
     </record>

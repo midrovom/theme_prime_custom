@@ -144,6 +144,7 @@ class TestCommissionGoalRules(TransactionCase):
             "seller_id": self.project_seller.id,
             "origin": "Importado",
             "basis": "net",
+            "rate_mode": "fixed",
             "commission_percent": 2.0,
             "active": True,
         })
@@ -683,6 +684,7 @@ class TestCommissionGoalRules(TransactionCase):
             "period_id": self.period.id,
             "seller_id": self.seller_1.id,
             "origin": "Importado",
+            "rate_mode": "fixed",
             "commission_percent": 1.5,
             "basis": "net",
             "active": True,
@@ -901,6 +903,7 @@ class TestCommissionGoalRules(TransactionCase):
             "seller_id": self.project_seller.id,
             "origin": "Importado",
             "basis": "net",
+            "rate_mode": "fixed",
             "commission_percent": 2.0,
             "active": True,
         })
@@ -917,6 +920,214 @@ class TestCommissionGoalRules(TransactionCase):
         result = settlement.result_ids.filtered(lambda r: r.seller_id == self.project_seller)
         self.assertAlmostEqual(result.project_commission, 0.0, places=4)
         self.assertAlmostEqual(result.total_sales, 0.0, places=4)
+
+    def test_location_target_can_exclude_seller_sales(self):
+        self._target(self.seller_1, amount=1000.0, rate=1.0)
+        self._location_target(amount=500.0)
+        self._management([{
+            "seller_id": self.seller_1.id,
+            "minimum_type": "fixed",
+            "minimum_amount": 0.0,
+            "commission_percent": 1.0,
+            "basis": "net",
+        }])
+        self.period.location_target_exempt_seller_ids = [Command.set([self.seller_1.id])]
+        self._sale("GR-LOC-EXC", self.seller_1, self.loc_a, 600.0)
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        manager_result = settlement.result_ids.filtered(lambda r: r.seller_id == self.manager)
+        self.assertAlmostEqual(manager_result.management_commission, 0.0, places=4)
+
+        self.period.location_target_exempt_seller_ids = [Command.clear()]
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        manager_result = settlement.result_ids.filtered(lambda r: r.seller_id == self.manager)
+        self.assertAlmostEqual(manager_result.management_commission, 6.0, places=4)
+
+    def test_project_origin_rates_are_scaled_by_global_achievement(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.project_seller.id,
+            "target_amount": 40000.0,
+            "basis": "net",
+        })
+        Tier = self.env["commission.seller.target.tier"]
+        # Los % de estos rangos NO son tasas de proyecto. El primer umbral
+        # conserva el mínimo global para comenzar a comisionar.
+        Tier.create({
+            "target_id": target.id,
+            "sales_threshold": 32000.0,
+            "commission_percent": 0.8,
+        })
+        Tier.create({
+            "target_id": target.id,
+            "sales_threshold": 40000.0,
+            "commission_percent": 1.0,
+        })
+        Rule = self.env["commission.project.rule"]
+        Rule.create({
+            "period_id": self.period.id,
+            "seller_id": self.project_seller.id,
+            "origin": "Local",
+            "basis": "net",
+            "rate_mode": "global_tier",
+            "commission_percent": 1.0,
+            "active": True,
+        })
+        Rule.create({
+            "period_id": self.period.id,
+            "seller_id": self.project_seller.id,
+            "origin": "Importado",
+            "basis": "net",
+            "rate_mode": "global_tier",
+            "commission_percent": 2.0,
+            "active": True,
+        })
+        self._sale("GR-PG-L", self.project_seller, self.loc_a, 12000.0, origin="Local")
+        self._sale("GR-PG-I", self.project_seller, self.loc_b, 20000.0, origin="Importado")
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.project_seller)
+        self.assertAlmostEqual(result.standard_commission, 0.0, places=4)
+        self.assertAlmostEqual(result.standard_sales, 32000.0, places=4)
+        self.assertAlmostEqual(result.achievement_percent, 80.0, places=4)
+        # Local: 12,000 x (1% x 80%) = 96
+        # Importado: 20,000 x (2% x 80%) = 320
+        self.assertAlmostEqual(result.project_commission, 416.0, places=4)
+        project_details = result.detail_ids.filtered(lambda d: d.detail_type == "project")
+        local = project_details.filtered(lambda d: d.project_origin == "Local")
+        imported = project_details.filtered(lambda d: d.project_origin == "Importado")
+        self.assertAlmostEqual(local.rate, 0.8, places=4)
+        self.assertAlmostEqual(imported.rate, 1.6, places=4)
+
+        # A 85% se usa el cumplimiento real, no el porcentaje guardado en el rango.
+        self._sale("GR-PG-L85", self.project_seller, self.loc_a, 2000.0, origin="Local")
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.project_seller)
+        self.assertAlmostEqual(result.achievement_percent, 85.0, places=4)
+        project_details = result.detail_ids.filtered(lambda d: d.detail_type == "project")
+        local = project_details.filtered(lambda d: d.project_origin == "Local")
+        imported = project_details.filtered(lambda d: d.project_origin == "Importado")
+        self.assertAlmostEqual(local.rate, 0.85, places=4)
+        self.assertAlmostEqual(imported.rate, 1.70, places=4)
+        # Local total 14,000 x 0.85% = 119; Importado 20,000 x 1.70% = 340.
+        self.assertAlmostEqual(result.project_commission, 459.0, places=4)
+
+        # Al alcanzar 100% de la meta se pagan las tasas completas por origen.
+        self._sale("GR-PG-L2", self.project_seller, self.loc_a, 6000.0, origin="Local")
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.project_seller)
+        self.assertAlmostEqual(result.achievement_percent, 100.0, places=4)
+        # Local total 20,000 x 1% = 200; Importado 20,000 x 2% = 400.
+        self.assertAlmostEqual(result.project_commission, 600.0, places=4)
+        project_details = result.detail_ids.filtered(lambda d: d.detail_type == "project")
+        local = project_details.filtered(lambda d: d.project_origin == "Local")
+        imported = project_details.filtered(lambda d: d.project_origin == "Importado")
+        self.assertAlmostEqual(local.rate, 1.0, places=4)
+        self.assertAlmostEqual(imported.rate, 2.0, places=4)
+
+    def test_project_global_achievement_is_capped_at_full_origin_rate(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.project_seller.id,
+            "target_amount": 10000.0,
+            "basis": "net",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 8000.0,
+            "commission_percent": 0.8,
+        })
+        self.env["commission.project.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.project_seller.id,
+            "origin": "Importado",
+            "basis": "net",
+            "rate_mode": "global_tier",
+            "commission_percent": 2.0,
+            "active": True,
+        })
+        self._sale("GR-PG-CAP", self.project_seller, self.loc_a, 12000.0, origin="Importado")
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.project_seller)
+        detail = result.detail_ids.filtered(lambda d: d.detail_type == "project")
+        self.assertAlmostEqual(result.achievement_percent, 120.0, places=4)
+        self.assertAlmostEqual(detail.rate, 2.0, places=4)
+        self.assertAlmostEqual(result.project_commission, 240.0, places=4)
+
+    def test_project_below_first_global_range_pays_zero(self):
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": self.project_seller.id,
+            "target_amount": 40000.0,
+            "basis": "net",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 32000.0,
+            "commission_percent": 0.8,
+        })
+        self.env["commission.project.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": self.project_seller.id,
+            "origin": "Importado",
+            "basis": "net",
+            "rate_mode": "global_tier",
+            "commission_percent": 2.0,
+            "active": True,
+        })
+        self._sale("GR-PG-MIN", self.project_seller, self.loc_a, 30000.0, origin="Importado")
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == self.project_seller)
+        detail = result.detail_ids.filtered(lambda d: d.detail_type == "project")
+        self.assertAlmostEqual(result.achievement_percent, 75.0, places=4)
+        self.assertAlmostEqual(detail.rate, 0.0, places=4)
+        self.assertAlmostEqual(result.project_commission, 0.0, places=4)
+
+    def test_corporate_project_is_paid_as_standard_and_grouped_separately(self):
+        corporate = self.Seller.create({
+            "code": "GR-CORP",
+            "name": "Proyecto Corporativo",
+            "role": "project",
+            "is_corporate_project": True,
+        })
+        target = self.env["commission.seller.target"].create({
+            "period_id": self.period.id,
+            "seller_id": corporate.id,
+            "target_amount": 35000.0,
+            "basis": "net",
+        })
+        self.env["commission.seller.target.tier"].create({
+            "target_id": target.id,
+            "sales_threshold": 32000.0,
+            "commission_percent": 0.8,
+        })
+        # Aun si existe una regla de origen histórica, corporativo se liquida normal.
+        self.env["commission.project.rule"].create({
+            "period_id": self.period.id,
+            "seller_id": corporate.id,
+            "origin": "Importado",
+            "rate_mode": "fixed",
+            "commission_percent": 2.0,
+            "basis": "net",
+            "active": True,
+        })
+        self._sale("GR-CORP-S", corporate, self.loc_a, 34000.0, origin="Importado")
+
+        settlement = self.env["commission.settlement"].create_or_recalculate(self.period)
+        result = settlement.result_ids.filtered(lambda r: r.seller_id == corporate)
+        self.assertAlmostEqual(result.standard_commission, 272.0, places=4)
+        self.assertAlmostEqual(result.project_commission, 0.0, places=4)
+        self.assertEqual(result.report_group, "corporate_project")
+
+    def test_period_copy_keeps_location_target_exceptions(self):
+        self.period.location_target_exempt_seller_ids = [
+            Command.set([self.seller_1.id, self.project_seller.id])
+        ]
+        copied = self.period.copy()
+        self.assertEqual(
+            set(copied.location_target_exempt_seller_ids.ids),
+            {self.seller_1.id, self.project_seller.id},
+        )
 
     def test_period_copy_copies_client_exclusions(self):
         exclusion = self.env["commission.period.client.exclusion"].create({

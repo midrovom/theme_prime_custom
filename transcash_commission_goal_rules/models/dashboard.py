@@ -49,10 +49,15 @@ class CommissionDashboardLine(models.Model):
     )
     sale_count = fields.Integer(string="Líneas de venta", default=0)
     gross_sales = fields.Float(string="Ventas brutas", digits=(16, 4))
-    target_sales = fields.Float(string="Ventas para metas", digits=(16, 4))
+    target_sales = fields.Float(string="Ventas para metas vendedor", digits=(16, 4))
+    local_target_sales = fields.Float(string="Ventas para meta local", digits=(16, 4))
     commissionable_sales = fields.Float(string="Ventas comisionables", digits=(16, 4))
     commission_amount = fields.Float(string="Comisión", digits=(16, 4))
     quantity = fields.Float(string="Cantidad / m²", digits=(16, 4))
     rate = fields.Float(string="Tasa / tarifa", digits=(16, 4))
     client_excluded = fields.Boolean(string="Cliente excluido")
     counts_for_target = fields.Boolean(string="Cuenta para meta")
+    excluded_from_location_target = fields.Boolean(
+        string="Excluido de meta local",
+        help="La venta no suma al cumplimiento de la localidad por excepción del vendedor en el período.",
+    )
