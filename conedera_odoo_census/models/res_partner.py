@@ -45,7 +45,7 @@ class ResPartner(models.Model):
     census_gps_payload = fields.Char(string="Captura GPS", copy=False)
     census_gps_accuracy = fields.Float(string="Precisión GPS (m)", readonly=True, copy=False)
     census_gps_captured_at = fields.Datetime(
-        string="GPS capturado el", readonly=True, copy=False, store=True
+        string="GPS capturado el", readonly=True, copy=False,
     )
 
     census_visit_ids = fields.One2many(
