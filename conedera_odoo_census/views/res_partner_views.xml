@@ -85,7 +85,7 @@
         <field name="name">res.partner.list.conedera.census</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
-            <list string="Clientes catastrados" default_order="census_last_visit_datetime desc">
+            <list string="Clientes catastrados" default_order="write_date desc, id desc">
                 <field name="display_name" string="Cliente"/>
                 <field name="vat" string="RUC"/>
                 <field name="commercial_name"/>
