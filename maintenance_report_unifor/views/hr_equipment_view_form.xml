@@ -9,7 +9,7 @@
             </xpath>
 
             <field name="partner_id" position="attributes">
-                <attribute name="attrs">{'invisible': True}</attribute>
+                <attribute name="invisible">1</attribute>
             </field>
 
             <xpath expr="//field[@name='category_id']" position="after">
