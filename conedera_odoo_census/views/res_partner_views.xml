@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_census" model="ir.ui.view">
+        <field name="name">res.partner.form.conedera.census</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_census_visits" type="object" class="oe_stat_button"
+                        icon="fa-map-marker" invisible="not census_active" groups="sales_team.group_sale_salesman">
+                    <field name="census_visit_count" widget="statinfo" string="Visitas"/>
+                </button>
+                <button name="action_view_census_quotations" type="object" class="oe_stat_button"
+                        icon="fa-file-text-o" invisible="not census_active" groups="sales_team.group_sale_salesman">
+                    <field name="census_quotation_count" widget="statinfo" string="Proformas"/>
+                </button>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Catastro comercial" name="commercial_census"
+                      groups="sales_team.group_sale_salesman">
+                    <group>
+                        <group string="Estado">
+                            <field name="census_active"/>
+                            <field name="census_date" invisible="not census_active"/>
+                            <field name="census_user_id" invisible="not census_active"/>
+                            <field name="census_last_visit_datetime" invisible="not census_active"/>
+                        </group>
+                        <group string="Clasificación">
+                            <field name="business_type" required="census_active"/>
+                            <field name="business_type_other"
+                                   invisible="business_type != 'other'"
+                                   required="business_type == 'other'"/>
+                            <field name="customer_census_type" required="census_active"/>
+                            <field name="capa"/>
+                        </group>
+                    </group>
+
+                    <group string="Datos del negocio">
+                        <group>
+                            <field name="commercial_name" required="census_active"/>
+                            <field name="owner_phone" widget="phone"/>
+                            <field name="commercial_contact_phone" widget="phone"/>
+                        </group>
+                        <group>
+                            <field name="store_count"/>
+                            <field name="vat" string="RUC" required="census_active"/>
+                            <field name="email" widget="email"/>
+                        </group>
+                    </group>
+
+                    <group string="Ubicación verificada">
+                        <group>
+                            <field name="census_gps_payload" widget="gps_capture" nolabel="1"/>
+                            <field name="census_gps_captured_at"/>
+                            <field name="census_gps_accuracy"/>
+                            <button name="action_open_census_location" type="object"
+                                    string="Abrir ubicación en mapa" icon="fa-external-link"
+                                    invisible="not census_gps_captured_at"/>
+                        </group>
+                        <group>
+                            <field name="partner_latitude" readonly="1"/>
+                            <field name="partner_longitude" readonly="1"/>
+                            <label for="street" string="Dirección utilizada por Odoo"/>
+                            <div class="o_address_format">
+                                <field name="street" placeholder="Calle..."/>
+                                <field name="street2" placeholder="Referencia..."/>
+                                <field name="city" placeholder="Ciudad"/>
+                            </div>
+                        </group>
+                    </group>
+
+                    <group string="Acciones" invisible="not census_active">
+                        <button name="action_new_census_visit" type="object" string="Registrar visita"
+                                class="btn-primary" icon="fa-map-marker"/>
+                        <button name="action_new_census_quotation" type="object" string="Generar proforma"
+                                class="btn-secondary" icon="fa-file-text-o"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_list_census" model="ir.ui.view">
+        <field name="name">res.partner.list.conedera.census</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <list string="Clientes catastrados" default_order="census_last_visit_datetime desc">
+                <field name="display_name" string="Cliente"/>
+                <field name="vat" string="RUC"/>
+                <field name="commercial_name"/>
+                <field name="city"/>
+                <field name="business_type"/>
+                <field name="customer_census_type"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="census_date" optional="hide"/>
+                <field name="census_last_visit_datetime"/>
+                <field name="census_visit_count"/>
+                <field name="census_quotation_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_census_partners" model="ir.actions.act_window">
+        <field name="name">Catastro de clientes</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="view_id" ref="view_partner_list_census"/>
+        <field name="domain">[('census_active', '=', True)]</field>
+        <field name="context">{'default_census_active': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Cree el primer cliente catastrado.</p>
+            <p>Use la ficha estándar de Contactos y complete la pestaña Catastro comercial.</p>
+        </field>
+    </record>
+</odoo>

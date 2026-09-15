@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_census_root" name="Catastro Comercial" sequence="35"
+              groups="sales_team.group_sale_salesman"/>
+    <menuitem id="menu_census_customers" name="Clientes catastrados"
+              parent="menu_census_root" action="action_census_partners" sequence="10"/>
+    <menuitem id="menu_census_visits" name="Visitas"
+              parent="menu_census_root" action="action_census_visit" sequence="20"/>
+    <menuitem id="menu_census_analysis" name="Análisis"
+              parent="menu_census_root" action="action_census_visit_analysis" sequence="30"
+              groups="sales_team.group_sale_manager"/>
+</odoo>

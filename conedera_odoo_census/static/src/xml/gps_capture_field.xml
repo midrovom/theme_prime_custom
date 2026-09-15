@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="conedera_odoo_census.GpsCaptureField">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <button type="button" class="btn btn-outline-primary"
+                    t-on-click="captureLocation" t-att-disabled="state.loading || props.readonly">
+                <i t-att-class="state.loading ? 'fa fa-spinner fa-spin me-1' : 'fa fa-location-arrow me-1'"/>
+                <t t-if="state.loading">Capturando...</t>
+                <t t-else="">Capturar ubicación actual</t>
+            </button>
+            <span t-if="props.value" class="text-success">
+                <i class="fa fa-check-circle me-1"/>GPS capturado
+            </span>
+        </div>
+    </t>
+</templates>
