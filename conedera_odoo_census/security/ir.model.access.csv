@@ -1,3 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_census_visit_salesman,conedera.census.visit salesman,model_conedera_census_visit,sales_team.group_sale_salesman,1,1,1,0
-access_census_visit_manager,conedera.census.visit manager,model_conedera_census_visit,sales_team.group_sale_manager,1,1,1,1
