@@ -1,0 +1,29 @@
+<odoo>
+    <record id="view_commission_sync_form_api_bridge" model="ir.ui.view">
+        <field name="name">commission.sync.form.api.bridge</field>
+        <field name="model">commission.sync</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_sync_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='date_to']" position="after">
+                <field name="company_id" groups="base.group_multi_company"/>
+            </xpath>
+            <xpath expr="//sheet/group[1]" position="after">
+                <group string="API Administrator">
+                    <field name="api_administrator_id" readonly="1"/>
+                    <field name="api_request_url" readonly="1" widget="url"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_sync_list_api_bridge" model="ir.ui.view">
+        <field name="name">commission.sync.list.api.bridge</field>
+        <field name="model">commission.sync</field>
+        <field name="inherit_id" ref="transcash_commission.view_commission_sync_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='date_to']" position="after">
+                <field name="company_id" optional="hide" groups="base.group_multi_company"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
