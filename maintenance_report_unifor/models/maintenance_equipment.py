@@ -85,8 +85,8 @@ class MaintenanceEquipment(models.Model):
 
         return super(MaintenanceEquipment, self).write(vals)
 
-    @api.onchange('company_related_id')
-    def _onchange_company_related_id(self):
-        if self.company_related_id:
-            self.partner_id = self.company_related_id
+    # @api.onchange('company_related_id')
+    # def _onchange_company_related_id(self):
+    #     if self.company_related_id:
+    #         self.partner_id = self.company_related_id
 
