@@ -24,9 +24,8 @@ class MaintenanceEquipment(models.Model):
 
     name = fields.Char('Name', translate=True)
 
-    company_related_id = fields.Many2one('res.partner', string='Compañía relacionada',
-        domain="[('is_company', '=', True)]", related='partner_id',
-        store=True, readonly=False
+    company_related_id = fields.Many2one('res.partner',
+        string='Compañía relacionada', domain="[('is_company', '=', True)]"
     )
 
     @api.onchange('category_id', 'partner_id')
@@ -89,4 +88,11 @@ class MaintenanceEquipment(models.Model):
     def _onchange_company_related_id(self):
         if self.company_related_id:
             self.partner_id = self.company_related_id
+
+    def write(self, vals):
+        # Si se asigna company_related_id directamente en la escritura,
+        # también actualizamos partner_id
+        if 'company_related_id' in vals and vals['company_related_id']:
+            vals['partner_id'] = vals['company_related_id']
+        return super().write(vals)
 
