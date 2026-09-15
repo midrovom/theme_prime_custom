@@ -51,41 +51,35 @@ class ResPartner(models.Model):
     census_visit_ids = fields.One2many(
         "conedera.census.visit", "partner_id", string="Visitas comerciales"
     )
-    census_visit_count = fields.Integer(compute="_compute_census_stats", string="Visitas")
+    census_visit_count = fields.Integer(
+        compute="_compute_census_visit_stats", string="Visitas", store=True
+    )
     census_quotation_count = fields.Integer(
-        compute="_compute_census_stats", string="Proformas"
+        compute="_compute_census_quotation_count", string="Proformas", store=True
     )
     census_last_visit_datetime = fields.Datetime(
-        compute="_compute_census_stats", string="Última visita"
+        compute="_compute_census_visit_stats",
+        string="Última visita",
+        store=True,
+        index=True,
     )
 
-    @api.depends("census_visit_ids.visit_datetime", "census_visit_ids.quotation_ids")
-    def _compute_census_stats(self):
-        partner_ids = self.ids
-        visit_counts = {partner_id: 0 for partner_id in partner_ids}
-        quotation_counts = {partner_id: 0 for partner_id in partner_ids}
-        last_visits = {partner_id: False for partner_id in partner_ids}
-
-        if partner_ids:
-            visits = self.env["conedera.census.visit"].search(
-                [("partner_id", "in", partner_ids)], order="visit_datetime desc, id desc"
-            )
-            for visit in visits:
-                partner_id = visit.partner_id.id
-                visit_counts[partner_id] += 1
-                if not last_visits[partner_id]:
-                    last_visits[partner_id] = visit.visit_datetime
-
-            quotations = self.env["sale.order"].search(
-                [("partner_id", "in", partner_ids), ("census_originated", "=", True)]
-            )
-            for quotation in quotations:
-                quotation_counts[quotation.partner_id.id] += 1
-
+    @api.depends("census_visit_ids", "census_visit_ids.visit_datetime")
+    def _compute_census_visit_stats(self):
         for partner in self:
-            partner.census_visit_count = visit_counts.get(partner.id, 0)
-            partner.census_quotation_count = quotation_counts.get(partner.id, 0)
-            partner.census_last_visit_datetime = last_visits.get(partner.id, False)
+            visits = partner.census_visit_ids
+            partner.census_visit_count = len(visits)
+            partner.census_last_visit_datetime = max(
+                (visit.visit_datetime for visit in visits if visit.visit_datetime),
+                default=False,
+            )
+
+    @api.depends("sale_order_ids", "sale_order_ids.census_originated")
+    def _compute_census_quotation_count(self):
+        for partner in self:
+            partner.census_quotation_count = len(
+                partner.sale_order_ids.filtered("census_originated")
+            )
 
     @api.constrains(
         "census_active",
@@ -187,7 +181,8 @@ class ResPartner(models.Model):
             "target": "current",
             "context": {
                 "default_partner_id": self.id,
-                "default_user_id": self.user_id.id or self.env.user.id,
+                "default_user_id": self.env.user.id,
+                "default_company_id": self.env.company.id,
             },
         }
 
@@ -195,7 +190,11 @@ class ResPartner(models.Model):
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id("conedera_odoo_census.action_census_visit")
         action["domain"] = [("partner_id", "=", self.id)]
-        action["context"] = {"default_partner_id": self.id}
+        action["context"] = {
+            "default_partner_id": self.id,
+            "default_user_id": self.env.user.id,
+            "default_company_id": self.env.company.id,
+        }
         return action
 
     def action_view_census_quotations(self):
@@ -207,8 +206,9 @@ class ResPartner(models.Model):
         ]
         action["context"] = {
             "default_partner_id": self.id,
-            "default_user_id": self.user_id.id or self.env.user.id,
+            "default_user_id": self.env.user.id,
             "default_census_originated": True,
+            "default_company_id": self.env.company.id,
         }
         return action
 
@@ -222,7 +222,8 @@ class ResPartner(models.Model):
             "target": "current",
             "context": {
                 "default_partner_id": self.id,
-                "default_user_id": self.user_id.id or self.env.user.id,
+                "default_user_id": self.env.user.id,
+                "default_company_id": self.env.company.id,
                 "default_origin": _("Catastro - %s") % self.display_name,
                 "default_census_originated": True,
             },

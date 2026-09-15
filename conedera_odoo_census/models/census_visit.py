@@ -140,7 +140,12 @@ class CensusVisit(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        is_manager = self.env.user.has_group("sales_team.group_sale_manager")
         for vals in vals_list:
+            if not is_manager:
+                # El vendedor que crea la visita es siempre el responsable auditado.
+                vals["user_id"] = self.env.user.id
+                vals["company_id"] = self.env.company.id
             if vals.get("name", "Nuevo") == "Nuevo":
                 vals["name"] = self.env["ir.sequence"].next_by_code("conedera.census.visit") or "Nuevo"
             parsed = parse_gps_payload(vals.get("gps_capture_payload"))
@@ -178,19 +183,29 @@ class CensusVisit(models.Model):
             "gps_captured_at",
             "location_tolerance_m",
         }
+        is_manager = self.env.user.has_group("sales_team.group_sale_manager")
+        locked_states = {"done", "cancel"}
         if (
-            any(visit.state == "done" for visit in self)
+            any(visit.state in locked_states for visit in self)
             and protected_fields.intersection(vals)
-            and not self.env.user.has_group("sales_team.group_sale_manager")
+            and not is_manager
         ):
-            raise UserError(_("Una visita finalizada solo puede ser modificada por un gerente de ventas."))
+            raise UserError(
+                _("Una visita finalizada o cancelada solo puede ser modificada por un gerente de ventas.")
+            )
         if (
             "state" in vals
-            and any(visit.state == "done" for visit in self)
-            and vals.get("state") != "done"
-            and not self.env.user.has_group("sales_team.group_sale_manager")
+            and any(visit.state in locked_states for visit in self)
+            and vals.get("state") not in locked_states
+            and not is_manager
         ):
-            raise UserError(_("Solo un gerente de ventas puede cambiar el estado de una visita finalizada."))
+            raise UserError(
+                _("Solo un gerente de ventas puede reabrir una visita finalizada o cancelada.")
+            )
+        if "user_id" in vals and not is_manager and vals.get("user_id") != self.env.user.id:
+            raise UserError(_("Un vendedor no puede reasignar la visita a otro usuario."))
+        if "company_id" in vals and not is_manager and vals.get("company_id") != self.env.company.id:
+            raise UserError(_("Un vendedor no puede mover la visita a otra compañía."))
 
         parsed = parse_gps_payload(vals.get("gps_capture_payload"))
         if parsed:
@@ -233,7 +248,9 @@ class CensusVisit(models.Model):
                 raise UserError(_("Especifique el resultado en el campo Otros."))
             visit.state = "done"
             if todo_type and visit.reschedule_visit == "yes":
-                deadline = fields.Date.to_date(visit.next_visit_datetime)
+                deadline = fields.Datetime.context_timestamp(
+                    visit, visit.next_visit_datetime
+                ).date()
                 existing = visit.activity_ids.filtered(
                     lambda activity: activity.activity_type_id == todo_type
                     and activity.user_id == visit.user_id
@@ -270,6 +287,7 @@ class CensusVisit(models.Model):
                 "default_census_visit_id": self.id,
                 "default_origin": self.name,
                 "default_census_originated": True,
+                "default_company_id": self.company_id.id,
             },
         }
 
@@ -279,6 +297,8 @@ class CensusVisit(models.Model):
         action["domain"] = [("census_visit_id", "=", self.id)]
         action["context"] = {
             "default_partner_id": self.partner_id.id,
+            "default_user_id": self.user_id.id,
+            "default_company_id": self.company_id.id,
             "default_census_visit_id": self.id,
             "default_census_originated": True,
         }

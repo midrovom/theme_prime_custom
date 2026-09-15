@@ -11,6 +11,10 @@ class TestConederaCensus(TransactionCase):
                 "name": "Cliente GPS",
                 "census_active": True,
                 "customer_rank": 1,
+                "vat": "0999999999001",
+                "commercial_name": "Cliente GPS",
+                "business_type": "cellphones",
+                "customer_census_type": "reseller",
                 "partner_latitude": -2.170998,
                 "partner_longitude": -79.922359,
             }
@@ -36,3 +40,21 @@ class TestConederaCensus(TransactionCase):
         action = visit.action_create_quotation()
         self.assertEqual(action["context"]["default_partner_id"], self.partner.id)
         self.assertEqual(action["context"]["default_census_visit_id"], visit.id)
+
+    def test_last_visit_is_stored_and_sortable(self):
+        visit = self.env["conedera.census.visit"].create({"partner_id": self.partner.id})
+        self.partner.invalidate_recordset(["census_last_visit_datetime"])
+        self.assertEqual(self.partner.census_last_visit_datetime, visit.visit_datetime)
+        found = self.env["res.partner"].search(
+            [("id", "=", self.partner.id)], order="census_last_visit_datetime desc"
+        )
+        self.assertEqual(found, self.partner)
+
+    def test_visit_quotation_marks_census_origin(self):
+        visit = self.env["conedera.census.visit"].create({"partner_id": self.partner.id})
+        order = self.env["sale.order"].create({
+            "partner_id": self.partner.id,
+            "census_visit_id": visit.id,
+        })
+        self.assertTrue(order.census_originated)
+        self.assertEqual(order.census_visit_id, visit)

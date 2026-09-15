@@ -15,7 +15,24 @@ export class GpsCaptureField extends Component {
         this.state = useState({ loading: false });
     }
 
+    get hasValue() {
+        return Boolean(this.props.record.data[this.props.name]);
+    }
+
     async captureLocation() {
+        if (this.props.readonly) {
+            return;
+        }
+
+        // Los navegadores modernos bloquean Geolocation API en HTTP salvo localhost.
+        if (!window.isSecureContext) {
+            this.notification.add(
+                _t("La captura GPS requiere HTTPS. Abra Odoo mediante una URL segura (https://)."),
+                { type: "danger", sticky: true }
+            );
+            return;
+        }
+
         if (!navigator.geolocation) {
             this.notification.add(_t("Este dispositivo o navegador no soporta geolocalización."), {
                 type: "danger",
@@ -38,7 +55,8 @@ export class GpsCaptureField extends Component {
                 accuracy: position.coords.accuracy || 0,
                 capturedAt: new Date(position.timestamp).toISOString(),
             });
-            await this.props.update(payload);
+
+            await this.props.record.update({ [this.props.name]: payload });
             this.notification.add(
                 _t("Ubicación capturada. Guarde el registro para conservarla."),
                 { type: "success" }

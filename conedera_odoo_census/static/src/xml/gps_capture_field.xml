@@ -8,7 +8,7 @@
                 <t t-if="state.loading">Capturando...</t>
                 <t t-else="">Capturar ubicación actual</t>
             </button>
-            <span t-if="props.value" class="text-success">
+            <span t-if="hasValue" class="text-success">
                 <i class="fa fa-check-circle me-1"/>GPS capturado
             </span>
         </div>
