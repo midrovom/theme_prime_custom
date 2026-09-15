@@ -1,7 +1,7 @@
 {
     "name": "Transcash Commissions - API Administrator Bridge",
     "summary": "Conecta la sincronización de comisiones con api.administrator",
-    "version": "18.0.1.0.1",
+    "version": "18.0.1.1.0",
     "category": "Sales/Commissions",
     "author": "Transcash",
     "license": "LGPL-3",
