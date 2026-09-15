@@ -7,6 +7,9 @@
             <xpath expr="//field[@name='department_id']" position="after">
                 <field name="product_category_id"/>
             </xpath>
+            <xpath expr="//field[@name='category_id']" position="after">
+                <field name="company_related_id"/>
+            </xpath>
         </field>
     </record>
 
