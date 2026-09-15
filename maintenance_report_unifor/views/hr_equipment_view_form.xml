@@ -7,6 +7,11 @@
             <xpath expr="//field[@name='department_id']" position="after">
                 <field name="product_category_id"/>
             </xpath>
+
+            <field name="partner_id" position="attributes">
+                <attribute name="attrs">{'invisible': True}</attribute>
+            </field>
+
             <xpath expr="//field[@name='category_id']" position="after">
                 <field name="company_related_id"/>
             </xpath>
