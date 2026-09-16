@@ -113,4 +113,23 @@
         <field name="expression">object.date_start_text</field>
     </record>
 
+    <record id="document_variable_sucursal_name" model="hr.ec.document.variable">
+        <field name="name">NOMBRE DE SUCURSAL</field>
+        <field name="key">SUCURSAL_NOMBRE</field>
+        <field name="expression">object.name</field>
+    </record>
+
+    <record id="document_variable_sucursal_direccion" model="hr.ec.document.variable">
+        <field name="name">DIRECCIÓN DE SUCURSAL</field>
+        <field name="key">SUCURSAL_DIRECCION</field>
+        <field name="expression">object.direccion</field>
+    </record>
+
+    <record id="document_variable_sucursal_ciudad" model="hr.ec.document.variable">
+        <field name="name">CIUDAD DE SUCURSAL</field>
+        <field name="key">SUCURSAL_CIUDAD</field>
+        <field name="expression">object.ciudad</field>
+    </record>
+
+
 </odoo>
