@@ -26,11 +26,11 @@
                 <header>
                     <button name="action_new_census_visit" type="object" string="Registrar visita"
                             class="btn-primary" icon="fa-map-marker"
-                            invisible="not id or not census_active"
+                            invisible="not id or not census_active or not census_ready_for_activity"
                             groups="sales_team.group_sale_salesman"/>
                     <button name="action_new_census_quotation" type="object" string="Crear proforma"
                             class="btn-secondary" icon="fa-file-text-o"
-                            invisible="not id or not census_active"
+                            invisible="not id or not census_active or not census_ready_for_activity"
                             groups="sales_team.group_sale_salesman"/>
                 </header>
                 <sheet class="o_conedera_census_form">
@@ -43,6 +43,8 @@
                     <field name="is_company" invisible="1"/>
                     <field name="partner_latitude" invisible="1"/>
                     <field name="partner_longitude" invisible="1"/>
+                    <field name="census_ready_for_activity" invisible="1"/>
+                    <field name="census_missing_requirements" invisible="1"/>
 
                     <div class="o_conedera_hero">
                         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
@@ -51,7 +53,7 @@
                                     <i class="fa fa-building-o me-1"/> Catastro comercial
                                 </div>
                                 <h1 class="mb-1">
-                                    <field name="commercial_name" nolabel="1"
+                                    <field name="commercial_name" nolabel="1" required="1"
                                            placeholder="Nombre comercial / local"
 />
                                 </h1>
@@ -64,6 +66,23 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="alert alert-warning d-flex align-items-start gap-2" role="alert"
+                         invisible="census_ready_for_activity">
+                        <i class="fa fa-exclamation-triangle mt-1"/>
+                        <div>
+                            <strong>Complete el catastro antes de registrar visitas o crear proformas.</strong>
+                            <div class="small mt-1">
+                                Pendiente: <field name="census_missing_requirements" readonly="1" nolabel="1"/>.
+                            </div>
+                            <div class="small mt-1">La ubicación GPS es opcional temporalmente mientras no tenga HTTPS.</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-success d-flex align-items-center gap-2" role="alert"
+                         invisible="not census_ready_for_activity">
+                        <i class="fa fa-check-circle"/>
+                        <div><strong>Catastro listo.</strong> Ya puede registrar visitas y crear proformas.</div>
                     </div>
 
                     <div class="oe_button_box" name="button_box" invisible="not id">
@@ -86,10 +105,13 @@
                                 <group>
                                     <group>
                                         <field name="name" string="Razón social / cliente" required="1"/>
-                                        <field name="vat" string="RUC"
+                                        <field name="vat" string="RUC" required="1"
                                                placeholder="RUC del cliente"/>
-                                        <field name="store_count" string="Número de locales"
-                                               help="Total de locales que pertenecen a este negocio."/>
+                                        <field name="census_store_count" string="Número de tiendas / locales"
+                                               class="o_conedera_store_count"
+                                               placeholder="Ej. 3"
+                                               help="Ingrese la cantidad total de tiendas o locales. Debe ser mayor que cero para habilitar visitas y proformas."/>
+                                        <div class="text-muted small">Digite la cantidad real de locales. Puede actualizarla cuando el cliente abra o cierre tiendas.</div>
                                     </group>
                                     <group>
                                         <field name="business_type_ids" widget="many2many_tags"
@@ -145,7 +167,7 @@
                                     <i class="fa fa-location-arrow"/> Ubicación GPS verificada
                                 </div>
                                 <div class="o_conedera_hint">
-                                    Capture la ubicación estando físicamente en el local. Se guardará la precisión y la fecha de captura.
+                                    Opcional por ahora: la captura GPS requiere HTTPS. Puede completar el catastro, registrar visitas y crear proformas sin GPS.
                                 </div>
                                 <field name="census_gps_payload" widget="gps_capture" nolabel="1"/>
                                 <group invisible="not census_gps_captured_at">
@@ -185,26 +207,63 @@
                             </div>
                         </page>
 
-                        <page string="Actividad" name="census_activity">
+                        <page string="Bitácora" name="census_activity">
                             <div class="o_conedera_card">
                                 <div class="o_conedera_card_title">
-                                    <i class="fa fa-history"/> Seguimiento
+                                    <i class="fa fa-history"/> Ficha única e historial comercial
+                                </div>
+                                <div class="o_conedera_hint mb-3">
+                                    Este catastro es único para el cliente. No cree otra ficha: registre aquí cada visita y cada proforma para conservar toda la historia comercial.
+                                </div>
+                                <div class="o_conedera_actionbar mb-3">
+                                    <button name="action_new_census_visit" type="object" string="Registrar nueva visita"
+                                            class="btn-primary" icon="fa-map-marker"
+                                            invisible="not id or not census_ready_for_activity"/>
+                                    <button name="action_new_census_quotation" type="object" string="Crear proforma"
+                                            class="btn-secondary" icon="fa-file-text-o"
+                                            invisible="not id or not census_ready_for_activity"/>
                                 </div>
                                 <group>
                                     <group>
                                         <field name="census_last_visit_datetime" readonly="1"/>
+                                    </group>
+                                    <group>
                                         <field name="census_date" readonly="1"/>
                                         <field name="census_user_id" readonly="1"/>
                                     </group>
-                                    <group>
-                                        <div class="o_conedera_actionbar">
-                                            <button name="action_new_census_visit" type="object" string="Registrar nueva visita"
-                                                    class="btn-primary" icon="fa-map-marker" invisible="not id"/>
-                                            <button name="action_new_census_quotation" type="object" string="Crear proforma"
-                                                    class="btn-secondary" icon="fa-file-text-o" invisible="not id"/>
-                                        </div>
-                                    </group>
                                 </group>
+                            </div>
+
+                            <div class="o_conedera_card">
+                                <div class="o_conedera_card_title">
+                                    <i class="fa fa-map-marker"/> Historial de visitas
+                                </div>
+                                <field name="census_visit_ids" nolabel="1" readonly="1">
+                                    <list create="0" edit="0" delete="0" default_order="visit_datetime desc, id desc">
+                                        <field name="visit_datetime" string="Fecha"/>
+                                        <field name="user_id" string="Vendedor" widget="many2one_avatar_user"/>
+                                        <field name="state" string="Estado" widget="badge"/>
+                                        <field name="purchase_made" string="Compra"/>
+                                        <field name="location_status" string="Ubicación" widget="badge"/>
+                                        <field name="quotation_count" string="Proformas"/>
+                                    </list>
+                                </field>
+                            </div>
+
+                            <div class="o_conedera_card">
+                                <div class="o_conedera_card_title">
+                                    <i class="fa fa-file-text-o"/> Proformas / cotizaciones del cliente
+                                </div>
+                                <field name="census_sale_order_ids" nolabel="1" readonly="1">
+                                    <list create="0" edit="0" delete="0" default_order="date_order desc, id desc">
+                                        <field name="date_order" string="Fecha"/>
+                                        <field name="name" string="Documento"/>
+                                        <field name="user_id" string="Vendedor" widget="many2one_avatar_user"/>
+                                        <field name="state" widget="badge"/>
+                                        <field name="amount_total" sum="Total"/>
+                                        <field name="census_visit_id" string="Visita origen" optional="show"/>
+                                    </list>
+                                </field>
                             </div>
                         </page>
                     </notebook>
@@ -223,7 +282,7 @@
                 <field name="name"/>
                 <field name="vat"/>
                 <field name="city"/>
-                <field name="store_count"/>
+                <field name="census_store_count"/>
                 <field name="business_type_ids"/>
                 <field name="customer_segment"/>
                 <field name="census_completion_state"/>
@@ -245,7 +304,7 @@
                                 <i class="fa fa-map-marker fa-fw me-1 text-muted"/> <field name="city"/>
                             </div>
                             <div class="mb-2">
-                                <i class="fa fa-building fa-fw me-1 text-muted"/> <field name="store_count"/> local(es)
+                                <i class="fa fa-building fa-fw me-1 text-muted"/> <field name="census_store_count"/> local(es)
                             </div>
                             <field name="business_type_ids" widget="many2many_tags"
                                    options="{'color_field': 'color'}"/>
@@ -269,7 +328,7 @@
                 <field name="name" string="Razón social" optional="show"/>
                 <field name="vat" string="RUC"/>
                 <field name="city"/>
-                <field name="store_count" string="Locales"/>
+                <field name="census_store_count" string="Locales"/>
                 <field name="business_type_ids" widget="many2many_tags" optional="show"/>
                 <field name="customer_segment" optional="hide"/>
                 <field name="user_id" string="Vendedor" widget="many2one_avatar_user" optional="show"/>
@@ -315,8 +374,8 @@
         <field name="domain">[('census_active', '=', True)]</field>
         <field name="context">{'default_census_active': True, 'default_company_type': 'company', 'default_user_id': uid}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">Cree el primer cliente catastrado.</p>
-            <p>Registre los datos esenciales, tipos de negocio, horario y ubicación GPS del local.</p>
+            <p class="o_view_nocontent_smiling_face">Cree el primer catastro. Cada cliente debe tener una sola ficha.</p>
+            <p>Busque primero por RUC o nombre. Luego alimente la misma ficha con visitas y proformas.</p>
         </field>
     </record>
 

@@ -1,8 +1,8 @@
 {
     "name": "Conedera - Catastro Comercial (Community)",
-    "version": "18.0.1.1.2",
+    "version": "18.0.1.2.1",
     "category": "Sales/Sales",
-    "summary": "Catastro móvil de clientes, visitas comerciales, GPS y proformas",
+    "summary": "Ficha única de cliente, bitácora comercial, GPS y proformas",
     "description": """
 Catastro comercial para Odoo 18 Community con experiencia móvil.
 Usa res.partner y sale.order estándar, registra múltiples tipos de negocio,

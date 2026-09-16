@@ -146,6 +146,11 @@ class CensusVisit(models.Model):
                 # El vendedor que crea la visita es siempre el responsable auditado.
                 vals["user_id"] = self.env.user.id
                 vals["company_id"] = self.env.company.id
+            partner_id = vals.get("partner_id")
+            if partner_id:
+                partner = self.env["res.partner"].browse(partner_id).exists()
+                if partner:
+                    partner._ensure_census_ready_for_activity()
             if vals.get("name", "Nuevo") == "Nuevo":
                 vals["name"] = self.env["ir.sequence"].next_by_code("conedera.census.visit") or "Nuevo"
             parsed = parse_gps_payload(vals.get("gps_capture_payload"))
@@ -237,8 +242,8 @@ class CensusVisit(models.Model):
         )
         todo_type = self.env.ref("mail.mail_activity_data_todo", raise_if_not_found=False)
         for visit in self:
-            if not visit.gps_captured_at:
-                raise UserError(_("Capture la ubicación GPS antes de finalizar la visita."))
+            # GPS es opcional temporalmente mientras el despliegue no tenga HTTPS.
+            # Si existe una captura, se conserva y se usa para validar ubicación.
             if any(not visit[field_name] for field_name in required_answers):
                 raise UserError(_("Complete todas las preguntas de la mini encuesta."))
             if visit.reschedule_visit == "yes" and not visit.next_visit_datetime:
@@ -274,6 +279,7 @@ class CensusVisit(models.Model):
 
     def action_create_quotation(self):
         self.ensure_one()
+        self.partner_id._ensure_census_ready_for_activity()
         return {
             "type": "ir.actions.act_window",
             "name": _("Nueva proforma"),
