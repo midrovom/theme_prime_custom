@@ -103,7 +103,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change input[name^="famArchivo_"]': '_validateFamilyFile',
         'change #famNumHermanos': '_onChangeNumHermanos',
         'change #hr-hijos': '_onChangeNumHijos',
-        'change #total_experiences': '_onChangeTotalExperiences',
 
 
     },
