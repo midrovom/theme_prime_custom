@@ -101,7 +101,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         'change select[name^="famTipoDoc_"]': '_validateField',
         'change select[name^="famTipoDoc_"]': '_onChangeFamilyDocType',
         'change input[name^="famArchivo_"]': '_validateFamilyFile',
-        'change #famNumHermanos': '_onChangeNumHermanos'
+        'change #famNumHermanos': '_onChangeNumHermanos',
+        'change #hr-hijos': '_onChangeNumHijos',
+
     },
     
     /**
@@ -2530,41 +2532,25 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
-    // async _addFamilyBlock(parentesco) {
-    //     const FAMILY_TYPES_MAP = {
-    //         '1': 'Padre',
-    //         '2': 'Madre',
-    //         '3': 'Hermano(a)',
-    //         '4': 'Conyugue',
-    //         '5': 'Hijo(a)'
-    //     };
+    _onChangeNumHijos: async function(ev) {
+        const numHijos = parseInt(ev.currentTarget.value, 10);
 
-    //     const UNIQUE_TYPES = ['Padre', 'Madre', 'Conyugue']; 
-    //     const label = FAMILY_TYPES_MAP[parentesco] || parentesco;
+        if (!isNaN(numHijos)) {
+            this.$('.family-block[data-type="Hijo"]').remove();
 
-    //     if (UNIQUE_TYPES.includes(label) &&
-    //         this.$(`#family_container .family-block[data-type="${label}"]`).length > 0) {
-    //         $('#familyMessageText').text(`Ya existe un bloque para ${label}`);
-    //         $('#familyMessage').removeClass('d-none');
-    //         return;
-    //     }
+            if (numHijos > 0) {
+                for (let i = 0; i < numHijos; i++) {
+                    this.familyCount++;
+                    const blockHtml = await this._getFamilyBlock("Hijo", this.familyCount);
+                    this.$('#family_container').append(blockHtml);
+                }
+            }
+            
+            this.$('#hr-hijos').prop('disabled', true);
+        }
+    },
 
-    //     this.familyCount++;
-    //     const html = await this._getFamilyBlock(label);
-    //     this.$('#family_container').append(html);
-    //     this.$(`#family_container .family-block:last`).append(`
-    //         <input type="hidden" name="famTipo_${this.familyCount}" value="${parentesco}"/>
-    //     `);
 
-    //     const i = this.familyCount;
-    //     this.$(`input[name="famDisc_${i}"]`).on('change', () => {
-    //         this._toggleFamilyDisability(i);
-    //     });
-    //     this.$(`input[name="famDepende_${i}"]`).on('change', (ev) => {
-    //         const name = $(ev.currentTarget).attr('name');
-    //         this.$(`input[name="${name}"]`).removeClass('is-invalid');
-    //     });
-    // },
 
     async _addFamilyBlock(parentesco) {
         const FAMILY_TYPES_MAP = {
