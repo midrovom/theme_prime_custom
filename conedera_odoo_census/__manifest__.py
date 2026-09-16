@@ -1,6 +1,6 @@
 {
     "name": "Conedera - Catastro Comercial (Community)",
-    "version": "18.0.1.3.0",
+    "version": "18.0.1.4.0",
     "category": "Sales/Sales",
     "summary": "Ficha única de cliente, bitácora comercial, GPS y proformas",
     "description": """
@@ -10,7 +10,7 @@ horarios estructurados, visitas con GPS y proformas sin dependencias Enterprise.
     """,
     "author": "Conedera",
     "license": "LGPL-3",
-    "depends": ["contacts", "mail", "sale_management", "web"],
+    "depends": ["contacts", "mail", "product", "sale_management", "web"],
     "data": [
         "security/census_security.xml",
         "security/ir.model.access.csv",
@@ -21,6 +21,8 @@ horarios estructurados, visitas con GPS y proformas sin dependencias Enterprise.
         "views/census_customer_lookup_views.xml",
         "views/census_mobile_brand_views.xml",
         "views/census_visit_views.xml",
+        "views/census_commercial_report_views.xml",
+        "views/product_template_views.xml",
         "views/sale_order_views.xml",
         "views/census_menus.xml",
     ],

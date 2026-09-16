@@ -93,3 +93,28 @@
         margin-bottom: .35rem;
     }
 }
+
+.o_conedera_timeline_card,
+.o_conedera_census_form {
+    .o_kanban_renderer .o_kanban_record {
+        border-radius: .85rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .o_conedera_census_form {
+        .o_field_x2many .o_kanban_renderer {
+            padding: 0;
+        }
+
+        .o_field_x2many .o_kanban_record {
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .o_field_x2many .btn-link {
+            white-space: normal;
+        }
+    }
+}

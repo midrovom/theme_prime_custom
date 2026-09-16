@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_template_census_quote_metrics" model="ir.ui.view">
+        <field name="name">product.template.form.conedera.quote.metrics</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_census_quote_history" type="object" class="oe_stat_button" icon="fa-file-text-o" invisible="census_quote_order_count == 0">
+                    <field name="census_quote_order_count" string="Proformas" widget="statinfo"/>
+                </button>
+            </xpath>
+            <xpath expr="//div[@name='list_price_uom']" position="after">
+                <field name="census_quote_currency_id" invisible="1"/>
+                <field name="census_quoted_qty" string="Cantidad proformada" readonly="1"/>
+                <field name="census_avg_quote_price" string="Precio promedio proformado" widget="monetary" options="{'currency_field': 'census_quote_currency_id'}" readonly="1"/>
+                <field name="census_quoted_amount" string="Importe proformado" widget="monetary" options="{'currency_field': 'census_quote_currency_id'}" readonly="1"/>
+                <field name="census_last_quote_date" string="Última proforma" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

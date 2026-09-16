@@ -5,3 +5,5 @@ from . import res_partner
 from . import census_customer_lookup_wizard
 from . import census_visit
 from . import sale_order
+from . import census_commercial_report
+from . import product_template

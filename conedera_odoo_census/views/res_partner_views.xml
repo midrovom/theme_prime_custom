@@ -216,10 +216,10 @@
                         <page string="Bitácora" name="census_activity">
                             <div class="o_conedera_card">
                                 <div class="o_conedera_card_title">
-                                    <i class="fa fa-history"/> Ficha única e historial comercial
+                                    <i class="fa fa-history"/> Bitácora comercial
                                 </div>
                                 <div class="o_conedera_hint mb-3">
-                                    Este catastro es único para el cliente. No cree otra ficha: registre aquí cada visita y cada proforma para conservar toda la historia comercial.
+                                    Línea de tiempo única del cliente. Combina visitas y proformas en orden cronológico y usa tarjetas para que el historial sea visible también desde el celular.
                                 </div>
                                 <div class="o_conedera_actionbar mb-3">
                                     <button name="action_new_census_visit" type="object" string="Registrar nueva visita"
@@ -228,46 +228,115 @@
                                     <button name="action_new_census_quotation" type="object" string="Crear proforma"
                                             class="btn-secondary" icon="fa-file-text-o"
                                             invisible="not id or not census_ready_for_activity"/>
+                                    <button name="action_view_census_timeline" type="object" string="Ver bitácora completa"
+                                            class="btn-outline-secondary" icon="fa-history" invisible="not id"/>
                                 </div>
                                 <group>
                                     <group>
+                                        <field name="census_visit_count" readonly="1"/>
                                         <field name="census_last_visit_datetime" readonly="1"/>
                                     </group>
                                     <group>
+                                        <field name="census_quotation_count" readonly="1"/>
                                         <field name="census_date" readonly="1"/>
-                                        <field name="census_user_id" readonly="1"/>
                                     </group>
                                 </group>
                             </div>
 
-                            <div class="o_conedera_card">
+                            <div class="o_conedera_card o_conedera_timeline_card">
                                 <div class="o_conedera_card_title">
-                                    <i class="fa fa-map-marker"/> Historial de visitas
+                                    <i class="fa fa-clock-o"/> Últimos movimientos
                                 </div>
-                                <field name="census_visit_ids" nolabel="1" readonly="1">
-                                    <list create="0" edit="0" delete="0" default_order="visit_datetime desc, id desc">
-                                        <field name="visit_datetime" string="Fecha"/>
-                                        <field name="user_id" string="Vendedor" widget="many2one_avatar_user"/>
-                                        <field name="state" string="Estado" widget="badge"/>
-                                        <field name="purchase_made" string="Compra"/>
-                                        <field name="location_status" string="Ubicación" widget="badge"/>
-                                        <field name="quotation_count" string="Proformas"/>
+                                <field name="census_timeline_ids" nolabel="1" mode="kanban,list">
+                                    <kanban create="false" edit="false" delete="false" sample="0">
+                                        <field name="event_type"/>
+                                        <field name="event_datetime"/>
+                                        <field name="title"/>
+                                        <field name="event_state_label"/>
+                                        <field name="user_id"/>
+                                        <field name="purchase_made"/>
+                                        <field name="location_status"/>
+                                        <field name="amount_total"/>
+                                        <field name="currency_id"/>
+                                        <templates>
+                                            <t t-name="card">
+                                                <main>
+                                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                                        <div>
+                                                            <div class="text-muted small" t-if="record.event_type.raw_value == 'visit'">
+                                                                <i class="fa fa-map-marker me-1"/> VISITA
+                                                            </div>
+                                                            <div class="text-muted small" t-if="record.event_type.raw_value == 'quotation'">
+                                                                <i class="fa fa-file-text-o me-1"/> PROFORMA
+                                                            </div>
+                                                            <strong><field name="title"/></strong>
+                                                        </div>
+                                                        <span class="badge text-bg-light"><field name="event_state_label"/></span>
+                                                    </div>
+                                                    <div class="small mb-1"><field name="event_datetime"/> · <field name="user_id"/></div>
+                                                    <div t-if="record.event_type.raw_value == 'visit' and record.purchase_made.raw_value" class="small">Compra: <field name="purchase_made"/></div>
+                                                    <div t-if="record.event_type.raw_value == 'quotation'" class="fw-semibold mt-1"><field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"/></div>
+                                                    <footer class="mt-2"><button name="action_open_source" type="object" string="Abrir" class="btn btn-outline-primary btn-sm"/></footer>
+                                                </main>
+                                            </t>
+                                        </templates>
+                                    </kanban>
+                                    <list create="0" edit="0" delete="0" default_order="event_datetime desc, id desc">
+                                        <field name="event_datetime" string="Fecha"/>
+                                        <field name="event_type" string="Tipo"/>
+                                        <field name="title"/>
+                                        <field name="event_state_label" string="Estado"/>
+                                        <field name="user_id"/>
+                                        <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        <button name="action_open_source" type="object" string="Abrir" icon="fa-external-link"/>
                                     </list>
                                 </field>
                             </div>
 
                             <div class="o_conedera_card">
                                 <div class="o_conedera_card_title">
-                                    <i class="fa fa-file-text-o"/> Proformas / cotizaciones del cliente
+                                    <i class="fa fa-cubes"/> Resumen de productos proformados
                                 </div>
-                                <field name="census_sale_order_ids" nolabel="1" readonly="1">
-                                    <list create="0" edit="0" delete="0" default_order="date_order desc, id desc">
-                                        <field name="date_order" string="Fecha"/>
-                                        <field name="name" string="Documento"/>
-                                        <field name="user_id" string="Vendedor" widget="many2one_avatar_user"/>
-                                        <field name="state" widget="badge"/>
-                                        <field name="amount_total" sum="Total"/>
-                                        <field name="census_visit_id" string="Visita origen" optional="show"/>
+                                <div class="o_conedera_hint">
+                                    Cantidades e importes de proformas no canceladas. El precio promedio es neto de descuento y ponderado por cantidad. Toque el producto para revisar cada fecha y precio, de la más reciente a la más antigua.
+                                </div>
+                                <div class="o_conedera_actionbar mb-2">
+                                    <button name="action_view_census_product_summary" type="object" string="Ver todos los productos"
+                                            class="btn-outline-secondary" icon="fa-bar-chart" invisible="not id"/>
+                                </div>
+                                <field name="census_product_summary_ids" nolabel="1" mode="kanban,list">
+                                    <kanban create="false" edit="false" delete="false" sample="0">
+                                        <field name="product_id"/>
+                                        <field name="quoted_qty"/>
+                                        <field name="uom_id"/>
+                                        <field name="quotation_count"/>
+                                        <field name="quoted_amount"/>
+                                        <field name="avg_net_unit_price"/>
+                                        <field name="last_quote_date"/>
+                                        <field name="currency_id"/>
+                                        <templates>
+                                            <t t-name="card">
+                                                <main>
+                                                    <button name="action_open_quote_history" type="object" class="btn btn-link p-0 text-start fw-bold mb-2"><field name="product_id"/></button>
+                                                    <div class="row g-2 small">
+                                                        <div class="col-6"><span class="text-muted">Cantidad</span><div class="fw-semibold"><field name="quoted_qty"/> <field name="uom_id"/></div></div>
+                                                        <div class="col-6"><span class="text-muted">Proformas</span><div class="fw-semibold"><field name="quotation_count"/></div></div>
+                                                        <div class="col-6"><span class="text-muted">Precio promedio</span><div class="fw-semibold"><field name="avg_net_unit_price" widget="monetary" options="{'currency_field': 'currency_id'}"/></div></div>
+                                                        <div class="col-6"><span class="text-muted">Total</span><div class="fw-semibold"><field name="quoted_amount" widget="monetary" options="{'currency_field': 'currency_id'}"/></div></div>
+                                                    </div>
+                                                    <div class="text-muted small mt-2">Última: <field name="last_quote_date"/></div>
+                                                </main>
+                                            </t>
+                                        </templates>
+                                    </kanban>
+                                    <list create="0" edit="0" delete="0" default_order="quoted_qty desc, quoted_amount desc, last_quote_date desc">
+                                        <field name="product_id"/>
+                                        <field name="quoted_qty"/>
+                                        <field name="uom_id"/>
+                                        <field name="quotation_count"/>
+                                        <field name="avg_net_unit_price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        <field name="quoted_amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        <button name="action_open_quote_history" type="object" string="Historial" icon="fa-history"/>
                                     </list>
                                 </field>
                             </div>

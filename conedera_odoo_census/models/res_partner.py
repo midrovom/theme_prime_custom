@@ -1,3 +1,5 @@
+import re
+
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 
@@ -105,6 +107,16 @@ class ResPartner(models.Model):
     )
     census_sale_order_ids = fields.One2many(
         "sale.order", "partner_id", string="Proformas / cotizaciones"
+    )
+    census_timeline_ids = fields.One2many(
+        "conedera.census.commercial.timeline",
+        "partner_id",
+        string="Bitácora comercial",
+    )
+    census_product_summary_ids = fields.One2many(
+        "conedera.census.product.quote.summary",
+        "partner_id",
+        string="Productos proformados",
     )
     census_visit_count = fields.Integer(compute="_compute_census_stats", string="Visitas")
     census_quotation_count = fields.Integer(compute="_compute_census_stats", string="Proformas")
@@ -253,18 +265,29 @@ class ResPartner(models.Model):
                 continue
             vat = (partner.vat or "").strip()
             if vat:
-                duplicate = self.with_context(active_test=False).search(
-                    [
-                        ("id", "!=", partner.id),
-                        ("parent_id", "=", False),
-                        ("vat", "=ilike", vat),
-                    ],
-                    limit=1,
+                normalized = re.sub(r"[^0-9A-Za-z]", "", vat).upper()
+                self.env.cr.execute(
+                    """
+                    SELECT id
+                      FROM res_partner
+                     WHERE id != %s
+                       AND parent_id IS NULL
+                       AND vat IS NOT NULL
+                       AND regexp_replace(upper(vat), '[^0-9A-Z]', '', 'g') = %s
+                     LIMIT 1
+                    """,
+                    [partner.id, normalized],
+                )
+                duplicate_id = self.env.cr.fetchone()
+                duplicate = (
+                    self.with_context(active_test=False).browse(duplicate_id[0]).exists()
+                    if duplicate_id
+                    else self.browse()
                 )
                 if duplicate:
                     raise ValidationError(
                         _(
-                            "El RUC %(vat)s ya pertenece a %(partner)s. "
+                            "El RUC / cédula %(vat)s ya pertenece a %(partner)s. "
                             "No cree otro cliente: use la ficha existente desde Nuevo catastro."
                         )
                         % {"vat": vat, "partner": duplicate.display_name}
@@ -415,6 +438,24 @@ class ResPartner(models.Model):
             "default_census_originated": True,
             "default_company_id": self.env.company.id,
         }
+        return action
+
+    def action_view_census_timeline(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "conedera_odoo_census.action_census_commercial_timeline"
+        )
+        action["domain"] = [("partner_id", "=", self.id)]
+        action["name"] = _("Bitácora - %s") % self.display_name
+        return action
+
+    def action_view_census_product_summary(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "conedera_odoo_census.action_census_product_quote_summary"
+        )
+        action["domain"] = [("partner_id", "=", self.id)]
+        action["name"] = _("Productos proformados - %s") % self.display_name
         return action
 
     def action_new_census_quotation(self):

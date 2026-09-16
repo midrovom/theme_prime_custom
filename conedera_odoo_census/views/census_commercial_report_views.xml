@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Línea de tiempo unificada: visitas + proformas. Diseñada para móvil. -->
+    <record id="view_census_commercial_timeline_kanban" model="ir.ui.view">
+        <field name="name">conedera.census.commercial.timeline.kanban</field>
+        <field name="model">conedera.census.commercial.timeline</field>
+        <field name="arch" type="xml">
+            <kanban create="false" edit="false" delete="false" sample="0">
+                <field name="event_type"/>
+                <field name="event_datetime"/>
+                <field name="title"/>
+                <field name="event_state_label"/>
+                <field name="user_id"/>
+                <field name="purchase_made"/>
+                <field name="location_status"/>
+                <field name="amount_total"/>
+                <field name="currency_id"/>
+                <templates>
+                    <t t-name="card">
+                        <main>
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div>
+                                    <div class="text-muted small" t-if="record.event_type.raw_value == 'visit'">
+                                        <i class="fa fa-map-marker me-1"/> VISITA
+                                    </div>
+                                    <div class="text-muted small" t-if="record.event_type.raw_value == 'quotation'">
+                                        <i class="fa fa-file-text-o me-1"/> PROFORMA / COTIZACIÓN
+                                    </div>
+                                    <strong><field name="title"/></strong>
+                                </div>
+                                <span class="badge text-bg-light"><field name="event_state_label"/></span>
+                            </div>
+                            <div class="mb-1"><i class="fa fa-calendar fa-fw me-1 text-muted"/><field name="event_datetime"/></div>
+                            <div class="mb-1"><i class="fa fa-user fa-fw me-1 text-muted"/><field name="user_id" widget="many2one_avatar_user"/></div>
+                            <div t-if="record.event_type.raw_value == 'visit' and record.purchase_made.raw_value" class="mb-1">
+                                <i class="fa fa-shopping-cart fa-fw me-1 text-muted"/> Compra: <field name="purchase_made"/>
+                            </div>
+                            <div t-if="record.event_type.raw_value == 'visit' and record.location_status.raw_value" class="mb-1">
+                                <i class="fa fa-location-arrow fa-fw me-1 text-muted"/> <field name="location_status"/>
+                            </div>
+                            <div t-if="record.event_type.raw_value == 'quotation'" class="fs-5 fw-semibold mt-2">
+                                <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            </div>
+                            <footer class="mt-2">
+                                <button name="action_open_source" type="object" string="Abrir detalle" class="btn btn-outline-primary btn-sm"/>
+                            </footer>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_census_commercial_timeline_list" model="ir.ui.view">
+        <field name="name">conedera.census.commercial.timeline.list</field>
+        <field name="model">conedera.census.commercial.timeline</field>
+        <field name="arch" type="xml">
+            <list string="Bitácora comercial" create="false" edit="false" delete="false" default_order="event_datetime desc, id desc">
+                <field name="event_datetime" string="Fecha"/>
+                <field name="event_type" string="Tipo"/>
+                <field name="title"/>
+                <field name="event_state_label" string="Estado"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="purchase_made" optional="hide"/>
+                <field name="location_status" optional="hide"/>
+                <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}" optional="show"/>
+                <button name="action_open_source" type="object" string="Abrir" icon="fa-external-link"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_census_commercial_timeline" model="ir.actions.act_window">
+        <field name="name">Bitácora comercial</field>
+        <field name="res_model">conedera.census.commercial.timeline</field>
+        <field name="view_mode">kanban,list</field>
+        <field name="views" eval="[(ref('view_census_commercial_timeline_kanban'), 'kanban'), (ref('view_census_commercial_timeline_list'), 'list')]"/>
+    </record>
+
+    <!-- Resumen por producto, cantidad y precio promedio. -->
+    <record id="view_census_product_quote_summary_kanban" model="ir.ui.view">
+        <field name="name">conedera.census.product.quote.summary.kanban</field>
+        <field name="model">conedera.census.product.quote.summary</field>
+        <field name="arch" type="xml">
+            <kanban create="false" edit="false" delete="false" sample="0">
+                <field name="product_id"/>
+                <field name="quoted_qty"/>
+                <field name="uom_id"/>
+                <field name="quotation_count"/>
+                <field name="quoted_amount"/>
+                <field name="avg_net_unit_price"/>
+                <field name="min_net_unit_price"/>
+                <field name="max_net_unit_price"/>
+                <field name="last_quote_date"/>
+                <field name="currency_id"/>
+                <templates>
+                    <t t-name="card">
+                        <main>
+                            <button name="action_open_quote_history" type="object" class="btn btn-link p-0 text-start fw-bold fs-5 mb-2">
+                                <field name="product_id"/>
+                            </button>
+                            <div class="row g-2 small">
+                                <div class="col-6"><span class="text-muted">Cantidad</span><div class="fw-semibold"><field name="quoted_qty"/> <field name="uom_id"/></div></div>
+                                <div class="col-6"><span class="text-muted">Proformas</span><div class="fw-semibold"><field name="quotation_count"/></div></div>
+                                <div class="col-6"><span class="text-muted">Precio promedio</span><div class="fw-semibold"><field name="avg_net_unit_price" widget="monetary" options="{'currency_field': 'currency_id'}"/></div></div>
+                                <div class="col-6"><span class="text-muted">Total proformado</span><div class="fw-semibold"><field name="quoted_amount" widget="monetary" options="{'currency_field': 'currency_id'}"/></div></div>
+                            </div>
+                            <div class="text-muted small mt-2">Rango: <field name="min_net_unit_price" widget="monetary" options="{'currency_field': 'currency_id'}"/> – <field name="max_net_unit_price" widget="monetary" options="{'currency_field': 'currency_id'}"/></div>
+                            <div class="text-muted small mt-1">Última: <field name="last_quote_date"/></div>
+                            <footer class="mt-2">
+                                <button name="action_open_quote_history" type="object" string="Ver fechas y precios" class="btn btn-outline-primary btn-sm"/>
+                            </footer>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_census_product_quote_summary_list" model="ir.ui.view">
+        <field name="name">conedera.census.product.quote.summary.list</field>
+        <field name="model">conedera.census.product.quote.summary</field>
+        <field name="arch" type="xml">
+            <list string="Productos proformados" create="false" edit="false" delete="false" default_order="quoted_qty desc, quoted_amount desc, last_quote_date desc">
+                <field name="product_id"/>
+                <field name="quoted_qty" sum="Cantidad"/>
+                <field name="uom_id"/>
+                <field name="quotation_count" sum="Proformas"/>
+                <field name="avg_net_unit_price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="min_net_unit_price" widget="monetary" options="{'currency_field': 'currency_id'}" optional="hide"/>
+                <field name="max_net_unit_price" widget="monetary" options="{'currency_field': 'currency_id'}" optional="hide"/>
+                <field name="quoted_amount" widget="monetary" options="{'currency_field': 'currency_id'}" sum="Total"/>
+                <field name="last_quote_date"/>
+                <button name="action_open_quote_history" type="object" string="Historial" icon="fa-history"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_census_product_quote_summary" model="ir.actions.act_window">
+        <field name="name">Productos proformados</field>
+        <field name="res_model">conedera.census.product.quote.summary</field>
+        <field name="view_mode">kanban,list</field>
+        <field name="views" eval="[(ref('view_census_product_quote_summary_kanban'), 'kanban'), (ref('view_census_product_quote_summary_list'), 'list')]"/>
+    </record>
+
+    <!-- Historial del producto por fecha, orden descendente. -->
+    <record id="view_census_product_quote_line_kanban" model="ir.ui.view">
+        <field name="name">conedera.census.product.quote.line.kanban</field>
+        <field name="model">conedera.census.product.quote.line</field>
+        <field name="arch" type="xml">
+            <kanban create="false" edit="false" delete="false" sample="0">
+                <field name="order_date"/>
+                <field name="order_id"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="qty"/>
+                <field name="uom_id"/>
+                <field name="price_unit"/>
+                <field name="discount"/>
+                <field name="net_unit_price"/>
+                <field name="subtotal"/>
+                <field name="currency_id"/>
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <main>
+                            <div class="d-flex justify-content-between gap-2 mb-2">
+                                <div><strong><field name="product_id"/></strong><div class="text-muted small"><field name="order_id"/> · <field name="order_date"/></div></div>
+                                <field name="state" widget="badge"/>
+                            </div>
+                            <div class="row g-2 small">
+                                <div class="col-6"><span class="text-muted">Cantidad</span><div class="fw-semibold"><field name="qty"/> <field name="uom_id"/></div></div>
+                                <div class="col-6"><span class="text-muted">Precio neto</span><div class="fw-semibold"><field name="net_unit_price" widget="monetary" options="{'currency_field': 'currency_id'}"/></div></div>
+                                <div class="col-6"><span class="text-muted">Precio lista</span><div><field name="price_unit" widget="monetary" options="{'currency_field': 'currency_id'}"/></div></div>
+                                <div class="col-6"><span class="text-muted">Descuento</span><div><field name="discount"/>%</div></div>
+                            </div>
+                            <div class="fs-5 fw-semibold mt-2"><field name="subtotal" widget="monetary" options="{'currency_field': 'currency_id'}"/></div>
+                            <footer class="mt-2"><button name="action_open_order" type="object" string="Abrir proforma" class="btn btn-outline-primary btn-sm"/></footer>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_census_product_quote_line_list" model="ir.ui.view">
+        <field name="name">conedera.census.product.quote.line.list</field>
+        <field name="model">conedera.census.product.quote.line</field>
+        <field name="arch" type="xml">
+            <list string="Historial proformado" create="false" edit="false" delete="false" default_order="order_date desc, order_id desc, id desc">
+                <field name="order_date" string="Fecha"/>
+                <field name="order_id" string="Proforma"/>
+                <field name="partner_id" string="Cliente" optional="show"/>
+                <field name="product_id" string="Producto"/>
+                <field name="qty" sum="Cantidad"/>
+                <field name="uom_id"/>
+                <field name="price_unit" widget="monetary" options="{'currency_field': 'currency_id'}" optional="show"/>
+                <field name="discount" optional="show"/>
+                <field name="net_unit_price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="subtotal" widget="monetary" options="{'currency_field': 'currency_id'}" sum="Total"/>
+                <field name="state" widget="badge"/>
+                <button name="action_open_order" type="object" string="Abrir" icon="fa-external-link"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_census_product_quote_line_search" model="ir.ui.view">
+        <field name="name">conedera.census.product.quote.line.search</field>
+        <field name="model">conedera.census.product.quote.line</field>
+        <field name="arch" type="xml">
+            <search string="Historial proformado">
+                <field name="product_id"/>
+                <field name="partner_id"/>
+                <field name="order_id"/>
+                <field name="user_id"/>
+                <filter name="confirmed" string="Pedidos confirmados" domain="[('state', '=', 'sale')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="group_product" string="Producto" context="{'group_by': 'product_id'}"/>
+                    <filter name="group_partner" string="Cliente" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_month" string="Mes" context="{'group_by': 'order_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_census_product_quote_line" model="ir.actions.act_window">
+        <field name="name">Historial proformado</field>
+        <field name="res_model">conedera.census.product.quote.line</field>
+        <field name="view_mode">kanban,list</field>
+        <field name="views" eval="[(ref('view_census_product_quote_line_kanban'), 'kanban'), (ref('view_census_product_quote_line_list'), 'list')]"/>
+        <field name="search_view_id" ref="view_census_product_quote_line_search"/>
+    </record>
+</odoo>

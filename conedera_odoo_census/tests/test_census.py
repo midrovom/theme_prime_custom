@@ -194,3 +194,56 @@ class TestConederaCensus(TransactionCase):
         self.partner.invalidate_recordset(["census_ready_for_activity"])
         self.assertTrue(self.partner.census_ready_for_activity)
 
+
+    def test_lookup_wizard_normalizes_vat_separators(self):
+        self.partner.write({"vat": "09-99999999-001"})
+        wizard = self.env["conedera.census.customer.lookup.wizard"].create(
+            {"vat": "0999999999001"}
+        )
+        wizard.action_validate()
+        self.assertEqual(wizard.validation_state, "found")
+        self.assertEqual(wizard.existing_partner_id, self.partner)
+        self.assertEqual(wizard.existing_name, self.partner.name)
+
+    def test_timeline_contains_visit_and_quotation(self):
+        visit = self.env["conedera.census.visit"].create({"partner_id": self.partner.id})
+        order = self.env["sale.order"].create({"partner_id": self.partner.id})
+        timeline = self.env["conedera.census.commercial.timeline"].search(
+            [("partner_id", "=", self.partner.id)]
+        )
+        self.assertIn(visit, timeline.mapped("visit_id"))
+        self.assertIn(order, timeline.mapped("sale_order_id"))
+
+    def test_product_quote_summary_and_history(self):
+        product = self.env["product.product"].create(
+            {"name": "Equipo Demo", "list_price": 100.0}
+        )
+        order = self.env["sale.order"].create({"partner_id": self.partner.id})
+        self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": product.id,
+                "product_uom_qty": 3,
+                "price_unit": 100.0,
+                "discount": 10.0,
+            }
+        )
+        summary = self.env["conedera.census.product.quote.summary"].search(
+            [
+                ("partner_id", "=", self.partner.id),
+                ("product_id", "=", product.id),
+            ],
+            limit=1,
+        )
+        self.assertTrue(summary)
+        self.assertEqual(summary.quoted_qty, 3)
+        self.assertAlmostEqual(summary.avg_net_unit_price, 90.0, places=2)
+        detail = self.env["conedera.census.product.quote.line"].search(
+            [
+                ("partner_id", "=", self.partner.id),
+                ("product_id", "=", product.id),
+            ],
+            limit=1,
+        )
+        self.assertTrue(detail)
+        self.assertAlmostEqual(detail.net_unit_price, 90.0, places=2)
