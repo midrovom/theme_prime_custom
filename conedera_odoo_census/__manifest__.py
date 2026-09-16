@@ -1,6 +1,6 @@
 {
     "name": "Conedera - Catastro Comercial (Community)",
-    "version": "18.0.1.1.1",
+    "version": "18.0.1.1.2",
     "category": "Sales/Sales",
     "summary": "Catastro móvil de clientes, visitas comerciales, GPS y proformas",
     "description": """

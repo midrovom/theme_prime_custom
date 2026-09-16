@@ -1,3 +1,11 @@
+# 18.0.1.1.2
+
+- Nueva migración en una versión superior para recuperar bases que quedaron registradas en 18.0.1.1.1 con esquema incompleto.
+- Reparación idempotente de todas las columnas persistentes del Catastro en `res_partner` y `sale_order`.
+- Verificación explícita de esquema en pre y post migración.
+- Reejecución segura de migración de datos legados.
+- Corrección del test de validación GPS.
+
 # 18.0.1.1.1
 
 - Recuperación defensiva para despliegues donde el código nuevo se carga antes de actualizar el esquema.

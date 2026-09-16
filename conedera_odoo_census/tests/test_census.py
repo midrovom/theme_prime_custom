@@ -17,8 +17,9 @@ class TestConederaCensus(TransactionCase):
                 "store_count": 2,
                 "business_type_ids": [(6, 0, [self.business_type.id])],
                 "customer_segment": "reseller",
-                "partner_latitude": -2.170998,
-                "partner_longitude": -79.922359,
+                "census_gps_payload": json.dumps(
+                    {"latitude": -2.170998, "longitude": -79.922359, "accuracy": 6.0}
+                ),
             }
         )
 
