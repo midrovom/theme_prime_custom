@@ -5,3 +5,6 @@ access_census_business_type_salesman,conedera.census.business.type salesman,mode
 access_census_business_type_manager,conedera.census.business.type manager,model_conedera_census_business_type,sales_team.group_sale_manager,1,1,1,1
 access_partner_opening_hour_salesman,conedera.partner.opening.hour salesman,model_conedera_partner_opening_hour,sales_team.group_sale_salesman,1,1,1,1
 access_partner_opening_hour_manager,conedera.partner.opening.hour manager,model_conedera_partner_opening_hour,sales_team.group_sale_manager,1,1,1,1
+access_census_customer_lookup_salesman,conedera.census.customer.lookup.wizard salesman,model_conedera_census_customer_lookup_wizard,sales_team.group_sale_salesman,1,1,1,1
+access_census_mobile_brand_salesman,conedera.census.mobile.brand salesman,model_conedera_census_mobile_brand,sales_team.group_sale_salesman,1,0,0,0
+access_census_mobile_brand_manager,conedera.census.mobile.brand manager,model_conedera_census_mobile_brand,sales_team.group_sale_manager,1,1,1,1

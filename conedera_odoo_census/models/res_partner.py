@@ -35,6 +35,15 @@ class ResPartner(models.Model):
         string="Tipos de negocio",
         tracking=True,
     )
+    mobile_brand_ids = fields.Many2many(
+        "conedera.census.mobile.brand",
+        "conedera_partner_mobile_brand_rel",
+        "partner_id",
+        "brand_id",
+        string="Marcas de celulares que maneja",
+        tracking=True,
+        help="Opcional. Seleccione una o varias marcas de celulares que comercializa o maneja el cliente.",
+    )
     business_description = fields.Char(
         string="Especialidad / detalle",
         help="Detalle opcional para describir líneas de negocio no cubiertas por las etiquetas.",
@@ -77,7 +86,11 @@ class ResPartner(models.Model):
         ],
         string="Tipo de cliente (legado)",
     )
-    capa = fields.Float(string="CAPA (legado)")
+    capa = fields.Float(
+        string="CAPA / Capacidad de compra",
+        tracking=True,
+        help="Monto estimado de capacidad de compra del cliente. Debe ser mayor que cero para habilitar visitas y proformas.",
+    )
 
     # GPS del local
     census_gps_payload = fields.Char(string="Captura GPS", copy=False)
@@ -153,6 +166,7 @@ class ResPartner(models.Model):
         "census_store_count",
         "business_type_ids",
         "customer_segment",
+        "capa",
         "owner_contact_name",
         "owner_phone",
         "commercial_contact_name",
@@ -186,12 +200,13 @@ class ResPartner(models.Model):
         """
         self.ensure_one()
         return [
-            (_("Razón social / cliente"), bool((self.name or "").strip())),
+            (_("Razón social / cliente"), bool((self.name or "").strip()) and not (self.name or "").startswith("BORRADOR - RUC ")),
             (_("RUC"), bool((self.vat or "").strip())),
             (_("Nombre comercial / local"), bool((self.commercial_name or "").strip())),
             (_("Número de tiendas / locales"), self.census_store_count > 0),
             (_("Tipo(s) de negocio"), bool(self.business_type_ids)),
             (_("Canal comercial"), bool(self.customer_segment)),
+            (_("CAPA / Capacidad de compra"), self.capa > 0),
             (_("Nombre del dueño"), bool((self.owner_contact_name or "").strip())),
             (_("Teléfono del dueño"), bool((self.owner_phone or "").strip())),
             (_("Contacto comercial"), bool((self.commercial_contact_name or "").strip())),
@@ -215,36 +230,65 @@ class ResPartner(models.Model):
                 )
         return True
 
-    @api.constrains("census_store_count")
+    @api.constrains("census_store_count", "capa")
     def _check_census_store_count(self):
         """Allow an incomplete draft, but never accept a negative store count."""
         for partner in self:
             if partner.census_store_count < 0:
                 raise ValidationError(_("El número de tiendas / locales no puede ser negativo."))
+            if partner.capa < 0:
+                raise ValidationError(_("La CAPA / capacidad de compra no puede ser negativa."))
 
-    @api.constrains("vat", "census_active")
-    def _check_unique_census_vat(self):
-        """Un cliente catastrado debe tener una sola ficha activa por RUC."""
+    @api.constrains("vat", "name", "commercial_name", "census_active", "parent_id")
+    def _check_unique_census_identity(self):
+        """Evita una segunda ficha para el mismo cliente.
+
+        - Con RUC: no puede existir otro contacto raíz con el mismo RUC, esté o no
+          catastrado. El flujo correcto es reutilizar ese contacto.
+        - Sin RUC: mientras el catastro está en borrador, bloqueamos otro catastro
+          con el mismo nombre exacto para obligar a identificarlo antes de duplicar.
+        """
         for partner in self:
-            vat = (partner.vat or "").strip()
-            if not partner.census_active or not vat:
+            if not partner.census_active or partner.parent_id:
                 continue
-            duplicate = self.with_context(active_test=False).search(
-                [
-                    ("id", "!=", partner.id),
-                    ("census_active", "=", True),
-                    ("vat", "=ilike", vat),
-                ],
-                limit=1,
-            )
-            if duplicate:
-                raise ValidationError(
-                    _(
-                        "Ya existe un catastro para el RUC %(vat)s: %(partner)s. "
-                        "Abra esa ficha y continúe alimentando su bitácora."
-                    )
-                    % {"vat": vat, "partner": duplicate.display_name}
+            vat = (partner.vat or "").strip()
+            if vat:
+                duplicate = self.with_context(active_test=False).search(
+                    [
+                        ("id", "!=", partner.id),
+                        ("parent_id", "=", False),
+                        ("vat", "=ilike", vat),
+                    ],
+                    limit=1,
                 )
+                if duplicate:
+                    raise ValidationError(
+                        _(
+                            "El RUC %(vat)s ya pertenece a %(partner)s. "
+                            "No cree otro cliente: use la ficha existente desde Nuevo catastro."
+                        )
+                        % {"vat": vat, "partner": duplicate.display_name}
+                    )
+            else:
+                name = (partner.name or "").strip()
+                if name and not name.startswith("BORRADOR - RUC "):
+                    duplicate = self.with_context(active_test=False).search(
+                        [
+                            ("id", "!=", partner.id),
+                            ("parent_id", "=", False),
+                            ("census_active", "=", True),
+                            ("name", "=ilike", name),
+                        ],
+                        limit=1,
+                    )
+                    if duplicate:
+                        raise ValidationError(
+                            _(
+                                "Ya existe un catastro con el nombre %(name)s. "
+                                "Ingrese el RUC para diferenciar clientes o abra la ficha existente."
+                            )
+                            % {"name": name}
+                        )
 
     def copy(self, default=None):
         self.ensure_one()
@@ -284,8 +328,6 @@ class ResPartner(models.Model):
     def create(self, vals_list):
         now = fields.Datetime.now()
         for vals in vals_list:
-            if vals.get("census_active") and not (vals.get("vat") or "").strip():
-                raise ValidationError(_("El RUC es obligatorio para crear una ficha de catastro."))
             parsed = parse_gps_payload(vals.get("census_gps_payload"))
             if parsed:
                 latitude, longitude, accuracy = parsed
@@ -305,11 +347,6 @@ class ResPartner(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
-        if vals.get("census_active") is True:
-            for partner in self:
-                resulting_vat = vals.get("vat", partner.vat)
-                if not (resulting_vat or "").strip():
-                    raise ValidationError(_("El RUC es obligatorio para activar el catastro de un cliente."))
         parsed = parse_gps_payload(vals.get("census_gps_payload"))
         if parsed:
             latitude, longitude, accuracy = parsed

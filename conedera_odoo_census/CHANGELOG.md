@@ -1,12 +1,12 @@
 # Changelog
 
-## 18.0.1.2.1
+## 18.0.1.3.0
 
-- `Número de tiendas / locales` queda como entero editable propio del módulo y los registros nuevos parten en `0` para obligar al vendedor a ingresar el dato real.
-- Nuevo bloqueo operativo: un catastro incompleto puede guardarse, pero no permite registrar visitas ni crear proformas desde Catastro.
-- El bloqueo se aplica tanto en la interfaz como en backend/RPC para evitar saltárselo desde otros menús.
-- Requisitos operativos: razón social, RUC, nombre comercial, número de tiendas > 0, tipos de negocio, canal comercial, dueño/teléfono, contacto comercial, teléfono o móvil, email, dirección, ciudad y horario de atención.
-- GPS del cliente y de la visita queda temporalmente opcional mientras el servidor no tenga HTTPS.
-- Una visita puede finalizar sin GPS; si existe captura, se sigue guardando y validando.
-- La ficha muestra exactamente qué datos faltan antes de habilitar Visita/Proforma.
-- Migración defensiva para `census_store_count` en bases que hayan quedado a medio actualizar.
+- Nuevo flujo **Nuevo catastro**: primero valida RUC o nombre antes de crear.
+- Si el cliente ya existe en Odoo, reutiliza la misma ficha y evita duplicarlo.
+- Si la búsqueda por nombre devuelve varias coincidencias, exige RUC para decidir.
+- Creación estándar deshabilitada en las vistas de Catastro; el alta pasa por el asistente.
+- CAPA vuelve a mostrarse como **CAPA / Capacidad de compra** y es requisito para Visita/Proforma.
+- Nuevo catálogo de **Marcas de celulares** y selección múltiple por cliente.
+- Las marcas son opcionales y no afectan la completitud del catastro.
+- Se mantiene GPS opcional mientras la instalación funcione sin HTTPS.

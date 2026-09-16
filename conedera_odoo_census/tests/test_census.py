@@ -18,6 +18,7 @@ class TestConederaCensus(TransactionCase):
                 "census_store_count": 2,
                 "business_type_ids": [(6, 0, [self.business_type.id])],
                 "customer_segment": "reseller",
+                "capa": 5000.0,
                 "owner_contact_name": "Ana Dueña",
                 "owner_phone": "0990000001",
                 "commercial_contact_name": "Carlos Compras",
@@ -151,3 +152,45 @@ class TestConederaCensus(TransactionCase):
         visit.action_mark_done()
         self.assertEqual(visit.state, "done")
         self.assertEqual(visit.location_status, "no_visit_gps")
+    def test_lookup_wizard_reuses_existing_partner(self):
+        wizard = self.env["conedera.census.customer.lookup.wizard"].create(
+            {"vat": self.partner.vat}
+        )
+        wizard.action_validate()
+        self.assertEqual(wizard.validation_state, "found")
+        self.assertEqual(wizard.existing_partner_id, self.partner)
+        count_before = self.env["res.partner"].search_count([("vat", "=", self.partner.vat)])
+        action = wizard.action_open_existing()
+        count_after = self.env["res.partner"].search_count([("vat", "=", self.partner.vat)])
+        self.assertEqual(count_before, count_after)
+        self.assertEqual(action["res_id"], self.partner.id)
+
+    def test_lookup_wizard_can_create_draft_from_name(self):
+        wizard = self.env["conedera.census.customer.lookup.wizard"].create(
+            {"customer_name": "Cliente Nuevo Sin RUC"}
+        )
+        wizard.action_validate()
+        self.assertEqual(wizard.validation_state, "not_found")
+        action = wizard.action_create_new()
+        partner = self.env["res.partner"].browse(action["res_id"])
+        self.assertTrue(partner.census_active)
+        self.assertEqual(partner.name, "Cliente Nuevo Sin RUC")
+        self.assertFalse(partner.census_ready_for_activity)
+
+    def test_capa_is_required_for_activity(self):
+        self.partner.write({"capa": 0})
+        self.partner.invalidate_recordset(["census_ready_for_activity", "census_missing_requirements"])
+        self.assertFalse(self.partner.census_ready_for_activity)
+        self.assertIn("CAPA", self.partner.census_missing_requirements)
+        with self.assertRaises(UserError):
+            self.partner.action_new_census_visit()
+
+    def test_mobile_brands_are_optional(self):
+        brand = self.env.ref("conedera_odoo_census.mobile_brand_samsung")
+        self.partner.write({"mobile_brand_ids": [(6, 0, [brand.id])]})
+        self.partner.invalidate_recordset(["census_ready_for_activity"])
+        self.assertTrue(self.partner.census_ready_for_activity)
+        self.partner.write({"mobile_brand_ids": [(5, 0, 0)]})
+        self.partner.invalidate_recordset(["census_ready_for_activity"])
+        self.assertTrue(self.partner.census_ready_for_activity)
+

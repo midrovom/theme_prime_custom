@@ -1,0 +1,143 @@
+# Validación estática — Conedera Catastro 18.0.1.3.0
+
+**Resultado: PASSED — 136 comprobaciones.**
+
+Se validó sintaxis/estructura fuera de un runtime Odoo. La prueba final de ORM/PostgreSQL debe realizarse con `-u conedera_odoo_census` en el servidor Odoo 18 Community.
+
+## Comprobaciones
+- OK — Manifest válido
+- OK — Versión 18.0.1.3.0
+- OK — Manifest data existe: security/census_security.xml
+- OK — Manifest data existe: security/ir.model.access.csv
+- OK — Manifest data existe: data/census_sequence.xml
+- OK — Manifest data existe: data/business_type_data.xml
+- OK — Manifest data existe: data/mobile_brand_data.xml
+- OK — Manifest data existe: views/res_partner_views.xml
+- OK — Manifest data existe: views/census_customer_lookup_views.xml
+- OK — Manifest data existe: views/census_mobile_brand_views.xml
+- OK — Manifest data existe: views/census_visit_views.xml
+- OK — Manifest data existe: views/sale_order_views.xml
+- OK — Manifest data existe: views/census_menus.xml
+- OK — Asset existe: static/src/js/gps_capture_field.js
+- OK — Asset existe: static/src/xml/gps_capture_field.xml
+- OK — Asset existe: static/src/scss/census_mobile.scss
+- OK — 21 archivos Python compilan
+- OK — ID XML único: view_order_form_census_visit
+- OK — ID XML único: view_quotation_list_census_visit
+- OK — ID XML único: view_census_customer_lookup_wizard_form
+- OK — ID XML único: action_census_customer_lookup
+- OK — ID XML único: view_census_mobile_brand_list
+- OK — ID XML único: view_census_mobile_brand_form
+- OK — ID XML único: action_census_mobile_brands
+- OK — ID XML único: view_partner_form_census
+- OK — ID XML único: view_partner_form_census_mobile
+- OK — ID XML único: view_partner_kanban_census
+- OK — ID XML único: view_partner_list_census
+- OK — ID XML único: view_partner_search_census
+- OK — ID XML único: action_census_partners
+- OK — ID XML único: action_census_partners_view_kanban
+- OK — ID XML único: action_census_partners_view_list
+- OK — ID XML único: action_census_partners_view_form
+- OK — ID XML único: view_census_business_type_list
+- OK — ID XML único: view_census_business_type_form
+- OK — ID XML único: action_census_business_types
+- OK — ID XML único: menu_census_root
+- OK — ID XML único: menu_census_new_customer
+- OK — ID XML único: menu_census_customers
+- OK — ID XML único: menu_census_visits
+- OK — ID XML único: menu_census_analysis
+- OK — ID XML único: menu_census_configuration
+- OK — ID XML único: menu_census_business_types
+- OK — ID XML único: menu_census_mobile_brands
+- OK — ID XML único: view_census_visit_kanban
+- OK — ID XML único: view_census_visit_list
+- OK — ID XML único: view_census_visit_form
+- OK — ID XML único: view_census_visit_search
+- OK — ID XML único: view_census_visit_pivot
+- OK — ID XML único: view_census_visit_graph
+- OK — ID XML único: action_census_visit
+- OK — ID XML único: action_census_visit_view_kanban
+- OK — ID XML único: action_census_visit_view_list
+- OK — ID XML único: action_census_visit_view_form
+- OK — ID XML único: action_census_visit_analysis
+- OK — ID XML único: rule_census_visit_salesman
+- OK — ID XML único: rule_census_visit_manager
+- OK — ID XML único: rule_partner_opening_hour_company
+- OK — ID XML único: mobile_brand_apple
+- OK — ID XML único: mobile_brand_samsung
+- OK — ID XML único: mobile_brand_xiaomi
+- OK — ID XML único: mobile_brand_honor
+- OK — ID XML único: mobile_brand_motorola
+- OK — ID XML único: mobile_brand_oppo
+- OK — ID XML único: mobile_brand_tecno
+- OK — ID XML único: mobile_brand_infinix
+- OK — ID XML único: mobile_brand_realme
+- OK — ID XML único: mobile_brand_huawei
+- OK — ID XML único: mobile_brand_zte
+- OK — ID XML único: mobile_brand_nokia
+- OK — ID XML único: mobile_brand_itel
+- OK — ID XML único: mobile_brand_other
+- OK — ID XML único: business_type_cellphones
+- OK — ID XML único: business_type_accessories
+- OK — ID XML único: business_type_computing
+- OK — ID XML único: business_type_electronics
+- OK — ID XML único: business_type_service
+- OK — ID XML único: business_type_commercial_house
+- OK — ID XML único: business_type_other
+- OK — ID XML único: seq_census_visit
+- OK — 11 XML parsean
+- OK — Formulario Catastro bloquea alta directa
+- OK — Kanban Catastro bloquea alta directa
+- OK — Lista Catastro bloquea alta directa
+- OK — Menú Nuevo catastro usa wizard
+- OK — Wizard pide RUC
+- OK — Wizard pide nombre
+- OK — Wizard tiene Validar
+- OK — Wizard puede abrir existente
+- OK — Wizard solo crea tras no encontrar
+- OK — Wizard busca res.partner existente
+- OK — Wizard reutiliza partner existente
+- OK — RUC duplicado se bloquea también contra contactos no catastrados
+- OK — CAPA visible en formulario
+- OK — CAPA requerida para operar
+- OK — CAPA no admite negativos
+- OK — Marcas multi-selección visibles
+- OK — Marcas NO bloquean visitas/proformas
+- OK — GPS NO bloquea visitas/proformas
+- OK — Número de tiendas sigue requerido > 0
+- OK — Nombre borrador no cuenta como ficha completa
+- OK — Modelo marcas importado
+- OK — Wizard importado
+- OK — Acceso wizard configurado
+- OK — Acceso marcas vendedor configurado
+- OK — Acceso marcas gerente configurado
+- OK — Marca inicial: Apple
+- OK — Marca inicial: Samsung
+- OK — Marca inicial: Xiaomi
+- OK — Marca inicial: Honor
+- OK — Marca inicial: Motorola
+- OK — Marca inicial: OPPO
+- OK — Marca inicial: Tecno
+- OK — Marca inicial: Infinix
+- OK — Marca inicial: realme
+- OK — Marca inicial: Huawei
+- OK — Marca inicial: ZTE
+- OK — Marca inicial: Nokia
+- OK — Marca inicial: itel
+- OK — Marca inicial: Otra
+- OK — Configuración de marcas disponible
+- OK — Post-migración 1.3.0 presente
+- OK — Test incluido: test_lookup_wizard_reuses_existing_partner
+- OK — Test incluido: test_lookup_wizard_can_create_draft_from_name
+- OK — Test incluido: test_capa_is_required_for_activity
+- OK — Test incluido: test_mobile_brands_are_optional
+- OK — CAPA no está oculta como legado
+- OK — JavaScript GPS pasa node --check
+- OK — Método existe: action_new_census_visit
+- OK — Método existe: action_new_census_quotation
+- OK — Método existe: action_view_census_visits
+- OK — Método existe: action_view_census_quotations
+- OK — Método existe: action_open_census_location
+- OK — Método existe: action_validate
+- OK — Método existe: action_open_existing
+- OK — Método existe: action_create_new

@@ -22,7 +22,7 @@
         <field name="model">res.partner</field>
         <field name="priority">5</field>
         <field name="arch" type="xml">
-            <form string="Catastro de cliente">
+            <form string="Catastro de cliente" create="false">
                 <header>
                     <button name="action_new_census_visit" type="object" string="Registrar visita"
                             class="btn-primary" icon="fa-map-marker"
@@ -38,7 +38,6 @@
                     <field name="census_active" invisible="1"/>
                     <field name="business_type" invisible="1"/>
                     <field name="customer_census_type" invisible="1"/>
-                    <field name="capa" invisible="1"/>
                     <field name="company_type" invisible="1"/>
                     <field name="is_company" invisible="1"/>
                     <field name="partner_latitude" invisible="1"/>
@@ -112,11 +111,18 @@
                                                placeholder="Ej. 3"
                                                help="Ingrese la cantidad total de tiendas o locales. Debe ser mayor que cero para habilitar visitas y proformas."/>
                                         <div class="text-muted small">Digite la cantidad real de locales. Puede actualizarla cuando el cliente abra o cierre tiendas.</div>
+                                        <field name="capa" string="CAPA / Capacidad de compra"
+                                               placeholder="Ej. 5000.00"
+                                               help="Monto estimado de capacidad de compra. Debe ser mayor que cero para habilitar visitas y proformas."/>
                                     </group>
                                     <group>
                                         <field name="business_type_ids" widget="many2many_tags"
                                                options="{'color_field': 'color', 'no_quick_create': True, 'no_create_edit': True}"
                                                placeholder="Seleccione uno o varios tipos"/>
+                                        <field name="mobile_brand_ids" widget="many2many_tags"
+                                               options="{'color_field': 'color', 'no_quick_create': True, 'no_create_edit': True}"
+                                               placeholder="Marcas de celulares (opcional)"/>
+                                        <div class="text-muted small">Opcional: seleccione las marcas de celulares que maneja el cliente.</div>
                                         <field name="business_description" placeholder="Ej. gaming, reparación, línea blanca..."/>
                                         <field name="customer_segment" string="Canal comercial"/>
                                         <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user"/>
@@ -277,13 +283,15 @@
         <field name="name">res.partner.kanban.conedera.census</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
-            <kanban sample="1" quick_create="false">
+            <kanban sample="1" quick_create="false" create="false">
                 <field name="commercial_name"/>
                 <field name="name"/>
                 <field name="vat"/>
                 <field name="city"/>
                 <field name="census_store_count"/>
+                <field name="capa"/>
                 <field name="business_type_ids"/>
+                <field name="mobile_brand_ids"/>
                 <field name="customer_segment"/>
                 <field name="census_completion_state"/>
                 <field name="census_last_visit_datetime"/>
@@ -303,8 +311,11 @@
                             <div class="mb-1" t-if="record.city.raw_value">
                                 <i class="fa fa-map-marker fa-fw me-1 text-muted"/> <field name="city"/>
                             </div>
-                            <div class="mb-2">
+                            <div class="mb-1">
                                 <i class="fa fa-building fa-fw me-1 text-muted"/> <field name="census_store_count"/> local(es)
+                            </div>
+                            <div class="mb-2" t-if="record.capa.raw_value">
+                                <i class="fa fa-line-chart fa-fw me-1 text-muted"/> CAPA: <field name="capa"/>
                             </div>
                             <field name="business_type_ids" widget="many2many_tags"
                                    options="{'color_field': 'color'}"/>
@@ -323,13 +334,15 @@
         <field name="name">res.partner.list.conedera.census</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
-            <list string="Clientes catastrados" default_order="write_date desc, id desc">
+            <list string="Clientes catastrados" default_order="write_date desc, id desc" create="false">
                 <field name="commercial_name" string="Local"/>
                 <field name="name" string="Razón social" optional="show"/>
                 <field name="vat" string="RUC"/>
                 <field name="city"/>
                 <field name="census_store_count" string="Locales"/>
+                <field name="capa" string="CAPA" optional="show"/>
                 <field name="business_type_ids" widget="many2many_tags" optional="show"/>
+                <field name="mobile_brand_ids" widget="many2many_tags" optional="hide"/>
                 <field name="customer_segment" optional="hide"/>
                 <field name="user_id" string="Vendedor" widget="many2one_avatar_user" optional="show"/>
                 <field name="census_completion_state" widget="badge" string="Estado"/>
@@ -348,6 +361,7 @@
                 <field name="vat" string="RUC"/>
                 <field name="city"/>
                 <field name="business_type_ids"/>
+                <field name="mobile_brand_ids" string="Marcas"/>
                 <field name="user_id" string="Vendedor"/>
                 <separator/>
                 <filter name="pending_gps" string="Pendiente GPS" domain="[('census_gps_captured_at', '=', False)]"/>
@@ -359,6 +373,7 @@
                 </group>
                 <searchpanel>
                     <field name="business_type_ids" string="Tipo de negocio" select="multi"/>
+                    <field name="mobile_brand_ids" string="Marca celular" select="multi"/>
                     <field name="customer_segment" string="Canal comercial" select="multi"/>
                 </searchpanel>
             </search>
@@ -374,8 +389,8 @@
         <field name="domain">[('census_active', '=', True)]</field>
         <field name="context">{'default_census_active': True, 'default_company_type': 'company', 'default_user_id': uid}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">Cree el primer catastro. Cada cliente debe tener una sola ficha.</p>
-            <p>Busque primero por RUC o nombre. Luego alimente la misma ficha con visitas y proformas.</p>
+            <p class="o_view_nocontent_smiling_face">No hay catastros todavía.</p>
+            <p>Use <strong>Catastro Comercial &gt; Nuevo catastro</strong> para validar primero por RUC o nombre y evitar duplicados.</p>
         </field>
     </record>
 

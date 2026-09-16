@@ -1,12 +1,14 @@
 # Conedera — Catastro Comercial para Odoo 18 Community
 
-Ficha única por cliente sobre `res.partner`, con bitácora de visitas y cotizaciones estándar `sale.order`.
+Módulo de ficha única de cliente con validación previa, bitácora de visitas, proformas estándar de Odoo y captura GPS opcional mientras no exista HTTPS.
 
-## Flujo
+## Flujo principal
 
-1. Crear/buscar la ficha única del cliente.
-2. Completar el catastro.
-3. Solo cuando está listo, registrar visitas o crear proformas.
-4. Visitas y proformas quedan como bitácora del mismo cliente.
+1. **Nuevo catastro**.
+2. Ingresar RUC o nombre.
+3. Validar si el cliente ya existe.
+4. Reutilizar ficha existente o crear una nueva únicamente si no existe.
+5. Completar datos comerciales.
+6. Registrar Visitas y Proformas sobre la misma ficha.
 
-La ubicación GPS es opcional temporalmente hasta disponer de HTTPS.
+CAPA / Capacidad de compra es obligatoria para operar. Marcas de celulares es opcional y permite varias selecciones.

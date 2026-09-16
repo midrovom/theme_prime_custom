@@ -261,7 +261,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <div class="col-md-3">
                             <label class="fs-6">Adjuntar Documento (PDF) <span class="required-asterisk">*</span></label>
                                 <input type="file" name="famArchivo_${this.familyCount}" class="form-control rounded-pill fam-archivo-doc d-none" accept="application/pdf"/>
-                            <div class="invalid-feedback">Adjunte PDF si es partida de nacimiento</div>
+                            <div class="invalid-feedback">Adjunte PDF si tipo es partida de nacimiento</div>
                         </div>
 
                         <!-- Fecha -->
