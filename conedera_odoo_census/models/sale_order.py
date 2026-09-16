@@ -27,6 +27,10 @@ class SaleOrder(models.Model):
                     vals.setdefault("partner_id", visit.partner_id.id)
                     vals.setdefault("user_id", visit.user_id.id)
                     vals.setdefault("company_id", visit.company_id.id)
+            if vals.get("census_originated") and vals.get("partner_id"):
+                partner = self.env["res.partner"].browse(vals["partner_id"]).exists()
+                if partner:
+                    partner._ensure_census_ready_for_activity()
         return super().create(vals_list)
 
     def write(self, vals):

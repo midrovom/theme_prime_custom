@@ -1,0 +1,67 @@
+# Validación estática — 18.0.1.2.1
+
+**Resultado:** APROBADO
+
+- Comprobaciones: 60
+- Fallos: 0
+
+- OK: Manifest/version — 18.0.1.2.1
+- OK: Data path security/census_security.xml
+- OK: Data path security/ir.model.access.csv
+- OK: Data path data/census_sequence.xml
+- OK: Data path data/business_type_data.xml
+- OK: Data path views/res_partner_views.xml
+- OK: Data path views/census_visit_views.xml
+- OK: Data path views/sale_order_views.xml
+- OK: Data path views/census_menus.xml
+- OK: Asset path conedera_odoo_census/static/src/js/gps_capture_field.js
+- OK: Asset path conedera_odoo_census/static/src/xml/gps_capture_field.xml
+- OK: Asset path conedera_odoo_census/static/src/scss/census_mobile.scss
+- OK: XML data/business_type_data.xml
+- OK: XML data/census_sequence.xml
+- OK: XML security/census_security.xml
+- OK: XML views/census_visit_views.xml
+- OK: XML views/res_partner_views.xml
+- OK: XML views/sale_order_views.xml
+- OK: XML views/census_menus.xml
+- OK: XML static/src/xml/gps_capture_field.xml
+- OK: Unique record XML ids — []
+- OK: Python __manifest__.py
+- OK: Python __init__.py
+- OK: Python models/census_business_type.py
+- OK: Python models/partner_opening_hour.py
+- OK: Python models/gps_utils.py
+- OK: Python models/__init__.py
+- OK: Python models/sale_order.py
+- OK: Python models/res_partner.py
+- OK: Python models/census_visit.py
+- OK: Python tests/__init__.py
+- OK: Python tests/test_census.py
+- OK: Python migrations/18.0.1.2.0/pre-10-schema-repair.py
+- OK: Python migrations/18.0.1.2.0/post-20-data-and-schema-check.py
+- OK: Python migrations/18.0.1.2.1/pre-10-schema-check.py
+- OK: Python migrations/18.0.1.1.0/post-migration.py
+- OK: Python migrations/18.0.1.1.2/pre-10-schema-repair.py
+- OK: Python migrations/18.0.1.1.2/post-20-data-and-schema-check.py
+- OK: Python migrations/18.0.1.1.1/pre-10-schema.py
+- OK: JavaScript syntax
+- OK: Button method action_new_census_visit
+- OK: Button method action_new_census_quotation
+- OK: Button method action_view_census_visits
+- OK: Button method action_view_census_quotations
+- OK: Button method action_open_census_location
+- OK: Button method action_new_census_visit
+- OK: Button method action_new_census_quotation
+- OK: Button method action_mark_done
+- OK: Button method action_set_draft
+- OK: Button method action_cancel
+- OK: Button method action_view_quotations
+- OK: Button method action_open_visit_location
+- OK: Button method action_create_quotation
+- OK: Store count editable integer
+- OK: Store count defaults pending
+- OK: Operational gate backend
+- OK: Operational gate UI
+- OK: GPS excluded from readiness
+- OK: Visit completion GPS optional
+- OK: Store count migration defense
