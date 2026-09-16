@@ -2540,7 +2540,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         for (let j = 0; j < cantidad; j++) {
             await this._addFamilyBlock('3'); 
         }
-         this.$('#hr-hijos').prop('readonly', true);
+         this.$('#famNumHermanos').prop('readonly', true);
     },
 
     // _onChangeNumHijos: async function(ev) {
