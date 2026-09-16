@@ -1,5 +1,5 @@
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import ValidationError
 
 from .gps_utils import parse_gps_payload
 
@@ -16,12 +16,7 @@ class ResPartner(models.Model):
 
     # Datos comerciales propios del catastro
     commercial_name = fields.Char(string="Nombre comercial / local")
-    census_store_count = fields.Integer(
-        string="Número de tiendas / locales",
-        default=0,
-        tracking=True,
-        help="Ingrese la cantidad total de tiendas o locales del cliente. Debe ser mayor que cero para registrar visitas o crear proformas desde el catastro.",
-    )
+    store_count = fields.Integer(string="Número de locales", default=1)
     owner_contact_name = fields.Char(string="Nombre del dueño")
     owner_phone = fields.Char(string="Teléfono del dueño")
     commercial_contact_name = fields.Char(string="Contacto comercial")
@@ -90,9 +85,6 @@ class ResPartner(models.Model):
     census_visit_ids = fields.One2many(
         "conedera.census.visit", "partner_id", string="Visitas comerciales"
     )
-    census_sale_order_ids = fields.One2many(
-        "sale.order", "partner_id", string="Proformas / cotizaciones"
-    )
     census_visit_count = fields.Integer(compute="_compute_census_stats", string="Visitas")
     census_quotation_count = fields.Integer(compute="_compute_census_stats", string="Proformas")
     census_last_visit_datetime = fields.Datetime(
@@ -101,7 +93,8 @@ class ResPartner(models.Model):
     census_completion_state = fields.Selection(
         [
             ("incomplete", "Faltan datos"),
-            ("complete", "Listo para operar"),
+            ("pending_gps", "Pendiente GPS"),
+            ("complete", "Catastro completo"),
         ],
         compute="_compute_census_completion",
         string="Estado del catastro",
@@ -109,16 +102,8 @@ class ResPartner(models.Model):
     census_completion_pct = fields.Integer(
         compute="_compute_census_completion", string="Completitud"
     )
-    census_ready_for_activity = fields.Boolean(
-        compute="_compute_census_completion",
-        string="Listo para visitas y proformas",
-    )
-    census_missing_requirements = fields.Char(
-        compute="_compute_census_completion",
-        string="Datos pendientes",
-    )
 
-    @api.depends("census_visit_ids.visit_datetime", "census_sale_order_ids")
+    @api.depends("census_visit_ids.visit_datetime", "census_visit_ids.quotation_ids")
     def _compute_census_stats(self):
         partner_ids = self.ids
         visit_counts = {partner_id: 0 for partner_id in partner_ids}
@@ -136,7 +121,7 @@ class ResPartner(models.Model):
                     last_visits[partner_id] = visit.visit_datetime
 
             quotations = self.env["sale.order"].search(
-                [("partner_id", "in", partner_ids)]
+                [("partner_id", "in", partner_ids), ("census_originated", "=", True)]
             )
             for quotation in quotations:
                 quotation_counts[quotation.partner_id.id] += 1
@@ -150,124 +135,44 @@ class ResPartner(models.Model):
         "name",
         "vat",
         "commercial_name",
-        "census_store_count",
+        "store_count",
         "business_type_ids",
-        "customer_segment",
-        "owner_contact_name",
-        "owner_phone",
-        "commercial_contact_name",
-        "phone",
-        "mobile",
-        "email",
         "street",
         "city",
-        "opening_hour_ids",
-        "opening_hour_ids.day_of_week",
-        "opening_hour_ids.opening_time",
-        "opening_hour_ids.closing_time",
+        "census_gps_captured_at",
     )
     def _compute_census_completion(self):
         for partner in self:
-            requirements = partner._get_census_requirements()
-            completed = sum(1 for _label, ok in requirements if ok)
-            total = len(requirements) or 1
-            missing = [label for label, ok in requirements if not ok]
-            partner.census_completion_pct = round(completed * 100 / total)
-            partner.census_ready_for_activity = not missing
-            partner.census_missing_requirements = ", ".join(missing)
-            partner.census_completion_state = "complete" if not missing else "incomplete"
+            checks = [
+                bool(partner.name),
+                bool(partner.vat),
+                bool(partner.commercial_name),
+                partner.store_count >= 1,
+                bool(partner.business_type_ids),
+                bool(partner.street or partner.city),
+                bool(partner.census_gps_captured_at),
+            ]
+            completed = sum(checks)
+            partner.census_completion_pct = round(completed * 100 / len(checks))
+            if completed < len(checks) - 1:
+                partner.census_completion_state = "incomplete"
+            elif not partner.census_gps_captured_at:
+                partner.census_completion_state = "pending_gps"
+            else:
+                partner.census_completion_state = "complete"
 
-    def _get_census_requirements(self):
-        """Return the operational requirements for this customer's census.
-
-        GPS is intentionally NOT part of this list while the deployment does not
-        have HTTPS. The customer can therefore be fully operational without a GPS
-        capture, while the location fields remain available for later use.
-        """
-        self.ensure_one()
-        return [
-            (_("Razón social / cliente"), bool((self.name or "").strip())),
-            (_("RUC"), bool((self.vat or "").strip())),
-            (_("Nombre comercial / local"), bool((self.commercial_name or "").strip())),
-            (_("Número de tiendas / locales"), self.census_store_count > 0),
-            (_("Tipo(s) de negocio"), bool(self.business_type_ids)),
-            (_("Canal comercial"), bool(self.customer_segment)),
-            (_("Nombre del dueño"), bool((self.owner_contact_name or "").strip())),
-            (_("Teléfono del dueño"), bool((self.owner_phone or "").strip())),
-            (_("Contacto comercial"), bool((self.commercial_contact_name or "").strip())),
-            (_("Teléfono o móvil del contacto"), bool((self.phone or "").strip() or (self.mobile or "").strip())),
-            (_("Email"), bool((self.email or "").strip())),
-            (_("Dirección"), bool((self.street or "").strip())),
-            (_("Ciudad"), bool((self.city or "").strip())),
-            (_("Horario de atención"), bool(self.opening_hour_ids)),
-        ]
-
-    def _ensure_census_ready_for_activity(self):
-        for partner in self:
-            missing = [label for label, ok in partner._get_census_requirements() if not ok]
-            if missing:
-                raise UserError(
-                    _(
-                        "Complete el catastro antes de registrar visitas o crear proformas. "
-                        "Falta: %(missing)s. La ubicación GPS es opcional por ahora."
-                    )
-                    % {"missing": ", ".join(missing)}
-                )
-        return True
-
-    @api.constrains("census_store_count")
+    @api.constrains("store_count")
     def _check_census_store_count(self):
-        """Allow an incomplete draft, but never accept a negative store count."""
+        """Mantener integridad sin impedir guardar catastros incompletos.
+
+        La ficha muestra un porcentaje/estado de completitud y el vendedor puede
+        guardar avances desde móvil. Evitamos validar RUC, nombre comercial o
+        tipos de negocio en cada ``write`` porque eso también bloquea migraciones
+        de datos históricos incompletos.
+        """
         for partner in self:
-            if partner.census_store_count < 0:
-                raise ValidationError(_("El número de tiendas / locales no puede ser negativo."))
-
-    @api.constrains("vat", "census_active")
-    def _check_unique_census_vat(self):
-        """Un cliente catastrado debe tener una sola ficha activa por RUC."""
-        for partner in self:
-            vat = (partner.vat or "").strip()
-            if not partner.census_active or not vat:
-                continue
-            duplicate = self.with_context(active_test=False).search(
-                [
-                    ("id", "!=", partner.id),
-                    ("census_active", "=", True),
-                    ("vat", "=ilike", vat),
-                ],
-                limit=1,
-            )
-            if duplicate:
-                raise ValidationError(
-                    _(
-                        "Ya existe un catastro para el RUC %(vat)s: %(partner)s. "
-                        "Abra esa ficha y continúe alimentando su bitácora."
-                    )
-                    % {"vat": vat, "partner": duplicate.display_name}
-                )
-
-    def copy(self, default=None):
-        self.ensure_one()
-        if self.census_active:
-            raise UserError(
-                _(
-                    "El catastro es una ficha única por cliente y no se puede duplicar. "
-                    "Registre nuevas visitas o proformas dentro de esta misma ficha."
-                )
-            )
-        return super().copy(default=default)
-
-    def unlink(self):
-        if any(partner.census_active for partner in self) and not self.env.user.has_group(
-            "sales_team.group_sale_manager"
-        ):
-            raise UserError(
-                _(
-                    "Un vendedor no puede eliminar un cliente catastrado. "
-                    "La ficha debe conservarse como historial comercial."
-                )
-            )
-        return super().unlink()
+            if partner.census_active and partner.store_count < 1:
+                raise ValidationError(_("El número de locales debe ser al menos 1."))
 
     @api.onchange("census_gps_payload")
     def _onchange_census_gps_payload(self):
@@ -284,8 +189,6 @@ class ResPartner(models.Model):
     def create(self, vals_list):
         now = fields.Datetime.now()
         for vals in vals_list:
-            if vals.get("census_active") and not (vals.get("vat") or "").strip():
-                raise ValidationError(_("El RUC es obligatorio para crear una ficha de catastro."))
             parsed = parse_gps_payload(vals.get("census_gps_payload"))
             if parsed:
                 latitude, longitude, accuracy = parsed
@@ -305,11 +208,6 @@ class ResPartner(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
-        if vals.get("census_active") is True:
-            for partner in self:
-                resulting_vat = vals.get("vat", partner.vat)
-                if not (resulting_vat or "").strip():
-                    raise ValidationError(_("El RUC es obligatorio para activar el catastro de un cliente."))
         parsed = parse_gps_payload(vals.get("census_gps_payload"))
         if parsed:
             latitude, longitude, accuracy = parsed
@@ -343,7 +241,6 @@ class ResPartner(models.Model):
 
     def action_new_census_visit(self):
         self.ensure_one()
-        self._ensure_census_ready_for_activity()
         return {
             "type": "ir.actions.act_window",
             "name": _("Nueva visita"),
@@ -371,7 +268,10 @@ class ResPartner(models.Model):
     def action_view_census_quotations(self):
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id("sale.action_quotations_with_onboarding")
-        action["domain"] = [("partner_id", "=", self.id)]
+        action["domain"] = [
+            ("partner_id", "=", self.id),
+            ("census_originated", "=", True),
+        ]
         action["context"] = {
             "default_partner_id": self.id,
             "default_user_id": self.env.user.id,
@@ -382,7 +282,6 @@ class ResPartner(models.Model):
 
     def action_new_census_quotation(self):
         self.ensure_one()
-        self._ensure_census_ready_for_activity()
         return {
             "type": "ir.actions.act_window",
             "name": _("Nueva proforma"),

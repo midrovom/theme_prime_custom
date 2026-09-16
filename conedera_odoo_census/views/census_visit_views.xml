@@ -101,7 +101,7 @@
                         <div class="o_conedera_card_title">
                             <i class="fa fa-location-arrow"/> 1. Verificar ubicación
                         </div>
-                        <div class="o_conedera_hint">GPS opcional por ahora. Si dispone de HTTPS, puede capturarlo desde el local para validar la ubicación.</div>
+                        <div class="o_conedera_hint">Capture el GPS desde el local antes de finalizar la visita.</div>
                         <field name="gps_capture_payload" widget="gps_capture" nolabel="1" readonly="state != 'draft'"/>
                         <group invisible="not gps_captured_at">
                             <group>
@@ -229,7 +229,7 @@
         <field name="search_view_id" ref="view_census_visit_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Registre la primera visita comercial.</p>
-            <p>Complete la mini encuesta y genere la proforma desde la visita. El GPS es opcional temporalmente.</p>
+            <p>Capture GPS, complete la mini encuesta y genere la proforma desde la visita.</p>
         </field>
     </record>
 
