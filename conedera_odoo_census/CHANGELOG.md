@@ -1,3 +1,13 @@
+# 18.0.1.1.1
+
+- Recuperación defensiva para despliegues donde el código nuevo se carga antes de actualizar el esquema.
+- Pre-migración crea de forma idempotente las cuatro columnas nuevas de `res_partner` antes de cargar el módulo.
+- Catastros incompletos pueden guardarse; la completitud se comunica con el indicador visual en lugar de bloquear migraciones/escrituras.
+- Validación de `Número de locales` se mantiene.
+- Validación GPS del cliente usa la marca real de captura, no el valor numérico 0/0.
+- Un vendedor ya no puede cambiar el estado de una visita finalizada/cancelada.
+- Regla multi-compañía añadida a horarios de atención.
+
 # Changelog
 
 ## 18.0.1.1.0

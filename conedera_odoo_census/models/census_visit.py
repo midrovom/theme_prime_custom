@@ -113,7 +113,7 @@ class CensusVisit(models.Model):
                 continue
             customer_lat = visit.partner_id.partner_latitude
             customer_lon = visit.partner_id.partner_longitude
-            if not customer_lat and not customer_lon:
+            if not visit.partner_id.census_gps_captured_at:
                 visit.location_status = "no_customer_gps"
                 continue
             distance = haversine_distance_m(
@@ -195,12 +195,11 @@ class CensusVisit(models.Model):
             )
         if (
             "state" in vals
-            and any(visit.state in locked_states for visit in self)
-            and vals.get("state") not in locked_states
+            and any(visit.state in locked_states and vals.get("state") != visit.state for visit in self)
             and not is_manager
         ):
             raise UserError(
-                _("Solo un gerente de ventas puede reabrir una visita finalizada o cancelada.")
+                _("Solo un gerente de ventas puede cambiar el estado de una visita finalizada o cancelada.")
             )
         if "user_id" in vals and not is_manager and vals.get("user_id") != self.env.user.id:
             raise UserError(_("Un vendedor no puede reasignar la visita a otro usuario."))

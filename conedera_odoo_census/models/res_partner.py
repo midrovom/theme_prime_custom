@@ -161,19 +161,18 @@ class ResPartner(models.Model):
             else:
                 partner.census_completion_state = "complete"
 
-    @api.constrains("census_active", "store_count", "vat", "commercial_name", "business_type_ids")
-    def _check_census_required_values(self):
+    @api.constrains("store_count")
+    def _check_census_store_count(self):
+        """Mantener integridad sin impedir guardar catastros incompletos.
+
+        La ficha muestra un porcentaje/estado de completitud y el vendedor puede
+        guardar avances desde móvil. Evitamos validar RUC, nombre comercial o
+        tipos de negocio en cada ``write`` porque eso también bloquea migraciones
+        de datos históricos incompletos.
+        """
         for partner in self:
-            if not partner.census_active:
-                continue
-            if partner.store_count < 1:
+            if partner.census_active and partner.store_count < 1:
                 raise ValidationError(_("El número de locales debe ser al menos 1."))
-            if not partner.vat:
-                raise ValidationError(_("El RUC es obligatorio para un cliente catastrado."))
-            if not partner.commercial_name:
-                raise ValidationError(_("El nombre comercial / local es obligatorio."))
-            if not partner.business_type_ids:
-                raise ValidationError(_("Seleccione al menos un tipo de negocio."))
 
     @api.onchange("census_gps_payload")
     def _onchange_census_gps_payload(self):
