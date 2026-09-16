@@ -1,79 +1,48 @@
-# Conedera - Catastro Comercial (Odoo 18 Community)
+# Conedera Catastro Comercial — Odoo 18 Community
 
-Módulo para **Odoo 18 Community** orientado al catastro de clientes y visitas comerciales de vendedores de campo.
+Versión: **18.0.1.1.2**
 
-## Dependencias
+Módulo Community para catastro móvil de clientes, múltiples tipos de negocio, horarios estructurados, visitas con GPS y generación de proformas estándar de Odoo.
 
-Solo utiliza módulos disponibles en Community:
+## Recuperación de una base con `UndefinedColumn`
 
-- `contacts`
-- `mail`
-- `sale_management`
-- `web`
+Si la base muestra errores como `res_partner.owner_contact_name does not exist`, **no use la interfaz web para actualizar**. El código ya se cargó pero la base no terminó el upgrade.
 
-No depende de `web_map`, Studio ni otros módulos Enterprise.
+Ejemplo (ajuste usuario, configuración y base):
 
-## Qué reutiliza de Odoo
+```bash
+sudo systemctl stop odoo18
+cd /opt/odoo18/odoo18/custom-addons
+sudo rm -rf conedera_odoo_census
+sudo unzip /RUTA/conedera_odoo_census_18_community_18.0.1.1.2.zip -d /opt/odoo18/odoo18/custom-addons/
 
-- `res.partner`: cliente, RUC (`vat`), dirección, ciudad, email, vendedor y coordenadas estándar.
-- `sale.order`: cotizaciones/proformas y flujo comercial existente.
-- `mail.thread` y `mail.activity.mixin`: chatter, trazabilidad y actividades.
-- Vistas estándar list/form/pivot/graph para operación y análisis.
+sudo -u odoo18 /opt/odoo18/odoo18/odoo-bin \
+  -c /etc/odoo18.conf \
+  -d NOMBRE_BASE \
+  -u conedera_odoo_census \
+  --stop-after-init \
+  --no-http
+```
 
-## Qué agrega
+Solo si ese comando termina limpio:
 
-- Pestaña **Catastro comercial** en Contactos.
-- Clasificación de negocio y cliente según el archivo BORRADOR ODOO.
-- Captura GPS desde el navegador del celular y guardado en `partner_latitude/partner_longitude`.
-- Modelo **Visita comercial** con mini encuesta, foto, observaciones, GPS y validación de distancia.
-- Tolerancia de ubicación por visita (300 m por defecto).
-- Generación de cotización/proforma estándar desde cliente o visita.
-- Reagendamiento mediante actividades estándar de Odoo.
-- Enlace `sale.order.census_visit_id` para trazabilidad visita → proforma.
-- Apertura de la ubicación del cliente y de cada visita en **OpenStreetMap**, sin API key.
-- Seguridad: vendedor ve sus visitas, no puede borrar visitas y no puede modificar/reabrir una visita finalizada; gerente de ventas administra las visitas de sus compañías.
+```bash
+sudo systemctl start odoo18
+```
 
-## Campos del Excel cubiertos
+## Verificación SQL posterior
 
-- Nombre del cliente → `res.partner.name`
-- RUC → `res.partner.vat`
-- Contacto dueño → `owner_phone`
-- Contacto comercial → `commercial_contact_phone`
-- Nombre de la tienda → `commercial_name`
-- Ciudad / Dirección / Email → campos estándar de Contactos
-- Número de tiendas → `store_count`
-- CAPA → `capa` (pendiente definir semántica exacta)
-- Tipo de negocio → `business_type`
-- Tipo de cliente → `customer_census_type`
-- Resultado de visita → campos de `conedera.census.visit`
+```sql
+SELECT column_name
+FROM information_schema.columns
+WHERE table_name = 'res_partner'
+  AND column_name IN (
+    'census_active','census_date','census_user_id','commercial_name','store_count',
+    'owner_contact_name','owner_phone','commercial_contact_name','commercial_contact_phone',
+    'business_description','customer_segment','business_type','customer_census_type','capa',
+    'census_gps_payload','census_gps_accuracy','census_gps_captured_at'
+  )
+ORDER BY column_name;
+```
 
-## Instalación
-
-1. Copiar la carpeta `conedera_odoo_census` al directorio incluido en `addons_path`.
-2. Reiniciar Odoo 18.
-3. Activar modo desarrollador si hace falta y actualizar la lista de aplicaciones.
-4. Instalar **Conedera - Catastro Comercial (Community)**.
-5. Conceder al vendedor permisos de Ventas.
-
-La geolocalización del navegador requiere **HTTPS** (excepto `localhost`) y permiso de ubicación del dispositivo.
-
-## Flujo recomendado
-
-1. Catastro Comercial → Clientes catastrados → Nuevo.
-2. Completar ficha y pestaña Catastro comercial.
-3. Capturar GPS y guardar.
-4. Desde el cliente, Registrar visita.
-5. Capturar GPS de la visita, responder la mini encuesta y finalizar.
-6. Generar proforma; Odoo abre una cotización estándar enlazada a la visita.
-7. Supervisor usa Visitas / Análisis para revisar productividad y registros fuera de ubicación.
-8. Los botones **Abrir ubicación en mapa** muestran el punto capturado en OpenStreetMap.
-
-## Mapa y recorrido en Community
-
-Esta versión **no usa la vista Map Enterprise**. Conserva todos los puntos GPS reales de las visitas y permite abrir cada punto en OpenStreetMap.
-
-El recorrido continuo del vendedor (línea GPS durante toda la jornada) no se captura en segundo plano en este MVP. La siguiente fase Community puede incorporar un dashboard cartográfico propio (por ejemplo con Leaflet/OpenStreetMap) para representar todos los puntos del día y el recorrido sin licencias Enterprise.
-
-## Compatibilidad
-
-Versión técnica del módulo: `18.0.1.0.0`.
+Deben aparecer **17 columnas**.
