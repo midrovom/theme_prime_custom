@@ -263,7 +263,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                         <div class="col-md-3">
                             <label class="fs-6">Adjuntar Documento (PDF) <span class="required-asterisk">*</span></label>
                                 <input type="file" name="famArchivo_${this.familyCount}" class="form-control rounded-pill fam-archivo-doc d-none" accept="application/pdf"/>
-                            <div class="invalid-feedback">Adjunte PDF si tipo es partida de nacimiento</div>
+                            <div class="invalid-feedback">Adjunte PDF si el documento es tipo partida de nacimiento</div>
                         </div>
 
                         <!-- Fecha -->
@@ -2470,19 +2470,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         }
     },
 
-    // Bloquear campo de experiencia cuando tenga valor 
-    async _onChangeTotalExperiences(ev) {
-        const cantidad = parseInt($(ev.currentTarget).val(), 10) || 0;
-        this.$('#experience_container .experience-block').remove();
-        for (let i = 0; i < cantidad; i++) {
-            this.experienceCount++;
-            const blockHtml = await this._getExperienceBlock();
-            this.$('#experience_container').append(blockHtml);
-        }
-
-        this.$('#total_experiences').prop('disabled', true);
-    },
-
     async _addFamilyBlock(parentesco) {
         const FAMILY_TYPES_MAP = {
             '1': 'Padre',
@@ -2577,6 +2564,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                 for (let i = 0; i < num; i++) {
                     await this._addExperienceBlock();
                 }
+                this.$('#total_experiences').prop('disabled', true);
             }
         });
     },
