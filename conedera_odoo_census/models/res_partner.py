@@ -7,18 +7,52 @@ from .gps_utils import parse_gps_payload
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
+    # Estado y auditoría del catastro
     census_active = fields.Boolean(string="Cliente catastrado", tracking=True)
     census_date = fields.Datetime(string="Fecha de catastro", readonly=True, copy=False)
     census_user_id = fields.Many2one(
         "res.users", string="Catastrado por", readonly=True, copy=False
     )
 
-    owner_phone = fields.Char(string="Contacto dueño")
-    commercial_contact_phone = fields.Char(string="Contacto comercial")
-    commercial_name = fields.Char(string="Nombre de la tienda")
-    store_count = fields.Integer(string="Número de tiendas", default=1)
-    capa = fields.Float(string="CAPA", help="Campo CAPA definido en el formulario original.")
+    # Datos comerciales propios del catastro
+    commercial_name = fields.Char(string="Nombre comercial / local")
+    store_count = fields.Integer(string="Número de locales", default=1)
+    owner_contact_name = fields.Char(string="Nombre del dueño")
+    owner_phone = fields.Char(string="Teléfono del dueño")
+    commercial_contact_name = fields.Char(string="Contacto comercial")
+    commercial_contact_phone = fields.Char(string="Teléfono comercial (legado)")
 
+    business_type_ids = fields.Many2many(
+        "conedera.census.business.type",
+        "conedera_partner_business_type_rel",
+        "partner_id",
+        "business_type_id",
+        string="Tipos de negocio",
+        tracking=True,
+    )
+    business_description = fields.Char(
+        string="Especialidad / detalle",
+        help="Detalle opcional para describir líneas de negocio no cubiertas por las etiquetas.",
+    )
+    customer_segment = fields.Selection(
+        [
+            ("wholesaler", "Mayorista"),
+            ("reseller", "Revendedor / distribuidor"),
+            ("retail", "Tienda al detalle"),
+            ("mixed", "Mixto"),
+            ("other", "Otro"),
+        ],
+        string="Canal comercial",
+        tracking=True,
+    )
+
+    opening_hour_ids = fields.One2many(
+        "conedera.partner.opening.hour",
+        "partner_id",
+        string="Horario de atención",
+    )
+
+    # Campos heredados de versiones anteriores. Se conservan para no romper datos existentes.
     business_type = fields.Selection(
         [
             ("cellphones", "Celulares"),
@@ -28,47 +62,49 @@ class ResPartner(models.Model):
             ("computing", "Cómputo"),
             ("other", "Otros"),
         ],
-        string="Tipo de negocio",
-        tracking=True,
+        string="Tipo de negocio (legado)",
     )
-    business_type_other = fields.Char(string="Especificar otro negocio")
     customer_census_type = fields.Selection(
         [
             ("wholesaler", "Mayorista"),
             ("reseller", "Reseller"),
             ("route", "Ruteo"),
         ],
-        string="Tipo de cliente",
-        tracking=True,
+        string="Tipo de cliente (legado)",
     )
+    capa = fields.Float(string="CAPA (legado)")
 
+    # GPS del local
     census_gps_payload = fields.Char(string="Captura GPS", copy=False)
     census_gps_accuracy = fields.Float(string="Precisión GPS (m)", readonly=True, copy=False)
     census_gps_captured_at = fields.Datetime(
         string="GPS capturado el", readonly=True, copy=False
     )
 
+    # Historial y métricas de UI
     census_visit_ids = fields.One2many(
         "conedera.census.visit", "partner_id", string="Visitas comerciales"
     )
-    census_visit_count = fields.Integer(
-        compute="_compute_census_stats", string="Visitas"
-    )
-    census_quotation_count = fields.Integer(
-        compute="_compute_census_stats", string="Proformas"
-    )
+    census_visit_count = fields.Integer(compute="_compute_census_stats", string="Visitas")
+    census_quotation_count = fields.Integer(compute="_compute_census_stats", string="Proformas")
     census_last_visit_datetime = fields.Datetime(
         compute="_compute_census_stats", string="Última visita"
+    )
+    census_completion_state = fields.Selection(
+        [
+            ("incomplete", "Faltan datos"),
+            ("pending_gps", "Pendiente GPS"),
+            ("complete", "Catastro completo"),
+        ],
+        compute="_compute_census_completion",
+        string="Estado del catastro",
+    )
+    census_completion_pct = fields.Integer(
+        compute="_compute_census_completion", string="Completitud"
     )
 
     @api.depends("census_visit_ids.visit_datetime", "census_visit_ids.quotation_ids")
     def _compute_census_stats(self):
-        """Métricas de UI no almacenadas.
-
-        Se mantienen fuera de SQL a propósito: son indicadores derivados y no deben
-        exigir columnas/migraciones en res_partner. La vista de lista se ordena por
-        un campo estándar almacenado (write_date).
-        """
         partner_ids = self.ids
         visit_counts = {partner_id: 0 for partner_id in partner_ids}
         quotation_counts = {partner_id: 0 for partner_id in partner_ids}
@@ -95,31 +131,49 @@ class ResPartner(models.Model):
             partner.census_quotation_count = quotation_counts.get(partner.id, 0)
             partner.census_last_visit_datetime = last_visits.get(partner.id, False)
 
-    @api.constrains(
-        "census_active",
-        "store_count",
+    @api.depends(
+        "name",
         "vat",
         "commercial_name",
-        "business_type",
-        "business_type_other",
-        "customer_census_type",
+        "store_count",
+        "business_type_ids",
+        "street",
+        "city",
+        "census_gps_captured_at",
     )
+    def _compute_census_completion(self):
+        for partner in self:
+            checks = [
+                bool(partner.name),
+                bool(partner.vat),
+                bool(partner.commercial_name),
+                partner.store_count >= 1,
+                bool(partner.business_type_ids),
+                bool(partner.street or partner.city),
+                bool(partner.census_gps_captured_at),
+            ]
+            completed = sum(checks)
+            partner.census_completion_pct = round(completed * 100 / len(checks))
+            if completed < len(checks) - 1:
+                partner.census_completion_state = "incomplete"
+            elif not partner.census_gps_captured_at:
+                partner.census_completion_state = "pending_gps"
+            else:
+                partner.census_completion_state = "complete"
+
+    @api.constrains("census_active", "store_count", "vat", "commercial_name", "business_type_ids")
     def _check_census_required_values(self):
         for partner in self:
             if not partner.census_active:
                 continue
             if partner.store_count < 1:
-                raise ValidationError(_("El número de tiendas debe ser al menos 1."))
+                raise ValidationError(_("El número de locales debe ser al menos 1."))
             if not partner.vat:
                 raise ValidationError(_("El RUC es obligatorio para un cliente catastrado."))
             if not partner.commercial_name:
-                raise ValidationError(_("El nombre de la tienda es obligatorio para un cliente catastrado."))
-            if not partner.business_type:
-                raise ValidationError(_("Seleccione el tipo de negocio."))
-            if partner.business_type == "other" and not partner.business_type_other:
-                raise ValidationError(_("Especifique el tipo de negocio en Otros."))
-            if not partner.customer_census_type:
-                raise ValidationError(_("Seleccione el tipo de cliente."))
+                raise ValidationError(_("El nombre comercial / local es obligatorio."))
+            if not partner.business_type_ids:
+                raise ValidationError(_("Seleccione al menos un tipo de negocio."))
 
     @api.onchange("census_gps_payload")
     def _onchange_census_gps_payload(self):
@@ -150,6 +204,7 @@ class ResPartner(models.Model):
             if vals.get("census_active"):
                 vals.setdefault("census_date", now)
                 vals.setdefault("census_user_id", self.env.user.id)
+                vals.setdefault("customer_rank", 1)
         return super().create(vals_list)
 
     def write(self, vals):
