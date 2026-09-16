@@ -40,19 +40,19 @@
     <record id="document_variable_company_sucursal_name" model="hr.ec.document.variable">
         <field name="name">NOMBRE DE LA SUCURSAL</field>
         <field name="key">EMPRESA_SUCURSAL_NOMBRE</field>
-        <field name="expression">object.company_config_id.sucursal_id.name</field>
+        <field name="expression">object.company_config_id.sucursal_ids.name</field>
     </record>
 
     <record id="document_variable_company_sucursal_direccion" model="hr.ec.document.variable">
         <field name="name">DIRECCIÓN DE LA SUCURSAL</field>
         <field name="key">EMPRESA_SUCURSAL_DIRECCION</field>
-        <field name="expression">object.company_config_id.sucursal_id.direccion</field>
+        <field name="expression">object.company_config_id.sucursal_ids.direccion</field>
     </record>
 
     <record id="document_variable_company_sucursal_ciudad" model="hr.ec.document.variable">
         <field name="name">CIUDAD DE LA SUCURSAL</field>
         <field name="key">EMPRESA_SUCURSAL_CIUDAD</field>
-        <field name="expression">object.company_config_id.sucursal_id.ciudad</field>
+        <field name="expression">object.company_config_id.sucursal_ids.ciudad</field>
     </record>
 
     <record id="document_variable_representante" model="hr.ec.document.variable">
