@@ -2530,6 +2530,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         for (let j = 0; j < cantidad; j++) {
             await this._addFamilyBlock('3'); 
         }
+         this.$('#famNumHermanos').prop('disabled', true);
     },
 
     _onChangeNumHijos: async function(ev) {
@@ -2545,11 +2546,10 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     this.$('#family_container').append(blockHtml);
                 }
             }
-            
+
             this.$('#hr-hijos').prop('disabled', true);
         }
     },
-
 
 
     async _addFamilyBlock(parentesco) {
