@@ -74,10 +74,10 @@
 //     },
 // });
 
-  /** @odoo-module **/
+
+/** @odoo-module **/
 
 import { Component, useState } from "@odoo/owl";
-import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 import { ControlPanel } from "@web/search/control_panel/control_panel";
 import { rpc } from "@web/core/network/rpc";
@@ -90,8 +90,6 @@ export class EcOnboardingDateFilter extends Component {
             open: false,
             date: "",
         });
-
-        this.searchService = useService("search");
     }
 
     toggle() {
@@ -104,26 +102,15 @@ export class EcOnboardingDateFilter extends Component {
 
     async apply() {
         const value = this.state.date;
-
-        if (!value) {
-            return;
-        }
+        if (!value) return;
 
         try {
             const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
                 date_str: value,
             });
 
-            console.log("IDs encontrados:", ids);
-
-            const searchModel = this.searchService.getSearchModel();
-
-            console.log("SearchModel:", searchModel);
-
-            searchModel.setDomain([
-                ["id", "in", ids],
-            ]);
-
+            // Aplicar dominio directamente al modelo de búsqueda
+            this.env.searchModel.setDomain([["id", "in", ids]]);
         } catch (err) {
             console.error("Error al consultar:", err);
         }
@@ -131,10 +118,17 @@ export class EcOnboardingDateFilter extends Component {
         this.state.open = false;
     }
 
-    clear() {
-        const searchModel = this.searchService.getSearchModel();
+    async clear() {
+        try {
+            const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
+                date_str: "",
+            });
 
-        searchModel.setDomain([]);
+            // Limpiar el dominio y mostrar todos los registros
+            this.env.searchModel.setDomain([]);
+        } catch (err) {
+            console.error("Error al limpiar:", err);
+        }
 
         this.state.date = "";
         this.state.open = false;
@@ -147,3 +141,4 @@ patch(ControlPanel, {
         EcOnboardingDateFilter,
     },
 });
+
