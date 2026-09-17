@@ -105,14 +105,19 @@ export class EcOnboardingDateFilter extends Component {
         if (!value) return;
 
         try {
-            const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
-                date_str: value,
-            });
+            // Construir rango de la fecha seleccionada
+            const start = `${value} 00:00:00`;
+            const end = `${value} 23:59:59`;
 
-            // Aplicar dominio directamente al modelo de búsqueda
-            this.env.searchModel.setDomain([["id", "in", ids]]);
+            const domain = [
+                ["generated_at", ">=", start],
+                ["generated_at", "<=", end],
+            ];
+
+            // Aplicar dominio directamente
+            this.env.searchModel.setDomain(domain);
         } catch (err) {
-            console.error("Error al consultar:", err);
+            console.error("Error al aplicar filtro:", err);
         }
 
         this.state.open = false;
@@ -120,11 +125,7 @@ export class EcOnboardingDateFilter extends Component {
 
     async clear() {
         try {
-            const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
-                date_str: "",
-            });
-
-            // Limpiar el dominio y mostrar todos los registros
+            // Limpiar dominio
             this.env.searchModel.setDomain([]);
         } catch (err) {
             console.error("Error al limpiar:", err);
@@ -133,6 +134,8 @@ export class EcOnboardingDateFilter extends Component {
         this.state.date = "";
         this.state.open = false;
     }
+
+
 }
 
 patch(ControlPanel, {
