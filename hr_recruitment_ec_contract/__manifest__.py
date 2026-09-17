@@ -36,6 +36,7 @@
     "assets": {
         "web.assets_backend": [
             "hr_recruitment_ec_contract/static/src/js/document_variable_drag.js",
+            'hr_recruitment_ec_contract/static/src/js/onboarding_package_date_filter.js',
             "hr_recruitment_ec_contract/static/src/xml/document_variable_drag.xml",
         ],
     },
