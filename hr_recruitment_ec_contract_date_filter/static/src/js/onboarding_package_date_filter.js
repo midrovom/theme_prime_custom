@@ -108,16 +108,20 @@ export class EcOnboardingDateFilter extends Component {
                 date_str: value,
             });
 
-            // Refrescar la vista actual con dominio, sin reemplazar acción
-            this.env.services.view.update({
-                domain: [["id", "in", ids]],
-            });
+            // Refrescar la vista actual con reload
+            const action = this.env.services.action.currentAction;
+            if (action) {
+                this.env.services.action.reload({
+                    domain: [["id", "in", ids]],
+                });
+            }
         } catch (err) {
             console.error("Error al consultar:", err);
         }
 
         this.state.open = false;
     }
+
 
     async clear() {
         try {
