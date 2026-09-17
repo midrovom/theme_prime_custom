@@ -2,49 +2,80 @@
 
 <templates xml:space="preserve">
 
+
+    <!-- ========================================================
+         COMPONENTE FILTRO
+         ======================================================== -->
+
     <t t-name="hr_recruitment_ec_contract_date_filter.DateFilter">
 
         <div class="o_ec_date_filter position-relative">
 
+
+            <!-- =================================================
+                 BOTÓN FILTRAR
+                 ================================================= -->
+
             <button
                 type="button"
-                class="btn btn-outline-secondary"
-                t-on-click="toggle">
+                class="btn btn-outline-secondary o_ec_date_filter_button"
+                t-on-click="toggle"
+                title="Filtrar por fecha">
 
                 <i class="fa fa-calendar me-1"/>
 
-                <span>Filtrar</span>
+                <span>
+                    Filtrar
+                </span>
 
             </button>
 
 
+            <!-- =================================================
+                 POPUP
+                 ================================================= -->
+
             <t t-if="state.open">
 
-                <div
-                    class="o_ec_date_filter_dropdown bg-white border rounded shadow p-3 position-absolute"
-                    style="z-index: 1100; min-width: 300px; right: 0; top: 100%;">
+                <div class="o_ec_date_filter_dropdown">
+
+
+                    <!-- TITULO -->
 
                     <div class="fw-bold mb-3">
+
                         Filtrar paquetes
+
                     </div>
 
+
+                    <!-- FECHA -->
 
                     <div class="mb-3">
 
                         <label class="form-label">
+
                             Generado el
+
                         </label>
+
 
                         <input
                             type="date"
                             class="form-control"
-                            t-att-value="state.date || ''"
-                            t-on-change="onDateChange"/>
+                            t-att-value="state.date"
+                            t-on-change="onDateChange"
+                        />
 
                     </div>
 
 
+                    <!-- BOTONES -->
+
                     <div class="d-flex justify-content-between">
+
+
+                        <!-- LIMPIAR -->
 
                         <button
                             type="button"
@@ -56,10 +87,12 @@
                         </button>
 
 
+                        <!-- APLICAR -->
+
                         <button
                             type="button"
                             class="btn btn-primary"
-                            t-on-click="close">
+                            t-on-click="apply">
 
                             Aplicar
 
@@ -72,6 +105,30 @@
             </t>
 
         </div>
+
+    </t>
+
+
+    <!-- ========================================================
+         EXTENDER CONTROL PANEL
+         ======================================================== -->
+
+    <t t-inherit="web.ControlPanel"
+       t-inherit-mode="extension">
+
+        <xpath
+            expr="//div[hasclass('o_control_panel_actions')]"
+            position="inside">
+
+
+            <EcOnboardingDateFilter
+                t-if="env.searchModel and env.searchModel.resModel === 'hr.ec.onboarding.package'"
+                searchModel="env.searchModel"
+            />
+
+
+        </xpath>
+
 
     </t>
 

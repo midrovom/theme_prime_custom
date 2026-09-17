@@ -10,7 +10,7 @@
         "web",
     ],
     "data": [
-        'view/onboarding_package_views.xml',
+        # 'view/onboarding_package_views.xml',
     ],
     "assets": {
         "web.assets_backend": [

@@ -1,9 +1,15 @@
 /** @odoo-module **/
 
 import { Component, useState } from "@odoo/owl";
-import { registry } from "@web/core/registry";
-import { useService } from "@web/core/utils/hooks";
+import { patch } from "@web/core/utils/patch";
+import { ControlPanel } from "@web/search/control_panel/control_panel";
 
+
+/**
+ * ============================================================
+ * COMPONENTE DEL FILTRO
+ * ============================================================
+ */
 
 export class EcOnboardingDateFilter extends Component {
 
@@ -13,16 +19,17 @@ export class EcOnboardingDateFilter extends Component {
 
     setup() {
 
-        this.searchModel = useService("search");
-
         this.state = useState({
             open: false,
-            date: null,
+            date: "",
         });
 
     }
 
 
+    /**
+     * Abrir / cerrar calendario
+     */
     toggle() {
 
         this.state.open = !this.state.open;
@@ -30,6 +37,9 @@ export class EcOnboardingDateFilter extends Component {
     }
 
 
+    /**
+     * Cerrar popup
+     */
     close() {
 
         this.state.open = false;
@@ -37,48 +47,75 @@ export class EcOnboardingDateFilter extends Component {
     }
 
 
-    async onDateChange(ev) {
+    /**
+     * Cuando el usuario selecciona una fecha
+     */
+    onDateChange(ev) {
 
         const value = ev.target.value;
 
         if (!value) {
-
-            await this.clear();
-
             return;
         }
 
-
         this.state.date = value;
-
-        await this.applyDateFilter(value);
 
     }
 
 
-    async applyDateFilter(value) {
+    /**
+     * Aplicar filtro
+     */
+    apply() {
+
+        const value = this.state.date;
+
+        if (!value) {
+            return;
+        }
+
 
         /*
-         * Fecha inicial.
+         * Obtenemos el SearchModel del ControlPanel.
+         */
+        const searchModel = this.props.searchModel;
+
+
+        if (!searchModel) {
+
+            console.error(
+                "EC Date Filter: SearchModel no disponible"
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * =====================================================
+         * FECHA INICIAL
+         * =====================================================
          *
          * Ejemplo:
          *
          * 2026-09-17 00:00:00
          */
 
-        const startDate = `${value} 00:00:00`;
+        const startDate =
+            `${value} 00:00:00`;
 
 
         /*
-         * Calculamos el día siguiente.
+         * =====================================================
+         * FECHA FINAL
+         * =====================================================
          *
-         * Esto permite buscar todo el día seleccionado
-         * sin importar la hora de generated_at.
+         * Tomamos el día siguiente.
          */
 
-        const [year, month, day] = value
-            .split("-")
-            .map(Number);
+        const [year, month, day] =
+            value.split("-").map(Number);
 
 
         const nextDate = new Date(
@@ -93,22 +130,19 @@ export class EcOnboardingDateFilter extends Component {
         );
 
 
-        const nextYear = nextDate
-            .getFullYear()
-            .toString()
-            .padStart(4, "0");
+        const nextYear =
+            String(nextDate.getFullYear())
+                .padStart(4, "0");
 
 
-        const nextMonth = (nextDate
-            .getMonth() + 1)
-            .toString()
-            .padStart(2, "0");
+        const nextMonth =
+            String(nextDate.getMonth() + 1)
+                .padStart(2, "0");
 
 
-        const nextDay = nextDate
-            .getDate()
-            .toString()
-            .padStart(2, "0");
+        const nextDay =
+            String(nextDate.getDate())
+                .padStart(2, "0");
 
 
         const endDate =
@@ -116,10 +150,9 @@ export class EcOnboardingDateFilter extends Component {
 
 
         /*
-         * Dominio:
-         *
-         * generated_at >= día seleccionado
-         * generated_at < día siguiente
+         * =====================================================
+         * DOMINIO
+         * =====================================================
          */
 
         const domain = [
@@ -128,29 +161,68 @@ export class EcOnboardingDateFilter extends Component {
         ];
 
 
+        console.log(
+            "EC Date Filter - Aplicando:",
+            domain
+        );
+
+
         /*
-         * Aplicamos el dominio.
+         * =====================================================
+         * APLICAR AL SEARCH MODEL
+         * =====================================================
          */
 
-        await this.env.searchModel.setDomain(domain);
+        searchModel.setDomain(domain);
+
+
+        /*
+         * Cerramos popup
+         */
+
+        this.state.open = false;
 
     }
 
 
-    async clear() {
+    /**
+     * Limpiar filtro
+     */
+    clear() {
 
-        this.state.date = null;
+        this.state.date = "";
 
-        await this.env.searchModel.setDomain([]);
+
+        const searchModel =
+            this.props.searchModel;
+
+
+        if (!searchModel) {
+            return;
+        }
+
+
+        searchModel.setDomain([]);
+
+
+        this.state.open = false;
 
     }
 
 }
 
 
-registry.category("view_widgets").add(
-    "ec_onboarding_date_filter",
-    {
-        component: EcOnboardingDateFilter,
-    }
-);
+/**
+ * ============================================================
+ * REGISTRAR COMPONENTE EN CONTROL PANEL
+ * ============================================================
+ */
+
+patch(ControlPanel, {
+
+    components: {
+        ...ControlPanel.components,
+        EcOnboardingDateFilter,
+    },
+
+});
