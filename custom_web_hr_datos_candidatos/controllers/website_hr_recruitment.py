@@ -244,13 +244,10 @@ class WebsiteHRRecruitment(http.Controller):
 
 
             # ---------------- Experiencia Laboral ----------------
-
-            total_experiences = kwargs.get('total_experiences')
-            if total_experiences:
-                applicant_values['experiencia'] = int(total_experiences)
-
             experience_lines = []
             j = 1
+
+            total_experiences = kwargs.get('total_experiences')
 
             while kwargs.get(f'cargo_{j}') is not None:
                 cargo = kwargs.get(f'cargo_{j}')

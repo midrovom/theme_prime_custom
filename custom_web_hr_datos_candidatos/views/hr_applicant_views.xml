@@ -131,6 +131,7 @@
                     <page string="Experiencia Laboral" name="page_experience">
                         <field name="experience_job_ids" readonly="is_readonly_group">
                             <list>
+                                <field name="experiencia"/>
                                 <field name="tiempo_servicio"/>
                                 <field name="empresa"/>
                                 <field name="country_id"/>
