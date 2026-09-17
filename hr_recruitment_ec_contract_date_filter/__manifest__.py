@@ -10,7 +10,7 @@
         "web",
     ],
     "data": [
-        "views/hr_ec_onboarding_package_views.xml",
+        # "views/hr_ec_onboarding_package_views.xml",
     ],
     "assets": {
         "web.assets_backend": [
