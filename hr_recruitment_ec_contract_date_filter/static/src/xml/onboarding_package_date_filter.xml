@@ -1,121 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <templates xml:space="preserve">
-
-
-    <!-- ========================================================
-         FILTRO DE FECHA
-         ======================================================== -->
-
     <t t-name="hr_recruitment_ec_contract_date_filter.DateFilter">
-
         <div class="o_ec_date_filter">
-
-
-            <!-- =================================================
-                 BOTÓN FILTRAR
-                 ================================================= -->
-
-            <button
-                type="button"
-                class="btn btn-outline-secondary o_ec_date_filter_button"
-                t-on-click="toggle"
-                title="Filtrar por fecha">
-
+            <button type="button" class="btn btn-outline-secondary o_ec_date_filter_button" t-on-click="toggle" title="Filtrar por fecha">
                 <i class="fa fa-calendar me-1"/>
-
                 <span>Filtrar</span>
-
             </button>
-
 
             <!-- =================================================
                  POPUP
                  ================================================= -->
 
             <t t-if="state.open">
-
                 <div class="o_ec_date_filter_dropdown">
-
-
-                    <!-- FECHA -->
-
                     <div class="mb-3">
-
-                        <label class="form-label">
-
-                            Generado el
-
-                        </label>
-
-
-                        <input
-                            type="date"
-                            class="form-control"
-                            t-att-value="state.date"
-                            t-on-change="onDateChange"
-                        />
-
+                        <label class="form-label"> Generado el </label>
+                        <input type="date" class="form-control" t-att-value="state.date" t-on-change="onDateChange"/>
                     </div>
-
-
-                    <!-- BOTONES -->
 
                     <div class="d-flex justify-content-between">
-
-
-                        <!-- LIMPIAR -->
-
-                        <button
-                            type="button"
-                            class="btn btn-link"
-                            t-on-click="clear">
-
+                        <button type="button" class="btn btn-link" t-on-click="clear">
                             Limpiar
-
                         </button>
 
-
-                        <!-- APLICAR -->
-
-                        <button
-                            type="button"
-                            class="btn btn-primary"
-                            t-on-click="apply">
-
+                        <button type="button" class="btn btn-primary" t-on-click="apply">
                             Aplicar
-
                         </button>
 
                     </div>
-
                 </div>
-
             </t>
-
         </div>
-
     </t>
-
 
     <!-- ========================================================
          CONTROL PANEL
          ======================================================== -->
 
-    <t t-inherit="web.ControlPanel"
-       t-inherit-mode="extension">
-
-        <xpath
-            expr="//div[hasclass('o_control_panel_actions')]"
-            position="inside">
-
+    <t t-inherit="web.ControlPanel" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o_control_panel_actions')]" position="inside">
             <EcOnboardingDateFilter
                 t-if="env.searchModel and env.searchModel.resModel === 'hr.ec.onboarding.package'"
                 searchModel="env.searchModel"
             />
-
         </xpath>
-
     </t>
 
 </templates>
