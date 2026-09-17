@@ -113,7 +113,7 @@ class WebsiteHRRecruitment(http.Controller):
                 'document_type': kwargs.get('documentType'),
                 'provincia_id': safe_int(kwargs.get('provincia')),
                 'image_1920': imagen_b64,
-                'total_experiences': total_experiences,
+                'experiencia': total_experiences,
             }
 
             # ---------------- Adjuntar Documentos ----------------
