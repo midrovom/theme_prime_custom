@@ -74,7 +74,6 @@
 //     },
 // });
 
-
 /** @odoo-module **/
 
 import { Component, useState } from "@odoo/owl";
@@ -107,18 +106,23 @@ export class EcOnboardingDateFilter extends Component {
         const start = `${value} 00:00:00`;
         const end = `${value} 23:59:59`;
 
-        this.env.searchModel.setDomain([
-            ["generated_at", ">=", start],
-            ["generated_at", "<=", end],
-        ]);
+        try {
+            // Aplica el dominio sobre la vista actual
+            this.env.searchModel.updateDomain([
+                ["generated_at", ">=", start],
+                ["generated_at", "<=", end],
+            ]);
+        } catch (err) {
+            console.error("Error al aplicar filtro:", err);
+        }
 
         this.state.open = false;
     }
 
     async clear() {
         try {
-            // Limpiar dominio
-            this.env.searchModel.setDomain([]);
+            // Limpia el dominio
+            this.env.searchModel.updateDomain([]);
         } catch (err) {
             console.error("Error al limpiar:", err);
         }
@@ -126,8 +130,6 @@ export class EcOnboardingDateFilter extends Component {
         this.state.date = "";
         this.state.open = false;
     }
-
-
 }
 
 patch(ControlPanel, {
@@ -136,4 +138,3 @@ patch(ControlPanel, {
         EcOnboardingDateFilter,
     },
 });
-
