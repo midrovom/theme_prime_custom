@@ -1,4 +1,4 @@
-// /** @odoo-module **/
+/** @odoo-module **/
 
 // import { Component, useState } from "@odoo/owl";
 // import { patch } from "@web/core/utils/patch";
@@ -27,20 +27,22 @@
 //         const value = this.state.date;
 //         if (!value) return;
 
-//         try {
-//             const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
-//                 date_str: value,
-//             });
+//         const start = `${value} 00:00:00`;
+//         const end = `${value} 23:59:59`;
 
-//             // Refrescar la vista lista estándar con dominio
-//             this.env.services.action.doAction({
+//         try {
+//             // Refrescar la vista con dominio dinámico
+//             await this.env.services.action.doAction({
 //                 type: "ir.actions.act_window",
 //                 res_model: "hr.ec.onboarding.package",
 //                 views: [[false, "list"], [false, "form"]],
-//                 domain: [["id", "in", ids]],
+//                 domain: [
+//                     ["generated_at", ">=", start],
+//                     ["generated_at", "<=", end],
+//                 ],
 //             });
 //         } catch (err) {
-//             console.error("Error al consultar:", err);
+//             console.error("Error al aplicar filtro:", err);
 //         }
 
 //         this.state.open = false;
@@ -48,15 +50,12 @@
 
 //     async clear() {
 //         try {
-//             const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
-//                 date_str: "",
-//             });
-
-//             this.env.services.action.doAction({
+//             // Refrescar la vista sin dominio (todos los registros)
+//             await this.env.services.action.doAction({
 //                 type: "ir.actions.act_window",
 //                 res_model: "hr.ec.onboarding.package",
 //                 views: [[false, "list"], [false, "form"]],
-//                 domain: [["id", "in", ids]],
+//                 domain: [],
 //             });
 //         } catch (err) {
 //             console.error("Error al limpiar:", err);
@@ -107,16 +106,11 @@ export class EcOnboardingDateFilter extends Component {
         const end = `${value} 23:59:59`;
 
         try {
-            // Refrescar la vista con dominio dinámico
-            await this.env.services.action.doAction({
-                type: "ir.actions.act_window",
-                res_model: "hr.ec.onboarding.package",
-                views: [[false, "list"], [false, "form"]],
-                domain: [
-                    ["generated_at", ">=", start],
-                    ["generated_at", "<=", end],
-                ],
-            });
+            // Añadir dominio sin reemplazar la vista
+            this.env.searchModel.addDomain([
+                ["generated_at", ">=", start],
+                ["generated_at", "<=", end],
+            ]);
         } catch (err) {
             console.error("Error al aplicar filtro:", err);
         }
@@ -126,13 +120,8 @@ export class EcOnboardingDateFilter extends Component {
 
     async clear() {
         try {
-            // Refrescar la vista sin dominio (todos los registros)
-            await this.env.services.action.doAction({
-                type: "ir.actions.act_window",
-                res_model: "hr.ec.onboarding.package",
-                views: [[false, "list"], [false, "form"]],
-                domain: [],
-            });
+            // Quitar el dominio añadido
+            this.env.searchModel.clearDomain();
         } catch (err) {
             console.error("Error al limpiar:", err);
         }
