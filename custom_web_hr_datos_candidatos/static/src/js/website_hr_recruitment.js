@@ -2416,12 +2416,55 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this._checkFieldsFilled();
     },
 
+    // async _onAddExperience(ev) {
+    //     ev.preventDefault();
+    //     this.experienceCount++;
+    //     const newBlock = await this._getExperienceBlock(false);
+    //     this.$('#experience_container').prepend(newBlock);
+    //     this.$('#total_experiences').val(this.experienceCount);
+
+    //     const startId = `job-inicio_${this.experienceCount}`;
+    //     const endId = `job-fin_${this.experienceCount}`;
+    //     const startInput = document.getElementById(startId);
+    //     const endSelect = document.getElementById(endId);
+
+    //     if (startInput && endSelect) {
+    //         startInput.addEventListener("change", () => {
+    //             const startDate = startInput.value;
+    //             if (startDate) {
+    //                 const startYear = new Date(startDate).getFullYear();
+    //                 const currentYear = new Date().getFullYear();
+
+    //                 endSelect.innerHTML = "<option value=''></option>";
+
+    //                 for (let year = startYear; year < currentYear; year++) {
+    //                     const opt = document.createElement("option");
+    //                     opt.value = year;
+    //                     opt.textContent = year;
+    //                     endSelect.appendChild(opt);
+    //                 }
+
+    //                 const presentOpt = document.createElement("option");
+    //                 presentOpt.value = "presente";
+    //                 presentOpt.textContent = "Presente";
+    //                 endSelect.appendChild(presentOpt);
+    //             }
+    //         });
+    //     }
+
+    //     this.$('#add-experience').css({
+    //         'opacity': '0.5',
+    //         'pointer-events': 'none'
+    //     });
+    // },
+
     async _onAddExperience(ev) {
         ev.preventDefault();
+
         this.experienceCount++;
+
         const newBlock = await this._getExperienceBlock(false);
         this.$('#experience_container').prepend(newBlock);
-        this.$('#total_experiences').val(this.experienceCount);
 
         const startId = `job-inicio_${this.experienceCount}`;
         const endId = `job-fin_${this.experienceCount}`;
@@ -2431,6 +2474,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         if (startInput && endSelect) {
             startInput.addEventListener("change", () => {
                 const startDate = startInput.value;
+
                 if (startDate) {
                     const startYear = new Date(startDate).getFullYear();
                     const currentYear = new Date().getFullYear();
