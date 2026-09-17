@@ -50,156 +50,58 @@ export class EcOnboardingDateFilter extends Component {
 
     }
 
-
     /**
      * Aplicar filtro por día
      */
     apply() {
-
         const value = this.state.date;
-
-        if (!value) {
-            return;
-        }
-
+        if (!value) return;
 
         const searchModel = this.props.searchModel;
-
-
         if (!searchModel) {
-
-            console.error(
-                "EC Date Filter: SearchModel no disponible"
-            );
-
+            console.error("EC Date Filter: SearchModel no disponible");
             return;
-
         }
 
+        const startDate = `${value} 00:00:00`;
 
-        /*
-         * =====================================================
-         * INICIO DEL DÍA
-         * =====================================================
-         */
+        const [year, month, day] = value.split("-").map(Number);
+        const nextDate = new Date(year, month - 1, day);
+        nextDate.setDate(nextDate.getDate() + 1);
 
-        const startDate =
-            `${value} 00:00:00`;
-
-
-        /*
-         * =====================================================
-         * DÍA SIGUIENTE
-         * =====================================================
-         */
-
-        const [year, month, day] =
-            value.split("-").map(Number);
-
-
-        const nextDate = new Date(
-            year,
-            month - 1,
-            day
-        );
-
-
-        nextDate.setDate(
-            nextDate.getDate() + 1
-        );
-
-
-        const nextYear =
-            String(nextDate.getFullYear())
-                .padStart(4, "0");
-
-
-        const nextMonth =
-            String(nextDate.getMonth() + 1)
-                .padStart(2, "0");
-
-
-        const nextDay =
-            String(nextDate.getDate())
-                .padStart(2, "0");
-
-
-        const endDate =
-            `${nextYear}-${nextMonth}-${nextDay} 00:00:00`;
-
-
-        /*
-         * =====================================================
-         * DOMINIO
-         * =====================================================
-         */
+        const nextYear = String(nextDate.getFullYear()).padStart(4, "0");
+        const nextMonth = String(nextDate.getMonth() + 1).padStart(2, "0");
+        const nextDay = String(nextDate.getDate()).padStart(2, "0");
+        const endDate = `${nextYear}-${nextMonth}-${nextDay} 00:00:00`;
 
         const domain = [
             ["generated_at", ">=", startDate],
             ["generated_at", "<", endDate],
         ];
 
+        console.log("EC Date Filter - Dominio:", domain);
 
-        console.log(
-            "EC Date Filter - Dominio:",
-            domain
-        );
-
-
-        /*
-         * =====================================================
-         * ODOO 18
-         *
-         * setGlobalDomain agrega el filtro al dominio
-         * global del SearchModel.
-         * =====================================================
-         */
-
-        searchModel.setGlobalDomain(domain);
-
-
-        /*
-         * Cerramos el popup
-         */
+        // Odoo 18: usar addDomain con global:true
+        searchModel.addDomain(domain, { global: true });
 
         this.state.open = false;
-
     }
-
 
     /**
      * Limpiar filtro
      */
     clear() {
-
-        const searchModel =
-            this.props.searchModel;
-
-
+        const searchModel = this.props.searchModel;
         if (!searchModel) {
-
-            console.error(
-                "EC Date Filter: SearchModel no disponible"
-            );
-
+            console.error("EC Date Filter: SearchModel no disponible");
             return;
-
         }
 
-
-        /*
-         * Eliminamos únicamente nuestro dominio global.
-         *
-         * Los filtros normales del buscador permanecen.
-         */
-
-        searchModel.setGlobalDomain([]);
-
+        // Odoo 18: limpiar dominios globales
+        searchModel.clearGlobalDomain();
 
         this.state.date = "";
-
         this.state.open = false;
-
     }
 
 }

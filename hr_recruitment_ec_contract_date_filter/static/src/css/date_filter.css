@@ -1,0 +1,32 @@
+.o_ec_date_filter {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 12px; /* más separación del buscador */
+}
+
+.o_ec_date_filter_button {
+    white-space: nowrap;
+}
+
+.o_ec_date_filter_dropdown {
+
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 0;
+    z-index: 2000;
+    width: 320px;
+    padding: 16px;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    box-shadow:0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.o_ec_date_filter_dropdown input[type="date"] {
+    min-height: 38px;
+}
+
+.o_ec_date_filter_dropdown .btn {
+    white-space: nowrap;
+}
