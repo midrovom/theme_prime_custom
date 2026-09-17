@@ -76,6 +76,8 @@ class WebsiteHRRecruitment(http.Controller):
 
             dependientes_list = request.httprequest.form.getlist('dependientes')
             dependientes = ', '.join(dependientes_list) if dependientes_list else ''
+
+            total_experiences = safe_int(kwargs.get('total_experiences'))
             
             # Crear Candidate con los campos separados
             candidate_vals = {
@@ -111,6 +113,7 @@ class WebsiteHRRecruitment(http.Controller):
                 'document_type': kwargs.get('documentType'),
                 'provincia_id': safe_int(kwargs.get('provincia')),
                 'image_1920': imagen_b64,
+                'total_experiences': total_experiences,
             }
 
             # ---------------- Adjuntar Documentos ----------------
@@ -247,8 +250,6 @@ class WebsiteHRRecruitment(http.Controller):
             experience_lines = []
             j = 1
 
-            total_experiences = kwargs.get('total_experiences')
-
             while kwargs.get(f'cargo_{j}') is not None:
                 cargo = kwargs.get(f'cargo_{j}')
 
@@ -269,7 +270,6 @@ class WebsiteHRRecruitment(http.Controller):
                         'motivo_separacion': kwargs.get(f'motivo_{j}'),
                         'jefe_directo': kwargs.get(f'jefe_{j}'),
                         'cargo_jefe_directo': kwargs.get(f'cargoJefe_{j}'),
-                        'experiencia': total_experiences,
                     }))
                 j += 1
 

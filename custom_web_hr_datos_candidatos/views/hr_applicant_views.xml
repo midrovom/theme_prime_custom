@@ -40,6 +40,7 @@
                     <field name="num_hijos" readonly="is_readonly_group"/>
                     <field name="dependientes" readonly="is_readonly_group"/>
                     <field name="estado_civil" readonly="is_readonly_group"/>
+                    <field name="experiencia" readonly="is_readonly_group"/>
 
                 </xpath>
 
@@ -131,7 +132,6 @@
                     <page string="Experiencia Laboral" name="page_experience">
                         <field name="experience_job_ids" readonly="is_readonly_group">
                             <list>
-                                <field name="experiencia"/>
                                 <field name="tiempo_servicio"/>
                                 <field name="empresa"/>
                                 <field name="country_id"/>

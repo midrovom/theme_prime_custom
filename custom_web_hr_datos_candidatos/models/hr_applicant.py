@@ -37,6 +37,7 @@ class HrApplicant(models.Model):
     document_type = fields.Selection(DOCUMENT_TYPES, string='Tipo de documento')
     cedula = fields.Char(string='Número de documento')
     nacionality = fields.Char(string='Nacionalidad')
+    experiencia = fields.Char(string="Cantidad de experiencia")
 
     estado_civil = fields.Selection([
         ('soltero', 'Soltero'),

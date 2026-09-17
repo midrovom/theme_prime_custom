@@ -2190,7 +2190,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         });
 
         if (!valid) {
-            $('#experienceMessageText').text("Complete todos los campos de experiencia o marque 'No aplica'.");
+            $('#experienceMessageText').text("Complete todos los campos de experiencia");
             $('#experienceMessage').removeClass('d-none');
             return;
         }

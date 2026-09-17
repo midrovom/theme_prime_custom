@@ -21,4 +21,4 @@ class ApplicantExperienceJob(models.Model):
     motivo_separacion = fields.Char(string="Motivo de separación")
     jefe_directo = fields.Char(string="Nombre de su jefe directo")
     cargo_jefe_directo = fields.Char(string="Cargo de su jefe directo")
-    experiencia = fields.Char(string="Cantidad de experiencia")
+    
