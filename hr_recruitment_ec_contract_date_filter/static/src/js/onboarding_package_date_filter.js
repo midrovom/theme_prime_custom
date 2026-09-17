@@ -106,8 +106,8 @@ export class EcOnboardingDateFilter extends Component {
         const end = `${value} 23:59:59`;
 
         try {
-            // Añadir dominio sin reemplazar la vista
-            this.env.searchModel.addDomain([
+            // Enviar dominio como si fuera un filtro de búsqueda
+            this.env.services.search.addDomain([
                 ["generated_at", ">=", start],
                 ["generated_at", "<=", end],
             ]);
