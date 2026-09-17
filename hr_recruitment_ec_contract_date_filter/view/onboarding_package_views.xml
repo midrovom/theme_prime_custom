@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_ec_onboarding_package_cp" model="ir.ui.view">
+        <field name="name">hr.ec.onboarding.package.control.panel</field>
+        <field name="model">hr.ec.onboarding.package</field>
+        <field name="inherit_id" ref="web.view_control_panel"/>
+        <field name="arch" type="xml">
+            <!-- Insertamos el widget justo al lado del buscador -->
+            <xpath expr="//div[@class='o_control_panel_actions']" position="inside">
+                <widget name="ec_onboarding_date_filter"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
