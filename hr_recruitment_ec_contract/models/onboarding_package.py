@@ -523,25 +523,85 @@ class HrEcOnboardingPackage(models.Model):
                     raise
         return True
 
+    # def action_send_email(self):
+    #     for package in self:
+    #         if not package.email_to:
+    #             raise ValidationError(_("Ingrese un correo de destinatario antes de enviar."))
+    #         if not package.attachment_ids:
+    #             raise ValidationError(_("El borrador no tiene documentos adjuntos."))
+    #         mail_server = self.env["ir.mail_server"].sudo().search(
+    #             [("is_recruitment_server", "=", True)],
+    #             limit=1,
+    #         )
+    #         if not mail_server:
+    #             raise ValidationError(
+    #                 _("No existe un servidor de correo de reclutamiento configurado.")
+    #             )
+
+    #         mail = self.env["mail.mail"].sudo().create({
+    #             "subject": package.email_subject or package.name,
+    #             "body_html": package.email_body_html or "",
+    #             "email_to": package.email_to,
+    #             "email_from": mail_server.smtp_user,
+    #             "mail_server_id": mail_server.id,
+    #             "attachment_ids": [(6, 0, package.attachment_ids.ids)],
+    #             "auto_delete": False,
+    #         })
+
+    #         mail.send(raise_exception=True)
+    #         package.write({
+    #             "mail_id": mail.id,
+    #             "state": "sent",
+    #         })
+    #         package.message_post(
+    #             body=_("Correo enviado a %(email)s.", email=package.email_to)
+    #         )
+    #         package.action_send_employee_email()
+
+    #     return True
+
     def action_send_email(self):
         for package in self:
             if not package.email_to:
-                raise ValidationError(_("Ingrese un correo de destinatario antes de enviar."))
+                raise ValidationError(
+                    _("Ingrese un correo de destinatario antes de enviar.")
+                )
+
             if not package.attachment_ids:
-                raise ValidationError(_("El borrador no tiene documentos adjuntos."))
+                raise ValidationError(
+                    _("El borrador no tiene documentos adjuntos.")
+                )
+
             mail_server = self.env["ir.mail_server"].sudo().search(
                 [("is_recruitment_server", "=", True)],
                 limit=1,
             )
+
             if not mail_server:
                 raise ValidationError(
                     _("No existe un servidor de correo de reclutamiento configurado.")
                 )
 
+            # ==========================================================
+            # CORREOS DEL REPRESENTANTE LEGAL
+            # ==========================================================
+            email_to = package.email_to
+
+            if package.empresa_id and package.empresa_id.correo_representante:
+                representante_emails = [
+                    email.strip()
+                    for email in package.empresa_id.correo_representante.split(";")
+                    if email.strip()
+                ]
+
+                if representante_emails:
+                    # Odoo espera los destinatarios separados por coma
+                    email_to = ", ".join(representante_emails)
+
             mail = self.env["mail.mail"].sudo().create({
                 "subject": package.email_subject or package.name,
                 "body_html": package.email_body_html or "",
-                "email_to": package.email_to,
+                "email_to": email_to,
                 "email_from": mail_server.smtp_user,
                 "mail_server_id": mail_server.id,
                 "attachment_ids": [(6, 0, package.attachment_ids.ids)],
@@ -549,13 +609,19 @@ class HrEcOnboardingPackage(models.Model):
             })
 
             mail.send(raise_exception=True)
+
             package.write({
                 "mail_id": mail.id,
                 "state": "sent",
             })
+
             package.message_post(
-                body=_("Correo enviado a %(email)s.", email=package.email_to)
+                body=_(
+                    "Correo enviado a %(email)s.",
+                    email=email_to,
+                )
             )
+
             package.action_send_employee_email()
 
         return True
