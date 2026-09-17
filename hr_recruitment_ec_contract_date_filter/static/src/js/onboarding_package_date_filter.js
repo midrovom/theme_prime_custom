@@ -34,8 +34,11 @@ export class EcOnboardingDateFilter extends Component {
 
             const searchModel = this.props.searchModel;
             if (searchModel) {
-                // Refrescar la vista con dominio sobre los IDs
-                searchModel.update({ domain: [["id", "in", ids]] });
+                // Refrescar la vista actual con dominio
+                this.env.services.view.reload({
+                    resModel: "hr.ec.onboarding.package",
+                    domain: [["id", "in", ids]],
+                });
             }
         } catch (err) {
             console.error("Error al consultar:", err);
