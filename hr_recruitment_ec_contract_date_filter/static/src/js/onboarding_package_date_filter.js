@@ -79,6 +79,7 @@
 import { Component, useState } from "@odoo/owl";
 import { patch } from "@web/core/utils/patch";
 import { ControlPanel } from "@web/search/control_panel/control_panel";
+import { rpc } from "@web/core/network/rpc";
 
 export class EcOnboardingDateFilter extends Component {
     static template = "hr_recruitment_ec_contract_date_filter.DateFilter";
@@ -98,33 +99,39 @@ export class EcOnboardingDateFilter extends Component {
         this.state.date = ev.target.value;
     }
 
-    apply() {
+    async apply() {
         const value = this.state.date;
         if (!value) return;
 
-        const [year, month, day] = value.split("-").map(Number);
-        const startDate = `${value} 00:00:00`;
+        try {
+            const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
+                date_str: value,
+            });
 
-        const nextDate = new Date(year, month - 1, day + 1);
-        const endDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${String(nextDate.getDate()).padStart(2, "0")} 00:00:00`;
-
-        const domain = [
-            ["generated_at", ">=", startDate],
-            ["generated_at", "<", endDate],
-        ];
-
-        // Aquí usamos el searchModel directamente
-        if (this.props.searchModel) {
-            this.props.searchModel.addDomain(domain);
+            // Refrescar la vista actual con dominio, sin reemplazar acción
+            this.env.services.view.update({
+                domain: [["id", "in", ids]],
+            });
+        } catch (err) {
+            console.error("Error al consultar:", err);
         }
 
         this.state.open = false;
     }
 
-    clear() {
-        if (this.props.searchModel) {
-            this.props.searchModel.clearDomain(); // elimina solo dominios añadidos
+    async clear() {
+        try {
+            const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
+                date_str: "",
+            });
+
+            this.env.services.view.update({
+                domain: [["id", "in", ids]],
+            });
+        } catch (err) {
+            console.error("Error al limpiar:", err);
         }
+
         this.state.date = "";
         this.state.open = false;
     }
@@ -136,3 +143,4 @@ patch(ControlPanel, {
         EcOnboardingDateFilter,
     },
 });
+
