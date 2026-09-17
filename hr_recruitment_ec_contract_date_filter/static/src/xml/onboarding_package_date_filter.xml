@@ -2,58 +2,76 @@
 
 <templates xml:space="preserve">
 
-    <t t-inherit="web.ControlPanel"
-       t-inherit-mode="extension">
+    <t t-name="hr_recruitment_ec_contract_date_filter.DateFilter">
 
-        <xpath expr="//div[contains(@class, 'o_cp_searchview')]"
-               position="after">
+        <div class="o_ec_date_filter position-relative">
 
-            <div class="o_onboarding_date_filter position-relative">
+            <button
+                type="button"
+                class="btn btn-outline-secondary"
+                t-on-click="toggle">
 
-                <button type="button"
-                        class="btn btn-outline-secondary"
-                        t-on-click="toggleDateFilter">
+                <i class="fa fa-calendar me-1"/>
 
-                    <i class="fa fa-calendar me-1"/>
-                    Filtrar
-                </button>
+                <span>Filtrar</span>
 
-                <t t-if="dateFilterState.open">
+            </button>
 
-                    <div class="position-absolute bg-white border rounded shadow p-3"
-                         style="z-index: 1050; min-width: 280px; right: 0;">
 
-                        <div class="fw-bold mb-2">
-                            Filtrar paquetes por fecha
-                        </div>
+            <t t-if="state.open">
+
+                <div
+                    class="o_ec_date_filter_dropdown bg-white border rounded shadow p-3 position-absolute"
+                    style="z-index: 1100; min-width: 300px; right: 0; top: 100%;">
+
+                    <div class="fw-bold mb-3">
+                        Filtrar paquetes
+                    </div>
+
+
+                    <div class="mb-3">
 
                         <label class="form-label">
                             Generado el
                         </label>
 
-                        <input type="date"
-                               class="form-control"
-                               t-att-value="dateFilterState.date || ''"
-                               t-on-change="onDateFilterChange"/>
-
-                        <div class="d-flex justify-content-end mt-2">
-
-                            <button type="button"
-                                    class="btn btn-sm btn-link"
-                                    t-on-click="clearDateFilter">
-
-                                Limpiar filtro
-                            </button>
-
-                        </div>
+                        <input
+                            type="date"
+                            class="form-control"
+                            t-att-value="state.date || ''"
+                            t-on-change="onDateChange"/>
 
                     </div>
 
-                </t>
 
-            </div>
+                    <div class="d-flex justify-content-between">
 
-        </xpath>
+                        <button
+                            type="button"
+                            class="btn btn-link"
+                            t-on-click="clear">
+
+                            Limpiar
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            t-on-click="close">
+
+                            Aplicar
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </t>
+
+        </div>
 
     </t>
 
