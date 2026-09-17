@@ -232,6 +232,35 @@ class CensusVisit(models.Model):
             if visit.location_tolerance_m <= 0:
                 raise ValidationError(_("La tolerancia de ubicación debe ser mayor que cero."))
 
+    def action_save_progress(self):
+        """Botón táctil: el cliente web guarda antes de ejecutar la acción."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Visita guardada"),
+                "message": _("Los datos, la encuesta y la fotografía quedaron guardados."),
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
+    def action_open_photo(self):
+        self.ensure_one()
+        if not self.photo:
+            raise UserError(_("La visita todavía no tiene una fotografía."))
+        return {
+            "type": "ir.actions.act_url",
+            "url": "/web/image/%s/%s/photo?unique=%s"
+            % (
+                self._name,
+                self.id,
+                (self.write_date or fields.Datetime.now()).strftime("%Y%m%d%H%M%S"),
+            ),
+            "target": "new",
+        }
+
     def action_mark_done(self):
         required_answers = (
             "purchase_made",

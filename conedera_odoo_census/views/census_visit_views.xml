@@ -13,6 +13,7 @@
                 <field name="location_status"/>
                 <field name="purchase_made"/>
                 <field name="quotation_count"/>
+                <field name="photo"/>
                 <templates>
                     <t t-name="card">
                         <main>
@@ -22,6 +23,9 @@
                                     <div class="text-muted small"><field name="name"/> · <field name="visit_datetime"/></div>
                                 </div>
                                 <field name="state" widget="badge"/>
+                            </div>
+                            <div t-if="record.photo.raw_value" class="o_conedera_visit_kanban_photo mb-2">
+                                <field name="photo" widget="image"/>
                             </div>
                             <div class="mb-1">
                                 <i class="fa fa-user fa-fw me-1 text-muted"/> <field name="user_id"/>
@@ -67,7 +71,7 @@
             <form string="Visita comercial">
                 <header>
                     <button name="action_mark_done" type="object" string="Finalizar visita"
-                            class="btn-primary" invisible="state != 'draft'"/>
+                            class="btn-primary d-none d-md-inline-block" invisible="state != 'draft'"/>
                     <button name="action_set_draft" type="object" string="Reabrir"
                             invisible="state != 'done'" groups="sales_team.group_sale_manager"/>
                     <button name="action_cancel" type="object" string="Cancelar"
@@ -146,17 +150,28 @@
                         <field name="notes" placeholder="Observaciones importantes de la visita..." readonly="state != 'draft'"/>
                     </div>
 
+                    <div class="o_conedera_card o_conedera_photo_card">
+                        <div class="o_conedera_card_title">
+                            <i class="fa fa-camera"/> 3. Evidencia de la visita
+                        </div>
+                        <div class="o_conedera_hint">La fotografía queda guardada en esta visita y puede ampliarse tanto en móvil como en PC.</div>
+                        <field name="photo" widget="camera_capture" nolabel="1" readonly="state != 'draft'"/>
+                        <div class="o_conedera_actionbar mt-3" invisible="not photo">
+                            <button name="action_open_photo" type="object" string="Ver foto en una ventana"
+                                    class="btn-secondary" icon="fa-external-link"/>
+                        </div>
+                    </div>
+
                     <div class="o_conedera_card">
                         <div class="o_conedera_card_title">
-                            <i class="fa fa-camera"/> 3. Evidencia y venta
+                            <i class="fa fa-file-text-o"/> 4. Venta y responsable
                         </div>
                         <group>
                             <group>
-                                <field name="photo" widget="camera_capture" readonly="state != 'draft'"/>
-                            </group>
-                            <group>
                                 <field name="user_id" string="Vendedor" widget="many2one_avatar_user" readonly="1"/>
                                 <field name="company_id" groups="base.group_multi_company" readonly="1"/>
+                            </group>
+                            <group>
                                 <field name="location_tolerance_m" groups="sales_team.group_sale_manager" readonly="state != 'draft'"/>
                                 <div class="o_conedera_actionbar">
                                     <button name="action_create_quotation" type="object" string="Crear proforma"
@@ -164,6 +179,19 @@
                                 </div>
                             </group>
                         </group>
+                    </div>
+
+                    <div class="o_conedera_visit_primary_actions" invisible="state != 'draft'">
+                        <button name="action_save_progress" type="object" string="Guardar visita"
+                                class="btn btn-outline-primary o_conedera_big_save" icon="fa-save"/>
+                        <button name="action_mark_done" type="object" string="Finalizar visita"
+                                class="btn btn-success o_conedera_big_finish" icon="fa-check-circle"/>
+                    </div>
+
+                    <div class="o_conedera_visit_done_banner" invisible="state != 'done'">
+                        <i class="fa fa-check-circle me-2"/>
+                        <strong>Visita finalizada</strong>
+                        <span>La encuesta y la evidencia quedaron bloqueadas para preservar la bitácora.</span>
                     </div>
 
                     <group string="Coordenadas" groups="sales_team.group_sale_manager">

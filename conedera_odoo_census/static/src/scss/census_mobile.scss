@@ -203,3 +203,236 @@
         }
     }
 }
+
+/* 18.0.1.6.0: evidencia visible y experiencia de visita tipo app */
+.o_conedera_visit_form {
+    .o_conedera_photo_card {
+        overflow: visible;
+    }
+
+    .o_conedera_visit_primary_actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+        gap: .75rem;
+        margin: 1rem 0;
+        padding: .8rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 1rem;
+        background: var(--bs-body-bg);
+        box-shadow: 0 .45rem 1.35rem rgba(0, 0, 0, .08);
+
+        .btn {
+            min-height: 54px;
+            border-radius: .85rem;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+    }
+
+    .o_conedera_visit_done_banner {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 1rem;
+        background: rgba(25, 135, 84, .1);
+        border: 1px solid rgba(25, 135, 84, .25);
+        color: var(--bs-success-text-emphasis);
+
+        span {
+            width: 100%;
+            opacity: .8;
+        }
+    }
+}
+
+.o_conedera_camera_capture {
+    width: 100%;
+
+    .o_conedera_camera_frame {
+        position: relative;
+        width: 100%;
+        min-height: 260px;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 1rem;
+        overflow: hidden;
+        background: #111;
+        cursor: zoom-in;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .o_conedera_camera_preview {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 620px;
+        object-fit: contain;
+        background: #111;
+    }
+
+    .o_conedera_camera_zoom_hint {
+        position: absolute;
+        right: .65rem;
+        bottom: .65rem;
+        border-radius: 2rem;
+        padding: .4rem .7rem;
+        color: #fff;
+        background: rgba(0, 0, 0, .72);
+        font-size: .82rem;
+        pointer-events: none;
+    }
+
+    .o_conedera_camera_empty {
+        min-height: 220px;
+        border: 2px dashed var(--bs-border-color);
+        border-radius: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .2rem;
+        text-align: center;
+        color: var(--bs-secondary-color);
+        padding: 1rem;
+    }
+
+    .o_conedera_camera_actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: .6rem;
+    }
+
+    .o_conedera_camera_button,
+    .o_conedera_camera_remove {
+        min-height: 52px;
+        border-radius: .85rem;
+        font-weight: 600;
+    }
+
+    .o_conedera_camera_lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        padding: 1rem;
+        background: rgba(0, 0, 0, .94);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: zoom-out;
+    }
+
+    .o_conedera_camera_lightbox_image {
+        max-width: 96vw;
+        max-height: 92vh;
+        object-fit: contain;
+        border-radius: .5rem;
+    }
+
+    .o_conedera_camera_lightbox_close {
+        position: fixed;
+        right: 1rem;
+        top: 1rem;
+        width: 48px;
+        height: 48px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, .16);
+        color: #fff;
+        font-size: 1.4rem;
+        z-index: 2001;
+    }
+}
+
+.o_conedera_visit_kanban_photo {
+    max-height: 180px;
+    overflow: hidden;
+    border-radius: .75rem;
+    background: var(--bs-tertiary-bg);
+
+    img {
+        width: 100%;
+        max-height: 180px;
+        object-fit: cover;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .o_conedera_visit_form {
+        padding-bottom: 7.5rem;
+
+        .o_conedera_hero h1 {
+            font-size: 1.35rem;
+        }
+
+        .o_conedera_card {
+            padding: 1rem;
+            border-radius: 1rem;
+        }
+
+        .o_conedera_card_title {
+            font-size: 1.06rem;
+            margin-bottom: .9rem;
+        }
+
+        .o_field_radio {
+            .o_horizontal {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: .5rem;
+            }
+            .form-check {
+                min-height: 48px;
+                margin: 0 !important;
+                padding: .7rem .8rem .7rem 2rem;
+                border: 1px solid var(--bs-border-color);
+                border-radius: .75rem;
+                display: flex;
+                align-items: center;
+            }
+        }
+
+        .o_conedera_visit_primary_actions {
+            position: fixed;
+            left: .65rem;
+            right: .65rem;
+            bottom: .65rem;
+            z-index: 1040;
+            margin: 0;
+            padding: .65rem;
+            grid-template-columns: minmax(0, .9fr) minmax(0, 1.25fr);
+            border-radius: 1.05rem;
+            background: rgba(var(--bs-body-bg-rgb), .96);
+            backdrop-filter: blur(12px);
+
+            .btn {
+                min-height: 58px;
+                font-size: 1.02rem;
+                white-space: normal;
+            }
+        }
+
+        .o_conedera_camera_frame {
+            min-height: 300px;
+            border-radius: 1rem;
+        }
+
+        .o_conedera_camera_preview {
+            max-height: 68vh;
+        }
+
+        .o_conedera_camera_actions {
+            grid-template-columns: 1fr;
+        }
+
+        .o_conedera_camera_button,
+        .o_conedera_camera_remove {
+            width: 100%;
+            min-height: 58px;
+            font-size: 1.02rem;
+        }
+    }
+}
