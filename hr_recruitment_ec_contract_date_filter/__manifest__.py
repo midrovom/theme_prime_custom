@@ -16,6 +16,7 @@
         "web.assets_backend": [
             "hr_recruitment_ec_contract_date_filter/static/src/js/onboarding_package_date_filter.js",
             "hr_recruitment_ec_contract_date_filter/static/src/xml/onboarding_package_date_filter.xml",
+            'hr_recruitment_ec_contract_date_filter/static/src/css/date_filter.css',
         ],
     },
     "installable": True,
