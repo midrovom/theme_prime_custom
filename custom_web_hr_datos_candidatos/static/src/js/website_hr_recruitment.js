@@ -2150,13 +2150,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-2').removeClass('d-none');
     },
 
-    // _onPrevClickStep2(ev) {
-    //     ev.preventDefault();
-
-    //     this.$('#form-step-2').addClass('d-none');
-    //     this.$('#form-step-1').removeClass('d-none');
-    // },
-
     _onSubmitForm(ev) {
         ev.preventDefault();
 
