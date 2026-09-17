@@ -1878,6 +1878,99 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Handlers
     //----------------------------------------------------------------------
 
+    // _onNextClick(ev) {
+    //     ev.preventDefault();
+
+    //     if (this._validateCurrentStep1()) {
+    //         this.$('#form-step-1').addClass('d-none');
+    //         this.$('#form-step-2').removeClass('d-none');
+
+    //         const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
+
+    //         this.$('#hr-hijos').prop('readonly', true);
+
+    //         this.$('.family-block[data-type="Hijo"]').remove();
+    //         const AUTO_FAMILY = ["Padre", "Madre", "Conyugue"];
+
+    //         AUTO_FAMILY.forEach(tipo => {
+    //             if (this.$(`.family-block[data-type="${tipo}"]`).length === 0) {
+    //                 this.familyCount++;
+    //                 const index = this.familyCount;
+    //                 this._getFamilyBlock(tipo, index).then(blockHtml => {
+    //                     const block = $(blockHtml);
+    //                     const tipoVal = tipo === "Padre" ? "1" :
+    //                                     tipo === "Madre" ? "2" :
+    //                                     tipo === "Conyugue" ? "4" : tipo;
+
+    //                     block.prepend(`<input type="hidden" name="famTipo_${index}" value="${tipoVal}"/>`);
+    //                     this.$('#family_container').append(block);
+
+    //                     const $fallecidoCheck = block.find(`input[name="famFallecido_${index}"]`);
+    //                     const $noTieneCheck = block.find(`input[name="famNoTiene_${index}"]`);
+
+    //                     const aplicarEstadoFamiliar = () => {
+    //                         const fallecido = $fallecidoCheck.is(":checked");
+    //                         const noTiene = $noTieneCheck.is(":checked");
+    //                         if (fallecido) $noTieneCheck.prop("checked", false);
+    //                         if (noTiene) $fallecidoCheck.prop("checked", false);
+
+    //                         const bloqueado = fallecido || noTiene;
+    //                         const $fields = block.find("input:not([type='hidden']), select, textarea")
+    //                             .filter(function () {
+    //                                 const name = $(this).attr("name") || "";
+    //                                 return !name.startsWith("famFallecido_") && !name.startsWith("famNoTiene_");
+    //                             });
+
+    //                         $fields.prop("disabled", bloqueado);
+    //                         if (bloqueado) {
+    //                             $fields.prop("required", false).val("").removeClass("is-invalid");
+    //                             $fields.filter(":radio,:checkbox").prop("checked", false);
+    //                             $fields.siblings(".error-message").hide();
+    //                         } else {
+    //                             block.find(`input[name="famApellidoPaterno_${index}"]`).prop("required", true);
+    //                             block.find(`input[name="famApellidoMaterno_${index}"]`).prop("required", true);
+    //                             block.find(`input[name="famPrimerNombre_${index}"]`).prop("required", true);
+    //                             block.find(`select[name="famTipoDoc_${index}"]`).prop("required", true);
+    //                             block.find(`input[name="famFecha_${index}"]`).prop("required", true);
+    //                             block.find(`input[name="famTelefono_${index}"]`).prop("required", true);
+    //                             block.find(`input[name="famOcupacion_${index}"]`).prop("required", true);
+    //                             block.find(`input[name="famDepende_${index}"]`).prop("required", true);
+    //                             block.find(`input[name="famDisc_${index}"]`).prop("required", true);
+    //                         }
+
+    //                         const $nombre = block.find(`input[name="famNombre_${index}"]`);
+    //                         $nombre.val(fallecido ? "FALLECIDO" : noTiene ? "NO TIENE" : "");
+    //                     };
+
+    //                     if ($fallecidoCheck.length) $fallecidoCheck.on("change", aplicarEstadoFamiliar);
+    //                     if ($noTieneCheck.length) $noTieneCheck.on("change", aplicarEstadoFamiliar);
+
+    //                     block.find(`input[name="famDisc_${index}"]`).on("change", () => {
+    //                         this._toggleFamilyDisability(index);
+    //                     });
+    //                     this._toggleFamilyDisability(index);
+    //                 });
+    //             }
+    //         });
+
+    //         if (!isNaN(numHijos) && numHijos > 0) {
+    //             for (let i = 0; i < numHijos; i++) {
+    //                 this.familyCount++;
+    //                 const index = this.familyCount;
+    //                 this._getFamilyBlock("Hijo", index).then(blockHtml => {
+    //                     const block = $(blockHtml);
+    //                     block.prepend(`<input type="hidden" name="famTipo_${index}" value="5"/>`);
+    //                     this.$('#family_container').append(block);
+    //                     block.find(`input[name="famDisc_${index}"]`).on("change", () => {
+    //                         this._toggleFamilyDisability(index);
+    //                     });
+    //                     this._toggleFamilyDisability(index);
+    //                 });
+    //             }
+    //         }
+    //     }
+    // },
+
     _onNextClick(ev) {
         ev.preventDefault();
 
@@ -1886,8 +1979,16 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$('#form-step-2').removeClass('d-none');
 
             const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
-
             this.$('#hr-hijos').prop('readonly', true);
+            if (!isNaN(numHijos)) {
+                if (this.$('input[name="numHijos_hidden"]').length === 0) {
+                    this.$('#hr-hijos').after(
+                        `<input type="hidden" name="numHijos" value="${numHijos}"/>`
+                    );
+                } else {
+                    this.$('input[name="numHijos_hidden"]').val(numHijos);
+                }
+            }
 
             this.$('.family-block[data-type="Hijo"]').remove();
             const AUTO_FAMILY = ["Padre", "Madre", "Conyugue"];
@@ -1903,6 +2004,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                                         tipo === "Conyugue" ? "4" : tipo;
 
                         block.prepend(`<input type="hidden" name="famTipo_${index}" value="${tipoVal}"/>`);
+                        block.prepend(`<input type="hidden" name="famIndex_${index}" value="${index}"/>`);
                         this.$('#family_container').append(block);
 
                         const $fallecidoCheck = block.find(`input[name="famFallecido_${index}"]`);
@@ -1960,7 +2062,9 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     this._getFamilyBlock("Hijo", index).then(blockHtml => {
                         const block = $(blockHtml);
                         block.prepend(`<input type="hidden" name="famTipo_${index}" value="5"/>`);
+                        block.prepend(`<input type="hidden" name="famIndex_${index}" value="${index}"/>`);
                         this.$('#family_container').append(block);
+
                         block.find(`input[name="famDisc_${index}"]`).on("change", () => {
                             this._toggleFamilyDisability(index);
                         });
