@@ -76,10 +76,12 @@
 
  /** @odoo-module **/
 
+ /** @odoo-module **/
+
 import { Component, useState } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 import { ControlPanel } from "@web/search/control_panel/control_panel";
-import { rpc } from "@web/core/network/rpc";
 
 export class EcOnboardingDateFilter extends Component {
     static template = "hr_recruitment_ec_contract_date_filter.DateFilter";
@@ -89,6 +91,8 @@ export class EcOnboardingDateFilter extends Component {
             open: false,
             date: "",
         });
+
+        this.searchService = useService("search");
     }
 
     toggle() {
@@ -99,35 +103,26 @@ export class EcOnboardingDateFilter extends Component {
         this.state.date = ev.target.value;
     }
 
-    async apply() {
+    apply() {
         const value = this.state.date;
 
         if (!value) {
             return;
         }
 
-        try {
-            const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
-                date_str: value,
-            });
+        const start = `${value} 00:00:00`;
+        const end = `${value} 23:59:59`;
 
-            console.log("IDs filtrados:", ids);
-
-            // IMPORTANTE:
-            // No usamos doAction(), porque eso abre otra lista.
-            this.env.searchModel.setDomain([
-                ["id", "in", ids],
-            ]);
-
-        } catch (err) {
-            console.error("Error al consultar:", err);
-        }
+        this.searchService.search([
+            ["generated_at", ">=", start],
+            ["generated_at", "<=", end],
+        ]);
 
         this.state.open = false;
     }
 
     clear() {
-        this.env.searchModel.setDomain([]);
+        this.searchService.search([]);
 
         this.state.date = "";
         this.state.open = false;
