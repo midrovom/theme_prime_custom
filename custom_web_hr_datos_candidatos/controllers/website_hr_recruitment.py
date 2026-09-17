@@ -244,6 +244,11 @@ class WebsiteHRRecruitment(http.Controller):
 
 
             # ---------------- Experiencia Laboral ----------------
+
+            total_experiences = kwargs.get('total_experiences')
+            if total_experiences:
+                applicant_values['experiencia'] = int(total_experiences)
+
             experience_lines = []
             j = 1
 
@@ -267,6 +272,7 @@ class WebsiteHRRecruitment(http.Controller):
                         'motivo_separacion': kwargs.get(f'motivo_{j}'),
                         'jefe_directo': kwargs.get(f'jefe_{j}'),
                         'cargo_jefe_directo': kwargs.get(f'cargoJefe_{j}'),
+                        'experiencia': total_experiences,
                     }))
                 j += 1
 

@@ -2354,21 +2354,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Methods experience job
     //----------------------------------------------------------------------
 
-    // async _addExperienceBlockController() {
-    //     this.$('#total_experiences').on('input change', async (ev) => {
-    //         let num = parseInt($(ev.currentTarget).val(), 10);
-    //         this.$('#experience_container').empty();
-    //         this.experienceCount = 0;
-
-    //         if (!isNaN(num) && num > 0) {
-    //             for (let i = 0; i < num; i++) {
-    //                 await this._addExperienceBlock();
-    //             }
-    //             this.$('#total_experiences').prop('disabled', true);
-    //         }
-    //     });
-    // },
-
     async _addExperienceBlockController() {
         this.$('#total_experiences').on('input change', async (ev) => {
             let num = parseInt($(ev.currentTarget).val(), 10);
@@ -2382,7 +2367,7 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
                     await this._addExperienceBlock();
                 }
 
-                this.$('#total_experiences').prop('disabled', true);
+                this.$('#total_experiences').prop('readonly', true);
             }
         });
     },
