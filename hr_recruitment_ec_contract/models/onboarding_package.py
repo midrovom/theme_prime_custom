@@ -123,6 +123,9 @@ class HrEcOnboardingPackage(models.Model):
     generated_at = fields.Datetime(string="Generado el", readonly=True)
     generation_message = fields.Text(string="Detalle de generación", readonly=True)
     document_count = fields.Integer(compute="_compute_document_count")
+    generated_date = fields.Date(string="Fecha de generación", compute="_compute_generated_date",
+        store=True, index=True,
+    )
 
     _sql_constraints = [
         (
@@ -684,4 +687,15 @@ class HrEcOnboardingPackage(models.Model):
                     package.action_send_email()
                 except Exception:
                     _logger.exception("Error enviando el paquete de contratación %s", package.name,)
+
+    @api.depends("generated_at")
+    def _compute_generated_date(self):
+        for record in self:
+            if record.generated_at:
+                record.generated_date = fields.Datetime.context_timestamp(
+                    record,
+                    record.generated_at,
+                ).date()
+            else:
+                record.generated_date = False
     

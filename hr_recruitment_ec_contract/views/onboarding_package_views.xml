@@ -7,16 +7,12 @@
         <field name="model">hr.ec.onboarding.package</field>
         <field name="arch" type="xml">
             <search string="Buscar paquetes de contratación">
-
-                <!-- Búsqueda por texto -->
                 <field name="name"/>
                 <field name="applicant_id"/>
                 <field name="employee_id"/>
                 <field name="contract_id"/>
-
                 <separator/>
 
-                <!-- Filtros rápidos -->
                 <filter
                     name="generated_today"
                     string="Hoy"
@@ -46,11 +42,9 @@
 
                 <separator/>
 
-                <!-- Fecha específica -->
-                <filter
-                    name="generated_specific_date"
+                <field
+                    name="generated_date"
                     string="Fecha específica"
-                    date="generated_at"
                 />
 
             </search>
