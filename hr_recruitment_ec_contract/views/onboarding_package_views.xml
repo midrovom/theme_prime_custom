@@ -19,8 +19,8 @@
                     name="generated_yesterday"
                     string="Ayer"
                     domain="[
-                        ('generated_at', '>=', (context_today() - relativedelta(days=1)).strftime('%Y-%m-%d 00:00:00')),
-                        ('generated_at', '<', context_today().strftime('%Y-%m-%d 00:00:00'))
+                        ('generated_at', '&gt;=', (context_today() - relativedelta(days=1)).strftime('%Y-%m-%d 00:00:00')),
+                        ('generated_at', '&lt;', context_today().strftime('%Y-%m-%d 00:00:00'))
                     ]"
                 />
 
