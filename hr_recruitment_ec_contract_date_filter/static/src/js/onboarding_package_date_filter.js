@@ -74,14 +74,13 @@
 //     },
 // });
 
- /** @odoo-module **/
-
- /** @odoo-module **/
+  /** @odoo-module **/
 
 import { Component, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 import { ControlPanel } from "@web/search/control_panel/control_panel";
+import { rpc } from "@web/core/network/rpc";
 
 export class EcOnboardingDateFilter extends Component {
     static template = "hr_recruitment_ec_contract_date_filter.DateFilter";
@@ -103,26 +102,39 @@ export class EcOnboardingDateFilter extends Component {
         this.state.date = ev.target.value;
     }
 
-    apply() {
+    async apply() {
         const value = this.state.date;
 
         if (!value) {
             return;
         }
 
-        const start = `${value} 00:00:00`;
-        const end = `${value} 23:59:59`;
+        try {
+            const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
+                date_str: value,
+            });
 
-        this.searchService.search([
-            ["generated_at", ">=", start],
-            ["generated_at", "<=", end],
-        ]);
+            console.log("IDs encontrados:", ids);
+
+            const searchModel = this.searchService.getSearchModel();
+
+            console.log("SearchModel:", searchModel);
+
+            searchModel.setDomain([
+                ["id", "in", ids],
+            ]);
+
+        } catch (err) {
+            console.error("Error al consultar:", err);
+        }
 
         this.state.open = false;
     }
 
     clear() {
-        this.searchService.search([]);
+        const searchModel = this.searchService.getSearchModel();
+
+        searchModel.setDomain([]);
 
         this.state.date = "";
         this.state.open = false;
