@@ -42,9 +42,10 @@
 
                 <separator/>
 
-                <field
-                    name="generated_date"
+                <filter
+                    name="generated_specific_date"
                     string="Fecha específica"
+                    domain="[]"
                 />
 
             </search>
