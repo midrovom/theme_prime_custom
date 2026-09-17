@@ -141,7 +141,12 @@
 
                 <separator/>
 
-                <!-- Filtros por fecha de generación -->
+                <!-- Filtro por fecha de generación -->
+                <field name="generated_at" string="Fecha de generación"/>
+
+                <separator/>
+
+                <!-- Filtros rápidos -->
                 <filter
                     name="generated_today"
                     string="Hoy"
@@ -169,26 +174,9 @@
                     ]"
                 />
 
-                <separator/>
-
-                <!-- Agrupación -->
-                <group string="Agrupar por">
-                    <filter
-                        name="group_generated_date"
-                        string="Fecha de generación"
-                        context="{'group_by': 'generated_at:date'}"
-                    />
-                    <filter
-                        name="group_generated_month"
-                        string="Mes de generación"
-                        context="{'group_by': 'generated_at:month'}"
-                    />
-                </group>
-
             </search>
         </field>
     </record>
-
 
     <!-- Vista lista -->
     <record id="view_hr_ec_onboarding_package_list" model="ir.ui.view">
