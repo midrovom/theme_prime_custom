@@ -74,7 +74,7 @@
 //     },
 // });
 
-/** @odoo-module **/
+ /** @odoo-module **/
 
 import { Component, useState } from "@odoo/owl";
 import { patch } from "@web/core/utils/patch";
@@ -111,9 +111,10 @@ export class EcOnboardingDateFilter extends Component {
                 date_str: value,
             });
 
-            // Aplicar el filtro sobre la vista actual
-            this.env.searchModel.createNewGroupBy;
-            
+            console.log("IDs filtrados:", ids);
+
+            // IMPORTANTE:
+            // No usamos doAction(), porque eso abre otra lista.
             this.env.searchModel.setDomain([
                 ["id", "in", ids],
             ]);
@@ -126,7 +127,6 @@ export class EcOnboardingDateFilter extends Component {
     }
 
     clear() {
-        // Quitar el dominio aplicado por nuestro filtro
         this.env.searchModel.setDomain([]);
 
         this.state.date = "";
@@ -134,11 +134,9 @@ export class EcOnboardingDateFilter extends Component {
     }
 }
 
-patch(ControlPanel.prototype, {
-    setup() {
-        super.setup(...arguments);
-
-        // Disponible desde el componente ControlPanel
-        this.EcOnboardingDateFilter = EcOnboardingDateFilter;
+patch(ControlPanel, {
+    components: {
+        ...ControlPanel.components,
+        EcOnboardingDateFilter,
     },
 });
