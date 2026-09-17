@@ -4,12 +4,12 @@
 
 
     <!-- ========================================================
-         COMPONENTE FILTRO
+         FILTRO DE FECHA
          ======================================================== -->
 
     <t t-name="hr_recruitment_ec_contract_date_filter.DateFilter">
 
-        <div class="o_ec_date_filter position-relative">
+        <div class="o_ec_date_filter">
 
 
             <!-- =================================================
@@ -24,9 +24,7 @@
 
                 <i class="fa fa-calendar me-1"/>
 
-                <span>
-                    Filtrar
-                </span>
+                <span>Filtrar</span>
 
             </button>
 
@@ -38,15 +36,6 @@
             <t t-if="state.open">
 
                 <div class="o_ec_date_filter_dropdown">
-
-
-                    <!-- TITULO -->
-
-                    <div class="fw-bold mb-3">
-
-                        Filtrar paquetes
-
-                    </div>
 
 
                     <!-- FECHA -->
@@ -110,7 +99,7 @@
 
 
     <!-- ========================================================
-         EXTENDER CONTROL PANEL
+         CONTROL PANEL
          ======================================================== -->
 
     <t t-inherit="web.ControlPanel"
@@ -120,15 +109,12 @@
             expr="//div[hasclass('o_control_panel_actions')]"
             position="inside">
 
-
             <EcOnboardingDateFilter
                 t-if="env.searchModel and env.searchModel.resModel === 'hr.ec.onboarding.package'"
                 searchModel="env.searchModel"
             />
 
-
         </xpath>
-
 
     </t>
 

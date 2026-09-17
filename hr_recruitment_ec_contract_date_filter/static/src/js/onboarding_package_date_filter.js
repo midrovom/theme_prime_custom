@@ -5,12 +5,6 @@ import { patch } from "@web/core/utils/patch";
 import { ControlPanel } from "@web/search/control_panel/control_panel";
 
 
-/**
- * ============================================================
- * COMPONENTE DEL FILTRO
- * ============================================================
- */
-
 export class EcOnboardingDateFilter extends Component {
 
     static template =
@@ -28,7 +22,7 @@ export class EcOnboardingDateFilter extends Component {
 
 
     /**
-     * Abrir / cerrar calendario
+     * Abrir / cerrar el filtro
      */
     toggle() {
 
@@ -38,7 +32,7 @@ export class EcOnboardingDateFilter extends Component {
 
 
     /**
-     * Cerrar popup
+     * Cerrar el filtro
      */
     close() {
 
@@ -48,23 +42,17 @@ export class EcOnboardingDateFilter extends Component {
 
 
     /**
-     * Cuando el usuario selecciona una fecha
+     * Seleccionar fecha
      */
     onDateChange(ev) {
 
-        const value = ev.target.value;
-
-        if (!value) {
-            return;
-        }
-
-        this.state.date = value;
+        this.state.date = ev.target.value;
 
     }
 
 
     /**
-     * Aplicar filtro
+     * Aplicar filtro por día
      */
     apply() {
 
@@ -75,9 +63,6 @@ export class EcOnboardingDateFilter extends Component {
         }
 
 
-        /*
-         * Obtenemos el SearchModel del ControlPanel.
-         */
         const searchModel = this.props.searchModel;
 
 
@@ -94,12 +79,8 @@ export class EcOnboardingDateFilter extends Component {
 
         /*
          * =====================================================
-         * FECHA INICIAL
+         * INICIO DEL DÍA
          * =====================================================
-         *
-         * Ejemplo:
-         *
-         * 2026-09-17 00:00:00
          */
 
         const startDate =
@@ -108,10 +89,8 @@ export class EcOnboardingDateFilter extends Component {
 
         /*
          * =====================================================
-         * FECHA FINAL
+         * DÍA SIGUIENTE
          * =====================================================
-         *
-         * Tomamos el día siguiente.
          */
 
         const [year, month, day] =
@@ -162,22 +141,25 @@ export class EcOnboardingDateFilter extends Component {
 
 
         console.log(
-            "EC Date Filter - Aplicando:",
+            "EC Date Filter - Dominio:",
             domain
         );
 
 
         /*
          * =====================================================
-         * APLICAR AL SEARCH MODEL
+         * ODOO 18
+         *
+         * setGlobalDomain agrega el filtro al dominio
+         * global del SearchModel.
          * =====================================================
          */
 
-        searchModel.setDomain(domain);
+        searchModel.setGlobalDomain(domain);
 
 
         /*
-         * Cerramos popup
+         * Cerramos el popup
          */
 
         this.state.open = false;
@@ -190,20 +172,31 @@ export class EcOnboardingDateFilter extends Component {
      */
     clear() {
 
-        this.state.date = "";
-
-
         const searchModel =
             this.props.searchModel;
 
 
         if (!searchModel) {
+
+            console.error(
+                "EC Date Filter: SearchModel no disponible"
+            );
+
             return;
+
         }
 
 
-        searchModel.setDomain([]);
+        /*
+         * Eliminamos únicamente nuestro dominio global.
+         *
+         * Los filtros normales del buscador permanecen.
+         */
 
+        searchModel.setGlobalDomain([]);
+
+
+        this.state.date = "";
 
         this.state.open = false;
 
