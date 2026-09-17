@@ -1,12 +1,14 @@
 # Changelog
 
-## 18.0.1.4.0
-- Bitácora móvil rediseñada como línea de tiempo Kanban que combina visitas y proformas.
-- Botón **Ver bitácora completa** como respaldo para móvil/escritorio.
-- Nuevo resumen por producto usando líneas reales de `sale.order`: cantidad proformada, documentos, importe, precio promedio neto ponderado, precio mínimo/máximo y última fecha.
-- Historial por producto ordenado por fecha descendente, con cantidad, precio, descuento, precio neto y subtotal por proforma.
-- Métricas de proformas agregadas también en la ficha estándar del producto (compañía actual), con botón al historial.
-- Nuevo catastro: búsqueda por **RUC / Cédula** normalizada (ignora espacios, puntos y guiones).
-- Si el cliente ya existe, el wizard muestra sus datos actuales y reutiliza el mismo `res.partner` para completar el catastro.
-- Nueva verificación anti-duplicado por identificación normalizada.
-- Reportes implementados con vistas SQL de solo lectura; no se duplican datos de ventas.
+## 18.0.1.5.0
+
+- Corrige el resumen de productos cotizados para consolidar por cliente comercial, incluyendo cotizaciones hechas a contactos/direcciones hijas.
+- Corrige reglas de acceso que podían hacer parecer que bitácora/productos habían desaparecido tras una actualización.
+- La bitácora comercial es visible para el equipo de ventas dentro de las compañías permitidas; los vendedores siguen modificando únicamente sus propias visitas.
+- El detalle y resumen de productos se muestran para la compañía permitida, sin exigir que `res.partner.user_id` coincida con el vendedor actual.
+- Añade guardia de integridad de datos pre/post actualización; el upgrade aborta si disminuyen catastros, visitas, horarios, relaciones o proformas del módulo.
+- La búsqueda por RUC/cédula detecta también identificaciones guardadas en contactos hijos y reutiliza el cliente comercial principal.
+- Añade captura directa de fotografía desde móvil mediante cámara trasera (`capture=environment`), sin requerir HTTPS.
+- Mejora la UX móvil con acciones rápidas grandes y tarjetas a ancho completo.
+- Las métricas globales de producto consideran todas las cotizaciones no canceladas de la compañía actual.
+- Mantiene GPS opcional hasta disponer de HTTPS.

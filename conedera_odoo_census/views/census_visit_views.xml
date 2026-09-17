@@ -152,8 +152,7 @@
                         </div>
                         <group>
                             <group>
-                                <field name="photo" widget="image" readonly="state != 'draft'"
-                                       options="{'preview_image': 'photo'}"/>
+                                <field name="photo" widget="camera_capture" readonly="state != 'draft'"/>
                             </group>
                             <group>
                                 <field name="user_id" string="Vendedor" widget="many2one_avatar_user" readonly="1"/>

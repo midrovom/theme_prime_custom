@@ -118,3 +118,88 @@
         }
     }
 }
+
+.o_conedera_camera_capture {
+    .o_conedera_camera_button {
+        min-height: 48px;
+        min-width: 180px;
+    }
+    .o_conedera_camera_preview {
+        max-height: 320px;
+        width: 100%;
+        object-fit: cover;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .o_conedera_census_form,
+    .o_conedera_visit_form {
+        padding-bottom: 1.5rem;
+
+        .o_conedera_hero {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            backdrop-filter: blur(10px);
+        }
+
+        .o_conedera_card {
+            box-shadow: 0 .35rem 1.25rem rgba(0, 0, 0, .06);
+            margin-bottom: .75rem;
+        }
+
+        .o_conedera_card_title {
+            font-size: 1rem;
+        }
+
+        input,
+        select,
+        textarea,
+        .o_field_widget {
+            font-size: 16px;
+        }
+
+        .o_conedera_camera_button {
+            width: 100%;
+            min-height: 52px;
+            font-size: 1rem;
+        }
+
+        .o_field_x2many .o_kanban_record {
+            box-shadow: 0 .25rem .8rem rgba(0, 0, 0, .05);
+        }
+    }
+}
+
+.o_conedera_app_actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .6rem;
+
+    .btn {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .o_conedera_mobile_quick_actions {
+        position: sticky;
+        bottom: .5rem;
+        z-index: 3;
+        border: 1px solid var(--bs-border-color);
+        background: var(--bs-body-bg);
+        backdrop-filter: blur(10px);
+    }
+
+    .o_conedera_app_actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        .btn {
+            min-height: 52px;
+            white-space: normal;
+        }
+    }
+}

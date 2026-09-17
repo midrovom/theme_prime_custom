@@ -160,11 +160,17 @@ class ResPartner(models.Model):
                 if not last_visits[partner_id]:
                     last_visits[partner_id] = visit.visit_datetime
 
+            commercial_ids = set(self.mapped("commercial_partner_id").ids)
             quotations = self.env["sale.order"].search(
-                [("partner_id", "in", partner_ids)]
+                [("partner_id.commercial_partner_id", "in", list(commercial_ids))]
             )
+            partner_by_commercial = {
+                partner.commercial_partner_id.id: partner.id for partner in self
+            }
             for quotation in quotations:
-                quotation_counts[quotation.partner_id.id] += 1
+                target_id = partner_by_commercial.get(quotation.partner_id.commercial_partner_id.id)
+                if target_id:
+                    quotation_counts[target_id] += 1
 
         for partner in self:
             partner.census_visit_count = visit_counts.get(partner.id, 0)
@@ -420,7 +426,7 @@ class ResPartner(models.Model):
     def action_view_census_visits(self):
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id("conedera_odoo_census.action_census_visit")
-        action["domain"] = [("partner_id", "=", self.id)]
+        action["domain"] = [("partner_id.commercial_partner_id", "=", self.commercial_partner_id.id)]
         action["context"] = {
             "default_partner_id": self.id,
             "default_user_id": self.env.user.id,
@@ -431,7 +437,7 @@ class ResPartner(models.Model):
     def action_view_census_quotations(self):
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id("sale.action_quotations_with_onboarding")
-        action["domain"] = [("partner_id", "=", self.id)]
+        action["domain"] = [("partner_id.commercial_partner_id", "=", self.commercial_partner_id.id)]
         action["context"] = {
             "default_partner_id": self.id,
             "default_user_id": self.env.user.id,
@@ -445,7 +451,7 @@ class ResPartner(models.Model):
         action = self.env["ir.actions.actions"]._for_xml_id(
             "conedera_odoo_census.action_census_commercial_timeline"
         )
-        action["domain"] = [("partner_id", "=", self.id)]
+        action["domain"] = [("partner_id", "=", self.commercial_partner_id.id)]
         action["name"] = _("Bitácora - %s") % self.display_name
         return action
 
@@ -454,7 +460,7 @@ class ResPartner(models.Model):
         action = self.env["ir.actions.actions"]._for_xml_id(
             "conedera_odoo_census.action_census_product_quote_summary"
         )
-        action["domain"] = [("partner_id", "=", self.id)]
+        action["domain"] = [("partner_id", "=", self.commercial_partner_id.id)]
         action["name"] = _("Productos proformados - %s") % self.display_name
         return action
 

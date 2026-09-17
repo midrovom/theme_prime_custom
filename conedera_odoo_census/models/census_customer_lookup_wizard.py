@@ -80,21 +80,23 @@ class CensusCustomerLookupWizard(models.TransientModel):
             """
             SELECT id
               FROM res_partner
-             WHERE parent_id IS NULL
-               AND vat IS NOT NULL
+             WHERE vat IS NOT NULL
                AND regexp_replace(upper(vat), '[^0-9A-Z]', '', 'g') = %s
-             ORDER BY active DESC, id
-             LIMIT 4
+             ORDER BY active DESC, parent_id NULLS FIRST, id
+             LIMIT 12
             """,
             [normalized],
         )
         ids = [row[0] for row in self.env.cr.fetchall()]
         if not ids:
             return self.env["res.partner"]
-        # Reaplicamos el ORM para respetar permisos y reglas de acceso.
-        return self.env["res.partner"].with_context(active_test=False).search(
-            [("id", "in", ids), ("parent_id", "=", False)], order="active desc, id"
+        # El RUC puede estar guardado en un contacto hijo o dirección. Siempre
+        # normalizamos al cliente comercial principal para evitar un segundo catastro.
+        records = self.env["res.partner"].with_context(active_test=False).search(
+            [("id", "in", ids)], order="active desc, id"
         )
+        commercial = records.mapped("commercial_partner_id")
+        return commercial.sorted(key=lambda p: (not p.active, p.id))
 
     def _find_existing(self):
         self.ensure_one()

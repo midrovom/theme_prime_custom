@@ -1,38 +1,14 @@
-# Conedera - Catastro Comercial 18.0.1.4.0
+# Conedera Catastro Comercial — Odoo 18 Community
 
-Módulo para Odoo 18 Community. Mantiene una ficha única `res.partner` por cliente, bitácora comercial, visitas, proformas y análisis por producto.
+Módulo móvil-first que reutiliza `res.partner`, `sale.order` y `sale.order.line` para mantener una ficha única de cliente, bitácora de visitas/proformas y analítica histórica de productos.
 
-## Flujo de alta
-1. **Nuevo catastro**.
-2. Ingresar RUC/cédula (preferido) o nombre.
-3. Validar.
-4. Si existe: se muestran sus datos y se abre la misma ficha para completar el catastro.
-5. Si no existe: se habilita la creación.
+## Flujo
+1. Nuevo catastro → validar RUC/cédula o nombre.
+2. Reutilizar cliente existente si Odoo ya lo conoce.
+3. Completar ficha de catastro.
+4. Registrar visitas y evidencia fotográfica.
+5. Crear proformas estándar de Odoo.
+6. Consultar bitácora y productos cotizados desde la misma ficha.
 
-La comparación de RUC/cédula normaliza espacios, puntos y guiones para reducir duplicados.
-
-## Bitácora móvil
-La pestaña Bitácora usa una línea de tiempo Kanban de solo lectura que combina:
-- visitas comerciales;
-- proformas/cotizaciones.
-
-Cada tarjeta abre el registro original.
-
-## Productos proformados
-Desde la ficha del cliente se resume por producto:
-- cantidad proformada;
-- número de proformas;
-- importe proformado;
-- precio promedio neto ponderado por cantidad;
-- precio mínimo/máximo neto;
-- última fecha.
-
-Al pulsar el producto se abre el detalle por fecha, de más reciente a más antigua.
-Las proformas canceladas no se incluyen.
-
-La ficha estándar del producto muestra, para la compañía activa y convertidos a su moneda:
-- cantidad proformada;
-- importe proformado;
-- precio promedio proformado;
-- última proforma;
-- botón al historial.
+## 18.0.1.5.0
+Incluye consolidación por cliente comercial, cámara móvil, data guard de upgrades y corrección de reglas de visibilidad.

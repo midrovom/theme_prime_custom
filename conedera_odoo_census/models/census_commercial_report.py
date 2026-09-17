@@ -44,7 +44,7 @@ class CensusCommercialTimeline(models.Model):
             CREATE OR REPLACE VIEW {self._table} AS (
                 SELECT
                     (v.id * 2)::bigint AS id,
-                    v.partner_id AS partner_id,
+                    COALESCE(vp.commercial_partner_id, v.partner_id) AS partner_id,
                     'visit'::varchar AS event_type,
                     v.visit_datetime AS event_datetime,
                     v.user_id AS user_id,
@@ -63,13 +63,14 @@ class CensusCommercialTimeline(models.Model):
                     0.0::numeric AS amount_total,
                     c.currency_id AS currency_id
                 FROM conedera_census_visit v
+                JOIN res_partner vp ON vp.id = v.partner_id
                 JOIN res_company c ON c.id = v.company_id
 
                 UNION ALL
 
                 SELECT
                     (so.id * 2 + 1)::bigint AS id,
-                    so.partner_id AS partner_id,
+                    COALESCE(sp.commercial_partner_id, so.partner_id) AS partner_id,
                     'quotation'::varchar AS event_type,
                     so.date_order AS event_datetime,
                     so.user_id AS user_id,
@@ -89,6 +90,7 @@ class CensusCommercialTimeline(models.Model):
                     so.amount_total AS amount_total,
                     so.currency_id AS currency_id
                 FROM sale_order so
+                JOIN res_partner sp ON sp.id = so.partner_id
                 WHERE so.partner_id IS NOT NULL
             )
             """
@@ -160,7 +162,7 @@ class CensusProductQuoteSummary(models.Model):
             CREATE OR REPLACE VIEW {self._table} AS (
                 SELECT
                     MIN(sol.id)::bigint AS id,
-                    so.partner_id AS partner_id,
+                    COALESCE(sp.commercial_partner_id, so.partner_id) AS partner_id,
                     sol.product_id AS product_id,
                     pp.product_tmpl_id AS product_tmpl_id,
                     so.company_id AS company_id,
@@ -179,15 +181,16 @@ class CensusProductQuoteSummary(models.Model):
                     MAX(so.date_order) AS last_quote_date
                 FROM sale_order_line sol
                 JOIN sale_order so ON so.id = sol.order_id
+                JOIN res_partner sp ON sp.id = so.partner_id
                 JOIN product_product pp ON pp.id = sol.product_id
                 WHERE
                     sol.display_type IS NULL
                     AND sol.product_id IS NOT NULL
-                    AND NOT sol.is_downpayment
+                    AND COALESCE(sol.is_downpayment, FALSE) IS FALSE
                     AND so.partner_id IS NOT NULL
                     AND so.state != 'cancel'
                 GROUP BY
-                    so.partner_id,
+                    COALESCE(sp.commercial_partner_id, so.partner_id),
                     sol.product_id,
                     pp.product_tmpl_id,
                     so.company_id,
@@ -257,7 +260,7 @@ class CensusProductQuoteLine(models.Model):
                     sol.id::bigint AS id,
                     sol.id AS sale_line_id,
                     so.id AS order_id,
-                    so.partner_id AS partner_id,
+                    COALESCE(sp.commercial_partner_id, so.partner_id) AS partner_id,
                     sol.product_id AS product_id,
                     pp.product_tmpl_id AS product_tmpl_id,
                     so.date_order AS order_date,
@@ -273,11 +276,12 @@ class CensusProductQuoteLine(models.Model):
                     so.state AS state
                 FROM sale_order_line sol
                 JOIN sale_order so ON so.id = sol.order_id
+                JOIN res_partner sp ON sp.id = so.partner_id
                 JOIN product_product pp ON pp.id = sol.product_id
                 WHERE
                     sol.display_type IS NULL
                     AND sol.product_id IS NOT NULL
-                    AND NOT sol.is_downpayment
+                    AND COALESCE(sol.is_downpayment, FALSE) IS FALSE
                     AND so.partner_id IS NOT NULL
                     AND so.state != 'cancel'
             )

@@ -43,7 +43,7 @@ class ProductTemplate(models.Model):
             for template_id in template_ids
         }
         if template_ids:
-            lines = self.env["sale.order.line"].search(
+            lines = self.env["sale.order.line"].sudo().search(
                 [
                     ("product_id.product_tmpl_id", "in", template_ids),
                     ("display_type", "=", False),

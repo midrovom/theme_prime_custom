@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="conedera_odoo_census.CameraCaptureField">
+        <div class="o_conedera_camera_capture">
+            <input t-ref="fileInput" type="file" accept="image/*" capture="environment"
+                   class="d-none" t-on-change="onFileChange" t-att-disabled="props.readonly"/>
+            <button type="button" class="btn btn-primary o_conedera_camera_button"
+                    t-on-click="openCamera" t-att-disabled="state.loading || props.readonly">
+                <i t-att-class="state.loading ? 'fa fa-spinner fa-spin me-2' : 'fa fa-camera me-2'"/>
+                <t t-if="state.loading">Procesando foto...</t>
+                <t t-else="">Tomar foto</t>
+            </button>
+            <div t-if="state.preview" class="mt-2">
+                <img t-att-src="state.preview" class="img-fluid rounded o_conedera_camera_preview" alt="Foto capturada"/>
+            </div>
+            <div t-elif="hasValue" class="text-success small mt-2">
+                <i class="fa fa-check-circle me-1"/>Foto guardada
+            </div>
+            <div class="text-muted small mt-2">En móvil abre la cámara trasera; en escritorio permite seleccionar una imagen.</div>
+        </div>
+    </t>
+</templates>

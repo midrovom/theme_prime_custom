@@ -1,6 +1,6 @@
 {
     "name": "Conedera - Catastro Comercial (Community)",
-    "version": "18.0.1.4.0",
+    "version": "18.0.1.5.0",
     "category": "Sales/Sales",
     "summary": "Ficha única de cliente, bitácora comercial, GPS y proformas",
     "description": """
@@ -29,7 +29,9 @@ horarios estructurados, visitas con GPS y proformas sin dependencias Enterprise.
     "assets": {
         "web.assets_backend": [
             "conedera_odoo_census/static/src/js/gps_capture_field.js",
+            "conedera_odoo_census/static/src/js/camera_capture_field.js",
             "conedera_odoo_census/static/src/xml/gps_capture_field.xml",
+            "conedera_odoo_census/static/src/xml/camera_capture_field.xml",
             "conedera_odoo_census/static/src/scss/census_mobile.scss",
         ],
     },

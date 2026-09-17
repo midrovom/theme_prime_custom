@@ -84,6 +84,22 @@
                         <div><strong>Catastro listo.</strong> Ya puede registrar visitas y crear proformas.</div>
                     </div>
 
+                    <div class="o_conedera_card o_conedera_mobile_quick_actions" invisible="not id">
+                        <div class="o_conedera_card_title"><i class="fa fa-bolt"/> Acciones rápidas</div>
+                        <div class="o_conedera_app_actions">
+                            <button name="action_new_census_visit" type="object" string="Nueva visita"
+                                    class="btn btn-primary" icon="fa-map-marker"
+                                    invisible="not census_ready_for_activity"/>
+                            <button name="action_new_census_quotation" type="object" string="Nueva proforma"
+                                    class="btn btn-primary" icon="fa-file-text-o"
+                                    invisible="not census_ready_for_activity"/>
+                            <button name="action_view_census_timeline" type="object" string="Bitácora"
+                                    class="btn btn-outline-secondary" icon="fa-history"/>
+                            <button name="action_view_census_product_summary" type="object" string="Productos cotizados"
+                                    class="btn btn-outline-secondary" icon="fa-cubes"/>
+                        </div>
+                    </div>
+
                     <div class="oe_button_box" name="button_box" invisible="not id">
                         <button name="action_view_census_visits" type="object" class="oe_stat_button"
                                 icon="fa-map-marker" groups="sales_team.group_sale_salesman">
