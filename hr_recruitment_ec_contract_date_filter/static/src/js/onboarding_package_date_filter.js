@@ -81,8 +81,9 @@ export class EcOnboardingDateFilter extends Component {
 
         console.log("EC Date Filter - Dominio:", domain);
 
-        // Odoo 18: usar addDomain con global:true
-        searchModel.addDomain(domain, { global: true });
+        // Odoo 18: manipular el query y aplicar
+        searchModel.query.domain = domain;
+        searchModel.query.trigger("update", searchModel.query);
 
         this.state.open = false;
     }
@@ -97,8 +98,9 @@ export class EcOnboardingDateFilter extends Component {
             return;
         }
 
-        // Odoo 18: limpiar dominios globales
-        searchModel.clearGlobalDomain();
+        // Limpiar dominio
+        searchModel.query.domain = [];
+        searchModel.query.trigger("update", searchModel.query);
 
         this.state.date = "";
         this.state.open = false;
