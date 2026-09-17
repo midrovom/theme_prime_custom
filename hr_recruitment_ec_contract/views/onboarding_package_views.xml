@@ -16,6 +16,15 @@
                 <separator/>
 
                 <filter
+                    name="generated_yesterday"
+                    string="Ayer"
+                    domain="[
+                        ('generated_at', '>=', (context_today() - relativedelta(days=1)).strftime('%Y-%m-%d 00:00:00')),
+                        ('generated_at', '<', context_today().strftime('%Y-%m-%d 00:00:00'))
+                    ]"
+                />
+
+                <filter
                     name="generated_today"
                     string="Hoy"
                     domain="[
