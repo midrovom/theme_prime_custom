@@ -124,6 +124,7 @@
 
 // });
 
+
 /** @odoo-module **/
 
 import { Component, useState } from "@odoo/owl";
@@ -158,11 +159,13 @@ export class EcOnboardingDateFilter extends Component {
                 date_str: value,
             });
 
-            // Refrescar la vista con esos IDs
-            const searchModel = this.props.searchModel;
-            if (searchModel) {
-                searchModel.load({ domain: [["id", "in", ids]] });
-            }
+            // Refrescar la vista lista estándar con dominio
+            this.env.services.action.doAction({
+                type: "ir.actions.act_window",
+                res_model: "hr.ec.onboarding.package",
+                views: [[false, "list"], [false, "form"]],
+                domain: [["id", "in", ids]],
+            });
         } catch (err) {
             console.error("Error al consultar:", err);
         }
@@ -176,10 +179,12 @@ export class EcOnboardingDateFilter extends Component {
                 date_str: "",
             });
 
-            const searchModel = this.props.searchModel;
-            if (searchModel) {
-                searchModel.load({ domain: [["id", "in", ids]] });
-            }
+            this.env.services.action.doAction({
+                type: "ir.actions.act_window",
+                res_model: "hr.ec.onboarding.package",
+                views: [[false, "list"], [false, "form"]],
+                domain: [["id", "in", ids]],
+            });
         } catch (err) {
             console.error("Error al limpiar:", err);
         }
