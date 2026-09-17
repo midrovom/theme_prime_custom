@@ -1878,7 +1878,6 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
     // Handlers
     //----------------------------------------------------------------------
 
-
     _onNextClick(ev) {
         ev.preventDefault();
 
@@ -1886,193 +1885,86 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             this.$('#form-step-1').addClass('d-none');
             this.$('#form-step-2').removeClass('d-none');
 
-            const $numHijos = this.$('#hr-hijos');
-            const numHijos = parseInt($numHijos.val(), 10);
+            const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
+            this.$('#hr-hijos').prop('readonly', true);
 
-            // Mantener el valor y bloquear el campo
             if (!isNaN(numHijos)) {
-                $numHijos.prop('readonly', true);
+                const $hiddenHijos = this.$('input[name="numHijos"]');
+                if ($hiddenHijos.length === 0) {
+                    this.$('#hr-hijos').after(`<input type="hidden" name="numHijos" value="${numHijos}"/>`);
+                } else {
+                    $hiddenHijos.val(numHijos);
+                }
             }
 
-            // Eliminar bloques de hijos anteriores
-            this.$('.family-block[data-type="Hijo"]').remove();
+            // Si los bloques ya fueron generados, no volver a crearlos.
+            if (this.familyBlocksGenerated) {
+                return;
+            }
 
-            const AUTO_FAMILY = [
-                "Padre",
-                "Madre",
-                "Conyugue"
-            ];
+            this.familyBlocksGenerated = true;
+
+            const AUTO_FAMILY = ["Padre", "Madre", "Conyugue"];
 
             AUTO_FAMILY.forEach(tipo => {
-                if (
-                    this.$(
-                        `.family-block[data-type="${tipo}"]`
-                    ).length === 0
-                ) {
+                if (this.$(`.family-block[data-type="${tipo}"]`).length === 0) {
                     this.familyCount++;
-
                     const index = this.familyCount;
 
                     this._getFamilyBlock(tipo, index).then(blockHtml => {
                         const block = $(blockHtml);
+                        const tipoVal = tipo === "Padre" ? "1" :
+                                        tipo === "Madre" ? "2" :
+                                        tipo === "Conyugue" ? "4" : tipo;
 
-                        const tipoVal =
-                            tipo === "Padre"
-                                ? "1"
-                                : tipo === "Madre"
-                                    ? "2"
-                                    : tipo === "Conyugue"
-                                        ? "4"
-                                        : tipo;
-
-                        block.prepend(
-                            `<input type="hidden" name="famTipo_${index}" value="${tipoVal}"/>`
-                        );
-
-                        block.prepend(
-                            `<input type="hidden" name="famIndex_${index}" value="${index}"/>`
-                        );
-
+                        block.prepend(`<input type="hidden" name="famTipo_${index}" value="${tipoVal}"/>`);
+                        block.prepend(`<input type="hidden" name="famIndex_${index}" value="${index}"/>`);
                         this.$('#family_container').append(block);
 
-                        const $fallecidoCheck = block.find(
-                            `input[name="famFallecido_${index}"]`
-                        );
-
-                        const $noTieneCheck = block.find(
-                            `input[name="famNoTiene_${index}"]`
-                        );
+                        const $fallecidoCheck = block.find(`input[name="famFallecido_${index}"]`);
+                        const $noTieneCheck = block.find(`input[name="famNoTiene_${index}"]`);
 
                         const aplicarEstadoFamiliar = () => {
                             const fallecido = $fallecidoCheck.is(":checked");
                             const noTiene = $noTieneCheck.is(":checked");
 
-                            if (fallecido) {
-                                $noTieneCheck.prop("checked", false);
-                            }
-
-                            if (noTiene) {
-                                $fallecidoCheck.prop("checked", false);
-                            }
+                            if (fallecido) $noTieneCheck.prop("checked", false);
+                            if (noTiene) $fallecidoCheck.prop("checked", false);
 
                             const bloqueado = fallecido || noTiene;
-
-                            const $fields = block
-                                .find(
-                                    "input:not([type='hidden']), select, textarea"
-                                )
-                                .filter(function () {
-                                    const name = $(this).attr("name") || "";
-
-                                    return (
-                                        !name.startsWith("famFallecido_") &&
-                                        !name.startsWith("famNoTiene_")
-                                    );
-                                });
+                            const $fields = block.find("input:not([type='hidden']), select, textarea").filter(function () {
+                                const name = $(this).attr("name") || "";
+                                return !name.startsWith("famFallecido_") && !name.startsWith("famNoTiene_");
+                            });
 
                             $fields.prop("disabled", bloqueado);
 
                             if (bloqueado) {
-                                $fields
-                                    .prop("required", false)
-                                    .val("")
-                                    .removeClass("is-invalid");
-
-                                $fields
-                                    .filter(":radio,:checkbox")
-                                    .prop("checked", false);
-
-                                $fields
-                                    .siblings(".error-message")
-                                    .hide();
+                                $fields.prop("required", false).val("").removeClass("is-invalid");
+                                $fields.filter(":radio,:checkbox").prop("checked", false);
+                                $fields.siblings(".error-message").hide();
                             } else {
-                                block
-                                    .find(
-                                        `input[name="famApellidoPaterno_${index}"]`
-                                    )
-                                    .prop("required", true);
-
-                                block
-                                    .find(
-                                        `input[name="famApellidoMaterno_${index}"]`
-                                    )
-                                    .prop("required", true);
-
-                                block
-                                    .find(
-                                        `input[name="famPrimerNombre_${index}"]`
-                                    )
-                                    .prop("required", true);
-
-                                block
-                                    .find(
-                                        `select[name="famTipoDoc_${index}"]`
-                                    )
-                                    .prop("required", true);
-
-                                block
-                                    .find(
-                                        `input[name="famFecha_${index}"]`
-                                    )
-                                    .prop("required", true);
-
-                                block
-                                    .find(
-                                        `input[name="famTelefono_${index}"]`
-                                    )
-                                    .prop("required", true);
-
-                                block
-                                    .find(
-                                        `input[name="famOcupacion_${index}"]`
-                                    )
-                                    .prop("required", true);
-
-                                block
-                                    .find(
-                                        `input[name="famDepende_${index}"]`
-                                    )
-                                    .prop("required", true);
-
-                                block
-                                    .find(
-                                        `input[name="famDisc_${index}"]`
-                                    )
-                                    .prop("required", true);
+                                block.find(`input[name="famApellidoPaterno_${index}"]`).prop("required", true);
+                                block.find(`input[name="famApellidoMaterno_${index}"]`).prop("required", true);
+                                block.find(`input[name="famPrimerNombre_${index}"]`).prop("required", true);
+                                block.find(`select[name="famTipoDoc_${index}"]`).prop("required", true);
+                                block.find(`input[name="famFecha_${index}"]`).prop("required", true);
+                                block.find(`input[name="famTelefono_${index}"]`).prop("required", true);
+                                block.find(`input[name="famOcupacion_${index}"]`).prop("required", true);
+                                block.find(`input[name="famDepende_${index}"]`).prop("required", true);
+                                block.find(`input[name="famDisc_${index}"]`).prop("required", true);
                             }
 
-                            const $nombre = block.find(
-                                `input[name="famNombre_${index}"]`
-                            );
-
-                            $nombre.val(
-                                fallecido
-                                    ? "FALLECIDO"
-                                    : noTiene
-                                        ? "NO TIENE"
-                                        : ""
-                            );
+                            const $nombre = block.find(`input[name="famNombre_${index}"]`);
+                            $nombre.val(fallecido ? "FALLECIDO" : noTiene ? "NO TIENE" : "");
                         };
 
-                        if ($fallecidoCheck.length) {
-                            $fallecidoCheck.on(
-                                "change",
-                                aplicarEstadoFamiliar
-                            );
-                        }
+                        if ($fallecidoCheck.length) $fallecidoCheck.on("change", aplicarEstadoFamiliar);
+                        if ($noTieneCheck.length) $noTieneCheck.on("change", aplicarEstadoFamiliar);
 
-                        if ($noTieneCheck.length) {
-                            $noTieneCheck.on(
-                                "change",
-                                aplicarEstadoFamiliar
-                            );
-                        }
-
-                        block
-                            .find(`input[name="famDisc_${index}"]`)
-                            .on("change", () => {
-                                this._toggleFamilyDisability(index);
-                            });
+                        block.find(`input[name="famDisc_${index}"]`).on("change", () => {
+                            this._toggleFamilyDisability(index);
+                        });
 
                         this._toggleFamilyDisability(index);
                     });
@@ -2082,27 +1974,18 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
             if (!isNaN(numHijos) && numHijos > 0) {
                 for (let i = 0; i < numHijos; i++) {
                     this.familyCount++;
-
                     const index = this.familyCount;
 
                     this._getFamilyBlock("Hijo", index).then(blockHtml => {
                         const block = $(blockHtml);
 
-                        block.prepend(
-                            `<input type="hidden" name="famTipo_${index}" value="5"/>`
-                        );
-
-                        block.prepend(
-                            `<input type="hidden" name="famIndex_${index}" value="${index}"/>`
-                        );
-
+                        block.prepend(`<input type="hidden" name="famTipo_${index}" value="5"/>`);
+                        block.prepend(`<input type="hidden" name="famIndex_${index}" value="${index}"/>`);
                         this.$('#family_container').append(block);
 
-                        block
-                            .find(`input[name="famDisc_${index}"]`)
-                            .on("change", () => {
-                                this._toggleFamilyDisability(index);
-                            });
+                        block.find(`input[name="famDisc_${index}"]`).on("change", () => {
+                            this._toggleFamilyDisability(index);
+                        });
 
                         this._toggleFamilyDisability(index);
                     });
@@ -2235,6 +2118,31 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-3').removeClass('d-none');
     },
 
+    _onPrevClickStep2(ev) {
+        ev.preventDefault();
+
+        // Mostrar nuevamente el Step 1
+        this.$('#form-step-2').addClass('d-none');
+        this.$('#form-step-1').removeClass('d-none');
+
+        // Mantener el valor seleccionado de hijos
+        const $hijos = this.$('#hr-hijos');
+
+        // Si existe un hidden con el valor, restaurarlo
+        const $hiddenHijos = this.$('input[name="numHijos"]');
+
+        if ($hiddenHijos.length) {
+            const numHijos = $hiddenHijos.val();
+
+            if (numHijos !== undefined && numHijos !== '') {
+                $hijos.val(numHijos);
+            }
+        }
+
+        // Mantener el campo bloqueado porque ya fue seleccionado
+        $hijos.prop('readonly', true);
+    },
+
     _onPrevClick(ev) {
         ev.preventDefault();
 
@@ -2242,12 +2150,12 @@ publicWidget.registry.MultistepForm = publicWidget.Widget.extend({
         this.$('#form-step-2').removeClass('d-none');
     },
 
-    _onPrevClickStep2(ev) {
-        ev.preventDefault();
+    // _onPrevClickStep2(ev) {
+    //     ev.preventDefault();
 
-        this.$('#form-step-2').addClass('d-none');
-        this.$('#form-step-1').removeClass('d-none');
-    },
+    //     this.$('#form-step-2').addClass('d-none');
+    //     this.$('#form-step-1').removeClass('d-none');
+    // },
 
     _onSubmitForm(ev) {
         ev.preventDefault();
