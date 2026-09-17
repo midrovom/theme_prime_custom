@@ -7,10 +7,12 @@
         <field name="model">hr.ec.onboarding.package</field>
         <field name="arch" type="xml">
             <search string="Buscar paquetes de contratación">
+
                 <field name="name"/>
                 <field name="applicant_id"/>
                 <field name="employee_id"/>
                 <field name="contract_id"/>
+
                 <separator/>
 
                 <filter
@@ -38,14 +40,6 @@
                         ('generated_at', '&gt;=', (context_today() - relativedelta(days=29)).strftime('%Y-%m-%d 00:00:00')),
                         ('generated_at', '&lt;', (context_today() + relativedelta(days=1)).strftime('%Y-%m-%d 00:00:00'))
                     ]"
-                />
-
-                <separator/>
-
-                <filter
-                    name="generated_specific_date"
-                    string="Fecha específica"
-                    domain="[]"
                 />
 
             </search>
@@ -82,7 +76,6 @@
             </list>
         </field>
     </record>
-
 
     <!-- Vista formulario -->
     <record id="view_hr_ec_onboarding_package_form" model="ir.ui.view">
