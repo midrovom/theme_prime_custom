@@ -101,20 +101,23 @@ export class EcOnboardingDateFilter extends Component {
 
     async apply() {
         const value = this.state.date;
-        if (!value) return;
+
+        if (!value) {
+            return;
+        }
 
         try {
             const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
                 date_str: value,
             });
 
-            // Refrescar la vista actual con reload
-            const action = this.env.services.action.currentAction;
-            if (action) {
-                this.env.services.action.reload({
-                    domain: [["id", "in", ids]],
-                });
-            }
+            // Aplicar el filtro sobre la vista actual
+            this.env.searchModel.createNewGroupBy;
+            
+            this.env.searchModel.setDomain([
+                ["id", "in", ids],
+            ]);
+
         } catch (err) {
             console.error("Error al consultar:", err);
         }
@@ -122,29 +125,20 @@ export class EcOnboardingDateFilter extends Component {
         this.state.open = false;
     }
 
-
-    async clear() {
-        try {
-            const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
-                date_str: "",
-            });
-
-            this.env.services.view.update({
-                domain: [["id", "in", ids]],
-            });
-        } catch (err) {
-            console.error("Error al limpiar:", err);
-        }
+    clear() {
+        // Quitar el dominio aplicado por nuestro filtro
+        this.env.searchModel.setDomain([]);
 
         this.state.date = "";
         this.state.open = false;
     }
 }
 
-patch(ControlPanel, {
-    components: {
-        ...ControlPanel.components,
-        EcOnboardingDateFilter,
+patch(ControlPanel.prototype, {
+    setup() {
+        super.setup(...arguments);
+
+        // Disponible desde el componente ControlPanel
+        this.EcOnboardingDateFilter = EcOnboardingDateFilter;
     },
 });
-
