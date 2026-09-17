@@ -28,17 +28,13 @@ export class EcOnboardingDateFilter extends Component {
         if (!value) return;
 
         try {
-            const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
+            const domain = await rpc("/hr_ec_onboarding/filter_by_date", {
                 date_str: value,
             });
 
             const searchModel = this.props.searchModel;
             if (searchModel) {
-                // Refrescar la vista actual con dominio
-                this.env.services.view.reload({
-                    resModel: "hr.ec.onboarding.package",
-                    domain: [["id", "in", ids]],
-                });
+                searchModel.updateDomain(domain);
             }
         } catch (err) {
             console.error("Error al consultar:", err);
@@ -49,13 +45,13 @@ export class EcOnboardingDateFilter extends Component {
 
     async clear() {
         try {
-            const ids = await rpc("/hr_ec_onboarding/filter_by_date", {
+            const domain = await rpc("/hr_ec_onboarding/filter_by_date", {
                 date_str: "",
             });
 
             const searchModel = this.props.searchModel;
             if (searchModel) {
-                searchModel.update({ domain: [["id", "in", ids]] });
+                searchModel.updateDomain(domain);
             }
         } catch (err) {
             console.error("Error al limpiar:", err);
