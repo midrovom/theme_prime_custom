@@ -562,16 +562,46 @@ class HrEcOnboardingPackage(models.Model):
 
     def action_send_email(self):
         for package in self:
-            if not package.email_to:
-                raise ValidationError(
-                    _("Ingrese un correo de destinatario antes de enviar.")
-                )
-
             if not package.attachment_ids:
                 raise ValidationError(
                     _("El borrador no tiene documentos adjuntos.")
                 )
 
+            # ==========================================================
+            # OBTENER EMPRESA AFILIADA
+            # ==========================================================
+            empresa = package.company_config_id
+
+            if not empresa:
+                raise ValidationError(
+                    _("El empleado no tiene una empresa afiliada configurada.")
+                )
+
+            # ==========================================================
+            # OBTENER MÚLTIPLES CORREOS DEL REPRESENTANTE
+            # ==========================================================
+            if not empresa.correo_representante:
+                raise ValidationError(
+                    _("La empresa no tiene correos de representante configurados.")
+                )
+
+            representante_emails = [
+                email.strip()
+                for email in empresa.correo_representante.split(";")
+                if email.strip()
+            ]
+
+            if not representante_emails:
+                raise ValidationError(
+                    _("No existen correos de representante válidos.")
+                )
+
+            # Odoo recibe múltiples destinatarios separados por coma
+            email_to = ", ".join(representante_emails)
+
+            # ==========================================================
+            # SERVIDOR DE CORREO
+            # ==========================================================
             mail_server = self.env["ir.mail_server"].sudo().search(
                 [("is_recruitment_server", "=", True)],
                 limit=1,
@@ -583,21 +613,8 @@ class HrEcOnboardingPackage(models.Model):
                 )
 
             # ==========================================================
-            # CORREOS DEL REPRESENTANTE LEGAL
+            # CREAR CORREO
             # ==========================================================
-            email_to = package.email_to
-
-            if package.empresa_id and package.empresa_id.correo_representante:
-                representante_emails = [
-                    email.strip()
-                    for email in package.empresa_id.correo_representante.split(";")
-                    if email.strip()
-                ]
-
-                if representante_emails:
-                    # Odoo espera los destinatarios separados por coma
-                    email_to = ", ".join(representante_emails)
-
             mail = self.env["mail.mail"].sudo().create({
                 "subject": package.email_subject or package.name,
                 "body_html": package.email_body_html or "",
@@ -608,6 +625,9 @@ class HrEcOnboardingPackage(models.Model):
                 "auto_delete": False,
             })
 
+            # ==========================================================
+            # ENVIAR
+            # ==========================================================
             mail.send(raise_exception=True)
 
             package.write({
@@ -625,6 +645,7 @@ class HrEcOnboardingPackage(models.Model):
             package.action_send_employee_email()
 
         return True
+
 
     def action_send_employee_email(self):
         for package in self:
