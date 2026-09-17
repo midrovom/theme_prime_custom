@@ -107,11 +107,16 @@ export class EcOnboardingDateFilter extends Component {
         const end = `${value} 23:59:59`;
 
         try {
-            // Aplica el dominio sobre la vista actual
-            this.env.searchModel.updateDomain([
-                ["generated_at", ">=", start],
-                ["generated_at", "<=", end],
-            ]);
+            // Refrescar la vista con dominio dinámico
+            await this.env.services.action.doAction({
+                type: "ir.actions.act_window",
+                res_model: "hr.ec.onboarding.package",
+                views: [[false, "list"], [false, "form"]],
+                domain: [
+                    ["generated_at", ">=", start],
+                    ["generated_at", "<=", end],
+                ],
+            });
         } catch (err) {
             console.error("Error al aplicar filtro:", err);
         }
@@ -121,8 +126,13 @@ export class EcOnboardingDateFilter extends Component {
 
     async clear() {
         try {
-            // Limpia el dominio
-            this.env.searchModel.updateDomain([]);
+            // Refrescar la vista sin dominio (todos los registros)
+            await this.env.services.action.doAction({
+                type: "ir.actions.act_window",
+                res_model: "hr.ec.onboarding.package",
+                views: [[false, "list"], [false, "form"]],
+                domain: [],
+            });
         } catch (err) {
             console.error("Error al limpiar:", err);
         }
