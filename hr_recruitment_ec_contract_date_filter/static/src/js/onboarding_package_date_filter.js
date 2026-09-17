@@ -104,21 +104,13 @@ export class EcOnboardingDateFilter extends Component {
         const value = this.state.date;
         if (!value) return;
 
-        try {
-            // Construir rango de la fecha seleccionada
-            const start = `${value} 00:00:00`;
-            const end = `${value} 23:59:59`;
+        const start = `${value} 00:00:00`;
+        const end = `${value} 23:59:59`;
 
-            const domain = [
-                ["generated_at", ">=", start],
-                ["generated_at", "<=", end],
-            ];
-
-            // Aplicar dominio directamente
-            this.env.searchModel.setDomain(domain);
-        } catch (err) {
-            console.error("Error al aplicar filtro:", err);
-        }
+        this.env.searchModel.setDomain([
+            ["generated_at", ">=", start],
+            ["generated_at", "<=", end],
+        ]);
 
         this.state.open = false;
     }
