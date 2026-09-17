@@ -578,26 +578,27 @@ class HrEcOnboardingPackage(models.Model):
                 )
 
             # ==========================================================
-            # OBTENER MÚLTIPLES CORREOS DEL REPRESENTANTE
+            # OBTENER CORREOS DE LA EMPRESA
             # ==========================================================
-            if not empresa.correo_representante:
+            if not empresa.correo:
                 raise ValidationError(
-                    _("La empresa no tiene correos de representante configurados.")
+                    _("La empresa no tiene un correo configurado.")
                 )
 
-            representante_emails = [
+            # El usuario puede ingresar varios correos separados por ;
+            empresa_emails = [
                 email.strip()
-                for email in empresa.correo_representante.split(";")
+                for email in empresa.correo.split(";")
                 if email.strip()
             ]
 
-            if not representante_emails:
+            if not empresa_emails:
                 raise ValidationError(
-                    _("No existen correos de representante válidos.")
+                    _("No existen correos válidos configurados para la empresa.")
                 )
 
-            # Odoo recibe múltiples destinatarios separados por coma
-            email_to = ", ".join(representante_emails)
+            # mail.mail utiliza coma como separador de destinatarios
+            email_to = ", ".join(empresa_emails)
 
             # ==========================================================
             # SERVIDOR DE CORREO
@@ -645,6 +646,7 @@ class HrEcOnboardingPackage(models.Model):
             package.action_send_employee_email()
 
         return True
+
 
 
     def action_send_employee_email(self):
