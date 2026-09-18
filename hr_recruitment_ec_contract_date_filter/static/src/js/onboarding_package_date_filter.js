@@ -26,38 +26,32 @@ export class EcOnboardingDateFilter extends Component {
         const value = this.state.date;
         if (!value) return;
 
-        const [year, month, day] = value.split("-").map(Number);
-
-        const startDate = `${value} 00:00:00`;
-        const nextDate = new Date(year, month - 1, day + 1);
-        const endDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${String(nextDate.getDate()).padStart(2, "0")} 00:00:00`;
-
-        const domain = [
-            ["generated_at", ">=", startDate],
-            ["generated_at", "<", endDate],
-        ];
-
-        this.env.services.action.doAction("hr_recruitment_ec_contract.action_hr_ec_onboarding_package", {
-            additional_context: {
-                domain: domain,
-            },
-            replace_last_action: true,   // 👈 evita duplicar cabecera
-        });
+        this.env.services.action.doAction(
+            "hr_recruitment_ec_contract.action_hr_ec_onboarding_package",
+            {
+                additional_context: {
+                    filter_date: value,  
+                },
+                replace_last_action: true,
+            }
+        );
 
         this.state.open = false;
     }
 
     clear() {
-        this.env.services.action.doAction("hr_recruitment_ec_contract.action_hr_ec_onboarding_package", {
-            additional_context: {
-                domain: [],
-            },
-            replace_last_action: true,   // 👈 evita duplicar cabecera
-        });
+        this.env.services.action.doAction(
+            "hr_recruitment_ec_contract.action_hr_ec_onboarding_package",
+            {
+                additional_context: {
+                    filter_date: false,   
+                },
+                replace_last_action: true,
+            }
+        );
         this.state.date = "";
         this.state.open = false;
     }
-
 
 }
 

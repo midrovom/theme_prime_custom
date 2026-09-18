@@ -10,7 +10,7 @@
         "web",
     ],
     "data": [
-        
+        'views/filter.views.xml',
     ],
     "assets": {
         "web.assets_backend": [
