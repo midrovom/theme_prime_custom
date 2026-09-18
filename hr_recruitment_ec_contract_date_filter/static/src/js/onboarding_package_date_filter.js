@@ -39,9 +39,9 @@ export class EcOnboardingDateFilter extends Component {
 
         this.env.services.action.doAction("hr_recruitment_ec_contract.action_hr_ec_onboarding_package", {
             additional_context: {
-                search_default_generated_at: value, // o directamente tu dominio
                 domain: domain,
             },
+            replace_last_action: true,   // 👈 evita duplicar cabecera
         });
 
         this.state.open = false;
@@ -52,11 +52,11 @@ export class EcOnboardingDateFilter extends Component {
             additional_context: {
                 domain: [],
             },
+            replace_last_action: true,   // 👈 evita duplicar cabecera
         });
         this.state.date = "";
         this.state.open = false;
     }
-
 
 
 }
