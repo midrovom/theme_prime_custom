@@ -18,7 +18,7 @@
                 <filter
                     name="filter_generate_date"
                     string="Filtrar generado"
-                    date="generate_date"
+                    date="generated_at"
                 />
 
                 <separator/>
