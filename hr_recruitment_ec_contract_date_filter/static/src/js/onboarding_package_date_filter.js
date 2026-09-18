@@ -30,7 +30,7 @@ export class EcOnboardingDateFilter extends Component {
             "hr_recruitment_ec_contract.action_hr_ec_onboarding_package",
             {
                 additional_context: {
-                    filter_date: value,  
+                    filter_date: value,   // 👉 se pasa al backend
                 },
                 replace_last_action: true,
             }
@@ -44,7 +44,7 @@ export class EcOnboardingDateFilter extends Component {
             "hr_recruitment_ec_contract.action_hr_ec_onboarding_package",
             {
                 additional_context: {
-                    filter_date: false,   
+                    filter_date: false,   // 👉 sin filtro, muestra todo
                 },
                 replace_last_action: true,
             }
