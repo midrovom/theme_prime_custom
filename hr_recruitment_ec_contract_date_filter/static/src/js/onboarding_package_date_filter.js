@@ -17,7 +17,20 @@ searchItemsRegistry.add(
     {
         type: "filter",
         description: "Generado el",
-        domain: () => [],
+
+        /*
+         * El dominio se genera utilizando el valor
+         * que nosotros enviamos desde toggleSearchItem().
+         */
+        domain: (value) => {
+            if (!value) {
+                return [];
+            }
+
+            return [
+                ["generated_date", "=", value],
+            ];
+        },
     },
     {
         force: true,
@@ -64,7 +77,7 @@ export class EcOnboardingDateFilter extends Component {
 
 
     // ========================================================
-    // APLICAR FILTRO
+    // APLICAR
     // ========================================================
 
     apply() {
@@ -75,41 +88,26 @@ export class EcOnboardingDateFilter extends Component {
             return;
         }
 
-        // Primero limpiar cualquier filtro anterior
-        this.clearFilter(false);
+        /*
+         * Si ya existe un filtro anterior,
+         * primero lo desactivamos.
+         */
+        this.searchModel.deactivateSearchItem(
+            "ec_date_filter"
+        );
 
         /*
-         * Agregamos el filtro directamente al SearchModel.
+         * Activamos el SearchItem correctamente.
          *
-         * generated_date es un campo Date, por lo que podemos
-         * comparar directamente:
-         *
-         * generated_date = 2026-09-18
+         * generatorIds debe contener el valor que
+         * utilizará nuestro domain().
          */
-
         this.searchModel.toggleSearchItem(
             "ec_date_filter",
             {
                 generatorIds: [value],
             }
         );
-
-        /*
-         * Cambiamos el dominio del search item.
-         *
-         * Esto evita trabajar con generated_at como Datetime.
-         */
-
-        const searchItem =
-            this.searchModel.getSearchItems(
-                "ec_date_filter"
-            )[0];
-
-        if (searchItem) {
-            searchItem.domain = [
-                ["generated_date", "=", value]
-            ];
-        }
 
         this.state.open = false;
     }
@@ -119,45 +117,21 @@ export class EcOnboardingDateFilter extends Component {
     // LIMPIAR
     // ========================================================
 
-    clear(closePopup = true) {
+    clear() {
 
-        this.clearFilter(closePopup);
+        /*
+         * Desactiva completamente el SearchItem.
+         *
+         * Esto elimina el dominio:
+         *
+         * generated_date = fecha
+         */
+        this.searchModel.deactivateSearchItem(
+            "ec_date_filter"
+        );
 
         this.state.date = "";
-    }
-
-
-    // ========================================================
-    // ELIMINAR FILTRO
-    // ========================================================
-
-    clearFilter(closePopup = true) {
-
-        /*
-         * Desactivar el search item.
-         *
-         * Esto elimina el dominio aplicado.
-         */
-
-        try {
-            this.searchModel.deactivateSearchItem(
-                "ec_date_filter"
-            );
-        } catch (error) {
-            console.warn(
-                "No se pudo desactivar el filtro de fecha",
-                error
-            );
-        }
-
-        /*
-         * Limpiamos cualquier filtro temporal
-         * relacionado con este componente.
-         */
-
-        if (closePopup) {
-            this.state.open = false;
-        }
+        this.state.open = false;
     }
 }
 
@@ -174,4 +148,6 @@ patch(ControlPanel, {
     },
 
 });
+
+
 
