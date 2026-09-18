@@ -111,12 +111,24 @@
                 </table>
             </div>
         </field>
-        <field name="email_subject">Documentos de contratación - {{ object.employee_id.name }}</field>
+        <field name="email_subject">NUEVO COLABORADOR INGRESADO A - {{ object.company_config_id.name }} - {{ object.employee_id.name }}</field>
         <field name="email_body_html" type="html">
             <div>
-                <p>Estimados,</p>
-                <p>Se adjunta el contrato de <t t-out="object.employee_id.name"/>, junto con las solicitudes de acumulación de décimos, reglamento interno y autorizaciòn de rol de pago, para su revisión y firma.</p>
-                <p>Saludos cordiales,</p>
+                <p>HOLA TALENTO HUMANO,</p>
+                <br/>
+                <P>Se regitro correctamente el ingreso de un nuevo colaborador.</P>
+                <br/>
+                <p>DATOS:</p>
+                <br/>
+                <br/>
+                <p>Nombre:<t t-out="object.employee_id.name"/></p>
+                <p>Cedula:<t t-out="object.employee_id.identification_id"/></p>
+                <p>Cargo:<t t-out="object.employee_id.identification_id"/></p>
+                <p>Empresa:<t t-out="object.company_config_id.name"/> Fecha de ingreso:<t t-out="object.date_start_text"/></p>
+                <br/>
+                <p>Se adjunta automaticamente los documentos generados.</p>
+                <br/>
+                <p>Sistema de ingresos</p>
             </div>
         </field>
     </record>
