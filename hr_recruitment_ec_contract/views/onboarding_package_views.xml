@@ -55,6 +55,16 @@
         </field>
     </record>
 
+    <record id="view_hr_ec_onboarding_package_searchitem" model="ir.ui.view">
+        <field name="name">hr.ec.onboarding.package.searchitem</field>
+        <field name="model">hr.ec.onboarding.package</field>
+        <field name="arch" type="xml">
+            <search>
+                <searchitem name="ec_date_filter" string="Generado el" type="dateFilter"/>
+            </search>
+        </field>
+    </record>
+
     <!-- Vista lista -->
     <record id="view_hr_ec_onboarding_package_list" model="ir.ui.view">
         <field name="name">hr.ec.onboarding.package.list</field>
