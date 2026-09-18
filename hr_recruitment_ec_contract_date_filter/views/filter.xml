@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_ec_onboarding_package_search" model="ir.ui.view">
+        <field name="name">hr.ec.onboarding.package.search</field>
+        <field name="model">hr.ec.onboarding.package</field>
+        <field name="arch" type="xml">
+            <search>
+                <searchitem name="ec_date_filter" string="Generado el" type="dateFilter"/>
+            </search>
+        </field>
+    </record>
+
+</odoo>
