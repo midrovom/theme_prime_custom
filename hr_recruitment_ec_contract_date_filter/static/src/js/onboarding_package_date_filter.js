@@ -78,56 +78,42 @@
 import { Component, useState } from "@odoo/owl";
 import { patch } from "@web/core/utils/patch";
 import { ControlPanel } from "@web/search/control_panel/control_panel";
-import { rpc } from "@web/core/network/rpc";
 
 export class EcOnboardingDateFilter extends Component {
     static template = "hr_recruitment_ec_contract_date_filter.DateFilter";
 
     setup() {
         this.state = useState({
-            open: false,
             date: "",
         });
-    }
-
-    toggle() {
-        this.state.open = !this.state.open;
     }
 
     onDateChange(ev) {
         this.state.date = ev.target.value;
     }
 
-    async apply() {
+    apply() {
         const value = this.state.date;
         if (!value) return;
 
-        const start = `${value} 00:00:00`;
-        const end = `${value} 23:59:59`;
+        const [year, month, day] = value.split("-").map(Number);
 
-        try {
-            // Enviar dominio como si fuera un filtro de búsqueda
-            this.env.services.search.addDomain([
-                ["generated_at", ">=", start],
-                ["generated_at", "<=", end],
-            ]);
-        } catch (err) {
-            console.error("Error al aplicar filtro:", err);
-        }
+        const startDate = `${value} 00:00:00`;
+        const nextDate = new Date(year, month - 1, day + 1);
+        const endDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${String(nextDate.getDate()).padStart(2, "0")} 00:00:00`;
 
-        this.state.open = false;
+        const domain = [
+            ["generated_at", ">=", startDate],
+            ["generated_at", "<", endDate],
+        ];
+
+        // Aquí aplicamos el mismo domain que pondrías en XML
+        this.env.searchModel.dispatch("updateDomain", { domain });
     }
 
-    async clear() {
-        try {
-            // Quitar el dominio añadido
-            this.env.searchModel.clearDomain();
-        } catch (err) {
-            console.error("Error al limpiar:", err);
-        }
-
+    clear() {
+        this.env.searchModel.dispatch("updateDomain", { domain: [] });
         this.state.date = "";
-        this.state.open = false;
     }
 }
 
@@ -137,3 +123,5 @@ patch(ControlPanel, {
         EcOnboardingDateFilter,
     },
 });
+
+
