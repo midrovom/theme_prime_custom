@@ -9,8 +9,13 @@ export class EcOnboardingDateFilter extends Component {
 
     setup() {
         this.state = useState({
+            open: false,
             date: "",
         });
+    }
+
+    toggle() {
+        this.state.open = !this.state.open;
     }
 
     onDateChange(ev) {
@@ -32,13 +37,18 @@ export class EcOnboardingDateFilter extends Component {
             ["generated_at", "<", endDate],
         ];
 
-        // Aquí aplicamos el mismo domain que pondrías en XML
-        this.env.searchModel.dispatch("updateDomain", { domain });
+        if (this.props.searchModel) {
+            this.props.searchModel.dispatch("updateDomain", { domain });
+        }
+        this.state.open = false;
     }
 
     clear() {
-        this.env.searchModel.dispatch("updateDomain", { domain: [] });
+        if (this.props.searchModel) {
+            this.props.searchModel.dispatch("updateDomain", { domain: [] });
+        }
         this.state.date = "";
+        this.state.open = false;
     }
 }
 
@@ -48,5 +58,3 @@ patch(ControlPanel, {
         EcOnboardingDateFilter,
     },
 });
-
-
