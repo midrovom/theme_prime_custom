@@ -436,35 +436,3 @@
         }
     }
 }
-
-/* 18.0.1.7.0: alta predictiva y control de cambios */
-.o_conedera_lookup_wizard {
-    .o_field_many2one input {
-        min-height: 48px;
-        font-size: 1rem;
-    }
-    .o_conedera_card {
-        border: 1px solid var(--bs-border-color);
-        border-radius: 1rem;
-        padding: 1rem;
-        background: var(--bs-body-bg);
-    }
-}
-
-@media (max-width: 767.98px) {
-    .o_conedera_lookup_wizard {
-        .o_field_many2one input {
-            min-height: 54px;
-            font-size: 16px;
-        }
-        .o_conedera_card {
-            padding: .85rem;
-            margin-bottom: .75rem;
-        }
-    }
-    .o_conedera_census_form .alert .btn {
-        min-height: 48px;
-        width: 100%;
-        margin-top: .5rem;
-    }
-}

@@ -22,15 +22,15 @@
         <field name="model">res.partner</field>
         <field name="priority">5</field>
         <field name="arch" type="xml">
-            <form string="Catastro de cliente" create="false" delete="false" duplicate="false">
+            <form string="Catastro de cliente" create="false">
                 <header>
                     <button name="action_new_census_visit" type="object" string="Registrar visita"
                             class="btn-primary" icon="fa-map-marker"
-                            invisible="not id or not census_active or not census_ready_for_activity or not census_locked"
+                            invisible="not id or not census_active or not census_ready_for_activity"
                             groups="sales_team.group_sale_salesman"/>
                     <button name="action_new_census_quotation" type="object" string="Crear proforma"
                             class="btn-secondary" icon="fa-file-text-o"
-                            invisible="not id or not census_active or not census_ready_for_activity or not census_locked"
+                            invisible="not id or not census_active or not census_ready_for_activity"
                             groups="sales_team.group_sale_salesman"/>
                 </header>
                 <sheet class="o_conedera_census_form">
@@ -44,11 +44,6 @@
                     <field name="partner_longitude" invisible="1"/>
                     <field name="census_ready_for_activity" invisible="1"/>
                     <field name="census_missing_requirements" invisible="1"/>
-                    <field name="census_locked" invisible="1"/>
-                    <field name="census_can_edit_master" invisible="1"/>
-                    <field name="census_edit_state" invisible="1"/>
-                    <field name="census_unlock_user_id" invisible="1"/>
-                    <field name="census_unlock_until" invisible="1"/>
 
                     <div class="o_conedera_hero">
                         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
@@ -57,7 +52,7 @@
                                     <i class="fa fa-building-o me-1"/> Catastro comercial
                                 </div>
                                 <h1 class="mb-1">
-                                    <field name="commercial_name" readonly="census_locked and not census_can_edit_master" nolabel="1" required="1"
+                                    <field name="commercial_name" nolabel="1" required="1"
                                            placeholder="Nombre comercial / local"
 />
                                 </h1>
@@ -65,7 +60,6 @@
                             </div>
                             <div class="text-end">
                                 <field name="census_completion_state" widget="badge" nolabel="1"/>
-                                <field name="census_edit_state" widget="badge" nolabel="1" class="ms-1"/>
                                 <div class="small text-muted mt-1">
                                     <field name="census_completion_pct" nolabel="1"/>% completo
                                 </div>
@@ -84,25 +78,10 @@
                             <div class="small mt-1">La ubicación GPS es opcional temporalmente mientras no tenga HTTPS.</div>
                         </div>
                     </div>
-                    <div class="alert alert-info d-flex align-items-center justify-content-between gap-2" role="alert"
-                         invisible="not census_ready_for_activity or census_locked">
-                        <div><i class="fa fa-shield me-1"/><strong>Datos completos.</strong> Registre el catastro para proteger la ficha y habilitar visitas/proformas.</div>
-                        <button name="action_register_census" type="object" string="Registrar catastro" class="btn-primary" icon="fa-lock"/>
-                    </div>
-                    <div class="alert alert-success d-flex align-items-center justify-content-between gap-2" role="alert"
-                         invisible="not census_locked">
-                        <div>
-                            <i class="fa fa-lock me-1"/>
-                            <strong>Catastro protegido.</strong>
-                            <span invisible="census_can_edit_master"> Para modificar datos maestros solicite habilitación al supervisor.</span>
-                            <span invisible="not census_can_edit_master or not census_unlock_until"> Edición temporal habilitada hasta <field name="census_unlock_until" readonly="1" nolabel="1"/>.</span>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button name="action_request_census_unlock" type="object" string="Solicitar edición" class="btn-outline-secondary" icon="fa-unlock-alt"
-                                    invisible="census_can_edit_master"/>
-                            <button name="action_finish_census_edit" type="object" string="Terminar edición" class="btn-outline-secondary" icon="fa-lock"
-                                    invisible="census_edit_state != 'enabled'"/>
-                        </div>
+                    <div class="alert alert-success d-flex align-items-center gap-2" role="alert"
+                         invisible="not census_ready_for_activity">
+                        <i class="fa fa-check-circle"/>
+                        <div><strong>Catastro listo.</strong> Ya puede registrar visitas y crear proformas.</div>
                     </div>
 
                     <div class="o_conedera_card o_conedera_mobile_quick_actions" invisible="not id">
@@ -110,10 +89,10 @@
                         <div class="o_conedera_app_actions">
                             <button name="action_new_census_visit" type="object" string="Nueva visita"
                                     class="btn btn-primary" icon="fa-map-marker"
-                                    invisible="not census_ready_for_activity or not census_locked"/>
+                                    invisible="not census_ready_for_activity"/>
                             <button name="action_new_census_quotation" type="object" string="Nueva proforma"
                                     class="btn btn-primary" icon="fa-file-text-o"
-                                    invisible="not census_ready_for_activity or not census_locked"/>
+                                    invisible="not census_ready_for_activity"/>
                             <button name="action_view_census_timeline" type="object" string="Bitácora"
                                     class="btn btn-outline-secondary" icon="fa-history"/>
                             <button name="action_view_census_product_summary" type="object" string="Productos cotizados"
@@ -140,32 +119,29 @@
                                 </div>
                                 <group>
                                     <group>
-                                        <field name="name" string="Razón social / cliente" required="1" readonly="census_locked and not census_can_edit_master"/>
-                                        <field name="vat" readonly="census_locked and not census_can_edit_master" string="RUC" required="1"
+                                        <field name="name" string="Razón social / cliente" required="1"/>
+                                        <field name="vat" string="RUC" required="1"
                                                placeholder="RUC del cliente"/>
-                                        <field name="census_store_count" readonly="census_locked and not census_can_edit_master" string="Número de tiendas / locales"
+                                        <field name="census_store_count" string="Número de tiendas / locales"
                                                class="o_conedera_store_count"
                                                placeholder="Ej. 3"
                                                help="Ingrese la cantidad total de tiendas o locales. Debe ser mayor que cero para habilitar visitas y proformas."/>
                                         <div class="text-muted small">Digite la cantidad real de locales. Puede actualizarla cuando el cliente abra o cierre tiendas.</div>
-                                        <field name="capa" readonly="census_locked and not census_can_edit_master" string="CAPA / Capacidad de compra"
+                                        <field name="capa" string="CAPA / Capacidad de compra"
                                                placeholder="Ej. 5000.00"
                                                help="Monto estimado de capacidad de compra. Debe ser mayor que cero para habilitar visitas y proformas."/>
                                     </group>
                                     <group>
-                                        <field name="business_type_ids" readonly="census_locked and not census_can_edit_master" widget="many2many_tags"
+                                        <field name="business_type_ids" widget="many2many_tags"
                                                options="{'color_field': 'color', 'no_quick_create': True, 'no_create_edit': True}"
                                                placeholder="Seleccione uno o varios tipos"/>
-                                        <field name="mobile_brand_ids" readonly="census_locked and not census_can_edit_master" widget="many2many_tags"
+                                        <field name="mobile_brand_ids" widget="many2many_tags"
                                                options="{'color_field': 'color', 'no_quick_create': True, 'no_create_edit': True}"
                                                placeholder="Marcas de celulares (opcional)"/>
                                         <div class="text-muted small">Opcional: seleccione las marcas de celulares que maneja el cliente.</div>
-                                        <field name="business_description" readonly="census_locked and not census_can_edit_master" placeholder="Ej. gaming, reparación, línea blanca..."/>
-                                        <field name="customer_segment" readonly="census_locked and not census_can_edit_master" string="Canal comercial"/>
-                                        <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user" readonly="1" groups="!sales_team.group_sale_manager"/>
-                                        <field name="census_team_id" string="Equipo comercial" readonly="1" groups="!sales_team.group_sale_manager"/>
-                                        <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user" groups="sales_team.group_sale_manager"/>
-                                        <field name="census_team_id" string="Equipo comercial" groups="sales_team.group_sale_manager"/>
+                                        <field name="business_description" placeholder="Ej. gaming, reparación, línea blanca..."/>
+                                        <field name="customer_segment" string="Canal comercial"/>
+                                        <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user"/>
                                     </group>
                                 </group>
                             </div>
@@ -176,14 +152,14 @@
                                 </div>
                                 <group>
                                     <group string="Dueño / propietario">
-                                        <field name="owner_contact_name" readonly="census_locked and not census_can_edit_master" placeholder="Nombre y apellido"/>
-                                        <field name="owner_phone" readonly="census_locked and not census_can_edit_master" widget="phone" placeholder="Teléfono / WhatsApp"/>
+                                        <field name="owner_contact_name" placeholder="Nombre y apellido"/>
+                                        <field name="owner_phone" widget="phone" placeholder="Teléfono / WhatsApp"/>
                                     </group>
                                     <group string="Contacto comercial">
-                                        <field name="commercial_contact_name" readonly="census_locked and not census_can_edit_master" placeholder="Nombre y apellido"/>
-                                        <field name="phone" readonly="census_locked and not census_can_edit_master" string="Teléfono principal" widget="phone" placeholder="Teléfono comercial"/>
-                                        <field name="mobile" readonly="census_locked and not census_can_edit_master" string="Móvil / WhatsApp" widget="phone" placeholder="Celular / WhatsApp"/>
-                                        <field name="email" readonly="census_locked and not census_can_edit_master" widget="email" placeholder="Correo electrónico"/>
+                                        <field name="commercial_contact_name" placeholder="Nombre y apellido"/>
+                                        <field name="phone" string="Teléfono principal" widget="phone" placeholder="Teléfono comercial"/>
+                                        <field name="mobile" string="Móvil / WhatsApp" widget="phone" placeholder="Celular / WhatsApp"/>
+                                        <field name="email" widget="email" placeholder="Correo electrónico"/>
                                     </group>
                                 </group>
                             </div>
@@ -196,14 +172,14 @@
                                 </div>
                                 <group>
                                     <group>
-                                        <field name="street" readonly="census_locked and not census_can_edit_master" string="Dirección" placeholder="Calle principal y numeración"/>
-                                        <field name="street2" readonly="census_locked and not census_can_edit_master" string="Referencia" placeholder="Referencia, local, piso..."/>
-                                        <field name="city" readonly="census_locked and not census_can_edit_master" string="Ciudad"/>
+                                        <field name="street" string="Dirección" placeholder="Calle principal y numeración"/>
+                                        <field name="street2" string="Referencia" placeholder="Referencia, local, piso..."/>
+                                        <field name="city" string="Ciudad"/>
                                     </group>
                                     <group>
-                                        <field name="country_id" readonly="census_locked and not census_can_edit_master" string="País"/>
-                                        <field name="state_id" readonly="census_locked and not census_can_edit_master" string="Provincia / estado"/>
-                                        <field name="zip" readonly="census_locked and not census_can_edit_master" string="Código postal"/>
+                                        <field name="country_id" string="País"/>
+                                        <field name="state_id" string="Provincia / estado"/>
+                                        <field name="zip" string="Código postal"/>
                                     </group>
                                 </group>
                             </div>
@@ -215,7 +191,7 @@
                                 <div class="o_conedera_hint">
                                     Opcional por ahora: la captura GPS requiere HTTPS. Puede completar el catastro, registrar visitas y crear proformas sin GPS.
                                 </div>
-                                <field name="census_gps_payload" readonly="census_locked and not census_can_edit_master" widget="gps_capture" nolabel="1"/>
+                                <field name="census_gps_payload" widget="gps_capture" nolabel="1"/>
                                 <group invisible="not census_gps_captured_at">
                                     <group>
                                         <field name="census_gps_captured_at" readonly="1"/>
@@ -236,7 +212,7 @@
                                 <div class="o_conedera_hint">
                                     Agregue una fila por franja de atención. Si un día no tiene filas, se considera cerrado. Puede agregar dos franjas el mismo día.
                                 </div>
-                                <field name="opening_hour_ids" readonly="census_locked and not census_can_edit_master" nolabel="1" mode="list,form">
+                                <field name="opening_hour_ids" nolabel="1" mode="list,form">
                                     <list editable="bottom" string="Horario de atención">
                                         <field name="day_of_week" string="Día"/>
                                         <field name="opening_time" string="Desde" widget="float_time"/>
@@ -392,7 +368,7 @@
         <field name="name">res.partner.kanban.conedera.census</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
-            <kanban sample="1" quick_create="false" create="false" delete="false">
+            <kanban sample="1" quick_create="false" create="false">
                 <field name="commercial_name"/>
                 <field name="name"/>
                 <field name="vat"/>
@@ -404,8 +380,6 @@
                 <field name="customer_segment"/>
                 <field name="census_completion_state"/>
                 <field name="census_last_visit_datetime"/>
-                <field name="user_id"/>
-                <field name="census_team_id"/>
                 <templates>
                     <t t-name="card">
                         <main>
@@ -424,12 +398,6 @@
                             </div>
                             <div class="mb-1">
                                 <i class="fa fa-building fa-fw me-1 text-muted"/> <field name="census_store_count"/> local(es)
-                            </div>
-                            <div class="mb-1" t-if="record.user_id.raw_value">
-                                <i class="fa fa-user fa-fw me-1 text-muted"/> <field name="user_id"/>
-                            </div>
-                            <div class="mb-2" t-if="record.census_team_id.raw_value">
-                                <i class="fa fa-users fa-fw me-1 text-muted"/> <field name="census_team_id"/>
                             </div>
                             <div class="mb-2" t-if="record.capa.raw_value">
                                 <i class="fa fa-line-chart fa-fw me-1 text-muted"/> CAPA: <field name="capa"/>
@@ -451,7 +419,7 @@
         <field name="name">res.partner.list.conedera.census</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
-            <list string="Clientes catastrados" default_order="write_date desc, id desc" create="false" delete="false">
+            <list string="Clientes catastrados" default_order="write_date desc, id desc" create="false">
                 <field name="commercial_name" string="Local"/>
                 <field name="name" string="Razón social" optional="show"/>
                 <field name="vat" string="RUC"/>
@@ -462,7 +430,6 @@
                 <field name="mobile_brand_ids" widget="many2many_tags" optional="hide"/>
                 <field name="customer_segment" optional="hide"/>
                 <field name="user_id" string="Vendedor" widget="many2one_avatar_user" optional="show"/>
-                <field name="census_team_id" string="Equipo" optional="show"/>
                 <field name="census_completion_state" widget="badge" string="Estado"/>
                 <field name="census_last_visit_datetime" optional="hide"/>
             </list>
@@ -481,14 +448,12 @@
                 <field name="business_type_ids"/>
                 <field name="mobile_brand_ids" string="Marcas"/>
                 <field name="user_id" string="Vendedor"/>
-                <field name="census_team_id" string="Equipo"/>
                 <separator/>
                 <filter name="pending_gps" string="Pendiente GPS" domain="[('census_gps_captured_at', '=', False)]"/>
                 <filter name="with_gps" string="Con GPS" domain="[('census_gps_captured_at', '!=', False)]"/>
                 <group expand="0" string="Agrupar por">
                     <filter name="group_city" string="Ciudad" context="{'group_by': 'city'}"/>
                     <filter name="group_user" string="Vendedor" context="{'group_by': 'user_id'}"/>
-                    <filter name="group_team" string="Equipo" context="{'group_by': 'census_team_id'}"/>
                     <filter name="group_segment" string="Canal comercial" context="{'group_by': 'customer_segment'}"/>
                 </group>
                 <searchpanel>

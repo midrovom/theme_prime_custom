@@ -36,8 +36,6 @@ class TestConederaCensus(TransactionCase):
                 "closing_time": 18.0,
             }
         )
-        # Desde 18.0.1.7.0 una ficha completa debe registrarse/bloquearse antes de operar.
-        self.partner.action_register_census()
 
     def test_multiple_business_types(self):
         accessories = self.env.ref("conedera_odoo_census.business_type_accessories")

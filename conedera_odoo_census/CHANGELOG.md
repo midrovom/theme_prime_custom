@@ -1,16 +1,5 @@
 # Changelog
 
-## 18.0.1.7.0
-
-- Alta predictiva por RUC/cédula/nombre con selección explícita de clientes duplicados existentes.
-- Solo una ficha puede quedar como Catastro activo por identificación normalizada.
-- Comercial ve sus Catastros; el líder estándar del Equipo de Ventas ve automáticamente los de su equipo; Administrador de Ventas ve todos.
-- Al pulsar **Registrar catastro** la información maestra queda protegida.
-- El comercial solicita edición con motivo; líder/administrador puede habilitarla durante 2 horas o rechazarla.
-- El comercial no puede borrar, archivar ni duplicar un Catastro protegido.
-- Migración no destructiva recupera asignaciones históricas y protege Catastros existentes.
-- Data Guard aborta el upgrade si detecta reducción de registros operativos.
-
 ## 18.0.1.5.0
 
 - Corrige el resumen de productos cotizados para consolidar por cliente comercial, incluyendo cotizaciones hechas a contactos/direcciones hijas.
