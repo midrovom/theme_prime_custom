@@ -42,7 +42,7 @@
         <xpath expr="//div[hasclass('o_control_panel_actions')]" position="inside">
             <EcOnboardingDateFilter
                 t-if="env.searchModel and env.searchModel.resModel === 'hr.ec.onboarding.package'"
-                searchModel="env.searchModel"
+                t-props="{ searchModel: env.searchModel }"
             />
         </xpath>
     </t>
