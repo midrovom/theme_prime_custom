@@ -1,7 +1,7 @@
 import re
 
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 from .gps_utils import parse_gps_payload
 
@@ -14,6 +14,27 @@ class ResPartner(models.Model):
     census_date = fields.Datetime(string="Fecha de catastro", readonly=True, copy=False)
     census_user_id = fields.Many2one(
         "res.users", string="Catastrado por", readonly=True, copy=False
+    )
+    census_team_id = fields.Many2one(
+        "crm.team", string="Equipo comercial", tracking=True, copy=False, index=True, check_company=True,
+        help="Equipo responsable del catastro. El líder del equipo actúa como supervisor.",
+    )
+    census_locked = fields.Boolean(
+        string="Catastro registrado / bloqueado", default=False, copy=False, tracking=True
+    )
+    census_locked_at = fields.Datetime(string="Bloqueado el", readonly=True, copy=False)
+    census_unlock_user_id = fields.Many2one(
+        "res.users", string="Edición habilitada para", readonly=True, copy=False
+    )
+    census_unlock_until = fields.Datetime(
+        string="Edición habilitada hasta", readonly=True, copy=False
+    )
+    census_can_edit_master = fields.Boolean(
+        compute="_compute_census_edit_permissions", string="Puede editar el catastro"
+    )
+    census_edit_state = fields.Selection(
+        [("draft", "Borrador"), ("locked", "Protegido"), ("enabled", "Edición habilitada")],
+        compute="_compute_census_edit_permissions", string="Control de edición"
     )
 
     # Datos comerciales propios del catastro
@@ -118,6 +139,14 @@ class ResPartner(models.Model):
         "partner_id",
         string="Productos proformados",
     )
+    census_reassignment_ids = fields.One2many(
+        "conedera.census.reassignment.request",
+        "partner_id",
+        string="Reasignaciones",
+    )
+    census_reassignment_count = fields.Integer(
+        compute="_compute_census_reassignment_count", string="Reasignaciones"
+    )
     census_visit_count = fields.Integer(compute="_compute_census_stats", string="Visitas")
     census_quotation_count = fields.Integer(compute="_compute_census_stats", string="Proformas")
     census_last_visit_datetime = fields.Datetime(
@@ -126,7 +155,7 @@ class ResPartner(models.Model):
     census_completion_state = fields.Selection(
         [
             ("incomplete", "Faltan datos"),
-            ("complete", "Listo para operar"),
+            ("complete", "Datos completos"),
         ],
         compute="_compute_census_completion",
         string="Estado del catastro",
@@ -142,6 +171,239 @@ class ResPartner(models.Model):
         compute="_compute_census_completion",
         string="Datos pendientes",
     )
+
+    _CENSUS_MASTER_FIELDS = {
+        "name", "vat", "commercial_name", "census_store_count", "owner_contact_name",
+        "owner_phone", "commercial_contact_name", "phone", "mobile", "email",
+        "street", "street2", "city", "state_id", "country_id", "zip",
+        "business_type_ids", "mobile_brand_ids", "business_description",
+        "business_type", "customer_census_type", "commercial_contact_phone",
+        "customer_segment", "capa", "opening_hour_ids", "census_gps_payload", "partner_latitude",
+        "partner_longitude", "company_id", "company_type", "parent_id",
+    }
+    _CENSUS_CONTROL_FIELDS = {
+        "active", "census_active", "user_id", "census_team_id", "census_locked",
+        "census_date", "census_user_id", "census_locked_at",
+        "census_unlock_user_id", "census_unlock_until",
+        "census_gps_accuracy", "census_gps_captured_at",
+    }
+    _CENSUS_ASSIGNMENT_FIELDS = {"user_id", "census_team_id"}
+
+    @api.model
+    def _census_normalize_identity(self, value):
+        return re.sub(r"[^0-9A-Za-z]", "", value or "").upper()
+
+    @api.model
+    def _census_lock_identity(self, value):
+        """Serialize writes for the same normalized identity inside PostgreSQL.
+
+        The Python constraint remains the user-friendly validation, while this
+        transaction-scoped advisory lock closes the race where two salespeople
+        could try to activate the same RUC/cédula at the same instant.
+        """
+        normalized = self._census_normalize_identity(value)
+        if normalized:
+            self.env.cr.execute(
+                "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                ["conedera.census.identity:" + normalized],
+            )
+        return normalized
+
+    def _census_primary_identity(self):
+        """Return the identity displayed/used by the commercial customer.
+
+        Historic Odoo databases sometimes keep the VAT on a child invoice/contact
+        record.  The Catastro is always anchored on commercial_partner_id, so we
+        use the parent's VAT first and then a child's VAT as a safe compatibility
+        fallback.
+        """
+        self.ensure_one()
+        partner = self.sudo().commercial_partner_id
+        if partner.vat:
+            return partner.vat
+        child = partner.child_ids.filtered(lambda c: bool((c.vat or "").strip())).sorted("id")[:1]
+        return child.vat if child else False
+
+    @api.model
+    def _census_global_partners_by_identity(self, value, active_only=False):
+        """Global lookup used only to protect the unique-census invariant.
+
+        This intentionally bypasses record rules for existence checks. Callers must
+        not expose restricted commercial information to unauthorized users.
+        """
+        normalized = self._census_normalize_identity(value)
+        if not normalized:
+            return self.sudo().browse()
+        # Do not filter census_active on the row that carries the VAT. In Odoo it is
+        # common for an identification to be stored on a child contact/address while
+        # the Catastro belongs to its commercial parent. We first resolve every VAT
+        # match to commercial_partner_id and only then apply the active-Catastro filter.
+        clauses = [
+            "vat IS NOT NULL",
+            "regexp_replace(upper(vat), '[^0-9A-Z]', '', 'g') = %s",
+        ]
+        self.env.cr.execute(
+            "SELECT id FROM res_partner WHERE %s ORDER BY active DESC, parent_id NULLS FIRST, id"
+            % " AND ".join(clauses),
+            [normalized],
+        )
+        ids = [row[0] for row in self.env.cr.fetchall()]
+        records = self.sudo().with_context(active_test=False).browse(ids).exists()
+        result = self.sudo().browse()
+        seen = set()
+        for partner in records.mapped("commercial_partner_id"):
+            if active_only and not partner.census_active:
+                continue
+            if partner.id not in seen:
+                result |= partner
+                seen.add(partner.id)
+        return result
+
+    @api.model
+    def _census_global_active_by_identity(self, value):
+        return self._census_global_partners_by_identity(value, active_only=True).filtered("census_active")
+
+    def _default_census_team(self, user=None):
+        user = user or self.env.user
+        team = user.sale_team_id
+        if team and (not team.company_id or team.company_id in self.env.companies):
+            return team
+        return self.env["crm.team"].search([
+            ("company_id", "in", [False] + self.env.companies.ids),
+            "|", ("user_id", "=", user.id), ("member_ids", "in", [user.id]),
+        ], limit=1)
+
+    def _user_is_census_supervisor(self, user=None):
+        self.ensure_one()
+        user = user or self.env.user
+        if user.has_group("sales_team.group_sale_manager"):
+            return True
+        # El líder del Equipo de Ventas es supervisor automáticamente.
+        # No requiere un grupo adicional: reutilizamos la jerarquía estándar de Odoo.
+        return bool(self.census_team_id and self.census_team_id.user_id == user)
+
+    def _user_has_active_unlock(self, user=None):
+        self.ensure_one()
+        user = user or self.env.user
+        return bool(
+            self.census_unlock_user_id == user
+            and self.census_unlock_until
+            and self.census_unlock_until > fields.Datetime.now()
+        )
+
+    @api.depends("census_locked", "census_unlock_user_id", "census_unlock_until", "user_id", "census_team_id")
+    @api.depends_context("uid")
+    def _compute_census_edit_permissions(self):
+        user = self.env.user
+        for partner in self:
+            if not partner.census_active:
+                allowed = True
+            elif partner._user_is_census_supervisor(user):
+                allowed = True
+            elif partner.user_id == user:
+                allowed = (not partner.census_locked) or partner._user_has_active_unlock(user)
+            else:
+                allowed = False
+            partner.census_can_edit_master = allowed
+            if not partner.census_locked:
+                partner.census_edit_state = "draft"
+            elif partner._user_has_active_unlock(user):
+                partner.census_edit_state = "enabled"
+            else:
+                partner.census_edit_state = "locked"
+
+    def _check_census_master_write(self, vals):
+        if self.env.su:
+            return
+        if vals.get("census_active") and not self.env.user.has_group("sales_team.group_sale_manager"):
+            raise AccessError(_("El Catastro debe activarse desde 'Nuevo catastro' para validar duplicados antes de crear o reutilizar una ficha."))
+        touched = (set(vals) & self._CENSUS_MASTER_FIELDS) | (set(vals) & self._CENSUS_CONTROL_FIELDS)
+        if not touched:
+            return
+        user = self.env.user
+        is_sales_admin = user.has_group("sales_team.group_sale_manager")
+        assignment_touched = bool(set(vals) & self._CENSUS_ASSIGNMENT_FIELDS)
+        control_touched = bool(set(vals) & self._CENSUS_CONTROL_FIELDS)
+        for partner in self.filtered("census_active"):
+            # Reassignment and lifecycle fields are audited workflows.  Even a team
+            # leader may not silently move/archive/deactivate a Catastro by editing
+            # Contacts, RPC or an import.  Only Sales Administrator may force those
+            # fields directly; normal supervisors use the approval actions.
+            if assignment_touched and not is_sales_admin:
+                raise AccessError(
+                    _(
+                        "La reasignación del comercial/equipo debe aprobarse desde una "
+                        "Solicitud de reasignación. Solo un administrador de Ventas puede "
+                        "forzarla directamente."
+                    )
+                )
+            if control_touched and not is_sales_admin:
+                raise AccessError(
+                    _(
+                        "Los campos de control del Catastro (activar, archivar, bloquear o "
+                        "cambiar responsables) solo se modifican mediante los flujos auditados. "
+                        "Un administrador de Ventas puede forzarlos directamente."
+                    )
+                )
+            if partner._user_is_census_supervisor(user):
+                continue
+            if partner.user_id != user:
+                raise AccessError(_("Solo puede modificar catastros asignados a usted."))
+            if partner.census_locked and not partner._user_has_active_unlock(user):
+                raise AccessError(_("Este catastro está protegido. Solicite una habilitación de edición a su supervisor."))
+
+    def action_register_census(self):
+        self.ensure_one()
+        if self.user_id != self.env.user and not self._user_is_census_supervisor():
+            raise AccessError(_("Solo el comercial responsable, su supervisor o un administrador puede registrar este catastro."))
+        missing = [label for label, ok in self._get_census_requirements() if not ok]
+        if missing:
+            raise UserError(_("Complete el catastro antes de registrarlo. Falta: %s") % ", ".join(missing))
+        vals = {"census_locked": True, "census_locked_at": fields.Datetime.now()}
+        if not self.census_team_id:
+            team = self._default_census_team(self.user_id or self.env.user)
+            if team:
+                vals["census_team_id"] = team.id
+        self.sudo().write(vals)
+        return {"type": "ir.actions.client", "tag": "reload"}
+
+    def action_request_census_unlock(self):
+        self.ensure_one()
+        if not self.census_locked:
+            raise UserError(_("El catastro todavía está en borrador y no necesita habilitación."))
+        if self.user_id != self.env.user:
+            raise AccessError(_("Solo el comercial responsable puede solicitar habilitación."))
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Solicitar habilitación"),
+            "res_model": "conedera.census.unlock.wizard",
+            "view_mode": "form",
+            "view_id": self.env.ref("conedera_odoo_census.view_census_unlock_wizard_form").id,
+            "target": "new",
+            "context": {"default_partner_id": self.id},
+        }
+
+    def action_finish_census_edit(self):
+        self.ensure_one()
+        if self.census_unlock_user_id != self.env.user and not self._user_is_census_supervisor():
+            raise AccessError(_("No tiene una habilitación activa para cerrar."))
+        now = fields.Datetime.now()
+        self.env["conedera.census.unlock.request"].sudo().search([
+            ("partner_id", "=", self.id),
+            ("requested_by_id", "=", self.env.user.id),
+            ("state", "=", "approved"),
+        ], order="request_date desc, id desc", limit=1).write({"state": "expired", "valid_until": now})
+        self.sudo().write({
+            "census_unlock_user_id": False,
+            "census_unlock_until": False,
+        })
+        return {"type": "ir.actions.client", "tag": "reload"}
+
+    def _compute_census_reassignment_count(self):
+        for partner in self:
+            partner.census_reassignment_count = self.env["conedera.census.reassignment.request"].search_count(
+                [("partner_id", "=", partner.id)]
+            )
 
     @api.depends("census_visit_ids.visit_datetime", "census_sale_order_ids")
     def _compute_census_stats(self):
@@ -246,6 +508,8 @@ class ResPartner(models.Model):
                     )
                     % {"missing": ", ".join(missing)}
                 )
+            if not partner.census_locked:
+                raise UserError(_("El catastro está completo pero todavía no ha sido registrado. Use 'Registrar catastro' para proteger la ficha antes de operar."))
         return True
 
     @api.constrains("census_store_count", "capa")
@@ -259,65 +523,59 @@ class ResPartner(models.Model):
 
     @api.constrains("vat", "name", "commercial_name", "census_active", "parent_id")
     def _check_unique_census_identity(self):
-        """Evita una segunda ficha para el mismo cliente.
+        """Guarantee one active Catastro per normalized identity.
 
-        - Con RUC: no puede existir otro contacto raíz con el mismo RUC, esté o no
-          catastrado. El flujo correcto es reutilizar ese contacto.
-        - Sin RUC: mientras el catastro está en borrador, bloqueamos otro catastro
-          con el mismo nombre exacto para obligar a identificarlo antes de duplicar.
+        The check also runs when a VAT is stored on a child contact of a catastrated
+        commercial partner, because global lookup intentionally treats that VAT as an
+        identity of the commercial customer.
         """
-        for partner in self:
-            if not partner.census_active or partner.parent_id:
+        checked_parents = self.env["res.partner"]
+        for record in self:
+            parent = record.sudo().commercial_partner_id
+            if not parent.census_active or parent.parent_id:
                 continue
-            vat = (partner.vat or "").strip()
-            if vat:
-                normalized = re.sub(r"[^0-9A-Za-z]", "", vat).upper()
-                self.env.cr.execute(
-                    """
-                    SELECT id
-                      FROM res_partner
-                     WHERE id != %s
-                       AND parent_id IS NULL
-                       AND vat IS NOT NULL
-                       AND regexp_replace(upper(vat), '[^0-9A-Z]', '', 'g') = %s
-                     LIMIT 1
-                    """,
-                    [partner.id, normalized],
+
+            # If this exact record carries a VAT, validate that identity.  Otherwise
+            # validate the commercial parent's primary identity (which may live on a
+            # historic child contact).
+            identity = record.vat or parent._census_primary_identity()
+            if identity:
+                duplicates = parent._census_global_active_by_identity(identity).filtered(
+                    lambda p: p.id != parent.id
                 )
-                duplicate_id = self.env.cr.fetchone()
-                duplicate = (
-                    self.with_context(active_test=False).browse(duplicate_id[0]).exists()
-                    if duplicate_id
-                    else self.browse()
-                )
-                if duplicate:
+                if duplicates:
+                    duplicate = duplicates[0].sudo()
                     raise ValidationError(
                         _(
-                            "El RUC / cédula %(vat)s ya pertenece a %(partner)s. "
-                            "No cree otro cliente: use la ficha existente desde Nuevo catastro."
+                            "El RUC / cédula %(vat)s ya pertenece al catastro %(partner)s. "
+                            "No cree otro cliente: use 'Nuevo catastro' y solicite reasignación "
+                            "si pertenece a otro comercial."
                         )
-                        % {"vat": vat, "partner": duplicate.display_name}
+                        % {"vat": identity, "partner": duplicate.display_name}
                     )
-            else:
-                name = (partner.name or "").strip()
-                if name and not name.startswith("BORRADOR - RUC "):
-                    duplicate = self.with_context(active_test=False).search(
-                        [
-                            ("id", "!=", partner.id),
-                            ("parent_id", "=", False),
-                            ("census_active", "=", True),
-                            ("name", "=ilike", name),
-                        ],
-                        limit=1,
-                    )
-                    if duplicate:
-                        raise ValidationError(
-                            _(
-                                "Ya existe un catastro con el nombre %(name)s. "
-                                "Ingrese el RUC para diferenciar clientes o abra la ficha existente."
+
+            if parent not in checked_parents:
+                checked_parents |= parent
+                if not parent._census_primary_identity():
+                    name = (parent.name or "").strip()
+                    if name and not name.startswith("BORRADOR - RUC "):
+                        duplicate = self.sudo().with_context(active_test=False).search(
+                            [
+                                ("id", "!=", parent.id),
+                                ("parent_id", "=", False),
+                                ("census_active", "=", True),
+                                ("name", "=ilike", name),
+                            ],
+                            limit=1,
+                        )
+                        if duplicate:
+                            raise ValidationError(
+                                _(
+                                    "Ya existe un catastro con el nombre %(name)s. "
+                                    "Ingrese el RUC para diferenciar clientes o abra la ficha existente."
+                                )
+                                % {"name": name}
                             )
-                            % {"name": name}
-                        )
 
     def copy(self, default=None):
         self.ensure_one()
@@ -331,15 +589,8 @@ class ResPartner(models.Model):
         return super().copy(default=default)
 
     def unlink(self):
-        if any(partner.census_active for partner in self) and not self.env.user.has_group(
-            "sales_team.group_sale_manager"
-        ):
-            raise UserError(
-                _(
-                    "Un vendedor no puede eliminar un cliente catastrado. "
-                    "La ficha debe conservarse como historial comercial."
-                )
-            )
+        if any(partner.census_active for partner in self) and not self.env.user.has_group("sales_team.group_sale_manager"):
+            raise UserError(_("Los catastros no pueden eliminarse por comerciales ni supervisores. Solo un administrador de Ventas puede hacerlo."))
         return super().unlink()
 
     @api.onchange("census_gps_payload")
@@ -355,6 +606,16 @@ class ResPartner(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        if (
+            any(vals.get("census_active") for vals in vals_list)
+            and not self.env.su
+            and not self.env.user.has_group("sales_team.group_sale_manager")
+        ):
+            raise AccessError(_("Cree el Catastro desde 'Nuevo catastro' para buscar primero por RUC, cédula o nombre."))
+        # Serialize simultaneous attempts for the same RUC/cédula before INSERT.
+        for vals in vals_list:
+            if vals.get("census_active") and vals.get("vat"):
+                self._census_lock_identity(vals.get("vat"))
         now = fields.Datetime.now()
         for vals in vals_list:
             parsed = parse_gps_payload(vals.get("census_gps_payload"))
@@ -372,10 +633,34 @@ class ResPartner(models.Model):
                 vals.setdefault("census_date", now)
                 vals.setdefault("census_user_id", self.env.user.id)
                 vals.setdefault("customer_rank", 1)
+                vals.setdefault("user_id", self.env.user.id)
+                if not vals.get("census_team_id"):
+                    user = self.env["res.users"].browse(vals.get("user_id") or self.env.user.id)
+                    team = self._default_census_team(user)
+                    if team:
+                        vals["census_team_id"] = team.id
         return super().create(vals_list)
 
     def write(self, vals):
         vals = dict(vals)
+        # Lock the target identity before the write/constraint sequence.  This closes
+        # concurrent duplicate activation or VAT changes across users/workers.
+        if vals.get("vat"):
+            for record in self:
+                parent = record.sudo().commercial_partner_id
+                if vals.get("census_active") or parent.census_active:
+                    self._census_lock_identity(vals.get("vat"))
+        elif vals.get("census_active"):
+            for record in self:
+                identity = record.sudo().commercial_partner_id._census_primary_identity()
+                if identity:
+                    self._census_lock_identity(identity)
+        self._check_census_master_write(vals)
+        if vals.get("user_id") and not vals.get("census_team_id") and (self.env.su or self.env.user.has_group("sales_team.group_sale_manager")):
+            user = self.env["res.users"].browse(vals["user_id"])
+            team = self._default_census_team(user)
+            if team:
+                vals["census_team_id"] = team.id
         parsed = parse_gps_payload(vals.get("census_gps_payload"))
         if parsed:
             latitude, longitude, accuracy = parsed
@@ -453,6 +738,15 @@ class ResPartner(models.Model):
         )
         action["domain"] = [("partner_id", "=", self.commercial_partner_id.id)]
         action["name"] = _("Bitácora - %s") % self.display_name
+        return action
+
+    def action_view_census_reassignments(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "conedera_odoo_census.action_census_reassignment_requests"
+        )
+        action["domain"] = [("partner_id", "=", self.id)]
+        action["name"] = _("Reasignaciones - %s") % self.display_name
         return action
 
     def action_view_census_product_summary(self):

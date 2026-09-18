@@ -8,41 +8,63 @@
                 <sheet>
                     <div class="o_conedera_hero mb-3">
                         <div class="text-muted small text-uppercase fw-semibold mb-1">
-                            <i class="fa fa-search me-1"/> Paso 1 · Identificar al cliente
+                            <i class="fa fa-search me-1"/> Paso 1 · Buscar antes de crear
                         </div>
-                        <h2 class="mb-1">RUC / cédula primero</h2>
+                        <h2 class="mb-1">Encuentre primero al cliente</h2>
                         <div class="text-muted">
-                            Ingrese el RUC o cédula. Si el cliente ya existe en Odoo, verá sus datos y continuará el catastro sobre la misma ficha. También puede buscar por nombre cuando no tenga identificación.
+                            Escriba RUC, cédula o nombre. La búsqueda revisa globalmente los clientes para impedir un segundo Catastro aunque la ficha pertenezca a otro comercial.
                         </div>
                     </div>
 
-                    <group>
-                        <field name="vat" string="RUC / Cédula" placeholder="Ej. 0991234567001 o 0912345678"/>
-                        <field name="customer_name" string="Nombre / razón social" placeholder="Ej. Comercial XYZ S.A."/>
-                        <field name="validation_state" invisible="1"/>
-                        <field name="existing_partner_id" invisible="1" readonly="1"/>
-                    </group>
+                    <div class="o_conedera_card mb-3">
+                        <div class="o_conedera_card_title"><i class="fa fa-id-card-o"/> RUC, cédula o nombre</div>
+                        <field name="lookup_query" widget="census_customer_lookup" nolabel="1"/>
+                        <div class="text-muted small mt-2">
+                            Seleccione una coincidencia del desplegable. Si el Catastro pertenece a otro vendedor, verá la opción de solicitar reasignación sin duplicar la ficha.
+                        </div>
+                    </div>
 
-                    <div class="alert alert-success" role="alert" invisible="validation_state != 'found'">
+                    <!-- Loaded for the custom lookup widget / server actions -->
+                    <field name="selected_partner_ref_id" invisible="1"/>
+                    <field name="selected_candidate_status" invisible="1"/>
+                    <field name="selected_can_open" invisible="1"/>
+                    <field name="selected_can_use" invisible="1"/>
+                    <field name="selected_can_request_reassignment" invisible="1"/>
+                    <field name="selected_is_census" invisible="1"/>
+                    <field name="existing_partner_id" invisible="1"/>
+                    <field name="existing_census_active" invisible="1"/>
+                    <field name="validation_state" invisible="1"/>
+
+                    <div class="alert alert-success" role="alert"
+                         invisible="validation_state not in ('found','request_sent')">
                         <i class="fa fa-check-circle me-1"/>
                         <field name="validation_message" nolabel="1" readonly="1"/>
                     </div>
+                    <div class="alert alert-warning" role="alert"
+                         invisible="validation_state not in ('multiple','restricted')">
+                        <i class="fa fa-exclamation-triangle me-1"/>
+                        <field name="validation_message" nolabel="1" readonly="1"/>
+                    </div>
+                    <div class="alert alert-info" role="alert" invisible="validation_state != 'not_found'">
+                        <i class="fa fa-plus-circle me-1"/>
+                        <field name="validation_message" nolabel="1" readonly="1"/>
+                    </div>
 
-                    <div class="o_conedera_card" invisible="validation_state != 'found'">
+                    <div class="o_conedera_card mb-3" invisible="not selected_partner_ref_id">
                         <div class="o_conedera_card_title">
-                            <i class="fa fa-address-card-o"/> Datos encontrados en Odoo
-                        </div>
-                        <div class="o_conedera_hint">
-                            Estos datos no se duplican: el Catastro reutiliza este mismo cliente y usted completará únicamente la información comercial faltante.
+                            <i class="fa fa-address-card-o"/> Cliente seleccionado
                         </div>
                         <group>
                             <group>
                                 <field name="existing_name" readonly="1"/>
                                 <field name="existing_vat" readonly="1"/>
                                 <field name="existing_commercial_name" readonly="1"/>
-                                <field name="existing_user_id" widget="many2one_avatar_user" readonly="1"/>
+                                <field name="existing_owner_label" readonly="1"/>
+                                <field name="existing_team_label" readonly="1"/>
+                                <field name="existing_user_id" widget="many2one_avatar_user" readonly="1"
+                                       invisible="not existing_user_id"/>
                             </group>
-                            <group>
+                            <group invisible="selected_can_request_reassignment">
                                 <field name="existing_phone" readonly="1"/>
                                 <field name="existing_mobile" readonly="1"/>
                                 <field name="existing_email" readonly="1"/>
@@ -50,25 +72,40 @@
                                 <field name="existing_city" readonly="1"/>
                             </group>
                         </group>
+
+                        <div class="alert alert-warning mt-2" role="alert"
+                             invisible="not selected_can_request_reassignment">
+                            <strong>No se creará otro Catastro.</strong>
+                            Este cliente ya está bajo responsabilidad de otro comercial/equipo. Solicite la reasignación para conservar visitas, proformas, fotos y toda la bitácora en la misma ficha.
+                        </div>
+                        <div class="mt-3" invisible="not selected_can_request_reassignment">
+                            <field name="reassignment_reason" placeholder="Ej. Cliente cambió de zona comercial o ahora será atendido por mi ruta..."/>
+                        </div>
                     </div>
 
-                    <div class="alert alert-info" role="alert" invisible="validation_state != 'not_found'">
-                        <i class="fa fa-plus-circle me-1"/>
-                        <field name="validation_message" nolabel="1" readonly="1"/>
-                    </div>
-                    <div class="alert alert-warning" role="alert" invisible="validation_state != 'multiple'">
-                        <i class="fa fa-exclamation-triangle me-1"/>
-                        <field name="validation_message" nolabel="1" readonly="1"/>
+                    <div class="o_conedera_card mb-3" invisible="validation_state != 'not_found'">
+                        <div class="o_conedera_card_title"><i class="fa fa-plus-circle"/> Cliente realmente nuevo</div>
+                        <div class="o_conedera_hint mb-2">
+                            Complete los datos mínimos. Antes de crear, el servidor vuelve a validar globalmente el RUC/cédula y el nombre.
+                        </div>
+                        <group>
+                            <field name="vat" string="RUC / Cédula" placeholder="Ej. 0991234567001 o 0912345678"/>
+                            <field name="customer_name" string="Nombre / razón social" placeholder="Razón social o nombre del cliente"/>
+                        </group>
                     </div>
                 </sheet>
                 <footer>
-                    <button name="action_validate" type="object" string="Validar cliente" class="btn-primary"
-                            invisible="validation_state in ('found', 'not_found')"/>
-                    <button name="action_open_existing" type="object" string="Usar este cliente y completar catastro" class="btn-primary"
-                            invisible="validation_state != 'found'"/>
-                    <button name="action_create_new" type="object" string="Crear nuevo catastro" class="btn-primary"
-                            invisible="validation_state != 'not_found'"/>
-                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                    <button name="action_use_selected" type="object" string="Abrir Catastro"
+                            class="btn-primary" invisible="not selected_can_open"/>
+                    <button name="action_use_selected" type="object" string="Usar este cliente y completar Catastro"
+                            class="btn-primary" invisible="not selected_can_use"/>
+                    <button name="action_request_reassignment" type="object" string="Solicitar reasignación"
+                            class="btn-warning" invisible="not selected_can_request_reassignment or validation_state == 'request_sent'"/>
+                    <button name="action_validate" type="object" string="Buscar / validar"
+                            class="btn-primary" invisible="selected_partner_ref_id or validation_state == 'not_found' or validation_state == 'request_sent'"/>
+                    <button name="action_create_new" type="object" string="Crear nuevo Catastro"
+                            class="btn-primary" invisible="validation_state != 'not_found'"/>
+                    <button string="Cerrar" special="cancel" class="btn-secondary"/>
                 </footer>
             </form>
         </field>

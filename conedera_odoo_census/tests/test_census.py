@@ -1,6 +1,6 @@
 import json
 
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests.common import TransactionCase
 
 
@@ -36,6 +36,8 @@ class TestConederaCensus(TransactionCase):
                 "closing_time": 18.0,
             }
         )
+        # Desde 18.0.1.7.0 una ficha completa debe registrarse/bloquearse antes de operar.
+        self.partner.action_register_census()
 
     def test_multiple_business_types(self):
         accessories = self.env.ref("conedera_odoo_census.business_type_accessories")
@@ -112,6 +114,75 @@ class TestConederaCensus(TransactionCase):
     def test_census_cannot_be_duplicated(self):
         with self.assertRaises(UserError):
             self.partner.copy()
+
+    def test_active_census_is_detected_when_vat_is_on_child_contact(self):
+        vat = self.partner.vat
+        self.partner.sudo().write({"vat": False})
+        self.env["res.partner"].create(
+            {
+                "name": "Contacto fiscal",
+                "parent_id": self.partner.id,
+                "vat": vat,
+            }
+        )
+        matches = self.env["res.partner"]._census_global_active_by_identity(vat)
+        self.assertIn(self.partner, matches)
+        with self.assertRaises(ValidationError):
+            self.env["res.partner"].create(
+                {
+                    "name": "Duplicado con RUC del contacto hijo",
+                    "census_active": True,
+                    "vat": vat,
+                    "commercial_name": "Duplicado",
+                }
+            )
+
+    def test_existing_contact_with_vat_on_child_is_reused_and_parent_gets_vat(self):
+        parent = self.env["res.partner"].create(
+            {
+                "name": "Cliente histórico sin RUC en matriz",
+                "customer_rank": 1,
+            }
+        )
+        child = self.env["res.partner"].create(
+            {
+                "name": "Facturación",
+                "parent_id": parent.id,
+                "type": "invoice",
+                "vat": "0912345678",
+            }
+        )
+        wizard = self.env["conedera.census.customer.lookup.wizard"].create(
+            {
+                "lookup_query": child.vat,
+                "selected_partner_ref_id": parent.id,
+                "selected_can_use": True,
+                "selected_candidate_status": "available_contact",
+                "existing_vat": child.vat,
+            }
+        )
+        action = wizard.action_use_selected()
+        parent.invalidate_recordset(["vat", "census_active"])
+        self.assertEqual(action["res_id"], parent.id)
+        self.assertTrue(parent.census_active)
+        self.assertEqual(parent.vat, child.vat)
+
+    def test_lookup_rejects_partner_id_outside_current_search_results(self):
+        unrelated = self.env["res.partner"].create({"name": "No coincide con búsqueda"})
+        wizard = self.env["conedera.census.customer.lookup.wizard"].create(
+            {
+                "lookup_query": self.partner.vat,
+                "selected_partner_ref_id": unrelated.id,
+                "selected_can_use": True,
+                "selected_candidate_status": "available_contact",
+            }
+        )
+        with self.assertRaises(AccessError):
+            self.env["conedera.census.customer.lookup.wizard"].action_select_candidate(
+                wizard.id, unrelated.id
+            )
+        with self.assertRaises(AccessError):
+            wizard.action_use_selected()
 
     def test_store_count_is_editable_field(self):
         self.partner.write({"census_store_count": 4})
@@ -247,3 +318,179 @@ class TestConederaCensus(TransactionCase):
         )
         self.assertTrue(detail)
         self.assertAlmostEqual(detail.net_unit_price, 90.0, places=2)
+
+    def test_global_lookup_detects_foreign_census_and_reassigns_same_record(self):
+        sales_group = self.env.ref("sales_team.group_sale_salesman")
+        seller_a = self.env["res.users"].with_context(no_reset_password=True).create(
+            {
+                "name": "Comercial Destino",
+                "login": "census_seller_a_test",
+                "groups_id": [(6, 0, [sales_group.id])],
+                "company_id": self.env.company.id,
+                "company_ids": [(6, 0, [self.env.company.id])],
+            }
+        )
+        seller_b = self.env["res.users"].with_context(no_reset_password=True).create(
+            {
+                "name": "Comercial Origen",
+                "login": "census_seller_b_test",
+                "groups_id": [(6, 0, [sales_group.id])],
+                "company_id": self.env.company.id,
+                "company_ids": [(6, 0, [self.env.company.id])],
+            }
+        )
+        supervisor_a = self.env["res.users"].with_context(no_reset_password=True).create(
+            {
+                "name": "Supervisor Destino",
+                "login": "census_supervisor_a_test",
+                "groups_id": [(6, 0, [sales_group.id])],
+                "company_id": self.env.company.id,
+                "company_ids": [(6, 0, [self.env.company.id])],
+            }
+        )
+        supervisor_b = self.env["res.users"].with_context(no_reset_password=True).create(
+            {
+                "name": "Supervisor Origen",
+                "login": "census_supervisor_b_test",
+                "groups_id": [(6, 0, [sales_group.id])],
+                "company_id": self.env.company.id,
+                "company_ids": [(6, 0, [self.env.company.id])],
+            }
+        )
+        team_a = self.env["crm.team"].create(
+            {
+                "name": "Equipo Destino Test",
+                "user_id": supervisor_a.id,
+                "member_ids": [(6, 0, [seller_a.id])],
+                "company_id": self.env.company.id,
+            }
+        )
+        team_b = self.env["crm.team"].create(
+            {
+                "name": "Equipo Origen Test",
+                "user_id": supervisor_b.id,
+                "member_ids": [(6, 0, [seller_b.id])],
+                "company_id": self.env.company.id,
+            }
+        )
+        self.partner.sudo().write(
+            {"user_id": seller_b.id, "census_team_id": team_b.id}
+        )
+        # El líder puede revisar/modificar el maestro, pero no saltarse la auditoría
+        # cambiando directamente el comercial responsable.
+        with self.assertRaises(AccessError):
+            self.partner.with_user(supervisor_b).write({"user_id": seller_a.id})
+        with self.assertRaises(AccessError):
+            self.partner.with_user(supervisor_b).write({"active": False})
+        with self.assertRaises(AccessError):
+            self.partner.with_user(supervisor_b).write({"census_active": False})
+
+        child_contact = self.env["res.partner"].sudo().create(
+            {"name": "Contacto protegido", "parent_id": self.partner.id}
+        )
+        self.assertFalse(
+            self.env["res.partner"].with_user(seller_a).search(
+                [("id", "=", child_contact.id)], limit=1
+            )
+        )
+
+        visit = self.env["conedera.census.visit"].create({"partner_id": self.partner.id})
+        historic_order = self.env["sale.order"].sudo().create(
+            {
+                "partner_id": self.partner.id,
+                "user_id": seller_b.id,
+            }
+        )
+        historic_product = self.env["product.product"].create(
+            {"name": "Equipo Histórico Reasignación", "list_price": 250.0}
+        )
+        historic_line = self.env["sale.order.line"].sudo().create(
+            {
+                "order_id": historic_order.id,
+                "product_id": historic_product.id,
+                "product_uom_qty": 2.0,
+                "price_unit": 250.0,
+            }
+        )
+        partner_id_before = self.partner.id
+
+        Wizard = self.env["conedera.census.customer.lookup.wizard"].with_user(seller_a)
+        candidates = Wizard.search_global_candidates(self.partner.vat)
+        match = next(c for c in candidates if c["id"] == self.partner.id)
+        self.assertEqual(match["status"], "other_census")
+        self.assertFalse(match["can_open"])
+        self.assertTrue(match["can_request"])
+        self.assertEqual(match["owner_label"], "Otro comercial")
+
+        wizard = Wizard.create(
+            {
+                "lookup_query": self.partner.vat,
+                "selected_partner_ref_id": self.partner.id,
+                "selected_candidate_status": "other_census",
+                "selected_can_request_reassignment": True,
+                "selected_is_census": True,
+                "existing_name": self.partner.name,
+                "existing_vat": self.partner.vat,
+                "reassignment_reason": "Cambio de zona comercial",
+            }
+        )
+        wizard.action_request_reassignment()
+        request = self.env["conedera.census.reassignment.request"].sudo().search(
+            [
+                ("partner_id", "=", self.partner.id),
+                ("requested_by_id", "=", seller_a.id),
+                ("state", "=", "pending"),
+            ],
+            limit=1,
+        )
+        self.assertTrue(request)
+        request.with_user(supervisor_b).action_approve()
+        self.partner.invalidate_recordset(["user_id", "census_team_id"])
+        self.assertEqual(self.partner.id, partner_id_before)
+        self.assertEqual(self.partner.user_id, seller_a)
+        self.assertEqual(self.partner.census_team_id, team_a)
+        self.assertIn(visit, self.partner.census_visit_ids)
+
+        # The new responsible salesperson can open the same customer's child contacts
+        # and historical quotations, but our added rules are read-only for those sales
+        # documents and do not rewrite their original salesperson/history.
+        self.assertTrue(
+            self.env["res.partner"].with_user(seller_a).search(
+                [("id", "=", child_contact.id)], limit=1
+            )
+        )
+        self.assertTrue(
+            self.env["sale.order"].with_user(seller_a).search(
+                [("id", "=", historic_order.id)], limit=1
+            )
+        )
+        self.assertTrue(
+            self.env["sale.order.line"].with_user(seller_a).search(
+                [("id", "=", historic_line.id)], limit=1
+            )
+        )
+        self.assertEqual(historic_order.user_id, seller_b)
+
+    def test_non_census_duplicate_contact_can_be_selected_without_new_partner(self):
+        duplicate = self.env["res.partner"].create(
+            {
+                "name": "Contacto histórico duplicado",
+                "vat": "0911111111",
+                "customer_rank": 1,
+            }
+        )
+        wizard = self.env["conedera.census.customer.lookup.wizard"].create(
+            {
+                "lookup_query": "0911111111",
+                "selected_partner_ref_id": duplicate.id,
+                "selected_can_use": True,
+                "selected_candidate_status": "available_contact",
+                "existing_vat": duplicate.vat,
+            }
+        )
+        count_before = self.env["res.partner"].search_count([("vat", "=", "0911111111")])
+        action = wizard.action_use_selected()
+        count_after = self.env["res.partner"].search_count([("vat", "=", "0911111111")])
+        self.assertEqual(count_before, count_after)
+        self.assertEqual(action["res_id"], duplicate.id)
+        self.assertTrue(duplicate.census_active)

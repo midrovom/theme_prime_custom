@@ -436,3 +436,95 @@
         }
     }
 }
+
+/* 18.0.1.7.0: alta predictiva y control de cambios */
+.o_conedera_lookup_wizard {
+    .o_field_many2one input {
+        min-height: 48px;
+        font-size: 1rem;
+    }
+    .o_conedera_card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 1rem;
+        padding: 1rem;
+        background: var(--bs-body-bg);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .o_conedera_lookup_wizard {
+        .o_field_many2one input {
+            min-height: 54px;
+            font-size: 16px;
+        }
+        .o_conedera_card {
+            padding: .85rem;
+            margin-bottom: .75rem;
+        }
+    }
+    .o_conedera_census_form .alert .btn {
+        min-height: 48px;
+        width: 100%;
+        margin-top: .5rem;
+    }
+}
+
+// 18.0.1.8.0 - global customer lookup / duplicate protection
+.o_conedera_lookup_field {
+    z-index: 20;
+}
+
+.o_conedera_lookup_input {
+    min-height: 54px;
+    font-size: 1.05rem;
+}
+
+.o_conedera_lookup_dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 420px;
+    overflow-y: auto;
+    background: var(--o-view-background-color, #fff);
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 14px;
+    z-index: 1080;
+}
+
+.o_conedera_lookup_result {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid var(--border-color, #edf0f2);
+    background: transparent;
+    padding: 14px 16px;
+    text-align: left;
+}
+
+.o_conedera_lookup_result:hover,
+.o_conedera_lookup_result:focus {
+    background: rgba(113, 75, 103, 0.08);
+    outline: none;
+}
+
+.o_conedera_lookup_result:last-child {
+    border-bottom: 0;
+}
+
+@media (max-width: 767.98px) {
+    .o_conedera_lookup_dropdown {
+        position: fixed;
+        top: auto;
+        left: 8px;
+        right: 8px;
+        bottom: 10px;
+        max-height: 58vh;
+        border-radius: 18px;
+    }
+
+    .o_conedera_lookup_result {
+        min-height: 72px;
+        padding: 14px;
+    }
+}
