@@ -16,6 +16,14 @@
                 <separator/>
 
                 <filter
+                    name="filter_generate_date"
+                    string="Filtrar generado"
+                    date="generate_date"
+                />
+
+                <separator/>
+
+                <filter
                     name="generated_yesterday"
                     string="Ayer"
                     domain="[
