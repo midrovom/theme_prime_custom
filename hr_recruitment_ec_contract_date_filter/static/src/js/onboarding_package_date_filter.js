@@ -26,31 +26,37 @@ export class EcOnboardingDateFilter extends Component {
         const value = this.state.date;
         if (!value) return;
 
+        const [year, month, day] = value.split("-").map(Number);
+
         const startDate = `${value} 00:00:00`;
-        const nextDate = new Date(new Date(value).getTime() + 24*60*60*1000);
-        const endDate = `${nextDate.toISOString().split("T")[0]} 00:00:00`;
+        const nextDate = new Date(year, month - 1, day + 1);
+        const endDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${String(nextDate.getDate()).padStart(2, "0")} 00:00:00`;
 
         const domain = [
             ["generated_at", ">=", startDate],
             ["generated_at", "<", endDate],
         ];
 
-        if (this.props.searchModel) {
-            this.props.searchModel.addFilter({
-                description: "Generado el " + value,
-                domain: domain,
-            });
-        }
-        this.state.open = false;
+        this.env.services.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "hr.ec.onboarding.package",
+            views: [[false, "list"]],
+            domain: domain,
+            view_id: "hr_recruitment_ec_contract.view_hr_ec_onboarding_package_list", // tu vista lista
+        });
     }
 
     clear() {
-        if (this.props.searchModel) {
-            this.props.searchModel.clearFilters(); // limpia todos los filtros dinámicos
-        }
+        this.env.services.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "hr.ec.onboarding.package",
+            views: [[false, "list"]],
+            domain: [],
+            view_id: "hr_recruitment_ec_contract.view_hr_ec_onboarding_package_list",
+        });
         this.state.date = "";
-        this.state.open = false;
     }
+
 
 }
 
