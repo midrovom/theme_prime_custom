@@ -36,13 +36,14 @@ export class EcOnboardingDateFilter extends Component {
             ["generated_at", ">=", startDate],
             ["generated_at", "<", endDate],
         ];
-
         this.env.services.action.doAction({
             type: "ir.actions.act_window",
             res_model: "hr.ec.onboarding.package",
             views: [[false, "list"]],
             domain: domain,
+            view_id: "hr_recruitment_ec_contract.view_hr_ec_onboarding_package_list",
         });
+
     }
 
 
