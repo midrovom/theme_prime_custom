@@ -55,6 +55,7 @@
         </field>
     </record>
 
+    <!-- Vista de búsqueda con searchitem -->
     <record id="view_hr_ec_onboarding_package_searchitem" model="ir.ui.view">
         <field name="name">hr.ec.onboarding.package.searchitem</field>
         <field name="model">hr.ec.onboarding.package</field>
@@ -265,7 +266,6 @@
             </form>
         </field>
     </record>
-
 
     <!-- Acción -->
     <record id="action_hr_ec_onboarding_package" model="ir.actions.act_window">
