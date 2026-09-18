@@ -5,19 +5,16 @@ import { ControlPanel } from "@web/search/control_panel/control_panel";
 import { patch } from "@web/core/utils/patch";
 
 export class EcOnboardingDateFilter extends Component {
-    static template =
-        "hr_recruitment_ec_contract_date_filter.DateFilter";
+    static template = "hr_recruitment_ec_contract_date_filter.DateFilter";
 
     setup() {
         this.state = useState({
             open: false,
             date: "",
+            filterId: null,   
         });
 
         this.searchModel = this.env.searchModel;
-
-        // Guardamos el filtro creado por nuestro componente
-        this.dateFilter = null;
     }
 
     toggle() {
@@ -30,99 +27,40 @@ export class EcOnboardingDateFilter extends Component {
 
     apply() {
         const value = this.state.date;
+        if (!value) return;
 
-        if (!value) {
-            return;
-        }
-
-        // =====================================================
-        // ELIMINAR FILTRO ANTERIOR
-        // =====================================================
-
+        // Si ya existe un filtro previo, lo eliminamos
         this.clearSearchFilter();
 
-        // =====================================================
-        // CREAR NUEVO FILTRO
-        // =====================================================
-
-        const filters = this.searchModel.createNewFilters([
+        // Creamos el nuevo filtro y guardamos su ID
+        const ids = this.searchModel.createNewFilters([
             {
                 description: `Generado el: ${value}`,
-                domain: [
-                    ["generated_date", "=", value],
-                ],
+                domain: [["generated_date", "=", value]],
             },
         ]);
 
-        // Guardamos referencia al filtro creado
-        if (filters && filters.length) {
-            this.dateFilter = filters[0];
+        if (ids && ids.length) {
+            this.state.filterId = ids[0];
         }
-
-        console.log(
-            "[EC DATE FILTER] Filtro aplicado:",
-            value
-        );
-
-        console.log(
-            "[EC DATE FILTER] Filtro creado:",
-            this.dateFilter
-        );
 
         this.state.open = false;
     }
 
     clearSearchFilter() {
-        if (!this.dateFilter) {
-            console.log(
-                "[EC DATE FILTER] No existe filtro para eliminar"
-            );
-            return;
+        // Elimina el filtro creado por este componente si existe
+        if (this.state.filterId) {
+            this.searchModel.removeFilter(this.state.filterId);
+            this.state.filterId = null;
         }
-
-        console.log(
-            "[EC DATE FILTER] Eliminando filtro:",
-            this.dateFilter
-        );
-
-        try {
-            /*
-             * Elimina el filtro creado mediante
-             * createNewFilters().
-             */
-            this.searchModel.deleteNewFilter(
-                this.dateFilter
-            );
-        } catch (error) {
-            console.error(
-                "[EC DATE FILTER] Error eliminando filtro:",
-                error
-            );
-        }
-
-        this.dateFilter = null;
     }
 
     clear() {
-        console.log(
-            "[EC DATE FILTER] Limpiando filtro de fecha"
-        );
-
-        // Eliminar filtro del SearchModel
         this.clearSearchFilter();
-
-        // Limpiar input
         this.state.date = "";
-
-        // Cerrar popup
         this.state.open = false;
     }
 }
-
-
-// ============================================================
-// CONTROL PANEL
-// ============================================================
 
 patch(ControlPanel, {
     components: {
@@ -130,5 +68,4 @@ patch(ControlPanel, {
         EcOnboardingDateFilter,
     },
 });
-
 
