@@ -51,6 +51,8 @@
                     ]"
                 />
 
+                <searchitem name="ec_date_filter" string="Generado el" type="dateFilter"/>
+
             </search>
         </field>
     </record>
