@@ -20,9 +20,9 @@
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <button type="button" class="btn btn-link" t-on-click="clear">
+                        <!-- <button type="button" class="btn btn-link" t-on-click="clear">
                             Limpiar
-                        </button>
+                        </button> -->
 
                         <button type="button" class="btn btn-primary" t-on-click="apply">
                             Aplicar
