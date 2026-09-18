@@ -55,17 +55,6 @@
         </field>
     </record>
 
-    <!-- Vista de búsqueda con searchitem -->
-    <record id="view_hr_ec_onboarding_package_searchitem" model="ir.ui.view">
-        <field name="name">hr.ec.onboarding.package.searchitem</field>
-        <field name="model">hr.ec.onboarding.package</field>
-        <field name="arch" type="xml">
-            <search>
-                <searchitem name="ec_date_filter" string="Generado el" type="dateFilter"/>
-            </search>
-        </field>
-    </record>
-
     <!-- Vista lista -->
     <record id="view_hr_ec_onboarding_package_list" model="ir.ui.view">
         <field name="name">hr.ec.onboarding.package.list</field>
@@ -268,20 +257,11 @@
     </record>
 
     <!-- Acción -->
-    <!-- <record id="action_hr_ec_onboarding_package" model="ir.actions.act_window">
-        <field name="name">Paquetes de contratación</field>
-        <field name="res_model">hr.ec.onboarding.package</field>
-        <field name="view_mode">list,form</field>
-        <field name="search_view_id" ref="view_hr_ec_onboarding_package_search"/>
-    </record> -->
-
     <record id="action_hr_ec_onboarding_package" model="ir.actions.act_window">
         <field name="name">Paquetes de contratación</field>
         <field name="res_model">hr.ec.onboarding.package</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_hr_ec_onboarding_package_search"/>
-        <field name="view_ids" eval="[(5,0,0),
-            (0,0,{'view_mode':'search','view_id':ref('view_hr_ec_onboarding_package_searchitem')})]"/>
     </record>
 
 </odoo>
