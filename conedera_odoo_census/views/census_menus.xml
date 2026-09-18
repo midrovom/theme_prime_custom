@@ -8,6 +8,9 @@
               parent="menu_census_root" action="action_census_partners" sequence="10"/>
     <menuitem id="menu_census_visits" name="Visitas"
               parent="menu_census_root" action="action_census_visit" sequence="20"/>
+    <menuitem id="menu_census_unlock_requests" name="Solicitudes de edición"
+              parent="menu_census_root" action="action_census_unlock_requests" sequence="25"
+              groups="sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
     <menuitem id="menu_census_analysis" name="Análisis"
               parent="menu_census_root" action="action_census_visit_analysis" sequence="30"
               groups="sales_team.group_sale_manager"/>

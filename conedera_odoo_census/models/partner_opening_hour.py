@@ -40,3 +40,20 @@ class PartnerOpeningHour(models.Model):
                 raise ValidationError(_("La hora de cierre debe estar entre 00:01 y 24:00."))
             if line.closing_time <= line.opening_time:
                 raise ValidationError(_("La hora de cierre debe ser posterior a la hora de apertura."))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if not self.env.context.get("census_system_write"):
+            partner_ids = [vals.get("partner_id") for vals in vals_list if vals.get("partner_id")]
+            self.env["res.partner"].browse(partner_ids)._check_census_master_write({"opening_hour_ids": True})
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if not self.env.context.get("census_system_write"):
+            self.mapped("partner_id")._check_census_master_write({"opening_hour_ids": True})
+        return super().write(vals)
+
+    def unlink(self):
+        if not self.env.context.get("census_system_write"):
+            self.mapped("partner_id")._check_census_master_write({"opening_hour_ids": True})
+        return super().unlink()

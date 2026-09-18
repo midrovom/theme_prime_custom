@@ -8,32 +8,51 @@
                 <sheet>
                     <div class="o_conedera_hero mb-3">
                         <div class="text-muted small text-uppercase fw-semibold mb-1">
-                            <i class="fa fa-search me-1"/> Paso 1 · Identificar al cliente
+                            <i class="fa fa-search me-1"/> Paso 1 · Buscar antes de crear
                         </div>
-                        <h2 class="mb-1">RUC / cédula primero</h2>
+                        <h2 class="mb-1">RUC, cédula o nombre</h2>
                         <div class="text-muted">
-                            Ingrese el RUC o cédula. Si el cliente ya existe en Odoo, verá sus datos y continuará el catastro sobre la misma ficha. También puede buscar por nombre cuando no tenga identificación.
+                            Empiece a escribir y Odoo mostrará los clientes existentes. Si hay duplicados, seleccione la ficha correcta; nunca se crea un segundo catastro sobre el mismo cliente.
                         </div>
                     </div>
 
-                    <group>
-                        <field name="vat" string="RUC / Cédula" placeholder="Ej. 0991234567001 o 0912345678"/>
-                        <field name="customer_name" string="Nombre / razón social" placeholder="Ej. Comercial XYZ S.A."/>
-                        <field name="validation_state" invisible="1"/>
-                        <field name="existing_partner_id" invisible="1" readonly="1"/>
-                    </group>
+                    <div class="o_conedera_card mb-3">
+                        <div class="o_conedera_card_title"><i class="fa fa-users"/> Buscar cliente existente</div>
+                        <field name="existing_partner_id" nolabel="1"
+                               placeholder="Escriba RUC, cédula o nombre..."
+                               context="{'show_vat': True, 'show_address': True, 'active_test': False}"
+                               options="{'no_create': True, 'no_create_edit': True}"/>
+                        <div class="text-muted small mt-2">El desplegable incluye RUC y dirección para poder distinguir fichas duplicadas.</div>
+                    </div>
+
+                    <div class="o_conedera_card mb-3" invisible="existing_partner_id">
+                        <div class="o_conedera_card_title"><i class="fa fa-id-card-o"/> ¿No aparece en la búsqueda?</div>
+                        <div class="o_conedera_hint">Ingrese el documento exacto para validar también coincidencias con puntos, guiones o espacios diferentes.</div>
+                        <group>
+                            <field name="vat" string="RUC / Cédula exacto" placeholder="Ej. 0991234567001 o 0912345678"/>
+                            <field name="customer_name" string="Nombre / razón social" placeholder="Opcional para apoyar la búsqueda"/>
+                        </group>
+                    </div>
+
+                    <field name="validation_state" invisible="1"/>
+                    <field name="existing_census_active" invisible="1"/>
 
                     <div class="alert alert-success" role="alert" invisible="validation_state != 'found'">
                         <i class="fa fa-check-circle me-1"/>
                         <field name="validation_message" nolabel="1" readonly="1"/>
                     </div>
+                    <div class="alert alert-warning" role="alert" invisible="validation_state not in ('multiple','restricted')">
+                        <i class="fa fa-exclamation-triangle me-1"/>
+                        <field name="validation_message" nolabel="1" readonly="1"/>
+                    </div>
+                    <div class="alert alert-info" role="alert" invisible="validation_state != 'not_found'">
+                        <i class="fa fa-plus-circle me-1"/>
+                        <field name="validation_message" nolabel="1" readonly="1"/>
+                    </div>
 
-                    <div class="o_conedera_card" invisible="validation_state != 'found'">
+                    <div class="o_conedera_card" invisible="not existing_partner_id">
                         <div class="o_conedera_card_title">
                             <i class="fa fa-address-card-o"/> Datos encontrados en Odoo
-                        </div>
-                        <div class="o_conedera_hint">
-                            Estos datos no se duplican: el Catastro reutiliza este mismo cliente y usted completará únicamente la información comercial faltante.
                         </div>
                         <group>
                             <group>
@@ -50,22 +69,16 @@
                                 <field name="existing_city" readonly="1"/>
                             </group>
                         </group>
-                    </div>
-
-                    <div class="alert alert-info" role="alert" invisible="validation_state != 'not_found'">
-                        <i class="fa fa-plus-circle me-1"/>
-                        <field name="validation_message" nolabel="1" readonly="1"/>
-                    </div>
-                    <div class="alert alert-warning" role="alert" invisible="validation_state != 'multiple'">
-                        <i class="fa fa-exclamation-triangle me-1"/>
-                        <field name="validation_message" nolabel="1" readonly="1"/>
+                        <div class="alert alert-info mt-2" role="alert" invisible="not existing_census_active">
+                            Este cliente ya tiene Catastro. Al continuar se abrirá la ficha existente.
+                        </div>
                     </div>
                 </sheet>
                 <footer>
-                    <button name="action_validate" type="object" string="Validar cliente" class="btn-primary"
-                            invisible="validation_state in ('found', 'not_found')"/>
-                    <button name="action_open_existing" type="object" string="Usar este cliente y completar catastro" class="btn-primary"
-                            invisible="validation_state != 'found'"/>
+                    <button name="action_open_existing" type="object" string="Usar cliente seleccionado" class="btn-primary"
+                            invisible="not existing_partner_id"/>
+                    <button name="action_validate" type="object" string="Validar RUC / nombre" class="btn-primary"
+                            invisible="existing_partner_id or validation_state == 'not_found'"/>
                     <button name="action_create_new" type="object" string="Crear nuevo catastro" class="btn-primary"
                             invisible="validation_state != 'not_found'"/>
                     <button string="Cancelar" special="cancel" class="btn-secondary"/>
