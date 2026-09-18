@@ -37,11 +37,14 @@ export class EcOnboardingDateFilter extends Component {
             ["generated_at", "<", endDate],
         ];
 
-        if (this.props.searchModel) {
-            this.props.searchModel.dispatch("updateDomain", { domain });
-        }
-        this.state.open = false;
+        this.env.services.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "hr.ec.onboarding.package",
+            views: [[false, "list"]],
+            domain: domain,
+        });
     }
+
 
     clear() {
         if (this.props.searchModel) {
