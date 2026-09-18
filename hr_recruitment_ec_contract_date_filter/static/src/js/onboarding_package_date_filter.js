@@ -109,7 +109,7 @@ export class EcOnboardingDateFilter extends Component {
             return;
         }
 
-        // Eliminar filtros anteriores creados por este componente
+        // Eliminar filtro anterior si existe
         this.clearSearchFilter();
 
         // Crear filtro directamente sobre el campo Date
