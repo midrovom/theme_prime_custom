@@ -37,19 +37,21 @@ export class EcOnboardingDateFilter extends Component {
             ["generated_at", "<", endDate],
         ];
 
-        if (this.props.searchModel) {
-            this.props.searchModel.setDomain(domain, { replace: true });
-        }
+        this.env.services.action.doAction("hr_recruitment_ec_contract.action_hr_ec_onboarding_package", {
+            additional_context: { search_default_domain: domain },
+        });
+
         this.state.open = false;
     }
 
     clear() {
-        if (this.props.searchModel) {
-            this.props.searchModel.setDomain([], { replace: true });
-        }
+        this.env.services.action.doAction("hr_recruitment_ec_contract.action_hr_ec_onboarding_package", {
+            additional_context: { search_default_domain: [] },
+        });
         this.state.date = "";
         this.state.open = false;
     }
+
 
 }
 
