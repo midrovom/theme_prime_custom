@@ -37,26 +37,19 @@ export class EcOnboardingDateFilter extends Component {
             ["generated_at", "<", endDate],
         ];
 
-        this.env.services.action.doAction({
-            type: "ir.actions.act_window",
-            res_model: "hr.ec.onboarding.package",
-            views: [[false, "list"]],
-            domain: domain,
-            view_id: "hr_recruitment_ec_contract.view_hr_ec_onboarding_package_list", // tu vista lista
-        });
+        if (this.props.searchModel) {
+            this.props.searchModel.setDomain(domain, { replace: true });
+        }
+        this.state.open = false;
     }
 
     clear() {
-        this.env.services.action.doAction({
-            type: "ir.actions.act_window",
-            res_model: "hr.ec.onboarding.package",
-            views: [[false, "list"]],
-            domain: [],
-            view_id: "hr_recruitment_ec_contract.view_hr_ec_onboarding_package_list",
-        });
+        if (this.props.searchModel) {
+            this.props.searchModel.setDomain([], { replace: true });
+        }
         this.state.date = "";
+        this.state.open = false;
     }
-
 
 }
 
