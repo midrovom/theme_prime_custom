@@ -121,10 +121,10 @@
                 <p>DATOS:</p>
                 <br/>
                 <br/>
-                <p>Nombre:<t t-out="object.employee_id.name"/></p>
-                <p>Cedula:<t t-out="object.employee_id.identification_id"/></p>
+                <p>Nombre: <t t-out="object.employee_id.name"/></p>
+                <p>Cedula: <t t-out="object.employee_id.identification_id"/></p>
                 <p>Cargo: <t t-out="object.job_id.name"/></p>
-                <p>Empresa:<t t-out="object.company_config_id.name"/> Fecha de ingreso:<t t-out="object.date_start_text"/></p>
+                <p>Empresa: <t t-out="object.company_config_id.name"/> Fecha de ingreso:<t t-out="object.date_start_text"/></p>
                 <br/>
                 <p>Se adjunta automaticamente los documentos generados.</p>
                 <br/>
