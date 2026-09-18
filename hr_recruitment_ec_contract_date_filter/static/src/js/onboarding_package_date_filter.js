@@ -88,7 +88,7 @@ export class EcOnboardingDateFilter extends Component {
         this.state = useState({
             open: false,
             date: "",
-            filterId: null,
+            filterId: null,   // 👉 guardamos el ID del filtro creado
         });
 
         this.searchModel = this.env.searchModel;
@@ -104,19 +104,25 @@ export class EcOnboardingDateFilter extends Component {
 
     apply() {
         const value = this.state.date;
-        if (!value) return;
 
-        // Eliminar filtro previo
+        if (!value) {
+            return;
+        }
+
+        // Eliminar filtros anteriores creados por este componente
         this.clearSearchFilter();
 
-        // Crear nuevo filtro
+        // Crear filtro directamente sobre el campo Date
         const ids = this.searchModel.createNewFilters([
             {
                 description: `Generado el: ${value}`,
-                domain: [["generated_date", "=", value]],
+                domain: [
+                    ["generated_date", "=", value],
+                ],
             },
         ]);
 
+        // Guardamos el ID para poder eliminarlo luego
         if (ids && ids.length) {
             this.state.filterId = ids[0];
         }
@@ -125,20 +131,26 @@ export class EcOnboardingDateFilter extends Component {
     }
 
     clearSearchFilter() {
+        // Elimina el filtro dinámico anterior si existe
         if (this.state.filterId) {
             this.searchModel.removeFilter(this.state.filterId);
             this.state.filterId = null;
         }
-        // 👉 Resetear el domain aplicado
-        this.searchModel.updateDomain([]);
     }
 
     clear() {
-        this.clearSearchFilter();
         this.state.date = "";
         this.state.open = false;
+
+        this.clearSearchFilter();
     }
 }
+
+patch(ControlPanel.prototype, {
+    setup() {
+        super.setup(...arguments);
+    },
+});
 
 patch(ControlPanel, {
     components: {
@@ -146,4 +158,3 @@ patch(ControlPanel, {
         EcOnboardingDateFilter,
     },
 });
-
