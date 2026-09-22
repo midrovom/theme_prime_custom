@@ -30,10 +30,7 @@ class SaleOrder(models.Model):
             if vals.get("census_originated") and vals.get("partner_id"):
                 partner = self.env["res.partner"].browse(vals["partner_id"]).exists()
                 if partner:
-                    partner = partner.commercial_partner_id
                     partner._ensure_census_ready_for_activity()
-                    if partner.census_company_id:
-                        vals.setdefault("company_id", partner.census_company_id.id)
         return super().create(vals_list)
 
     def write(self, vals):
@@ -42,11 +39,9 @@ class SaleOrder(models.Model):
             vals["census_originated"] = True
         return super().write(vals)
 
-    @api.constrains("census_visit_id", "partner_id", "company_id", "census_originated")
+    @api.constrains("census_visit_id", "partner_id", "company_id")
     def _check_census_visit_consistency(self):
         for order in self:
-            if order.census_originated and order.partner_id.commercial_partner_id.census_company_id and order.company_id != order.partner_id.commercial_partner_id.census_company_id:
-                raise ValidationError(_("La proforma originada desde Catastro debe pertenecer a la misma Empresa del Catastro."))
             if not order.census_visit_id:
                 continue
             visit = order.census_visit_id

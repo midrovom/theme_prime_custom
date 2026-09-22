@@ -33,19 +33,19 @@
         <field name="name">Catastro: comercial ve sus clientes</field>
         <field name="model_id" ref="base.model_res_partner"/>
         <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
-        <field name="domain_force">['|', ('commercial_partner_id.census_active', '=', False), '&amp;', ('commercial_partner_id.census_company_id', 'in', company_ids), ('commercial_partner_id.user_id', '=', user.id)]</field>
+        <field name="domain_force">['|', ('commercial_partner_id.census_active', '=', False), ('commercial_partner_id.user_id', '=', user.id)]</field>
     </record>
     <record id="rule_census_partner_supervisor" model="ir.rule">
         <field name="name">Catastro: supervisor ve su equipo</field>
         <field name="model_id" ref="base.model_res_partner"/>
         <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
-        <field name="domain_force">['|', ('commercial_partner_id.census_active', '=', False), '&amp;', ('commercial_partner_id.census_company_id', 'in', company_ids), '|', ('commercial_partner_id.user_id', '=', user.id), ('commercial_partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="domain_force">['|', '|', ('commercial_partner_id.census_active', '=', False), ('commercial_partner_id.user_id', '=', user.id), ('commercial_partner_id.census_team_id.user_id', '=', user.id)]</field>
     </record>
     <record id="rule_census_partner_manager" model="ir.rule">
         <field name="name">Catastro: administrador ve todo</field>
         <field name="model_id" ref="base.model_res_partner"/>
         <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_manager'))]"/>
-        <field name="domain_force">['|', ('commercial_partner_id.census_active', '=', False), ('commercial_partner_id.census_company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[(1, '=', 1)]</field>
     </record>
 
     <!-- Visitas: lectura por propiedad/equipo. Escritura del comercial solo sobre su propia visita. -->
@@ -90,19 +90,19 @@
         <field name="name">Horarios: comercial ve sus clientes</field>
         <field name="model_id" ref="model_conedera_partner_opening_hour"/>
         <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
-        <field name="domain_force">[('partner_id.census_company_id', 'in', company_ids), ('partner_id.user_id', '=', user.id)]</field>
+        <field name="domain_force">[('partner_id.user_id', '=', user.id)]</field>
     </record>
     <record id="rule_partner_opening_hour_supervisor" model="ir.rule">
         <field name="name">Horarios: supervisor ve su equipo</field>
         <field name="model_id" ref="model_conedera_partner_opening_hour"/>
         <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
-        <field name="domain_force">[('partner_id.census_company_id', 'in', company_ids), '|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="domain_force">['|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
     </record>
     <record id="rule_partner_opening_hour_manager" model="ir.rule">
         <field name="name">Horarios: administrador ve todos</field>
         <field name="model_id" ref="model_conedera_partner_opening_hour"/>
         <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_manager'))]"/>
-        <field name="domain_force">[('partner_id.census_company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[(1, '=', 1)]</field>
     </record>
 
     <record id="rule_census_timeline_salesman" model="ir.rule">

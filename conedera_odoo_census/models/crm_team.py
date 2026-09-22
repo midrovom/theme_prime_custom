@@ -1,4 +1,4 @@
-from odoo import _, api, fields, models
+from odoo import _, fields, models
 from odoo.exceptions import UserError
 
 
@@ -34,15 +34,7 @@ class CrmTeam(models.Model):
                 % ", ".join(blocked.mapped("name"))
             )
 
-    @api.constrains("census_enabled", "company_id")
-    def _check_census_company(self):
-        for team in self:
-            if team.census_enabled and not team.company_id:
-                raise UserError(_("Un Equipo habilitado para Catastro debe pertenecer a una empresa específica."))
-
     def write(self, vals):
         if vals.get("census_enabled"):
             self._check_census_enable_allowed()
-        result = super().write(vals)
-        self._check_census_company()
-        return result
+        return super().write(vals)

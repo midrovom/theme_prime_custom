@@ -31,10 +31,6 @@ class ConederaCensusRoleWizard(models.TransientModel):
         default="user",
     )
     current_role = fields.Char(string="Rol actual", compute="_compute_current_role")
-    company_id = fields.Many2one(
-        "res.company", string="Empresa", required=True, default=lambda self: self.env.company,
-        domain=lambda self: [("id", "in", self.env.companies.ids)],
-    )
     team_id = fields.Many2one(
         "crm.team",
         string="Equipo comercial",
@@ -78,8 +74,6 @@ class ConederaCensusRoleWizard(models.TransientModel):
         user = self.user_id
         if not user:
             return
-        if user.company_id and user.company_id in self.env.companies:
-            self.company_id = user.company_id
         if user.has_group(CENSUS_MANAGER_GROUP):
             self.role = "manager"
         elif user.has_group(CENSUS_SUPERVISOR_GROUP):
@@ -94,7 +88,7 @@ class ConederaCensusRoleWizard(models.TransientModel):
         teams = Team.search([
             ("census_enabled", "=", True),
             ("active", "=", True),
-            ("company_id", "=", (self.company_id or self.env.company).id),
+            ("company_id", "in", [False] + self.env.companies.ids),
             "|", ("user_id", "=", user.id), ("member_ids", "in", [user.id]),
         ])
         if technical_ids:
@@ -129,9 +123,7 @@ class ConederaCensusRoleWizard(models.TransientModel):
             technical_ids = team._census_technical_team_ids() if hasattr(team, "_census_technical_team_ids") else set()
             if team.id in technical_ids or not team.census_enabled or not team.active:
                 raise UserError(_("El equipo seleccionado no es válido para Catastro Comercial."))
-            if not team.company_id or team.company_id != self.company_id:
-                raise UserError(_("El Equipo comercial debe pertenecer a la Empresa seleccionada."))
-            if team.company_id not in user.company_ids:
+            if team.company_id and team.company_id not in user.company_ids:
                 raise UserError(_("El usuario no tiene acceso a la compañía del Equipo comercial seleccionado."))
             if self.role == "supervisor":
                 team.write({"user_id": user.id})
