@@ -1,43 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <template id="facebook_pixel" inherit_id="website.layout" name="Facebook Pixel">
-    <xpath expr="//head" position="inside">
-      <t t-set="pixel_id" t-value="request.env['ir.config_parameter'].sudo().get_param('website_sale.facebook_pixel_id')"/>
-      <t t-if="pixel_id">
-        <!-- Facebook Pixel Code -->
-        <script>
-          !function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
-          'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '<t t-esc="pixel_id"/>'); 
-          fbq('track', 'PageView');
-        </script>
-        <noscript>
-          <img height="1" width="1" style="display:none"
-               src="https://www.facebook.com/tr?id=<t t-esc="pixel_id"/>&ev=PageView&noscript=1"/>
-        </noscript>
-        <!-- End Facebook Pixel Code -->
-      </t>
-    </xpath>
-  </template>
 
-  <!-- Evento Purchase al confirmar orden -->
-  <template id="sale_order_confirmation_pixel" inherit_id="website_sale.confirmation" name="Sale Order Confirmation Pixel">
-    <xpath expr="//div[@id='wrap']" position="inside">
-      <t t-set="pixel_id" t-value="request.env['ir.config_parameter'].sudo().get_param('website_sale.facebook_pixel_id')"/>
-      <t t-if="pixel_id">
-        <script>
-          fbq('track', 'Purchase', {
-            value: <t t-esc="order.amount_total"/>,
-            currency: '<t t-esc="order.currency_id.name"/>'
-          });
-        </script>
-      </t>
-    </xpath>
-  </template>
+    <!-- Facebook Pixel -->
+    <template id="facebook_pixel" inherit_id="website.layout" name="Facebook Pixel">
+        <xpath expr="//head" position="inside">
+            <t t-set="pixel_id" t-value="request.env['ir.config_parameter'].sudo().get_param('website_sale.facebook_pixel_id')"/>
+            <t t-if="pixel_id">
+                <!-- Facebook Pixel Code -->
+                <script>
+                    !function(f,b,e,v,n,t,s)
+                    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+                    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+                    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+                    n.queue=[];t=b.createElement(e);t.async=!0;
+                    t.src=v;s=b.getElementsByTagName(e)[0];
+                    s.parentNode.insertBefore(t,s)}(
+                        window,
+                        document,
+                        'script',
+                        'https://connect.facebook.net/en_US/fbevents.js'
+                    );
+                    fbq('init', '<t t-esc="pixel_id"/>');
+                    fbq('track', 'PageView');
+                </script>
+                <noscript>
+                    <img height="1" width="1" style="display:none" t-att-src="'https://www.facebook.com/tr?id=%s&amp;ev=PageView&amp;noscript=1' % pixel_id"/>
+                </noscript>
+                <!-- End Facebook Pixel Code -->
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Evento Purchase al confirmar orden -->
+    <template id="sale_order_confirmation_pixel" inherit_id="website_sale.confirmation" name="Sale Order Confirmation Pixel">
+        <xpath expr="//div[@id='wrap']" position="inside">
+            <t t-set="pixel_id" t-value="request.env['ir.config_parameter'].sudo().get_param('website_sale.facebook_pixel_id')"/>
+            <t t-if="pixel_id">
+                <script>
+                    fbq('track', 'Purchase', {
+                        value: <t t-esc="order.amount_total"/>,
+                        currency: '<t t-esc="order.currency_id.name"/>'
+                    });
+                </script>
+            </t>
+        </xpath>
+    </template>
+
 </odoo>
+
