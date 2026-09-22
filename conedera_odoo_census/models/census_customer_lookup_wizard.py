@@ -3,6 +3,8 @@ import re
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 
+from .census_security_utils import is_census_manager, is_census_supervisor
+
 
 class CensusCustomerLookupWizard(models.TransientModel):
     _name = "conedera.census.customer.lookup.wizard"
@@ -104,9 +106,9 @@ class CensusCustomerLookupWizard(models.TransientModel):
     def _candidate_payload(self, partner):
         partner = partner.sudo().commercial_partner_id
         user = self.env.user
-        manager = user.has_group("sales_team.group_sale_manager")
-        team = partner.census_team_id or partner.user_id.sale_team_id
-        leader = bool(team and team.user_id == user)
+        manager = is_census_manager(user)
+        team = partner.census_team_id if partner.census_team_id and partner.census_team_id.census_enabled else partner._default_census_team(partner.user_id)
+        leader = bool(is_census_supervisor(user) and team and team.user_id == user)
         own = partner.user_id == user
         effective_company = partner.company_id or team.company_id
         company_allowed = not effective_company or effective_company in user.company_ids
@@ -379,6 +381,10 @@ class CensusCustomerLookupWizard(models.TransientModel):
                 )
             ],
             "target": "current",
+            "context": {
+                "form_view_ref": "conedera_odoo_census.view_partner_form_census_mobile",
+                "conedera_census_isolated_form": True,
+            },
         }
 
     def _can_take_existing_partner(self, partner):
@@ -386,11 +392,11 @@ class CensusCustomerLookupWizard(models.TransientModel):
         if not partner.company_id or partner.company_id in self.env.user.company_ids:
             if not partner.user_id or partner.user_id == self.env.user:
                 return True
-            if self.env.user.has_group("sales_team.group_sale_manager"):
+            if is_census_manager(self.env.user):
                 return True
-            team = partner.census_team_id or partner.user_id.sale_team_id
-            return bool(team and team.user_id == self.env.user)
-        return self.env.user.has_group("sales_team.group_sale_manager")
+            team = partner.census_team_id if partner.census_team_id and partner.census_team_id.census_enabled else partner._default_census_team(partner.user_id)
+            return bool(is_census_supervisor(self.env.user) and team and team.user_id == self.env.user)
+        return is_census_manager(self.env.user)
 
     def action_validate(self):
         self.ensure_one()
@@ -525,7 +531,7 @@ class CensusCustomerLookupWizard(models.TransientModel):
         if payload["can_open"] or payload["can_use"]:
             raise UserError(_("Este cliente ya está disponible para usted; no necesita reasignación."))
         if payload["status"] == "company_restricted":
-            raise AccessError(_("La reasignación entre compañías debe realizarla un administrador de Ventas."))
+            raise AccessError(_("La reasignación entre compañías debe realizarla un administrador de Catastro."))
 
         request_type = "reassign_census" if partner.census_active else "claim_contact"
         self.env["conedera.census.reassignment.request"].create(

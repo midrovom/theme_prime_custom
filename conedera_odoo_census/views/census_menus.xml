@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <menuitem id="menu_census_root" name="Catastro Comercial" sequence="35"
-              groups="sales_team.group_sale_salesman"/>
+              groups="conedera_odoo_census.group_census_user"/>
     <menuitem id="menu_census_new_customer" name="Nuevo catastro"
               parent="menu_census_root" action="action_census_customer_lookup" sequence="5"/>
     <menuitem id="menu_census_customers" name="Clientes"
@@ -10,23 +10,29 @@
               parent="menu_census_root" action="action_census_visit" sequence="20"/>
     <menuitem id="menu_census_unlock_requests" name="Solicitudes de edición"
               parent="menu_census_root" action="action_census_unlock_requests" sequence="25"
-              groups="sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
+              groups="conedera_odoo_census.group_census_user,conedera_odoo_census.group_census_manager"/>
     <menuitem id="menu_census_reassignment_requests" name="Solicitudes de reasignación"
               parent="menu_census_root" action="action_census_reassignment_requests" sequence="27"
-              groups="sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
+              groups="conedera_odoo_census.group_census_user,conedera_odoo_census.group_census_manager"/>
     <menuitem id="menu_census_analysis" name="Análisis"
               parent="menu_census_root" action="action_census_visit_analysis" sequence="30"
-              groups="sales_team.group_sale_manager"/>
+              groups="conedera_odoo_census.group_census_manager"/>
     <menuitem id="menu_census_product_analysis" name="Productos proformados"
               parent="menu_census_root" action="action_census_product_quote_summary" sequence="35"
-              groups="sales_team.group_sale_salesman"/>
+              groups="conedera_odoo_census.group_census_user"/>
     <menuitem id="menu_census_configuration" name="Configuración"
               parent="menu_census_root" sequence="90"
-              groups="sales_team.group_sale_manager"/>
+              groups="conedera_odoo_census.group_census_manager"/>
+    <menuitem id="menu_census_user_permissions" name="Usuarios y permisos"
+              parent="menu_census_configuration" action="action_census_role_wizard" sequence="1"
+              groups="conedera_odoo_census.group_census_manager"/>
+    <menuitem id="menu_census_sales_teams" name="Equipos comerciales"
+              parent="menu_census_configuration" action="action_census_sales_teams" sequence="5"
+              groups="conedera_odoo_census.group_census_manager"/>
     <menuitem id="menu_census_business_types" name="Tipos de negocio"
               parent="menu_census_configuration" action="action_census_business_types" sequence="10"
-              groups="sales_team.group_sale_manager"/>
+              groups="conedera_odoo_census.group_census_manager"/>
     <menuitem id="menu_census_mobile_brands" name="Marcas de celulares"
               parent="menu_census_configuration" action="action_census_mobile_brands" sequence="20"
-              groups="sales_team.group_sale_manager"/>
+              groups="conedera_odoo_census.group_census_manager"/>
 </odoo>

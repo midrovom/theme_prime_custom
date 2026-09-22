@@ -1,26 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="crm_team_view_form_census" model="ir.ui.view">
-        <field name="name">crm.team.form.conedera.census</field>
+    <!--
+        Deliberately standalone views.  Do NOT inherit the standard Sales Team
+        dashboard form/kanban: technical teams such as "Sitio web" have no graph
+        model in the sales scope and can raise "Modelo gráfico sin definir" on
+        mobile.  Catastro only needs leader, members and company.
+    -->
+    <record id="view_census_sales_team_list" model="ir.ui.view">
+        <field name="name">crm.team.list.conedera.census.safe</field>
         <field name="model">crm.team</field>
-        <field name="inherit_id" ref="sales_team.crm_team_view_form"/>
         <field name="arch" type="xml">
-            <field name="user_id" position="after">
-                <field name="census_enabled" string="Disponible para Catastro"
-                       groups="conedera_odoo_census.group_census_manager"/>
-            </field>
+            <list string="Equipos comerciales del Catastro" default_order="name" create="true" delete="false">
+                <field name="member_company_ids" column_invisible="True"/>
+                <field name="name"/>
+                <field name="user_id" string="Supervisor / líder" widget="many2one_avatar_user"/>
+                <field name="member_ids" string="Comerciales" widget="many2many_tags" optional="show"/>
+                <field name="company_id" groups="base.group_multi_company" optional="show"/>
+                <field name="census_enabled" string="Habilitado" widget="boolean_toggle"/>
+            </list>
         </field>
     </record>
 
-    <record id="crm_team_view_tree_census" model="ir.ui.view">
-        <field name="name">crm.team.list.conedera.census</field>
+    <record id="view_census_sales_team_form" model="ir.ui.view">
+        <field name="name">crm.team.form.conedera.census.safe</field>
         <field name="model">crm.team</field>
-        <field name="inherit_id" ref="sales_team.crm_team_view_tree"/>
         <field name="arch" type="xml">
-            <field name="user_id" position="after">
-                <field name="census_enabled" string="Catastro" optional="show"
-                       groups="conedera_odoo_census.group_census_manager"/>
-            </field>
+            <form string="Equipo comercial del Catastro" create="true" delete="false">
+                <sheet>
+                    <widget name="web_ribbon" title="Deshabilitado" bg_color="text-bg-warning" invisible="census_enabled"/>
+                    <div class="oe_title">
+                        <label for="name" string="Equipo comercial"/>
+                        <h1><field name="name" placeholder="Ej. Equipo Norte"/></h1>
+                    </div>
+                    <div class="alert alert-info" role="alert">
+                        Esta vista no usa el tablero gráfico de Odoo. Configure aquí únicamente los equipos comerciales que participarán en el Catastro.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="census_enabled" string="Disponible para Catastro"/>
+                            <field name="user_id" string="Supervisor / líder" widget="many2one_avatar_user"
+                                   domain="[('share', '=', False)]" options="{'no_create': True, 'no_create_edit': True}"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Comerciales del equipo">
+                        <field name="member_company_ids" invisible="1"/>
+                        <field name="member_ids" widget="many2many_tags"
+                               options="{'no_create': True, 'no_create_edit': True}"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_census_sales_team_search" model="ir.ui.view">
+        <field name="name">crm.team.search.conedera.census.safe</field>
+        <field name="model">crm.team</field>
+        <field name="arch" type="xml">
+            <search string="Equipos comerciales">
+                <field name="name"/>
+                <field name="user_id" string="Supervisor"/>
+                <field name="member_ids" string="Comercial"/>
+                <filter name="enabled" string="Habilitados" domain="[('census_enabled', '=', True)]"/>
+                <filter name="archived" string="Archivados" domain="[('active', '=', False)]"/>
+            </search>
         </field>
     </record>
 
@@ -28,11 +74,24 @@
         <field name="name">Equipos comerciales</field>
         <field name="res_model">crm.team</field>
         <field name="view_mode">list,form</field>
-        <field name="domain">[('active', '=', True)]</field>
-        <field name="context">{'in_sales_app': True, 'default_census_enabled': True}</field>
+        <field name="search_view_id" ref="view_census_sales_team_search"/>
+        <field name="domain">[('census_enabled', '=', True)]</field>
+        <field name="context">{'default_census_enabled': True}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">Configure los equipos que utilizará el Catastro</p>
-            <p>Defina líder, miembros y marque “Disponible para Catastro”. Los equipos técnicos Sitio web/Punto de Venta no deben utilizarse.</p>
+            <p class="o_view_nocontent_smiling_face">Cree un equipo comercial para el Catastro</p>
+            <p>Defina un supervisor/líder y los comerciales. Los equipos técnicos de Odoo (Sitio web / Punto de Venta) están bloqueados.</p>
         </field>
+    </record>
+    <record id="action_census_sales_teams_view_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_census_sales_team_list"/>
+        <field name="act_window_id" ref="action_census_sales_teams"/>
+    </record>
+    <record id="action_census_sales_teams_view_form" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_census_sales_team_form"/>
+        <field name="act_window_id" ref="action_census_sales_teams"/>
     </record>
 </odoo>

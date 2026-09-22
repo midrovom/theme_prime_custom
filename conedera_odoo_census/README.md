@@ -1,37 +1,31 @@
 # Conedera — Catastro Comercial para Odoo 18 Community
 
-Módulo móvil de Catastro Comercial que reutiliza `res.partner`, Equipos de Ventas y `sale.order` de Odoo.
+Versión: **18.0.1.8.3**
 
-## Flujo principal
+Módulo de Catastro Comercial móvil integrado con Contactos y Ventas estándar de Odoo.
 
-1. **Nuevo catastro** busca globalmente por RUC, cédula o nombre.
-2. Si existe un cliente, reutiliza la misma ficha; nunca crea un segundo Catastro para la misma identificación.
-3. Si el Catastro pertenece a otro vendedor, permite **solicitar reasignación** en vez de duplicarlo.
-4. El líder del Equipo de Ventas origen o un Administrador aprueba/rechaza la transferencia.
-5. La reasignación conserva la misma ficha, visitas, fotos, proformas, productos y bitácora.
-6. El comercial completa y registra el Catastro; después queda protegido y requiere habilitación temporal para modificar el maestro.
+Funciones principales:
 
-## Jerarquía
+- una ficha de Catastro por cliente/RUC/cédula;
+- búsqueda/reutilización de clientes existentes;
+- CAPA, tiendas, tipos de negocio, marcas y horario estructurado;
+- visitas con encuesta, foto y GPS opcional mientras se use HTTP;
+- proformas estándar `sale.order` y bitácora comercial;
+- análisis de productos/cantidades/precios proformados;
+- jerarquía Comercial / Supervisor / Administrador;
+- equipos comerciales reutilizando `crm.team`;
+- solicitudes auditadas de edición y reasignación;
+- protección de Catastros registrados;
+- Data Guard en upgrades.
 
-- Comercial: sus Catastros.
-- Líder del Equipo de Ventas: Catastros del equipo que lidera.
-- Administrador de Ventas: todos.
+## Permisos
 
-## Funciones
+Se administran dentro del propio módulo:
 
-- CAPA / capacidad de compra.
-- Número de tiendas/locales.
-- Tipos de negocio múltiples y marcas de celulares opcionales.
-- Horarios estructurados.
-- Visitas con encuesta, fotografía móvil y GPS opcional mientras el despliegue siga en HTTP.
-- Proformas estándar de Odoo vinculadas al cliente/visita.
-- Bitácora móvil.
-- Resumen e historial de productos proformados.
-- Solicitudes auditadas de edición y reasignación.
-- Protección de datos durante upgrades mediante Data Guard.
+**Catastro Comercial > Configuración > Usuarios y permisos**
 
-## Versión
+Los equipos se administran en:
 
-`18.0.1.8.1`
+**Catastro Comercial > Configuración > Equipos comerciales**
 
-Consulte `ACTUALIZACION_18.0.1.8.1.md`, `CHANGELOG_18.0.1.8.1.md` y `VALIDATION_18.0.1.8.1.md`.
+Los equipos técnicos `Sitio web` y `Punto de Venta` están excluidos. En 1.8.3 la selección de equipo se hace desde el Catastro/Permisos sin abrir el tablero gráfico estándar, y el bloqueo del Catastro usa una vista aislada para no depender de módulos externos como Ventas en Ruta.

@@ -8,6 +8,15 @@ class TestConederaCensus(TransactionCase):
     def setUp(self):
         super().setUp()
         self.business_type = self.env.ref("conedera_odoo_census.business_type_cellphones")
+        self.team = self.env["crm.team"].create(
+            {
+                "name": "Equipo Catastro Test",
+                "user_id": self.env.user.id,
+                "member_ids": [(4, self.env.user.id)],
+                "company_id": self.env.company.id,
+                "census_enabled": True,
+            }
+        )
         self.partner = self.env["res.partner"].create(
             {
                 "name": "Cliente GPS S.A.",
@@ -26,6 +35,8 @@ class TestConederaCensus(TransactionCase):
                 "email": "compras@example.com",
                 "street": "Av. Principal 123",
                 "city": "Guayaquil",
+                "user_id": self.env.user.id,
+                "census_team_id": self.team.id,
             }
         )
         self.env["conedera.partner.opening.hour"].create(
@@ -38,6 +49,14 @@ class TestConederaCensus(TransactionCase):
         )
         # Desde 18.0.1.7.0 una ficha completa debe registrarse/bloquearse antes de operar.
         self.partner.action_register_census()
+
+
+    def test_technical_sales_team_cannot_be_enabled_for_census(self):
+        technical = self.env.ref("sales_team.salesteam_website_sales", raise_if_not_found=False)
+        if technical:
+            self.assertFalse(technical.census_enabled)
+            with self.assertRaises(UserError):
+                technical.write({"census_enabled": True})
 
     def test_multiple_business_types(self):
         accessories = self.env.ref("conedera_odoo_census.business_type_accessories")
@@ -320,7 +339,8 @@ class TestConederaCensus(TransactionCase):
         self.assertAlmostEqual(detail.net_unit_price, 90.0, places=2)
 
     def test_global_lookup_detects_foreign_census_and_reassigns_same_record(self):
-        sales_group = self.env.ref("sales_team.group_sale_salesman")
+        sales_group = self.env.ref("conedera_odoo_census.group_census_user")
+        supervisor_group = self.env.ref("conedera_odoo_census.group_census_supervisor")
         seller_a = self.env["res.users"].with_context(no_reset_password=True).create(
             {
                 "name": "Comercial Destino",
@@ -343,7 +363,7 @@ class TestConederaCensus(TransactionCase):
             {
                 "name": "Supervisor Destino",
                 "login": "census_supervisor_a_test",
-                "groups_id": [(6, 0, [sales_group.id])],
+                "groups_id": [(6, 0, [supervisor_group.id])],
                 "company_id": self.env.company.id,
                 "company_ids": [(6, 0, [self.env.company.id])],
             }
@@ -352,7 +372,7 @@ class TestConederaCensus(TransactionCase):
             {
                 "name": "Supervisor Origen",
                 "login": "census_supervisor_b_test",
-                "groups_id": [(6, 0, [sales_group.id])],
+                "groups_id": [(6, 0, [supervisor_group.id])],
                 "company_id": self.env.company.id,
                 "company_ids": [(6, 0, [self.env.company.id])],
             }
@@ -363,6 +383,7 @@ class TestConederaCensus(TransactionCase):
                 "user_id": supervisor_a.id,
                 "member_ids": [(6, 0, [seller_a.id])],
                 "company_id": self.env.company.id,
+                "census_enabled": True,
             }
         )
         team_b = self.env["crm.team"].create(
@@ -371,6 +392,7 @@ class TestConederaCensus(TransactionCase):
                 "user_id": supervisor_b.id,
                 "member_ids": [(6, 0, [seller_b.id])],
                 "company_id": self.env.company.id,
+                "census_enabled": True,
             }
         )
         self.partner.sudo().write(
@@ -494,3 +516,93 @@ class TestConederaCensus(TransactionCase):
         self.assertEqual(count_before, count_after)
         self.assertEqual(action["res_id"], duplicate.id)
         self.assertTrue(duplicate.census_active)
+
+    def test_draft_salesperson_can_select_valid_commercial_team(self):
+        census_group = self.env.ref("conedera_odoo_census.group_census_user")
+        seller = self.env["res.users"].with_context(no_reset_password=True).create({
+            "name": "Comercial Selector",
+            "login": "census_team_selector_test",
+            "groups_id": [(6, 0, [census_group.id])],
+            "company_id": self.env.company.id,
+            "company_ids": [(6, 0, [self.env.company.id])],
+        })
+        team = self.env["crm.team"].create({
+            "name": "Equipo Seleccionable",
+            "member_ids": [(6, 0, [seller.id])],
+            "company_id": self.env.company.id,
+            "census_enabled": True,
+        })
+        draft = self.env["res.partner"].sudo().create({
+            "name": "Cliente Borrador Equipo",
+            "commercial_name": "Cliente Borrador Equipo",
+            "vat": "0918181818",
+            "census_active": True,
+            "user_id": seller.id,
+            "census_locked": False,
+        })
+        draft.with_user(seller).write({"census_team_id": team.id})
+        draft.invalidate_recordset(["census_team_id"])
+        self.assertEqual(draft.census_team_id, team)
+
+    def test_locked_salesperson_cannot_change_team_directly(self):
+        census_group = self.env.ref("conedera_odoo_census.group_census_user")
+        seller = self.env["res.users"].with_context(no_reset_password=True).create({
+            "name": "Comercial Bloqueado",
+            "login": "census_locked_team_test",
+            "groups_id": [(6, 0, [census_group.id])],
+            "company_id": self.env.company.id,
+            "company_ids": [(6, 0, [self.env.company.id])],
+        })
+        team_a = self.env["crm.team"].create({
+            "name": "Equipo Bloqueado A",
+            "member_ids": [(6, 0, [seller.id])],
+            "company_id": self.env.company.id,
+            "census_enabled": True,
+        })
+        team_b = self.env["crm.team"].create({
+            "name": "Equipo Bloqueado B",
+            "member_ids": [(6, 0, [seller.id])],
+            "company_id": self.env.company.id,
+            "census_enabled": True,
+        })
+        locked = self.partner.sudo()
+        locked._census_internal_control_update({"census_team_id": team_a.id, "census_locked": True})
+        locked.sudo().write({"user_id": seller.id})
+        with self.assertRaises(AccessError):
+            locked.with_user(seller).write({"census_team_id": team_b.id})
+
+    def test_register_census_reopens_isolated_catastro_form(self):
+        action = self.partner.action_register_census()
+        view = self.env.ref("conedera_odoo_census.view_partner_form_census_mobile")
+        self.partner.invalidate_recordset(["census_locked"])
+        self.assertTrue(self.partner.census_locked)
+        self.assertEqual(action["res_model"], "res.partner")
+        self.assertEqual(action["res_id"], self.partner.id)
+        self.assertEqual(action["views"], [(view.id, "form")])
+        self.assertTrue(action["context"]["conedera_census_isolated_form"])
+        self.assertNotEqual(action.get("tag"), "reload")
+
+    def test_role_wizard_assigns_commercial_team_without_opening_team_dashboard(self):
+        manager_group = self.env.ref("conedera_odoo_census.group_census_manager")
+        census_group = self.env.ref("conedera_odoo_census.group_census_user")
+        admin = self.env.user
+        admin.sudo().write({"groups_id": [(4, manager_group.id)]})
+        seller = self.env["res.users"].with_context(no_reset_password=True).create({
+            "name": "Comercial Permisos",
+            "login": "census_permissions_team_test",
+            "groups_id": [(6, 0, [census_group.id])],
+            "company_id": self.env.company.id,
+            "company_ids": [(6, 0, [self.env.company.id])],
+        })
+        team = self.env["crm.team"].create({
+            "name": "Equipo Permisos",
+            "company_id": self.env.company.id,
+            "census_enabled": True,
+        })
+        wizard = self.env["conedera.census.role.wizard"].create({
+            "user_id": seller.id,
+            "role": "user",
+            "team_id": team.id,
+        })
+        wizard.action_apply()
+        self.assertIn(seller, team.member_ids)

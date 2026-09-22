@@ -73,7 +73,7 @@
                     <button name="action_mark_done" type="object" string="Finalizar visita"
                             class="btn-primary d-none d-md-inline-block" invisible="state != 'draft'"/>
                     <button name="action_set_draft" type="object" string="Reabrir"
-                            invisible="state != 'done'" groups="sales_team.group_sale_manager"/>
+                            invisible="state != 'done'" groups="conedera_odoo_census.group_census_manager"/>
                     <button name="action_cancel" type="object" string="Cancelar"
                             invisible="state != 'draft'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,done,cancel"/>
@@ -172,7 +172,7 @@
                                 <field name="company_id" groups="base.group_multi_company" readonly="1"/>
                             </group>
                             <group>
-                                <field name="location_tolerance_m" groups="sales_team.group_sale_manager" readonly="state != 'draft'"/>
+                                <field name="location_tolerance_m" groups="conedera_odoo_census.group_census_manager" readonly="state != 'draft'"/>
                                 <div class="o_conedera_actionbar">
                                     <button name="action_create_quotation" type="object" string="Crear proforma"
                                             class="btn-primary" icon="fa-file-text-o" invisible="state == 'cancel'"/>
@@ -194,7 +194,7 @@
                         <span>La encuesta y la evidencia quedaron bloqueadas para preservar la bitácora.</span>
                     </div>
 
-                    <group string="Coordenadas" groups="sales_team.group_sale_manager">
+                    <group string="Coordenadas" groups="conedera_odoo_census.group_census_manager">
                         <field name="gps_latitude" readonly="1"/>
                         <field name="gps_longitude" readonly="1"/>
                     </group>

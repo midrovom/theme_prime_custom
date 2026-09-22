@@ -27,11 +27,11 @@
                     <button name="action_new_census_visit" type="object" string="Registrar visita"
                             class="btn-primary" icon="fa-map-marker"
                             invisible="not id or not census_active or not census_ready_for_activity or not census_locked"
-                            groups="sales_team.group_sale_salesman"/>
+                            groups="conedera_odoo_census.group_census_user"/>
                     <button name="action_new_census_quotation" type="object" string="Crear proforma"
                             class="btn-secondary" icon="fa-file-text-o"
                             invisible="not id or not census_active or not census_ready_for_activity or not census_locked"
-                            groups="sales_team.group_sale_salesman"/>
+                            groups="conedera_odoo_census.group_census_user"/>
                 </header>
                 <sheet class="o_conedera_census_form">
                     <!-- Campos técnicos/legado: presentes para expresiones y compatibilidad, no para el usuario. -->
@@ -49,6 +49,7 @@
                     <field name="census_edit_state" invisible="1"/>
                     <field name="census_unlock_user_id" invisible="1"/>
                     <field name="census_unlock_until" invisible="1"/>
+                    <field name="census_allowed_team_ids" invisible="1"/>
 
                     <div class="o_conedera_hero">
                         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
@@ -87,7 +88,7 @@
                     <div class="alert alert-info d-flex align-items-center justify-content-between gap-2" role="alert"
                          invisible="not census_ready_for_activity or census_locked">
                         <div><i class="fa fa-shield me-1"/><strong>Datos completos.</strong> Registre el catastro para proteger la ficha y habilitar visitas/proformas.</div>
-                        <button name="action_register_census" type="object" string="Registrar catastro" class="btn-primary" icon="fa-lock"/>
+                        <button name="action_register_census" type="object" string="Registrar y proteger" class="btn-primary" icon="fa-lock"/>
                     </div>
                     <div class="alert alert-success d-flex align-items-center justify-content-between gap-2" role="alert"
                          invisible="not census_locked">
@@ -123,15 +124,15 @@
 
                     <div class="oe_button_box" name="button_box" invisible="not id">
                         <button name="action_view_census_visits" type="object" class="oe_stat_button"
-                                icon="fa-map-marker" groups="sales_team.group_sale_salesman">
+                                icon="fa-map-marker" groups="conedera_odoo_census.group_census_user">
                             <field name="census_visit_count" widget="statinfo" string="Visitas"/>
                         </button>
                         <button name="action_view_census_quotations" type="object" class="oe_stat_button"
-                                icon="fa-file-text-o" groups="sales_team.group_sale_salesman">
+                                icon="fa-file-text-o" groups="conedera_odoo_census.group_census_user">
                             <field name="census_quotation_count" widget="statinfo" string="Proformas"/>
                         </button>
                         <button name="action_view_census_reassignments" type="object" class="oe_stat_button"
-                                icon="fa-exchange" groups="sales_team.group_sale_salesman"
+                                icon="fa-exchange" groups="conedera_odoo_census.group_census_user"
                                 invisible="not census_reassignment_count">
                             <field name="census_reassignment_count" widget="statinfo" string="Reasignaciones"/>
                         </button>
@@ -167,10 +168,24 @@
                                         <div class="text-muted small">Opcional: seleccione las marcas de celulares que maneja el cliente.</div>
                                         <field name="business_description" readonly="census_locked and not census_can_edit_master" placeholder="Ej. gaming, reparación, línea blanca..."/>
                                         <field name="customer_segment" readonly="census_locked and not census_can_edit_master" string="Canal comercial"/>
-                                        <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user" readonly="1" groups="!sales_team.group_sale_manager"/>
-                                        <field name="census_team_id" string="Equipo comercial" readonly="1" groups="!sales_team.group_sale_manager"/>
-                                        <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user" groups="sales_team.group_sale_manager"/>
-                                        <field name="census_team_id" string="Equipo comercial" groups="sales_team.group_sale_manager"/>
+                                        <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user" readonly="1" groups="!conedera_odoo_census.group_census_manager"/>
+                                        <field name="census_team_id" string="Equipo comercial"
+                                               readonly="census_locked"
+                                               domain="[('id', 'in', census_allowed_team_ids)]"
+                                               groups="!conedera_odoo_census.group_census_manager"
+                                               options="{'no_open': True, 'no_create': True, 'no_create_edit': True}"
+                                               placeholder="Seleccione su equipo comercial"/>
+                                        <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user"
+                                               readonly="census_locked" groups="conedera_odoo_census.group_census_manager"/>
+                                        <field name="census_team_id" string="Equipo comercial"
+                                               readonly="census_locked"
+                                               domain="[('id', 'in', census_allowed_team_ids)]"
+                                               groups="conedera_odoo_census.group_census_manager"
+                                               options="{'no_open': True, 'no_create': True, 'no_create_edit': True}"
+                                               placeholder="Seleccione un equipo comercial"/>
+                                        <div class="text-muted small" colspan="2">
+                                            En borrador puede seleccionar únicamente equipos habilitados donde el vendedor sea líder o miembro. Al registrar el Catastro, el equipo queda protegido.
+                                        </div>
                                     </group>
                                 </group>
                             </div>
@@ -512,7 +527,7 @@
         <field name="view_id" eval="False"/>
         <field name="search_view_id" ref="view_partner_search_census"/>
         <field name="domain">[('census_active', '=', True)]</field>
-        <field name="context">{'default_census_active': True, 'default_company_type': 'company', 'default_user_id': uid}</field>
+        <field name="context">{'default_census_active': True, 'default_company_type': 'company', 'default_user_id': uid, 'form_view_ref': 'conedera_odoo_census.view_partner_form_census_mobile', 'conedera_census_isolated_form': True}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">No hay catastros todavía.</p>
             <p>Use <strong>Catastro Comercial &gt; Nuevo catastro</strong> para validar primero por RUC o nombre y evitar duplicados.</p>

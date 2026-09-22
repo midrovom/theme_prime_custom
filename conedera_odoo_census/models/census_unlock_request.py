@@ -3,6 +3,8 @@ from datetime import timedelta
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 
+from .census_security_utils import is_census_manager, is_census_supervisor
+
 
 class CensusUnlockRequest(models.Model):
     _name = "conedera.census.unlock.request"
@@ -31,12 +33,13 @@ class CensusUnlockRequest(models.Model):
     @api.depends_context("uid")
     def _compute_can_review(self):
         user = self.env.user
-        is_admin = user.has_group("sales_team.group_sale_manager")
+        is_admin = is_census_manager(user)
         for request in self:
             request.can_review = bool(
                 is_admin
                 or (
-                    request.partner_id.census_team_id
+                    is_census_supervisor(user)
+                    and request.partner_id.census_team_id
                     and request.partner_id.census_team_id.user_id == user
                 )
             )
@@ -44,12 +47,12 @@ class CensusUnlockRequest(models.Model):
     def _check_can_review(self):
         for request in self:
             if not request.can_review:
-                raise AccessError(_("Solo el líder del Equipo de Ventas responsable o un administrador puede revisar esta solicitud."))
+                raise AccessError(_("Solo un usuario con rol Supervisor que lidere el Equipo comercial responsable, o un Administrador de Catastro, puede revisar esta solicitud."))
 
     @api.model_create_multi
     def create(self, vals_list):
         # No permitimos crear solicitudes en nombre de otro vendedor mediante RPC/importación.
-        if not self.env.su and not self.env.user.has_group("sales_team.group_sale_manager"):
+        if not self.env.su and not is_census_manager(self.env.user):
             for vals in vals_list:
                 partner = self.env["res.partner"].browse(vals.get("partner_id")).exists()
                 if not partner or not partner.census_active or not partner.census_locked:
@@ -86,7 +89,7 @@ class CensusUnlockRequest(models.Model):
         return super().write(vals)
 
     def unlink(self):
-        if not self.env.su and not self.env.user.has_group("sales_team.group_sale_manager"):
+        if not self.env.su and not is_census_manager(self.env.user):
             raise AccessError(_("Las solicitudes de edición no se eliminan; se conservan como auditoría."))
         return super().unlink()
 
@@ -147,7 +150,7 @@ class CensusUnlockWizard(models.TransientModel):
         partner = self.partner_id
         if not partner.census_active or not partner.census_locked:
             raise UserError(_("Este catastro no está bloqueado."))
-        if partner.user_id != self.env.user and not self.env.user.has_group("sales_team.group_sale_manager"):
+        if partner.user_id != self.env.user and not is_census_manager(self.env.user):
             raise AccessError(_("Solo el comercial responsable puede solicitar habilitación para este catastro."))
         reason = (self.reason or "").strip()
         if not reason:

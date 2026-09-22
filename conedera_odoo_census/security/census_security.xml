@@ -1,29 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <odoo>
-    <!-- Se conserva el grupo por compatibilidad con instalaciones anteriores, pero
-         desde 18.0.1.7.0 el líder del Equipo de Ventas es supervisor automáticamente. -->
     <record id="module_category_conedera_census" model="ir.module.category">
         <field name="name">Catastro Comercial</field>
-        <field name="description">Roles y supervisión del Catastro Comercial.</field>
+        <field name="description">Permisos del Catastro Comercial: Comercial, Supervisor y Administrador.</field>
         <field name="sequence">35</field>
     </record>
 
-    <record id="group_census_supervisor" model="res.groups">
-        <field name="name">Supervisor de Catastro (compatibilidad)</field>
+    <record id="group_census_user" model="res.groups">
+        <field name="name">Comercial</field>
         <field name="category_id" ref="module_category_conedera_census"/>
         <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
-        <field name="comment">Compatibilidad. La supervisión efectiva se determina automáticamente por el líder del Equipo de Ventas.</field>
+        <field name="comment">Ve y opera únicamente sus catastros. Puede crear visitas/proformas y solicitar cambios.</field>
+    </record>
+
+    <record id="group_census_supervisor" model="res.groups">
+        <field name="name">Supervisor</field>
+        <field name="category_id" ref="module_category_conedera_census"/>
+        <field name="implied_ids" eval="[(4, ref('group_census_user'))]"/>
+        <field name="comment">Ve los catastros del equipo que lidera y aprueba solicitudes de edición/reasignación.</field>
+    </record>
+
+    <record id="group_census_manager" model="res.groups">
+        <field name="name">Administrador</field>
+        <field name="category_id" ref="module_category_conedera_census"/>
+        <field name="implied_ids" eval="[(4, ref('group_census_supervisor'))]"/>
+        <field name="users" eval="[(4, ref('base.user_admin'))]"/>
+        <field name="comment">Administra todos los catastros, equipos habilitados y configuraciones del módulo.</field>
     </record>
 
     <!-- Catastros: comercial=propios; si el usuario lidera el equipo, ve ese equipo; administrador=todo. -->
     <record id="rule_census_partner_salesman" model="ir.rule">
-        <field name="name">Catastro: comercial propio / líder ve su equipo</field>
+        <field name="name">Catastro: comercial ve sus clientes</field>
         <field name="model_id" ref="base.model_res_partner"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
-        <field name="domain_force">['|', '|', ('commercial_partner_id.census_active', '=', False), ('commercial_partner_id.user_id', '=', user.id), ('commercial_partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
+        <field name="domain_force">['|', ('commercial_partner_id.census_active', '=', False), ('commercial_partner_id.user_id', '=', user.id)]</field>
     </record>
     <record id="rule_census_partner_supervisor" model="ir.rule">
-        <field name="name">Catastro: grupo supervisor compatible</field>
+        <field name="name">Catastro: supervisor ve su equipo</field>
         <field name="model_id" ref="base.model_res_partner"/>
         <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
         <field name="domain_force">['|', '|', ('commercial_partner_id.census_active', '=', False), ('commercial_partner_id.user_id', '=', user.id), ('commercial_partner_id.census_team_id.user_id', '=', user.id)]</field>
@@ -31,16 +44,16 @@
     <record id="rule_census_partner_manager" model="ir.rule">
         <field name="name">Catastro: administrador ve todo</field>
         <field name="model_id" ref="base.model_res_partner"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_manager'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_manager'))]"/>
         <field name="domain_force">[(1, '=', 1)]</field>
     </record>
 
     <!-- Visitas: lectura por propiedad/equipo. Escritura del comercial solo sobre su propia visita. -->
     <record id="rule_census_visit_salesman" model="ir.rule">
-        <field name="name">Visitas: comercial propio / líder ve su equipo</field>
+        <field name="name">Visitas: comercial ve sus clientes</field>
         <field name="model_id" ref="model_conedera_census_visit"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
-        <field name="domain_force">[('company_id', 'in', company_ids), '|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
+        <field name="domain_force">[('company_id', 'in', company_ids), ('partner_id.user_id', '=', user.id)]</field>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
         <field name="perm_create" eval="False"/>
@@ -49,7 +62,7 @@
     <record id="rule_census_visit_salesman_write_own" model="ir.rule">
         <field name="name">Visitas: comercial modifica únicamente las propias</field>
         <field name="model_id" ref="model_conedera_census_visit"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids), ('partner_id.user_id', '=', user.id), ('user_id', '=', user.id)]</field>
         <field name="perm_read" eval="False"/>
         <field name="perm_write" eval="True"/>
@@ -57,7 +70,7 @@
         <field name="perm_unlink" eval="False"/>
     </record>
     <record id="rule_census_visit_supervisor" model="ir.rule">
-        <field name="name">Visitas: grupo supervisor compatible</field>
+        <field name="name">Visitas: supervisor ve su equipo</field>
         <field name="model_id" ref="model_conedera_census_visit"/>
         <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids), '|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
@@ -69,18 +82,18 @@
     <record id="rule_census_visit_manager" model="ir.rule">
         <field name="name">Visitas: administrador ve todas</field>
         <field name="model_id" ref="model_conedera_census_visit"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_manager'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_manager'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
     </record>
 
     <record id="rule_partner_opening_hour_salesman" model="ir.rule">
-        <field name="name">Horarios: comercial propio / líder ve su equipo</field>
+        <field name="name">Horarios: comercial ve sus clientes</field>
         <field name="model_id" ref="model_conedera_partner_opening_hour"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
-        <field name="domain_force">['|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
+        <field name="domain_force">[('partner_id.user_id', '=', user.id)]</field>
     </record>
     <record id="rule_partner_opening_hour_supervisor" model="ir.rule">
-        <field name="name">Horarios: grupo supervisor compatible</field>
+        <field name="name">Horarios: supervisor ve su equipo</field>
         <field name="model_id" ref="model_conedera_partner_opening_hour"/>
         <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
         <field name="domain_force">['|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
@@ -88,18 +101,18 @@
     <record id="rule_partner_opening_hour_manager" model="ir.rule">
         <field name="name">Horarios: administrador ve todos</field>
         <field name="model_id" ref="model_conedera_partner_opening_hour"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_manager'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_manager'))]"/>
         <field name="domain_force">[(1, '=', 1)]</field>
     </record>
 
     <record id="rule_census_timeline_salesman" model="ir.rule">
-        <field name="name">Bitácora: comercial propio / líder ve su equipo</field>
+        <field name="name">Bitácora: comercial ve sus clientes</field>
         <field name="model_id" ref="model_conedera_census_commercial_timeline"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
-        <field name="domain_force">[('company_id', 'in', company_ids), '|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
+        <field name="domain_force">[('company_id', 'in', company_ids), ('partner_id.user_id', '=', user.id)]</field>
     </record>
     <record id="rule_census_timeline_supervisor" model="ir.rule">
-        <field name="name">Bitácora: grupo supervisor compatible</field>
+        <field name="name">Bitácora: supervisor ve su equipo</field>
         <field name="model_id" ref="model_conedera_census_commercial_timeline"/>
         <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids), '|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
@@ -107,18 +120,18 @@
     <record id="rule_census_timeline_manager" model="ir.rule">
         <field name="name">Bitácora: administrador ve todo</field>
         <field name="model_id" ref="model_conedera_census_commercial_timeline"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_manager'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_manager'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
     </record>
 
     <record id="rule_census_product_summary_salesman" model="ir.rule">
-        <field name="name">Resumen productos: comercial propio / líder ve su equipo</field>
+        <field name="name">Resumen productos: comercial ve sus clientes</field>
         <field name="model_id" ref="model_conedera_census_product_quote_summary"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
-        <field name="domain_force">[('company_id', 'in', company_ids), '|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
+        <field name="domain_force">[('company_id', 'in', company_ids), ('partner_id.user_id', '=', user.id)]</field>
     </record>
     <record id="rule_census_product_summary_supervisor" model="ir.rule">
-        <field name="name">Resumen productos: grupo supervisor compatible</field>
+        <field name="name">Resumen productos: supervisor ve su equipo</field>
         <field name="model_id" ref="model_conedera_census_product_quote_summary"/>
         <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids), '|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
@@ -126,18 +139,18 @@
     <record id="rule_census_product_summary_manager" model="ir.rule">
         <field name="name">Resumen productos: administrador ve todo</field>
         <field name="model_id" ref="model_conedera_census_product_quote_summary"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_manager'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_manager'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
     </record>
 
     <record id="rule_census_product_quote_line_salesman" model="ir.rule">
-        <field name="name">Detalle proformado: comercial propio / líder ve su equipo</field>
+        <field name="name">Detalle proformado: comercial ve sus clientes</field>
         <field name="model_id" ref="model_conedera_census_product_quote_line"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
-        <field name="domain_force">[('company_id', 'in', company_ids), '|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
+        <field name="domain_force">[('company_id', 'in', company_ids), ('partner_id.user_id', '=', user.id)]</field>
     </record>
     <record id="rule_census_product_quote_line_supervisor" model="ir.rule">
-        <field name="name">Detalle proformado: grupo supervisor compatible</field>
+        <field name="name">Detalle proformado: supervisor ve su equipo</field>
         <field name="model_id" ref="model_conedera_census_product_quote_line"/>
         <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids), '|', ('partner_id.user_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
@@ -145,7 +158,7 @@
     <record id="rule_census_product_quote_line_manager" model="ir.rule">
         <field name="name">Detalle proformado: administrador ve todo</field>
         <field name="model_id" ref="model_conedera_census_product_quote_line"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_manager'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_manager'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
     </record>
 
@@ -153,11 +166,11 @@
     <record id="rule_unlock_request_salesman" model="ir.rule">
         <field name="name">Solicitudes: propias / líder ve su equipo</field>
         <field name="model_id" ref="model_conedera_census_unlock_request"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
-        <field name="domain_force">['|', ('requested_by_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
+        <field name="domain_force">[('requested_by_id', '=', user.id)]</field>
     </record>
     <record id="rule_unlock_request_supervisor" model="ir.rule">
-        <field name="name">Solicitudes: grupo supervisor compatible</field>
+        <field name="name">Solicitudes: supervisor ve su equipo</field>
         <field name="model_id" ref="model_conedera_census_unlock_request"/>
         <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
         <field name="domain_force">['|', ('requested_by_id', '=', user.id), ('partner_id.census_team_id.user_id', '=', user.id)]</field>
@@ -165,20 +178,26 @@
     <record id="rule_unlock_request_manager" model="ir.rule">
         <field name="name">Solicitudes: administrador ve todas</field>
         <field name="model_id" ref="model_conedera_census_unlock_request"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_manager'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_manager'))]"/>
         <field name="domain_force">[(1, '=', 1)]</field>
     </record>
     <!-- Reasignaciones: el solicitante ve la suya; el líder del equipo origen la revisa; admin ve todo. -->
     <record id="rule_census_reassignment_salesman" model="ir.rule">
         <field name="name">Reasignación: solicitante / supervisores implicados</field>
         <field name="model_id" ref="model_conedera_census_reassignment_request"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
+        <field name="domain_force">[('company_id', 'in', company_ids), ('requested_by_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_census_reassignment_supervisor" model="ir.rule">
+        <field name="name">Reasignación: supervisor revisa su equipo</field>
+        <field name="model_id" ref="model_conedera_census_reassignment_request"/>
+        <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids), '|', ('requested_by_id', '=', user.id), ('source_team_id.user_id', '=', user.id)]</field>
     </record>
     <record id="rule_census_reassignment_manager" model="ir.rule">
         <field name="name">Reasignación: administrador ve todo</field>
         <field name="model_id" ref="model_conedera_census_reassignment_request"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_manager'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_manager'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
     </record>
 
@@ -188,8 +207,8 @@
     <record id="rule_census_sale_order_history_read" model="ir.rule">
         <field name="name">Catastro: lectura de proformas históricas del cliente asignado</field>
         <field name="model_id" ref="sale.model_sale_order"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
-        <field name="domain_force">[('company_id', 'in', company_ids), ('partner_id.commercial_partner_id.census_active', '=', True), '|', ('partner_id.commercial_partner_id.user_id', '=', user.id), ('partner_id.commercial_partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
+        <field name="domain_force">[('company_id', 'in', company_ids), ('partner_id.commercial_partner_id.census_active', '=', True), ('partner_id.commercial_partner_id.user_id', '=', user.id)]</field>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
         <field name="perm_create" eval="False"/>
@@ -198,7 +217,28 @@
     <record id="rule_census_sale_order_line_history_read" model="ir.rule">
         <field name="name">Catastro: lectura de líneas históricas del cliente asignado</field>
         <field name="model_id" ref="sale.model_sale_order_line"/>
-        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
+        <field name="groups" eval="[(4, ref('conedera_odoo_census.group_census_user'))]"/>
+        <field name="domain_force">[('company_id', 'in', company_ids), ('order_id.partner_id.commercial_partner_id.census_active', '=', True), ('order_id.partner_id.commercial_partner_id.user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_census_sale_order_history_read_supervisor" model="ir.rule">
+        <field name="name">Catastro: supervisor lee proformas históricas de su equipo</field>
+        <field name="model_id" ref="sale.model_sale_order"/>
+        <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
+        <field name="domain_force">[('company_id', 'in', company_ids), ('partner_id.commercial_partner_id.census_active', '=', True), '|', ('partner_id.commercial_partner_id.user_id', '=', user.id), ('partner_id.commercial_partner_id.census_team_id.user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_census_sale_order_line_history_read_supervisor" model="ir.rule">
+        <field name="name">Catastro: supervisor lee líneas históricas de su equipo</field>
+        <field name="model_id" ref="sale.model_sale_order_line"/>
+        <field name="groups" eval="[(4, ref('group_census_supervisor'))]"/>
         <field name="domain_force">[('company_id', 'in', company_ids), ('order_id.partner_id.commercial_partner_id.census_active', '=', True), '|', ('order_id.partner_id.commercial_partner_id.user_id', '=', user.id), ('order_id.partner_id.commercial_partner_id.census_team_id.user_id', '=', user.id)]</field>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>

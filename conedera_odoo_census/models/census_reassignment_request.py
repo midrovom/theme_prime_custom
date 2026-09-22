@@ -1,6 +1,8 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 
+from .census_security_utils import is_census_manager, is_census_supervisor
+
 
 class CensusReassignmentRequest(models.Model):
     _name = "conedera.census.reassignment.request"
@@ -88,7 +90,7 @@ class CensusReassignmentRequest(models.Model):
     @api.depends_context("uid")
     def _compute_can_cancel(self):
         user = self.env.user
-        is_admin = user.has_group("sales_team.group_sale_manager")
+        is_admin = is_census_manager(user)
         for request in self:
             request.can_cancel = bool(request.state == "pending" and (is_admin or request.requested_by_id == user))
 
@@ -96,11 +98,11 @@ class CensusReassignmentRequest(models.Model):
     @api.depends_context("uid")
     def _compute_can_review(self):
         user = self.env.user
-        is_admin = user.has_group("sales_team.group_sale_manager")
+        is_admin = is_census_manager(user)
         for request in self:
             request.can_review = bool(
                 is_admin
-                or (request.source_team_id and request.source_team_id.user_id == user)
+                or (is_census_supervisor(user) and request.source_team_id and request.source_team_id.user_id == user)
             )
 
     def _check_can_review(self):
@@ -109,7 +111,7 @@ class CensusReassignmentRequest(models.Model):
                 raise AccessError(
                     _(
                         "Solo el líder del equipo comercial que actualmente tiene el cliente, "
-                        "o un administrador de Ventas, puede aprobar o rechazar esta reasignación."
+                        "o un administrador de Catastro, puede aprobar o rechazar esta reasignación."
                     )
                 )
 
@@ -122,7 +124,7 @@ class CensusReassignmentRequest(models.Model):
                 raise ValidationError(_("El cliente indicado ya no existe."))
             partner = partner.commercial_partner_id
             requester = self.env.user
-            if vals.get("requested_by_id") and self.env.user.has_group("sales_team.group_sale_manager"):
+            if vals.get("requested_by_id") and is_census_manager(self.env.user):
                 requester = self.env["res.users"].browse(vals["requested_by_id"]).exists() or self.env.user
             elif not self.env.su:
                 vals["requested_by_id"] = requester.id
@@ -133,10 +135,10 @@ class CensusReassignmentRequest(models.Model):
             if (
                 effective_company
                 and effective_company not in requester.company_ids
-                and not requester.has_group("sales_team.group_sale_manager")
+                and not is_census_manager(requester)
             ):
-                raise AccessError(_("La reasignación entre compañías debe realizarla un administrador de Ventas."))
-            if not target_team and not requester.has_group("sales_team.group_sale_manager"):
+                raise AccessError(_("La reasignación entre compañías debe realizarla un administrador de Catastro."))
+            if not target_team and not is_census_manager(requester):
                 raise ValidationError(
                     _(
                         "No se encontró un Equipo de Ventas para el comercial solicitante. "
@@ -145,7 +147,7 @@ class CensusReassignmentRequest(models.Model):
                 )
             if not requester.active:
                 raise ValidationError(_("No se puede solicitar una reasignación hacia un usuario archivado."))
-            if partner.census_active and partner.user_id == requester and not self.env.user.has_group("sales_team.group_sale_manager"):
+            if partner.census_active and partner.user_id == requester and not is_census_manager(self.env.user):
                 raise UserError(_("Este Catastro ya está asignado a usted; no necesita solicitar una reasignación."))
 
             request_type = vals.get("request_type") or (
@@ -215,7 +217,7 @@ class CensusReassignmentRequest(models.Model):
         return super().write(vals)
 
     def unlink(self):
-        if not self.env.su and not self.env.user.has_group("sales_team.group_sale_manager"):
+        if not self.env.su and not is_census_manager(self.env.user):
             raise AccessError(_("Las solicitudes de reasignación se conservan como auditoría y no pueden eliminarse."))
         return super().unlink()
 
@@ -377,7 +379,7 @@ class CensusReassignmentRequest(models.Model):
         self.ensure_one()
         partner = self.partner_id.sudo().commercial_partner_id
         can_open = bool(
-            self.env.user.has_group("sales_team.group_sale_manager")
+            is_census_manager(self.env.user)
             or partner.user_id == self.env.user
             or (partner.census_team_id and partner.census_team_id.user_id == self.env.user)
         )
@@ -391,13 +393,17 @@ class CensusReassignmentRequest(models.Model):
             "view_mode": "form",
             "views": [(self.env.ref("conedera_odoo_census.view_partner_form_census_mobile").id, "form")],
             "target": "current",
+            "context": {
+                "form_view_ref": "conedera_odoo_census.view_partner_form_census_mobile",
+                "conedera_census_isolated_form": True,
+            },
         }
 
     def action_cancel(self):
         for request in self:
             if request.state != "pending":
                 raise UserError(_("Solo se puede cancelar una solicitud pendiente."))
-            if request.requested_by_id != self.env.user and not self.env.user.has_group("sales_team.group_sale_manager"):
+            if request.requested_by_id != self.env.user and not is_census_manager(self.env.user):
                 raise AccessError(_("Solo quien creó la solicitud o un administrador puede cancelarla."))
         self.sudo().write({"state": "cancelled"})
         self.sudo().activity_ids.action_done()

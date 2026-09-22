@@ -1,6 +1,6 @@
 {
     "name": "Conedera - Catastro Comercial (Community)",
-    "version": "18.0.1.8.1",
+    "version": "18.0.1.8.3",
     "category": "Sales/Sales",
     "summary": "Catastro móvil con jerarquía comercial, aprobación de cambios y bitácora",
     "description": """
@@ -18,6 +18,8 @@ horarios estructurados, visitas con GPS y proformas sin dependencias Enterprise.
         "data/business_type_data.xml",
         "data/mobile_brand_data.xml",
         "data/census_unlock_cron.xml",
+        "views/crm_team_views.xml",
+        "views/census_role_views.xml",
         "views/res_partner_views.xml",
         "views/census_customer_lookup_views.xml",
         "views/census_unlock_request_views.xml",

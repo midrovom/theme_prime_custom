@@ -4,6 +4,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 
 from .gps_utils import parse_gps_payload
+from .census_security_utils import is_census_manager, is_census_supervisor, is_census_user
 
 
 class ResPartner(models.Model):
@@ -17,7 +18,14 @@ class ResPartner(models.Model):
     )
     census_team_id = fields.Many2one(
         "crm.team", string="Equipo comercial", tracking=True, copy=False, index=True, check_company=True,
-        help="Equipo responsable del catastro. El líder del equipo actúa como supervisor.",
+        domain=[("census_enabled", "=", True)],
+        help="Equipo responsable del catastro. Solo se permiten equipos habilitados para Catastro.",
+    )
+    census_allowed_team_ids = fields.Many2many(
+        "crm.team",
+        compute="_compute_census_allowed_team_ids",
+        string="Equipos comerciales permitidos",
+        help="Equipos válidos para el vendedor responsable. Se usa únicamente para filtrar la selección en la ficha de Catastro.",
     )
     census_locked = fields.Boolean(
         string="Catastro registrado / bloqueado", default=False, copy=False, tracking=True
@@ -264,23 +272,153 @@ class ResPartner(models.Model):
         return self._census_global_partners_by_identity(value, active_only=True).filtered("census_active")
 
     def _default_census_team(self, user=None):
+        """Return a real sales team enabled for Catastro.
+
+        Odoo ships technical teams such as Website/POS. They are valid ``crm.team``
+        records but are not appropriate for this workflow and may not define the sales
+        dashboard graph outside the Sales context. Never auto-assign them here.
+        """
         user = user or self.env.user
         team = user.sale_team_id
-        if team and (not team.company_id or team.company_id in self.env.companies):
+        if (
+            team
+            and team.census_enabled
+            and team.active
+            and (not team.company_id or team.company_id in self.env.companies)
+            and (team.user_id == user or user in team.member_ids)
+        ):
             return team
         return self.env["crm.team"].search([
+            ("census_enabled", "=", True),
+            ("active", "=", True),
             ("company_id", "in", [False] + self.env.companies.ids),
             "|", ("user_id", "=", user.id), ("member_ids", "in", [user.id]),
         ], limit=1)
 
+    @api.depends("user_id")
+    @api.depends_context("uid", "allowed_company_ids")
+    def _compute_census_allowed_team_ids(self):
+        """Teams that may be selected from the mobile Catastro form.
+
+        The list is intentionally calculated without opening the standard Sales Team
+        dashboard.  This keeps technical teams such as Website/POS out of the selector
+        and avoids the ``Undefined graph model`` error raised by those dashboard-only
+        teams in Odoo Community.
+        """
+        Team = self.env["crm.team"].sudo().with_context(active_test=True)
+        technical_ids = Team._census_technical_team_ids() if hasattr(Team, "_census_technical_team_ids") else set()
+        allowed_company_ids = self.env.companies.ids
+        for partner in self:
+            salesperson = partner.user_id or self.env.user
+            domain = [
+                ("census_enabled", "=", True),
+                ("active", "=", True),
+                ("company_id", "in", [False] + allowed_company_ids),
+            ]
+            if salesperson:
+                domain += ["|", ("user_id", "=", salesperson.id), ("member_ids", "in", [salesperson.id])]
+            teams = Team.search(domain)
+            if technical_ids:
+                teams = teams.filtered(lambda team: team.id not in technical_ids)
+            partner.census_allowed_team_ids = teams
+
+    def _validate_census_team_assignment(self, team, salesperson=None):
+        """Validate a Catastro team without invoking the Sales Team dashboard."""
+        self.ensure_one()
+        salesperson = salesperson or self.user_id or self.env.user
+        if not team:
+            raise UserError(_("Seleccione un Equipo comercial para registrar el Catastro."))
+        technical_ids = team._census_technical_team_ids() if hasattr(team, "_census_technical_team_ids") else set()
+        if team.id in technical_ids or not team.census_enabled or not team.active:
+            raise UserError(
+                _("El equipo '%s' no está habilitado para Catastro Comercial. Seleccione un equipo comercial válido.")
+                % team.display_name
+            )
+        if team.company_id and team.company_id not in self.env.companies:
+            raise AccessError(_("El Equipo comercial pertenece a una compañía no permitida para su sesión."))
+        if salesperson and salesperson != team.user_id and salesperson not in team.member_ids:
+            raise UserError(
+                _("El vendedor %(seller)s no pertenece al Equipo comercial %(team)s. Agréguelo como miembro o seleccione otro equipo.")
+                % {"seller": salesperson.display_name, "team": team.display_name}
+            )
+        return True
+
+    def _census_internal_control_update(self, values):
+        """Update only Conedera lifecycle columns without calling third-party partner hooks.
+
+        Some deployments extend ``res.partner.write`` with route/field-service logic and
+        require permissions on unrelated models (for example ``route.sale.visit``).
+        Registering or closing the Catastro must not require those optional modules.
+        We therefore update our own control columns directly and invalidate the ORM cache.
+        No customer master data is written through this helper.
+        """
+        allowed = {
+            "census_team_id", "census_locked", "census_locked_at",
+            "census_unlock_user_id", "census_unlock_until",
+        }
+        unexpected = set(values) - allowed
+        if unexpected:
+            raise UserError(_("Actualización interna no permitida: %s") % ", ".join(sorted(unexpected)))
+        if not self:
+            return True
+        columns = []
+        params = []
+        for field_name, value in values.items():
+            field = self._fields[field_name]
+            columns.append(f'"{field_name}" = %s')
+            if field.type == "many2one":
+                value = value.id if hasattr(value, "id") else value
+                params.append(value or None)
+            else:
+                params.append(value)
+        columns.extend(['"write_uid" = %s', '"write_date" = NOW()'])
+        params.append(self.env.uid)
+        params.append(tuple(self.ids))
+        self.env.cr.execute(
+            "UPDATE res_partner SET %s WHERE id IN %%s" % ", ".join(columns),
+            params,
+        )
+        field_names = list(values) + ["write_uid", "write_date"]
+        self.invalidate_recordset(field_names)
+        self.modified(list(values))
+        return True
+
+    def _action_open_census_form(self):
+        """Reopen the isolated Catastro form explicitly.
+
+        Returning a generic ``reload`` may let another addon replace/extend the current
+        ``res.partner`` form.  In databases with a route-sales addon this can trigger
+        access checks on ``route.sale.visit``.  Always reopen our standalone form instead.
+        """
+        self.ensure_one()
+        view = self.env.ref("conedera_odoo_census.view_partner_form_census_mobile")
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Catastro - %s") % (self.commercial_name or self.display_name),
+            "res_model": "res.partner",
+            "res_id": self.id,
+            "view_mode": "form",
+            "views": [(view.id, "form")],
+            "view_id": view.id,
+            "target": "current",
+            "context": {
+                "form_view_ref": "conedera_odoo_census.view_partner_form_census_mobile",
+                "conedera_census_isolated_form": True,
+            },
+        }
+
     def _user_is_census_supervisor(self, user=None):
         self.ensure_one()
         user = user or self.env.user
-        if user.has_group("sales_team.group_sale_manager"):
+        if is_census_manager(user):
             return True
         # El líder del Equipo de Ventas es supervisor automáticamente.
         # No requiere un grupo adicional: reutilizamos la jerarquía estándar de Odoo.
-        return bool(self.census_team_id and self.census_team_id.user_id == user)
+        return bool(
+            is_census_supervisor(user)
+            and self.census_team_id
+            and self.census_team_id.user_id == user
+        )
 
     def _user_has_active_unlock(self, user=None):
         self.ensure_one()
@@ -315,36 +453,43 @@ class ResPartner(models.Model):
     def _check_census_master_write(self, vals):
         if self.env.su:
             return
-        if vals.get("census_active") and not self.env.user.has_group("sales_team.group_sale_manager"):
+        if vals.get("census_active") and not is_census_manager(self.env.user):
             raise AccessError(_("El Catastro debe activarse desde 'Nuevo catastro' para validar duplicados antes de crear o reutilizar una ficha."))
         touched = (set(vals) & self._CENSUS_MASTER_FIELDS) | (set(vals) & self._CENSUS_CONTROL_FIELDS)
         if not touched:
             return
+
         user = self.env.user
-        is_sales_admin = user.has_group("sales_team.group_sale_manager")
-        assignment_touched = bool(set(vals) & self._CENSUS_ASSIGNMENT_FIELDS)
-        control_touched = bool(set(vals) & self._CENSUS_CONTROL_FIELDS)
+        is_sales_admin = is_census_manager(user)
         for partner in self.filtered("census_active"):
-            # Reassignment and lifecycle fields are audited workflows.  Even a team
-            # leader may not silently move/archive/deactivate a Catastro by editing
-            # Contacts, RPC or an import.  Only Sales Administrator may force those
-            # fields directly; normal supervisors use the approval actions.
-            if assignment_touched and not is_sales_admin:
+            # Vendedor/equipo are assignment fields.  The salesperson can choose a
+            # valid team while the Catastro is still a draft, but after registration
+            # team changes must go through reassignment (or a Catastro administrator).
+            if "user_id" in vals and not is_sales_admin:
+                raise AccessError(
+                    _("El vendedor responsable solo puede cambiarse mediante una Solicitud de reasignación.")
+                )
+            if "census_team_id" in vals and not is_sales_admin:
+                if partner.census_locked:
+                    raise AccessError(
+                        _("El Equipo comercial de un Catastro protegido solo puede cambiarse mediante una Solicitud de reasignación.")
+                    )
+                if partner.user_id != user and not partner._user_is_census_supervisor(user):
+                    raise AccessError(_("Solo el responsable o su supervisor puede seleccionar el Equipo comercial del borrador."))
+                team = self.env["crm.team"].browse(vals.get("census_team_id")) if vals.get("census_team_id") else self.env["crm.team"]
+                if team:
+                    partner._validate_census_team_assignment(team, partner.user_id or user)
+
+            other_control_fields = self._CENSUS_CONTROL_FIELDS - {"census_team_id", "user_id"}
+            if set(vals) & other_control_fields and not is_sales_admin:
                 raise AccessError(
                     _(
-                        "La reasignación del comercial/equipo debe aprobarse desde una "
-                        "Solicitud de reasignación. Solo un administrador de Ventas puede "
-                        "forzarla directamente."
+                        "Los campos de control del Catastro (activar, archivar o bloquear) "
+                        "solo se modifican mediante los flujos auditados. Un administrador "
+                        "de Catastro puede forzarlos directamente."
                     )
                 )
-            if control_touched and not is_sales_admin:
-                raise AccessError(
-                    _(
-                        "Los campos de control del Catastro (activar, archivar, bloquear o "
-                        "cambiar responsables) solo se modifican mediante los flujos auditados. "
-                        "Un administrador de Ventas puede forzarlos directamente."
-                    )
-                )
+
             if partner._user_is_census_supervisor(user):
                 continue
             if partner.user_id != user:
@@ -354,18 +499,35 @@ class ResPartner(models.Model):
 
     def action_register_census(self):
         self.ensure_one()
-        if self.user_id != self.env.user and not self._user_is_census_supervisor():
-            raise AccessError(_("Solo el comercial responsable, su supervisor o un administrador puede registrar este catastro."))
+        user = self.env.user
+        if not is_census_user(user):
+            raise AccessError(_("Su usuario no tiene un rol de Catastro Comercial asignado."))
+        if self.user_id != user and not self._user_is_census_supervisor(user):
+            raise AccessError(_("Solo el comercial responsable, su supervisor o un administrador de Catastro puede registrar esta ficha."))
         missing = [label for label, ok in self._get_census_requirements() if not ok]
         if missing:
             raise UserError(_("Complete el catastro antes de registrarlo. Falta: %s") % ", ".join(missing))
-        vals = {"census_locked": True, "census_locked_at": fields.Datetime.now()}
-        if not self.census_team_id:
-            team = self._default_census_team(self.user_id or self.env.user)
-            if team:
-                vals["census_team_id"] = team.id
-        self.sudo().write(vals)
-        return {"type": "ir.actions.client", "tag": "reload"}
+
+        team = self.census_team_id or self._default_census_team(self.user_id or user)
+        if not team or not team.census_enabled:
+            raise UserError(
+                _(
+                    "No hay un Equipo comercial válido para este Catastro. "
+                    "Un administrador debe asignar un equipo marcado como 'Disponible para Catastro' "
+                    "y configurar su líder/miembros antes de registrar la ficha."
+                )
+            )
+        self._validate_census_team_assignment(team, self.user_id or user)
+
+        # Only our lifecycle columns are changed here.  Avoid third-party
+        # res.partner.write hooks (e.g. route-sales addons) and reopen the dedicated
+        # Catastro form explicitly instead of a generic reload.
+        self._census_internal_control_update({
+            "census_team_id": team.id,
+            "census_locked": True,
+            "census_locked_at": fields.Datetime.now(),
+        })
+        return self._action_open_census_form()
 
     def action_request_census_unlock(self):
         self.ensure_one()
@@ -393,11 +555,11 @@ class ResPartner(models.Model):
             ("requested_by_id", "=", self.env.user.id),
             ("state", "=", "approved"),
         ], order="request_date desc, id desc", limit=1).write({"state": "expired", "valid_until": now})
-        self.sudo().write({
+        self._census_internal_control_update({
             "census_unlock_user_id": False,
             "census_unlock_until": False,
         })
-        return {"type": "ir.actions.client", "tag": "reload"}
+        return self._action_open_census_form()
 
     def _compute_census_reassignment_count(self):
         for partner in self:
@@ -509,7 +671,7 @@ class ResPartner(models.Model):
                     % {"missing": ", ".join(missing)}
                 )
             if not partner.census_locked:
-                raise UserError(_("El catastro está completo pero todavía no ha sido registrado. Use 'Registrar catastro' para proteger la ficha antes de operar."))
+                raise UserError(_("El catastro está completo pero todavía no ha sido registrado. Use 'Registrar y proteger' para proteger la ficha antes de operar."))
         return True
 
     @api.constrains("census_store_count", "capa")
@@ -589,8 +751,8 @@ class ResPartner(models.Model):
         return super().copy(default=default)
 
     def unlink(self):
-        if any(partner.census_active for partner in self) and not self.env.user.has_group("sales_team.group_sale_manager"):
-            raise UserError(_("Los catastros no pueden eliminarse por comerciales ni supervisores. Solo un administrador de Ventas puede hacerlo."))
+        if any(partner.census_active for partner in self) and not is_census_manager(self.env.user):
+            raise UserError(_("Los catastros no pueden eliminarse por comerciales ni supervisores. Solo un administrador de Catastro puede hacerlo."))
         return super().unlink()
 
     @api.onchange("census_gps_payload")
@@ -609,7 +771,7 @@ class ResPartner(models.Model):
         if (
             any(vals.get("census_active") for vals in vals_list)
             and not self.env.su
-            and not self.env.user.has_group("sales_team.group_sale_manager")
+            and not is_census_manager(self.env.user)
         ):
             raise AccessError(_("Cree el Catastro desde 'Nuevo catastro' para buscar primero por RUC, cédula o nombre."))
         # Serialize simultaneous attempts for the same RUC/cédula before INSERT.
@@ -656,7 +818,7 @@ class ResPartner(models.Model):
                 if identity:
                     self._census_lock_identity(identity)
         self._check_census_master_write(vals)
-        if vals.get("user_id") and not vals.get("census_team_id") and (self.env.su or self.env.user.has_group("sales_team.group_sale_manager")):
+        if vals.get("user_id") and not vals.get("census_team_id") and (self.env.su or is_census_manager(self.env.user)):
             user = self.env["res.users"].browse(vals["user_id"])
             team = self._default_census_team(user)
             if team:

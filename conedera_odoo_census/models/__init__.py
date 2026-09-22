@@ -1,3 +1,4 @@
+from . import crm_team
 from . import census_business_type
 from . import census_mobile_brand
 from . import partner_opening_hour
@@ -9,3 +10,4 @@ from . import census_visit
 from . import sale_order
 from . import census_commercial_report
 from . import product_template
+from . import census_role_wizard

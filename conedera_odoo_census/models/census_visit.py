@@ -3,6 +3,8 @@ from odoo.exceptions import UserError, ValidationError
 
 from .gps_utils import haversine_distance_m, parse_gps_payload
 
+from .census_security_utils import is_census_manager, is_census_supervisor
+
 
 class CensusVisit(models.Model):
     _name = "conedera.census.visit"
@@ -140,7 +142,7 @@ class CensusVisit(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        is_manager = self.env.user.has_group("sales_team.group_sale_manager")
+        is_manager = is_census_manager(self.env.user)
         for vals in vals_list:
             if not is_manager:
                 # El vendedor que crea la visita es siempre el responsable auditado.
@@ -188,7 +190,7 @@ class CensusVisit(models.Model):
             "gps_captured_at",
             "location_tolerance_m",
         }
-        is_manager = self.env.user.has_group("sales_team.group_sale_manager")
+        is_manager = is_census_manager(self.env.user)
         locked_states = {"done", "cancel"}
         if (
             any(visit.state in locked_states for visit in self)
@@ -196,7 +198,7 @@ class CensusVisit(models.Model):
             and not is_manager
         ):
             raise UserError(
-                _("Una visita finalizada o cancelada solo puede ser modificada por un gerente de ventas.")
+                _("Una visita finalizada o cancelada solo puede ser modificada por un administrador de Catastro.")
             )
         if (
             "state" in vals
@@ -204,7 +206,7 @@ class CensusVisit(models.Model):
             and not is_manager
         ):
             raise UserError(
-                _("Solo un gerente de ventas puede cambiar el estado de una visita finalizada o cancelada.")
+                _("Solo un administrador de Catastro puede cambiar el estado de una visita finalizada o cancelada.")
             )
         if "user_id" in vals and not is_manager and vals.get("user_id") != self.env.user.id:
             raise UserError(_("Un vendedor no puede reasignar la visita a otro usuario."))

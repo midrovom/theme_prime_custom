@@ -33,9 +33,9 @@ class ConederaCensusRoleWizard(models.TransientModel):
     current_role = fields.Char(string="Rol actual", compute="_compute_current_role")
     team_id = fields.Many2one(
         "crm.team",
-        string="Equipo comercial principal",
-        related="user_id.sale_team_id",
-        readonly=True,
+        string="Equipo comercial",
+        domain=[("census_enabled", "=", True), ("active", "=", True)],
+        help="Equipo comercial que usará el usuario en Catastro. Los equipos técnicos de Sitio web/Punto de Venta no se muestran.",
     )
     help_text = fields.Html(
         string="Alcance",
@@ -83,6 +83,18 @@ class ConederaCensusRoleWizard(models.TransientModel):
         else:
             self.role = "none"
 
+        Team = self.env["crm.team"].sudo().with_context(active_test=True)
+        technical_ids = Team._census_technical_team_ids() if hasattr(Team, "_census_technical_team_ids") else set()
+        teams = Team.search([
+            ("census_enabled", "=", True),
+            ("active", "=", True),
+            ("company_id", "in", [False] + self.env.companies.ids),
+            "|", ("user_id", "=", user.id), ("member_ids", "in", [user.id]),
+        ])
+        if technical_ids:
+            teams = teams.filtered(lambda team: team.id not in technical_ids)
+        self.team_id = teams[:1]
+
     def action_apply(self):
         self.ensure_one()
         if not is_census_manager(self.env.user):
@@ -103,6 +115,20 @@ class ConederaCensusRoleWizard(models.TransientModel):
         if self.role in groups:
             commands.append((4, groups[self.role].id))
         user.write({"groups_id": commands})
+
+        if self.role in ("user", "supervisor"):
+            if not self.team_id:
+                raise UserError(_("Seleccione un Equipo comercial habilitado para este usuario."))
+            team = self.team_id.sudo()
+            technical_ids = team._census_technical_team_ids() if hasattr(team, "_census_technical_team_ids") else set()
+            if team.id in technical_ids or not team.census_enabled or not team.active:
+                raise UserError(_("El equipo seleccionado no es válido para Catastro Comercial."))
+            if team.company_id and team.company_id not in user.company_ids:
+                raise UserError(_("El usuario no tiene acceso a la compañía del Equipo comercial seleccionado."))
+            if self.role == "supervisor":
+                team.write({"user_id": user.id})
+            if user != team.user_id and user not in team.member_ids:
+                team.write({"member_ids": [(4, user.id)]})
 
         return {
             "type": "ir.actions.client",
