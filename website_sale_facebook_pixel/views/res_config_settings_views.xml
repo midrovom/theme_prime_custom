@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_res_config_settings_facebook_pixel" model="ir.ui.view">
+    <field name="name">res.config.settings.facebook.pixel</field>
+    <field name="model">res.config.settings</field>
+    <field name="inherit_id" ref="website.res_config_settings_view"/>
+    <field name="arch" type="xml">
+      <xpath expr="//div[@id='website_settings']" position="inside">
+        <div class="row mt16 o_settings_container">
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_left_pane">
+              <field name="facebook_pixel_id"/>
+            </div>
+            <div class="o_setting_right_pane">
+              <label for="facebook_pixel_id"/>
+              <p class="text-muted">
+                Ingresa tu Facebook Pixel ID para rastrear eventos en Website Sale.
+              </p>
+            </div>
+          </div>
+        </div>
+      </xpath>
+    </field>
+  </record>
+</odoo>

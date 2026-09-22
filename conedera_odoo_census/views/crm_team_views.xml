@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="crm_team_view_form_census" model="ir.ui.view">
+        <field name="name">crm.team.form.conedera.census</field>
+        <field name="model">crm.team</field>
+        <field name="inherit_id" ref="sales_team.crm_team_view_form"/>
+        <field name="arch" type="xml">
+            <field name="user_id" position="after">
+                <field name="census_enabled" string="Disponible para Catastro"
+                       groups="conedera_odoo_census.group_census_manager"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="crm_team_view_tree_census" model="ir.ui.view">
+        <field name="name">crm.team.list.conedera.census</field>
+        <field name="model">crm.team</field>
+        <field name="inherit_id" ref="sales_team.crm_team_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="user_id" position="after">
+                <field name="census_enabled" string="Catastro" optional="show"
+                       groups="conedera_odoo_census.group_census_manager"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="action_census_sales_teams" model="ir.actions.act_window">
+        <field name="name">Equipos comerciales</field>
+        <field name="res_model">crm.team</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('active', '=', True)]</field>
+        <field name="context">{'in_sales_app': True, 'default_census_enabled': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Configure los equipos que utilizará el Catastro</p>
+            <p>Defina líder, miembros y marque “Disponible para Catastro”. Los equipos técnicos Sitio web/Punto de Venta no deben utilizarse.</p>
+        </field>
+    </record>
+</odoo>
