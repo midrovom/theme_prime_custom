@@ -107,10 +107,10 @@ class CensusCustomerLookupWizard(models.TransientModel):
         partner = partner.sudo().commercial_partner_id
         user = self.env.user
         manager = is_census_manager(user)
-        team = partner.census_team_id if partner.census_team_id and partner.census_team_id.census_enabled else partner._default_census_team(partner.user_id)
+        team = partner.census_team_id if partner.census_team_id and partner.census_team_id.census_enabled and partner.census_team_id.company_id == (partner.census_company_id or self.env.company) else partner._default_census_team(partner.user_id, partner.census_company_id or self.env.company)
         leader = bool(is_census_supervisor(user) and team and team.user_id == user)
         own = partner.user_id == user
-        effective_company = partner.company_id or team.company_id
+        effective_company = partner.census_company_id or team.company_id or self.env.company
         company_allowed = not effective_company or effective_company in user.company_ids
 
         if not company_allowed and not manager:
@@ -389,12 +389,12 @@ class CensusCustomerLookupWizard(models.TransientModel):
 
     def _can_take_existing_partner(self, partner):
         partner = partner.sudo().commercial_partner_id
-        if not partner.company_id or partner.company_id in self.env.user.company_ids:
+        if not partner.census_company_id or partner.census_company_id in self.env.user.company_ids:
             if not partner.user_id or partner.user_id == self.env.user:
                 return True
             if is_census_manager(self.env.user):
                 return True
-            team = partner.census_team_id if partner.census_team_id and partner.census_team_id.census_enabled else partner._default_census_team(partner.user_id)
+            team = partner.census_team_id if partner.census_team_id and partner.census_team_id.census_enabled and partner.census_team_id.company_id == (partner.census_company_id or self.env.company) else partner._default_census_team(partner.user_id, partner.census_company_id or self.env.company)
             return bool(is_census_supervisor(self.env.user) and team and team.user_id == self.env.user)
         return is_census_manager(self.env.user)
 
@@ -481,13 +481,15 @@ class CensusCustomerLookupWizard(models.TransientModel):
             return self._reopen()
 
         owner = partner.user_id or self.env.user
-        team = partner._default_census_team(owner)
+        company = partner.census_company_id or self.env.company
+        team = partner._default_census_team(owner, company)
         vals = {
             "active": True,
             "census_active": True,
             "census_date": fields.Datetime.now(),
             "census_user_id": self.env.user.id,
             "user_id": owner.id,
+            "census_company_id": company.id,
             "census_locked": False,
             "customer_rank": max(partner.customer_rank, 1),
         }
@@ -588,7 +590,8 @@ class CensusCustomerLookupWizard(models.TransientModel):
                 )
 
         record_name = name or (_("BORRADOR - RUC %s") % vat)
-        team = Partner._default_census_team(self.env.user)
+        company = self.env.company
+        team = Partner._default_census_team(self.env.user, company)
         vals = {
             "name": record_name,
             "vat": vat or False,
@@ -599,6 +602,7 @@ class CensusCustomerLookupWizard(models.TransientModel):
             "company_type": "company",
             "customer_rank": 1,
             "user_id": self.env.user.id,
+            "census_company_id": company.id,
         }
         if team:
             vals["census_team_id"] = team.id

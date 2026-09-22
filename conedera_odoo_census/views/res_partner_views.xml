@@ -169,7 +169,8 @@
                                         <field name="business_description" readonly="census_locked and not census_can_edit_master" placeholder="Ej. gaming, reparación, línea blanca..."/>
                                         <field name="customer_segment" readonly="census_locked and not census_can_edit_master" string="Canal comercial"/>
                                         <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user" readonly="1" groups="!conedera_odoo_census.group_census_manager"/>
-                                        <field name="census_team_id" string="Equipo comercial"
+                                        <field name="census_company_id" string="Empresa del Catastro" readonly="census_locked" options="{'no_create': True, 'no_create_edit': True}" groups="base.group_multi_company,!conedera_odoo_census.group_census_manager"/>
+                                        <field name="census_team_id" string="Equipo comercial" widget="selection"
                                                readonly="census_locked"
                                                domain="[('id', 'in', census_allowed_team_ids)]"
                                                groups="!conedera_odoo_census.group_census_manager"
@@ -177,14 +178,15 @@
                                                placeholder="Seleccione su equipo comercial"/>
                                         <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user"
                                                readonly="census_locked" groups="conedera_odoo_census.group_census_manager"/>
-                                        <field name="census_team_id" string="Equipo comercial"
+                                        <field name="census_company_id" string="Empresa del Catastro" readonly="census_locked" options="{'no_create': True, 'no_create_edit': True}" groups="conedera_odoo_census.group_census_manager,base.group_multi_company"/>
+                                        <field name="census_team_id" string="Equipo comercial" widget="selection"
                                                readonly="census_locked"
                                                domain="[('id', 'in', census_allowed_team_ids)]"
                                                groups="conedera_odoo_census.group_census_manager"
                                                options="{'no_open': True, 'no_create': True, 'no_create_edit': True}"
                                                placeholder="Seleccione un equipo comercial"/>
                                         <div class="text-muted small" colspan="2">
-                                            En borrador puede seleccionar únicamente equipos habilitados donde el vendedor sea líder o miembro. Al registrar el Catastro, el equipo queda protegido.
+                                            El equipo se propone desde el usuario y puede cambiarse en borrador mediante una lista simple. Solo aparecen equipos habilitados de la misma Empresa del Catastro. Al registrar, empresa y equipo quedan protegidos.
                                         </div>
                                     </group>
                                 </group>
@@ -425,6 +427,7 @@
                 <field name="census_completion_state"/>
                 <field name="census_last_visit_datetime"/>
                 <field name="user_id"/>
+                <field name="census_company_id"/>
                 <field name="census_team_id"/>
                 <templates>
                     <t t-name="card">
@@ -482,6 +485,7 @@
                 <field name="mobile_brand_ids" widget="many2many_tags" optional="hide"/>
                 <field name="customer_segment" optional="hide"/>
                 <field name="user_id" string="Vendedor" widget="many2one_avatar_user" optional="show"/>
+                <field name="census_company_id" string="Empresa" optional="show" groups="base.group_multi_company"/>
                 <field name="census_team_id" string="Equipo" optional="show"/>
                 <field name="census_completion_state" widget="badge" string="Estado"/>
                 <field name="census_last_visit_datetime" optional="hide"/>

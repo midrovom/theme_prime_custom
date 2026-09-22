@@ -26,7 +26,7 @@ class CensusUnlockRequest(models.Model):
     reviewed_at = fields.Datetime(string="Revisado el", readonly=True)
     valid_until = fields.Datetime(string="Habilitado hasta", readonly=True)
     supervisor_id = fields.Many2one(related="partner_id.census_team_id.user_id", string="Supervisor", store=True, readonly=True)
-    company_id = fields.Many2one(related="partner_id.company_id", string="Compañía", store=True, readonly=True)
+    company_id = fields.Many2one(related="partner_id.census_company_id", string="Compañía", store=True, readonly=True)
     can_review = fields.Boolean(compute="_compute_can_review", string="Puede revisar")
 
     @api.depends("partner_id", "partner_id.census_team_id", "partner_id.census_team_id.user_id")
