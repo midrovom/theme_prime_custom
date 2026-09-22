@@ -75,6 +75,14 @@ class TestConederaCensus(TransactionCase):
         self.assertEqual(line.partner_id, self.partner)
         self.assertEqual(line.opening_time, 9.0)
 
+
+    def test_opening_hours_summary_is_human_readable(self):
+        self.partner.invalidate_recordset(["opening_hours_summary_html"])
+        summary = self.partner.opening_hours_summary_html or ""
+        self.assertIn("Lunes", summary)
+        self.assertIn("09:00", summary)
+        self.assertIn("18:00", summary)
+
     def test_visit_gps_distance(self):
         self.partner.write(
             {
@@ -606,3 +614,31 @@ class TestConederaCensus(TransactionCase):
         })
         wizard.action_apply()
         self.assertIn(seller, team.member_ids)
+    def test_unlock_request_rejection_keeps_reason_for_salesperson(self):
+        request = self.env["conedera.census.unlock.request"].create({
+            "partner_id": self.partner.id,
+            "requested_by_id": self.env.user.id,
+            "reason": "Actualizar dirección",
+        })
+        request._reject_with_reason("Falta documento de respaldo")
+        self.assertEqual(request.state, "rejected")
+        self.assertEqual(request.review_note, "Falta documento de respaldo")
+        self.partner.invalidate_recordset([
+            "census_latest_unlock_state",
+            "census_latest_unlock_review_note",
+        ])
+        self.assertEqual(self.partner.census_latest_unlock_state, "rejected")
+        self.assertEqual(
+            self.partner.census_latest_unlock_review_note,
+            "Falta documento de respaldo",
+        )
+
+    def test_refresh_unlock_status_reopens_dedicated_census_form(self):
+        action = self.partner.action_refresh_census_unlock_status()
+        self.assertEqual(action["res_model"], "res.partner")
+        self.assertEqual(action["res_id"], self.partner.id)
+        self.assertEqual(
+            action["view_id"],
+            self.env.ref("conedera_odoo_census.view_partner_form_census_mobile").id,
+        )
+

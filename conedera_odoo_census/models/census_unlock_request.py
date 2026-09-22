@@ -25,6 +25,7 @@ class CensusUnlockRequest(models.Model):
     reviewed_by_id = fields.Many2one("res.users", string="Revisado por", readonly=True)
     reviewed_at = fields.Datetime(string="Revisado el", readonly=True)
     valid_until = fields.Datetime(string="Habilitado hasta", readonly=True)
+    review_note = fields.Text(string="Respuesta / motivo de rechazo", readonly=True, tracking=True)
     supervisor_id = fields.Many2one(related="partner_id.census_team_id.user_id", string="Supervisor", store=True, readonly=True)
     company_id = fields.Many2one(related="partner_id.census_company_id", string="Compañía", store=True, readonly=True)
     can_review = fields.Boolean(compute="_compute_can_review", string="Puede revisar")
@@ -112,16 +113,37 @@ class CensusUnlockRequest(models.Model):
         return True
 
     def action_reject(self):
+        self.ensure_one()
         self._check_can_review()
+        if self.state != "pending":
+            raise UserError(_("Esta solicitud ya fue revisada."))
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Rechazar solicitud"),
+            "res_model": "conedera.census.unlock.reject.wizard",
+            "view_mode": "form",
+            "view_id": self.env.ref("conedera_odoo_census.view_census_unlock_reject_wizard_form").id,
+            "target": "new",
+            "context": {"default_request_id": self.id},
+        }
+
+    def _reject_with_reason(self, reason):
+        self.ensure_one()
+        self._check_can_review()
+        if self.state != "pending":
+            raise UserError(_("Esta solicitud ya fue revisada."))
+        reason = (reason or "").strip()
+        if not reason:
+            raise ValidationError(_("Indique el motivo del rechazo."))
         now = fields.Datetime.now()
-        for request in self.filtered(lambda r: r.state == "pending"):
-            request.sudo().write({
-                "state": "rejected",
-                "reviewed_by_id": self.env.user.id,
-                "reviewed_at": now,
-                "valid_until": False,
-            })
-            request.sudo().activity_ids.action_done()
+        self.sudo().write({
+            "state": "rejected",
+            "reviewed_by_id": self.env.user.id,
+            "reviewed_at": now,
+            "valid_until": False,
+            "review_note": reason,
+        })
+        self.sudo().activity_ids.action_done()
         return True
 
     @api.model
@@ -167,4 +189,21 @@ class CensusUnlockWizard(models.TransientModel):
             "requested_by_id": self.env.user.id,
             "reason": reason,
         })
+        # Reabrimos exclusivamente la vista de Catastro para mostrar el estado
+        # pendiente inmediatamente, evitando un reload genérico de res.partner.
+        return partner._action_open_census_form()
+
+
+class CensusUnlockRejectWizard(models.TransientModel):
+    _name = "conedera.census.unlock.reject.wizard"
+    _description = "Rechazar solicitud de habilitación de Catastro"
+
+    request_id = fields.Many2one(
+        "conedera.census.unlock.request", string="Solicitud", required=True, readonly=True
+    )
+    reason = fields.Text(string="Motivo del rechazo", required=True)
+
+    def action_confirm(self):
+        self.ensure_one()
+        self.request_id._reject_with_reason(self.reason)
         return {"type": "ir.actions.act_window_close"}

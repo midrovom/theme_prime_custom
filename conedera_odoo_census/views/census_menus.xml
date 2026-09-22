@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_census_root" name="Catastro Comercial" sequence="35"
+    <menuitem id="menu_census_root" name="Catastro Comercial" sequence="35" action="action_census_partners"
               groups="conedera_odoo_census.group_census_user"/>
+    <menuitem id="menu_census_customers" name="Catastros"
+              parent="menu_census_root" action="action_census_partners" sequence="5"/>
     <menuitem id="menu_census_new_customer" name="Nuevo catastro"
-              parent="menu_census_root" action="action_census_customer_lookup" sequence="5"/>
-    <menuitem id="menu_census_customers" name="Clientes"
-              parent="menu_census_root" action="action_census_partners" sequence="10"/>
+              parent="menu_census_root" action="action_census_customer_lookup" sequence="10"/>
     <menuitem id="menu_census_visits" name="Visitas"
               parent="menu_census_root" action="action_census_visit" sequence="20"/>
     <menuitem id="menu_census_unlock_requests" name="Solicitudes de edición"

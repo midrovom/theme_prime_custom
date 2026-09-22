@@ -55,6 +55,26 @@ class ResPartner(models.Model):
         [("draft", "Borrador"), ("locked", "Protegido"), ("enabled", "Edición habilitada")],
         compute="_compute_census_edit_permissions", string="Control de edición"
     )
+    census_latest_unlock_state = fields.Selection(
+        [("pending", "Pendiente"), ("approved", "Aprobada"), ("rejected", "Rechazada"), ("expired", "Vencida")],
+        compute="_compute_census_latest_unlock_status",
+        string="Estado de la solicitud",
+    )
+    census_latest_unlock_request_date = fields.Datetime(
+        compute="_compute_census_latest_unlock_status", string="Solicitud enviada el"
+    )
+    census_latest_unlock_reviewed_at = fields.Datetime(
+        compute="_compute_census_latest_unlock_status", string="Respondida el"
+    )
+    census_latest_unlock_valid_until = fields.Datetime(
+        compute="_compute_census_latest_unlock_status", string="Habilitada hasta"
+    )
+    census_latest_unlock_reason = fields.Text(
+        compute="_compute_census_latest_unlock_status", string="Motivo solicitado"
+    )
+    census_latest_unlock_review_note = fields.Text(
+        compute="_compute_census_latest_unlock_status", string="Respuesta del supervisor"
+    )
 
     # Datos comerciales propios del catastro
     commercial_name = fields.Char(string="Nombre comercial / local")
@@ -106,6 +126,12 @@ class ResPartner(models.Model):
         "conedera.partner.opening.hour",
         "partner_id",
         string="Horario de atención",
+    )
+    opening_hours_summary_html = fields.Html(
+        string="Horario registrado",
+        compute="_compute_opening_hours_summary_html",
+        sanitize=False,
+        help="Resumen visual de las franjas horarias registradas, optimizado para móvil.",
     )
 
     # Campos heredados de versiones anteriores. Se conservan para no romper datos existentes.
@@ -489,6 +515,43 @@ class ResPartner(models.Model):
             else:
                 partner.census_edit_state = "locked"
 
+    @api.depends_context("uid")
+    def _compute_census_latest_unlock_status(self):
+        Request = self.env["conedera.census.unlock.request"].sudo()
+        user = self.env.user
+        for partner in self:
+            partner.census_latest_unlock_state = False
+            partner.census_latest_unlock_request_date = False
+            partner.census_latest_unlock_reviewed_at = False
+            partner.census_latest_unlock_valid_until = False
+            partner.census_latest_unlock_reason = False
+            partner.census_latest_unlock_review_note = False
+            if not partner.id or not partner.census_active:
+                continue
+            domain = [("partner_id", "=", partner.id)]
+            # El comercial solo ve el estado de sus propias solicitudes. Supervisores
+            # del equipo y administradores pueden ver la última solicitud del Catastro.
+            if not (is_census_manager(user) or partner._user_is_census_supervisor(user)):
+                domain.append(("requested_by_id", "=", user.id))
+            request = Request.search(domain, order="request_date desc, id desc", limit=1)
+            if not request:
+                continue
+            partner.census_latest_unlock_state = request.state
+            partner.census_latest_unlock_request_date = request.request_date
+            partner.census_latest_unlock_reviewed_at = request.reviewed_at
+            partner.census_latest_unlock_valid_until = request.valid_until
+            partner.census_latest_unlock_reason = request.reason
+            partner.census_latest_unlock_review_note = request.review_note
+
+    def action_refresh_census_unlock_status(self):
+        self.ensure_one()
+        if not self.census_active:
+            raise UserError(_("Este registro no corresponde a un Catastro activo."))
+        # Reabrir la vista dedicada fuerza una lectura fresca de los campos calculados
+        # y evita ejecutar hooks de formularios de Contactos añadidos por otros módulos.
+        self.invalidate_recordset()
+        return self._action_open_census_form()
+
     def _check_census_master_write(self, vals):
         if self.env.su:
             return
@@ -649,6 +712,64 @@ class ResPartner(models.Model):
             partner.census_visit_count = visit_counts.get(partner.id, 0)
             partner.census_quotation_count = quotation_counts.get(partner.id, 0)
             partner.census_last_visit_datetime = last_visits.get(partner.id, False)
+
+    @api.depends(
+        "opening_hour_ids",
+        "opening_hour_ids.day_of_week",
+        "opening_hour_ids.opening_time",
+        "opening_hour_ids.closing_time",
+    )
+    def _compute_opening_hours_summary_html(self):
+        day_labels = {
+            "0": _("Lunes"),
+            "1": _("Martes"),
+            "2": _("Miércoles"),
+            "3": _("Jueves"),
+            "4": _("Viernes"),
+            "5": _("Sábado"),
+            "6": _("Domingo"),
+        }
+
+        def format_hour(value):
+            total_minutes = int(round((value or 0.0) * 60))
+            hours, minutes = divmod(total_minutes, 60)
+            return f"{hours:02d}:{minutes:02d}"
+
+        for partner in self:
+            lines = partner.opening_hour_ids.sorted(
+                key=lambda line: (line.day_of_week or "0", line.opening_time, line.id)
+            )
+            if not lines:
+                partner.opening_hours_summary_html = (
+                    '<div class="o_conedera_schedule_empty">'
+                    '<i class="fa fa-calendar-times-o me-1"></i> Sin horario registrado'
+                    '</div>'
+                )
+                continue
+
+            grouped = {}
+            for line in lines:
+                grouped.setdefault(line.day_of_week, []).append(
+                    f"{format_hour(line.opening_time)} – {format_hour(line.closing_time)}"
+                )
+
+            rows = []
+            for day in ["0", "1", "2", "3", "4", "5", "6"]:
+                slots = grouped.get(day)
+                if not slots:
+                    continue
+                slots_html = "".join(
+                    f'<span class="o_conedera_schedule_slot">{slot}</span>' for slot in slots
+                )
+                rows.append(
+                    '<div class="o_conedera_schedule_row">'
+                    f'<span class="o_conedera_schedule_day">{day_labels[day]}</span>'
+                    f'<span class="o_conedera_schedule_slots">{slots_html}</span>'
+                    '</div>'
+                )
+            partner.opening_hours_summary_html = (
+                '<div class="o_conedera_schedule_summary">' + "".join(rows) + '</div>'
+            )
 
     @api.depends(
         "name",

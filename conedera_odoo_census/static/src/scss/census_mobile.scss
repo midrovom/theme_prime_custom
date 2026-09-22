@@ -528,3 +528,81 @@
         padding: 14px;
     }
 }
+
+/* 18.0.1.8.6: horario persistente y legible en móvil */
+.o_conedera_schedule_summary {
+    display: grid;
+    gap: .55rem;
+    margin: .25rem 0 .85rem;
+}
+
+.o_conedera_schedule_row {
+    display: grid;
+    grid-template-columns: minmax(92px, .8fr) minmax(0, 1.8fr);
+    gap: .65rem;
+    align-items: start;
+    padding: .7rem .8rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: .8rem;
+    background: var(--bs-tertiary-bg);
+}
+
+.o_conedera_schedule_day {
+    font-weight: 700;
+}
+
+.o_conedera_schedule_slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+}
+
+.o_conedera_schedule_slot {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: .25rem .55rem;
+    border-radius: 999px;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    font-variant-numeric: tabular-nums;
+}
+
+.o_conedera_schedule_empty {
+    padding: .85rem;
+    border: 1px dashed var(--bs-border-color);
+    border-radius: .8rem;
+    opacity: .75;
+}
+
+@media (max-width: 767.98px) {
+    .o_conedera_schedule_row {
+        grid-template-columns: 1fr;
+        gap: .4rem;
+    }
+
+    .o_conedera_schedule_slot {
+        min-height: 36px;
+        font-size: .95rem;
+    }
+}
+
+/* 18.0.1.8.7: seguimiento visible de solicitudes de edición */
+.o_conedera_request_status {
+    .o_field_badge {
+        font-size: .95rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .o_conedera_request_status {
+        .btn {
+            min-height: 50px;
+            width: 100%;
+        }
+        > .d-flex:first-child {
+            align-items: stretch !important;
+            flex-direction: column;
+        }
+    }
+}

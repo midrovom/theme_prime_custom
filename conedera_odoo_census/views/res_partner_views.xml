@@ -50,6 +50,12 @@
                     <field name="census_unlock_user_id" invisible="1"/>
                     <field name="census_unlock_until" invisible="1"/>
                     <field name="census_allowed_team_ids" invisible="1"/>
+                    <field name="census_latest_unlock_state" invisible="1"/>
+                    <field name="census_latest_unlock_request_date" invisible="1"/>
+                    <field name="census_latest_unlock_reviewed_at" invisible="1"/>
+                    <field name="census_latest_unlock_valid_until" invisible="1"/>
+                    <field name="census_latest_unlock_reason" invisible="1"/>
+                    <field name="census_latest_unlock_review_note" invisible="1"/>
 
                     <div class="o_conedera_hero">
                         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
@@ -103,6 +109,42 @@
                                     invisible="census_can_edit_master"/>
                             <button name="action_finish_census_edit" type="object" string="Terminar edición" class="btn-outline-secondary" icon="fa-lock"
                                     invisible="census_edit_state != 'enabled'"/>
+                        </div>
+                    </div>
+
+                    <div class="o_conedera_card o_conedera_request_status" invisible="not census_locked">
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <div class="o_conedera_card_title mb-0"><i class="fa fa-refresh"/> Estado de solicitud de edición</div>
+                            <button name="action_refresh_census_unlock_status" type="object" string="Refrescar estado"
+                                    class="btn btn-outline-primary" icon="fa-refresh"/>
+                        </div>
+                        <div class="text-muted" invisible="census_latest_unlock_state">
+                            No hay una solicitud de edición registrada para su usuario.
+                        </div>
+                        <div invisible="not census_latest_unlock_state">
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                <strong>Estado:</strong>
+                                <field name="census_latest_unlock_state" widget="badge" nolabel="1"/>
+                            </div>
+                            <div class="small mb-1" invisible="not census_latest_unlock_request_date">
+                                <strong>Solicitada:</strong> <field name="census_latest_unlock_request_date" readonly="1" nolabel="1"/>
+                            </div>
+                            <div class="small mb-1" invisible="not census_latest_unlock_reason">
+                                <strong>Motivo:</strong> <field name="census_latest_unlock_reason" readonly="1" nolabel="1"/>
+                            </div>
+                            <div class="alert alert-success mt-2 mb-0" invisible="census_latest_unlock_state != 'approved'">
+                                <strong>Solicitud aprobada.</strong>
+                                <span invisible="not census_latest_unlock_valid_until"> Puede editar hasta <field name="census_latest_unlock_valid_until" readonly="1" nolabel="1"/>.</span>
+                            </div>
+                            <div class="alert alert-danger mt-2 mb-0" invisible="census_latest_unlock_state != 'rejected'">
+                                <strong>Solicitud rechazada.</strong>
+                                <div class="mt-1" invisible="not census_latest_unlock_review_note">
+                                    Motivo: <field name="census_latest_unlock_review_note" readonly="1" nolabel="1"/>
+                                </div>
+                            </div>
+                            <div class="small text-muted mt-2" invisible="not census_latest_unlock_reviewed_at">
+                                Respondida: <field name="census_latest_unlock_reviewed_at" readonly="1" nolabel="1"/>
+                            </div>
                         </div>
                     </div>
 
@@ -168,21 +210,13 @@
                                         <div class="text-muted small">Opcional: seleccione las marcas de celulares que maneja el cliente.</div>
                                         <field name="business_description" readonly="census_locked and not census_can_edit_master" placeholder="Ej. gaming, reparación, línea blanca..."/>
                                         <field name="customer_segment" readonly="census_locked and not census_can_edit_master" string="Canal comercial"/>
-                                        <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user" readonly="1" groups="!conedera_odoo_census.group_census_manager"/>
-                                        <field name="census_company_id" string="Empresa del Catastro" readonly="census_locked" options="{'no_create': True, 'no_create_edit': True}" groups="base.group_multi_company,!conedera_odoo_census.group_census_manager"/>
+                                        <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user" readonly="1"/>
+                                        <field name="census_company_id" string="Empresa del Catastro"
+                                               readonly="census_locked"
+                                               options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                                         <field name="census_team_id" string="Equipo comercial" widget="selection"
                                                readonly="census_locked"
                                                domain="[('id', 'in', census_allowed_team_ids)]"
-                                               groups="!conedera_odoo_census.group_census_manager"
-                                               options="{'no_open': True, 'no_create': True, 'no_create_edit': True}"
-                                               placeholder="Seleccione su equipo comercial"/>
-                                        <field name="user_id" string="Vendedor responsable" widget="many2one_avatar_user"
-                                               readonly="census_locked" groups="conedera_odoo_census.group_census_manager"/>
-                                        <field name="census_company_id" string="Empresa del Catastro" readonly="census_locked" options="{'no_create': True, 'no_create_edit': True}" groups="conedera_odoo_census.group_census_manager,base.group_multi_company"/>
-                                        <field name="census_team_id" string="Equipo comercial" widget="selection"
-                                               readonly="census_locked"
-                                               domain="[('id', 'in', census_allowed_team_ids)]"
-                                               groups="conedera_odoo_census.group_census_manager"
                                                options="{'no_open': True, 'no_create': True, 'no_create_edit': True}"
                                                placeholder="Seleccione un equipo comercial"/>
                                         <div class="text-muted small" colspan="2">
@@ -258,7 +292,13 @@
                                 <div class="o_conedera_hint">
                                     Agregue una fila por franja de atención. Si un día no tiene filas, se considera cerrado. Puede agregar dos franjas el mismo día.
                                 </div>
-                                <field name="opening_hour_ids" readonly="census_locked and not census_can_edit_master" nolabel="1" mode="list,form">
+                                <field name="opening_hours_summary_html" nolabel="1" readonly="1" widget="html"/>
+                                <div class="o_conedera_hint" invisible="census_locked and not census_can_edit_master">
+                                    Edite las franjas aquí. Al guardar, el resumen superior permanecerá visible también en móvil.
+                                </div>
+                                <field name="opening_hour_ids"
+                                       invisible="census_locked and not census_can_edit_master"
+                                       nolabel="1" mode="list,form">
                                     <list editable="bottom" string="Horario de atención">
                                         <field name="day_of_week" string="Día"/>
                                         <field name="opening_time" string="Desde" widget="float_time"/>
@@ -415,6 +455,10 @@
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <kanban sample="1" quick_create="false" create="false" delete="false">
+                <header>
+                    <button type="action" name="%(conedera_odoo_census.action_census_customer_lookup)d"
+                            string="Nuevo catastro" icon="fa-plus" class="btn-primary" display="always"/>
+                </header>
                 <field name="commercial_name"/>
                 <field name="name"/>
                 <field name="vat"/>
@@ -475,6 +519,10 @@
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <list string="Clientes catastrados" default_order="write_date desc, id desc" create="false" delete="false">
+                <header>
+                    <button type="action" name="%(conedera_odoo_census.action_census_customer_lookup)d"
+                            string="Nuevo catastro" icon="fa-plus" class="btn-primary" display="always"/>
+                </header>
                 <field name="commercial_name" string="Local"/>
                 <field name="name" string="Razón social" optional="show"/>
                 <field name="vat" string="RUC"/>
@@ -534,7 +582,7 @@
         <field name="context">{'default_census_active': True, 'default_company_type': 'company', 'default_user_id': uid, 'form_view_ref': 'conedera_odoo_census.view_partner_form_census_mobile', 'conedera_census_isolated_form': True}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">No hay catastros todavía.</p>
-            <p>Use <strong>Catastro Comercial &gt; Nuevo catastro</strong> para validar primero por RUC o nombre y evitar duplicados.</p>
+            <p>Pulse <strong>Nuevo catastro</strong> para validar primero por RUC/cédula o nombre y evitar duplicados.</p>
         </field>
     </record>
 
