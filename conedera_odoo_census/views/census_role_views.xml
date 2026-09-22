@@ -12,7 +12,8 @@
                 <group>
                     <field name="user_id" options="{'no_create': True, 'no_create_edit': True}"/>
                     <field name="current_role" readonly="1"/>
-                    <field name="team_id" options="{'no_open': True, 'no_create': True, 'no_create_edit': True}"
+                    <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="team_id" widget="selection" domain="[('census_enabled', '=', True), ('active', '=', True), ('company_id', '=', company_id)]" options="{'no_open': True, 'no_create': True, 'no_create_edit': True}"
                            invisible="role not in ('user', 'supervisor')"
                            required="role in ('user', 'supervisor')"/>
                     <field name="role" widget="radio"/>

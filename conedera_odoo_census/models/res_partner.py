@@ -16,10 +16,21 @@ class ResPartner(models.Model):
     census_user_id = fields.Many2one(
         "res.users", string="Catastrado por", readonly=True, copy=False
     )
+    census_company_id = fields.Many2one(
+        "res.company",
+        string="Empresa del Catastro",
+        tracking=True,
+        copy=False,
+        index=True,
+        help=(
+            "Empresa operativa propietaria del Catastro. Es independiente de la compañía "
+            "técnica del contacto, que puede estar vacío/compartido en Odoo."
+        ),
+    )
     census_team_id = fields.Many2one(
-        "crm.team", string="Equipo comercial", tracking=True, copy=False, index=True, check_company=True,
+        "crm.team", string="Equipo comercial", tracking=True, copy=False, index=True,
         domain=[("census_enabled", "=", True)],
-        help="Equipo responsable del catastro. Solo se permiten equipos habilitados para Catastro.",
+        help="Equipo responsable del catastro. Debe pertenecer a la misma Empresa del Catastro.",
     )
     census_allowed_team_ids = fields.Many2many(
         "crm.team",
@@ -190,12 +201,12 @@ class ResPartner(models.Model):
         "partner_longitude", "company_id", "company_type", "parent_id",
     }
     _CENSUS_CONTROL_FIELDS = {
-        "active", "census_active", "user_id", "census_team_id", "census_locked",
+        "active", "census_active", "user_id", "census_company_id", "census_team_id", "census_locked",
         "census_date", "census_user_id", "census_locked_at",
         "census_unlock_user_id", "census_unlock_until",
         "census_gps_accuracy", "census_gps_captured_at",
     }
-    _CENSUS_ASSIGNMENT_FIELDS = {"user_id", "census_team_id"}
+    _CENSUS_ASSIGNMENT_FIELDS = {"user_id", "census_company_id", "census_team_id"}
 
     @api.model
     def _census_normalize_identity(self, value):
@@ -271,31 +282,29 @@ class ResPartner(models.Model):
     def _census_global_active_by_identity(self, value):
         return self._census_global_partners_by_identity(value, active_only=True).filtered("census_active")
 
-    def _default_census_team(self, user=None):
-        """Return a real sales team enabled for Catastro.
-
-        Odoo ships technical teams such as Website/POS. They are valid ``crm.team``
-        records but are not appropriate for this workflow and may not define the sales
-        dashboard graph outside the Sales context. Never auto-assign them here.
-        """
+    def _default_census_team(self, user=None, company=None):
+        """Return a Catastro-enabled team for the salesperson and operating company."""
         user = user or self.env.user
+        company = company or (self.census_company_id if len(self) == 1 else self.env.company)
+        if company not in user.company_ids:
+            return self.env["crm.team"]
         team = user.sale_team_id
         if (
             team
             and team.census_enabled
             and team.active
-            and (not team.company_id or team.company_id in self.env.companies)
+            and team.company_id == company
             and (team.user_id == user or user in team.member_ids)
         ):
             return team
         return self.env["crm.team"].search([
             ("census_enabled", "=", True),
             ("active", "=", True),
-            ("company_id", "in", [False] + self.env.companies.ids),
+            ("company_id", "=", company.id),
             "|", ("user_id", "=", user.id), ("member_ids", "in", [user.id]),
         ], limit=1)
 
-    @api.depends("user_id")
+    @api.depends("user_id", "census_company_id")
     @api.depends_context("uid", "allowed_company_ids")
     def _compute_census_allowed_team_ids(self):
         """Teams that may be selected from the mobile Catastro form.
@@ -307,13 +316,13 @@ class ResPartner(models.Model):
         """
         Team = self.env["crm.team"].sudo().with_context(active_test=True)
         technical_ids = Team._census_technical_team_ids() if hasattr(Team, "_census_technical_team_ids") else set()
-        allowed_company_ids = self.env.companies.ids
         for partner in self:
             salesperson = partner.user_id or self.env.user
+            company = partner.census_company_id or self.env.company
             domain = [
                 ("census_enabled", "=", True),
                 ("active", "=", True),
-                ("company_id", "in", [False] + allowed_company_ids),
+                ("company_id", "=", company.id),
             ]
             if salesperson:
                 domain += ["|", ("user_id", "=", salesperson.id), ("member_ids", "in", [salesperson.id])]
@@ -334,14 +343,44 @@ class ResPartner(models.Model):
                 _("El equipo '%s' no está habilitado para Catastro Comercial. Seleccione un equipo comercial válido.")
                 % team.display_name
             )
-        if team.company_id and team.company_id not in self.env.companies:
-            raise AccessError(_("El Equipo comercial pertenece a una compañía no permitida para su sesión."))
+        company = self.census_company_id or self.env.company
+        if company not in self.env.companies:
+            raise AccessError(_("La Empresa del Catastro no está habilitada en su sesión."))
+        if not team.company_id or team.company_id != company:
+            raise UserError(
+                _("El Equipo comercial %(team)s pertenece a %(team_company)s, pero el Catastro pertenece a %(company)s. Seleccione un equipo de la misma empresa.")
+                % {
+                    "team": team.display_name,
+                    "team_company": team.company_id.display_name if team.company_id else _("Sin empresa"),
+                    "company": company.display_name,
+                }
+            )
         if salesperson and salesperson != team.user_id and salesperson not in team.member_ids:
             raise UserError(
                 _("El vendedor %(seller)s no pertenece al Equipo comercial %(team)s. Agréguelo como miembro o seleccione otro equipo.")
                 % {"seller": salesperson.display_name, "team": team.display_name}
             )
         return True
+
+    @api.onchange("census_company_id", "user_id")
+    def _onchange_census_company_team(self):
+        for partner in self:
+            if not partner.census_company_id:
+                partner.census_company_id = self.env.company
+            if partner.census_team_id and partner.census_team_id.company_id != partner.census_company_id:
+                partner.census_team_id = False
+            if not partner.census_team_id and partner.user_id:
+                team = partner._default_census_team(partner.user_id, partner.census_company_id)
+                if team:
+                    partner.census_team_id = team
+
+    @api.constrains("census_active", "census_company_id", "census_team_id")
+    def _check_census_company_team_consistency(self):
+        for partner in self.filtered("census_active"):
+            if not partner.census_company_id:
+                raise ValidationError(_("Todo Catastro debe tener una Empresa del Catastro."))
+            if partner.census_team_id and partner.census_team_id.company_id != partner.census_company_id:
+                raise ValidationError(_("El Equipo comercial debe pertenecer a la misma Empresa del Catastro."))
 
     def _census_internal_control_update(self, values):
         """Update only Conedera lifecycle columns without calling third-party partner hooks.
@@ -353,7 +392,7 @@ class ResPartner(models.Model):
         No customer master data is written through this helper.
         """
         allowed = {
-            "census_team_id", "census_locked", "census_locked_at",
+            "census_company_id", "census_team_id", "census_locked", "census_locked_at",
             "census_unlock_user_id", "census_unlock_until",
         }
         unexpected = set(values) - allowed
@@ -469,6 +508,13 @@ class ResPartner(models.Model):
                 raise AccessError(
                     _("El vendedor responsable solo puede cambiarse mediante una Solicitud de reasignación.")
                 )
+            if "census_company_id" in vals and not is_sales_admin:
+                if partner.census_locked:
+                    raise AccessError(_("La Empresa de un Catastro protegido solo puede cambiarse mediante un proceso administrativo."))
+                company = self.env["res.company"].browse(vals.get("census_company_id"))
+                if not company or company not in user.company_ids:
+                    raise AccessError(_("No puede asignar el Catastro a una empresa a la que no tiene acceso."))
+
             if "census_team_id" in vals and not is_sales_admin:
                 if partner.census_locked:
                     raise AccessError(
@@ -480,7 +526,7 @@ class ResPartner(models.Model):
                 if team:
                     partner._validate_census_team_assignment(team, partner.user_id or user)
 
-            other_control_fields = self._CENSUS_CONTROL_FIELDS - {"census_team_id", "user_id"}
+            other_control_fields = self._CENSUS_CONTROL_FIELDS - {"census_company_id", "census_team_id", "user_id"}
             if set(vals) & other_control_fields and not is_sales_admin:
                 raise AccessError(
                     _(
@@ -508,7 +554,10 @@ class ResPartner(models.Model):
         if missing:
             raise UserError(_("Complete el catastro antes de registrarlo. Falta: %s") % ", ".join(missing))
 
-        team = self.census_team_id or self._default_census_team(self.user_id or user)
+        company = self.census_company_id or self.env.company
+        if company not in user.company_ids and not is_census_manager(user):
+            raise AccessError(_("No tiene acceso a la Empresa del Catastro."))
+        team = self.census_team_id or self._default_census_team(self.user_id or user, company)
         if not team or not team.census_enabled:
             raise UserError(
                 _(
@@ -796,9 +845,11 @@ class ResPartner(models.Model):
                 vals.setdefault("census_user_id", self.env.user.id)
                 vals.setdefault("customer_rank", 1)
                 vals.setdefault("user_id", self.env.user.id)
+                vals.setdefault("census_company_id", self.env.company.id)
                 if not vals.get("census_team_id"):
                     user = self.env["res.users"].browse(vals.get("user_id") or self.env.user.id)
-                    team = self._default_census_team(user)
+                    company = self.env["res.company"].browse(vals.get("census_company_id") or self.env.company.id)
+                    team = self._default_census_team(user, company)
                     if team:
                         vals["census_team_id"] = team.id
         return super().create(vals_list)
@@ -820,7 +871,7 @@ class ResPartner(models.Model):
         self._check_census_master_write(vals)
         if vals.get("user_id") and not vals.get("census_team_id") and (self.env.su or is_census_manager(self.env.user)):
             user = self.env["res.users"].browse(vals["user_id"])
-            team = self._default_census_team(user)
+            team = self._default_census_team(user, self.census_company_id or self.env.company)
             if team:
                 vals["census_team_id"] = team.id
         parsed = parse_gps_payload(vals.get("census_gps_payload"))
@@ -866,30 +917,33 @@ class ResPartner(models.Model):
             "context": {
                 "default_partner_id": self.id,
                 "default_user_id": self.env.user.id,
-                "default_company_id": self.env.company.id,
+                "default_company_id": (self.census_company_id or self.env.company).id,
             },
         }
 
     def action_view_census_visits(self):
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id("conedera_odoo_census.action_census_visit")
-        action["domain"] = [("partner_id.commercial_partner_id", "=", self.commercial_partner_id.id)]
+        action["domain"] = [
+            ("partner_id.commercial_partner_id", "=", self.commercial_partner_id.id),
+            ("company_id", "=", (self.census_company_id or self.env.company).id),
+        ]
         action["context"] = {
             "default_partner_id": self.id,
             "default_user_id": self.env.user.id,
-            "default_company_id": self.env.company.id,
+            "default_company_id": (self.census_company_id or self.env.company).id,
         }
         return action
 
     def action_view_census_quotations(self):
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id("sale.action_quotations_with_onboarding")
-        action["domain"] = [("partner_id.commercial_partner_id", "=", self.commercial_partner_id.id)]
+        action["domain"] = [("partner_id.commercial_partner_id", "=", self.commercial_partner_id.id), ("company_id", "=", (self.census_company_id or self.env.company).id)]
         action["context"] = {
             "default_partner_id": self.id,
             "default_user_id": self.env.user.id,
             "default_census_originated": True,
-            "default_company_id": self.env.company.id,
+            "default_company_id": (self.census_company_id or self.env.company).id,
         }
         return action
 
@@ -898,7 +952,7 @@ class ResPartner(models.Model):
         action = self.env["ir.actions.actions"]._for_xml_id(
             "conedera_odoo_census.action_census_commercial_timeline"
         )
-        action["domain"] = [("partner_id", "=", self.commercial_partner_id.id)]
+        action["domain"] = [("partner_id", "=", self.commercial_partner_id.id), ("company_id", "=", (self.census_company_id or self.env.company).id)]
         action["name"] = _("Bitácora - %s") % self.display_name
         return action
 
@@ -916,7 +970,7 @@ class ResPartner(models.Model):
         action = self.env["ir.actions.actions"]._for_xml_id(
             "conedera_odoo_census.action_census_product_quote_summary"
         )
-        action["domain"] = [("partner_id", "=", self.commercial_partner_id.id)]
+        action["domain"] = [("partner_id", "=", self.commercial_partner_id.id), ("company_id", "=", (self.census_company_id or self.env.company).id)]
         action["name"] = _("Productos proformados - %s") % self.display_name
         return action
 
@@ -932,7 +986,7 @@ class ResPartner(models.Model):
             "context": {
                 "default_partner_id": self.id,
                 "default_user_id": self.env.user.id,
-                "default_company_id": self.env.company.id,
+                "default_company_id": (self.census_company_id or self.env.company).id,
                 "default_origin": _("Catastro - %s") % self.display_name,
                 "default_census_originated": True,
             },

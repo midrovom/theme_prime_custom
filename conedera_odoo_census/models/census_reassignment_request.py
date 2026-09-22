@@ -131,7 +131,7 @@ class CensusReassignmentRequest(models.Model):
 
             target_team = partner._default_census_team(requester)
             source_team = partner.census_team_id or partner.user_id.sale_team_id
-            effective_company = partner.company_id or source_team.company_id or target_team.company_id or self.env.company
+            effective_company = partner.census_company_id or source_team.company_id or target_team.company_id or self.env.company
             if (
                 effective_company
                 and effective_company not in requester.company_ids
@@ -254,7 +254,8 @@ class CensusReassignmentRequest(models.Model):
             target_user = request.requested_by_id
             if not target_user.active:
                 raise UserError(_("El comercial destino está archivado. Genere una nueva solicitud con un usuario activo."))
-            target_team = partner._default_census_team(target_user)
+            target_company = partner.census_company_id or request.company_id or self.env.company
+            target_team = partner._default_census_team(target_user, target_company)
             if not target_team:
                 raise UserError(
                     _(
@@ -283,6 +284,7 @@ class CensusReassignmentRequest(models.Model):
                 values.update(
                     {
                         "census_active": True,
+                        "census_company_id": target_company.id,
                         "census_date": now,
                         "census_user_id": target_user.id,
                         "census_locked": False,

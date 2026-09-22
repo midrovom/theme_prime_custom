@@ -144,15 +144,18 @@ class CensusVisit(models.Model):
     def create(self, vals_list):
         is_manager = is_census_manager(self.env.user)
         for vals in vals_list:
+            partner_id = vals.get("partner_id")
+            partner = self.env["res.partner"].browse(partner_id).exists() if partner_id else self.env["res.partner"]
+            if partner:
+                partner = partner.commercial_partner_id
+                partner._ensure_census_ready_for_activity()
+                vals["company_id"] = (partner.census_company_id or self.env.company).id
             if not is_manager:
                 # El vendedor que crea la visita es siempre el responsable auditado.
                 vals["user_id"] = self.env.user.id
-                vals["company_id"] = self.env.company.id
             partner_id = vals.get("partner_id")
-            if partner_id:
+            if partner_id and not partner:
                 partner = self.env["res.partner"].browse(partner_id).exists()
-                if partner:
-                    partner._ensure_census_ready_for_activity()
             if vals.get("name", "Nuevo") == "Nuevo":
                 vals["name"] = self.env["ir.sequence"].next_by_code("conedera.census.visit") or "Nuevo"
             parsed = parse_gps_payload(vals.get("gps_capture_payload"))
@@ -226,13 +229,15 @@ class CensusVisit(models.Model):
             )
         return super().write(vals)
 
-    @api.constrains("reschedule_visit", "next_visit_datetime", "location_tolerance_m")
+    @api.constrains("reschedule_visit", "next_visit_datetime", "location_tolerance_m", "partner_id", "company_id")
     def _check_visit_values(self):
         for visit in self:
             if visit.reschedule_visit == "yes" and not visit.next_visit_datetime:
                 raise ValidationError(_("Debe indicar la fecha de la próxima visita."))
             if visit.location_tolerance_m <= 0:
                 raise ValidationError(_("La tolerancia de ubicación debe ser mayor que cero."))
+            if visit.partner_id and visit.partner_id.census_company_id and visit.company_id != visit.partner_id.census_company_id:
+                raise ValidationError(_("La visita debe pertenecer a la misma Empresa del Catastro."))
 
     def action_save_progress(self):
         """Botón táctil: el cliente web guarda antes de ejecutar la acción."""
