@@ -38,13 +38,7 @@ const wpwlOptions = {
             <div class="wpwl-wrapper wpwl-wrapper-brand" style="display:inline-block; margin: 3px 0; padding-right: 30px;">
                 <select class="wpwl-control wpwl-control-brand" name="customParameters[SHOPPER_TIPOCREDITO]">
                     <option value="00">Corriente</option>
-                    <option value="01">Dif Corriente</option>
                     <option value="02">Dif con int</option>
-                    <option value="03">Dif sin int</option>
-                    <option value="07">Dif con int + Meses gracia</option>
-                    <option value="09">Dif sin int + Meses gracia</option>
-                    <option value="21">Dif plus cuotas</option>
-                    <option value="22">Dif plus</option>
                 </select>
             </div>`;
 
