@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Liquidation rule: add protected minimum before the full target. -->
+    <record id="view_commission_liquidation_rule_form_advanced" model="ir.ui.view">
+        <field name="name">commission.liquidation.rule.form.advanced</field>
+        <field name="model">commission.liquidation.rule</field>
+        <field name="inherit_id" ref="transcash_commission_goal_rules.view_commission_liquidation_rule_form_goal_rules"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='min_sales_amount']" position="before">
+                <field name="penalty_free_min_sales_amount"/>
+                <field name="effective_penalty_free_minimum" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_liquidation_rule_list_advanced" model="ir.ui.view">
+        <field name="name">commission.liquidation.rule.list.advanced</field>
+        <field name="model">commission.liquidation.rule</field>
+        <field name="inherit_id" ref="transcash_commission_goal_rules.view_commission_liquidation_rule_list_goal_rules"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='min_sales_amount']" position="before">
+                <field name="penalty_free_min_sales_amount" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Period unified configuration: show the same protected minimum inline. -->
+    <record id="view_commission_period_form_advanced" model="ir.ui.view">
+        <field name="name">commission.period.form.advanced.rules</field>
+        <field name="model">commission.period</field>
+        <field name="inherit_id" ref="transcash_commission_goal_rules.view_commission_period_form_goal_rules"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[.//field[@name='liquidation_rule_ids']]//field[@name='min_sales_amount']" position="before">
+                <field name="penalty_free_min_sales_amount" optional="show"/>
+            </xpath>
+            <xpath expr="//page[.//field[@name='project_rule_ids']]//field[@name='commission_percent']" position="attributes">
+                <attribute name="string">% base del origen</attribute>
+                <attribute name="invisible">0</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Manager header: one record, sellers below; each seller opens a form with tiers. -->
+    <record id="view_commission_manager_goal_rule_form_advanced" model="ir.ui.view">
+        <field name="name">commission.manager.goal.rule.form.advanced</field>
+        <field name="model">commission.manager.goal.rule</field>
+        <field name="inherit_id" ref="transcash_commission_goal_rules.view_commission_manager_goal_rule_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='line_ids']" position="replace">
+                <field name="line_ids" context="{'default_management_id': id}">
+                    <list>
+                        <field name="seller_id"/>
+                        <field name="basis"/>
+                        <field name="management_tier_count"/>
+                        <field name="effective_minimum" readonly="1" optional="show"/>
+                        <field name="commission_percent" string="% inicial / legado" optional="hide"/>
+                        <field name="active"/>
+                    </list>
+                    <form string="Condición del vendedor para gestión">
+                        <sheet>
+                            <group>
+                                <group>
+                                    <field name="seller_id"/>
+                                    <field name="basis"/>
+                                </group>
+                                <group>
+                                    <field name="active"/>
+                                    <field name="management_tier_count" readonly="1"/>
+                                </group>
+                            </group>
+                            <separator string="Rangos de comisión del administrador"/>
+                            <field name="management_tier_ids">
+                                <list editable="bottom">
+                                    <field name="sales_threshold"/>
+                                    <field name="commission_percent"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                            <group string="Compatibilidad cuando no existen rangos" invisible="management_tier_count &gt; 0">
+                                <group>
+                                    <field name="minimum_type"/>
+                                    <field name="minimum_amount" invisible="minimum_type != 'fixed'"/>
+                                    <field name="minimum_target_percent" invisible="minimum_type != 'target_percent'"/>
+                                </group>
+                                <group>
+                                    <field name="commission_percent"/>
+                                    <field name="effective_minimum" readonly="1"/>
+                                </group>
+                            </group>
+                        </sheet>
+                    </form>
+                </field>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Make the per-origin base rate explicit in project setup. -->
+    <record id="view_commission_project_rule_form_advanced" model="ir.ui.view">
+        <field name="name">commission.project.rule.form.advanced</field>
+        <field name="model">commission.project.rule</field>
+        <field name="inherit_id" ref="transcash_commission_goal_rules.view_commission_project_rule_form_goal_rules"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='commission_percent']" position="attributes">
+                <attribute name="string">% base del origen</attribute>
+                <attribute name="invisible">0</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_commission_project_rule_list_advanced" model="ir.ui.view">
+        <field name="name">commission.project.rule.list.advanced</field>
+        <field name="model">commission.project.rule</field>
+        <field name="inherit_id" ref="transcash_commission_goal_rules.view_commission_project_rule_list_goal_rules"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='commission_percent']" position="attributes">
+                <attribute name="string">% base del origen</attribute>
+                <attribute name="invisible">0</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
