@@ -17,7 +17,7 @@
                             .tc-summary td { border: 1px solid #d5d5d5; padding: 5px; }
                         </style>
 
-                        <div class="tc-title" style="margin-top:40px;">Liquidación total de comisiones</div>
+                        <div class="tc-title">Liquidación total de comisiones</div>
                         <div class="tc-meta">
                             <strong>Liquidación:</strong> <span t-field="o.name"/>
                             &amp;nbsp;&amp;nbsp; <strong>Período:</strong> <span t-field="o.period_id.name"/>
