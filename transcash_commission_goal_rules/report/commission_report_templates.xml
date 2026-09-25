@@ -137,7 +137,7 @@
                             .tc-total { font-size: 15px; font-weight: 700; }
                         </style>
 
-                        <div class="tc-title">Liquidación individual de comisión</div>
+                        <div class="tc-title" style="margin-top:40px;">Liquidación individual de comisión</div>
                         <div class="tc-block">
                             <table class="tc-grid">
                                 <tr>
