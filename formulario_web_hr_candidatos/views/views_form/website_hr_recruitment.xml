@@ -21,7 +21,9 @@
                                   data-model_name="hr.applicant"
                                   hide-change-model="true"
                                   novalidate="novalidate"
-                                  enctype="multipart/form-data">
+                                  enctype="multipart/form-data"
+                                  t-att-data-educations="educations"
+                                  t-att-data-experiences="experiences">
 
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 

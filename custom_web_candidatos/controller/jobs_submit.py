@@ -25,18 +25,11 @@ class WebsiteHRRecruitmentCustom(http.Controller):
         if not applicant.exists() or applicant.portal_user_id.id != request.env.user.id:
             return request.not_found()
 
-        if applicant.candidate_id:
-            firstname = applicant.candidate_id.firstname or ""
-            lastname_paterno = applicant.candidate_id.lastname_paterno or ""
-            lastname_materno = applicant.candidate_id.lastname_materno or ""
-            full_name = applicant.candidate_id.name or applicant.partner_name or ""
-        else:
-            # Si no hay candidate_id, descomponemos partner_name
-            full_name = applicant.partner_name or ""
-            parts = full_name.split()
-            lastname_paterno = parts[0] if len(parts) > 0 else ""
-            lastname_materno = parts[1] if len(parts) > 1 else ""
-            firstname = " ".join(parts[2:]) if len(parts) > 2 else ""
+        full_name = applicant.partner_name or ""
+        parts = full_name.split()
+        lastname_paterno = parts[0] if len(parts) > 0 else ""
+        lastname_materno = parts[1] if len(parts) > 1 else ""
+        firstname = " ".join(parts[2:]) if len(parts) > 2 else ""
 
         values = {
             "applicant": applicant,
@@ -54,13 +47,13 @@ class WebsiteHRRecruitmentCustom(http.Controller):
             "birth_country_id": applicant.birth_country_id.id if applicant.birth_country_id else False,
             "vive_con": applicant.vive_con,
             "tipo_vivienda": applicant.tipo_vivienda,
-            "num_hijos": applicant.num_hijos if applicant.num_hijos is not None else 0,
+            "num_hijos": applicant.num_hijos,
             "estado_civil": applicant.estado_civil,
             "cedula": applicant.cedula,
             "birthdate": applicant.birthdate,
             "nacionality": applicant.nacionality,
             "document_type": applicant.document_type,
-            "provincia_id": applicant.provincia_id.id if applicant.provincia_id else None,
+            "provincia_id": applicant.provincia_id.id if applicant.provincia_id else False,
             "dependientes": applicant.dependientes,
             "image_1920": applicant.image_1920,
             "experiencia": applicant.experiencia,
@@ -74,8 +67,6 @@ class WebsiteHRRecruitmentCustom(http.Controller):
             "educations": applicant.education_ids,
             # Experiencia laboral
             "experiences": applicant.experience_job_ids,
-            # Conocidos
-            "knowns": applicant.known_ids,
             # Referencias
             "references": applicant.reference_ids,
             # Catálogos para selects
