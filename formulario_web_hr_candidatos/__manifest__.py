@@ -12,14 +12,7 @@
     'license': 'LGPL-3',
     'category': 'Website',
     'depends': [
-        'base',
-        'contacts',
-        'hr_recruitment',
-        'web',
-        'website',
-        'auth_signup', 
-        'portal', 
-        'mail',
+        'custom_web_candidatos',
     ],
     'data': [
         'security/ir.model.access.csv',
