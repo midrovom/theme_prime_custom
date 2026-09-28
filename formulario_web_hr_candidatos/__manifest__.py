@@ -22,7 +22,6 @@
         # 'report/applicant_report_action.xml',
         # 'report/report_view.xml',
 
-        'views/hr_applicant_views.xml',
         'views/views_form/recruitment_form_1.xml',
         'views/views_form/recruitment_form_2.xml',
         'views/views_form/recruitment_form_3.xml',
