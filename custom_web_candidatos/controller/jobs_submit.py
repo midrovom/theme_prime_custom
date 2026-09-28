@@ -79,8 +79,11 @@ class WebsiteHRRecruitmentCustom(http.Controller):
             ]), default=str),
             # Referencias
             "references": json.dumps(applicant.reference_ids.read([
-                "nombre", "telefono", "ocupacion",
-                "tiempo_conocimiento", "domicilio"
+                "nombre",
+                "domicilio",
+                "telefono",
+                "ocupacion",
+                "tiempo_conocerlo"
             ]), default=str),
             # Catálogos para selects
             "country_states": request.env['res.country.state'].sudo().search([], order="name ASC"),
