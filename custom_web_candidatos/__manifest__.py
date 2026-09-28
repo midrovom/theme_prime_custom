@@ -12,7 +12,7 @@
     'license': 'LGPL-3',
     'category': 'Website',
     'depends': [
-        'formulario_web_hr_candidatos', 'sale',
+        'custom_web_hr_datos_candidatos', 'sale',
     ],
     'data': [
         'views/website_hr_recruitment.xml',

@@ -12,7 +12,14 @@
     'license': 'LGPL-3',
     'category': 'Website',
     'depends': [
-        'formulario_web_hr_candidatos',
+        'base',
+        'contacts',
+        'hr_recruitment',
+        'web',
+        'website',
+        'auth_signup', 
+        'portal', 
+        'mail',
     ],
     'data': [
         'security/security.xml',
