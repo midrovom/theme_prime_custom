@@ -64,70 +64,46 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
                 <div class="col-12 col-md-10">
                     <div class="row d-flex justify-content-between">
 
-                        <!-- Nivel educativo -->
                         <div class="col-12 col-md-4 mb-4">
                             <label class="fs-6">Nivel Educativo:</label>
-                            <select name="level_id_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option value=""></option>
-                                ${optionsStudiesLevels}
-                            </select>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
+                                value="${edu.level_id ? edu.level_id[1] : ''}"/>
                         </div>
 
-                        <!-- Institución -->
                         <div class="col-12 col-md-4 mb-4">
-                            <label class="fs-6">Nombre de la institución:</label>
-                            <input type="text" name="institucion_${this.educationCount}" class="form-control rounded-pill py-2"
+                            <label class="fs-6">Institución:</label>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${edu.institucion || ''}"/>
                         </div>
 
-                        <!-- Desde -->
                         <div class="col-12 col-md-4 mb-4">
                             <label class="fs-6">Desde:</label>
-                            <input type="date" name="inicioEstudio_${this.educationCount}" class="form-control rounded-pill py-2"
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${edu.fecha_inicio || ''}"/>
                         </div>
 
-                        <!-- Hasta -->
                         <div class="col-12 col-md-4 mb-4">
                             <label class="fs-6">Hasta:</label>
-                            <select name="finEstudio_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option value=""></option>
-                                ${edu.year_fin ? `<option value="${edu.year_fin}" selected>${edu.year_fin}</option>` : ''}
-                                <option value="presente">Presente</option>
-                            </select>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
+                                value="${edu.year_fin || ''}"/>
                         </div>
 
-                        <!-- País -->
+                        <div class="col-12 col-md-4 mb-4">
+                            <label class="fs-6">Título:</label>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
+                                value="${edu.titulo || ''}"/>
+                        </div>
+
                         <div class="col-12 col-md-4 mb-4">
                             <label class="fs-6">País:</label>
-                            <select name="paisEducacion_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option value=""></option>
-                                ${cachedCountries.map(country => `
-                                    <option value="country-${country.id}" ${edu.country_id && edu.country_id[0] === country.id ? 'selected' : ''}>
-                                        ${country.name}
-                                    </option>
-                                `).join('')}
-                            </select>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
+                                value="${edu.country_id ? edu.country_id[1] : ''}"/>
                         </div>
 
-                        <!-- Ciudad -->
                         <div class="col-12 col-md-4 mb-4">
                             <label class="fs-6">Ciudad/Provincia:</label>
-                            <select name="ciudad_${this.educationCount}" class="form-select rounded-pill py-2">
-                                <option value=""></option>
-                                ${cachedStatesByCountry[cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
-                                    <option value="state-${state.id}" ${edu.state_id && edu.state_id[0] === state.id ? 'selected' : ''}>
-                                        ${state.name}
-                                    </option>
-                                `).join('')}
-                            </select>
-                        </div>
-
-                        <!-- Título -->
-                        <div class="col-12 col-md-4 mb-4">
-                            <label class="fs-6">Título Recibido:</label>
-                            <input type="text" name="titulo_${this.educationCount}" class="form-control rounded-pill py-2"
-                                value="${edu.titulo || ''}"/>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
+                                value="${edu.state_id ? edu.state_id[1] : ''}"/>
                         </div>
 
                     </div>
@@ -179,103 +155,76 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
 
                     <div class="row d-flex justify-content-between">
 
-                        <!-- Nombre de la compañía -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Nombre de la compañía:</label>
-                            <input type="text" name="company_${this.experienceCount}" class="form-control rounded-pill py-2"
+                            <label class="fs-6">Compañía:</label>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${exp.empresa || ''}"/>
                         </div>
 
-                        <!-- Cargo desempeñado -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Cargo desempeñado:</label>
-                            <input type="text" name="cargo_${this.experienceCount}" class="form-control rounded-pill py-2"
+                            <label class="fs-6">Cargo:</label>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${exp.name || ''}"/>
                         </div>
 
-                        <!-- Desde -->
                         <div class="col-12 col-md-3 mb-4">
                             <label class="fs-6">Desde:</label>
-                            <input type="date" name="jobInicio_${this.experienceCount}" class="form-control rounded-pill py-2"
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${exp.fecha_inicio || ''}"/>
                         </div>
 
-                        <!-- Hasta -->
                         <div class="col-12 col-md-3 mb-4">
                             <label class="fs-6">Hasta:</label>
-                            <select name="jobFin_${this.experienceCount}" class="form-select rounded-pill py-2">
-                                <option value=""></option>
-                                ${exp.year_fin ? `<option value="${exp.year_fin}" selected>${exp.year_fin}</option>` : ''}
-                                <option value="presente">Presente</option>
-                            </select>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
+                                value="${exp.year_fin || ''}"/>
                         </div>
 
-                        <!-- Teléfonos -->
                         <div class="col-12 col-md-3 mb-4">
                             <label class="fs-6">Teléfonos:</label>
-                            <input type="text" name="telefonos_${this.experienceCount}" class="form-control rounded-pill py-2"
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${exp.telefonos || ''}"/>
                         </div>
 
-                        <!-- Tiempo de servicio -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Tiempo que prestó su servicio:</label>
-                            <input type="text" name="tiempo_${this.experienceCount}" class="form-control rounded-pill py-2"
+                            <label class="fs-6">Tiempo de servicio:</label>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${exp.tiempo_servicio || ''}"/>
                         </div>
 
-                        <!-- Ingreso mensual -->
                         <div class="col-12 col-md-3 mb-4">
                             <label class="fs-6">Ingreso mensual:</label>
-                            <input type="number" name="ingreso_${this.experienceCount}" class="form-control rounded-pill py-2"
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${exp.ingreso_mensual || ''}"/>
                         </div>
 
-                        <!-- Motivo de separación -->
                         <div class="col-12 col-md-3 mb-4">
                             <label class="fs-6">Motivo de separación:</label>
-                            <input type="text" name="motivo_${this.experienceCount}" class="form-control rounded-pill py-2"
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${exp.motivo_separacion || ''}"/>
                         </div>
 
-                        <!-- Jefe directo -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Nombre de su jefe directo:</label>
-                            <input type="text" name="jefe_${this.experienceCount}" class="form-control rounded-pill py-2"
+                            <label class="fs-6">Jefe directo:</label>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${exp.jefe_directo || ''}"/>
                         </div>
 
-                        <!-- Cargo jefe directo -->
                         <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Cargo de su jefe directo:</label>
-                            <input type="text" name="cargoJefe_${this.experienceCount}" class="form-control rounded-pill py-2"
+                            <label class="fs-6">Cargo jefe directo:</label>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${exp.cargo_jefe_directo || ''}"/>
                         </div>
 
-                        <!-- País -->
                         <div class="col-12 col-md-3 mb-4">
                             <label class="fs-6">País:</label>
-                            <select name="paisExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
-                                <option value=""></option>
-                                ${cachedCountries.map(country => `
-                                    <option value="country-${country.id}" ${exp.country_id && exp.country_id[0] === country.id ? 'selected' : ''}>
-                                        ${country.name}
-                                    </option>
-                                `).join('')}
-                            </select>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
+                                value="${exp.country_id ? exp.country_id[1] : ''}"/>
                         </div>
 
-                        <!-- Ciudad -->
                         <div class="col-12 col-md-3 mb-4">
                             <label class="fs-6">Ciudad/Provincia:</label>
-                            <select name="ciudadExperiencia_${this.experienceCount}" class="form-select rounded-pill py-2">
-                                <option value=""></option>
-                                ${cachedStatesByCountry[cachedCountries.find(c => c.name === 'Ecuador').id].map(state => `
-                                    <option value="state-${state.id}" ${exp.state_id && exp.state_id[0] === state.id ? 'selected' : ''}>
-                                        ${state.name}
-                                    </option>
-                                `).join('')}
-                            </select>
+                            <input type="text" class="form-control rounded-pill py-2" readonly
+                                value="${exp.state_id ? exp.state_id[1] : ''}"/>
                         </div>
 
                     </div>
@@ -285,4 +234,6 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
 
         return block;
     },
+
+
 });
