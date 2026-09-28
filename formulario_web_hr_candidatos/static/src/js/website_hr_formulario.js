@@ -39,8 +39,6 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
     },
 
     async _getEducationBlock(isFirstBlock = false, edu = {}) {
-        await loadCountriesAndStates();
-
         const separator = isFirstBlock ? '' : `
             <div class="row d-flex justify-content-center my-4">
                 <div class="col-12 col-md-10">
@@ -135,19 +133,17 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
     },
 
     async _getExperienceBlock(isFirstBlock = false, exp = {}) {
-        await loadCountriesAndStates();
-
+        const separator = isFirstBlock ? '' : `
+            <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
+                <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: white; padding: 0 15px; color: #666; font-size: 14px;">
+                    Experiencia Laboral # ${this.experienceCount}
+                </span>
+            </div>
+        `;
         const block = `
             <div class="row d-flex justify-content-center experience-block">
                 <div class="col-12 col-md-10">
-
-                    <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
-                        <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-                            background: white; padding: 0 15px; color: #666; font-size: 14px;">
-                            Experiencia Laboral # ${this.experienceCount}
-                        </span>
-                    </div>
-
+                    ${separator}
                     <div class="row d-flex justify-content-between">
 
                         <div class="col-12 col-md-3 mb-4">
