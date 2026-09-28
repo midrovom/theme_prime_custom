@@ -42,7 +42,43 @@
         </xpath>
     </template>
 
-    
+    <template id="portal_my_applications" name="Historial de Postulación">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-4">
+                <h2 class="mb-3">Historial de Postulación</h2>
+                <t t-if="applications">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Cargo</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="applications" t-as="app">
+                                <tr>
+                                    <td><t t-esc="app.job_id.name"/></td>
+                                    <td><t t-esc="app.stage_id.name"/></td>
+                                    <td><t t-esc="app.create_date"/></td>
+                                    <td>
+                                        <a t-att-href="'/jobs/continue/%s' % app.id"
+                                           class="btn btn-primary btn-sm">
+                                            Continuar Postulación
+                                        </a>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </t>
+                <t t-else="">
+                    <p class="text-muted">No tiene postulaciones registradas.</p>
+                </t>
+            </div>
+        </t>
+    </template>
 
     <template id="portal_home_remove_orders" inherit_id="sale.portal_my_home_sale" name="Portal Home Remove Orders">
         <xpath expr="//div[@id='portal_client_category']//t[@t-call='portal.portal_docs_entry']" position="replace"/>
