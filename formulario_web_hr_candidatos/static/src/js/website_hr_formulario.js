@@ -9,8 +9,10 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
         this._super(...arguments);
         this.educationCount = 1;
         this.experienceCount = 1;
+        this.referenceCount = 0; 
         this._prefillEducations();
         this._prefillExperiences();
+        this._prefillReferences();
     },
 
     async _prefillEducations() {
@@ -252,93 +254,52 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
         }
     },
 
-    async _getExperienceBlock(isFirstBlock = false, exp = {}) {
-        const separator = isFirstBlock ? '' : `
-            <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
-                <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: white; padding: 0 15px; color: #666; font-size: 14px;">
-                    Experiencia Laboral # ${this.experienceCount}
-                </span>
-            </div>
-        `;
-
+    _getReferenceBlock(ref = {}) {
         return `
-            <div class="row d-flex justify-content-center experience-block">
+            <div class="row d-flex justify-content-center reference-block">
                 <div class="col-12 col-md-10">
-                    ${separator}
-                    <div class="row d-flex justify-content-between">
+                    <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
+                        <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+                            background: white; padding: 0 15px; color: #666; font-size: 14px;">
+                            Referencia # ${this.referenceCount + 1}
+                        </span>
+                    </div>
 
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Compañía:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.empresa || ''}"/>
+                    <div class="row g-3">
+                        <!-- Nombre -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Nombre completo:</label>
+                            <input type="text" class="form-control rounded-pill" readonly
+                                value="${ref.nombre || ''}"/>
                         </div>
 
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Cargo:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.name || ''}"/>
+                        <!-- Teléfono -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Teléfono:</label>
+                            <input type="text" class="form-control rounded-pill" readonly
+                                value="${ref.telefono || ''}"/>
                         </div>
 
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Desde:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.fecha_inicio || ''}"/>
+                        <!-- Ocupación -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Ocupación:</label>
+                            <input type="text" class="form-control rounded-pill" readonly
+                                value="${ref.ocupacion || ''}"/>
                         </div>
 
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Hasta:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.year_fin || ''}"/>
+                        <!-- Tiempo de conocerlo -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Tiempo de conocerlo:</label>
+                            <input type="text" class="form-control rounded-pill" readonly
+                                value="${ref.tiempo_conocerlo || ''}"/>
                         </div>
 
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Teléfonos:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.telefonos || ''}"/>
+                        <!-- Domicilio -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Domicilio:</label>
+                            <input type="text" class="form-control rounded-pill" readonly
+                                value="${ref.domicilio || ''}"/>
                         </div>
-
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Tiempo de servicio:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.tiempo_servicio || ''}"/>
-                        </div>
-
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Ingreso mensual:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.ingreso_mensual || ''}"/>
-                        </div>
-
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Motivo de separación:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.motivo_separacion || ''}"/>
-                        </div>
-
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Jefe directo:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.jefe_directo || ''}"/>
-                        </div>
-
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Cargo jefe directo:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.cargo_jefe_directo || ''}"/>
-                        </div>
-
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">País:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.country_id ? exp.country_id[1] : ''}"/>
-                        </div>
-
-                        <div class="col-12 col-md-3 mb-4">
-                            <label class="fs-6">Ciudad/Provincia:</label>
-                            <input type="text" class="form-control rounded-pill py-2" readonly
-                                value="${exp.state_id ? exp.state_id[1] : ''}"/>
-                        </div>
-
                     </div>
                 </div>
             </div>
