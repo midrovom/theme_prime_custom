@@ -1,0 +1,4 @@
+<odoo>
+ <record id="warehouse_mapping_list" model="ir.ui.view"><field name="name">commission.warehouse.mapping.list</field><field name="model">commission.warehouse.mapping</field><field name="arch" type="xml"><list editable="bottom"><field name="warehouse_code"/><field name="warehouse_name"/><field name="region_id"/><field name="zone_id"/><field name="active"/></list></field></record>
+ <record id="action_warehouse_mapping" model="ir.actions.act_window"><field name="name">Mapeo Bodega / Zona</field><field name="res_model">commission.warehouse.mapping</field><field name="view_mode">list,form</field></record>
+</odoo>

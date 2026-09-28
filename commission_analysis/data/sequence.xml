@@ -1,0 +1,4 @@
+<odoo><data noupdate="1">
+<record id="seq_purchase_batch" model="ir.sequence"><field name="name">Lote compras</field><field name="code">commission.purchase.batch</field><field name="prefix">CMP/%(year)s/</field><field name="padding">5</field></record>
+<record id="seq_settlement_batch" model="ir.sequence"><field name="name">Liquidación operador</field><field name="code">commission.settlement.batch</field><field name="prefix">LIQ/%(year)s/</field><field name="padding">5</field></record>
+</data></odoo>

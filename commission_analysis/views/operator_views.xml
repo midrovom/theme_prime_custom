@@ -1,0 +1,8 @@
+<odoo>
+<record id="operator_list" model="ir.ui.view"><field name="name">commission.operator.list</field><field name="model">commission.operator</field><field name="arch" type="xml"><list editable="bottom"><field name="name"/><field name="code"/><field name="active"/></list></field></record>
+<record id="region_list" model="ir.ui.view"><field name="name">commission.region.list</field><field name="model">commission.region</field><field name="arch" type="xml"><list editable="bottom"><field name="name"/><field name="code"/><field name="active"/></list></field></record>
+<record id="zone_list" model="ir.ui.view"><field name="name">commission.zone.list</field><field name="model">commission.zone</field><field name="arch" type="xml"><list editable="bottom"><field name="region_id"/><field name="name"/><field name="code"/><field name="active"/></list></field></record>
+<record id="action_operator" model="ir.actions.act_window"><field name="name">Operadores</field><field name="res_model">commission.operator</field><field name="view_mode">list,form</field></record>
+<record id="action_region" model="ir.actions.act_window"><field name="name">Regiones</field><field name="res_model">commission.region</field><field name="view_mode">list,form</field></record>
+<record id="action_zone" model="ir.actions.act_window"><field name="name">Zonas</field><field name="res_model">commission.zone</field><field name="view_mode">list,form</field></record>
+</odoo>
