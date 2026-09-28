@@ -226,4 +226,82 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
         return block;
     },
 
+    async _prefillReferences() {
+        let referencesRaw = this.$el.attr('data-references');
+        if (!referencesRaw) return;
+
+        let references;
+        try {
+            references = JSON.parse(referencesRaw);
+        } catch (e) {
+            console.error("Error parseando references:", e);
+            return;
+        }
+
+        if (!Array.isArray(references) || references.length === 0) return;
+
+        const container = this.$('#reference_container');
+        container.empty();
+
+        this.referenceCount = 0;
+        for (let i = 0; i < references.length; i++) {
+            const ref = references[i];
+            const block = this._getReferenceBlock(ref);
+            container.append(block);
+            this.referenceCount++;
+        }
+    },
+
+    _getReferenceBlock(ref = {}) {
+        return `
+            <div class="row d-flex justify-content-center reference-block">
+                <div class="col-12 col-md-10">
+                    <div class="separator-education" style="border-top: 2px solid #e0e0e0; position: relative; margin: 20px 0;">
+                        <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+                            background: white; padding: 0 15px; color: #666; font-size: 14px;">
+                            Referencia # ${this.referenceCount + 1}
+                        </span>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- Nombre -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Nombre completo:</label>
+                            <input type="text" class="form-control rounded-pill" readonly
+                                value="${ref.nombre || ''}"/>
+                        </div>
+
+                        <!-- Teléfono -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Teléfono:</label>
+                            <input type="text" class="form-control rounded-pill" readonly
+                                value="${ref.telefono || ''}"/>
+                        </div>
+
+                        <!-- Ocupación -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Ocupación:</label>
+                            <input type="text" class="form-control rounded-pill" readonly
+                                value="${ref.ocupacion || ''}"/>
+                        </div>
+
+                        <!-- Tiempo de conocimiento -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Tiempo de conocimiento:</label>
+                            <input type="text" class="form-control rounded-pill" readonly
+                                value="${ref.tiempo_conocimiento || ''}"/>
+                        </div>
+
+                        <!-- Domicilio -->
+                        <div class="col-md-4">
+                            <label class="fs-6">Domicilio:</label>
+                            <input type="text" class="form-control rounded-pill" readonly
+                                value="${ref.domicilio || ''}"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
 });
