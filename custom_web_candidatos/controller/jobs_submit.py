@@ -25,11 +25,18 @@ class WebsiteHRRecruitmentCustom(http.Controller):
         if not applicant.exists() or applicant.portal_user_id.id != request.env.user.id:
             return request.not_found()
 
-        full_name = applicant.partner_name or ""
-        parts = full_name.split()
-        lastname_paterno = parts[0] if len(parts) > 0 else ""
-        lastname_materno = parts[1] if len(parts) > 1 else ""
-        firstname = " ".join(parts[2:]) if len(parts) > 2 else ""
+        if applicant.candidate_id:
+            firstname = applicant.candidate_id.firstname or ""
+            lastname_paterno = applicant.candidate_id.lastname_paterno or ""
+            lastname_materno = applicant.candidate_id.lastname_materno or ""
+            full_name = applicant.candidate_id.name or applicant.partner_name or ""
+        else:
+            # Si no hay candidate_id, descomponemos partner_name
+            full_name = applicant.partner_name or ""
+            parts = full_name.split()
+            lastname_paterno = parts[0] if len(parts) > 0 else ""
+            lastname_materno = parts[1] if len(parts) > 1 else ""
+            firstname = " ".join(parts[2:]) if len(parts) > 2 else ""
 
         values = {
             "applicant": applicant,
@@ -93,4 +100,4 @@ class WebsiteHRRecruitmentCustom(http.Controller):
             ],
         }
 
-        return request.render("custom_web_hr_datos_candidatos.web_recruitment", values)
+        return request.render("formulario_web_hr_candidatos.web_recruitment", values)
