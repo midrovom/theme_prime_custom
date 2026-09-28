@@ -69,14 +69,14 @@ class WebsiteHRRecruitmentCustom(http.Controller):
                 "level_id", "institucion", "fecha_inicio", "year_fin", "titulo",
                 "titulo_por_obtener", "institucion_2", "carrera", "horario", "estado", "study_current",
                 "country_id", "state_id"
-            ])),
+            ]), default=str),
             # Experiencia laboral
             "experiences": json.dumps(applicant.experience_job_ids.read([
                 "name", "empresa", "fecha_inicio", "year_fin",
                 "tiempo_servicio", "telefonos", "ingreso_mensual",
                 "motivo_separacion", "jefe_directo", "cargo_jefe_directo",
                 "country_id", "state_id"
-            ])),
+            ]), default=str),
             # Referencias
             "references": applicant.reference_ids,
             # Catálogos para selects
