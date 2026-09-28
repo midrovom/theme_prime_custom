@@ -61,10 +61,9 @@
                                 <tr>
                                     <td><t t-esc="app.job_id.name"/></td>
                                     <td><t t-esc="app.stage_id.name"/></td>
-                                    <td><t t-esc="app.create_date"/></td>
+                                    <td><t t-esc="app.create_date.strftime('%Y-%m-%d')"/></td>
                                     <td>
-                                        <a t-att-href="'/jobs/continue/%s' % app.id"
-                                           class="btn btn-primary btn-sm">
+                                        <a t-att-href="'/jobs/continue/%s' % app.id" class="btn btn-primary btn-sm">
                                             Continuar Postulación
                                         </a>
                                     </td>
