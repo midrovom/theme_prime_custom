@@ -333,10 +333,8 @@ class WebsiteHRRecruitment(http.Controller):
             applicant_values.update({
                 'portal_user_id': request.env.user.id,  # vínculo con el usuario logueado
             })
-            
-            applicant = request.env['hr.applicant'].sudo().create(applicant_values)
 
-            #applicant = request.env['hr.applicant'].sudo().create(applicant_values)
+            applicant = request.env['hr.applicant'].sudo().create(applicant_values)
 
         except Exception:
             _logger.exception('ERROR FORM COMPLETO')
