@@ -313,9 +313,7 @@
                                             <span class="text-success">
                                                 <t t-esc="doc.filename"/>
                                             </span>
-
-                                            <a t-att-href="'/web/content/%s?download=true' % doc.id"
-                                            class="btn btn-sm btn-outline-info rounded-pill px-3 py-2">
+                                            <a t-att-href="'/web/content/%s?download=true' % doc.id" class="btn btn-sm btn-outline-info rounded-pill px-3 py-2">
                                                 Descargar
                                             </a>
                                         </div>

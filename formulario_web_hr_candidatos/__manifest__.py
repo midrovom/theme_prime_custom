@@ -33,6 +33,7 @@
     'application': False,
     'assets': {
         "web.assets_frontend":[
+            'formulario_web_hr_candidatos/static/src/css/styles_custom.css',
             "formulario_web_hr_candidatos/static/src/js/website_hr_formulario.js",
         ]
         
