@@ -54,11 +54,6 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
             </div>
         `;
 
-        const studiesLevels = await fetch("/api/study_levels").then(r => r.json());
-        const optionsStudiesLevels = studiesLevels.map(
-            studyLevel => `<option value="${studyLevel.id}" ${edu.level_id && edu.level_id[0] === studyLevel.id ? 'selected' : ''}>${studyLevel.name}</option>`
-        ).join('');
-
         const block = `
             <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-10">
@@ -89,7 +84,7 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
                         </div>
 
                         <div class="col-12 col-md-4 mb-4">
-                            <label class="fs-6">Título:</label>
+                            <label class="fs-6">Título Recibido:</label>
                             <input type="text" class="form-control rounded-pill py-2" readonly
                                 value="${edu.titulo || ''}"/>
                         </div>
@@ -234,6 +229,5 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
 
         return block;
     },
-
 
 });
