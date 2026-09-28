@@ -11,4 +11,4 @@ class WebsiteHRRecruitmentCustom(http.Controller):
         values = {
             'applications': applications,
         }
-        return request.render("custom_web_candidatos.portal_home_custom", values)
+        return request.render("custom_web_candidatos.portal_my_applications", values)
