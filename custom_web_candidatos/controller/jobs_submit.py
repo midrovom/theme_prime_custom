@@ -18,6 +18,7 @@ class WebsiteHRRecruitmentCustom(http.Controller):
         applicant = request.env['hr.applicant'].sudo().browse(applicant_id)
         if not applicant.exists() or applicant.portal_user_id.id != request.env.user.id:
             return request.not_found()
-        return request.render("custom_web_candidatos.portal_continue_application", {
+        return request.render("formulario_web_hr_candidatos.web_recruitment", {
             'applicant': applicant,
+            'job': applicant.job_id,
         })
