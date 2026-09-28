@@ -25,9 +25,9 @@
 
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
-                                <t t-call="custom_web_hr_datos_candidatos.recruitment_form_1"/>
-                                <t t-call="custom_web_hr_datos_candidatos.recruitment_form_2"/>
-                                <t t-call="custom_web_hr_datos_candidatos.recruitment_form_3"/>
+                                <t t-call="formulario_web_hr_candidatos.recruitment_form_1"/>
+                                <t t-call="formulario_web_hr_candidatos.recruitment_form_2"/>
+                                <t t-call="formulario_web_hr_candidatos.recruitment_form_3"/>
 
                                 <input type="hidden" name="jobId" t-att-value="job.id"/>
                                 <input type="hidden" name="jobName" t-att-value="job.name"/>
