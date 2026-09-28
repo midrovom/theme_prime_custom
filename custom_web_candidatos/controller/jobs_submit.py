@@ -25,15 +25,19 @@ class WebsiteHRRecruitmentCustom(http.Controller):
         if not applicant.exists() or applicant.portal_user_id.id != request.env.user.id:
             return request.not_found()
 
-        # Construimos el diccionario values con todos los campos y relaciones
+        full_name = applicant.partner_name or ""
+        parts = full_name.split()
+        lastname_paterno = parts[0] if len(parts) > 0 else ""
+        lastname_materno = parts[1] if len(parts) > 1 else ""
+        firstname = " ".join(parts[2:]) if len(parts) > 2 else ""
+
         values = {
             "applicant": applicant,
             "job": applicant.job_id,
-            # Datos básicos
-            "firstname": applicant.firstname,
-            "lastname_paterno": applicant.lastname_paterno,
-            "lastname_materno": applicant.lastname_materno,
-            "name": applicant.candidate_id.name,  # nombre completo concatenado
+            "firstname": firstname,
+            "lastname_paterno": lastname_paterno,
+            "lastname_materno": lastname_materno,
+            "name": full_name,
             "age": applicant.age,
             "email": applicant.email_from,
             "phone": applicant.partner_phone,
