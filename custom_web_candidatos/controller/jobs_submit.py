@@ -64,9 +64,13 @@ class WebsiteHRRecruitmentCustom(http.Controller):
             # Familiares
             "families": applicant.family_ids,
             # Educación
-            "educations": applicant.education_ids,
+            "educations": applicant.education_ids.read([
+                "level_id", "institucion", "inicio", "fin", "titulo"
+            ]),
             # Experiencia laboral
-            "experiences": applicant.experience_job_ids,
+            "experiences": applicant.experience_job_ids.read([
+                "empresa", "cargo", "fecha_inicio", "fecha_fin", "funciones"
+            ]),
             # Referencias
             "references": applicant.reference_ids,
             # Catálogos para selects
