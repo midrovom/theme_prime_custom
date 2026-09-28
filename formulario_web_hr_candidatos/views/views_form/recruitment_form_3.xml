@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="recruitment_form_3" name="Formulario 3">
+        <div id="form-step-3" class=" row mb-5 mt-3">
+            <div class="bg-light py-3 d-flex justify-content-start">
+                <div>
+                    <span class="fw-normal fs-4 text-info">3. Formación</span>
+                </div>
+            </div>
+
+            <div id="education_container"></div>
+            
+            <div class="col">
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="col-12 col-md-10">
+                        <div class="row">
+                            <span class="text-info fs-5" id="add-education">
+                                + añadir educación
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="total_educations" id="total_educations" value="1"/>
+
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="col-12 col-md-10">
+                        <div class="my-2 border border-1 border-gray"></div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="col-12 col-md-10">
+
+                        <div class="row d-flex align-items-start mb-4">
+
+                            <div class="col-12 col-md-4">
+                                <span class="fs-5 d-block mb-2">
+                                    ¿Estudia en la actualidad? <span class="text-danger">*</span>
+                                </span>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="studyOptions" value="t" required="required"/>
+                                    <label class="form-check-label">Sí</label>
+                                </div>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="studyOptions" value="f" required="required"/>
+                                    <label class="form-check-label">No</label>
+                                </div>
+
+                                <div class="invalid-feedback d-block">Seleccione una opción.</div>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="fs-6">Tipo de Formación (titulo a obtener): <span class="text-danger">*</span></label>
+                                <input type="text" name="titulo_por_obtener" class="form-control rounded-pill py-2" required="required"/>
+                                <div class="invalid-feedback">Campo obligatorio.</div>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="fs-6">Institución: <span class="text-danger">*</span></label>
+                                <input type="text" name="institucion_2" class="form-control rounded-pill py-2" required="required"/>
+                                <div class="invalid-feedback">Campo obligatorio.</div>
+                            </div>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <label class="fs-6">Horario: <span class="text-danger">*</span></label>
+                                <input type="text" name="horario" class="form-control rounded-pill py-2" required="required"/>
+                                <div class="invalid-feedback">Campo obligatorio.</div>
+                            </div>
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <label class="fs-6">Carrera: <span class="text-danger">*</span></label>
+                                <input type="text" name="carrera" class="form-control rounded-pill py-2" required="required"/>
+                                <div class="invalid-feedback">Campo obligatorio.</div>
+                            </div>
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <label class="fs-6">Nivel actual: <span class="text-danger">*</span></label>
+                                <input type="text" name="estado" class="form-control rounded-pill py-2" required="required"/>
+                                <div class="invalid-feedback">Campo obligatorio.</div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="bg-light py-3 d-flex justify-content-start">
+                        <div>
+                            <span class="fw-normal fs-4 text-info">4. Experiencia Laboral</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-10 d-flex justify-content-between mt-3">
+                        <div class="d-flex align-items-center">
+                            <label for="total_experiences" class="me-2 fs-6">Ingrese cantidad de empleos o experiencias laborales que ha tenido:</label>
+                                <div> 
+                                    <input type="number" id="total_experiences" name="total_experiences" class="form-control rounded-pill px-3" min="1" max="10" style="width:100px;" />
+                                </div>
+                            <div class="invalid-feedback">Campo obligatorio.</div>
+                        </div>
+
+                        <!-- <button type="button" id="add-experience" class="btn btn-outline-info rounded-pill px-4"> + Añadir experiencia </button> -->
+                    </div>
+
+                    <div id="experience_container"></div>
+
+                    <div id="experienceMessage" class="position-fixed top-50 start-50 translate-middle d-none text-center shadow-lg rounded" style="z-index:1050; min-width:320px;">
+                        <h5 class="experience-title mb-3">Aviso</h5>
+                            <p id="experienceMessageText" class="experience-text mb-3"></p>
+                            <button type="button" class="btn btn-experience" onclick="$('#experienceMessage').addClass('d-none')"> Aceptar
+                        </button>
+                    </div>
+
+                </div>
+
+                <input type="hidden" name="total_experiences" id="total_experiences" value="1"/>
+
+                <div class="row d-flex justify-content-center mb-4">
+                    <div class="col-12 col-md-10">
+                        <div class="my-2 border border-1 border-gray"></div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center mb-5">
+                    <div class="col-12 col-md-10">
+
+                        <div class="row">
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <span class="fs-5 d-block mb-2">
+                                    ¿Posee familiares o conocidos que trabajan para el grupo empresarial? <span class="text-danger">*</span>
+                                </span>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="knownPosee_1" value="t" required="required"/>
+                                    <label class="form-check-label">Sí</label>
+                                </div>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="knownPosee_1" value="f" required="required"/>
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <label class="fs-6">
+                                    Nombre completo:
+                                </label>
+                                <input type="text" name="knownNombre_1" class="form-control rounded-pill py-2"/>
+                            </div>
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <span class="fs-6 d-block mb-2">Relación:</span>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="knownRelacion_1" value="familiar"/>
+                                    <label class="form-check-label">Familiar</label>
+                                </div>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="knownRelacion_1" value="amigo"/>
+                                    <label class="form-check-label">Amigo</label>
+                                </div>
+
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="knownRelacion_1" value="conocido"/>
+                                    <label class="form-check-label">Conocido</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-4 mb-4">
+                                <label class="fs-6">
+                                    En caso de ser familiar, indique el parentesco:
+                                </label>
+                                <input type="text" name="knownParentesco_1" class="form-control rounded-pill py-2"/>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="bg-light py-3 d-flex justify-content-start">
+                    <div>
+                        <span class="fw-normal fs-4 text-info">
+                            5. Referencias Personales (Favor de NO incluir FAMILIARES)
+                        </span>
+                    </div>
+                </div>
+
+                <div id="reference_container"></div>
+
+                <div class="row d-flex justify-content-center mt-5" style="width: 100%; padding-top: 2rem;">
+                    <div class="col-12 col-md-5 mb-2 mb-md-0" style="display: flex; justify-content: center;">
+                        <button class="btn btn-info rounded-pill w-100" id="prev-button" type="button" 
+                            style="font-size: clamp(0.9rem, 2vw, 1.2rem); padding: clamp(0.5rem, 1vw, 0.8rem) clamp(1rem, 3vw, 2rem);">
+                            Anterior
+                        </button>
+                    </div>
+
+                    <div class="col-12 col-md-5 d-flex justify-content-end">
+                        <button class="btn btn-info rounded-pill w-100" id="submit-form" type="submit" 
+                            style="font-size: clamp(0.9rem, 2vw, 1.2rem);  padding: clamp(0.5rem, 1vw, 0.8rem) clamp(1rem, 3vw, 2rem);">
+                            Enviar postulación
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </template>
+</odoo>

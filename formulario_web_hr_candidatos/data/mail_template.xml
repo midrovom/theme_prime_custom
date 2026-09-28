@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="email_template_signup_code" model="mail.template">
+        <field name="name">Signup Code</field>
+        <field name="model_id" ref="base.model_res_users"/>
+        <field name="subject">Código de verificación</field>
+        <field name="email_from"></field>
+        <field name="body_html">
+            <![CDATA[
+            <p>Este es un correo de verificación para completar tu registro.</p>
+            <p>El código será insertado directamente por el controlador.</p>
+            ]]>
+        </field>
+    </record>
+</odoo>

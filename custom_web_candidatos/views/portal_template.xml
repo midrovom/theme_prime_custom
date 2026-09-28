@@ -22,7 +22,7 @@
                 </a>
             </div>
 
-            <!-- <div class="o_portal_index_card col-md-6 order-3">
+            <div class="o_portal_index_card col-md-6 order-3">
                 <a href="/my/applications" title="Historial de Postulación" class="d-flex gap-2 gap-md-3 py-3 pe-2 px-md-3 h-100 rounded text-decoration-none bg-100">
                     <div class="o_portal_icon d-block align-self-start">
                         <img src="/hr_recruitment/static/src/img/applications.svg" loading="lazy"/>
@@ -36,7 +36,7 @@
                         </div>
                     </div>
                 </a>
-            </div> -->
+            </div>
 
         </xpath>
     </template>

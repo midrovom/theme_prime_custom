@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="recruitment_form_2" name="Formulario 2">
+        <div id="form-step-2" class=" row mb-5 mt-3">
+
+            <div class="bg-light py-3 d-flex justify-content-start">
+                <div>
+                    <span class="fw-normal fs-4 text-info"> 2. Información de salud personal</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-9">
+                <div class="row d-flex justify-content-center">
+                    <div class="col-12 col-md-10 mx-auto">
+                        <div class="row g-3 justify-content-center">
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        ¿Padece actualmente alguna enfermedad persistente?
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="enfermedad_persistente" id="enfermedad_persistente_si" value="si"/>
+                                            <label class="form-check-label" for="enfermedad_persistente_si">Sí</label>
+                                        </div>
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="enfermedad_persistente" id="enfermedad_persistente_no" value="no"/>
+                                            <label class="form-check-label" for="enfermedad_persistente_no">No</label>
+                                        </div>
+                                        <input type="text" name="detalle_enfermedad_persistente" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Especifique la enfermedad"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        ¿Toma actualmente alguna medicación de uso continuo?
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="medicacion_continua" id="medicacion_continua_si" value="si"/>
+                                            <label class="form-check-label" for="medicacion_continua_si">Sí</label>
+                                        </div>
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="medicacion_continua" id="medicacion_continua_no" value="no"/>
+                                            <label class="form-check-label" for="medicacion_continua_no">No</label>
+                                        </div>
+                                        <input type="text" name="detalle_medicacion_continua" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Detalle la medicación"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        ¿Padece o ha padecido alguna enfermedad laboral?
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="enfermedad_laboral" id="enfermedad_laboral_si" value="si"/>
+                                            <label class="form-check-label" for="enfermedad_laboral_si">Sí</label>
+                                        </div>
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="enfermedad_laboral" id="enfermedad_laboral_no" value="no"/>
+                                            <label class="form-check-label" for="enfermedad_laboral_no">No</label>
+                                        </div>
+                                        <input type="text" name="detalle_enfermedad_laboral" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Especifique la enfermedad"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        ¿Ha sido sometido a alguna cirugía?
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="cirugia_realizada" id="cirugia_realizada_si" value="si"/>
+                                            <label class="form-check-label" for="cirugia_realizada_si">Sí</label>
+                                        </div>
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="cirugia_realizada" id="cirugia_realizada_no" value="no"/>
+                                            <label class="form-check-label" for="cirugia_realizada_no">No</label>
+                                        </div>
+                                        <input type="text" name="detalle_cirugia_realizada" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Detalle"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        ¿Tiene usted alguna discapacidad?
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="discapacidad" id="discapacidad_si" value="si"/>
+                                            <label class="form-check-label" for="discapacidad_si">Sí</label>
+                                        </div>
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="radio" name="discapacidad" id="discapacidad_no" value="no"/>
+                                            <label class="form-check-label" for="discapacidad_no">No</label>
+                                        </div>
+                                        <input type="text" name="tipo_discapacidad" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Tipo de discapacidad"/>
+                                        <input type="text" name="porcentaje_discapacidad" class="form-control rounded-pill py-2 ms-3 flex-grow-1" placeholder="Porcentaje"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-4">
+                                <div>
+                                    <label class="fs-6">
+                                        Tipo de sangre
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" name="tipo_sangre" class="form-control rounded-pill py-2" placeholder="Ejemplo: O+, A-, B+"/>
+                                    <div class="invalid-feedback">Campo obligatorio.</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center my-4">
+                    <div class="col-12 col-md-10">
+                        <div class="py-3 d-flex justify-content-start mb-3">
+                            <span class="fw-normal fs-4 text-info">Datos Familiares</span>
+                        </div>
+
+                        <div class="d-flex align-items-center">
+                            <label for="famNumHermanos" class="me-2 fs-6 mt-2">Numero de Hermanos:</label> 
+                                <div> <input type="number" id="famNumHermanos" class="form-control rounded-pill px-3" min="1" max="10" style="width:100px;" /> 
+                                <div class="invalid-feedback">Campo obligatorio.</div> 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row d-flex justify-content-center my-4">
+                    <div class="col-12 col-md-10 d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="1" disabled="disabled">Padre</button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="2" disabled="disabled">Madre</button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="3" disabled="disabled">Hermano(a)</button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="4" disabled="disabled">Conyugue</button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 family-btn" data-type="5" disabled="disabled">Hijo(a)</button>
+                    </div>
+                </div>
+
+                <div id="family_container"></div>
+
+                <div id="familyMessage" class="position-fixed top-50 start-50 translate-middle alert alert-warning d-none text-center shadow-lg rounded" style="z-index:1050; min-width:300px;">
+                    <span id="familyMessageText"></span>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="$('#familyMessage').addClass('d-none')">
+                            Aceptar
+                        </button>
+                    </div>
+                </div>
+
+            </div> 
+
+            <div class="row d-flex justify-content-center mt-2" style="width: 100%;">
+                <div class="col-12 col-md-5 mb-2 mb-md-0" style="display: flex; justify-content: center;">
+                    <button class="btn btn-info rounded-pill px-5 py-2 w-100" id="prev-button-2" type="button" style="font-size: clamp(0.9rem, 2vw, 1.2rem); padding: clamp(0.5rem, 1vw, 0.8rem) clamp(1rem, 3vw, 2rem);">
+                        Anterior
+                    </button>
+                </div>
+                <div class="col-12 col-md-5 d-flex justify-content-end">
+                    <button class="btn btn-info rounded-pill px-5 py-2 w-100" id="next-button-step2" type="button" style="font-size: clamp(0.9rem, 2vw, 1.2rem);  padding: clamp(0.5rem, 1vw, 0.8rem) clamp(1rem, 3vw, 2rem);">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </template>
+
+</odoo>

@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<odoo>
+    <data>
+
+        <record model="ir.ui.view" id="applicant_family_list">
+            <field name="name">applicant.family.list</field>
+            <field name="model">applicant.family</field>
+            <field name="arch" type="xml">
+                <list string="Familiares">
+                    <field name="familiar_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="fallecido" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="document_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="filename" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="document_file" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="birthdate" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="phone" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="occupation" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="economically_dependent" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="disability" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="disability_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                    <field name="disability_percentage" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                </list>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="applicant_family_form">
+            <field name="name">applicant.family.form</field>
+            <field name="model">applicant.family</field>
+            <field name="arch" type="xml">
+                <form string="Familiar">
+                    <sheet>
+                        <group>
+                            <field name="applicant_id"/>
+                        </group>
+
+                        <group string="Información personal">
+                            <field name="fallecido" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="familiar_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1">
+                            <field name="name" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="document_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="cedula" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="filename" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="document_file" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="birthdate" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="phone" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="occupation" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="economically_dependent" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="disability" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="disability_type" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                            <field name="disability_percentage" groups="custom_web_hr_datos_candidatos.group_applicant_readonly" readonly="1"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="applicant_family_action" model="ir.actions.act_window">
+            <field name="name">Familiares</field>
+            <field name="res_model">applicant.family</field>
+            <field name="view_mode">list,form</field>
+            <field name="view_id" ref="applicant_family_list"/>
+        </record>
+
+    </data>
+</odoo>
