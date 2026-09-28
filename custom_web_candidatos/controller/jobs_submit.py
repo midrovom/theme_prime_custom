@@ -33,6 +33,7 @@ class WebsiteHRRecruitmentCustom(http.Controller):
             "firstname": applicant.firstname,
             "lastname_paterno": applicant.lastname_paterno,
             "lastname_materno": applicant.lastname_materno,
+            "name": applicant.candidate_id.name,  # nombre completo concatenado
             "age": applicant.age,
             "email": applicant.email_from,
             "phone": applicant.partner_phone,
