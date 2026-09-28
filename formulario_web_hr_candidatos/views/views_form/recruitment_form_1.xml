@@ -31,9 +31,8 @@
                 <!-- Apellido Paterno -->
                 <div class="col-12 col-md-3 mb-4">
                     <label for="hr-lastname-paterno" class="fs-6">Apellido Paterno: <span class="text-danger">*</span></label>
-                    <input type="text" name="lastname_paterno" id="hr-lastname-paterno"
-                           class="form-control rounded-pill py-2"
-                           t-att-value="lastname_paterno" required=""/>
+                    <input type="text" name="lastname_paterno" id="hr-lastname-paterno" class="form-control rounded-pill py-2"
+                           t-att-value="lastname_paterno" required="" readonly="readonly"/>
                 </div>
 
                 <!-- Apellido Materno -->
@@ -41,23 +40,21 @@
                     <label for="hr-lastname-materno" class="fs-6">Apellido Materno: <span class="text-danger">*</span></label>
                     <input type="text" name="lastname_materno" id="hr-lastname-materno"
                            class="form-control rounded-pill py-2"
-                           t-att-value="lastname_materno" required=""/>
+                           t-att-value="lastname_materno" required="" readonly="readonly"/>
                 </div>
 
                 <!-- Nombres -->
                 <div class="col-12 col-md-3 mb-4">
                     <label for="hr-name" class="fs-6">Nombre(s): <span class="text-danger">*</span></label>
-                    <input type="text" name="firstname" id="hr-name"
-                           class="form-control rounded-pill py-2"
-                           t-att-value="firstname" required=""/>
+                    <input type="text" name="firstname" id="hr-name" class="form-control rounded-pill py-2"
+                           t-att-value="firstname" required="" readonly="readonly"/>
                 </div>
 
                 <!-- Edad -->
                 <div class="col-12 col-md-3 mb-4">
                     <label for="hr-age" class="fs-6">Edad: <span class="text-danger">*</span></label>
-                    <input type="number" name="age" id="hr-age"
-                           class="form-control rounded-pill py-2"
-                           t-att-value="age" min="18" required=""/>
+                    <input type="number" name="age" id="hr-age" class="form-control rounded-pill py-2"
+                           t-att-value="age" min="18" required="" readonly="readonly"/>
                 </div>
             </div>
 
@@ -65,24 +62,22 @@
             <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-4 mb-4">
                     <label for="hr-address" class="fs-6">Dirección de domicilio: <span class="text-danger">*</span></label>
-                    <input type="text" name="address" id="hr-address"
-                           class="form-control rounded-pill py-2"
-                           t-att-value="address" required=""/>
+                    <input type="text" name="address" id="hr-address" class="form-control rounded-pill py-2"
+                           t-att-value="address" required="" readonly="readonly"/>
                 </div>
 
                 <!-- Parroquia -->
                 <div class="col-12 col-md-4 mb-4">
                     <label for="hr-parish" class="fs-6">Parroquia: <span class="text-danger">*</span></label>
-                    <input type="text" name="parish" id="hr-parish"
-                           class="form-control rounded-pill py-2"
-                           t-att-value="parish" required=""/>
+                    <input type="text" name="parish" id="hr-parish" class="form-control rounded-pill py-2"
+                           t-att-value="parish" required="" readonly="readonly"/>
                 </div>
 
                 <!-- Fecha de nacimiento -->
                 <div class="col-12 col-md-4 mb-4">
                     <label class="fs-6">Fecha de nacimiento: <span class="text-danger">*</span></label>
                     <div class="d-flex">
-                        <select id="hr-day" name="diaNacimiento" class="form-select rounded-pill py-2" required="required">
+                        <select id="hr-day" name="diaNacimiento" class="form-select rounded-pill py-2" required="required" readonly="readonly">
                             <option>Dia</option>
                             <t t-foreach="days" t-as="day">
                                 <option t-att-value="day"
@@ -91,7 +86,7 @@
                                 </option>
                             </t>
                         </select>
-                        <select id="hr-month" name="mesNacimiento" class="form-select rounded-pill py-2 mx-2" required="required">
+                        <select id="hr-month" name="mesNacimiento" class="form-select rounded-pill py-2 mx-2" required="required" readonly="readonly">
                             <option>Mes</option>
                             <t t-foreach="months" t-as="month">
                                 <option t-att-value="month[0]"
@@ -100,7 +95,7 @@
                                 </option>
                             </t>
                         </select>
-                        <select id="hr-year" name="anioNacimiento" class="form-select rounded-pill py-2" required="required">
+                        <select id="hr-year" name="anioNacimiento" class="form-select rounded-pill py-2" required="required" readonly="readonly">
                             <option>Año</option>
                             <t t-foreach="years" t-as="year">
                                 <option t-att-value="year"
@@ -118,7 +113,7 @@
                 <div class="col-12 col-md-3 mb-4">
                     <div>
                         <label for="hr-country" class="fs-6">Lugar de nacimiento (país): <span class="text-danger">*</span></label>
-                        <select id="hr-country" name="birthCountry" class="form-select rounded-pill py-2" required="required">
+                        <select id="hr-country" name="birthCountry" class="form-select rounded-pill py-2" required="required" readonly="readonly">
                             <option value=""></option>
                             <t t-foreach="countries" t-as="country">
                                 <option t-att-value="country.id" t-att-selected="country.id == birth_country_id and 'selected' or None">
@@ -132,7 +127,7 @@
                 <div class="col-12 col-md-3 mb-4">
                     <div>
                         <label for="hr-provincia" class="fs-6">Provincia: <span class="text-danger">*</span></label>
-                        <select id="hr-provincia" name="provincia" class="form-select rounded-pill py-2" required="required">
+                        <select id="hr-provincia" name="provincia" class="form-select rounded-pill py-2" required="required" readonly="readonly">
                             <option></option>
                             <t t-foreach="country_states" t-as="country_state">
                                 <option t-att-value="country_state.id" t-att-selected="country_state.id == provincia_id and 'selected' or None" t-att-data-country="country_state.country_id.id">
@@ -146,14 +141,14 @@
                 <div class="col-12 col-md-3 mb-4">
                     <div>
                         <label for="hr-phone" class="fs-6">Teléfono:</label>
-                        <input type="text" name="phone" id="hr-phone" class="form-control rounded-pill py-2" t-att-value="phone"/>
+                        <input type="text" name="phone" id="hr-phone" class="form-control rounded-pill py-2" t-att-value="phone" readonly="readonly"/>
                     </div>
                 </div>
 
                 <div class="col-12 col-md-3 mb-4">
                     <div>
                         <label for="hr-cellphone" class="fs-6">Celular: <span class="text-danger">*</span></label>
-                        <input type="text" name="cellphone" id="hr-cellphone" class="form-control rounded-pill py-2" t-att-value="cellphone" required=""/>
+                        <input type="text" name="cellphone" id="hr-cellphone" class="form-control rounded-pill py-2" t-att-value="cellphone" required="" readonly="readonly"/>
                     </div>
                 </div>
             </div>
@@ -163,27 +158,27 @@
                     <label class="fs-6">Vive con: <span class="text-danger">*</span></label>
                     <div class="d-flex flex-wrap">
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConPadres" value="padres" t-att-checked="vive_con == 'padres' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConPadres" value="padres" t-att-checked="vive_con == 'padres' and 'checked' or None" readonly="readonly"/>
                             <label class="form-check-label" for="viveConPadres">Padres</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConFamilia" value="familia" t-att-checked="vive_con == 'familia' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConFamilia" value="familia" t-att-checked="vive_con == 'familia' and 'checked' or None" readonly="readonly"/>
                             <label class="form-check-label" for="viveConFamilia">Familia</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConParientes" value="parientes" t-att-checked="vive_con == 'parientes' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConParientes" value="parientes" t-att-checked="vive_con == 'parientes' and 'checked' or None" readonly="readonly"/>
                             <label class="form-check-label" for="viveConParientes">Parientes</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConConyuge" value="conyuge" t-att-checked="vive_con == 'conyuge' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConConyuge" value="conyuge" t-att-checked="vive_con == 'conyuge' and 'checked' or None" readonly="readonly"/>
                             <label class="form-check-label" for="viveConConyuge">Cónyuge</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConSolo" value="solo" t-att-checked="vive_con == 'solo' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConSolo" value="solo" t-att-checked="vive_con == 'solo' and 'checked' or None" readonly="readonly"/>
                             <label class="form-check-label" for="viveConSolo">Solo</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConOtro" value="otro" t-att-checked="vive_con == 'otro' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConOtro" value="otro" t-att-checked="vive_con == 'otro' and 'checked' or None" readonly="readonly"/>
                             <label class="form-check-label" for="viveConOtro">Otro</label>
                         </div>
                     </div>
@@ -193,11 +188,11 @@
                     <label class="fs-6">Tipo de vivienda: <span class="text-danger">*</span></label>
                     <div class="d-flex">
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="tipoVivienda" id="viviendaPropia" value="propia" t-att-checked="tipo_vivienda == 'propia' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="tipoVivienda" id="viviendaPropia" value="propia" t-att-checked="tipo_vivienda == 'propia' and 'checked' or None" readonly="readonly"/>
                             <label class="form-check-label" for="viviendaPropia">Propia</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="tipoVivienda" id="viviendaArrendada" value="arrendada" t-att-checked="tipo_vivienda == 'arrendada' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="tipoVivienda" id="viviendaArrendada" value="arrendada" t-att-checked="tipo_vivienda == 'arrendada' and 'checked' or None" readonly="readonly"/>
                             <label class="form-check-label" for="viviendaArrendada">Arrendada</label>
                         </div>
                     </div>
@@ -205,7 +200,7 @@
 
                 <div class="col-12 col-md-3 mb-4">
                     <label for="hr-hijos" class="fs-6">Número de hijos: <span class="text-danger">*</span></label>
-                    <input type="number" name="numHijos" id="hr-hijos" class="form-control rounded-pill py-2 w-75" t-att-value="num_hijos" min="0" required="required"/>
+                    <input type="number" name="numHijos" id="hr-hijos" class="form-control rounded-pill py-2 w-75" t-att-value="num_hijos" min="0" required="required" readonly="readonly"/>
                 </div>
             </div>
 
@@ -216,19 +211,19 @@
                         <label class="fs-6">Personas que dependen de usted: </label>
                         <div class="d-flex flex-wrap">
                             <div class="form-check me-3">
-                                <input class="form-check-input" type="checkbox" name="dependientes" id="depHijos" value="hijos" t-att-checked="'hijos' in (dependientes or '') and 'checked' or None"/>
+                                <input class="form-check-input" type="checkbox" name="dependientes" id="depHijos" value="hijos" t-att-checked="'hijos' in (dependientes or '') and 'checked' or None" readonly="readonly"/>
                                 <label class="form-check-label" for="depHijos">Hijos</label>
                             </div>
                             <div class="form-check me-3">
-                                <input class="form-check-input" type="checkbox" name="dependientes" id="depConyuge" value="conyuge" t-att-checked="'conyuge' in (dependientes or '') and 'checked' or None"/>
+                                <input class="form-check-input" type="checkbox" name="dependientes" id="depConyuge" value="conyuge" t-att-checked="'conyuge' in (dependientes or '') and 'checked' or None" readonly="readonly"/>
                                 <label class="form-check-label" for="depConyuge">Cónyuge</label>
                             </div>
                             <div class="form-check me-3">
-                                <input class="form-check-input" type="checkbox" name="dependientes" id="depPadres" value="padres" t-att-checked="'padres' in (dependientes or '') and 'checked' or None"/>
+                                <input class="form-check-input" type="checkbox" name="dependientes" id="depPadres" value="padres" t-att-checked="'padres' in (dependientes or '') and 'checked' or None" readonly="readonly"/>
                                 <label class="form-check-label" for="depPadres">Padres</label>
                             </div>
                             <div class="form-check me-3">
-                                <input class="form-check-input" type="checkbox" name="dependientes" id="depOtros" value="otros" t-att-checked="'otros' in (dependientes or '') and 'checked' or None"/>
+                                <input class="form-check-input" type="checkbox" name="dependientes" id="depOtros" value="otros" t-att-checked="'otros' in (dependientes or '') and 'checked' or None" readonly="readonly"/>
                                 <label class="form-check-label" for="depOtros">Otros</label>
                             </div>
                         </div>
@@ -237,7 +232,7 @@
 
                 <div class="col-12 col-md-4 mb-4">
                     <label for="hr-email" class="fs-6">Email: <span class="text-danger">*</span></label>
-                    <input type="text" name="email" id="hr-email" class="form-control rounded-pill py-2" t-att-value="email" required=""/>
+                    <input type="text" name="email" id="hr-email" class="form-control rounded-pill py-2" t-att-value="email" required="" readonly="readonly"/>
                 </div>
             </div>
 
@@ -245,7 +240,7 @@
             <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-4 mb-4">
                     <label for="hr-type-doc" class="fs-6">Tipo de documento: <span class="text-danger">*</span></label>
-                    <select id="hr-type-doc" name="documentType" class="form-select rounded-pill py-2" required="required">
+                    <select id="hr-type-doc" name="documentType" class="form-select rounded-pill py-2" required="required" readonly="readonly">
                         <t t-foreach="document_types" t-as="document_type">
                             <option t-att-value="document_type[0]"
                                     t-att-selected="document_type[0] == document_type and 'selected' or None">
@@ -257,19 +252,17 @@
 
                 <div class="col-12 col-md-4 mb-4">
                     <label for="hr-number-doc" class="fs-6">Número de documento: <span class="text-danger">*</span></label>
-                    <input type="text" name="documentNumber" id="hr-number-doc"
-                        class="form-control rounded-pill py-2"
-                        t-att-value="cedula" required="required"/>
+                    <input type="text" name="documentNumber" id="hr-number-doc" class="form-control rounded-pill py-2"
+                        t-att-value="cedula" required="required" readonly="readonly"/>
                     <div class="invalid-feedback" id="doc-error"></div>
                 </div>
 
                 <div class="col-12 col-md-4 mb-4">
                     <label for="hr-nationality" class="fs-6">Nacionalidad: <span class="text-danger">*</span></label>
-                    <input type="text" name="nationality" id="hr-nationality"
-                        class="form-control rounded-pill py-2"
-                        t-att-value="nacionality" required="required"/>
-                    <div class="invalid-feedback">Campo obligatorio.</div>
-                </div>
+                        <input type="text" name="nationality" id="hr-nationality" class="form-control rounded-pill py-2"
+                            t-att-value="nacionality" required="required" readonly="readonly"/>
+                        <div class="invalid-feedback">Campo obligatorio.</div>
+                    </div>
                 </div>
 
                 <!-- Estado civil -->
@@ -279,27 +272,27 @@
                         <div class="d-flex flex-wrap">
                             <div class="form-check me-3">
                                 <input class="form-check-input" type="radio" name="estadoCivil" id="civilSoltero" value="soltero"
-                                    t-att-checked="estado_civil == 'soltero' and 'checked' or None" required="required"/>
+                                    t-att-checked="estado_civil == 'soltero' and 'checked' or None" required="required" readonly="readonly"/>
                                 <label class="form-check-label" for="civilSoltero">Soltero</label>
                             </div>
                             <div class="form-check me-3">
                                 <input class="form-check-input" type="radio" name="estadoCivil" id="civilCasado" value="casado"
-                                    t-att-checked="estado_civil == 'casado' and 'checked' or None"/>
+                                    t-att-checked="estado_civil == 'casado' and 'checked' or None" readonly="readonly"/>
                                 <label class="form-check-label" for="civilCasado">Casado</label>
                             </div>
                             <div class="form-check me-3">
                                 <input class="form-check-input" type="radio" name="estadoCivil" id="civilDivorciado" value="divorciado"
-                                    t-att-checked="estado_civil == 'divorciado' and 'checked' or None"/>
+                                    t-att-checked="estado_civil == 'divorciado' and 'checked' or None" readonly="readonly"/>
                                 <label class="form-check-label" for="civilDivorciado">Divorciado</label>
                             </div>
                             <div class="form-check me-3">
                                 <input class="form-check-input" type="radio" name="estadoCivil" id="civilUnionLibre" value="union_libre"
-                                    t-att-checked="estado_civil == 'union_libre' and 'checked' or None"/>
+                                    t-att-checked="estado_civil == 'union_libre' and 'checked' or None" readonly="readonly"/>
                                 <label class="form-check-label" for="civilUnionLibre">Unión libre</label>
                             </div>
                             <div class="form-check me-3">
                                 <input class="form-check-input" type="radio" name="estadoCivil" id="civilOtro" value="otro"
-                                    t-att-checked="estado_civil == 'otro' and 'checked' or None"/>
+                                    t-att-checked="estado_civil == 'otro' and 'checked' or None" readonly="readonly"/>
                                 <label class="form-check-label" for="civilOtro">Otro</label>
                             </div>
                         </div>
@@ -310,10 +303,9 @@
                     <div class="col-12 col-md-6 mb-4">
                         <div class="row">
                             <span class="fs-6"> Adjuntar CV y Cédula: </span>
-                            <div class="my-2 border border-1 border-gray"></div>
-                            <input class="d-none" id="curriculum-vitae" name="curriculumVitae" type="file"
-                                accept="application/pdf,.pdf" multiple="multiple"/>
-                            <label for="curriculum-vitae" class="text-info custom_vitae fs-5"> + adjuntar archivo formato PDF </label>
+                                <div class="my-2 border border-1 border-gray"></div>
+                                    <input class="d-none" id="curriculum-vitae" name="curriculumVitae" type="file" accept="application/pdf,.pdf" multiple="multiple" readonly="readonly"/>
+                                <label for="curriculum-vitae" class="text-info custom_vitae fs-5"> + adjuntar archivo formato PDF </label>
                             <div id="file-selected-message" class="text-success custom-message fs-5 mt-2 ms-2"></div>
 
                             <!-- Mostrar documentos ya cargados -->
