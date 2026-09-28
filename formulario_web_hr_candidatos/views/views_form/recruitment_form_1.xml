@@ -113,160 +113,131 @@
                 </div>
             </div>
 
-            <!-- Lugar de nacimiento y provincia -->
+            <!-- Lugar de nacimiento, provincia, teléfono y celular -->
             <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-3 mb-4">
-                    <label for="hr-country" class="fs-6">Lugar de nacimiento (país): <span class="text-danger">*</span></label>
-                    <select id="hr-country" name="birthCountry" class="form-select rounded-pill py-2" required="required">
-                        <option value=""></option>
-                        <t t-foreach="countries" t-as="country">
-                            <option t-att-value="country.id"
-                                    t-att-selected="country.id == birth_country_id and 'selected' or None">
-                                <t t-esc="country.name"/>
-                            </option>
-                        </t>
-                    </select>
+                    <div>
+                        <label for="hr-country" class="fs-6">Lugar de nacimiento (país): <span class="text-danger">*</span></label>
+                        <select id="hr-country" name="birthCountry" class="form-select rounded-pill py-2" required="required">
+                            <option value=""></option>
+                            <t t-foreach="countries" t-as="country">
+                                <option t-att-value="country.id" t-att-selected="country.id == birth_country_id and 'selected' or None">
+                                    <t t-esc="country.name"/>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="col-12 col-md-3 mb-4">
-                    <label for="hr-provincia" class="fs-6">Provincia: <span class="text-danger">*</span></label>
-                    <select id="hr-provincia" name="provincia" class="form-select rounded-pill py-2" required="required">
-                        <option></option>
-                        <t t-foreach="country_states" t-as="country_state">
-                            <option t-att-value="country_state.id"
-                                    t-att-selected="country_state.id == provincia_id and 'selected' or None"
-                                    t-att-data-country="country_state.country_id.id">
-                                <t t-esc="country_state.name"/>
-                            </option>
-                        </t>
-                    </select>
+                    <div>
+                        <label for="hr-provincia" class="fs-6">Provincia: <span class="text-danger">*</span></label>
+                        <select id="hr-provincia" name="provincia" class="form-select rounded-pill py-2" required="required">
+                            <option></option>
+                            <t t-foreach="country_states" t-as="country_state">
+                                <option t-att-value="country_state.id" t-att-selected="country_state.id == provincia_id and 'selected' or None" t-att-data-country="country_state.country_id.id">
+                                    <t t-esc="country_state.name"/>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3 mb-4">
+                    <div>
+                        <label for="hr-phone" class="fs-6">Teléfono:</label>
+                        <input type="text" name="phone" id="hr-phone" class="form-control rounded-pill py-2" t-att-value="phone"/>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3 mb-4">
+                    <div>
+                        <label for="hr-cellphone" class="fs-6">Celular: <span class="text-danger">*</span></label>
+                        <input type="text" name="cellphone" id="hr-cellphone" class="form-control rounded-pill py-2" t-att-value="cellphone" required=""/>
+                    </div>
                 </div>
             </div>
 
-            <!-- Teléfono y Celular -->
-            <div class="row d-flex justify-content-center">
-                <div class="col-12 col-md-3 mb-4">
-                    <label for="hr-phone" class="fs-6">Teléfono:</label>
-                    <input type="text" name="phone" id="hr-phone"
-                           class="form-control rounded-pill py-2"
-                           t-att-value="phone"/>
-                </div>
-
-                <div class="col-12 col-md-3 mb-4">
-                    <label for="hr-cellphone" class="fs-6">Celular: <span class="text-danger">*</span></label>
-                    <input type="text" name="cellphone" id="hr-cellphone"
-                           class="form-control rounded-pill py-2"
-                           t-att-value="cellphone" required=""/>
-                </div>
-            </div>
-
-            <!-- Vive con -->
             <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-5 mb-4">
                     <label class="fs-6">Vive con: <span class="text-danger">*</span></label>
                     <div class="d-flex flex-wrap">
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConPadres" value="padres"
-                                t-att-checked="vive_con == 'padres' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConPadres" value="padres" t-att-checked="vive_con == 'padres' and 'checked' or None"/>
                             <label class="form-check-label" for="viveConPadres">Padres</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConFamilia" value="familia"
-                                t-att-checked="vive_con == 'familia' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConFamilia" value="familia" t-att-checked="vive_con == 'familia' and 'checked' or None"/>
                             <label class="form-check-label" for="viveConFamilia">Familia</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConParientes" value="parientes"
-                                t-att-checked="vive_con == 'parientes' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConParientes" value="parientes" t-att-checked="vive_con == 'parientes' and 'checked' or None"/>
                             <label class="form-check-label" for="viveConParientes">Parientes</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConConyuge" value="conyuge"
-                                t-att-checked="vive_con == 'conyuge' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConConyuge" value="conyuge" t-att-checked="vive_con == 'conyuge' and 'checked' or None"/>
                             <label class="form-check-label" for="viveConConyuge">Cónyuge</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConSolo" value="solo"
-                                t-att-checked="vive_con == 'solo' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConSolo" value="solo" t-att-checked="vive_con == 'solo' and 'checked' or None"/>
                             <label class="form-check-label" for="viveConSolo">Solo</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="viveCon" id="viveConOtro" value="otro"
-                                t-att-checked="vive_con == 'otro' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="viveCon" id="viveConOtro" value="otro" t-att-checked="vive_con == 'otro' and 'checked' or None"/>
                             <label class="form-check-label" for="viveConOtro">Otro</label>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Tipo de vivienda -->
-            <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-4 mb-4">
                     <label class="fs-6">Tipo de vivienda: <span class="text-danger">*</span></label>
                     <div class="d-flex">
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="tipoVivienda" id="viviendaPropia" value="propia"
-                                t-att-checked="tipo_vivienda == 'propia' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="tipoVivienda" id="viviendaPropia" value="propia" t-att-checked="tipo_vivienda == 'propia' and 'checked' or None"/>
                             <label class="form-check-label" for="viviendaPropia">Propia</label>
                         </div>
                         <div class="form-check me-2">
-                            <input class="form-check-input" type="radio" name="tipoVivienda" id="viviendaArrendada" value="arrendada"
-                                t-att-checked="tipo_vivienda == 'arrendada' and 'checked' or None"/>
+                            <input class="form-check-input" type="radio" name="tipoVivienda" id="viviendaArrendada" value="arrendada" t-att-checked="tipo_vivienda == 'arrendada' and 'checked' or None"/>
                             <label class="form-check-label" for="viviendaArrendada">Arrendada</label>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Número de hijos -->
-            <div class="row d-flex justify-content-center">
                 <div class="col-12 col-md-3 mb-4">
                     <label for="hr-hijos" class="fs-6">Número de hijos: <span class="text-danger">*</span></label>
-                    <input type="number" name="numHijos" id="hr-hijos"
-                        class="form-control rounded-pill py-2 w-75"
-                        t-att-value="num_hijos" min="0" required="required"/>
+                    <input type="number" name="numHijos" id="hr-hijos" class="form-control rounded-pill py-2 w-75" t-att-value="num_hijos" min="0" required="required"/>
                 </div>
             </div>
 
-            <!-- Dependientes -->
+            <!-- Dependientes, email -->
             <div class="row d-flex justify-content-start">
                 <div class="col-12 col-md-4 mb-4">
                     <div id="dependientes-group">
                         <label class="fs-6">Personas que dependen de usted: </label>
                         <div class="d-flex flex-wrap">
                             <div class="form-check me-3">
-                                <input class="form-check-input" type="checkbox" name="dependientes" id="depHijos" value="hijos"
-                                    t-att-checked="'hijos' in (dependientes or '') and 'checked' or None"/>
+                                <input class="form-check-input" type="checkbox" name="dependientes" id="depHijos" value="hijos" t-att-checked="'hijos' in (dependientes or '') and 'checked' or None"/>
                                 <label class="form-check-label" for="depHijos">Hijos</label>
                             </div>
                             <div class="form-check me-3">
-                                <input class="form-check-input" type="checkbox" name="dependientes" id="depConyuge" value="conyuge"
-                                    t-att-checked="'conyuge' in (dependientes or '') and 'checked' or None"/>
+                                <input class="form-check-input" type="checkbox" name="dependientes" id="depConyuge" value="conyuge" t-att-checked="'conyuge' in (dependientes or '') and 'checked' or None"/>
                                 <label class="form-check-label" for="depConyuge">Cónyuge</label>
                             </div>
                             <div class="form-check me-3">
-                                <input class="form-check-input" type="checkbox" name="dependientes" id="depPadres" value="padres"
-                                    t-att-checked="'padres' in (dependientes or '') and 'checked' or None"/>
+                                <input class="form-check-input" type="checkbox" name="dependientes" id="depPadres" value="padres" t-att-checked="'padres' in (dependientes or '') and 'checked' or None"/>
                                 <label class="form-check-label" for="depPadres">Padres</label>
                             </div>
                             <div class="form-check me-3">
-                                <input class="form-check-input" type="checkbox" name="dependientes" id="depOtros" value="otros"
-                                    t-att-checked="'otros' in (dependientes or '') and 'checked' or None"/>
+                                <input class="form-check-input" type="checkbox" name="dependientes" id="depOtros" value="otros" t-att-checked="'otros' in (dependientes or '') and 'checked' or None"/>
                                 <label class="form-check-label" for="depOtros">Otros</label>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-
-            <!-- Email -->
-            <div class="row d-flex justify-content-start">
                 <div class="col-12 col-md-4 mb-4">
                     <label for="hr-email" class="fs-6">Email: <span class="text-danger">*</span></label>
-                    <input type="text" name="email" id="hr-email"
-                           class="form-control rounded-pill py-2"
-                           t-att-value="email" required=""/>
+                    <input type="text" name="email" id="hr-email" class="form-control rounded-pill py-2" t-att-value="email" required=""/>
                 </div>
             </div>
 
