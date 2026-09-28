@@ -1,5 +1,6 @@
 from odoo import http, _
 from odoo.http import request
+import json
 
 import base64
 import logging
@@ -64,18 +65,18 @@ class WebsiteHRRecruitmentCustom(http.Controller):
             # Familiares
             "families": applicant.family_ids,
             # Educación
-            "educations": applicant.education_ids.read([
+            "educations": json.dumps(applicant.education_ids.read([
                 "level_id", "institucion", "fecha_inicio", "year_fin", "titulo",
                 "titulo_por_obtener", "institucion_2", "carrera", "horario", "estado", "study_current",
                 "country_id", "state_id"
-            ]),
-            # Experiencia laboral 
-            "experiences": applicant.experience_job_ids.read([
+            ])),
+            # Experiencia laboral
+            "experiences": json.dumps(applicant.experience_job_ids.read([
                 "name", "empresa", "fecha_inicio", "year_fin",
                 "tiempo_servicio", "telefonos", "ingreso_mensual",
                 "motivo_separacion", "jefe_directo", "cargo_jefe_directo",
                 "country_id", "state_id"
-            ]),
+            ])),
             # Referencias
             "references": applicant.reference_ids,
             # Catálogos para selects
