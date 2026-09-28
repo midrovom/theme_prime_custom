@@ -2,7 +2,7 @@
 <odoo>
 
     <template id="recruitment_form_2" name="Formulario 2">
-        <div id="form-step-2" class=" d-none row mb-5 mt-3">
+        <div id="form-step-2" class=" row mb-5 mt-3">
 
             <div class="bg-light py-3 d-flex justify-content-start">
                 <div>
