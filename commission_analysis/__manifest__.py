@@ -1,7 +1,7 @@
 {
     "name": "Análisis de Comisiones",
-    "version": "18.0.2.0.0",
-    "summary": "Compras de SIM, liquidaciones de operador, conciliación, ROI y análisis por región/zona",
+    "version": "18.0.4.0.0",
+    "summary": "Compras de SIM, conciliación, ROI, recuperación y rendimiento por región/zona",
     "category": "Sales/Commission Analysis",
     "author": "Telecity",
     "license": "LGPL-3",

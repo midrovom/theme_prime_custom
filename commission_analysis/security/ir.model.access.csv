@@ -12,6 +12,5 @@ access_commission_settlement_line,settlement line,model_commission_settlement_li
 access_commission_import_file,import file,model_commission_import_file,base.group_user,1,1,1,1
 access_commission_dashboard,dashboard,model_commission_analysis_dashboard,base.group_user,1,1,1,1
 access_commission_import_wizard,import wizard,model_commission_import_wizard,base.group_user,1,1,1,1
-
 access_commission_warehouse_mapping,warehouse mapping,model_commission_warehouse_mapping,base.group_user,1,1,1,1
 access_commission_region_analysis,region analysis,model_commission_region_analysis,base.group_user,1,0,0,0

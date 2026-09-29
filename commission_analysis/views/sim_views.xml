@@ -1,5 +1,63 @@
 <odoo>
-<record id="sim_list" model="ir.ui.view"><field name="name">commission.sim.list</field><field name="model">commission.sim</field><field name="arch" type="xml"><list><field name="icc"/><field name="purchase_date"/><field name="product"/><field name="region_id"/><field name="zone_id"/><field name="purchase_cost"/><field name="realized_commission"/><field name="expected_commission"/><field name="roi_realized"/><field name="roi_expected"/><field name="monetized"/></list></field></record>
-<record id="sim_form" model="ir.ui.view"><field name="name">commission.sim.form</field><field name="model">commission.sim</field><field name="arch" type="xml"><form><sheet><group><group><field name="icc"/><field name="operator_id"/><field name="product"/><field name="purchase_date"/><field name="invoice"/></group><group><field name="region_id"/><field name="zone_id"/><field name="warehouse"/><field name="purchase_cost"/><field name="realized_commission"/><field name="expected_commission"/><field name="roi_realized"/><field name="roi_expected"/></group></group><notebook><page string="Compras"><field name="purchase_line_ids"/></page><page string="Comisiones"><field name="commission_line_ids"/></page></notebook></sheet><chatter/></form></field></record>
-<record id="action_sim" model="ir.actions.act_window"><field name="name">SIM / ICC</field><field name="res_model">commission.sim</field><field name="view_mode">list,form,pivot,graph</field></record>
+    <record id="sim_list" model="ir.ui.view">
+        <field name="name">commission.sim.list</field>
+        <field name="model">commission.sim</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="icc"/>
+                <field name="operator_id"/>
+                <field name="purchase_date"/>
+                <field name="product"/>
+                <field name="region_id"/>
+                <field name="zone_id"/>
+                <field name="purchase_cost"/>
+                <field name="realized_commission"/>
+                <field name="expected_commission"/>
+                <field name="roi_realized"/>
+                <field name="roi_expected"/>
+                <field name="monetized"/>
+            </list>
+        </field>
+    </record>
+    <record id="sim_form" model="ir.ui.view">
+        <field name="name">commission.sim.form</field>
+        <field name="model">commission.sim</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="icc"/>
+                            <field name="icc_key" readonly="1"/>
+                            <field name="operator_id"/>
+                            <field name="product"/>
+                            <field name="purchase_date"/>
+                            <field name="invoice"/>
+                        </group>
+                        <group>
+                            <field name="region_id"/>
+                            <field name="zone_id"/>
+                            <field name="warehouse"/>
+                            <field name="purchase_cost"/>
+                            <field name="realized_commission"/>
+                            <field name="expected_commission"/>
+                            <field name="margin_realized"/>
+                            <field name="roi_realized"/>
+                            <field name="roi_expected"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Compras"><field name="purchase_line_ids"/></page>
+                        <page string="Comisiones"><field name="commission_line_ids"/></page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_sim" model="ir.actions.act_window">
+        <field name="name">SIM / ICC</field>
+        <field name="res_model">commission.sim</field>
+        <field name="view_mode">list,form</field>
+    </record>
 </odoo>
