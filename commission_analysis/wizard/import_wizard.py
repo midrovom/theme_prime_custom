@@ -264,13 +264,19 @@ class CommissionImportWizard(models.TransientModel):
                         else:
                             count = self._import_settlement(logical_source, data)
 
+                        # Compatibilidad de esquema: la trazabilidad ZIP se conserva en
+                        # el campo name, que existe desde la primera versión del módulo. Esto
+                        # evita depender de columnas añadidas posteriormente (archive_member,
+                        # archive_name, byte_size) en bases que quedaron con un esquema previo.
+                        source_display_name = payload['display_name']
+                        if payload['archive_name'] and payload['archive_member']:
+                            source_display_name = '%s :: %s' % (
+                                payload['archive_name'], payload['archive_member']
+                            )
                         import_file = ImportFile.create({
-                            'name': payload['display_name'],
+                            'name': source_display_name,
                             'sha256': sha256,
                             'attachment_id': attachment.id,
-                            'archive_name': payload['archive_name'],
-                            'archive_member': payload['archive_member'],
-                            'byte_size': len(data),
                             'purchase_batch_id': self.purchase_batch_id.id if self.import_type == 'purchase' else False,
                             'settlement_batch_id': self.settlement_batch_id.id if self.import_type == 'settlement' else False,
                             'row_count': count,

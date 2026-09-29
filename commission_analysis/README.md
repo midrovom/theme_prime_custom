@@ -171,3 +171,9 @@ Cada archivo lógico conserva SHA-256, archivo contenedor, miembro del ZIP, tama
 ### Nota sobre `navigator.clipboard.writeText`
 
 El error de JavaScript `Cannot read properties of undefined (reading 'writeText')` pertenece al botón de copiar del diálogo de errores del cliente web y no identifica la causa del fallo de importación. En navegadores modernos la API de portapapeles puede no estar disponible cuando Odoo se abre por HTTP en lugar de un contexto seguro. Para diagnosticar una importación, use el mensaje original del diálogo o el traceback del servidor, no el error generado al pulsar el botón de copiar.
+
+## Nota de compatibilidad v7
+
+La v7 elimina la dependencia de tres columnas auxiliares introducidas en versiones intermedias (`archive_name`, `archive_member`, `byte_size`). La trazabilidad de un ZIP se guarda como `ZIP :: miembro` en el nombre del archivo fuente, junto con SHA-256 y el adjunto original. Esto permite actualizar bases que hayan quedado con el esquema físico de una versión anterior sin bloquear la importación al final del proceso.
+
+**Aun así, después de reemplazar la carpeta del módulo se debe ejecutar una actualización de Odoo (`-u commission_analysis`) para cargar las vistas y metadatos de esta versión.**

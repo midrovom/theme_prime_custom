@@ -1,3 +1,10 @@
+# 18.0.7.0.0
+
+- Corrige compatibilidad con bases actualizadas desde v4/v5/v6 donde `commission_import_file` no recibió las columnas `archive_name`, `archive_member` y `byte_size`.
+- El importador ya no depende de esas columnas: conserva `ZIP :: miembro` en el campo histórico `name`, mantiene SHA-256 y adjunto original.
+- Evita el error PostgreSQL `column archive_member ... does not exist` al finalizar una carga de Compras.
+- Se mantiene la trazabilidad del archivo fuente y la transacción completa por archivo.
+
 # Changelog
 
 ## 18.0.6.0.0

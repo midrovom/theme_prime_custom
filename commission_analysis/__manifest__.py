@@ -1,6 +1,6 @@
 {
     "name": "Análisis de Comisiones",
-    "version": "18.0.6.0.0",
+    "version": "18.0.7.0.0",
     "summary": "Compras de SIM, conciliación, ROI, recuperación y rendimiento por región/zona",
     "category": "Sales/Commission Analysis",
     "author": "Telecity",

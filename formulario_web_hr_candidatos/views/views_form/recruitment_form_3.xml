@@ -108,7 +108,6 @@
                             <div class="invalid-feedback">Campo obligatorio.</div>
                         </div>
 
-                        <!-- <button type="button" id="add-experience" class="btn btn-outline-info rounded-pill px-4"> + Añadir experiencia </button> -->
                     </div>
 
                     <div id="experience_container"></div>

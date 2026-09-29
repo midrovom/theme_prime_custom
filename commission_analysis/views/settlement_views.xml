@@ -75,9 +75,6 @@
                                 <list>
                                     <field name="name"/>
                                     <field name="attachment_id" string="Archivo original" optional="show"/>
-                                    <field name="archive_name" optional="show"/>
-                                    <field name="archive_member" optional="hide"/>
-                                    <field name="byte_size" optional="hide"/>
                                     <field name="row_count"/>
                                     <field name="sha256"/>
                                     <field name="imported_at"/>
