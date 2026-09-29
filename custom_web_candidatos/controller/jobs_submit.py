@@ -48,7 +48,7 @@ class WebsiteHRRecruitmentCustom(http.Controller):
             "birth_country_id": applicant.birth_country_id.id if applicant.birth_country_id else False,
             "vive_con": applicant.vive_con,
             "tipo_vivienda": applicant.tipo_vivienda,
-            "num_hijos": applicant.num_hijos,
+            "num_hijos": str(applicant.num_hijos or 0),
             "estado_civil": applicant.estado_civil,
             "cedula": applicant.cedula,
             "birthdate": applicant.birthdate,
@@ -77,6 +77,7 @@ class WebsiteHRRecruitmentCustom(http.Controller):
                 "motivo_separacion", "jefe_directo", "cargo_jefe_directo",
                 "country_id", "state_id"
             ]), default=str),
+            "total_experiences": len(applicant.experience_job_ids),
             # Referencias
             "references": json.dumps(applicant.reference_ids.read([
                 "nombre",
