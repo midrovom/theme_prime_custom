@@ -23,7 +23,8 @@
                                   novalidate="novalidate"
                                   enctype="multipart/form-data"
                                   t-att-data-educations="educations"
-                                  t-att-data-experiences="experiences">
+                                  t-att-data-experiences="experiences"
+                                  t-att-data-references="references">
 
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 

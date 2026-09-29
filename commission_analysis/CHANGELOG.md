@@ -1,21 +1,42 @@
 # Changelog
 
+## 18.0.6.0.0
+- Corrige el `DatatypeMismatch` de PostgreSQL al recalcular liquidaciones sin regla aplicable: `scheme_line_id` se tipa explícitamente como `integer` en `execute_values`.
+- El botón **Recalcular** vuelve a vincular ICC/SIM por operador + `icc_key` antes de calcular, por lo que el orden Compras/Liquidaciones ya no deja registros permanentemente como “ICC sin compra”.
+- Al importar compras se vinculan y recalculan automáticamente liquidaciones previamente cargadas para las SIM afectadas.
+- Sincronización de Región/Zona de las liquidaciones con el maestro SIM después de aplicar mapeos.
+- Versiones de esquemas cerradas siguen participando en recalculaciones históricas dentro de su vigencia; cerrar una versión exige `Fecha hasta`.
+- Reglas y campos críticos de una versión activa/cerrada quedan bloqueados; los cambios se realizan mediante **Duplicar esquema**.
+- Validación de rangos superpuestos/vacíos antes de activar un esquema.
+- Estadísticas de liquidación: ICC vinculados, ICC sin compra, con regla, sin regla, datos incompletos, OK, diferencias y cobertura de reglas.
+- Protección para no cambiar la longitud de normalización ICC cuando el operador ya tiene datos históricos.
+- Identificador de fila fuente reforzado con hash corto para admitir archivos distintos con el mismo nombre.
+- Parser DBF conserva enteros en campos numéricos sin decimales y sincroniza los datos maestros de la SIM desde la compra más antigua.
+- XLSX se cierra explícitamente después de procesar para reducir recursos en cargas múltiples.
+- Índice compuesto `(operator_id, icc_key)` en detalle de liquidación para acelerar re-vinculación masiva.
+- Pruebas Odoo de regresión para recalcular sin reglas, mezclar líneas con/sin regla, detectar fechas faltantes, vincular compras cargadas después y conservar esquemas históricos cerrados.
+- `flush_model/flush_recordset` antes de SQL directo para evitar lecturas obsoletas de campos ORM pendientes.
+- El adjunto original de importación se reasigna al lote y queda visible desde la pestaña Archivos para preservar auditoría tras la limpieza del wizard transitorio.
+
+## 18.0.5.0.0
+- Importador reforzado para archivos grandes.
+- Compras y liquidaciones pueden cargarse dentro de archivos ZIP; un ZIP puede contener múltiples fuentes.
+- Trazabilidad de archivo contenedor, miembro ZIP, tamaño y SHA-256 del archivo lógico.
+- Mensajes de error de importación legibles con nombre del archivo y detalle técnico en log.
+- Protección frente a ZIP cifrado y límites de descompresión para evitar cargas accidentales excesivas.
+- Recomendación integrada en el wizard para comprimir el DBF/XLS de compras antes de subirlo.
+
 ## 18.0.4.0.0
 - Dashboard ejecutivo ampliado con margen por SIM, comisión por SIM, recuperación, maduración y capital sin recuperar.
-- KPI "Pendiente potencial de Claro" sin compensar faltantes con sobrepagos de otras líneas.
+- KPI “Pendiente potencial de Claro” sin compensar faltantes con sobrepagos de otras líneas.
 - KPI territorial: zona que más genera, zona que menos genera y zona con mayor ROI.
 - Participación de la zona líder y concentración Top 3 de zonas.
 - Cobertura de mapeo territorial: SIM sin zona y porcentaje con zona asignada.
-- Parámetro configurable por operador para días de madurez de SIM (90 por defecto para Claro).
-- Base de costo de ROI configurable: costo, costo neto de descuento o costo neto + impuesto; recalculable sin reimportar.
-- Región fuente de Claro usada como respaldo cuando el ICC aún no tiene región de Telecity mapeada.
+- Parámetro configurable por operador para días de madurez de SIM.
+- Base de costo de ROI configurable y recalculable sin reimportar.
+- Región fuente de Claro como respaldo cuando el ICC aún no tiene región mapeada.
 - Reporte Región/Zona enriquecido con participación, comisión/margen por SIM, improductividad y capital maduro sin recuperar.
-- Nueva vista gráfica de comisión recibida por zona y filtros de agrupación territorial.
-- Accesos directos desde dashboard a rendimiento por zona y líneas con pendiente potencial.
-- Cobertura de reglas y cantidad de líneas con diferencia para no interpretar un esperado incompleto como conciliación correcta.
-- Índices compuestos para acelerar dashboard, recuperación y filtros de conciliación con volúmenes altos.
-- Aplicación de mapeos Bodega/Zona procesada por ventanas de 5.000 registros para limitar memoria.
-- Revalidación de columna `Valor` en P1/P2/P3: total fuente corregido/documentado a USD 113.021,18 aprox.
+- Cobertura de reglas y cantidad de líneas con diferencia.
 
 ## 18.0.3.0.0
 - Corrige instalación Odoo 18: botón del dashboard ya no llama `_compute` (método privado).
@@ -28,5 +49,3 @@
 - KPIs de SIM almacenados y refrescados masivamente.
 - Patrón de producto y límites inclusivos/exclusivos parametrizables.
 - Prevención de esquemas activos con vigencias superpuestas.
-- Vistas de análisis, filtros de conciliación y trazabilidad ampliadas.
-- Pruebas de lectura y cruce repetidas con los 4 archivos reales suministrados.

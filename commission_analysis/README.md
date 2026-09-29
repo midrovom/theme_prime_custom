@@ -3,7 +3,7 @@
 Módulo independiente para Telecity orientado a controlar compras de SIM/ICC, liquidaciones de Claro, conciliación de comisiones, ROI y desempeño por región/zona.
 
 ## Corrección de compatibilidad Odoo 18
-La versión 18.0.4.0.0 conserva la corrección de compatibilidad de 18.0.3.0.0: el error de instalación reportado en `dashboard_views.xml`: Odoo 18 no permite llamar por RPC a un método privado (`_compute`) desde un botón `type="object"`. El botón ahora invoca el método público `action_refresh` y los cálculos internos permanecen privados.
+La versión 18.0.6.0.0 conserva la corrección de compatibilidad introducida en 18.0.3.0.0: el error de instalación reportado en `dashboard_views.xml`: Odoo 18 no permite llamar por RPC a un método privado (`_compute`) desde un botón `type="object"`. El botón ahora invoca el método público `action_refresh` y los cálculos internos permanecen privados.
 
 ## Flujo recomendado
 1. Configurar **Operadores**. Claro viene creado con longitud de cruce ICC = 18.
@@ -67,10 +67,11 @@ En febrero 2025 Claro exporta 20% como valor numérico `0.20`. El módulo guarda
 - KPIs de SIM almacenados y actualizados en bloque después de importaciones/recalculos.
 - SHA-256 para impedir importar dos veces el mismo archivo.
 - Archivo y fila de origen, usuario y fecha de importación.
+- El adjunto original se conserva ligado al lote y puede abrirse desde la pestaña **Archivos**.
 - Validación de columnas mínimas de Claro.
 - El export de compras `.XLS` recibido es realmente DBF/FoxBase; se procesa con parser incluido, sin `xlrd`.
 
-## Dashboard ejecutivo v4
+## Dashboard ejecutivo
 La portada incorpora KPI pensados para lectura inmediata del dueño del distribuidor:
 - Comisión recibida, comisión esperada y pendiente potencial de Claro.
 - Margen realizado, ROI realizado y ROI esperado.
@@ -107,7 +108,7 @@ Regresión verificada sobre los archivos originales usados para diseñar el mód
 - Costo acumulado fuente: USD 251.789,95603123598 (visual aproximado USD 251.789,96).
 - Impuesto acumulado fuente: USD 37.768,49 aprox.; costo + impuesto: USD 289.558,44 aprox.
 - P1+P2+P3 febrero 2025: 240.537 filas con SIMCARD / 240.537 claves normalizadas únicas.
-- Valor reportado acumulado (`Valor`): USD 113.021,18 aprox.
+- Valor reportado acumulado (`Valor`): USD 101.235,68 aprox.
 - Cruce compra-liquidación por 18 dígitos: 99.232 ICC coincidentes.
 - Compras sin aparición en esos tres archivos: 42.016 ICC.
 - SIMCARD de esos archivos no presentes en el archivo de compras suministrado: 141.305.
@@ -138,5 +139,35 @@ Estos números son pruebas de lectura/cruce de los archivos proporcionados; no s
 - Prueba de encabezados de los tres XLSX reales.
 - Prueba de normalización de porcentaje 0,20 -> 20,00%.
 - Prueba de cruce ICC 18/19 dígitos con los archivos reales.
+- Pruebas Odoo de regresión incluidas para recalculación masiva sin reglas, mezcla de líneas con/sin regla, fecha de compensación faltante, re-vinculación tardía de ICC y vigencias históricas cerradas.
+- Revisión de SQL directo con `flush_model/flush_recordset` antes de agregados/actualizaciones masivas.
 
 El entorno de construcción no incluye un servidor Odoo 18 ejecutable ni PostgreSQL configurado, por lo que no se puede afirmar que se ejecutó una instalación end-to-end local. La corrección se hizo contra el traceback real y la documentación de Odoo 18, además de validaciones estáticas y de datos fuente.
+
+## Recalculación y orden de carga (v18.0.6.0.0)
+
+El flujo fue reforzado para que **Compras y Liquidaciones puedan cargarse en cualquier orden**. Al recalcular una liquidación, el módulo primero vuelve a vincular cada línea por `Operador + icc_key`, sincroniza Región/Zona desde el maestro SIM, aplica la versión de reglas vigente para la fecha de compensación y finalmente actualiza los KPI de las SIM afectadas.
+
+La versión corrige específicamente el error PostgreSQL `column "scheme_line_id" is of type integer but expression is of type text`. Ese error aparecía cuando un bloque completo no tenía una regla aplicable (caso normal para febrero 2025 mientras no exista un esquema histórico configurado): PostgreSQL infería el `NULL` de `scheme_line_id` como texto. La actualización masiva ahora tipa explícitamente ID, importes, porcentaje y estado.
+
+Una liquidación muestra además controles de calidad de primera vista: registros totales, ICC vinculados, ICC sin compra, líneas con regla, sin regla, datos incompletos, OK, diferencias y porcentaje de cobertura de reglas. Que un registro quede **Sin regla** no es un error técnico: significa que falta una parametrización contractual aplicable a esa fecha/concepto.
+
+## Integridad histórica de parámetros
+
+Las versiones activas o cerradas quedan protegidas para evitar que un cambio posterior altere una auditoría histórica. Para modificar porcentajes/rangos se usa **Duplicar esquema**, se ajusta la nueva vigencia y luego se activa. Antes de cerrar una versión se exige `Fecha hasta`; una versión cerrada continúa siendo utilizada al recalcular fechas que caen dentro de su vigencia.
+
+Antes de activar, el módulo valida rangos superpuestos o vacíos dentro del mismo patrón/base. La longitud de normalización ICC del operador tampoco puede cambiar una vez existen datos, porque modificarla rompería los cruces históricos.
+
+## Importación de archivos grandes (v18.0.5.0.0)
+
+El archivo `DETALLE DE COMPRAS CHIPS.XLS` utilizado para validar este módulo no es un libro Excel: es un DBF/FoxBase con extensión `.XLS`. El archivo analizado pesa aproximadamente 110 MB y contiene 141.248 registros.
+
+Para evitar límites de carga del navegador, proxy o servidor, el importador acepta ahora `.ZIP`. Comprima el `.XLS`/DBF y cargue el ZIP directamente; el módulo lo descomprime y procesa conservando la trazabilidad. En la muestra real de Telecity, el archivo de aproximadamente 110 MB se reduce a cerca de 1,1 MB al comprimirlo como ZIP.
+
+También se pueden incluir varios `.XLS`/`.DBF` de compras dentro de un mismo ZIP. Para liquidaciones se admiten `.XLSX` directos o varios `.XLSX` dentro de un ZIP.
+
+Cada archivo lógico conserva SHA-256, archivo contenedor, miembro del ZIP, tamaño, filas importadas, fecha y usuario. Un error de procesamiento se registra en el log del servidor y se presenta al usuario con el archivo que lo produjo.
+
+### Nota sobre `navigator.clipboard.writeText`
+
+El error de JavaScript `Cannot read properties of undefined (reading 'writeText')` pertenece al botón de copiar del diálogo de errores del cliente web y no identifica la causa del fallo de importación. En navegadores modernos la API de portapapeles puede no estar disponible cuando Odoo se abre por HTTP en lugar de un contexto seguro. Para diagnosticar una importación, use el mensaje original del diálogo o el traceback del servidor, no el error generado al pulsar el botón de copiar.

@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from odoo import api, fields, models, _
+from odoo import fields, models, _
 from odoo.exceptions import UserError
 
 
@@ -58,12 +58,70 @@ class CommissionPurchaseBatch(models.Model):
                 rec.total_cost, rec.total_discount, rec.total_tax
             ) if rec.operator_id else rec.total_cost
 
+    def write(self, vals):
+        if 'operator_id' in vals:
+            Line = self.env['commission.purchase.line']
+            ImportFile = self.env['commission.import.file']
+            for rec in self:
+                if rec.operator_id.id != vals.get('operator_id'):
+                    has_data = (
+                        bool(Line.search([('batch_id', '=', rec.id)], limit=1))
+                        or bool(ImportFile.search([('purchase_batch_id', '=', rec.id)], limit=1))
+                    )
+                    if has_data:
+                        raise UserError(_(
+                            'No se puede cambiar el operador de un lote de compras que ya contiene archivos o registros.'
+                        ))
+        return super().write(vals)
+
+    def _refresh_purchase_master_for_sims(self, sim_ids):
+        """Sincroniza los datos maestros de la SIM desde su compra más antigua."""
+        ids = list(set(sim_ids or []))
+        if not ids:
+            return True
+        self.env['commission.purchase.line'].flush_model([
+            'sim_id', 'date', 'invoice', 'warehouse_name', 'product_name', 'region_id', 'zone_id',
+        ])
+        self.env['commission.sim'].flush_model([
+            'purchase_date', 'invoice', 'warehouse', 'product', 'region_id', 'zone_id',
+        ])
+        self.env.cr.execute(
+            """
+            WITH first_purchase AS (
+                SELECT DISTINCT ON (pl.sim_id)
+                       pl.sim_id, pl.date, pl.invoice, pl.warehouse_name, pl.product_name,
+                       pl.region_id, pl.zone_id
+                  FROM commission_purchase_line pl
+                 WHERE pl.sim_id = ANY(%s)
+                 ORDER BY pl.sim_id, pl.date NULLS LAST, pl.id
+            )
+            UPDATE commission_sim s
+               SET purchase_date = fp.date,
+                   invoice = fp.invoice,
+                   warehouse = fp.warehouse_name,
+                   product = fp.product_name,
+                   region_id = COALESCE(fp.region_id, s.region_id),
+                   zone_id = COALESCE(fp.zone_id, s.zone_id)
+              FROM first_purchase fp
+             WHERE s.id = fp.sim_id
+            """,
+            (ids,),
+        )
+        self.env['commission.sim'].invalidate_model([
+            'purchase_date', 'invoice', 'warehouse', 'product', 'region_id', 'zone_id'
+        ])
+        return True
+
     def _recalculate_roi_cost_for_sims(self, sim_ids):
         """Recompute SIM investment cost from raw purchase lines using the operator setting."""
         self.ensure_one()
         ids = list(set(sim_ids or []))
         if not ids:
             return True
+        self.env['commission.purchase.line'].flush_model([
+            'sim_id', 'cost', 'discount', 'tax',
+        ])
+        self.env['commission.sim'].flush_model(['purchase_cost'])
         basis = self.operator_id.roi_cost_basis or 'cost'
         expressions = {
             'cost': 'COALESCE(pl.cost, 0)',
@@ -100,6 +158,7 @@ class CommissionPurchaseBatch(models.Model):
             sim_ids = [row[0] for row in self.env.cr.fetchall()]
             for start in range(0, len(sim_ids), 10000):
                 chunk = sim_ids[start:start + 10000]
+                batch._refresh_purchase_master_for_sims(chunk)
                 batch._recalculate_roi_cost_for_sims(chunk)
                 Sim._refresh_kpis(chunk)
         return True
@@ -109,8 +168,13 @@ class CommissionPurchaseBatch(models.Model):
         Mapping = self.env['commission.warehouse.mapping']
         Line = self.env['commission.purchase.line']
         mappings = Mapping.search([('active', '=', True)])
-        by_code = {str(m.warehouse_code or '').strip().casefold(): m for m in mappings if m.warehouse_code}
-        by_name = {str(m.warehouse_name or '').strip().casefold(): m for m in mappings if m.warehouse_name}
+        by_code = {}
+        by_name = {}
+        for mapping in mappings.sorted('id'):
+            if mapping.warehouse_code:
+                by_code.setdefault(str(mapping.warehouse_code).strip().casefold(), mapping)
+            if mapping.warehouse_name:
+                by_name.setdefault(str(mapping.warehouse_name).strip().casefold(), mapping)
 
         for batch in self:
             last_id = 0
@@ -148,7 +212,13 @@ class CommissionPurchaseBatch(models.Model):
                     )
                 last_id = lines[-1].id
             Line.invalidate_model(['region_id', 'zone_id'])
-            self.env['commission.sim'].invalidate_model(['region_id', 'zone_id'])
+            Sim = self.env['commission.sim']
+            Sim.invalidate_model(['region_id', 'zone_id'])
+
+            # Mantener la geografía de las liquidaciones alineada con el maestro SIM.
+            self.env['commission.settlement.line']._match_sims_bulk(
+                operator_id=batch.operator_id.id,
+            )
         return True
 
     def action_close(self):

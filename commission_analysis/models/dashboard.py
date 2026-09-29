@@ -190,8 +190,8 @@ class CommissionDashboard(models.TransientModel):
                        COUNT(*) FILTER (WHERE l.reconciliation_state = 'difference')::integer
                            AS difference_count,
                        COALESCE(SUM(
-                           CASE WHEN l.scheme_line_id IS NULL THEN COALESCE(l.reported_value, 0)
-                                ELSE 0 END
+                           CASE WHEN l.reconciliation_state = 'no_rule'
+                                THEN COALESCE(l.reported_value, 0) ELSE 0 END
                        ), 0) AS no_rule_reported
                   FROM commission_settlement_line l
                   JOIN selected_sims ss ON ss.id = l.sim_id

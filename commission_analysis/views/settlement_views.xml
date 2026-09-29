@@ -5,7 +5,7 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
-                <field name="operator_id"/>
+                <field name="operator_id" readonly="state != 'draft'"/>
                 <field name="period"/>
                 <field name="line_count"/>
                 <field name="reported_total"/>
@@ -35,6 +35,14 @@
                         </group>
                         <group>
                             <field name="line_count"/>
+                            <field name="matched_line_count"/>
+                            <field name="no_purchase_count"/>
+                            <field name="ruled_line_count"/>
+                            <field name="rule_coverage_rate"/>
+                            <field name="no_rule_count"/>
+                            <field name="data_error_count"/>
+                            <field name="ok_count"/>
+                            <field name="difference_count"/>
                             <field name="reported_total"/>
                             <field name="expected_total"/>
                             <field name="difference_total"/>
@@ -66,6 +74,10 @@
                             <field name="file_ids">
                                 <list>
                                     <field name="name"/>
+                                    <field name="attachment_id" string="Archivo original" optional="show"/>
+                                    <field name="archive_name" optional="show"/>
+                                    <field name="archive_member" optional="hide"/>
+                                    <field name="byte_size" optional="hide"/>
                                     <field name="row_count"/>
                                     <field name="sha256"/>
                                     <field name="imported_at"/>
@@ -118,6 +130,7 @@
                 <filter name="state_difference" string="Con diferencia" domain="[('reconciliation_state','=','difference')]"/>
                 <filter name="state_no_rule" string="Sin regla" domain="[('reconciliation_state','=','no_rule')]"/>
                 <filter name="state_no_purchase" string="ICC sin compra" domain="[('reconciliation_state','=','no_purchase')]"/>
+                <filter name="state_data_error" string="Dato incompleto" domain="[('reconciliation_state','=','data_error')]"/>
                 <filter name="state_ok" string="OK" domain="[('reconciliation_state','=','ok')]"/>
                 <group expand="0" string="Agrupar por">
                     <filter string="Región" name="group_region" context="{'group_by':'region_id'}"/>

@@ -5,10 +5,10 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
-                <field name="operator_id"/>
-                <field name="product"/>
-                <field name="product_match_pattern"/>
-                <field name="date_from"/>
+                <field name="operator_id" readonly="state != 'draft'"/>
+                <field name="product" readonly="state != 'draft'"/>
+                <field name="product_match_pattern" readonly="state != 'draft'"/>
+                <field name="date_from" readonly="state != 'draft'"/>
                 <field name="date_to"/>
                 <field name="state"/>
             </list>
@@ -21,8 +21,8 @@
             <form>
                 <header>
                     <button name="action_duplicate_version" type="object" string="Duplicar esquema" class="btn-primary"/>
-                    <button name="action_activate" type="object" string="Activar" invisible="state == 'active'"/>
-                    <button name="action_close" type="object" string="Cerrar" invisible="state == 'closed'"/>
+                    <button name="action_activate" type="object" string="Activar" invisible="state != 'draft'"/>
+                    <button name="action_close" type="object" string="Cerrar" invisible="state != 'active'"/>
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
@@ -38,9 +38,13 @@
                             <field name="date_to"/>
                         </group>
                     </group>
+                    <div class="alert alert-info" role="alert">
+                        Los cambios de porcentajes/rangos deben realizarse en un esquema en borrador.
+                        Para una nueva vigencia use <strong>Duplicar esquema</strong>, ajuste los parámetros y actívelo.
+                    </div>
                     <notebook>
                         <page string="Reglas">
-                            <field name="line_ids">
+                            <field name="line_ids" readonly="state != 'draft'">
                                 <list editable="bottom">
                                     <field name="priority"/>
                                     <field name="concept_code"/>

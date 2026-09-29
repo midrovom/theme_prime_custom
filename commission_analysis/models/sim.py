@@ -65,6 +65,10 @@ class CommissionSim(models.Model):
         ids = list(set(sim_ids or self.ids))
         if not ids:
             return True
+        self.flush_model(['purchase_cost'])
+        self.env['commission.settlement.line'].flush_model([
+            'sim_id', 'reported_value', 'expected_value',
+        ])
         self.env.cr.execute(
             """
             WITH agg AS (

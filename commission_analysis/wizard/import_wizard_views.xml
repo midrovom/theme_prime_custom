@@ -1,4 +1,9 @@
 <odoo>
-<record id="import_wizard_form" model="ir.ui.view"><field name="name">commission.import.wizard.form</field><field name="model">commission.import.wizard</field><field name="arch" type="xml"><form string="Importar archivos"><group><field name="import_type"/><field name="purchase_batch_id" invisible="import_type != 'purchase'" required="import_type == 'purchase'"/><field name="settlement_batch_id" invisible="import_type != 'settlement'" required="import_type == 'settlement'"/><field name="file_ids" widget="many2many_binary"/></group><footer><button name="action_import" type="object" string="Importar" class="btn-primary"/><button string="Cancelar" special="cancel"/></footer></form></field></record>
+<record id="import_wizard_form" model="ir.ui.view"><field name="name">commission.import.wizard.form</field><field name="model">commission.import.wizard</field><field name="arch" type="xml"><form string="Importar archivos"><group><field name="import_type"/><field name="purchase_batch_id" invisible="import_type != 'purchase'" required="import_type == 'purchase'"/><field name="settlement_batch_id" invisible="import_type != 'settlement'" required="import_type == 'settlement'"/><field name="file_ids" widget="many2many_binary"/>
+<div class="alert alert-info" role="alert" colspan="2">
+    <strong>Compras:</strong> el archivo fuente de Telecity es DBF/FoxBase aunque tenga extensión .XLS.
+    Para archivos grandes, comprímalo en .ZIP antes de subirlo; el módulo lo descomprime automáticamente.
+    Un ZIP también puede contener varios archivos. Las liquidaciones de Claro aceptan .XLSX directos o dentro de .ZIP.
+</div></group><footer><button name="action_import" type="object" string="Importar" class="btn-primary"/><button string="Cancelar" special="cancel"/></footer></form></field></record>
 <record id="action_import_wizard" model="ir.actions.act_window"><field name="name">Importar archivos</field><field name="res_model">commission.import.wizard</field><field name="view_mode">form</field><field name="target">new</field></record>
 </odoo>
