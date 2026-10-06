@@ -32,6 +32,16 @@ class WebsiteHRRecruitmentCustom(http.Controller):
         lastname_materno = parts[1] if len(parts) > 1 else ""
         firstname = " ".join(parts[2:]) if len(parts) > 2 else ""
 
+        # Normalizar image_1920 a str base64 o False
+        image_val = applicant.image_1920 or False
+        if image_val and isinstance(image_val, bytes):
+            try:
+                image_val = image_val.decode('utf-8')
+            except Exception:
+                image_val = base64.b64encode(image_val).decode('utf-8')
+
+        _logger.info("Passing image_1920 to template: type=%s, len=%s", type(image_val), len(image_val) if image_val else 0)
+
         values = {
             "applicant": applicant,
             "job": applicant.job_id,
@@ -56,7 +66,7 @@ class WebsiteHRRecruitmentCustom(http.Controller):
             "document_type": applicant.document_type,
             "provincia_id": applicant.provincia_id.id if applicant.provincia_id else False,
             "dependientes": applicant.dependientes,
-            "image_1920": applicant.image_1920,
+            "image_1920": image_val,
             "experiencia": applicant.experiencia,
             # Documentos
             "documents": applicant.document_ids,
