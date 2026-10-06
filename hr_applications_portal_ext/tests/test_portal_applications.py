@@ -51,3 +51,43 @@ class TestPortalApplications(TransactionCase):
         })
         self.assertFalse(self.env["hr.applicant"].with_user(self.portal_user).search(
             [("id", "=", other_applicant.id)]))
+
+
+class TestFichaTecnicaEnablesForm2(TransactionCase):
+    def setUp(self):
+        super().setUp()
+        self.Stage = self.env["hr.recruitment.stage"]
+        self.Applicant = self.env["hr.applicant"]
+        self.stage_3 = self.Stage.create({
+            "name": "Ficha Tecnica",
+            "sequence": 3,
+        })
+        self.stage_2 = self.Stage.create({
+            "name": "Etapa previa",
+            "sequence": 2,
+        })
+
+    def test_entering_sequence_3_enables_form2(self):
+        applicant = self.Applicant.create({
+            "name": "Candidato Ficha Tecnica",
+            "stage_id": self.stage_2.id,
+        })
+        self.assertFalse(applicant.form2_portal_enabled)
+
+        applicant.write({"stage_id": self.stage_3.id})
+        self.assertTrue(applicant.form2_portal_enabled)
+
+    def test_applicant_created_directly_in_sequence_3_enables_form2(self):
+        applicant = self.Applicant.create({
+            "name": "Candidato Ficha Tecnica Directo",
+            "stage_id": self.stage_3.id,
+        })
+        self.assertTrue(applicant.form2_portal_enabled)
+
+    def test_leaving_sequence_3_does_not_disable_form2(self):
+        applicant = self.Applicant.create({
+            "name": "Candidato Ficha Tecnica",
+            "stage_id": self.stage_3.id,
+        })
+        applicant.write({"stage_id": self.stage_2.id})
+        self.assertTrue(applicant.form2_portal_enabled)

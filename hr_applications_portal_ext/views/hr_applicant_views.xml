@@ -10,12 +10,15 @@
                 <field name="phase_1_completed" groups="base.group_user"/>
                 <field name="phase_2_completed" groups="base.group_user"/>
                 <field name="phase_3_completed" groups="base.group_user"/>
+                <field name="form2_portal_enabled" groups="base.group_user"/>
             </xpath>
         </field>
     </record>
 
-    <template id="web_recruitment_remove_form2" inherit_id="custom_web_hr_datos_candidatos.web_recruitment" name="Recruitment form without Form 2">
-        <xpath expr="//t[@t-call='custom_web_hr_datos_candidatos.recruitment_form_2']" position="replace"/>
+    <template id="web_recruitment_remove_form2"
+              inherit_id="custom_web_hr_datos_candidatos.web_recruitment"
+              name="Recruitment form without Form 2">
+        <xpath expr="//t[@t-call='custom_web_hr_datos_candidatos.recruitment_form_2']"
+               position="replace"/>
     </template>
-
 </odoo>
