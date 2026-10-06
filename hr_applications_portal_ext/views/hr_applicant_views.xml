@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_applicant_view_form_portal_extension" model="ir.ui.view">
+        <field name="name">hr.applicant.form.portal.extension</field>
+        <field name="model">hr.applicant</field>
+        <field name="inherit_id" ref="custom_web_hr_datos_candidatos.hr_applicant_view_form_inherit"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='candidate_id']" position="after">
+                <field name="portal_user_id" groups="base.group_user"/>
+                <field name="phase_1_completed" groups="base.group_user"/>
+                <field name="phase_2_completed" groups="base.group_user"/>
+                <field name="phase_3_completed" groups="base.group_user"/>
+            </xpath>
+        </field>
+    </record>
+
+    <template id="web_recruitment_remove_form2"
+              inherit_id="custom_web_hr_datos_candidatos.web_recruitment"
+              name="Recruitment form without Form 2">
+        <xpath expr="//t[@t-call='custom_web_hr_datos_candidatos.recruitment_form_2']"
+               position="replace"/>
+    </template>
+</odoo>

@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_applicant_portal,hr.applicant portal,hr_recruitment.model_hr_applicant,base.group_portal,1,1,0,0
+access_applicant_medical_portal,applicant.medical portal,custom_web_hr_datos_candidatos.model_applicant_medical,base.group_portal,1,1,1,0
+access_applicant_family_portal,applicant.family portal,custom_web_hr_datos_candidatos.model_applicant_family,base.group_portal,1,1,1,1

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_hr_applicant_portal_own" model="ir.rule">
+        <field name="name">Postulaciones: portal user solo ve las propias</field>
+        <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="domain_force">[('portal_user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_applicant_medical_portal_own" model="ir.rule">
+        <field name="name">Información médica: portal user solo ve la propia</field>
+        <field name="model_id" ref="custom_web_hr_datos_candidatos.model_applicant_medical"/>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="domain_force">[('applicant_id.portal_user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_applicant_family_portal_own" model="ir.rule">
+        <field name="name">Familiares: portal user solo ve los propios</field>
+        <field name="model_id" ref="custom_web_hr_datos_candidatos.model_applicant_family"/>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="domain_force">[('applicant_id.portal_user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+</odoo>

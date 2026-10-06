@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="recruitment_form_2_hook"
+              inherit_id="custom_web_hr_datos_candidatos.recruitment_form_2"
+              name="Form 2 extension hook">
+        <xpath expr="//div[@id='form-step-2']" position="attributes">
+            <attribute name="class" add="o_hr_applications_form2"/>
+        </xpath>
+    </template>
+
+    <template id="application_form_2_page" name="Continuar postulación - Formulario 2">
+        <t t-call="portal.portal_layout">
+            <div class="container py-4 o_hr_application_form2_page">
+                <div class="mb-4">
+                    <h2>Continuar postulación</h2>
+                    <p class="text-muted mb-0">Completa únicamente el Formulario 2 de esta postulación.</p>
+                </div>
+                <t t-if="error"><div class="alert alert-danger"><t t-esc="error"/></div></t>
+                <form id="hr_application_form2" t-att-action="'/my/applications/%s/form2/save' % application.id"
+                      method="post" class="o_hr_application_form2_form" novalidate="novalidate">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div id="hr_application_form2_payload"
+                         t-att-data-medical="medical_json"
+                         t-att-data-families="families_json">
+                        <t t-call="custom_web_hr_datos_candidatos.recruitment_form_2"/>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a href="/my/applications" class="btn btn-outline-secondary">Cancelar</a>
+                        <button id="hr_application_form2_save" type="submit" class="btn btn-primary">Guardar Formulario 2</button>
+                    </div>
+                </form>
+            </div>
+        </t>
+    </template>
+</odoo>

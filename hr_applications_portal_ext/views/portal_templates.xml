@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_applications" inherit_id="portal.portal_my_home"
+              name="Portal: Historial de Postulación">
+        <xpath expr="//div[contains(@class, 'o_portal_docs')]" position="inside">
+            <a href="/my/applications"
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <span><i class="fa fa-file-text-o me-2"/> Historial de Postulación</span>
+                <i class="fa fa-chevron-right"/>
+            </a>
+        </xpath>
+    </template>
+
+    <template id="portal_my_applications" name="Historial de Postulación">
+        <t t-call="portal.portal_layout">
+            <div class="container py-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0">Historial de Postulación</h2>
+                    <a href="/my/home" class="btn btn-outline-secondary">Volver al portal</a>
+                </div>
+                <t t-if="request.params.get('form2_saved')">
+                    <div class="alert alert-success">El Formulario 2 fue guardado y la Fase 2 quedó marcada como completada.</div>
+                </t>
+                <t t-if="applications">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead><tr>
+                                <th>Postulación</th><th>Puesto</th><th>Fecha</th><th>Fase 2</th><th class="text-end">Acción</th>
+                            </tr></thead>
+                            <tbody>
+                                <t t-foreach="applications" t-as="application">
+                                    <tr>
+                                        <td><strong><t t-esc="application.partner_name or application.name or ('Postulación #%s' % application.id)"/></strong></td>
+                                        <td><t t-esc="application.job_id.name or ''"/></td>
+                                        <td><span t-field="application.create_date"/></td>
+                                        <td>
+                                            <span t-if="application.phase_2_completed" class="badge text-bg-success">Completada</span>
+                                            <span t-else="" class="badge text-bg-warning">Pendiente</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a t-att-href="'/my/applications/%s/form2' % application.id" class="btn btn-primary">
+                                                <t t-if="application.phase_2_completed">Editar Formulario 2</t>
+                                                <t t-else="">Continuar postulación</t>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="alert alert-info">No tienes postulaciones registradas.</div>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>
