@@ -24,7 +24,9 @@
                                   enctype="multipart/form-data"
                                   t-att-data-educations="educations"
                                   t-att-data-experiences="experiences"
-                                  t-att-data-references="references">
+                                  t-att-data-references="references"
+                                  t-att-data-image="image_1920 or ''"
+                                  t-att-data-image-mime="image_mime or ''">
 
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
