@@ -21,9 +21,10 @@
                position="replace"/>
     </template>
 
-    <template id="recruitment_form_3_hook" inherit_id="custom_web_hr_datos_candidatos.recruitment_form_3" name="Form 3 oculto inicialmente">
+    <template id="recruitment_form_force_hide_step3" inherit_id="custom_web_hr_datos_candidatos.recruitment_form_root">
         <xpath expr="//div[@id='form-step-3']" position="attributes">
-            <attribute name="class" add="d-none"/>
+            <attribute name="class" add=" d-none"/>
         </xpath>
     </template>
+
 </odoo>
