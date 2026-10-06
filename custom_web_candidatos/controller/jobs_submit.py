@@ -1,7 +1,7 @@
 from odoo import http, _
 from odoo.http import request
 import json
-
+import imghdr
 import base64
 import logging
 
@@ -9,6 +9,22 @@ _logger = logging.getLogger(__name__)
 
 
 class WebsiteHRRecruitmentCustom(http.Controller):
+
+    def _detect_image_mime(self, b64_string):
+        """Detecta mime a partir de base64 (intenta imghdr sobre bytes)."""
+        try:
+            raw = base64.b64decode(b64_string)
+            kind = imghdr.what(None, h=raw)
+            if kind == 'jpeg':
+                return 'image/jpeg'
+            if kind == 'png':
+                return 'image/png'
+            if kind == 'gif':
+                return 'image/gif'
+        except Exception:
+            pass
+        # fallback genérico
+        return 'image/png'
 
     @http.route("/my/applications", type="http", auth="user", website=True)
     def my_applications(self, **kwargs):
@@ -40,8 +56,12 @@ class WebsiteHRRecruitmentCustom(http.Controller):
             except Exception:
                 image_val = base64.b64encode(image_val).decode('utf-8')
 
-        _logger.info("Passing image_1920 to template: type=%s, len=%s", type(image_val), len(image_val) if image_val else 0)
+        image_mime = False
+        if image_val:
+            image_mime = self._detect_image_mime(image_val)
 
+        _logger.info("Passing image_1920 to template: type=%s, len=%s, mime=%s", type(image_val), len(image_val) if image_val else 0, image_mime)
+ 
         values = {
             "applicant": applicant,
             "job": applicant.job_id,

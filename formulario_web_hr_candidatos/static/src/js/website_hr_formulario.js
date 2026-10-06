@@ -14,6 +14,20 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
         this._prefillExperiences();
         this._prefillReferences();
         this._initPreviewFromDataImage();
+
+        // dentro de tu widget start()
+        const imageBase64 = this.$el.attr('data-image');
+        const imageMime = this.$el.attr('data-image-mime') || 'image/png';
+        if (imageBase64) {
+            const img = document.getElementById('preview-img');
+            const text = document.getElementById('text-img');
+            if (img) {
+                img.src = 'data:' + imageMime + ';base64,' + imageBase64;
+                img.style.display = '';
+            }
+            if (text) text.style.display = 'none';
+        }
+
     },
 
     _initPreviewFromDataImage() {
