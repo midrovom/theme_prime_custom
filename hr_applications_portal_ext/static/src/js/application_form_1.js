@@ -4,61 +4,6 @@ import publicWidget from "@web/legacy/js/public/public_widget";
 
 publicWidget.registry.MultistepFormCustom = publicWidget.registry.MultistepForm.extend({
 
-    /**
-     * @override
-     */
-    start() {
-        // Mantener inicializaciones necesarias
-        this._initializeForm();
-        this._toggleFamilyKnownFields();
-        this._toggleDisabilityFields();
-        this._toggleParentescoField();
-        this._toggleJobDisabilityFields();
-        this._onChangeCountry({ currentTarget: this.$('#hr-country') });
-
-        // Validaciones de campos conocidos
-        this.$('input[name="knownPosee_1"]').on('change', () => {
-            this._toggleFamilyKnownFields();
-        });
-        this.$('input[name="knownNombre_1"]').on('input', (ev) => {
-            const $f = $(ev.currentTarget);
-            $f.toggleClass('is-invalid', !$f.val().trim());
-        });
-        this.$('input[name="knownRelacion_1"]').on('change', () => {
-            this._toggleParentescoField();
-            this.$('input[name="knownRelacion_1"]').removeClass('is-invalid');
-        });
-        this.$('input[name="knownParentesco_1"]').on('input', (ev) => {
-            const $f = $(ev.currentTarget);
-            $f.toggleClass('is-invalid', !$f.val().trim());
-        });
-        this.$('input[name="studyOptions"]').on('change', () => {
-            this.$('input[name="studyOptions"]').removeClass('is-invalid');
-        });
-
-        return this._super();
-    },
-
-    /**
-     * @override
-     * Opcional: habilitar el botón de educación desde el inicio
-     */
-    _initializeForm() {
-        this.$('#add-experience').css({
-            'opacity': '0.5',
-            'pointer-events': 'none'
-        });
-
-        // 🔓 Habilitamos el botón de educación para que siempre se pueda añadir
-        this.$('#add-education').css({
-            'opacity': '1',
-            'pointer-events': 'auto'
-        });
-
-        this._checkFieldsFilled();
-        this._checkEducationFieldsFilled();
-    },
-
     
     /**
      * Sobrescribimos la función _onNextClick
