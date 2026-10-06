@@ -14,17 +14,8 @@
         </field>
     </record>
 
-    <template id="web_recruitment_remove_form2"
-              inherit_id="custom_web_hr_datos_candidatos.web_recruitment"
-              name="Recruitment form without Form 2">
-        <xpath expr="//t[@t-call='custom_web_hr_datos_candidatos.recruitment_form_2']"
-               position="replace"/>
-    </template>
-
-    <template id="recruitment_form_force_hide_step3" inherit_id="custom_web_hr_datos_candidatos.recruitment_form_3">
-        <xpath expr="//div[@id='form-step-3']" position="attributes">
-            <attribute name="class" add=" d-none"/>
-        </xpath>
+    <template id="web_recruitment_remove_form2" inherit_id="custom_web_hr_datos_candidatos.web_recruitment" name="Recruitment form without Form 2">
+        <xpath expr="//t[@t-call='custom_web_hr_datos_candidatos.recruitment_form_2']" position="replace"/>
     </template>
 
 </odoo>
