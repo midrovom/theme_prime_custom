@@ -13,6 +13,22 @@ publicWidget.registry.EducationExperiencePrefill = publicWidget.Widget.extend({
         this._prefillEducations();
         this._prefillExperiences();
         this._prefillReferences();
+        this._initPreviewFromDataImage();
+    },
+
+    _initPreviewFromDataImage() {
+        const imageBase64 = this.$el.attr('data-image');
+        if (imageBase64) {
+            const img = document.getElementById('preview-img');
+            const text = document.getElementById('text-img');
+            if (img) {
+                img.src = 'data:image/png;base64,' + imageBase64;
+                img.style.display = '';
+            }
+            if (text) {
+                text.style.display = 'none';
+            }
+        }
     },
 
     async _prefillEducations() {
