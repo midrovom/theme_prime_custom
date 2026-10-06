@@ -1,0 +1,82 @@
+/** @odoo-module **/
+
+import publicWidget from "@web/legacy/js/public/public_widget";
+
+publicWidget.registry.MultistepFormCustom = publicWidget.registry.MultistepForm.extend({
+
+    /**
+     * Sobrescribimos la función _onNextClick
+     */
+    _onNextClick(ev) {
+        ev.preventDefault();
+
+        if (this._validateCurrentStep1()) {
+            // Ocultar step 1
+            this.$('#form-step-1').addClass('d-none');
+
+            // Mostrar step 3 en lugar de step 2
+            this.$('#form-step-3').removeClass('d-none');
+
+            const numHijos = parseInt(this.$('#hr-hijos').val(), 10);
+            this.$('#hr-hijos').prop('readonly', true);
+
+            if (!isNaN(numHijos)) {
+                const $hiddenHijos = this.$('input[name="numHijos"]');
+                if ($hiddenHijos.length === 0) {
+                    this.$('#hr-hijos').after(`<input type="hidden" name="numHijos" value="${numHijos}"/>`);
+                } else {
+                    $hiddenHijos.val(numHijos);
+                }
+            }
+
+            // Generación de bloques familiares (igual que antes)
+            if (this.familyBlocksGenerated) {
+                return;
+            }
+            this.familyBlocksGenerated = true;
+
+            const AUTO_FAMILY = ["Padre", "Madre", "Conyugue"];
+            AUTO_FAMILY.forEach(tipo => {
+                if (this.$(`.family-block[data-type="${tipo}"]`).length === 0) {
+                    this.familyCount++;
+                    const index = this.familyCount;
+
+                    this._getFamilyBlock(tipo, index).then(blockHtml => {
+                        const block = $(blockHtml);
+                        const tipoVal = tipo === "Padre" ? "1" :
+                                        tipo === "Madre" ? "2" :
+                                        tipo === "Conyugue" ? "4" : tipo;
+
+                        block.prepend(`<input type="hidden" name="famTipo_${index}" value="${tipoVal}"/>`);
+                        block.prepend(`<input type="hidden" name="famIndex_${index}" value="${index}"/>`);
+                        this.$('#family_container').append(block);
+
+                        block.find(`input[name="famDisc_${index}"]`).on("change", () => {
+                            this._toggleFamilyDisability(index);
+                        });
+                        this._toggleFamilyDisability(index);
+                    });
+                }
+            });
+
+            if (!isNaN(numHijos) && numHijos > 0) {
+                for (let i = 0; i < numHijos; i++) {
+                    this.familyCount++;
+                    const index = this.familyCount;
+
+                    this._getFamilyBlock("Hijo", index).then(blockHtml => {
+                        const block = $(blockHtml);
+                        block.prepend(`<input type="hidden" name="famTipo_${index}" value="5"/>`);
+                        block.prepend(`<input type="hidden" name="famIndex_${index}" value="${index}"/>`);
+                        this.$('#family_container').append(block);
+
+                        block.find(`input[name="famDisc_${index}"]`).on("change", () => {
+                            this._toggleFamilyDisability(index);
+                        });
+                        this._toggleFamilyDisability(index);
+                    });
+                }
+            }
+        }
+    },
+});
