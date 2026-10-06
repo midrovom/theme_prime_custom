@@ -38,7 +38,7 @@ class HrApplicant(models.Model):
     cedula = fields.Char(string='Número de documento')
     nacionality = fields.Char(string='Nacionalidad')
     experiencia = fields.Char(string="Cantidad de experiencia")
-
+    
     portal_user_id = fields.Many2one('res.users', string="Usuario del portal", ondelete="set null")
 
     estado_civil = fields.Selection([
