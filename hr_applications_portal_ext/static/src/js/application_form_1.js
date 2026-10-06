@@ -79,4 +79,17 @@ publicWidget.registry.MultistepFormCustom = publicWidget.registry.MultistepForm.
             }
         }
     },
+
+        /**
+     * Sobrescribimos la función _onPrevClick para regresar de step 3 a step 1
+     */
+    _onPrevClick(ev) {
+        ev.preventDefault();
+
+        // Ocultar step 3
+        this.$('#form-step-3').addClass('d-none');
+
+        // Mostrar step 1 directamente
+        this.$('#form-step-1').removeClass('d-none');
+    },
 });
