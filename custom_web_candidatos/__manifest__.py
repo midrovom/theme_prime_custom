@@ -12,7 +12,7 @@
     'license': 'LGPL-3',
     'category': 'Website',
     'depends': [
-        'custom_web_hr_datos_candidatos', 'sale',
+        'custom_web_hr_datos_candidatos',
     ],
     'data': [
         'views/website_hr_recruitment.xml',
@@ -24,6 +24,7 @@
     'application': False,
     'assets': {
         "web.assets_frontend":[
+
         ]
         
     }
