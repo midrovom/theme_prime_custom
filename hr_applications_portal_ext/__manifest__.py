@@ -19,7 +19,7 @@
             'hr_applications_portal_ext/static/src/js/application_form_1.js',
             "hr_applications_portal_ext/static/src/js/application_form_2.js",
             "hr_applications_portal_ext/static/src/js/native_form_cleanup.js",
-            "hr_applications_portal_ext/static/src/css/application_form_2.css"
+            "hr_applications_portal_ext/static/src/css/application_form_2.css",
         ]
     },
     "installable": True,
