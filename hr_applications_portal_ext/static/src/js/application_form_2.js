@@ -553,6 +553,81 @@
         return valid;
     };
 
+    const initializeHealthSection = (form) => {
+        if (!form || form.dataset.hrHealthBound === "1") return;
+        form.dataset.hrHealthBound = "1";
+
+        const healthGroups = [
+            ["enfermedad_persistente", "detalle_enfermedad_persistente"],
+            ["medicacion_continua", "detalle_medicacion_continua"],
+            ["enfermedad_laboral", "detalle_enfermedad_laboral"],
+            ["cirugia_realizada", "detalle_cirugia_realizada"],
+        ];
+
+        const setDetailState = (questionName, detailName, preserveValue = true) => {
+            const radios = form.querySelectorAll(`input[name="${questionName}"]`);
+            const detail = form.querySelector(`[name="${detailName}"]`);
+            if (!detail) return;
+
+            let selected = form.querySelector(`input[name="${questionName}"]:checked`);
+            // Si no existe información previamente guardada, el valor inicial
+            // del formulario es "No", igual que en el comportamiento nativo.
+            if (!selected && radios.length) {
+                selected = form.querySelector(`input[name="${questionName}"][value="no"]`);
+                if (selected) selected.checked = true;
+            }
+
+            const enabled = selected?.value === "si";
+            detail.disabled = !enabled;
+            detail.required = enabled;
+
+            if (!enabled) {
+                if (!preserveValue || selected?.value === "no") {
+                    detail.value = "";
+                }
+                detail.classList.remove("is-invalid");
+            }
+        };
+
+        healthGroups.forEach(([questionName, detailName]) => {
+            const radios = form.querySelectorAll(`input[name="${questionName}"]`);
+            radios.forEach((radio) => {
+                radio.addEventListener("change", () => {
+                    setDetailState(questionName, detailName, false);
+                });
+            });
+            setDetailState(questionName, detailName, true);
+        });
+
+        const disabilityRadios = form.querySelectorAll('input[name="discapacidad"]');
+        const disabilityType = form.querySelector('[name="tipo_discapacidad"]');
+        const disabilityPct = form.querySelector('[name="porcentaje_discapacidad"]');
+
+        const setDisabilityState = (preserveValue = true) => {
+            let selected = form.querySelector('input[name="discapacidad"]:checked');
+            if (!selected && disabilityRadios.length) {
+                selected = form.querySelector('input[name="discapacidad"][value="no"]');
+                if (selected) selected.checked = true;
+            }
+
+            const enabled = selected?.value === "si";
+            [disabilityType, disabilityPct].forEach((field) => {
+                if (!field) return;
+                field.disabled = !enabled;
+                field.required = enabled;
+                if (!enabled) {
+                    if (!preserveValue || selected?.value === "no") field.value = "";
+                    field.classList.remove("is-invalid");
+                }
+            });
+        };
+
+        disabilityRadios.forEach((radio) => {
+            radio.addEventListener("change", () => setDisabilityState(false));
+        });
+        setDisabilityState(true);
+    };
+
     const bindForm2Validation = () => {
         const form = document.querySelector(FORM_ID);
         if (!form || form.dataset.hrApplicationsValidationBound === "1") return;
@@ -577,6 +652,7 @@
         const form = document.querySelector(FORM_ID);
         if (!form) return;
         bindForm2Validation();
+        initializeHealthSection(form);
 
         const payload = document.querySelector("#hr_application_form2_payload");
         const familyContainer = document.querySelector("#family_container");
