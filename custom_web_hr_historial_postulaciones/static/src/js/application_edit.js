@@ -40,14 +40,42 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatched) {
 }
 
 publicWidget.registry.PortalApplicantEdit = publicWidget.Widget.extend({
-    selector: "form.js-applicant-edit-form",
+    selector: "#hr_job_recruitment_form",
 
     async start() {
         await this._super(...arguments);
+
+        const params = new URLSearchParams(window.location.search);
+        const applicantId = params.get("edit_applicant");
+        if (!applicantId || !/^\d+$/.test(applicantId)) {
+            return this;
+        }
+
+        this.$el.attr("data-portal-edit", "1");
+        this.$el.attr("data-edit-applicant-id", applicantId);
+        this.$el.attr("action", `/my/application/${applicantId}/update`);
+
+        if (!this.$el.prev("#portal-edit-notice").length) {
+            this.$el.before(`
+                <div id="portal-edit-notice" class="alert alert-warning rounded-4 mb-4">
+                    Esta actualización fue habilitada por el equipo de reclutamiento.
+                    Al enviar el formulario, el permiso se cerrará nuevamente.
+                </div>
+            `);
+        }
+
         try {
-            await this._loadApplicantData();
+            await this._loadApplicantData(applicantId);
         } catch (error) {
             console.error("No se pudo cargar la información de la postulación", error);
+            if (!this.$el.prev("#portal-edit-load-error").length) {
+                this.$el.before(`
+                    <div id="portal-edit-load-error" class="alert alert-danger rounded-4 mb-4">
+                        No se pudo cargar la información guardada de la postulación.
+                        Recargue la página antes de actualizar.
+                    </div>
+                `);
+            }
         }
         return this;
     },
@@ -96,10 +124,7 @@ publicWidget.registry.PortalApplicantEdit = publicWidget.Widget.extend({
         };
     },
 
-    async _loadApplicantData() {
-        const applicantId = this.$el.find('input[name="applicantId"]').val();
-        if (!applicantId) return;
-
+    async _loadApplicantData(applicantId) {
         const response = await fetch(`/my/application/${applicantId}/data`, {
             headers: { "Accept": "application/json" },
         });
@@ -107,6 +132,9 @@ publicWidget.registry.PortalApplicantEdit = publicWidget.Widget.extend({
             throw new Error("No fue posible consultar la postulación.");
         }
         const data = await response.json();
+
+        this.$el.attr("data-existing-image", data.has_image ? "1" : "0");
+        this.$el.attr("data-existing-curriculum", data.has_curriculum ? "1" : "0");
 
         await this._waitFor("#education_container [name^='level_id_']");
         this._fillStep1(data);
@@ -152,8 +180,8 @@ publicWidget.registry.PortalApplicantEdit = publicWidget.Widget.extend({
         this._setRadio("jobOptions", data.disability ? "t" : "f", true);
         this._setRadio("discOptions", data.family_disability ? "t" : "f", true);
 
-        // Mostrar la foto existente en el preview del formulario.
-        if (data.id && this.$el.attr("data-existing-image") === "1") {
+        // Mostrar la foto existente en el preview del formulario nativo.
+        if (data.id && data.has_image) {
             const preview = this.$("#preview-img")[0];
             const textImg = this.$("#text-img")[0];
             if (preview) {
@@ -164,11 +192,11 @@ publicWidget.registry.PortalApplicantEdit = publicWidget.Widget.extend({
         }
 
         const inputImage = this.$("#hr-perfil")[0];
-        if (inputImage) inputImage.required = false;
+        if (inputImage) inputImage.required = !data.has_image;
 
         const inputCurriculum = this.$("#curriculum-vitae")[0];
-        if (inputCurriculum) inputCurriculum.required = false;
-        if (this.$el.attr("data-existing-curriculum") === "1") {
+        if (inputCurriculum) inputCurriculum.required = !data.has_curriculum;
+        if (data.has_curriculum) {
             this.$("#file-selected-message").html(
                 '<div class="text-success custom-message fs-6">Ya existen archivos curriculares registrados. Puede conservarlos o seleccionar nuevos.</div>'
             );

@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 
 from odoo import fields, http, _
 from odoo.http import request
+from odoo.addons.http_routing.models.ir_http import slug
 from odoo.exceptions import ValidationError
 
 
@@ -94,6 +95,12 @@ class PortalApplications(http.Controller):
     def _common_form_values(self, applicant=None):
         countries = request.env['res.country'].sudo().search([], order='name ASC')
         states = request.env['res.country.state'].sudo().search([], order='name ASC')
+        document_types = [
+            ('cedula', 'Cédula'),
+            ('id_extrj', 'Cédula extranjera'),
+            ('pasaporte', 'Pasaporte'),
+            ('part_naci', 'Partida de Nacimiento'),
+        ]
         family_types = [
             ('1', 'Padre'), ('2', 'Madre'), ('3', 'Hermano(a)'),
             ('4', 'Conyugue'), ('5', 'Hijo(a)'),
@@ -102,6 +109,7 @@ class PortalApplications(http.Controller):
             'job': applicant.job_id if applicant else False,
             'country_states': states,
             'countries': countries,
+            'document_types': document_types,
             'days': DAYS,
             'months': MONTHS,
             'years': YEARS,
@@ -131,10 +139,14 @@ class PortalApplications(http.Controller):
         if not applicant.portal_update_allowed:
             raise Forbidden(_('Esta postulación no está habilitada para actualización.'))
 
-        values = self._common_form_values(applicant)
-        return request.render(
-            'custom_web_hr_historial_postulaciones.portal_application_edit',
-            values,
+        # Abrimos el mismo formulario nativo que se utiliza para una nueva postulación.
+        # El parámetro edit_applicant permite que el JS del módulo cargue los datos
+        # existentes y cambie únicamente el destino del envío al endpoint de actualización.
+        if not applicant.job_id:
+            raise NotFound(_('La postulación no tiene un puesto asociado.'))
+
+        return request.redirect(
+            '/jobs/recruitment/%s?edit_applicant=%s' % (slug(applicant.job_id), applicant.id)
         )
 
     @http.route('/my/application/<int:applicant_id>/data', type='http', auth='user', website=True, methods=['GET'], csrf=False)
@@ -162,6 +174,8 @@ class PortalApplications(http.Controller):
         payload = {
             'id': applicant.id,
             'job_id': applicant.job_id.id,
+            'has_image': bool(applicant.image_1920),
+            'has_curriculum': bool(applicant.document_ids),
             'firstname': applicant.candidate_id.firstname if applicant.candidate_id else '',
             'lastname_paterno': applicant.candidate_id.lastname_paterno if applicant.candidate_id else '',
             'lastname_materno': applicant.candidate_id.lastname_materno if applicant.candidate_id else '',

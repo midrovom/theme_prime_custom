@@ -25,7 +25,7 @@
                                     <th>Puesto</th>
                                     <th>Fecha</th>
                                     <th>Estado</th>
-                                    <th class="text-end"></th>
+                                    <th class="text-end">Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -47,7 +47,7 @@
                                                 </a>
                                             </t>
                                             <t t-else="">
-                                                <span class="text-muted small"></span>
+                                                <span class="text-muted small">Sin permiso</span>
                                             </t>
                                         </td>
                                     </tr>

@@ -1,59 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <template id="portal_application_edit" name="Actualizar postulación">
-        <t t-call="website.layout">
-            <div id="wrap_container" class="container">
-                <header class="d-flex justify-content-center mt-4 mb-3">
-                    <h1 class="text-info fw-bold text-center fs-3 fs-md-2 fs-lg-1">
-                        ACTUALIZACIÓN DE DATOS PARA CANDIDATOS
-                    </h1>
-                </header>
-                <div class="alert alert-warning rounded-4">
-                    Esta actualización fue habilitada por el equipo de reclutamiento. Al enviar el formulario, el permiso se cerrará nuevamente.
-                </div>
-            </div>
-
-            <div id="jobs_apply" class="container">
-                <div class="row">
-                    <section id="forms_apply" data-vcss="001" data-snippet="s_website_form">
-                        <div class="container">
-                            <form id="hr_job_recruitment_form"
-                                  t-attf-action="/my/application/#{applicant.id}/update"
-                                  method="post"
-                                  class="d-flex flex-column justify-content-center mx-1 js-applicant-edit-form"
-                                  data-portal-edit="1"
-                                  t-att-data-existing-image="'1' if applicant.image_1920 else '0'"
-                                  t-att-data-existing-curriculum="'1' if applicant.document_ids else '0'"
-                                  data-model_name="hr.applicant"
-                                  hide-change-model="true"
-                                  novalidate="novalidate"
-                                  enctype="multipart/form-data">
-
-                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                <input type="hidden" name="applicantId" t-att-value="applicant.id"/>
-                                <input type="hidden" name="jobId" t-att-value="job.id"/>
-                                <input type="hidden" name="jobName" t-att-value="job.name"/>
-
-                                <t t-call="custom_web_hr_datos_candidatos.recruitment_form_1"/>
-                                <t t-call="custom_web_hr_datos_candidatos.recruitment_form_2"/>
-                                <t t-call="custom_web_hr_datos_candidatos.recruitment_form_3"/>
-                            </form>
-                        </div>
-                    </section>
-                </div>
-            </div>
-        </t>
-    </template>
-
-    <template id="portal_error" name="Portal error">
-        <t t-call="portal.portal_layout">
-            <div class="container py-5">
-                <div class="alert alert-danger rounded-4">
-                    <h4 class="alert-heading">No se pudo completar la operación</h4>
-                    <p class="mb-0" t-esc="error_message"/>
-                </div>
-                <a href="/my/application-history" class="btn btn-primary rounded-pill mt-3">Volver al historial</a>
-            </div>
-        </t>
-    </template>
+    <!--
+        No se duplica el formulario de reclutamiento.
+        El botón Actualizar redirige al formulario nativo
+        custom_web_hr_datos_candidatos.web_recruitment y application_edit.js
+        lo convierte en modo edición cuando encuentra edit_applicant en la URL.
+    -->
 </odoo>
