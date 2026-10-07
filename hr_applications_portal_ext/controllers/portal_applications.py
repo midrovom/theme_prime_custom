@@ -53,6 +53,28 @@ class HrApplicationsPortal(http.Controller):
             for name in ("tipo_discapacidad", "porcentaje_discapacidad"):
                 if not (post.get(name) or "").strip():
                     missing.append(name)
+
+        # Validación server-side de los mismos campos familiares que el JS
+        # nativo comprueba antes de continuar.
+        index = 1
+        while post.get(f"famTipo_{index}") is not None:
+            fallecido = post.get(f"famFallecido_{index}") == "1"
+            no_tiene = bool(post.get(f"famNoTiene_{index}"))
+            if not fallecido and not no_tiene:
+                for name in (
+                    f"famApellidoPaterno_{index}", f"famApellidoMaterno_{index}",
+                    f"famPrimerNombre_{index}", f"famTipoDoc_{index}",
+                    f"famCedula_{index}", f"famFecha_{index}",
+                    f"famTelefono_{index}", f"famOcupacion_{index}",
+                    f"famDepende_{index}", f"famDisc_{index}",
+                ):
+                    if not (post.get(name) or "").strip():
+                        missing.append(name)
+                if post.get(f"famTipoDoc_{index}") == "part_naci":
+                    upload = request.httprequest.files.get(f"famArchivo_{index}")
+                    if not upload or not upload.filename:
+                        missing.append(f"famArchivo_{index}")
+            index += 1
         return missing
 
     def _medical_values(self, post):
@@ -60,24 +82,43 @@ class HrApplicationsPortal(http.Controller):
 
     def _family_values(self, post):
         values, index = [], 1
-        while post.get(f"famNombre_{index}") is not None:
+        while post.get(f"famTipo_{index}") is not None:
+            fallecido = post.get(f"famFallecido_{index}") == "1"
+            no_tiene = bool(post.get(f"famNoTiene_{index}"))
             name = (post.get(f"famNombre_{index}") or "").strip()
-            if name:
-                values.append({
-                    "name": name,
-                    "familiar_type": post.get(f"famTipo_{index}") or False,
-                    "fallecido": post.get(f"famFallecido_{index}") == "1",
-                    "no_tiene": bool(post.get(f"famNoTiene_{index}")),
-                    "document_type": post.get(f"famTipoDoc_{index}") or False,
-                    "cedula": (post.get(f"famCedula_{index}") or "").strip(),
-                    "birthdate": post.get(f"famFecha_{index}") or False,
-                    "phone": (post.get(f"famTelefono_{index}") or "").strip(),
-                    "occupation": (post.get(f"famOcupacion_{index}") or "").strip(),
-                    "economically_dependent": post.get(f"famDepende_{index}") or False,
-                    "disability": post.get(f"famDisc_{index}") or False,
-                    "disability_type": (post.get(f"famDiscTipo_{index}") or "").strip(),
-                    "disability_percentage": int(post.get(f"famDiscPorcentaje_{index}") or 0),
-                })
+            if fallecido:
+                name = "FALLECIDO"
+            elif no_tiene:
+                name = "NO TIENE"
+
+            file_value = False
+            file_name = False
+            try:
+                uploaded = request.httprequest.files.get(f"famArchivo_{index}")
+                if uploaded and uploaded.filename:
+                    import base64
+                    file_value = base64.b64encode(uploaded.read())
+                    file_name = uploaded.filename
+            except Exception:
+                pass
+
+            values.append({
+                "name": name,
+                "familiar_type": post.get(f"famTipo_{index}") or False,
+                "fallecido": fallecido,
+                "no_tiene": no_tiene,
+                "document_type": False if fallecido else (post.get(f"famTipoDoc_{index}") or False),
+                "cedula": "" if fallecido else (post.get(f"famCedula_{index}") or "").strip(),
+                "birthdate": False if fallecido else (post.get(f"famFecha_{index}") or False),
+                "phone": "" if fallecido else (post.get(f"famTelefono_{index}") or "").strip(),
+                "occupation": "" if fallecido else (post.get(f"famOcupacion_{index}") or "").strip(),
+                "economically_dependent": False if fallecido else (post.get(f"famDepende_{index}") or False),
+                "disability": False if fallecido else (post.get(f"famDisc_{index}") or False),
+                "disability_type": "" if fallecido else (post.get(f"famDiscTipo_{index}") or "").strip(),
+                "disability_percentage": int(post.get(f"famDiscPorcentaje_{index}") or 0),
+                "filename": file_name,
+                "document_file": file_value,
+            })
             index += 1
         return values
 
@@ -131,24 +172,24 @@ class HrApplicationsPortal(http.Controller):
                 "hr_applications_portal_ext.application_form_2_page",
                 dict(
                     {"application": applicant,
-                     "error": "Complete los campos obligatorios de salud antes de guardar.",
+                     "error": "Complete los campos obligatorios del Formulario 2 antes de guardar.",
                      "missing_fields": missing, "post": post},
                     **self._form2_payload(applicant),
                 ),
                 status=400,
             )
 
-        medical = applicant.medical_ids[:1]
+        medical = applicant.sudo().medical_ids[:1]
         values = self._medical_values(post)
         if medical:
-            medical.write(values)
+            medical.sudo().write(values)
         else:
-            request.env["applicant.medical"].create(dict(values, applicant_id=applicant.id))
+            request.env["applicant.medical"].sudo().create(dict(values, applicant_id=applicant.id))
 
         family_values = self._family_values(post)
-        applicant.family_ids.unlink()
+        applicant.sudo().family_ids.unlink()
         if family_values:
-            request.env["applicant.family"].create(
+            request.env["applicant.family"].sudo().create(
                 [dict(vals, applicant_id=applicant.id) for vals in family_values]
             )
 

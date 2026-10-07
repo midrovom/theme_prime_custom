@@ -17,7 +17,7 @@
                 </div>
                 <t t-if="error"><div class="alert alert-danger"><t t-esc="error"/></div></t>
                 <form id="hr_application_form2" t-att-action="'/my/applications/%s/form2/save' % application.id"
-                      method="post" class="o_hr_application_form2_form" novalidate="novalidate">
+                      method="post" enctype="multipart/form-data" class="o_hr_application_form2_form" novalidate="novalidate">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <div id="hr_application_form2_payload"
                          t-att-data-medical="medical_json"

@@ -91,6 +91,11 @@
                             <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
                         <div class="col-md-3">
+                            <label class="fs-6">Adjuntar Documento (PDF)</label>
+                            <input type="file" name="famArchivo_${index}" class="form-control rounded-pill fam-archivo-doc" accept="application/pdf"/>
+                            <div class="invalid-feedback">Adjunte PDF si el documento es tipo partida de nacimiento.</div>
+                        </div>
+                        <div class="col-md-3">
                             <label class="fs-6">Fecha nacimiento <span class="required-asterisk">*</span></label>
                             <input type="date" name="famFecha_${index}" class="form-control rounded-pill" required="required"/>
                             <div class="invalid-feedback">Campo obligatorio</div>
@@ -272,20 +277,19 @@
         const form = document.querySelector("#hr_job_recruitment_form");
         if (!form) return;
 
-        const zeroBased = form.querySelector('input[name="ref_nombre_0"]');
-        const third = form.querySelector('input[name="ref_nombre_3"]');
-        if (zeroBased || !third) return;
-
+        const blocks = Array.from(form.querySelectorAll("#reference_container .reference-block")).slice(0, 3);
         const suffixes = ["nombre", "telefono", "ocupacion", "tiempo", "domicilio"];
-        const mappings = [[3, 2], [2, 1], [1, 0]];
-
-        for (const [from, to] of mappings) {
-            for (const suffix of suffixes) {
-                form.querySelectorAll(`[name="ref_${suffix}_${from}"]`).forEach((input) => {
-                    input.name = `ref_${suffix}_${to}`;
-                });
-            }
-        }
+        blocks.forEach((block, index) => {
+            suffixes.forEach((suffix) => {
+                const input = block.querySelector(`[name^="ref_${suffix}_"]`);
+                if (input) {
+                    input.name = `ref_${suffix}_${index}`;
+                    input.disabled = false;
+                }
+            });
+        });
+        const total = form.querySelector("#total_references");
+        if (total) total.value = String(blocks.length);
     };
 
     const bindNativeReferenceFix = () => {
@@ -297,11 +301,145 @@
         form.dataset.hrReferenceNormalized = "1";
     };
 
+    const validateNativeForm2 = (form) => {
+        let valid = true;
+        const markField = (field, ok, message) => {
+            if (!field) return;
+            field.classList.toggle("is-invalid", !ok);
+            const feedback = field.parentElement?.querySelector(".invalid-feedback");
+            if (feedback) {
+                feedback.textContent = message || feedback.textContent;
+                feedback.style.display = ok ? "" : "block";
+            }
+            if (!ok) valid = false;
+        };
+        const checked = (name) => form.querySelector(`input[name="${name}"]:checked`);
+
+        const radioGroups = [
+            "enfermedad_persistente",
+            "medicacion_continua",
+            "enfermedad_laboral",
+            "cirugia_realizada",
+            "discapacidad",
+        ];
+        radioGroups.forEach((name) => {
+            const value = checked(name);
+            const radios = form.querySelectorAll(`input[name="${name}"]`);
+            radios.forEach((radio) => radio.classList.toggle("is-invalid", !value));
+            if (!value) valid = false;
+        });
+
+        const typeBlood = form.querySelector('input[name="tipo_sangre"]');
+        markField(typeBlood, Boolean(typeBlood?.value.trim()), "Campo obligatorio.");
+
+        [
+            ["enfermedad_persistente", "detalle_enfermedad_persistente"],
+            ["medicacion_continua", "detalle_medicacion_continua"],
+            ["enfermedad_laboral", "detalle_enfermedad_laboral"],
+            ["cirugia_realizada", "detalle_cirugia_realizada"],
+        ].forEach(([question, detail]) => {
+            const field = form.querySelector(`[name="${detail}"]`);
+            const requiresDetail = checked(question)?.value === "si";
+            if (!field) return;
+            field.disabled = !requiresDetail;
+            field.required = requiresDetail;
+            if (!requiresDetail) {
+                field.value = "";
+                field.classList.remove("is-invalid");
+            } else {
+                markField(field, Boolean(field.value.trim()), "Campo obligatorio.");
+            }
+        });
+
+        const hasDisability = checked("discapacidad")?.value === "si";
+        const disabilityType = form.querySelector('[name="tipo_discapacidad"]');
+        const disabilityPct = form.querySelector('[name="porcentaje_discapacidad"]');
+        [disabilityType, disabilityPct].forEach((field) => {
+            if (!field) return;
+            field.disabled = !hasDisability;
+            field.required = hasDisability;
+            if (!hasDisability) {
+                field.value = "";
+                field.classList.remove("is-invalid");
+            }
+        });
+        if (hasDisability) {
+            markField(disabilityType, Boolean(disabilityType?.value.trim()), "Campo obligatorio.");
+            const pct = parseInt(disabilityPct?.value || "", 10);
+            markField(disabilityPct, Number.isInteger(pct) && pct >= 0 && pct <= 100, "Ingrese un valor entre 0 y 100.");
+        }
+
+        const siblingInput = form.querySelector("#famNumHermanos");
+        if (siblingInput) {
+            const raw = siblingInput.value.trim();
+            const quantity = parseInt(raw || "", 10);
+            markField(
+                siblingInput,
+                raw !== "" && Number.isInteger(quantity) && quantity >= 0 && quantity <= 10,
+                "Campo obligatorio. Ingrese 0 o un número entre 1 y 10."
+            );
+        }
+
+        form.querySelectorAll("#family_container .family-block").forEach((block) => {
+            const deceased = Boolean(block.querySelector('input[name^="famFallecido_"]')?.checked);
+            const noTiene = Boolean(block.querySelector('input[name^="famNoTiene_"]')?.checked);
+
+            if (deceased || noTiene) {
+                block.querySelectorAll(".is-invalid").forEach((field) => field.classList.remove("is-invalid"));
+                block.querySelectorAll(".invalid-feedback").forEach((feedback) => feedback.style.display = "none");
+                return;
+            }
+
+            block.querySelectorAll("input[required], select[required], textarea[required]").forEach((field) => {
+                if (field.disabled || field.type === "hidden") return;
+                let ok;
+                if (field.type === "radio" || field.type === "checkbox") {
+                    ok = Boolean(block.querySelector(`input[name="${field.name}"]:checked`));
+                } else {
+                    ok = Boolean(String(field.value || "").trim());
+                }
+                markField(field, ok, "Campo obligatorio.");
+            });
+
+            const tipoDocumento = block.querySelector('select[name^="famTipoDoc_"]');
+            const archivo = block.querySelector('input[name^="famArchivo_"]');
+            if (tipoDocumento?.value === "part_naci" && archivo && !archivo.files.length) {
+                markField(archivo, false, "Adjunte PDF si el documento es tipo partida de nacimiento.");
+            }
+        });
+
+        if (!valid) {
+            const first = form.querySelector(".is-invalid");
+            first?.scrollIntoView({ behavior: "smooth", block: "center" });
+            first?.focus();
+        }
+        return valid;
+    };
+
+    const bindForm2Validation = () => {
+        const form = document.querySelector(FORM_ID);
+        if (!form || form.dataset.hrApplicationsValidationBound === "1") return;
+        form.dataset.hrApplicationsValidationBound = "1";
+        form.addEventListener("submit", (ev) => {
+            if (!validateNativeForm2(form)) {
+                ev.preventDefault();
+                ev.stopImmediatePropagation();
+            }
+        });
+
+        // Los botones de navegación solo son necesarios en el formulario
+        // multistep nativo. En el formulario independiente del portal se
+        // guarda directamente con el botón Guardar Formulario 2.
+        form.querySelector("#prev-button-2")?.remove();
+        form.querySelector("#next-button-step2")?.remove();
+    };
+
     const initializeForm2 = () => {
         bindNativeReferenceFix();
 
         const form = document.querySelector(FORM_ID);
         if (!form) return;
+        bindForm2Validation();
 
         const payload = document.querySelector("#hr_application_form2_payload");
         const familyContainer = document.querySelector("#family_container");

@@ -122,24 +122,17 @@ function reindexReferences(form) {
 function syncReferenceFields(form) {
     const container = form.querySelector("#reference_container");
     if (!container) return;
-
-    const blocks = Array.from(container.querySelectorAll(".reference-block")).slice(0, MAX_REFERENCES);
-
+    const blocks = Array.from(container.querySelectorAll(".reference-block")).slice(0, 3);
+    const suffixes = ["nombre", "telefono", "ocupacion", "tiempo", "domicilio"];
     blocks.forEach((block, index) => {
-        const number = index + 1;
-        block.querySelectorAll("input[name]").forEach((input) => {
-            const name = input.getAttribute("name") || "";
-            const match = name.match(/^(ref_(?:nombre|telefono|ocupacion|tiempo|domicilio))_(?:\d+)$/);
-            if (match) {
-                input.name = `${match[1]}_${number}`;
+        suffixes.forEach((suffix) => {
+            const input = block.querySelector(`[name^="ref_${suffix}_"]`);
+            if (input) {
+                input.name = `ref_${suffix}_${index}`;
+                input.disabled = false;
             }
-            // Los campos visibles no deben quedar disabled al enviar la
-            // postulación; de lo contrario el navegador no los incluye en
-            // request.form y el controlador nativo no puede crear las líneas.
-            input.disabled = false;
         });
     });
-
     const total = form.querySelector("#total_references");
     if (total) total.value = String(blocks.length);
 }

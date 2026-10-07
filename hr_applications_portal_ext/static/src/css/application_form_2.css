@@ -5,3 +5,10 @@
 .o_hr_application_form2_page .family-block {
     margin-bottom: 1.5rem;
 }
+
+/* El formulario 2 independiente se guarda directamente; no muestra los
+   botones de navegación del multistep nativo. */
+.o_hr_application_form2_form #prev-button-2,
+.o_hr_application_form2_form #next-button-step2 {
+    display: none !important;
+}
