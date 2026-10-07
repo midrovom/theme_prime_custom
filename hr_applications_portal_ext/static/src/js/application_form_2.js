@@ -85,14 +85,14 @@
                             </select>
                             <div class="invalid-feedback">Seleccione una opción.</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3 o-document-number-field">
                             <label class="fs-6">Numero de Documento <span class="required-asterisk">*</span></label>
                             <input type="text" name="famCedula_${index}" class="form-control rounded-pill" required="required"/>
                             <div class="invalid-feedback">Campo obligatorio</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3 o-document-file-field d-none">
                             <label class="fs-6">Adjuntar Documento (PDF)</label>
-                            <input type="file" name="famArchivo_${index}" class="form-control rounded-pill fam-archivo-doc" accept="application/pdf"/>
+                            <input type="file" name="famArchivo_${index}" class="form-control rounded-pill fam-archivo-doc" accept="application/pdf" disabled="disabled"/>
                             <div class="invalid-feedback">Adjunte PDF si el documento es tipo partida de nacimiento.</div>
                         </div>
                         <div class="col-md-3">
@@ -152,6 +152,95 @@
         `;
     };
 
+    const isValidEcuadorianId = (cedula) => {
+        cedula = String(cedula || "").replace(/\D/g, "");
+        if (cedula.length !== 10) return false;
+        const province = parseInt(cedula.substring(0, 2), 10);
+        if (province < 1 || province > 24 || parseInt(cedula[2], 10) > 5) return false;
+        const coefficients = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+        let total = 0;
+        for (let i = 0; i < coefficients.length; i++) {
+            const product = parseInt(cedula[i], 10) * coefficients[i];
+            total += product >= 10 ? product - 9 : product;
+        }
+        const verifier = (10 - (total % 10)) % 10;
+        return verifier === parseInt(cedula[9], 10);
+    };
+
+    const isValidForeignId = (value) => /^\d{10}$/.test(String(value || ""));
+
+    const validateFamilyDocumentNumber = (input, showMessage = true) => {
+        if (!input) return true;
+        const block = input.closest('.family-block');
+        if (!block) return true;
+        const type = block.querySelector('select[name^="famTipoDoc_"]')?.value || "";
+        const value = String(input.value || "").trim();
+        let valid = true;
+        let message = "";
+
+        if (type === "cedula") {
+            valid = isValidEcuadorianId(value);
+            message = "La cédula no es válida.";
+        } else if (type === "id_extrj") {
+            valid = isValidForeignId(value);
+            message = "La cédula extranjera no es válida.";
+        } else if (type === "pasaporte") {
+            valid = value.length > 0;
+            message = "Campo obligatorio.";
+        } else if (type === "part_naci") {
+            valid = true;
+        } else {
+            valid = value.length > 0;
+            message = "Seleccione el tipo de documento.";
+        }
+
+        input.classList.toggle('is-invalid', !valid);
+        const feedback = input.parentElement?.querySelector('.invalid-feedback');
+        if (feedback && showMessage) {
+            feedback.textContent = valid ? "" : message;
+            feedback.style.display = valid ? "" : "block";
+        }
+        return valid;
+    };
+
+    const applyFamilyDocumentTypeRules = ($block) => {
+        if (!$block) return;
+        const type = $block.querySelector('select[name^="famTipoDoc_"]')?.value || "";
+        const numberInput = $block.querySelector('input[name^="famCedula_"]');
+        const numberWrapper = $block.querySelector('.o-document-number-field');
+        const fileInput = $block.querySelector('input[name^="famArchivo_"]');
+        const fileWrapper = $block.querySelector('.o-document-file-field');
+        if (!numberInput || !fileInput) return;
+
+        const isBirthCertificate = type === 'part_naci';
+
+        if (isBirthCertificate) {
+            numberInput.value = "";
+            numberInput.disabled = true;
+            numberInput.required = false;
+            numberInput.classList.remove('is-invalid');
+            numberWrapper?.classList.add('d-none');
+
+            fileInput.disabled = false;
+            fileInput.required = true;
+            fileWrapper?.classList.remove('d-none');
+        } else {
+            numberInput.disabled = false;
+            numberInput.required = true;
+            numberWrapper?.classList.remove('d-none');
+
+            fileInput.value = "";
+            fileInput.disabled = true;
+            fileInput.required = false;
+            fileInput.classList.remove('is-invalid');
+            fileWrapper?.classList.add('d-none');
+        }
+
+        if (type !== 'part_naci') {
+            validateFamilyDocumentNumber(numberInput, false);
+        }
+    };
+
     const setBlockValues = ($block, record) => {
         if (!record) return;
 
@@ -186,6 +275,7 @@
         depende.forEach(input => { input.checked = input.value === (record.economically_dependent || ""); });
         const disc = $block.querySelectorAll(`input[name="famDisc_${index}"]`);
         disc.forEach(input => { input.checked = input.value === (record.disability || ""); });
+        applyFamilyDocumentTypeRules($block);
     };
 
     const activateDisability = ($block) => {
@@ -247,6 +337,22 @@
         if (deceased) deceased.addEventListener("change", applySpecialState);
         if (noTiene) noTiene.addEventListener("change", applySpecialState);
 
+        const documentType = $block.querySelector('select[name^="famTipoDoc_"]');
+        const documentNumber = $block.querySelector('input[name^="famCedula_"]');
+        if (documentType) {
+            documentType.addEventListener("change", () => {
+                applyFamilyDocumentTypeRules($block);
+            });
+        }
+        if (documentNumber) {
+            documentNumber.addEventListener("blur", () => {
+                validateFamilyDocumentNumber(documentNumber);
+            });
+            documentNumber.addEventListener("input", () => {
+                documentNumber.classList.remove("is-invalid");
+            });
+        }
+
         updateName();
         if (deceased?.checked || noTiene?.checked) {
             const specialName = deceased?.checked ? "FALLECIDO" : "NO TIENE";
@@ -254,6 +360,7 @@
             if (hidden) hidden.value = specialName;
         }
         applySpecialState();
+        applyFamilyDocumentTypeRules($block);
         activateDisability($block);
     };
 
@@ -390,8 +497,16 @@
                 return;
             }
 
+            const tipoDocumento = block.querySelector('select[name^="famTipoDoc_"]');
+            const numeroDocumento = block.querySelector('input[name^="famCedula_"]');
+            const archivo = block.querySelector('input[name^="famArchivo_"]');
+            const tipoValue = tipoDocumento?.value || "";
+
             block.querySelectorAll("input[required], select[required], textarea[required]").forEach((field) => {
                 if (field.disabled || field.type === "hidden") return;
+                // El número de documento y el PDF son excluyentes según el tipo.
+                if (field === numeroDocumento && tipoValue === "part_naci") return;
+                if (field === archivo && tipoValue !== "part_naci") return;
                 let ok;
                 if (field.type === "radio" || field.type === "checkbox") {
                     ok = Boolean(block.querySelector(`input[name="${field.name}"]:checked`));
@@ -401,10 +516,32 @@
                 markField(field, ok, "Campo obligatorio.");
             });
 
-            const tipoDocumento = block.querySelector('select[name^="famTipoDoc_"]');
-            const archivo = block.querySelector('input[name^="famArchivo_"]');
-            if (tipoDocumento?.value === "part_naci" && archivo && !archivo.files.length) {
-                markField(archivo, false, "Adjunte PDF si el documento es tipo partida de nacimiento.");
+            if (tipoValue === "part_naci") {
+                if (numeroDocumento) {
+                    numeroDocumento.value = "";
+                    numeroDocumento.disabled = true;
+                    numeroDocumento.required = false;
+                    numeroDocumento.classList.remove("is-invalid");
+                }
+                if (archivo) {
+                    archivo.disabled = false;
+                    archivo.required = true;
+                    if (!archivo.files.length) {
+                        markField(archivo, false, "Adjunte PDF si el documento es tipo partida de nacimiento.");
+                    }
+                }
+            } else {
+                if (archivo) {
+                    archivo.disabled = true;
+                    archivo.required = false;
+                    archivo.value = "";
+                    archivo.classList.remove("is-invalid");
+                }
+                if (numeroDocumento) {
+                    numeroDocumento.disabled = false;
+                    numeroDocumento.required = true;
+                    markField(numeroDocumento, validateFamilyDocumentNumber(numeroDocumento), "Documento no válido.");
+                }
             }
         });
 

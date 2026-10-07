@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import date, datetime
 
 from odoo import http
@@ -64,18 +65,47 @@ class HrApplicationsPortal(http.Controller):
                 for name in (
                     f"famApellidoPaterno_{index}", f"famApellidoMaterno_{index}",
                     f"famPrimerNombre_{index}", f"famTipoDoc_{index}",
-                    f"famCedula_{index}", f"famFecha_{index}",
-                    f"famTelefono_{index}", f"famOcupacion_{index}",
-                    f"famDepende_{index}", f"famDisc_{index}",
+                    f"famFecha_{index}", f"famTelefono_{index}",
+                    f"famOcupacion_{index}", f"famDepende_{index}",
+                    f"famDisc_{index}",
                 ):
                     if not (post.get(name) or "").strip():
                         missing.append(name)
-                if post.get(f"famTipoDoc_{index}") == "part_naci":
+
+                document_type = (post.get(f"famTipoDoc_{index}") or "").strip()
+                document_number = (post.get(f"famCedula_{index}") or "").strip()
+
+                if document_type == "part_naci":
                     upload = request.httprequest.files.get(f"famArchivo_{index}")
                     if not upload or not upload.filename:
                         missing.append(f"famArchivo_{index}")
+                elif document_type in ("cedula", "id_extrj", "pasaporte"):
+                    if not document_number:
+                        missing.append(f"famCedula_{index}")
+                    elif document_type == "cedula" and not self._is_valid_ecuadorian_id(document_number):
+                        missing.append(f"famCedula_{index}")
+                    elif document_type == "id_extrj" and not re.fullmatch(r"\d{10}", document_number):
+                        missing.append(f"famCedula_{index}")
+                else:
+                    missing.append(f"famTipoDoc_{index}")
             index += 1
         return missing
+
+    @staticmethod
+    def _is_valid_ecuadorian_id(value):
+        cedula = re.sub(r"\D", "", str(value or ""))
+        if len(cedula) != 10:
+            return False
+        province = int(cedula[:2])
+        if province < 1 or province > 24 or int(cedula[2]) > 5:
+            return False
+        coefficients = [2, 1, 2, 1, 2, 1, 2, 1, 2]
+        total = 0
+        for i, coefficient in enumerate(coefficients):
+            product = int(cedula[i]) * coefficient
+            total += product - 9 if product >= 10 else product
+        verifier = (10 - (total % 10)) % 10
+        return verifier == int(cedula[9])
 
     def _medical_values(self, post):
         return {field: (post.get(field) or "").strip() for field in FORM2_MEDICAL_FIELDS}
