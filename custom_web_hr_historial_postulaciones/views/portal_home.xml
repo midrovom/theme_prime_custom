@@ -4,8 +4,8 @@
         <xpath expr="//div[@id='portal_common_category']" position="inside">
             <t t-set="portal_applications_custom"
                t-value="request.env['hr.applicant'].sudo().search([('portal_user_id', '=', request.env.user.id)])"/>
-            <t t-set="documentation_enabled_custom"
-               t-value="request.env['hr.applicant'].sudo().search_count([('portal_user_id', '=', request.env.user.id), ('stage_id.sequence', '>=', 3]) &gt; 0"/>
+            <t t-set="documentation_applicant_custom"
+               t-value="request.env['hr.applicant'].sudo().search([('portal_user_id', '=', request.env.user.id), ('stage_id.sequence', '>=', 3)], limit=1)"/>
 
             <div class="o_portal_index_card col-md-6 order-3">
                 <a href="/my/application-history"
@@ -25,7 +25,7 @@
                 </a>
             </div>
 
-            <t t-if="documentation_enabled_custom">
+            <t t-if="documentation_applicant_custom">
                 <div class="o_portal_index_card col-md-6 order-4">
                     <a href="/my/application-documentation"
                        title="Ingreso de documentación"
