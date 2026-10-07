@@ -39,6 +39,27 @@ class TestPortalApplications(TransactionCase):
         self.assertTrue(portal_applicant.phase_2_completed)
         self.assertEqual(portal_applicant.id, self.applicant.id)
 
+    def test_03_medical_values_do_not_default_to_no(self):
+        controller = __import__(
+            "hr_applications_portal_ext.controllers.portal_applications",
+            fromlist=["HrApplicationsPortal"],
+        ).HrApplicationsPortal()
+        values = controller._medical_values({
+            "enfermedad_persistente": "si",
+            "detalle_enfermedad_persistente": "Diabetes",
+            "tipo_sangre": "O+",
+        })
+
+        self.assertEqual(values["enfermedad_persistente"], "si")
+        self.assertEqual(values["detalle_enfermedad_persistente"], "Diabetes")
+        self.assertEqual(values["tipo_sangre"], "O+")
+        self.assertEqual(values["medicacion_continua"], "")
+        self.assertEqual(values["enfermedad_laboral"], "")
+        self.assertEqual(values["cirugia_realizada"], "")
+        self.assertEqual(values["discapacidad"], "")
+        self.assertEqual(values["tipo_discapacidad"], "")
+        self.assertEqual(values["porcentaje_discapacidad"], "")
+
     def test_03_completed_form2_cannot_be_reopened_from_portal(self):
         self.applicant.write({"form2_portal_enabled": True, "phase_2_completed": False})
         portal_applicant = self.applicant.with_user(self.portal_user)

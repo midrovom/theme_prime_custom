@@ -108,6 +108,11 @@ class HrApplicationsPortal(http.Controller):
         return verifier == int(cedula[9])
 
     def _medical_values(self, post):
+        """Persist exactly what the portal sent for each medical field.
+
+        Missing/empty values remain empty; the custom portal controller must
+        never inject a default value such as ``"no"``.
+        """
         return {field: (post.get(field) or "").strip() for field in FORM2_MEDICAL_FIELDS}
 
     def _family_values(self, post):
