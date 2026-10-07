@@ -8,7 +8,6 @@ from werkzeug.utils import secure_filename
 
 from odoo import fields, http, _
 from odoo.http import request
-from odoo.addons.http_routing.models.ir_http import slug
 from odoo.exceptions import ValidationError
 
 
@@ -146,7 +145,7 @@ class PortalApplications(http.Controller):
             raise NotFound(_('La postulación no tiene un puesto asociado.'))
 
         return request.redirect(
-            '/jobs/recruitment/%s?edit_applicant=%s' % (slug(applicant.job_id), applicant.id)
+            '/jobs/recruitment/%s?edit_applicant=%s' % (applicant.job_id.id, applicant.id)
         )
 
     @http.route('/my/application/<int:applicant_id>/data', type='http', auth='user', website=True, methods=['GET'], csrf=False)
