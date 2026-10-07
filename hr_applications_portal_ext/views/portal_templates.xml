@@ -39,7 +39,7 @@
                     <a href="/my/home" class="btn btn-outline-secondary">Volver al portal</a>
                 </div>
                 <t t-if="request.params.get('form2_saved')">
-                    <div class="alert alert-success">El Formulario 1 fue guardado y la Fase 2 quedó marcada como completada.</div>
+                    <div class="alert alert-success">¡Enhorabuena! 🎉 Tu postulación quedó registrada correctamente.</div>
                 </t>
                 <t t-if="applications">
                     <div class="table-responsive">
