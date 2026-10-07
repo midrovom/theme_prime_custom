@@ -63,7 +63,7 @@
                                                class="btn btn-primary">
                                                 Continuar postulación
                                             </a>
-                                            <span t-elif="not application.phase_2_completed" class="text-muted">Disponible en Ficha Tecnica</span>
+                                            <span t-elif="not application.phase_2_completed" class="text-muted"></span>
                                         </td>
                                     </tr>
                                 </t>
