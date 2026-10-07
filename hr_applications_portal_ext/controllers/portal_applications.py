@@ -195,6 +195,10 @@ class HrApplicationsPortal(http.Controller):
         applicant = self._get_owned_application(application_id)
         if applicant.portal_user_id.id != request.env.user.id:
             raise Forbidden()
+        # Formulario 2 es de un solo envío: una vez completado, no se
+        # permite volver a abrirlo ni sobrescribir sus datos desde el portal.
+        if not applicant._portal_can_continue_form2(request.env.user):
+            raise Forbidden()
 
         missing = self._validate_form2(post)
         if missing:

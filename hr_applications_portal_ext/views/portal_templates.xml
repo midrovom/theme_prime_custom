@@ -38,13 +38,12 @@
                                             <span t-else="" class="badge text-bg-warning">Pendiente</span>
                                         </td>
                                         <td class="text-end">
-                                            <a t-if="application.form2_portal_enabled"
+                                            <a t-if="application.form2_portal_enabled and not application.phase_2_completed"
                                                t-att-href="'/my/applications/%s/form2' % application.id"
                                                class="btn btn-primary">
-                                                <t t-if="application.phase_2_completed">Editar Formulario 2</t>
-                                                <t t-else="">Continuar postulación</t>
+                                                Continuar postulación
                                             </a>
-                                            <span t-else="" class="text-muted">Disponible en Ficha Tecnica</span>
+                                            <span t-elif="not application.phase_2_completed" class="text-muted">Disponible en Ficha Tecnica</span>
                                         </td>
                                     </tr>
                                 </t>

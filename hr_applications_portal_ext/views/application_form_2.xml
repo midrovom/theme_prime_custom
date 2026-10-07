@@ -12,7 +12,8 @@
         <t t-call="portal.portal_layout">
             <div class="container py-4 o_hr_application_form2_page">
                 <div class="mb-4">
-                    <h2>ACTUALIZACIÓN DE DATOS PARA CANDIDATOS</h2>
+                    <h2>Continuar postulación</h2>
+                    <p class="text-muted mb-0">Completa únicamente el Formulario 2 de esta postulación.</p>
                 </div>
                 <t t-if="error"><div class="alert alert-danger"><t t-esc="error"/></div></t>
                 <form id="hr_application_form2" t-att-action="'/my/applications/%s/form2/save' % application.id"

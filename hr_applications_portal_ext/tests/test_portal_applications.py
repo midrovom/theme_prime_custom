@@ -39,7 +39,16 @@ class TestPortalApplications(TransactionCase):
         self.assertTrue(portal_applicant.phase_2_completed)
         self.assertEqual(portal_applicant.id, self.applicant.id)
 
-    def test_03_portal_user_cannot_see_other_users_application(self):
+    def test_03_completed_form2_cannot_be_reopened_from_portal(self):
+        self.applicant.write({"form2_portal_enabled": True, "phase_2_completed": False})
+        portal_applicant = self.applicant.with_user(self.portal_user)
+
+        self.assertTrue(portal_applicant._portal_can_continue_form2(self.portal_user))
+        self.assertTrue(portal_applicant._complete_phase_2())
+        self.assertTrue(portal_applicant.phase_2_completed)
+        self.assertFalse(portal_applicant._portal_can_continue_form2(self.portal_user))
+
+    def test_04_portal_user_cannot_see_other_users_application(self):
         other_user = self.env["res.users"].with_context(no_reset_password=True).create({
             "name": "Other Portal Applicant", "login": "other.portal.application.test@example.com",
             "email": "other.portal.application.test@example.com",
@@ -52,7 +61,7 @@ class TestPortalApplications(TransactionCase):
         self.assertFalse(self.env["hr.applicant"].with_user(self.portal_user).search(
             [("id", "=", other_applicant.id)]))
 
-    def test_04_reference_lines_are_persisted_from_create_values(self):
+    def test_05_reference_lines_are_persisted_from_create_values(self):
         applicant = self.env["hr.applicant"].create({
             "partner_name": "Reference Persistence Applicant",
             "job_id": self.job.id,

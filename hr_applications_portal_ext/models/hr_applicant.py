@@ -115,6 +115,7 @@ class HrApplicant(models.Model):
         return bool(
             self._portal_can_access(user)
             and self.form2_portal_enabled
+            and not self.phase_2_completed
         )
 
     def _portal_can_access(self, user=None):
