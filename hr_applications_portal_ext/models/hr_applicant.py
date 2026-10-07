@@ -22,7 +22,40 @@ class HrApplicant(models.Model):
         if self.env.user.has_group("base.group_portal"):
             for vals in vals_list:
                 vals.setdefault("portal_user_id", self.env.user.id)
+        reference_payloads = []
+        for vals in vals_list:
+            commands = vals.get("reference_ids") or []
+            extracted = []
+            for command in commands:
+                if isinstance(command, (list, tuple)) and len(command) >= 3 and command[0] == 0 and isinstance(command[2], dict):
+                    extracted.append(dict(command[2]))
+            reference_payloads.append(extracted)
+
         records = super().create(vals_list)
+
+        # Garantía para el formulario público: si el controlador nativo recibió
+        # reference_ids pero el ORM no dejó líneas relacionadas, persistimos
+        # únicamente las referencias que todavía no existen. No tocamos el
+        # controlador nativo ni duplicamos referencias ya guardadas.
+        for record, refs in zip(records, reference_payloads):
+            if not refs:
+                continue
+            existing = {
+                (ref.nombre, ref.domicilio, ref.telefono, ref.ocupacion, ref.tiempo_conocerlo)
+                for ref in record.reference_ids
+            }
+            missing = [
+                ref for ref in refs
+                if (
+                    ref.get("nombre"), ref.get("domicilio"), ref.get("telefono"),
+                    ref.get("ocupacion"), ref.get("tiempo_conocerlo")
+                ) not in existing
+            ]
+            if missing:
+                self.env["applicant.reference"].create([
+                    dict(ref, applicant_id=record.id) for ref in missing
+                ])
+
         records._enable_form2_when_stage_3()
         return records
 

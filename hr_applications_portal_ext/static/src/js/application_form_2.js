@@ -1,247 +1,311 @@
 /** @odoo-module **/
 
-import publicWidget from "@web/legacy/js/public/public_widget";
+(() => {
+    const FORM_ID = "#hr_application_form2";
 
-const IGNORED_MEDICAL_KEYS = new Set([
-    "id", "applicant_id", "create_uid", "create_date",
-    "write_uid", "write_date", "display_name",
-]);
-
-function setValue(root, name, value) {
-    const input = root.querySelector(`[name="${name}"]`);
-    if (input && value !== undefined && value !== null) input.value = value;
-}
-
-function setRadio(root, name, value) {
-    if (!value) return;
-    const input = root.querySelector(`[name="${name}"][value="${value}"]`);
-    if (input) input.checked = true;
-}
-
-function addChildBlock(container, index, family = {}, childNumber = index) {
-    const block = document.createElement("div");
-    block.className = "row d-flex justify-content-center family-block child-family-block";
-    block.dataset.type = "Hijo";
-    block.innerHTML = `
-        <div class="col-12 col-md-10">
-            <div class="py-3 d-flex justify-content-start mb-3">
-                <span class="fw-normal fs-4 text-info">Hijo #${childNumber}</span>
-            </div>
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="fs-6">Apellido paterno</label>
-                    <input type="text" name="famApellidoPaterno_${index}" class="form-control rounded-pill"/>
-                </div>
-                <div class="col-md-3">
-                    <label class="fs-6">Apellido materno</label>
-                    <input type="text" name="famApellidoMaterno_${index}" class="form-control rounded-pill"/>
-                </div>
-                <div class="col-md-3">
-                    <label class="fs-6">Primer nombre</label>
-                    <input type="text" name="famPrimerNombre_${index}" class="form-control rounded-pill"/>
-                </div>
-                <div class="col-md-3">
-                    <label class="fs-6">Segundo nombre</label>
-                    <input type="text" name="famSegundoNombre_${index}" class="form-control rounded-pill"/>
-                </div>
-                <input type="hidden" name="famNombre_${index}" class="fam-nombre-completo"/>
-
-                <div class="col-md-3">
-                    <label class="fs-6">Tipo de documento</label>
-                    <select name="famTipoDoc_${index}" class="form-select rounded-pill py-2">
-                        <option value=""></option>
-                        <option value="cedula">Cédula</option>
-                        <option value="ruc">RUC</option>
-                        <option value="pasaporte">Pasaporte</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="fs-6">Número de documento</label>
-                    <input type="text" name="famCedula_${index}" class="form-control rounded-pill"/>
-                </div>
-                <div class="col-md-3">
-                    <label class="fs-6">Fecha nacimiento</label>
-                    <input type="date" name="famFecha_${index}" class="form-control rounded-pill"/>
-                </div>
-                <div class="col-md-3">
-                    <label class="fs-6">Teléfono</label>
-                    <input type="tel" name="famTelefono_${index}" class="form-control rounded-pill"/>
-                </div>
-                <div class="col-md-3">
-                    <label class="fs-6">Ocupación y Empresa</label>
-                    <input type="text" name="famOcupacion_${index}" class="form-control rounded-pill"/>
-                </div>
-                <div class="col-md-3">
-                    <label class="fs-6">Depende económicamente</label>
-                    <div class="d-flex mt-2">
-                        <label class="form-check me-3">
-                            <input class="form-check-input" type="radio" name="famDepende_${index}" value="si"/> Sí
-                        </label>
-                        <label class="form-check">
-                            <input class="form-check-input" type="radio" name="famDepende_${index}" value="no"/> No
-                        </label>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label class="fs-6">Discapacidad</label>
-                    <div class="d-flex mt-2">
-                        <label class="form-check me-3">
-                            <input class="form-check-input" type="radio" name="famDisc_${index}" value="si"/> Sí
-                        </label>
-                        <label class="form-check">
-                            <input class="form-check-input" type="radio" name="famDisc_${index}" value="no"/> No
-                        </label>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label class="fs-6">Tipo de discapacidad</label>
-                    <input type="text" name="famDiscTipo_${index}" class="form-control rounded-pill"/>
-                </div>
-            </div>
-        </div>`;
-
-    container.appendChild(block);
-
-    const updateName = () => {
-        const parts = [
-            block.querySelector(`[name="famApellidoPaterno_${index}"]`)?.value?.trim(),
-            block.querySelector(`[name="famApellidoMaterno_${index}"]`)?.value?.trim(),
-            block.querySelector(`[name="famPrimerNombre_${index}"]`)?.value?.trim(),
-            block.querySelector(`[name="famSegundoNombre_${index}"]`)?.value?.trim(),
-        ].filter(Boolean);
-        setValue(block, `famNombre_${index}`, parts.join(" "));
-    };
-
-    block.querySelectorAll(
-        `[name="famApellidoPaterno_${index}"],` +
-        `[name="famApellidoMaterno_${index}"],` +
-        `[name="famPrimerNombre_${index}"],` +
-        `[name="famSegundoNombre_${index}"]`
-    ).forEach((input) => input.addEventListener("input", updateName));
-
-    updateName();
-
-    setValue(block, `famNombre_${index}`, family.name);
-    setValue(block, `famCedula_${index}`, family.cedula);
-    setValue(block, `famFecha_${index}`, family.birthdate);
-    setValue(block, `famTelefono_${index}`, family.phone);
-    setValue(block, `famOcupacion_${index}`, family.occupation);
-    setRadio(block, `famDepende_${index}`, family.economically_dependent);
-    setRadio(block, `famDisc_${index}`, family.disability);
-    setValue(block, `famDiscTipo_${index}`, family.disability_type);
-
-    return block;
-}
-
-function addLegacyFamilyBlock(container, index, family = {}) {
-    const block = document.createElement("div");
-    block.className = "row d-flex justify-content-center family-block";
-    block.innerHTML = `
-      <div class="col-12 col-md-10">
-        <div class="py-3 d-flex justify-content-start mb-3">
-          <span class="fw-normal fs-4 text-info">Familiar #${index}</span>
-        </div>
-        <div class="row g-3">
-          <div class="col-md-3"><label class="fs-6">Nombres completos</label><input type="text" name="famNombre_${index}" class="form-control rounded-pill"/></div>
-          <div class="col-md-3"><label class="fs-6">Cédula</label><input type="text" name="famCedula_${index}" class="form-control rounded-pill"/></div>
-          <div class="col-md-3"><label class="fs-6">Fecha nacimiento</label><input type="date" name="famFecha_${index}" class="form-control rounded-pill"/></div>
-          <div class="col-md-3"><label class="fs-6">Teléfono</label><input type="tel" name="famTelefono_${index}" class="form-control rounded-pill"/></div>
-          <div class="col-md-3"><label class="fs-6">Ocupación y Empresa</label><input type="text" name="famOcupacion_${index}" class="form-control rounded-pill"/></div>
-          <div class="col-md-3"><label class="fs-6">Depende económicamente</label><div class="d-flex mt-2">
-            <label class="form-check me-3"><input class="form-check-input" type="radio" name="famDepende_${index}" value="si"/> Sí</label>
-            <label class="form-check"><input class="form-check-input" type="radio" name="famDepende_${index}" value="no"/> No</label>
-          </div></div>
-          <div class="col-md-3"><label class="fs-6">Discapacidad</label><div class="d-flex mt-2">
-            <label class="form-check me-3"><input class="form-check-input" type="radio" name="famDisc_${index}" value="si"/> Sí</label>
-            <label class="form-check"><input class="form-check-input" type="radio" name="famDisc_${index}" value="no"/> No</label>
-          </div></div>
-          <div class="col-md-3"><label class="fs-6">Tipo de discapacidad</label><input type="text" name="famDiscTipo_${index}" class="form-control rounded-pill"/></div>
-        </div>
-      </div>`;
-    container.appendChild(block);
-    setValue(block, `famNombre_${index}`, family.name);
-    setValue(block, `famCedula_${index}`, family.cedula);
-    setValue(block, `famFecha_${index}`, family.birthdate);
-    setValue(block, `famTelefono_${index}`, family.phone);
-    setValue(block, `famOcupacion_${index}`, family.occupation);
-    setRadio(block, `famDepende_${index}`, family.economically_dependent);
-    setRadio(block, `famDisc_${index}`, family.disability);
-    setValue(block, `famDiscTipo_${index}`, family.disability_type);
-    return block;
-}
-
-publicWidget.registry.HrApplicationsForm2 = publicWidget.Widget.extend({
-    selector: "#hr_application_form2",
-
-    start() {
-        const result = this._super(...arguments);
-        this.form = this.el;
-        this.payload = document.getElementById("hr_application_form2_payload");
-
-        // El XML nativo trae #form-step-2 con d-none. En el historial
-        // queremos mostrar exclusivamente este formulario.
-        const step2 = this.form.querySelector("#form-step-2");
-        if (step2) step2.classList.remove("d-none");
-
-        this._loadPayload();
-
-        this.form.querySelector("#prev-button-2")?.remove();
-        this.form.querySelector("#next-button-step2")?.remove();
-
-        const addButton = this.form.querySelector("#add-family");
-        if (addButton) addButton.addEventListener("click", (ev) => {
-            ev.preventDefault();
-            const container = this.form.querySelector("#family_container");
-            addLegacyFamilyBlock(container, container.querySelectorAll(".family-block").length + 1);
-        });
-
-        this.form.addEventListener("submit", () => {
-            const button = document.getElementById("hr_application_form2_save");
-            if (button) {
-                button.disabled = true;
-                button.textContent = "Guardando...";
-            }
-        });
-        return result;
-    },
-
-    _json(name, fallback) {
+    const safeParse = (value, fallback) => {
         try {
-            return JSON.parse(this.payload.dataset[name] || JSON.stringify(fallback));
-        } catch {
+            return JSON.parse(value || "") || fallback;
+        } catch (error) {
+            console.warn("No se pudo interpretar el payload familiar del Formulario 2.", error);
             return fallback;
         }
-    },
+    };
 
-    _loadPayload() {
-        const medical = this._json("medical", {});
-        for (const [name, value] of Object.entries(medical)) {
-            if (["enfermedad_persistente", "medicacion_continua", "enfermedad_laboral", "cirugia_realizada", "discapacidad"].includes(name)) {
-                setRadio(this.form, name, value);
-            } else if (!IGNORED_MEDICAL_KEYS.has(name)) {
-                setValue(this.form, name, value);
+    const htmlEscape = (value) => {
+        const div = document.createElement("div");
+        div.textContent = value == null ? "" : String(value);
+        return div.innerHTML;
+    };
+
+    const getDocumentOptions = () => `
+        <option value=""></option>
+        <option value="cedula">Cedula</option>
+        <option value="ruc">RUC</option>
+        <option value="pasaporte">Pasaporte</option>
+    `;
+
+    const getFamilyBlock = (label, index, typeCode) => {
+        const showDeceased = ["Padre", "Madre"].includes(label);
+        const showNoTiene = ["Padre", "Madre", "Conyugue"].includes(label);
+        const requiredFields = label === "Hijo(a)" || label === "Hermano(a)" || showDeceased || showNoTiene;
+        return `
+            <div class="row d-flex justify-content-center family-block" data-type="${htmlEscape(label)}" data-family-index="${index}">
+                <div class="col-12 col-md-10">
+                    <input type="hidden" name="famTipo_${index}" value="${htmlEscape(typeCode)}"/>
+                    <input type="hidden" name="famIndex_${index}" value="${index}"/>
+
+                    <div class="py-3 d-flex justify-content-start mb-3">
+                        <span class="fw-normal fs-4 text-info">${htmlEscape(label)}</span>
+                    </div>
+
+                    <div class="col-12 d-flex align-items-center mb-3 gap-3">
+                        ${showDeceased ? `
+                            <div class="col-md-3 d-flex align-items-center">
+                                <label class="fs-6 me-2">Fallecido</label>
+                                <input class="form-check-input" type="checkbox" name="famFallecido_${index}" value="1"/>
+                            </div>
+                        ` : ""}
+                        ${showNoTiene ? `
+                            <div class="form-check">
+                                <input class="form-check-input fam-no-tiene" type="checkbox" name="famNoTiene_${index}" value="1"/>
+                                <label class="form-check-label fs-6">No tiene</label>
+                            </div>
+                        ` : ""}
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="fs-6">Apellido paterno <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famApellidoPaterno_${index}" class="form-control rounded-pill" required="${requiredFields ? "required" : "required"}"/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Apellido materno <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famApellidoMaterno_${index}" class="form-control rounded-pill" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Primer nombre <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famPrimerNombre_${index}" class="form-control rounded-pill" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Segundo nombre</label>
+                            <input type="text" name="famSegundoNombre_${index}" class="form-control rounded-pill"/>
+                        </div>
+
+                        <input type="hidden" name="famNombre_${index}" class="fam-nombre-completo"/>
+
+                        <div class="col-12 col-md-3">
+                            <label class="fs-6">Tipo de documento <span class="text-danger">*</span></label>
+                            <select name="famTipoDoc_${index}" class="form-select rounded-pill py-2" required="required">
+                                ${getDocumentOptions()}
+                            </select>
+                            <div class="invalid-feedback">Seleccione una opción.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Numero de Documento <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famCedula_${index}" class="form-control rounded-pill" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Fecha nacimiento <span class="required-asterisk">*</span></label>
+                            <input type="date" name="famFecha_${index}" class="form-control rounded-pill" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Teléfono <span class="required-asterisk">*</span></label>
+                            <input type="tel" name="famTelefono_${index}" class="form-control rounded-pill fam-telefono" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Ocupación y Empresa <span class="required-asterisk">*</span></label>
+                            <input type="text" name="famOcupacion_${index}" class="form-control rounded-pill" required="required"/>
+                            <div class="invalid-feedback">Campo obligatorio</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Depende económicamente <span class="required-asterisk">*</span></label>
+                            <div class="d-flex mt-2">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="radio" name="famDepende_${index}" value="si" required="required"/>
+                                    <label class="form-check-label">Sí</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="famDepende_${index}" value="no" required="required"/>
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Discapacidad <span class="required-asterisk">*</span></label>
+                            <div class="d-flex mt-2">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input fam-disc-radio" type="radio" name="famDisc_${index}" value="si" required="required"/>
+                                    <label class="form-check-label">Sí</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input fam-disc-radio" type="radio" name="famDisc_${index}" value="no" required="required"/>
+                                    <label class="form-check-label">No</label>
+                                </div>
+                            </div>
+                            <div class="invalid-feedback d-none fam-disc-error">Campo obligatorio</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Tipo de discapacidad</label>
+                            <input type="text" name="famDiscTipo_${index}" class="form-control rounded-pill fam-disc-tipo" disabled="disabled"/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="fs-6">Porcentaje de discapacidad</label>
+                            <input type="number" name="famDiscPorcentaje_${index}" class="form-control rounded-pill fam-disc-porcentaje" min="0" max="100" step="1" disabled="disabled"/>
+                            <div class="invalid-feedback">Ingrese un valor entre 0 y 100</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    const setBlockValues = ($block, record) => {
+        if (!record) return;
+
+        const index = $block.dataset.familyIndex;
+        const name = String(record.name || "").trim();
+        const parts = name.split(/\s+/).filter(Boolean);
+        const set = (suffix, value) => {
+            const el = $block.querySelector(`[name="${suffix}_${index}"]`);
+            if (el && value !== undefined && value !== null) el.value = value;
+        };
+
+        if (parts.length) {
+            set("famApellidoPaterno", parts[0] || "");
+            set("famApellidoMaterno", parts[1] || "");
+            set("famPrimerNombre", parts.slice(2).join(" ") || parts[0] || "");
+        }
+        set("famNombre", name);
+        set("famCedula", record.cedula || "");
+        set("famFecha", record.birthdate || "");
+        set("famTelefono", record.phone || "");
+        set("famOcupacion", record.occupation || "");
+        set("famDiscTipo", record.disability_type || "");
+
+        const depende = $block.querySelectorAll(`input[name="famDepende_${index}"]`);
+        depende.forEach(input => { input.checked = input.value === (record.economically_dependent || ""); });
+        const disc = $block.querySelectorAll(`input[name="famDisc_${index}"]`);
+        disc.forEach(input => { input.checked = input.value === (record.disability || ""); });
+    };
+
+    const activateDisability = ($block) => {
+        const index = $block.dataset.familyIndex;
+        const value = $block.querySelector(`input[name="famDisc_${index}"]:checked`)?.value;
+        const type = $block.querySelector(`[name="famDiscTipo_${index}"]`);
+        const percentage = $block.querySelector(`[name="famDiscPorcentaje_${index}"]`);
+        if (value === "si") {
+            type.disabled = false;
+            percentage.disabled = false;
+        } else {
+            type.disabled = true;
+            percentage.disabled = true;
+            type.value = "";
+            percentage.value = "";
+        }
+    };
+
+    const bindFamilyBlock = ($block) => {
+        const index = $block.dataset.familyIndex;
+        const updateName = () => {
+            const val = [
+                $block.querySelector(`[name="famApellidoPaterno_${index}"]`)?.value || "",
+                $block.querySelector(`[name="famApellidoMaterno_${index}"]`)?.value || "",
+                $block.querySelector(`[name="famPrimerNombre_${index}"]`)?.value || "",
+                $block.querySelector(`[name="famSegundoNombre_${index}"]`)?.value || "",
+            ].map(v => v.trim()).filter(Boolean).join(" ");
+            const hidden = $block.querySelector(`[name="famNombre_${index}"]`);
+            if (hidden) hidden.value = val;
+        };
+
+        $block.querySelectorAll(`input[name="famApellidoPaterno_${index}"], input[name="famApellidoMaterno_${index}"], input[name="famPrimerNombre_${index}"], input[name="famSegundoNombre_${index}"]`)
+            .forEach(input => input.addEventListener("input", updateName));
+
+        $block.querySelectorAll(`input[name="famDisc_${index}"]`).forEach(input => {
+            input.addEventListener("change", () => activateDisability($block));
+        });
+
+        const deceased = $block.querySelector(`input[name="famFallecido_${index}"]`);
+        const noTiene = $block.querySelector(`input[name="famNoTiene_${index}"]`);
+        const applySpecialState = () => {
+            const locked = Boolean(deceased?.checked || noTiene?.checked);
+            if (deceased?.checked && noTiene) noTiene.checked = false;
+            if (noTiene?.checked && deceased) deceased.checked = false;
+            $block.querySelectorAll("input:not([type='hidden']), select, textarea").forEach(field => {
+                if (field === deceased || field === noTiene) return;
+                field.disabled = locked;
+                if (locked) {
+                    field.required = false;
+                    if (field.type === "radio" || field.type === "checkbox") field.checked = false;
+                    else field.value = "";
+                } else {
+                    field.required = true;
+                }
+            });
+            const hidden = $block.querySelector(`[name="famNombre_${index}"]`);
+            if (hidden) hidden.value = deceased?.checked ? "FALLECIDO" : noTiene?.checked ? "NO TIENE" : hidden.value;
+        };
+        if (deceased) deceased.addEventListener("change", applySpecialState);
+        if (noTiene) noTiene.addEventListener("change", applySpecialState);
+
+        updateName();
+        activateDisability($block);
+    };
+
+    const ensureSiblingField = (container) => {
+        let input = document.querySelector("#famNumHermanos");
+        if (input) return input;
+        const wrapper = document.createElement("div");
+        wrapper.className = "row d-flex justify-content-center mb-4 o_hr_num_hermanos_generated";
+        wrapper.innerHTML = `
+            <div class="col-12 col-md-10">
+                <label class="fs-6">Número de hermanos:</label>
+                <input type="number" id="famNumHermanos" name="numHermanos" class="form-control rounded-pill py-2" min="0" value="0"/>
+                <div class="invalid-feedback">Ingrese 0 o un número mayor.</div>
+            </div>
+        `;
+        container.parentElement.insertBefore(wrapper, container);
+        return wrapper.querySelector("#famNumHermanos");
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.querySelector(FORM_ID);
+        if (!form) return;
+
+        const payload = document.querySelector("#hr_application_form2_payload");
+        const familyContainer = document.querySelector("#family_container");
+        if (!familyContainer) return;
+
+        familyContainer.querySelectorAll(".family-block").forEach(node => node.remove());
+
+        const numHijos = Math.max(0, parseInt(payload?.dataset.numHijos || "0", 10) || 0);
+        const familyRecords = safeParse(payload?.dataset.families || "[]", []);
+
+        let familyCount = 0;
+        const nextRecord = () => familyRecords[familyCount] || null;
+
+        const appendFamily = (label, typeCode, record) => {
+            familyCount += 1;
+            const wrapper = document.createElement("div");
+            wrapper.innerHTML = getFamilyBlock(label, familyCount, typeCode).trim();
+            const block = wrapper.firstElementChild;
+            familyContainer.appendChild(block);
+            setBlockValues(block, record);
+            bindFamilyBlock(block);
+        };
+
+        appendFamily("Padre", "1", familyRecords[0]);
+        appendFamily("Madre", "2", familyRecords[1]);
+        appendFamily("Conyugue", "4", familyRecords[2]);
+
+        for (let i = 0; i < numHijos; i++) {
+            appendFamily("Hijo(a)", "5", familyRecords[3 + i]);
+        }
+
+        const siblingInput = ensureSiblingField(familyContainer);
+        const renderSiblings = () => {
+            const quantity = Math.max(0, parseInt(siblingInput.value || "0", 10) || 0);
+            familyContainer.querySelectorAll('.family-block[data-type="Hermano(a)"]').forEach(node => node.remove());
+
+            const start = 3 + numHijos;
+            for (let i = 0; i < quantity; i++) {
+                appendFamily("Hermano(a)", "3", familyRecords[start + i]);
             }
+        };
+
+        siblingInput.addEventListener("input", renderSiblings);
+        siblingInput.addEventListener("change", renderSiblings);
+        renderSiblings();
+
+        const step2 = document.querySelector("#form-step-2");
+        if (step2) {
+            step2.classList.remove("d-none");
         }
-
-        const container = this.form.querySelector("#family_container");
-        if (!container) return;
-
-        container.innerHTML = "";
-
-        const families = this._json("families", []);
-        const numHijos = Math.max(parseInt(this.payload.dataset.numHijos || "0", 10) || 0, 0);
-
-        // Conservamos familiares ya guardados. Si el postulante tiene hijos
-        // registrados en hr.applicant y todavía no existen líneas familiares
-        // suficientes, generamos los bloques faltantes para completar esa
-        // cantidad. Esto evita duplicarlos cuando ya fueron guardados.
-        families.forEach((family, i) => addLegacyFamilyBlock(container, i + 1, family));
-
-        const existingCount = families.length;
-        const missingChildren = Math.max(numHijos - existingCount, 0);
-        for (let i = 0; i < missingChildren; i++) {
-            const index = existingCount + i + 1;
-            addChildBlock(container, index, {}, i + 1);
-        }
-    },
-});
+    });
+})();

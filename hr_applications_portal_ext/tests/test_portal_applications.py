@@ -52,6 +52,21 @@ class TestPortalApplications(TransactionCase):
         self.assertFalse(self.env["hr.applicant"].with_user(self.portal_user).search(
             [("id", "=", other_applicant.id)]))
 
+    def test_04_reference_lines_are_persisted_from_create_values(self):
+        applicant = self.env["hr.applicant"].create({
+            "partner_name": "Reference Persistence Applicant",
+            "job_id": self.job.id,
+            "reference_ids": [(0, 0, {
+                "nombre": "Referencia Uno",
+                "domicilio": "Quito",
+                "telefono": "0999999999",
+                "ocupacion": "Ingeniero",
+                "tiempo_conocerlo": "5 años",
+            })],
+        })
+        self.assertEqual(len(applicant.reference_ids), 1)
+        self.assertEqual(applicant.reference_ids.nombre, "Referencia Uno")
+
 
 class TestFichaTecnicaEnablesForm2(TransactionCase):
     def setUp(self):

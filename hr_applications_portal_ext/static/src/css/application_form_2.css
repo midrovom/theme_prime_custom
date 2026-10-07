@@ -1,6 +1,7 @@
-.o_hr_application_form2_page #form-step-2.o_hr_applications_form2 { display: block !important; }
-.o_hr_application_form2_page #prev-button-2,
-.o_hr_application_form2_page #next-button-step2 { display: none !important; }
-.o_hr_application_form2_page #family_container .family-block { margin-bottom: 1rem; }
+.o_hr_application_form2_page #form-step-2 {
+    display: block !important;
+}
 
-.o_hr_application_form2_page #form-step-2 { display: block !important; }
+.o_hr_application_form2_page .family-block {
+    margin-bottom: 1.5rem;
+}
