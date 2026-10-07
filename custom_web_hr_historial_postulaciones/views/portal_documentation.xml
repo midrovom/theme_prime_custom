@@ -17,7 +17,7 @@
                         <div class="col-12 col-lg-6">
                             <div class="card h-100 shadow-sm border-0 rounded-4">
                                 <div class="card-body">
-                                    <h5 class="card-title" t-esc="applicant.name or applicant.display_name"/>
+                                    <h5 class="card-title" t-esc="applicant.candidate_id.name or applicant.partner_name or applicant.email_from or ('Postulación #%s' % applicant.id)"/>
                                     <p class="mb-1"><strong>Puesto:</strong> <span t-esc="applicant.job_id.name or '-'"/></p>
                                     <p class="mb-3"><strong>Etapa:</strong> <span t-esc="applicant.stage_id.name or '-'"/></p>
                                     <t t-set="doc" t-value="applicant.applicant_documentation_ids[:1]"/>
@@ -45,7 +45,7 @@
             <div class="container py-4">
                 <div class="mb-4">
                     <h2>Ingreso de documentación</h2>
-                    <p class="mb-1"><strong>Postulación:</strong> <span t-esc="applicant.name or applicant.display_name"/></p>
+                    <p class="mb-1"><strong>Postulación:</strong> <span t-esc="applicant.candidate_id.name or applicant.partner_name or applicant.email_from or ('Postulación #%s' % applicant.id)"/></p>
                     <p class="mb-0"><strong>Puesto:</strong> <span t-esc="applicant.job_id.name or '-'"/></p>
                 </div>
 

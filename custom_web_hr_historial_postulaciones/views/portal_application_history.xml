@@ -32,7 +32,7 @@
                                 <t t-foreach="applicants" t-as="applicant">
                                     <tr>
                                         <td>
-                                            <strong t-esc="applicant.name or applicant.display_name"/>
+                                            <strong t-esc="applicant.candidate_id.name or applicant.partner_name or applicant.email_from or ('Postulación #%s' % applicant.id)"/>
                                         </td>
                                         <td t-esc="applicant.job_id.name or '-'"/>
                                         <td t-esc="applicant.create_date.strftime('%d/%m/%Y') if applicant.create_date else '-'"/>
