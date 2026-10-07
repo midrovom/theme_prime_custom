@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="portal_application_history" name="Historial de postulación">
+        <t t-call="portal.portal_layout">
+            <div class="container py-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <div>
+                        <h2 class="mb-1">Historial de postulación</h2>
+                        <p class="text-muted mb-0">Consulte las postulaciones registradas con su usuario.</p>
+                    </div>
+                    <a href="/jobs" class="btn btn-outline-primary rounded-pill">Ver vacantes</a>
+                </div>
+
+                <t t-if="not applicants">
+                    <div class="alert alert-info rounded-4">
+                        No existen postulaciones registradas con su usuario.
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="table-responsive portal-table-card">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Postulación</th>
+                                    <th>Puesto</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="applicants" t-as="applicant">
+                                    <tr>
+                                        <td>
+                                            <strong t-esc="applicant.name or applicant.display_name"/>
+                                        </td>
+                                        <td t-esc="applicant.job_id.name or '-'"/>
+                                        <td t-esc="applicant.create_date.strftime('%d/%m/%Y') if applicant.create_date else '-'"/>
+                                        <td>
+                                            <span class="badge rounded-pill text-bg-secondary" t-esc="applicant.stage_id.name or 'Sin estado'"/>
+                                        </td>
+                                        <td class="text-end">
+                                            <t t-if="applicant.portal_update_allowed">
+                                                <a t-att-href="'/my/application/%s/edit' % applicant.id"
+                                                   class="btn btn-sm btn-primary rounded-pill">
+                                                    Actualizar
+                                                </a>
+                                            </t>
+                                            <t t-else="">
+                                                <span class="text-muted small">Sin permiso</span>
+                                            </t>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

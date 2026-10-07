@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="portal_documentation_index" name="Ingreso de documentación - índice">
+        <t t-call="portal.portal_layout">
+            <div class="container py-4">
+                <h2>Ingreso de documentación</h2>
+                <p class="text-muted">Complete todos los documentos requeridos para las postulaciones habilitadas.</p>
+
+                <t t-if="not applicants">
+                    <div class="alert alert-info rounded-4">
+                        La carga documental no está habilitada para ninguna postulación.
+                    </div>
+                </t>
+
+                <div class="row g-4">
+                    <t t-foreach="applicants" t-as="applicant">
+                        <div class="col-12 col-lg-6">
+                            <div class="card h-100 shadow-sm border-0 rounded-4">
+                                <div class="card-body">
+                                    <h5 class="card-title" t-esc="applicant.name or applicant.display_name"/>
+                                    <p class="mb-1"><strong>Puesto:</strong> <span t-esc="applicant.job_id.name or '-'"/></p>
+                                    <p class="mb-3"><strong>Etapa:</strong> <span t-esc="applicant.stage_id.name or '-'"/></p>
+                                    <t t-set="doc" t-value="applicant.applicant_documentation_ids[:1]"/>
+                                    <t t-if="doc and doc.is_complete">
+                                        <div class="alert alert-success py-2 rounded-3">Documentación completa.</div>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="alert alert-warning py-2 rounded-3">Documentación pendiente.</div>
+                                    </t>
+                                    <a t-att-href="'/my/application/%s/documentation' % applicant.id"
+                                       class="btn btn-primary rounded-pill">
+                                        Ingresar documentación
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_documentation_form" name="Ingreso de documentación - formulario">
+        <t t-call="portal.portal_layout">
+            <div class="container py-4">
+                <div class="mb-4">
+                    <h2>Ingreso de documentación</h2>
+                    <p class="mb-1"><strong>Postulación:</strong> <span t-esc="applicant.name or applicant.display_name"/></p>
+                    <p class="mb-0"><strong>Puesto:</strong> <span t-esc="applicant.job_id.name or '-'"/></p>
+                </div>
+
+                <t t-if="errors">
+                    <div class="alert alert-danger rounded-4">
+                        <strong>Falta información o existen archivos inválidos:</strong>
+                        <ul class="mb-0 mt-2">
+                            <t t-foreach="errors" t-as="error">
+                                <li t-esc="error"/>
+                            </t>
+                        </ul>
+                    </div>
+                </t>
+
+                <form method="post"
+                      enctype="multipart/form-data"
+                      class="card border-0 shadow-sm rounded-4"
+                      t-attf-action="/my/application/#{applicant.id}/documentation">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="card-body p-4">
+                        <div class="alert alert-info rounded-3">
+                            Todos los documentos son obligatorios. Los documentos indicados como PDF deben cargarse exclusivamente en PDF.
+                            La fotografía puede cargarse en JPG, PNG o PDF.
+                        </div>
+
+                        <div class="row g-4">
+                            <t t-foreach="document_fields" t-as="document_field">
+                                <t t-set="field_name" t-value="document_field[0]"/>
+                                <t t-set="label" t-value="document_field[1]"/>
+                                <t t-set="allowed" t-value="document_field[2]"/>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        <t t-esc="label"/> <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="file"
+                                           class="form-control"
+                                           t-att-name="field_name"
+                                           t-att-accept="'.' + ',.'.join(allowed)"/>
+                                    <t t-if="documentation and documentation[field_name]">
+                                        <div class="small text-success mt-2">
+                                            Archivo actual: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/>
+                                        </div>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="small text-danger mt-2">Falta información.</div>
+                                    </t>
+                                </div>
+                            </t>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="/my/application-documentation" class="btn btn-outline-secondary rounded-pill">Cancelar</a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar documentación</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </t>
+    </template>
+</odoo>

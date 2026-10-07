@@ -1,0 +1,24 @@
+.portal-card-icon {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+    border-radius: 16px;
+    background: #eef3f7;
+    color: #0d6efd;
+}
+
+.portal-table-card {
+    border: 1px solid rgba(0, 0, 0, .08);
+    border-radius: 1rem;
+    overflow: hidden;
+    background: #fff;
+}
+
+.portal-table-card table thead th {
+    background: #f6f8fa;
+    white-space: nowrap;
+}
+
+.js-applicant-edit-form .is-invalid {
+    border-color: #dc3545 !important;
+}
