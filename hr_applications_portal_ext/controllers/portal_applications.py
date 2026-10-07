@@ -88,6 +88,7 @@ class HrApplicationsPortal(http.Controller):
         return {
             "medical_json": json.dumps(medical, default=self._json_default),
             "families_json": json.dumps(families, default=self._json_default),
+            "num_hijos": applicant.num_hijos or 0,
         }
 
     @http.route("/my/applications", type="http", auth="user", website=True, methods=["GET"])
@@ -104,6 +105,8 @@ class HrApplicationsPortal(http.Controller):
                 type="http", auth="user", website=True, methods=["GET"])
     def application_form2(self, application_id, **kwargs):
         applicant = self._get_owned_application(application_id)
+        if not applicant._portal_can_continue_form2(request.env.user):
+            raise Forbidden()
         values = {"application": applicant}
         values.update(self._form2_payload(applicant))
         return request.render(

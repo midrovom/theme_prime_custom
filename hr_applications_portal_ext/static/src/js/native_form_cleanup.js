@@ -118,6 +118,32 @@ function reindexReferences(form) {
     if (total) total.value = String(blocks.length);
 }
 
+
+function syncReferenceFields(form) {
+    const container = form.querySelector("#reference_container");
+    if (!container) return;
+
+    const blocks = Array.from(container.querySelectorAll(".reference-block")).slice(0, MAX_REFERENCES);
+
+    blocks.forEach((block, index) => {
+        const number = index + 1;
+        block.querySelectorAll("input[name]").forEach((input) => {
+            const name = input.getAttribute("name") || "";
+            const match = name.match(/^(ref_(?:nombre|telefono|ocupacion|tiempo|domicilio))_(?:\d+)$/);
+            if (match) {
+                input.name = `${match[1]}_${number}`;
+            }
+            // Los campos visibles no deben quedar disabled al enviar la
+            // postulación; de lo contrario el navegador no los incluye en
+            // request.form y el controlador nativo no puede crear las líneas.
+            input.disabled = false;
+        });
+    });
+
+    const total = form.querySelector("#total_references");
+    if (total) total.value = String(blocks.length);
+}
+
 function normalizeReferences(form) {
     removeExtraReferences(form);
     reindexReferences(form);
@@ -197,6 +223,14 @@ if (publicWidget.registry.MultistepForm) {
             this.$("#form-step-3").addClass("d-none");
             this.$("#form-step-2").addClass("d-none");
             this.$("#form-step-1").removeClass("d-none");
+        },
+
+        _onSubmitForm(ev) {
+            // Antes de delegar al JS nativo dejamos las tres referencias con
+            // nombres consecutivos y habilitadas para que /jobs/submit pueda
+            // construir applicant.reference.
+            syncReferenceFields(this.el);
+            return super._onSubmitForm(...arguments);
         },
     });
 }
