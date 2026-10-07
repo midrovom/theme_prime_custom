@@ -65,6 +65,10 @@ class HrApplicationsPortal(http.Controller):
             if name:
                 values.append({
                     "name": name,
+                    "familiar_type": post.get(f"famTipo_{index}") or False,
+                    "fallecido": post.get(f"famFallecido_{index}") == "1",
+                    "no_tiene": bool(post.get(f"famNoTiene_{index}")),
+                    "document_type": post.get(f"famTipoDoc_{index}") or False,
                     "cedula": (post.get(f"famCedula_{index}") or "").strip(),
                     "birthdate": post.get(f"famFecha_{index}") or False,
                     "phone": (post.get(f"famTelefono_{index}") or "").strip(),
@@ -72,6 +76,7 @@ class HrApplicationsPortal(http.Controller):
                     "economically_dependent": post.get(f"famDepende_{index}") or False,
                     "disability": post.get(f"famDisc_{index}") or False,
                     "disability_type": (post.get(f"famDiscTipo_{index}") or "").strip(),
+                    "disability_percentage": int(post.get(f"famDiscPorcentaje_{index}") or 0),
                 })
             index += 1
         return values

@@ -20,9 +20,10 @@
 
     const getDocumentOptions = () => `
         <option value=""></option>
-        <option value="cedula">Cedula</option>
-        <option value="ruc">RUC</option>
+        <option value="cedula">Cédula</option>
+        <option value="id_extrj">Cédula extranjera</option>
         <option value="pasaporte">Pasaporte</option>
+        <option value="part_naci">Partida de Nacimiento</option>
     `;
 
     const getFamilyBlock = (label, index, typeCode) => {
@@ -163,11 +164,18 @@
             set("famPrimerNombre", parts.slice(2).join(" ") || parts[0] || "");
         }
         set("famNombre", name);
+        set("famTipoDoc", record.document_type || "");
         set("famCedula", record.cedula || "");
         set("famFecha", record.birthdate || "");
         set("famTelefono", record.phone || "");
         set("famOcupacion", record.occupation || "");
         set("famDiscTipo", record.disability_type || "");
+        set("famDiscPorcentaje", record.disability_percentage || "");
+
+        const fallecido = $block.querySelector(`input[name="famFallecido_${index}"]`);
+        const noTiene = $block.querySelector(`input[name="famNoTiene_${index}"]`);
+        if (fallecido) fallecido.checked = Boolean(record.fallecido);
+        if (noTiene) noTiene.checked = Boolean(record.no_tiene);
 
         const depende = $block.querySelectorAll(`input[name="famDepende_${index}"]`);
         depende.forEach(input => { input.checked = input.value === (record.economically_dependent || ""); });
@@ -235,6 +243,12 @@
         if (noTiene) noTiene.addEventListener("change", applySpecialState);
 
         updateName();
+        if (deceased?.checked || noTiene?.checked) {
+            const specialName = deceased?.checked ? "FALLECIDO" : "NO TIENE";
+            const hidden = $block.querySelector(`[name="famNombre_${index}"]`);
+            if (hidden) hidden.value = specialName;
+        }
+        applySpecialState();
         activateDisability($block);
     };
 
@@ -254,7 +268,38 @@
         return wrapper.querySelector("#famNumHermanos");
     };
 
-    document.addEventListener("DOMContentLoaded", () => {
+    const normalizeNativeReferencesForController = () => {
+        const form = document.querySelector("#hr_job_recruitment_form");
+        if (!form) return;
+
+        const zeroBased = form.querySelector('input[name="ref_nombre_0"]');
+        const third = form.querySelector('input[name="ref_nombre_3"]');
+        if (zeroBased || !third) return;
+
+        const suffixes = ["nombre", "telefono", "ocupacion", "tiempo", "domicilio"];
+        const mappings = [[3, 2], [2, 1], [1, 0]];
+
+        for (const [from, to] of mappings) {
+            for (const suffix of suffixes) {
+                form.querySelectorAll(`[name="ref_${suffix}_${from}"]`).forEach((input) => {
+                    input.name = `ref_${suffix}_${to}`;
+                });
+            }
+        }
+    };
+
+    const bindNativeReferenceFix = () => {
+        const form = document.querySelector("#hr_job_recruitment_form");
+        if (!form || form.dataset.hrReferenceNormalized === "1") return;
+
+        const normalize = () => normalizeNativeReferencesForController();
+        form.addEventListener("submit", normalize, true);
+        form.dataset.hrReferenceNormalized = "1";
+    };
+
+    const initializeForm2 = () => {
+        bindNativeReferenceFix();
+
         const form = document.querySelector(FORM_ID);
         if (!form) return;
 
@@ -267,8 +312,20 @@
         const numHijos = Math.max(0, parseInt(payload?.dataset.numHijos || "0", 10) || 0);
         const familyRecords = safeParse(payload?.dataset.families || "[]", []);
 
+        const recordsByType = {
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": [],
+        };
+
+        familyRecords.forEach((record) => {
+            const type = String(record?.familiar_type || "");
+            if (recordsByType[type]) recordsByType[type].push(record);
+        });
+
         let familyCount = 0;
-        const nextRecord = () => familyRecords[familyCount] || null;
 
         const appendFamily = (label, typeCode, record) => {
             familyCount += 1;
@@ -280,32 +337,46 @@
             bindFamilyBlock(block);
         };
 
-        appendFamily("Padre", "1", familyRecords[0]);
-        appendFamily("Madre", "2", familyRecords[1]);
-        appendFamily("Conyugue", "4", familyRecords[2]);
+        // El nativo siempre presenta un bloque para Padre, Madre y Cónyuge.
+        appendFamily("Padre", "1", recordsByType["1"][0] || null);
+        appendFamily("Madre", "2", recordsByType["2"][0] || null);
+        appendFamily("Conyugue", "4", recordsByType["4"][0] || null);
 
+        // Los hijos se generan exactamente según hr.applicant.num_hijos.
         for (let i = 0; i < numHijos; i++) {
-            appendFamily("Hijo(a)", "5", familyRecords[3 + i]);
+            appendFamily("Hijo(a)", "5", recordsByType["5"][i] || null);
         }
 
-        const siblingInput = ensureSiblingField(familyContainer);
-        const renderSiblings = () => {
-            const quantity = Math.max(0, parseInt(siblingInput.value || "0", 10) || 0);
-            familyContainer.querySelectorAll('.family-block[data-type="Hermano(a)"]').forEach(node => node.remove());
+        // El número de hermanos es exclusivamente de frontend y no se guarda
+        // en hr.applicant. El campo ya existe en el Formulario 2 nativo.
+        const siblingInput = document.querySelector("#famNumHermanos");
+        if (siblingInput) {
+            const renderSiblings = () => {
+                const quantity = Math.max(0, parseInt(siblingInput.value || "0", 10) || 0);
+                familyContainer
+                    .querySelectorAll('.family-block[data-type="Hermano(a)"]')
+                    .forEach(node => node.remove());
 
-            const start = 3 + numHijos;
-            for (let i = 0; i < quantity; i++) {
-                appendFamily("Hermano(a)", "3", familyRecords[start + i]);
-            }
-        };
+                for (let i = 0; i < quantity; i++) {
+                    appendFamily("Hermano(a)", "3", recordsByType["3"][i] || null);
+                }
+            };
 
-        siblingInput.addEventListener("input", renderSiblings);
-        siblingInput.addEventListener("change", renderSiblings);
-        renderSiblings();
+            siblingInput.addEventListener("input", renderSiblings);
+            siblingInput.addEventListener("change", renderSiblings);
+            renderSiblings();
+        }
 
         const step2 = document.querySelector("#form-step-2");
-        if (step2) {
-            step2.classList.remove("d-none");
-        }
-    });
+        if (step2) step2.classList.remove("d-none");
+    };
+
+    // Los assets de Odoo pueden cargarse después de DOMContentLoaded.
+    // Ejecutamos inmediatamente si el DOM ya está listo y, de lo contrario,
+    // esperamos una sola vez al evento.
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initializeForm2, { once: true });
+    } else {
+        initializeForm2();
+    }
 })();
