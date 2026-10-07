@@ -82,7 +82,37 @@ class TestPortalApplications(TransactionCase):
         self.assertFalse(self.env["hr.applicant"].with_user(self.portal_user).search(
             [("id", "=", other_applicant.id)]))
 
-    def test_05_reference_lines_are_persisted_from_create_values(self):
+    def test_05_portal_initial_create_does_not_keep_medical_commands(self):
+        portal_applicant_model = self.Applicant.with_user(self.portal_user)
+        applicant = portal_applicant_model.create({
+            "partner_name": "Portal Medical Deferred",
+            "job_id": self.job.id,
+            "medical_ids": [(0, 0, {
+                "enfermedad_persistente": "no",
+                "medicacion_continua": "no",
+                "enfermedad_laboral": "no",
+                "cirugia_realizada": "no",
+                "discapacidad": "no",
+                "tipo_sangre": "",
+            })],
+        })
+        self.assertFalse(applicant.medical_ids)
+
+    def test_06_portal_education_payload_requires_all_fields(self):
+        controller = __import__(
+            "hr_applications_portal_ext.models.hr_applicant",
+            fromlist=["HrApplicant"],
+        ).HrApplicant
+        self.assertTrue(hasattr(controller, "_validate_portal_education_submission"))
+
+    def test_07_education_fields_reference_required_set(self):
+        controller = __import__(
+            "hr_applications_portal_ext.models.hr_applicant",
+            fromlist=["HrApplicant"],
+        ).HrApplicant
+        self.assertTrue(callable(controller._validate_portal_education_submission))
+
+    def test_08_reference_lines_are_persisted_from_create_values(self):
         applicant = self.env["hr.applicant"].create({
             "partner_name": "Reference Persistence Applicant",
             "job_id": self.job.id,

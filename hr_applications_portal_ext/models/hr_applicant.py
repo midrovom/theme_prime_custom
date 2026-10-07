@@ -1,4 +1,6 @@
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+import re
 from odoo.http import request
 
 class HrApplicant(models.Model):
@@ -18,11 +20,62 @@ class HrApplicant(models.Model):
         help="Se activa automáticamente cuando la postulación entra en la etapa con secuencia 3 (Ficha Tecnica).",
     )
 
+    @staticmethod
+    def _validate_portal_education_submission():
+        """Evita crear una postulación portal con educación incompleta.
+
+        El formulario nativo permite que varios campos de educación lleguen
+        vacíos hasta el controlador. La extensión valida aquí el mismo
+        conjunto de campos que el frontend exige, de modo que un POST directo
+        tampoco pueda dejar una línea applicant.education incompleta.
+        """
+        try:
+            form = request.httprequest.form
+        except Exception:
+            return
+
+        index_set = set()
+        for key in form.keys():
+            match = re.match(
+                r"(?:level_id|institucion|inicioEstudio|finEstudio|paisEducacion|ciudad|titulo)_(\d+)$",
+                key,
+            )
+            if match:
+                index_set.add(int(match.group(1)))
+
+        if not index_set:
+            return
+
+        required_fields = (
+            "level_id", "institucion", "inicioEstudio", "finEstudio",
+            "paisEducacion", "ciudad", "titulo",
+        )
+        missing = []
+        for index in sorted(index_set):
+            for field in required_fields:
+                name = f"{field}_{index}"
+                value = (form.get(name) or "").strip()
+                if not value:
+                    missing.append(name)
+
+        if missing:
+            raise ValidationError(
+                "Complete todos los campos obligatorios de Educación antes de enviar la postulación."
+            )
+
     @api.model_create_multi
     def create(self, vals_list):
-        if self.env.user.has_group("base.group_portal"):
+        is_portal = self.env.user.has_group("base.group_portal")
+
+        if is_portal:
+            self._validate_portal_education_submission()
             for vals in vals_list:
                 vals.setdefault("portal_user_id", self.env.user.id)
+                # El Formulario 2 es independiente y se envía posteriormente.
+                # Por eso el primer envío de la postulación no debe crear
+                # applicant.medical ni conservar los valores por defecto "no"
+                # que entrega el controlador nativo.
+                vals.pop("medical_ids", None)
 
         # El controlador nativo espera índices 0, 1 y 2 para las referencias.
         # Capturamos tanto los comandos one2many que lleguen en vals como los

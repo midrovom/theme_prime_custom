@@ -203,6 +203,71 @@ function normalizeInitialState(form, widget = null) {
     normalizeReferences(form);
 }
 
+function validateEducationSubmission(form) {
+    const container = getEducationContainer(form);
+    if (!container) return true;
+
+    const requiredPrefixes = [
+        "level_id_",
+        "institucion_",
+        "inicioEstudio_",
+        "finEstudio_",
+        "paisEducacion_",
+        "ciudad_",
+        "titulo_",
+    ];
+
+    const indexes = new Set();
+    requiredPrefixes.forEach((prefix) => {
+        container.querySelectorAll(`[name^="${prefix}"]`).forEach((field) => {
+            const match = field.name.match(/_(\d+)$/);
+            if (match) indexes.add(match[1]);
+        });
+    });
+
+    if (!indexes.size) {
+        const message = document.querySelector("#educationMessageText");
+        const alert = document.querySelector("#educationMessage");
+        if (message && alert) {
+            message.textContent = "Complete al menos un bloque de educación antes de enviar la postulación.";
+            alert.classList.remove("d-none");
+        }
+        return false;
+    }
+
+    let valid = true;
+    let firstError = null;
+
+    Array.from(indexes).sort((a, b) => Number(a) - Number(b)).forEach((index) => {
+        requiredPrefixes.forEach((prefix) => {
+            const field = container.querySelector(`[name="${prefix}${index}"]`);
+            if (!field || field.disabled || !field.offsetParent) return;
+
+            const value = String(field.value ?? "").trim();
+            const isValid = value !== "";
+            field.classList.toggle("is-invalid", !isValid);
+
+            if (!isValid) {
+                valid = false;
+                if (!firstError) firstError = field;
+            }
+        });
+    });
+
+    if (!valid) {
+        const message = document.querySelector("#educationMessageText");
+        const alert = document.querySelector("#educationMessage");
+        if (message && alert) {
+            message.textContent = "Complete todos los campos de educación antes de enviar la postulación.";
+            alert.classList.remove("d-none");
+        }
+        firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+        firstError?.focus();
+    }
+
+    return valid;
+}
+
 /*
  * Patch del widget legacy usado por custom_web_hr_datos_candidatos.
  * Odoo 18 recomienda patch() para modificar clases existentes sin editar el
@@ -266,6 +331,17 @@ if (publicWidget.registry.MultistepForm) {
         },
 
         _onSubmitForm(ev) {
+            /*
+             * El modelo applicant.education exige que cada bloque tenga
+             * institución y el resto de sus campos. Validamos antes de dejar
+             * que el controlador nativo haga el POST, evitando el error de
+             * registro incompleto y permitiendo volver a llenar el Formulario 3.
+             */
+            if (!validateEducationSubmission(this.el)) {
+                ev.preventDefault();
+                return;
+            }
+
             // Antes de delegar al JS nativo dejamos las tres referencias con
             // nombres consecutivos y habilitadas para que /jobs/submit pueda
             // construir applicant.reference.
