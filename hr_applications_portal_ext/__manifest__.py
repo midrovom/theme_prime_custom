@@ -1,12 +1,12 @@
 {
     "name": "HR Applications Portal Extension",
-    "version": "18.0.1.0.5",
+    "version": "18.0.1.0.6",
     "summary": "Portal para continuar y completar el Formulario 2 de postulaciones",
     "description": "Extiende custom_web_hr_datos_candidatos para separar el Formulario 2 y gestionar el historial de postulaciones del portal.",
     "author": "Callphone Ecuador / Bolivar Rodriguez",
     "license": "LGPL-3",
     "category": "Human Resources",
-    "depends": ["custom_web_hr_datos_candidatos", "portal", "website"],
+    "depends": ["custom_web_hr_datos_candidatos", "custom_web_candidatos", "portal", "website"],
     "data": [
         "security/ir.model.access.csv",
         "security/security.xml",

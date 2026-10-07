@@ -1,4 +1,51 @@
+
 /** @odoo-module **/
+
+
+/**
+ * Renumeración únicamente visual de los formularios.
+ * Los ids, rutas y nombres técnicos siguen siendo los mismos para no
+ * alterar la lógica existente del módulo.
+ */
+const renameVisibleFormNumbers = () => {
+    const updateFirstMatchingText = (root, pattern, replacement) => {
+        if (!root) return;
+
+        const walker = document.createTreeWalker(
+            root,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode(node) {
+                    return node.nodeValue?.trim()
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_REJECT;
+                },
+            }
+        );
+
+        let node;
+        while ((node = walker.nextNode())) {
+            const current = node.nodeValue.trim();
+            if (!pattern.test(current)) continue;
+            node.nodeValue = current.replace(pattern, replacement);
+            return;
+        }
+    };
+
+    updateFirstMatchingText(
+        document.querySelector('#form-step-2'),
+        /^2\.\s*Información de salud personal\b/i,
+        '1. Información de salud personal'
+    );
+
+    updateFirstMatchingText(
+        document.querySelector('#form-step-3'),
+        /^3\.\s*/i,
+        '2. '
+    );
+};
+
+document.addEventListener('DOMContentLoaded', renameVisibleFormNumbers);
 
 import publicWidget from "@web/legacy/js/public/public_widget";
 import { patch } from "@web/core/utils/patch";
