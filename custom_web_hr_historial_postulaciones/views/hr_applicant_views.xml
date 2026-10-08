@@ -41,11 +41,11 @@
                                 <div class="oe_title mb-3">
                                     <div class="row g-3 mb-3">
                                         <div class="col-12 col-md-4">
-                                            <label class="o_form_label">Fecha de carga</label>
+                                            <span class="o_form_label">Fecha de carga</span>
                                             <field name="create_date" readonly="1" class="fw-semibold"/>
                                         </div>
                                         <div class="col-12 col-md-8">
-                                            <label class="o_form_label">Postulación</label>
+                                            <span class="o_form_label">Postulación</span>
                                             <field name="applicant_id" readonly="1" class="fw-semibold"/>
                                         </div>
                                     </div>
