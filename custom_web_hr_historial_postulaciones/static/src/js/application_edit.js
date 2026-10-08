@@ -4,7 +4,7 @@ import publicWidget from "@web/legacy/js/public/public_widget";
 
 const MultistepForm = publicWidget.registry.MultistepForm;
 
-if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
+if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV3) {
     // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------
@@ -41,6 +41,37 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
         $radio.prop("checked", true);
         if (trigger) {
             $radio.trigger("change");
+        }
+    };
+
+    const populateEndYearSelect = function (selector, startDate, savedYear) {
+        const $select = this.$(selector);
+        if (!$select.length) return;
+
+        const start = String(startDate || "").trim();
+        $select.empty().append($('<option>', { value: "", text: "" }));
+
+        if (!start) {
+            return;
+        }
+
+        const parsed = new Date(`${start}T00:00:00`);
+        if (Number.isNaN(parsed.getTime())) {
+            return;
+        }
+
+        const startYear = parsed.getFullYear();
+        const currentYear = new Date().getFullYear();
+
+        for (let year = startYear + 1; year < currentYear; year++) {
+            $select.append($('<option>', { value: String(year), text: String(year) }));
+        }
+
+        $select.append($('<option>', { value: "presente", text: "Presente" }));
+
+        const normalized = savedYear === undefined || savedYear === null ? "" : String(savedYear);
+        if (normalized) {
+            $select.val(normalized);
         }
     };
 
@@ -461,9 +492,12 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
             setValue.call(this, `input[name="famTelefono_${index}"]`, family.phone);
             setValue.call(this, `input[name="famOcupacion_${index}"]`, family.occupation);
             setRadio.call(this, `famDepende_${index}`, family.economically_dependent, false);
-            setRadio.call(this, `famDisc_${index}`, family.disability, true);
+            setRadio.call(this, `famDisc_${index}`, family.disability, false);
             setValue.call(this, `input[name="famDiscTipo_${index}"]`, family.disability_type);
             setValue.call(this, `input[name="famDiscPorcentaje_${index}"]`, family.disability_percentage);
+            if (typeof this._toggleFamilyDisability === 'function') {
+                this._toggleFamilyDisability(index);
+            }
 
             const $fallecido = this.$(`input[name="famFallecido_${index}"]`);
             if ($fallecido.length) {
@@ -529,9 +563,8 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
             const index = i + 1;
             setValue.call(this, `select[name="level_id_${index}"]`, education.level_id);
             setValue.call(this, `input[name="institucion_${index}"]`, education.institucion);
-            setValue.call(this, `input[name="inicioEstudio_${index}"]`, education.fecha_inicio, true);
-            await sleep(50);
-            setValue.call(this, `select[name="finEstudio_${index}"]`, education.year_fin);
+            setValue.call(this, `input[name="inicioEstudio_${index}"]`, education.fecha_inicio, false);
+            populateEndYearSelect.call(this, `select[name="finEstudio_${index}"]`, education.fecha_inicio, education.year_fin);
             setValue.call(this, `select[name="paisEducacion_${index}"]`, education.country_id ? `country-${education.country_id}` : "", true);
             await sleep(80);
             setValue.call(this, `select[name="ciudad_${index}"]`, education.state_id ? `state-${education.state_id}` : "");
@@ -565,9 +598,8 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
             setValue.call(this, `input[name="motivo_${index}"]`, exp.motivo_separacion);
             setValue.call(this, `input[name="jefe_${index}"]`, exp.jefe_directo);
             setValue.call(this, `input[name="cargoJefe_${index}"]`, exp.cargo_jefe_directo);
-            setValue.call(this, `input[name="jobInicio_${index}"]`, exp.fecha_inicio, true);
-            await sleep(50);
-            setValue.call(this, `select[name="jobFin_${index}"]`, exp.year_fin);
+            setValue.call(this, `input[name="jobInicio_${index}"]`, exp.fecha_inicio, false);
+            populateEndYearSelect.call(this, `select[name="jobFin_${index}"]`, exp.fecha_inicio, exp.year_fin);
         }
 
         // Referencias.
