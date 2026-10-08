@@ -70,10 +70,10 @@
                       t-attf-action="/my/application/#{applicant.id}/documentation">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <div class="card-body p-4">
-                        <div class="alert alert-info rounded-3">
+                        <!-- <div class="alert alert-info rounded-3">
                             Los documentos con <strong>*</strong> son obligatorios. Los demás son opcionales.
                             Para recomendaciones se requieren <strong>mínimo 2 archivos PDF</strong>.
-                        </div>
+                        </div> -->
 
                         <div class="mb-4">
                             <h5 class="fw-semibold mb-1">Documentos personales</h5>
@@ -107,7 +107,7 @@
                                     <t t-set="label" t-value="document_field[1]"/>
                                     <t t-set="allowed" t-value="document_field[2]"/>
                                     <div class="col-12 col-md-6 document-upload-card">
-                                        <label class="form-label fw-semibold"><t t-esc="label"/><span class="text-muted small"> (opcional)</span></label>
+                                        <label class="form-label fw-semibold"><t t-esc="label"/><span class="text-muted small"></span></label>
                                         <input type="file" class="form-control" t-att-name="field_name" t-att-accept="'.' + ',.'.join(allowed)"/>
                                         <t t-if="documentation and documentation[field_name]">
                                             <div class="small text-success mt-2">Archivo guardado: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div>
@@ -198,7 +198,7 @@
                                     <t t-set="label" t-value="document_field[1]"/>
                                     <t t-set="allowed" t-value="document_field[2]"/>
                                     <div class="col-12 col-md-6 document-upload-card">
-                                        <label class="form-label fw-semibold"><t t-esc="label"/><span class="text-muted small"> (opcional)</span></label>
+                                        <label class="form-label fw-semibold"><t t-esc="label"/><span class="text-muted small"></span></label>
                                         <input type="file" class="form-control" t-att-name="field_name" t-att-accept="'.' + ',.'.join(allowed)"/>
                                         <t t-if="documentation and documentation[field_name]">
                                             <div class="small text-success mt-2">Archivo guardado: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div>
