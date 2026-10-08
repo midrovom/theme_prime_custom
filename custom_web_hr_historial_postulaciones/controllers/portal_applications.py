@@ -748,6 +748,7 @@ class PortalApplications(http.Controller):
         existing_recommendations = len(documentation.recommendation_ids) if documentation else 0
         legacy_recommendation = 1 if documentation and documentation.recomendaciones else 0
         recommendation_count = existing_recommendations + legacy_recommendation
+        cedula_count = int(bool(documentation and documentation.cedula_votacion)) + int(bool(documentation and documentation.cedula_votacion_2))
 
         def render_form(errors=None, status=200):
             return request.render(
@@ -760,6 +761,7 @@ class PortalApplications(http.Controller):
                     'errors': errors or [],
                     'missing': [],
                     'recommendation_count': recommendation_count,
+                    'cedula_count': cedula_count,
                 },
                 status=status,
             )
@@ -769,9 +771,9 @@ class PortalApplications(http.Controller):
             missing = []
             invalid_files = []
 
-            # Todos los documentos individuales mantienen su comportamiento actual.
+            # Documentos individuales. Cédula/votación se procesa aparte porque admite 2 archivos.
             for field, label, allowed_extensions in DOCUMENT_FIELDS:
-                if field == 'recomendaciones':
+                if field in {'recomendaciones', 'cedula_votacion'}:
                     continue
                 file = request.httprequest.files.get(field)
                 if file and file.filename:
@@ -786,6 +788,35 @@ class PortalApplications(http.Controller):
                         missing.append(label)
                 elif field not in OPTIONAL_DOCUMENT_FIELDS and (not documentation or not documentation[field]):
                     missing.append(label)
+
+            # Cédula + certificado de votación: admite hasta 2 archivos PDF independientes.
+            identity_files = []
+            for file in request.httprequest.files.getlist('cedula_votacion'):
+                if not file or not file.filename:
+                    continue
+                if not self._check_document_extension(file.filename, ('pdf',)):
+                    invalid_files.append(file.filename)
+                    continue
+                content = file.read()
+                if content:
+                    identity_files.append({
+                        'content': base64.b64encode(content).decode('ascii'),
+                        'filename': secure_filename(file.filename),
+                    })
+
+            if cedula_count + len(identity_files) > 2:
+                missing.append(_('Cédula y certificado de votación: máximo 2 archivos PDF.'))
+            elif cedula_count + len(identity_files) < 2:
+                missing.append(_('Cédula y certificado de votación: se requieren 2 archivos PDF.'))
+            else:
+                identity_slots = []
+                if not (documentation and documentation.cedula_votacion):
+                    identity_slots.append(('cedula_votacion', 'cedula_votacion_filename'))
+                if not (documentation and documentation.cedula_votacion_2):
+                    identity_slots.append(('cedula_votacion_2', 'cedula_votacion_filename_2'))
+                for file_data, slots in zip(identity_files, identity_slots):
+                    values[slots[0]] = file_data['content']
+                    values[slots[1]] = file_data['filename']
 
             # Recomendaciones: acumular archivos, nunca reemplazar los anteriores.
             recommendation_files = []
@@ -840,6 +871,7 @@ class PortalApplications(http.Controller):
                         'errors': [str(exc)],
                         'missing': [],
                         'recommendation_count': len(documentation.recommendation_ids) + (1 if documentation.recomendaciones else 0),
+                        'cedula_count': int(bool(documentation.cedula_votacion)) + int(bool(documentation.cedula_votacion_2)),
                     },
                     status=400,
                 )
