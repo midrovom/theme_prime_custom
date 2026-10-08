@@ -245,28 +245,35 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
         // internamente al paso 2, porque el formulario nativo las valida.
         fillMedical.call(this, data.medical || {});
 
-        // Generar los bloques nativos del paso 2 sin enviar el formulario.
-        // _onNextClick solo cambia de paso y crea los familiares; no enviamos nada.
-        this._onNextClick({ preventDefault() {} });
+        // Inicializar los bloques dinámicos del Paso 2 usando exactamente la
+        // lógica nativa de navegación, pero sin ejecutar sus validaciones.
+        // Así conservamos la estructura 1 -> 2 -> 3 del formulario original.
+        const originalValidateCurrentStep1 = this._validateCurrentStep1;
+        try {
+            this._validateCurrentStep1 = function () { return true; };
+            this._onNextClick({ preventDefault() {} });
+        } finally {
+            this._validateCurrentStep1 = originalValidateCurrentStep1;
+        }
 
         const expectedFamilyBlocks = 3 + Math.max(0, Number(data.num_hijos || 0));
         await waitFor.call(this, "#family_container .family-block", expectedFamilyBlocks);
 
         await fillFamilies.call(this, data.family || []);
 
-        // Rellenar la información de estudio/experiencia/referencias sin usar
-        // la validación del botón Siguiente.
+        // Dejar configurados los valores del Paso 2 para que, cuando el
+        // usuario pulse Siguiente, encuentre toda la información anterior.
         this.$("#famNumHermanos").val((data.family || []).filter(x => x.familiar_type === "3").length || 1);
         this.$("#famNumHermanos").prop("readonly", true);
 
-        // Mostrar el paso 3 para que el usuario pueda continuar con el flujo
-        // nativo. No se valida aquí; ya estamos precargando datos existentes.
-        this.$("#form-step-2").addClass("d-none");
-        this.$("#form-step-3").removeClass("d-none");
-
+        // Los bloques del Paso 3 son creados por originalStart(). Los
+        // precargamos aunque permanezcan ocultos, sin cambiar la navegación
+        // nativa ni mostrar el Paso 3 antes de tiempo.
         await fillStep3.call(this, data);
 
-        // Dejar al postulante en el Paso 1.
+        // Restaurar exactamente el estado inicial del formulario nativo:
+        // Paso 1 visible, Pasos 2 y 3 ocultos. Al pulsar Siguiente, el
+        // controlador original mostrará el Paso 2 y luego el Paso 3.
         this.$("#form-step-1").removeClass("d-none");
         this.$("#form-step-2").addClass("d-none");
         this.$("#form-step-3").addClass("d-none");
