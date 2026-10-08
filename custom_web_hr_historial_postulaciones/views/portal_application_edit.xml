@@ -5,6 +5,9 @@
               name="Portal Applicant Edit Loading">
         <xpath expr="//form[@id='hr_job_recruitment_form']" position="before">
             <t t-if="request.httprequest.args.get('edit_applicant')">
+                <style id="portal-edit-preload-style">
+                    #hr_job_recruitment_form { display: none !important; }
+                </style>
                 <div id="portal-edit-loading" class="portal-edit-loading mb-4" role="status" aria-live="polite" aria-busy="true">
                     <div class="portal-edit-loading__header">
                         <div>
