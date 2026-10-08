@@ -228,6 +228,17 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV3) {
             return result;
         }
 
+        // Limpiar la caché de la postulación justo antes de enviar la actualización.
+        // Así, una nueva visita al historial nunca reutiliza el payload anterior.
+        if (!this.$el.data("portalCacheClearBound")) {
+            this.$el.on("submit.portalEditCacheClear", () => {
+                if (window.__portalClearApplicantPreloadCache) {
+                    window.__portalClearApplicantPreloadCache(applicantId);
+                }
+            });
+            this.$el.data("portalCacheClearBound", true);
+        }
+
         if (!this.$el.prev("#portal-edit-notice").length) {
             this.$el.before(`
                 <div id="portal-edit-notice" class="alert alert-warning rounded-4 mb-4">

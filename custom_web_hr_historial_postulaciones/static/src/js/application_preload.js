@@ -10,6 +10,39 @@ function now() {
     return Date.now();
 }
 
+function clearApplicantPreloadCache(applicantId) {
+    const key = `${DATA_PREFIX}${applicantId}`;
+    for (const storage of [window.sessionStorage, window.localStorage]) {
+        try {
+            // El dato actual y cualquier clave antigua de la misma postulación.
+            storage.removeItem(key);
+            for (let index = storage.length - 1; index >= 0; index--) {
+                const storageKey = storage.key(index);
+                if (storageKey && storageKey.startsWith(DATA_PREFIX) && storageKey.endsWith(String(applicantId))) {
+                    storage.removeItem(storageKey);
+                }
+            }
+        } catch (error) {
+            // Ignore storage access restrictions.
+        }
+    }
+    if (window.__portalApplicantPreloadPromises?.delete) {
+        window.__portalApplicantPreloadPromises.delete(String(applicantId));
+    }
+}
+
+// Exponer la limpieza para que el formulario pueda invalidar la caché justo antes de enviarse.
+window.__portalClearApplicantPreloadCache = clearApplicantPreloadCache;
+
+// Después de guardar una actualización, el servidor redirige al historial
+// indicando qué postulación debe invalidarse. Se limpian ambas cachés para
+// evitar que vuelva a aparecer información antigua.
+const cacheParams = new URLSearchParams(window.location.search);
+const clearApplicantId = cacheParams.get('clear_applicant');
+if (/^\d+$/.test(clearApplicantId || '')) {
+    clearApplicantPreloadCache(clearApplicantId);
+}
+
 function readSession(key, ttl = DATA_TTL_MS) {
     try {
         const raw = sessionStorage.getItem(key);
@@ -159,3 +192,4 @@ if (!window.__portalFetchPatched) {
 
 window.__portalPreloadApplicant = preloadApplicant;
 window.__portalPreloadCatalogs = preloadCatalogs;
+window.__clearPortalApplicantPreloadCache = clearApplicantPreloadCache;

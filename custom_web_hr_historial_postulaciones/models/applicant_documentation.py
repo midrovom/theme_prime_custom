@@ -4,9 +4,20 @@ from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 
+OPTIONAL_DOCUMENT_FIELDS = {
+    'historia_iess',
+    'acta_matrimonio',
+    'documentos_hijos',
+    'estudios_titulo',
+    'cursos_realizados',
+    'certificados_trabajo',
+    'formulario_107',
+}
+
 DOCUMENT_FIELDS = [
     ('fotografia', 'Fotografía actualizada a color tamaño carnet', 'image'),
     ('cedula_votacion', '2 copias a color de cédula de identidad y certificado de votación', 'pdf'),
+    ('hoja_vida_actualizada', 'Hoja de vida actualizada', 'pdf'),
     ('historia_iess', 'Historia laboral extraída de la página web del IESS (resumen de empleadores)', 'pdf'),
     ('acta_matrimonio', 'Acta de matrimonio ORIGINAL / unión de hecho registrada en cédula', 'pdf'),
     ('documentos_hijos', 'Hijos menores de 18 años: partida de nacimiento y/o cédula a color', 'pdf'),
@@ -41,26 +52,29 @@ class ApplicantDocumentation(models.Model):
     cedula_votacion = fields.Binary(string='Cédula y votación', attachment=True, required=True)
     cedula_votacion_filename = fields.Char(string='Archivo cédula y votación', required=True)
 
-    historia_iess = fields.Binary(string='Historia laboral IESS', attachment=True, required=True)
-    historia_iess_filename = fields.Char(string='Archivo historia IESS', required=True)
+    hoja_vida_actualizada = fields.Binary(string='Hoja de vida actualizada', attachment=True)
+    hoja_vida_actualizada_filename = fields.Char(string='Archivo hoja de vida actualizada')
 
-    acta_matrimonio = fields.Binary(string='Acta de matrimonio / unión de hecho', attachment=True, required=True)
-    acta_matrimonio_filename = fields.Char(string='Archivo acta', required=True)
+    historia_iess = fields.Binary(string='Historia laboral IESS', attachment=True)
+    historia_iess_filename = fields.Char(string='Archivo historia IESS')
 
-    documentos_hijos = fields.Binary(string='Documentos de hijos menores', attachment=True, required=True)
-    documentos_hijos_filename = fields.Char(string='Archivo documentos hijos', required=True)
+    acta_matrimonio = fields.Binary(string='Acta de matrimonio / unión de hecho', attachment=True)
+    acta_matrimonio_filename = fields.Char(string='Archivo acta')
 
-    estudios_titulo = fields.Binary(string='Estudios / título SENESCYT', attachment=True, required=True)
-    estudios_titulo_filename = fields.Char(string='Archivo estudios / título', required=True)
+    documentos_hijos = fields.Binary(string='Documentos de hijos menores', attachment=True)
+    documentos_hijos_filename = fields.Char(string='Archivo documentos hijos')
 
-    cursos_realizados = fields.Binary(string='Cursos realizados', attachment=True, required=True)
-    cursos_realizados_filename = fields.Char(string='Archivo cursos', required=True)
+    estudios_titulo = fields.Binary(string='Estudios / título SENESCYT', attachment=True)
+    estudios_titulo_filename = fields.Char(string='Archivo estudios / título')
+
+    cursos_realizados = fields.Binary(string='Cursos realizados', attachment=True)
+    cursos_realizados_filename = fields.Char(string='Archivo cursos')
 
     recomendaciones = fields.Binary(string='Recomendaciones', attachment=True, required=True)
     recomendaciones_filename = fields.Char(string='Archivo recomendaciones', required=True)
 
-    certificados_trabajo = fields.Binary(string='Certificados de trabajos anteriores', attachment=True, required=True)
-    certificados_trabajo_filename = fields.Char(string='Archivo certificados', required=True)
+    certificados_trabajo = fields.Binary(string='Certificados de trabajos anteriores', attachment=True)
+    certificados_trabajo_filename = fields.Char(string='Archivo certificados')
 
     planilla_servicios = fields.Binary(string='Planilla de servicios básicos', attachment=True, required=True)
     planilla_servicios_filename = fields.Char(string='Archivo planilla', required=True)
@@ -68,8 +82,8 @@ class ApplicantDocumentation(models.Model):
     croquis_domicilio = fields.Binary(string='Croquis del domicilio', attachment=True, required=True)
     croquis_domicilio_filename = fields.Char(string='Archivo croquis', required=True)
 
-    formulario_107 = fields.Binary(string='Formulario No. 107 del SRI', attachment=True, required=True)
-    formulario_107_filename = fields.Char(string='Archivo formulario 107', required=True)
+    formulario_107 = fields.Binary(string='Formulario No. 107 del SRI', attachment=True)
+    formulario_107_filename = fields.Char(string='Archivo formulario 107')
 
     cuenta_banco_internacional = fields.Binary(string='Cuenta de ahorros Banco Internacional', attachment=True, required=True)
     cuenta_banco_internacional_filename = fields.Char(string='Archivo cuenta bancaria', required=True)
@@ -87,15 +101,22 @@ class ApplicantDocumentation(models.Model):
         ),
     ]
 
-    @api.depends(*[field for field, _, _ in DOCUMENT_FIELDS])
+    @api.depends(*[field for field, _, _ in DOCUMENT_FIELDS if field not in OPTIONAL_DOCUMENT_FIELDS])
     def _compute_is_complete(self):
         for record in self:
-            record.is_complete = all(bool(record[field]) for field, _, _ in DOCUMENT_FIELDS)
+            required_fields = [
+                field for field, _, _ in DOCUMENT_FIELDS
+                if field not in OPTIONAL_DOCUMENT_FIELDS
+            ]
+            record.is_complete = all(bool(record[field]) for field in required_fields)
 
-    @api.constrains(*[field for field, _, _ in DOCUMENT_FIELDS])
+    @api.constrains(*[field for field, _, _ in DOCUMENT_FIELDS if field not in OPTIONAL_DOCUMENT_FIELDS])
     def _check_required_documents(self):
         for record in self:
-            missing = [label for field, label, _ in DOCUMENT_FIELDS if not record[field]]
+            missing = [
+                label for field, label, _ in DOCUMENT_FIELDS
+                if field not in OPTIONAL_DOCUMENT_FIELDS and not record[field]
+            ]
             if missing:
                 raise ValidationError(
                     _('Falta información/documentación obligatoria:\n- %s') % '\n- '.join(missing)

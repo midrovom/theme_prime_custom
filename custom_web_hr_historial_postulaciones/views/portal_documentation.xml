@@ -4,7 +4,7 @@
         <t t-call="portal.portal_layout">
             <div class="container py-4">
                 <h2>Ingreso de documentación</h2>
-                <p class="text-muted">Complete todos los documentos requeridos para las postulaciones habilitadas.</p>
+                <p class="text-muted">Carga y consulta los documentos requeridos para las postulaciones habilitadas.</p>
 
                 <t t-if="not applicants">
                     <div class="alert alert-info rounded-4">
@@ -67,36 +67,101 @@
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <div class="card-body p-4">
                         <div class="alert alert-info rounded-3">
-                            Todos los documentos son obligatorios. Los documentos indicados como PDF deben cargarse exclusivamente en PDF.
-                            La fotografía puede cargarse en JPG, PNG o PDF.
+                            Los documentos con <strong>*</strong> son obligatorios. Los marcados como <strong>opcional</strong> pueden omitirse y completarse posteriormente. Los documentos administrativos deben cargarse en PDF; la fotografía permite JPG o PNG.
                         </div>
 
+                        <div class="mb-4">
+                            <h5 class="fw-semibold mb-1">Documentos personales</h5>
+                            <p class="text-muted small mb-0">Identificación, fotografía y hoja de vida actualizada.</p>
+                        </div>
                         <div class="row g-4">
                             <t t-foreach="document_fields" t-as="document_field">
                                 <t t-set="field_name" t-value="document_field[0]"/>
-                                <t t-set="label" t-value="document_field[1]"/>
-                                <t t-set="allowed" t-value="document_field[2]"/>
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        <t t-esc="label"/> <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="file"
-                                           class="form-control"
-                                           t-att-name="field_name"
-                                           t-att-accept="'.' + ',.'.join(allowed)"/>
-                                    <t t-if="documentation and documentation[field_name]">
-                                        <div class="small text-success mt-2">
-                                            Archivo actual: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/>
-                                        </div>
-                                    </t>
-                                    <t t-else="">
-                                        <div class="small text-danger mt-2">Falta información.</div>
-                                    </t>
-                                </div>
+                                <t t-if="field_name in ['fotografia', 'cedula_votacion', 'hoja_vida_actualizada']">
+                                    <t t-set="label" t-value="document_field[1]"/>
+                                    <t t-set="allowed" t-value="document_field[2]"/>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <t t-esc="label"/>
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="file" class="form-control" t-att-name="field_name" t-att-accept="'.' + ',.'.join(allowed)"/>
+                                        <t t-if="documentation and documentation[field_name]">
+                                            <div class="small text-success mt-2">Archivo actual: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div>
+                                        </t>
+                                        <t t-else=""><div class="small text-muted mt-2">Sin archivo cargado.</div></t>
+                                    </div>
+                                </t>
                             </t>
                         </div>
 
-                        <div class="d-flex justify-content-end gap-2 mt-4">
+                        <div class="mt-5 mb-4">
+                            <h5 class="fw-semibold mb-1">Estudios y experiencia</h5>
+                            <p class="text-muted small mb-0">Documentos académicos y laborales; algunos son opcionales.</p>
+                        </div>
+                        <div class="row g-4">
+                            <t t-foreach="document_fields" t-as="document_field">
+                                <t t-set="field_name" t-value="document_field[0]"/>
+                                <t t-if="field_name in ['historia_iess', 'estudios_titulo', 'cursos_realizados', 'recomendaciones', 'certificados_trabajo']">
+                                    <t t-set="label" t-value="document_field[1]"/>
+                                    <t t-set="allowed" t-value="document_field[2]"/>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <t t-esc="label"/>
+                                            <t t-if="field_name in optional_document_fields"><span class="text-muted small"> (opcional)</span></t>
+                                            <t t-else=""><span class="text-danger">*</span></t>
+                                        </label>
+                                        <input type="file" class="form-control" t-att-name="field_name" t-att-accept="'.' + ',.'.join(allowed)"/>
+                                        <t t-if="documentation and documentation[field_name]">
+                                            <div class="small text-success mt-2">Archivo actual: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div>
+                                        </t>
+                                        <t t-else=""><div class="small text-muted mt-2">Sin archivo cargado.</div></t>
+                                    </div>
+                                </t>
+                            </t>
+                        </div>
+
+                        <div class="mt-5 mb-4">
+                            <h5 class="fw-semibold mb-1">Domicilio, banca y salud</h5>
+                            <p class="text-muted small mb-0">Documentos necesarios para completar el expediente de ingreso.</p>
+                        </div>
+                        <div class="row g-4">
+                            <t t-foreach="document_fields" t-as="document_field">
+                                <t t-set="field_name" t-value="document_field[0]"/>
+                                <t t-if="field_name in ['planilla_servicios', 'croquis_domicilio', 'cuenta_banco_internacional', 'certificado_salud']">
+                                    <t t-set="label" t-value="document_field[1]"/>
+                                    <t t-set="allowed" t-value="document_field[2]"/>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold"><t t-esc="label"/><span class="text-danger">*</span></label>
+                                        <input type="file" class="form-control" t-att-name="field_name" t-att-accept="'.' + ',.'.join(allowed)"/>
+                                        <t t-if="documentation and documentation[field_name]"><div class="small text-success mt-2">Archivo actual: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div></t>
+                                        <t t-else=""><div class="small text-muted mt-2">Sin archivo cargado.</div></t>
+                                    </div>
+                                </t>
+                            </t>
+                        </div>
+
+                        <div class="mt-5 mb-4">
+                            <h5 class="fw-semibold mb-1">Documentación condicionada</h5>
+                            <p class="text-muted small mb-0">Estos documentos pueden omitirse cuando no correspondan a la situación del postulante.</p>
+                        </div>
+                        <div class="row g-4">
+                            <t t-foreach="document_fields" t-as="document_field">
+                                <t t-set="field_name" t-value="document_field[0]"/>
+                                <t t-if="field_name in ['acta_matrimonio', 'documentos_hijos', 'formulario_107']">
+                                    <t t-set="label" t-value="document_field[1]"/>
+                                    <t t-set="allowed" t-value="document_field[2]"/>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold"><t t-esc="label"/><span class="text-muted small"> (opcional)</span></label>
+                                        <input type="file" class="form-control" t-att-name="field_name" t-att-accept="'.' + ',.'.join(allowed)"/>
+                                        <t t-if="documentation and documentation[field_name]"><div class="small text-success mt-2">Archivo actual: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div></t>
+                                        <t t-else=""><div class="small text-muted mt-2">Sin archivo cargado.</div></t>
+                                    </div>
+                                </t>
+                            </t>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-5">
                             <a href="/my/application-documentation" class="btn btn-outline-secondary rounded-pill">Cancelar</a>
                             <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar documentación</button>
                         </div>

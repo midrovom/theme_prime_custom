@@ -24,7 +24,8 @@ YEARS = list(range(1900, 2027))
 DOCUMENT_FIELDS = [
     ('fotografia', 'Fotografía actualizada a color tamaño carnet', ('pdf', 'jpg', 'jpeg', 'png')),
     ('cedula_votacion', '2 copias a color de cédula de identidad y certificado de votación', ('pdf',)),
-    ('historia_iess', 'Historia laboral extraída de la página web del IESS', ('pdf',)),
+    ('hoja_vida_actualizada', 'Hoja de vida actualizada', ('pdf',)),
+    ('historia_iess', 'Historia laboral extraída de la página web del IESS (resumen de empleadores)', ('pdf',)),
     ('acta_matrimonio', 'Acta de matrimonio / unión de hecho', ('pdf',)),
     ('documentos_hijos', 'Documentos de hijos menores de 18 años', ('pdf',)),
     ('estudios_titulo', 'Certificado de estudios / título certificado por SENESCYT', ('pdf',)),
@@ -36,7 +37,17 @@ DOCUMENT_FIELDS = [
     ('formulario_107', 'Formulario No. 107 del SRI', ('pdf',)),
     ('cuenta_banco_internacional', 'Cuenta de ahorros Banco Internacional', ('pdf',)),
     ('certificado_salud', 'Certificado de salud MSP con tipo de sangre', ('pdf',)),
-]
+ ]
+
+OPTIONAL_DOCUMENT_FIELDS = {
+    'historia_iess',
+    'acta_matrimonio',
+    'documentos_hijos',
+    'estudios_titulo',
+    'cursos_realizados',
+    'certificados_trabajo',
+    'formulario_107',
+}
 
 
 def _safe_int(value):
@@ -718,7 +729,7 @@ class PortalApplications(http.Controller):
                 status=500,
             )
 
-        return request.redirect('/my/application-history')
+        return request.redirect('/my/application-history?updated=1&clear_applicant=%s' % applicant.id)
 
     def _check_document_extension(self, filename, allowed):
         lower = (filename or '').lower()
@@ -748,9 +759,9 @@ class PortalApplications(http.Controller):
                     if content:
                         values[field] = base64.b64encode(content).decode('ascii')
                         values[f'{field}_filename'] = secure_filename(file.filename)
-                    elif not documentation or not documentation[field]:
+                    elif field not in OPTIONAL_DOCUMENT_FIELDS and (not documentation or not documentation[field]):
                         missing.append(label)
-                elif not documentation or not documentation[field]:
+                elif field not in OPTIONAL_DOCUMENT_FIELDS and (not documentation or not documentation[field]):
                     missing.append(label)
 
             if invalid_files:
@@ -760,6 +771,7 @@ class PortalApplications(http.Controller):
                         'applicant': applicant,
                         'documentation': documentation,
                         'document_fields': DOCUMENT_FIELDS,
+                        'optional_document_fields': OPTIONAL_DOCUMENT_FIELDS,
                         'errors': [_('Formato no permitido: %s') % label for label in invalid_files],
                         'missing': missing,
                     },
@@ -772,6 +784,7 @@ class PortalApplications(http.Controller):
                         'applicant': applicant,
                         'documentation': documentation,
                         'document_fields': DOCUMENT_FIELDS,
+                        'optional_document_fields': OPTIONAL_DOCUMENT_FIELDS,
                         'errors': [_('Falta información: %s') % label for label in missing],
                         'missing': missing,
                     },
@@ -790,6 +803,7 @@ class PortalApplications(http.Controller):
                         'applicant': applicant,
                         'documentation': documentation,
                         'document_fields': DOCUMENT_FIELDS,
+                        'optional_document_fields': OPTIONAL_DOCUMENT_FIELDS,
                         'errors': [str(exc)],
                         'missing': [],
                     },
@@ -804,6 +818,7 @@ class PortalApplications(http.Controller):
                 'applicant': applicant,
                 'documentation': documentation,
                 'document_fields': DOCUMENT_FIELDS,
+                'optional_document_fields': OPTIONAL_DOCUMENT_FIELDS,
                 'errors': [],
                 'missing': [],
             },

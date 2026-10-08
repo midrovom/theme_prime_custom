@@ -6,47 +6,106 @@
         <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
-                <button name="action_allow_portal_update"
-                        type="object"
-                        string="Permitir actualización"
-                        class="btn-primary"
-                        invisible="not portal_user_id or portal_update_allowed"
-                        groups="hr_recruitment.group_hr_recruitment_user"/>
-                <button name="action_revoke_portal_update"
-                        type="object"
-                        string="Revocar actualización"
-                        class="btn-secondary"
-                        invisible="not portal_update_allowed"
-                        groups="hr_recruitment.group_hr_recruitment_user"/>
+                <button name="action_allow_portal_update" type="object" string="Permitir actualización" class="btn-primary" invisible="not portal_user_id or portal_update_allowed" groups="hr_recruitment.group_hr_recruitment_user"/>
+                <button name="action_revoke_portal_update" type="object" string="Revocar actualización" class="btn-secondary" invisible="not portal_update_allowed" groups="hr_recruitment.group_hr_recruitment_user"/>
             </xpath>
-
 
             <xpath expr="//notebook" position="inside">
                 <page string="Documentación de ingreso" name="portal_documentation_page">
-                    <group>
-                        <field name="documentation_required" readonly="1"/>
-                        <field name="documentation_complete" readonly="1"/>
-                        <field name="applicant_documentation_ids" readonly="1">
-                            <list>
-                                <field name="create_date"/>
-                                <field name="is_complete"/>
-                                <field name="fotografia_filename"/>
-                                <field name="cedula_votacion_filename"/>
-                                <field name="historia_iess_filename"/>
-                                <field name="acta_matrimonio_filename"/>
-                                <field name="documentos_hijos_filename"/>
-                                <field name="estudios_titulo_filename"/>
-                                <field name="cursos_realizados_filename"/>
-                                <field name="recomendaciones_filename"/>
-                                <field name="certificados_trabajo_filename"/>
-                                <field name="planilla_servicios_filename"/>
-                                <field name="croquis_domicilio_filename"/>
-                                <field name="formulario_107_filename"/>
-                                <field name="cuenta_banco_internacional_filename"/>
-                                <field name="certificado_salud_filename"/>
-                            </list>
-                        </field>
+                    <div class="alert alert-info o_form_uri mb-3">
+                        <strong>Expediente documental</strong>
+                        <span class="ms-1">Revise rápidamente el estado de carga y consulte los documentos por sección.</span>
+                    </div>
+                    <group col="4" class="mb-3">
+                        <group string="Estado">
+                            <field name="documentation_required" readonly="1"/>
+                            <field name="documentation_complete" readonly="1"/>
+                        </group>
+                        <group string="Postulación">
+                            <field name="portal_user_id" readonly="1"/>
+                            <field name="portal_update_allowed" readonly="1"/>
+                        </group>
+                        <group string="Actualización portal">
+                            <field name="portal_update_allowed_at" readonly="1"/>
+                            <field name="portal_update_allowed_by" readonly="1"/>
+                        </group>
                     </group>
+
+                    <field name="applicant_documentation_ids" readonly="1" mode="list,form">
+                        <list create="0" delete="0" edit="0">
+                            <field name="create_date" string="Fecha de carga"/>
+                            <field name="is_complete" string="Obligatorios completos"/>
+                            <field name="fotografia_filename" string="Fotografía"/>
+                            <field name="cedula_votacion_filename" string="Cédula / votación"/>
+                            <field name="hoja_vida_actualizada_filename" string="Hoja de vida"/>
+                            <field name="historia_iess_filename" string="Historia IESS"/>
+                            <field name="estudios_titulo_filename" string="Estudios / SENESCYT"/>
+                            <field name="recomendaciones_filename" string="Recomendaciones"/>
+                            <field name="certificados_trabajo_filename" string="Trabajos"/>
+                            <field name="planilla_servicios_filename" string="Servicios básicos"/>
+                            <field name="croquis_domicilio_filename" string="Croquis"/>
+                            <field name="cuenta_banco_internacional_filename" string="Cuenta bancaria"/>
+                            <field name="certificado_salud_filename" string="Salud"/>
+                        </list>
+                        <form string="Documentación de ingreso">
+                            <sheet>
+                                <div class="oe_title mb-3">
+                                    <h2><field name="applicant_id" readonly="1"/></h2>
+                                    <div class="text-muted">Expediente documental del postulante</div>
+                                </div>
+                                <group col="3" class="mb-3">
+                                    <group string="Estado">
+                                        <field name="is_complete" readonly="1"/>
+                                        <field name="create_date" readonly="1"/>
+                                    </group>
+                                    <group string="Identificación">
+                                        <field name="fotografia_filename" readonly="1"/>
+                                        <field name="cedula_votacion_filename" readonly="1"/>
+                                    </group>
+                                    <group string="Currículum">
+                                        <field name="hoja_vida_actualizada_filename" readonly="1"/>
+                                    </group>
+                                </group>
+                                <notebook>
+                                    <page string="Personales y currículum">
+                                        <group col="2">
+                                            <field name="fotografia" widget="binary" filename="fotografia_filename" readonly="1"/>
+                                            <field name="cedula_votacion" widget="binary" filename="cedula_votacion_filename" readonly="1"/>
+                                            <field name="hoja_vida_actualizada" widget="binary" filename="hoja_vida_actualizada_filename" readonly="1"/>
+                                        </group>
+                                    </page>
+                                    <page string="Estudios y experiencia">
+                                        <group col="2">
+                                            <field name="historia_iess" widget="binary" filename="historia_iess_filename" readonly="1"/>
+                                            <field name="estudios_titulo" widget="binary" filename="estudios_titulo_filename" readonly="1"/>
+                                            <field name="cursos_realizados" widget="binary" filename="cursos_realizados_filename" readonly="1"/>
+                                            <field name="certificados_trabajo" widget="binary" filename="certificados_trabajo_filename" readonly="1"/>
+                                            <field name="recomendaciones" widget="binary" filename="recomendaciones_filename" readonly="1"/>
+                                        </group>
+                                    </page>
+                                    <page string="Domicilio y banca">
+                                        <group col="2">
+                                            <field name="planilla_servicios" widget="binary" filename="planilla_servicios_filename" readonly="1"/>
+                                            <field name="croquis_domicilio" widget="binary" filename="croquis_domicilio_filename" readonly="1"/>
+                                            <field name="cuenta_banco_internacional" widget="binary" filename="cuenta_banco_internacional_filename" readonly="1"/>
+                                        </group>
+                                    </page>
+                                    <page string="Condicionados">
+                                        <group col="2">
+                                            <field name="acta_matrimonio" widget="binary" filename="acta_matrimonio_filename" readonly="1"/>
+                                            <field name="documentos_hijos" widget="binary" filename="documentos_hijos_filename" readonly="1"/>
+                                            <field name="formulario_107" widget="binary" filename="formulario_107_filename" readonly="1"/>
+                                        </group>
+                                    </page>
+                                    <page string="Salud">
+                                        <group>
+                                            <field name="certificado_salud" widget="binary" filename="certificado_salud_filename" readonly="1"/>
+                                        </group>
+                                    </page>
+                                </notebook>
+                            </sheet>
+                        </form>
+                    </field>
                 </page>
             </xpath>
 

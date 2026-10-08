@@ -1,6 +1,6 @@
 {
     'name': 'Portal - Historial de Postulaciones',
-    'version': '18.0.1.0.24',
+    'version': '18.0.1.0.26',
     'summary': 'Historial de postulaciones, actualización de datos e ingreso de documentación',
     'description': '''
         Extensión del módulo custom_web_hr_datos_candidatos para el portal.
@@ -10,7 +10,7 @@
         - Habilitación controlada para actualizar los datos de una postulación.
         - Reutilización del formulario nativo de reclutamiento para la actualización.
         - Activación del ingreso de documentación a partir de la etapa de secuencia 3.
-        - Modelo de documentación obligatoria relacionado con hr.applicant.
+        - Modelo de documentación de ingreso relacionado con hr.applicant, con documentos obligatorios y opcionales, incluida la hoja de vida actualizada.
         - Validación servidor/portal de todos los documentos obligatorios.
     ''',
     'author': 'OpenAI',
