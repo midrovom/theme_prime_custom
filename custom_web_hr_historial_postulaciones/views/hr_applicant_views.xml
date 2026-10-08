@@ -21,7 +21,7 @@
                         <span class="ms-1">Vista organizada del expediente para identificar rápidamente lo cargado y lo pendiente.</span>
                     </div>
 
-                    <group col="4" class="mb-3">
+                    <group col="2" class="mb-3">
                         <group string="Postulación">
                             <field name="portal_user_id" readonly="1"/>
                             <field name="portal_update_scope" readonly="1"/>
