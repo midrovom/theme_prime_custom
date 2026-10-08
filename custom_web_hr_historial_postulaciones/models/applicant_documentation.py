@@ -106,6 +106,21 @@ class ApplicantDocumentation(models.Model):
         compute='_compute_recommendation_count',
     )
 
+    required_document_total = fields.Integer(
+        string='Documentos obligatorios',
+        compute='_compute_required_document_summary',
+        store=True,
+    )
+    required_document_uploaded = fields.Integer(
+        string='Documentos obligatorios cargados',
+        compute='_compute_required_document_summary',
+        store=True,
+    )
+    required_document_missing = fields.Integer(
+        string='Documentos obligatorios faltantes',
+        compute='_compute_required_document_summary',
+        store=True,
+    )
     is_complete = fields.Boolean(string='Documentación completa', compute='_compute_is_complete', store=True)
 
     _sql_constraints = [
@@ -126,6 +141,25 @@ class ApplicantDocumentation(models.Model):
             recommendation_total = len(record.recommendation_ids) + (1 if record.recomendaciones else 0)
             cedula_total = int(bool(record.cedula_votacion)) + int(bool(record.cedula_votacion_2))
             record.is_complete = all(bool(record[field]) for field in required_fields) and cedula_total >= 2 and recommendation_total >= 2
+
+    @api.depends('recommendation_ids', 'recomendaciones', 'fotografia', 'cedula_votacion', 'cedula_votacion_2', 'hoja_vida_actualizada', 'planilla_servicios', 'croquis_domicilio', 'cuenta_banco_internacional', 'certificado_salud')
+    def _compute_required_document_summary(self):
+        for record in self:
+            total = 10
+            uploaded = sum([
+                int(bool(record.fotografia)),
+                int(bool(record.cedula_votacion)),
+                int(bool(record.cedula_votacion_2)),
+                int(bool(record.hoja_vida_actualizada)),
+                min(len(record.recommendation_ids) + int(bool(record.recomendaciones)), 2),
+                int(bool(record.planilla_servicios)),
+                int(bool(record.croquis_domicilio)),
+                int(bool(record.cuenta_banco_internacional)),
+                int(bool(record.certificado_salud)),
+            ])
+            record.required_document_total = total
+            record.required_document_uploaded = uploaded
+            record.required_document_missing = max(total - uploaded, 0)
 
     @api.depends('recommendation_ids', 'recomendaciones')
     def _compute_recommendation_count(self):

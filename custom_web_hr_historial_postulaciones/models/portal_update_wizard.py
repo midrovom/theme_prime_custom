@@ -37,6 +37,8 @@ class PortalUpdatePermissionWizard(models.TransientModel):
 
     def action_apply(self):
         self.ensure_one()
+        if not self.env.user.has_group('custom_web_hr_historial_postulaciones.group_portal_update_manager'):
+            raise UserError(_('No tiene permisos para gestionar los permisos de actualización del portal.'))
         applicant = self.applicant_id
         if not applicant or not applicant.portal_user_id:
             raise UserError(_('Esta postulación no tiene un usuario de portal asociado.'))

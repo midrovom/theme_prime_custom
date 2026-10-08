@@ -6,25 +6,37 @@
         <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
-                <button name="action_open_portal_update_wizard" type="object" string="Habilitar permiso del portal" class="btn-primary" invisible="not portal_user_id" groups="hr_recruitment.group_hr_recruitment_user"/>
+                <button name="action_open_portal_update_wizard"
+                        type="object"
+                        string="Habilitar permiso del portal"
+                        class="btn-primary"
+                        invisible="not portal_user_id"
+                        groups="custom_web_hr_historial_postulaciones.group_portal_update_manager"/>
             </xpath>
 
             <xpath expr="//notebook" position="inside">
                 <page string="Documentación de ingreso" name="portal_documentation_page">
                     <div class="alert alert-info o_form_uri mb-3">
                         <strong>Expediente documental</strong>
-                        <span class="ms-1">Revise rápidamente el estado de carga y consulte los documentos por sección.</span>
+                        <span class="ms-1">Vista organizada del expediente para identificar rápidamente lo cargado y lo pendiente.</span>
                     </div>
+
                     <group col="4" class="mb-3">
-                        <group string="Estado">
+                        <group string="Estado del expediente">
                             <field name="documentation_required" readonly="1"/>
                             <field name="documentation_complete" readonly="1"/>
+                            <field name="required_document_uploaded" readonly="1" string="Obligatorios cargados"/>
+                            <field name="required_document_missing" readonly="1" string="Obligatorios faltantes"/>
+                        </group>
+                        <group string="Progreso">
+                            <field name="required_document_total" readonly="1" string="Total obligatorios"/>
+                            <field name="is_complete" readonly="1" string="Expediente completo"/>
                         </group>
                         <group string="Postulación">
                             <field name="portal_user_id" readonly="1"/>
-                            <field name="portal_update_allowed" readonly="1"/>
+                            <field name="portal_update_scope" readonly="1"/>
                         </group>
-                        <group string="Actualización portal">
+                        <group string="Última actualización portal">
                             <field name="portal_update_allowed_at" readonly="1"/>
                             <field name="portal_update_allowed_by" readonly="1"/>
                         </group>
@@ -33,58 +45,81 @@
                     <field name="applicant_documentation_ids" readonly="1" mode="list,form">
                         <list create="0" delete="0" edit="0">
                             <field name="create_date" string="Fecha de carga"/>
-                            <field name="is_complete" string="Obligatorios completos"/>
-                            <field name="fotografia_filename" string="Fotografía"/>
-                            <field name="cedula_votacion_filename" string="Cédula / votación 1"/>
-                            <field name="cedula_votacion_filename_2" string="Cédula / votación 2"/>
-                            <field name="hoja_vida_actualizada_filename" string="Hoja de vida"/>
-                            <field name="historia_iess_filename" string="Historia IESS"/>
-                            <field name="estudios_titulo_filename" string="Estudios / SENESCYT"/>
-                            <field name="recomendaciones_filename" string="Recomendaciones"/>
-                            <field name="certificados_trabajo_filename" string="Trabajos"/>
-                            <field name="planilla_servicios_filename" string="Servicios básicos"/>
-                            <field name="croquis_domicilio_filename" string="Croquis"/>
-                            <field name="cuenta_banco_internacional_filename" string="Cuenta bancaria"/>
-                            <field name="certificado_salud_filename" string="Salud"/>
+                            <field name="applicant_id" string="Postulación"/>
+                            <field name="required_document_uploaded" string="Obligatorios cargados"/>
+                            <field name="required_document_missing" string="Faltantes"/>
+                            <field name="recommendation_count" string="Recomendaciones"/>
+                            <field name="is_complete" string="Expediente completo"/>
                         </list>
                         <form string="Documentación de ingreso">
                             <sheet>
                                 <div class="oe_title mb-3">
                                     <h2><field name="applicant_id" readonly="1"/></h2>
-                                    <div class="text-muted">Expediente documental del postulante</div>
+                                    <div class="text-muted">Expediente documental organizado por sección</div>
                                 </div>
-                                <group col="3" class="mb-3">
-                                    <group string="Estado">
-                                        <field name="is_complete" readonly="1"/>
-                                        <field name="create_date" readonly="1"/>
+
+                                <div class="alert alert-success mb-3" invisible="not is_complete">
+                                    <strong>Expediente completo.</strong>
+                                    <span class="ms-1">Todos los documentos obligatorios fueron cargados.</span>
+                                </div>
+                                <div class="alert alert-warning mb-3" invisible="is_complete">
+                                    <strong>Expediente pendiente.</strong>
+                                    <span class="ms-1">Revise la cantidad de documentos faltantes indicada en el resumen.</span>
+                                </div>
+
+                                <group col="4" class="mb-4">
+                                    <group string="Obligatorios cargados">
+                                        <field name="required_document_uploaded" readonly="1"/>
                                     </group>
-                                    <group string="Identificación">
-                                        <field name="fotografia_filename" readonly="1"/>
-                                        <field name="cedula_votacion_filename" readonly="1"/>
-                                        <field name="cedula_votacion_filename_2" readonly="1"/>
+                                    <group string="Obligatorios faltantes">
+                                        <field name="required_document_missing" readonly="1"/>
                                     </group>
-                                    <group string="Currículum">
-                                        <field name="hoja_vida_actualizada_filename" readonly="1"/>
+                                    <group string="Total obligatorios">
+                                        <field name="required_document_total" readonly="1"/>
+                                    </group>
+                                    <group string="Recomendaciones">
+                                        <field name="recommendation_count" readonly="1"/>
                                     </group>
                                 </group>
+
                                 <notebook>
-                                    <page string="Personales y currículum">
+                                    <page string="1. Identificación y hoja de vida">
                                         <group col="2">
-                                            <field name="fotografia" widget="binary" filename="fotografia_filename" readonly="1"/>
-                                            <field name="cedula_votacion" widget="binary" filename="cedula_votacion_filename" readonly="1"/>
-                                            <field name="cedula_votacion_2" widget="binary" filename="cedula_votacion_filename_2" readonly="1"/>
-                                            <field name="hoja_vida_actualizada" widget="binary" filename="hoja_vida_actualizada_filename" readonly="1"/>
+                                            <group string="Fotografía">
+                                                <field name="fotografia" widget="binary" filename="fotografia_filename" readonly="1"/>
+                                            </group>
+                                            <group string="Hoja de vida actualizada">
+                                                <field name="hoja_vida_actualizada" widget="binary" filename="hoja_vida_actualizada_filename" readonly="1"/>
+                                            </group>
+                                            <group string="Cédula / certificado de votación - copia 1">
+                                                <field name="cedula_votacion" widget="binary" filename="cedula_votacion_filename" readonly="1"/>
+                                            </group>
+                                            <group string="Cédula / certificado de votación - copia 2">
+                                                <field name="cedula_votacion_2" widget="binary" filename="cedula_votacion_filename_2" readonly="1"/>
+                                            </group>
                                         </group>
                                     </page>
-                                    <page string="Estudios y experiencia">
+
+                                    <page string="2. Estudios, IESS y experiencia">
                                         <group col="2">
-                                            <field name="historia_iess" widget="binary" filename="historia_iess_filename" readonly="1"/>
-                                            <field name="estudios_titulo" widget="binary" filename="estudios_titulo_filename" readonly="1"/>
-                                            <field name="cursos_realizados" widget="binary" filename="cursos_realizados_filename" readonly="1"/>
-                                            <field name="certificados_trabajo" widget="binary" filename="certificados_trabajo_filename" readonly="1"/>
+                                            <group string="Historia laboral IESS">
+                                                <field name="historia_iess" widget="binary" filename="historia_iess_filename" readonly="1"/>
+                                            </group>
+                                            <group string="Estudios / SENESCYT">
+                                                <field name="estudios_titulo" widget="binary" filename="estudios_titulo_filename" readonly="1"/>
+                                            </group>
+                                            <group string="Cursos realizados">
+                                                <field name="cursos_realizados" widget="binary" filename="cursos_realizados_filename" readonly="1"/>
+                                            </group>
+                                            <group string="Certificados de trabajos anteriores">
+                                                <field name="certificados_trabajo" widget="binary" filename="certificados_trabajo_filename" readonly="1"/>
+                                            </group>
                                         </group>
-                                        <group string="Recomendaciones">
-                                            <field name="recommendation_count" readonly="1"/>
+                                    </page>
+
+                                    <page string="3. Recomendaciones">
+                                        <group>
+                                            <field name="recommendation_count" readonly="1" string="Cantidad de recomendaciones"/>
                                             <field name="recomendaciones_filename" string="Recomendación legado" readonly="1" invisible="not recomendaciones"/>
                                             <field name="recommendation_ids" readonly="1" nolabel="1">
                                                 <list create="0" edit="0" delete="0">
@@ -94,23 +129,40 @@
                                             </field>
                                         </group>
                                     </page>
-                                    <page string="Domicilio y banca">
+
+                                    <page string="4. Domicilio y banca">
                                         <group col="2">
-                                            <field name="planilla_servicios" widget="binary" filename="planilla_servicios_filename" readonly="1"/>
-                                            <field name="croquis_domicilio" widget="binary" filename="croquis_domicilio_filename" readonly="1"/>
-                                            <field name="cuenta_banco_internacional" widget="binary" filename="cuenta_banco_internacional_filename" readonly="1"/>
+                                            <group string="Planilla de servicios básicos">
+                                                <field name="planilla_servicios" widget="binary" filename="planilla_servicios_filename" readonly="1"/>
+                                            </group>
+                                            <group string="Croquis del domicilio">
+                                                <field name="croquis_domicilio" widget="binary" filename="croquis_domicilio_filename" readonly="1"/>
+                                            </group>
+                                            <group string="Cuenta de ahorros Banco Internacional">
+                                                <field name="cuenta_banco_internacional" widget="binary" filename="cuenta_banco_internacional_filename" readonly="1"/>
+                                            </group>
                                         </group>
                                     </page>
-                                    <page string="Condicionados">
+
+                                    <page string="5. Documentación condicionada">
                                         <group col="2">
-                                            <field name="acta_matrimonio" widget="binary" filename="acta_matrimonio_filename" readonly="1"/>
-                                            <field name="documentos_hijos" widget="binary" filename="documentos_hijos_filename" readonly="1"/>
-                                            <field name="formulario_107" widget="binary" filename="formulario_107_filename" readonly="1"/>
+                                            <group string="Acta de matrimonio / unión de hecho">
+                                                <field name="acta_matrimonio" widget="binary" filename="acta_matrimonio_filename" readonly="1"/>
+                                            </group>
+                                            <group string="Hijos menores de 18 años">
+                                                <field name="documentos_hijos" widget="binary" filename="documentos_hijos_filename" readonly="1"/>
+                                            </group>
+                                            <group string="Formulario 107 del SRI">
+                                                <field name="formulario_107" widget="binary" filename="formulario_107_filename" readonly="1"/>
+                                            </group>
                                         </group>
                                     </page>
-                                    <page string="Salud">
+
+                                    <page string="6. Salud">
                                         <group>
-                                            <field name="certificado_salud" widget="binary" filename="certificado_salud_filename" readonly="1"/>
+                                            <group string="Certificado de salud MSP">
+                                                <field name="certificado_salud" widget="binary" filename="certificado_salud_filename" readonly="1"/>
+                                            </group>
                                         </group>
                                     </page>
                                 </notebook>

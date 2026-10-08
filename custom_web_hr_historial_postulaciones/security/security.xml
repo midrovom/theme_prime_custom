@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="module_category_portal_management" model="ir.module.category">
+        <field name="name">Gestión del Portal</field>
+        <field name="description">Permisos para administrar qué postulantes pueden actualizar información desde el portal.</field>
+        <field name="sequence">80</field>
+    </record>
+
+    <record id="group_portal_update_manager" model="res.groups">
+        <field name="name">Gestionar permisos de actualización del portal</field>
+        <field name="category_id" ref="module_category_portal_management"/>
+        <field name="implied_ids" eval="[(4, ref('hr_recruitment.group_hr_recruitment_user'))]"/>
+    </record>
+</odoo>

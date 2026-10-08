@@ -80,6 +80,8 @@ class HrApplicant(models.Model):
 
     def action_open_portal_update_wizard(self):
         self.ensure_one()
+        if not self.env.user.has_group('custom_web_hr_historial_postulaciones.group_portal_update_manager'):
+            raise UserError(_('No tiene permisos para habilitar actualizaciones desde el portal.'))
         if not self.portal_user_id:
             raise UserError(_('Esta postulación no tiene un usuario de portal asociado.'))
         return {
