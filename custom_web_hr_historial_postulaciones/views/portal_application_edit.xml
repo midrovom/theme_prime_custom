@@ -20,7 +20,7 @@
             </t>
         </xpath>
         <xpath expr="//form[@id='hr_job_recruitment_form']" position="attributes">
-            <attribute name="t-att-style">"visibility:hidden;" if request.httprequest.args.get('edit_applicant') else ''</attribute>
+            <attribute name="t-att-style">"display:none;" if request.httprequest.args.get('edit_applicant') else ''</attribute>
         </xpath>
     </template>
 </odoo>
