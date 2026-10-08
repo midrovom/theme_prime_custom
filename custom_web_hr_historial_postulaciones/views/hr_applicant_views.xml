@@ -30,9 +30,6 @@
                             <field name="portal_update_allowed_at" readonly="1"/>
                             <field name="portal_update_allowed_by" readonly="1"/>
                         </group>
-                        <group string="Documentación">
-                            <field name="applicant_documentation_ids" readonly="1" options="{'no_open': True}"/>
-                        </group>
                     </group>
 
                     <field name="applicant_documentation_ids" readonly="1" mode="list,form" nolabel="1">
