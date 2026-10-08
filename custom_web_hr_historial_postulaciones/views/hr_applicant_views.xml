@@ -30,7 +30,7 @@
                         </group>
                         <group string="Progreso">
                             <field name="required_document_total" readonly="1" string="Total obligatorios"/>
-                            <field name="is_complete" readonly="1" string="Expediente completo"/>
+                            <field name="documentation_is_complete" readonly="1" string="Expediente completo"/>
                         </group>
                         <group string="Postulación">
                             <field name="portal_user_id" readonly="1"/>
