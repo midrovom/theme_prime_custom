@@ -321,6 +321,20 @@ class PortalApplications(http.Controller):
                     'tiempo_conocerlo': self._field_value(ref, 'tiempo_conocerlo', ''),
                 })
 
+            # DEBUG TEMPORAL: registrar exactamente lo que el backend prepara
+            # para el formulario de actualización. No se modifica la respuesta ni
+            # la lógica de precarga; solo se agrega trazabilidad en el log de Odoo.
+            _logger.info(
+                'PORTAL_PRELOAD applicant=%s user=%s counts={family:%s, education:%s, experience:%s, references:%s} payload=%s',
+                applicant.id,
+                request.env.user.id,
+                len(payload['family']),
+                len(payload['education']),
+                len(payload['experience']),
+                len(payload['references']),
+                json.dumps(payload, default=str, ensure_ascii=False),
+            )
+
             return request.make_response(
                 json.dumps(payload, default=str),
                 headers=[('Content-Type', 'application/json; charset=utf-8'), ('Cache-Control', 'no-store')],
