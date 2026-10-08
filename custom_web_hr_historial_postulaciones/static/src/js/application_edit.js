@@ -214,7 +214,7 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
             this.$el.find("#form-step-2, #form-step-3").addClass("d-none");
             this.$el.find("#next-button, #next-button-step2, #prev-button, #prev-button-2, #submit-form").prop("disabled", false);
             this.$el.css("visibility", "visible");
-            this.$el.prev("#portal-edit-loading").remove();
+            this.$el.siblings("#portal-edit-loading").remove();
             if (!this.$el.prev("#portal-edit-load-error").length) {
                 this.$el.before(`
                     <div id="portal-edit-load-error" class="alert alert-danger rounded-4 mb-4">
@@ -297,8 +297,8 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
         this.$el.find("#form-step-1").removeClass("d-none");
         this.$el.find("#form-step-2, #form-step-3").addClass("d-none");
         this.$el.find("#next-button, #next-button-step2, #prev-button, #prev-button-2, #submit-form").prop("disabled", false);
+        this.$el.siblings("#portal-edit-loading").remove();
         this.$el.css("visibility", "visible");
-        this.$el.prev("#portal-edit-loading").remove();
 
         if (!this.$el.prev("#portal-edit-loaded").length) {
             this.$el.before(`
