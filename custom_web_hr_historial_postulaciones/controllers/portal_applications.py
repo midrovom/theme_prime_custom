@@ -148,19 +148,28 @@ class PortalApplications(http.Controller):
             '/jobs/recruitment/%s?edit_applicant=%s' % (applicant.job_id.id, applicant.id)
         )
 
+    def _field_value(self, record, field_name, default=False):
+        """Return a field value without crashing if a custom installation lacks it."""
+        if not record or field_name not in record._fields:
+            return default
+        try:
+            return record[field_name]
+        except Exception:
+            _logger.exception("No se pudo leer %s.%s", record._name, field_name)
+            return default
+
     @http.route('/my/application/<int:applicant_id>/data', type='http', auth='user', website=True, methods=['GET'], csrf=False)
     def application_data(self, applicant_id, **kwargs):
-        applicant = self._get_owned_applicant(applicant_id)
-        birthdate = applicant.birthdate
-        day = birthdate.day if birthdate else ''
-        month = birthdate.month if birthdate else ''
-        year = birthdate.year if birthdate else ''
-        code_cell, cellphone = _split_phone(applicant.partner_mobile)
-        code_phone, phone = _split_phone(applicant.partner_phone)
-        medical = applicant.medical_ids[:1]
-        medical_values = {
-            field: medical[field] if medical else ''
-            for field in [
+        try:
+            applicant = self._get_owned_applicant(applicant_id)
+            candidate = self._field_value(applicant, 'candidate_id')
+            birthdate = self._field_value(applicant, 'birthdate')
+            code_cell, cellphone = _split_phone(self._field_value(applicant, 'partner_mobile', ''))
+            code_phone, phone = _split_phone(self._field_value(applicant, 'partner_phone', ''))
+
+            medical_ids = self._field_value(applicant, 'medical_ids', request.env['applicant.medical'])
+            medical = medical_ids[:1] if medical_ids else False
+            medical_fields = [
                 'enfermedad_persistente', 'detalle_enfermedad_persistente',
                 'medicacion_continua', 'detalle_medicacion_continua',
                 'enfermedad_laboral', 'detalle_enfermedad_laboral',
@@ -168,116 +177,167 @@ class PortalApplications(http.Controller):
                 'discapacidad', 'tipo_discapacidad', 'porcentaje_discapacidad',
                 'tipo_sangre',
             ]
-        }
+            medical_values = {
+                field: self._field_value(medical, field, '')
+                for field in medical_fields
+            }
 
-        payload = {
-            'id': applicant.id,
-            'job_id': applicant.job_id.id,
-            'has_image': bool(applicant.image_1920),
-            'has_curriculum': bool(applicant.document_ids),
-            'firstname': applicant.candidate_id.firstname if applicant.candidate_id else '',
-            'lastname_paterno': applicant.candidate_id.lastname_paterno if applicant.candidate_id else '',
-            'lastname_materno': applicant.candidate_id.lastname_materno if applicant.candidate_id else '',
-            'age': applicant.age or '',
-            'address': applicant.address or '',
-            'parish': applicant.parish or '',
-            'birth_country_id': applicant.birth_country_id.id if applicant.birth_country_id else '',
-            'provincia_id': applicant.provincia_id.id if applicant.provincia_id else '',
-            'birthdate': {'day': day, 'month': month, 'year': year},
-            'phone_code': code_phone,
-            'phone': phone,
-            'cellphone_code': code_cell,
-            'cellphone': cellphone,
-            'vive_con': applicant.vive_con or '',
-            'tipo_vivienda': applicant.tipo_vivienda or '',
-            'num_hijos': applicant.num_hijos or 0,
-            'dependientes': [x.strip() for x in (applicant.dependientes or '').split(',') if x.strip()],
-            'email': applicant.email_from or request.env.user.email or '',
-            'document_type': applicant.document_type or '',
-            'document_number': applicant.cedula or '',
-            'nationality': applicant.nacionality or '',
-            'estado_civil': applicant.estado_civil or '',
-            'secondary_studies': bool(applicant.secondary_studies),
-            'disability': bool(applicant.disability),
-            'family_disability': bool(applicant.family_disability),
-            'medical': medical_values,
-            'family': [
-                {
+            family_ids = self._field_value(applicant, 'family_ids', request.env['applicant.family'])
+            education_ids = self._field_value(applicant, 'education_ids', request.env['applicant.education'])
+            experience_ids = self._field_value(applicant, 'experience_job_ids', request.env['applicant.experience.job'])
+            known_ids = self._field_value(applicant, 'known_ids', request.env['applicant.known'])
+            reference_ids = self._field_value(applicant, 'reference_ids', request.env['applicant.reference'])
+            document_ids = self._field_value(applicant, 'document_ids', request.env['applicant.document'])
+
+            candidate_id = candidate.id if candidate else False
+            applicant_image = self._field_value(applicant, 'image_1920', False)
+            portal_user = self._field_value(applicant, 'portal_user_id', False)
+            portal_user_id = portal_user.id if portal_user else False
+
+            payload = {
+                'ok': True,
+                'id': applicant.id,
+                'job_id': self._field_value(self._field_value(applicant, 'job_id'), 'id', False),
+                'portal_user_id': portal_user_id,
+                'has_image': bool(applicant_image),
+                'has_curriculum': bool(document_ids),
+                'firstname': self._field_value(candidate, 'firstname', ''),
+                'lastname_paterno': self._field_value(candidate, 'lastname_paterno', ''),
+                'lastname_materno': self._field_value(candidate, 'lastname_materno', ''),
+                'age': self._field_value(applicant, 'age', ''),
+                'address': self._field_value(applicant, 'address', ''),
+                'parish': self._field_value(applicant, 'parish', ''),
+                'birth_country_id': self._field_value(self._field_value(applicant, 'birth_country_id'), 'id', False),
+                'provincia_id': self._field_value(self._field_value(applicant, 'provincia_id'), 'id', False),
+                'birthdate': {
+                    'day': birthdate.day if birthdate else '',
+                    'month': birthdate.month if birthdate else '',
+                    'year': birthdate.year if birthdate else '',
+                },
+                'phone_code': code_phone,
+                'phone': phone,
+                'cellphone_code': code_cell,
+                'cellphone': cellphone,
+                'vive_con': self._field_value(applicant, 'vive_con', ''),
+                'tipo_vivienda': self._field_value(applicant, 'tipo_vivienda', ''),
+                'num_hijos': self._field_value(applicant, 'num_hijos', 0),
+                'dependientes': [x.strip() for x in _clean(self._field_value(applicant, 'dependientes', '')).split(',') if x.strip()],
+                'email': self._field_value(applicant, 'email_from', '') or _clean(request.env.user.email),
+                'document_type': self._field_value(applicant, 'document_type', ''),
+                'document_number': self._field_value(applicant, 'cedula', ''),
+                'nationality': self._field_value(applicant, 'nacionality', ''),
+                'estado_civil': self._field_value(applicant, 'estado_civil', ''),
+                'secondary_studies': bool(self._field_value(applicant, 'secondary_studies', False)),
+                'disability': bool(self._field_value(applicant, 'disability', False)),
+                'family_disability': bool(self._field_value(applicant, 'family_disability', False)),
+                'medical': medical_values,
+                'family': [],
+                'education': [],
+                'experience': [],
+                'known': {
+                    'posee': False,
+                    'nombre': '',
+                    'relacion': '',
+                    'parentesco': '',
+                },
+                'references': [],
+            }
+
+            for family in family_ids.sorted('id'):
+                payload['family'].append({
                     'id': family.id,
-                    'familiar_type': family.familiar_type or '',
-                    'name': family.name or '',
-                    'fallecido': family.fallecido,
-                    'no_tiene': family.no_tiene,
-                    'document_type': family.document_type or '',
-                    'cedula': family.cedula or '',
-                    'birthdate': str(family.birthdate) if family.birthdate else '',
-                    'phone': family.phone or '',
-                    'occupation': family.occupation or '',
-                    'economically_dependent': family.economically_dependent or '',
-                    'disability': family.disability or '',
-                    'disability_type': family.disability_type or '',
-                    'disability_percentage': family.disability_percentage or '',
-                    'has_document': bool(family.document_file),
-                    'filename': family.filename or '',
+                    'familiar_type': self._field_value(family, 'familiar_type', ''),
+                    'name': self._field_value(family, 'name', ''),
+                    'fallecido': bool(self._field_value(family, 'fallecido', False)),
+                    'no_tiene': bool(self._field_value(family, 'no_tiene', False)),
+                    'document_type': self._field_value(family, 'document_type', ''),
+                    'cedula': self._field_value(family, 'cedula', ''),
+                    'birthdate': str(self._field_value(family, 'birthdate', '')) if self._field_value(family, 'birthdate', False) else '',
+                    'phone': self._field_value(family, 'phone', ''),
+                    'occupation': self._field_value(family, 'occupation', ''),
+                    'economically_dependent': self._field_value(family, 'economically_dependent', ''),
+                    'disability': self._field_value(family, 'disability', ''),
+                    'disability_type': self._field_value(family, 'disability_type', ''),
+                    'disability_percentage': self._field_value(family, 'disability_percentage', ''),
+                    'has_document': bool(self._field_value(family, 'document_file', False)),
+                    'filename': self._field_value(family, 'filename', ''),
+                })
+
+            for education in education_ids.sorted('id'):
+                level = self._field_value(education, 'level_id')
+                country = self._field_value(education, 'country_id')
+                state = self._field_value(education, 'state_id')
+                start_date = self._field_value(education, 'fecha_inicio', False)
+                payload['education'].append({
+                    'level_id': level.id if level else False,
+                    'institucion': self._field_value(education, 'institucion', ''),
+                    'fecha_inicio': str(start_date) if start_date else '',
+                    'year_fin': self._field_value(education, 'year_fin', ''),
+                    'country_id': country.id if country else False,
+                    'state_id': state.id if state else False,
+                    'titulo': self._field_value(education, 'titulo', ''),
+                    'titulo_por_obtener': self._field_value(education, 'titulo_por_obtener', ''),
+                    'institucion_2': self._field_value(education, 'institucion_2', ''),
+                    'horario': self._field_value(education, 'horario', ''),
+                    'carrera': self._field_value(education, 'carrera', ''),
+                    'estado': self._field_value(education, 'estado', ''),
+                    'study_current': self._field_value(education, 'study_current', ''),
+                })
+
+            for exp in experience_ids.sorted('id'):
+                country = self._field_value(exp, 'country_id')
+                state = self._field_value(exp, 'state_id')
+                start_date = self._field_value(exp, 'fecha_inicio', False)
+                payload['experience'].append({
+                    'name': self._field_value(exp, 'name', ''),
+                    'empresa': self._field_value(exp, 'empresa', ''),
+                    'country_id': country.id if country else False,
+                    'state_id': state.id if state else False,
+                    'fecha_inicio': str(start_date) if start_date else '',
+                    'year_fin': self._field_value(exp, 'year_fin', ''),
+                    'tiempo_servicio': self._field_value(exp, 'tiempo_servicio', ''),
+                    'telefonos': self._field_value(exp, 'telefonos', ''),
+                    'ingreso_mensual': self._field_value(exp, 'ingreso_mensual', 0),
+                    'motivo_separacion': self._field_value(exp, 'motivo_separacion', ''),
+                    'jefe_directo': self._field_value(exp, 'jefe_directo', ''),
+                    'cargo_jefe_directo': self._field_value(exp, 'cargo_jefe_directo', ''),
+                })
+
+            known = known_ids[:1] if known_ids else False
+            if known:
+                payload['known'] = {
+                    'posee': self._field_value(known, 'posee_familiares', '') == 'si',
+                    'nombre': self._field_value(known, 'nombre_completo', ''),
+                    'relacion': self._field_value(known, 'relacion', ''),
+                    'parentesco': self._field_value(known, 'parentesco', ''),
                 }
-                for family in applicant.family_ids.sorted(key=lambda r: (r.familiar_type or '', r.id))
-            ],
-            'education': [
-                {
-                    'level_id': education.level_id.id if education.level_id else '',
-                    'institucion': education.institucion or '',
-                    'fecha_inicio': str(education.fecha_inicio) if education.fecha_inicio else '',
-                    'year_fin': education.year_fin or '',
-                    'country_id': education.country_id.id if education.country_id else '',
-                    'state_id': education.state_id.id if education.state_id else '',
-                    'titulo': education.titulo or '',
-                    'titulo_por_obtener': education.titulo_por_obtener or '',
-                    'institucion_2': education.institucion_2 or '',
-                    'horario': education.horario or '',
-                    'carrera': education.carrera or '',
-                    'estado': education.estado or '',
-                    'study_current': education.study_current or '',
-                }
-                for education in applicant.education_ids.sorted('id')
-            ],
-            'experience': [
-                {
-                    'name': exp.name or '',
-                    'empresa': exp.empresa or '',
-                    'country_id': exp.country_id.id if exp.country_id else '',
-                    'state_id': exp.state_id.id if exp.state_id else '',
-                    'fecha_inicio': str(exp.fecha_inicio) if exp.fecha_inicio else '',
-                    'year_fin': exp.year_fin or '',
-                    'tiempo_servicio': exp.tiempo_servicio or '',
-                    'telefonos': exp.telefonos or '',
-                    'ingreso_mensual': exp.ingreso_mensual or 0,
-                    'motivo_separacion': exp.motivo_separacion or '',
-                    'jefe_directo': exp.jefe_directo or '',
-                    'cargo_jefe_directo': exp.cargo_jefe_directo or '',
-                }
-                for exp in applicant.experience_job_ids.sorted('id')
-            ],
-            'known': {
-                'posee': (applicant.known_ids[:1].posee_familiares == 'si') if applicant.known_ids else False,
-                'nombre': applicant.known_ids[:1].nombre_completo if applicant.known_ids else '',
-                'relacion': applicant.known_ids[:1].relacion if applicant.known_ids else '',
-                'parentesco': applicant.known_ids[:1].parentesco if applicant.known_ids else '',
-            },
-            'references': [
-                {
-                    'nombre': ref.nombre or '',
-                    'domicilio': ref.domicilio or '',
-                    'telefono': ref.telefono or '',
-                    'ocupacion': ref.ocupacion or '',
-                    'tiempo_conocerlo': ref.tiempo_conocerlo or '',
-                }
-                for ref in applicant.reference_ids.sorted('id')
-            ],
-        }
-        return request.make_response(
-            json.dumps(payload, default=str),
-            headers=[('Content-Type', 'application/json; charset=utf-8')],
-        )
+
+            for ref in reference_ids.sorted('id'):
+                payload['references'].append({
+                    'nombre': self._field_value(ref, 'nombre', ''),
+                    'domicilio': self._field_value(ref, 'domicilio', ''),
+                    'telefono': self._field_value(ref, 'telefono', ''),
+                    'ocupacion': self._field_value(ref, 'ocupacion', ''),
+                    'tiempo_conocerlo': self._field_value(ref, 'tiempo_conocerlo', ''),
+                })
+
+            return request.make_response(
+                json.dumps(payload, default=str),
+                headers=[('Content-Type', 'application/json; charset=utf-8'), ('Cache-Control', 'no-store')],
+            )
+        except (NotFound, Forbidden):
+            raise
+        except Exception as exc:
+            _logger.exception('ERROR CARGANDO INFORMACIÓN DE LA POSTULACIÓN %s', applicant_id)
+            error_payload = {
+                'ok': False,
+                'error': str(exc),
+                'applicant_id': applicant_id,
+            }
+            return request.make_response(
+                json.dumps(error_payload, default=str),
+                headers=[('Content-Type', 'application/json; charset=utf-8'), ('Cache-Control', 'no-store'), ('X-Portal-Error', '1')],
+            )
 
     def _parse_applicant_values(self, kwargs, applicant=None):
         dependientes_list = request.httprequest.form.getlist('dependientes')

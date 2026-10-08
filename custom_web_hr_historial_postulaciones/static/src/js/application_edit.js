@@ -215,16 +215,24 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
     };
 
     async function loadApplicantData(applicantId) {
-        const response = await fetch(`/my/application/${applicantId}/data`, {
-            headers: { "Accept": "application/json" },
+        const response = await fetch(`/my/application/${applicantId}/data?ts=${Date.now()}`, {
+            headers: { "Accept": "application/json", "Cache-Control": "no-cache" },
             credentials: "same-origin",
+            cache: "no-store",
         });
 
-        if (!response.ok) {
-            throw new Error(`No fue posible consultar la postulación (${response.status}).`);
+        const raw = await response.text();
+        let data;
+        try {
+            data = JSON.parse(raw);
+        } catch (parseError) {
+            throw new Error(`La respuesta del servidor no es JSON (${response.status}).`);
         }
 
-        const data = await response.json();
+        if (!response.ok || data.ok === false) {
+            const detail = data?.error ? `: ${data.error}` : '';
+            throw new Error(`No fue posible consultar la postulación (${response.status})${detail}`);
+        }
 
         this.$el.attr("data-existing-image", data.has_image ? "1" : "0");
         this.$el.attr("data-existing-curriculum", data.has_curriculum ? "1" : "0");
