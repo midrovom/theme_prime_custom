@@ -6,8 +6,7 @@
         <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
-                <button name="action_allow_portal_update" type="object" string="Permitir actualización" class="btn-primary" invisible="not portal_user_id or portal_update_allowed" groups="hr_recruitment.group_hr_recruitment_user"/>
-                <button name="action_revoke_portal_update" type="object" string="Revocar actualización" class="btn-secondary" invisible="not portal_update_allowed" groups="hr_recruitment.group_hr_recruitment_user"/>
+                <button name="action_apply_portal_update" type="object" string="Aplicar permisos de portal" class="btn-primary" invisible="not portal_user_id" groups="hr_recruitment.group_hr_recruitment_user"/>
             </xpath>
 
             <xpath expr="//notebook" position="inside">
@@ -123,7 +122,8 @@
 
             <xpath expr="//field[@name='partner_phone']" position="after">
                 <field name="portal_user_id" invisible="1"/>
-                <field name="portal_update_allowed"/>
+                <field name="portal_update_scope" invisible="1"/>
+                <field name="portal_update_allowed" invisible="1"/>
                 <field name="portal_update_allowed_at" readonly="1"/>
                 <field name="portal_update_allowed_by" readonly="1"/>
             </xpath>

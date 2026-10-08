@@ -40,7 +40,7 @@
                                             <span class="badge rounded-pill text-bg-secondary" t-esc="applicant.stage_id.name or 'Sin estado'"/>
                                         </td>
                                         <td class="text-end">
-                                            <t t-if="applicant.portal_update_allowed">
+                                            <t t-if="applicant.portal_can_update_history()">
                                                 <a t-att-href="'/my/application/%s/edit' % applicant.id"
                                                    class="btn btn-sm btn-primary rounded-pill">
                                                     Actualizar

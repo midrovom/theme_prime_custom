@@ -94,6 +94,11 @@ class PortalApplications(http.Controller):
     def _documentation_enabled(self, applicant):
         return bool(applicant.stage_id and applicant.stage_id.sequence >= 3)
 
+    def _documentation_access_allowed(self, applicant, documentation):
+        if not documentation:
+            return self._documentation_enabled(applicant)
+        return self._documentation_enabled(applicant) and applicant.portal_can_update_documentation()
+
     def _portal_context(self):
         user = request.env.user
         applicants = request.env['hr.applicant'].sudo().search(
@@ -174,8 +179,8 @@ class PortalApplications(http.Controller):
     @http.route('/my/application/<int:applicant_id>/edit', type='http', auth='user', website=True)
     def edit_application(self, applicant_id, **kwargs):
         applicant = self._get_owned_applicant(applicant_id)
-        if not applicant.portal_update_allowed:
-            raise Forbidden(_('Esta postulación no está habilitada para actualización.'))
+        if not applicant.portal_can_update_history():
+            raise Forbidden(_('La sección de historial no está habilitada para actualización.'))
 
         # Abrimos el mismo formulario nativo que se utiliza para una nueva postulación.
         # El parámetro edit_applicant permite que el JS del módulo cargue los datos
@@ -661,8 +666,8 @@ class PortalApplications(http.Controller):
     @http.route('/my/application/<int:applicant_id>/update', type='http', auth='user', website=True, methods=['POST'], csrf=True)
     def update_application(self, applicant_id, **kwargs):
         applicant = self._get_owned_applicant(applicant_id)
-        if not applicant.portal_update_allowed:
-            raise Forbidden(_('Esta postulación ya no está habilitada para actualización.'))
+        if not applicant.portal_can_update_history():
+            raise Forbidden(_('La sección de historial no está habilitada para actualización.'))
 
         try:
             applicant_values = self._parse_applicant_values(kwargs, applicant=applicant)
@@ -713,7 +718,7 @@ class PortalApplications(http.Controller):
                         **command[2],
                     })
 
-            applicant.write({'portal_update_allowed': False})
+            applicant.write({'portal_update_scope': 'none'})
         except (ValidationError, ValueError) as exc:
             _logger.exception('Error actualizando la postulación %s', applicant_id)
             return request.render(
@@ -738,12 +743,13 @@ class PortalApplications(http.Controller):
     @http.route('/my/application/<int:applicant_id>/documentation', type='http', auth='user', website=True, methods=['GET', 'POST'], csrf=True)
     def application_documentation(self, applicant_id, **kwargs):
         applicant = self._get_owned_applicant(applicant_id)
-        if not self._documentation_enabled(applicant):
-            raise Forbidden(_('El ingreso de documentación aún no está habilitado para esta postulación.'))
 
         Documentation = request.env['applicant.documentation'].sudo()
         Recommendation = request.env['applicant.documentation.recommendation'].sudo()
         documentation = Documentation.search([('applicant_id', '=', applicant.id)], limit=1)
+
+        if not self._documentation_access_allowed(applicant, documentation):
+            raise Forbidden(_('El ingreso de documentación no está habilitado para esta postulación.'))
 
         existing_recommendations = len(documentation.recommendation_ids) if documentation else 0
         legacy_recommendation = 1 if documentation and documentation.recomendaciones else 0
@@ -847,6 +853,7 @@ class PortalApplications(http.Controller):
                 return render_form([_('Falta información: %s') % item for item in missing], status=400)
 
             values['applicant_id'] = applicant.id
+            was_existing_documentation = bool(documentation)
             try:
                 if documentation:
                     documentation.write(values)
@@ -859,6 +866,9 @@ class PortalApplications(http.Controller):
                         'documentation_id': documentation.id,
                         **recommendation,
                     })
+
+                if was_existing_documentation and applicant.portal_can_update_documentation():
+                    applicant.write({'portal_update_scope': 'none'})
 
             except (ValidationError, ValueError) as exc:
                 return request.render(

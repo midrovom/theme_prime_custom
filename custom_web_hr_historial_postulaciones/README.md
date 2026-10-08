@@ -39,3 +39,6 @@ El módulo depende de `custom_web_hr_datos_candidatos`, por lo que este debe est
 3. El postulante debe completar los 14 documentos.
 4. Si falta cualquiera, el servidor rechaza el envío indicando la documentación pendiente.
 5. Una vez completos, la postulación queda marcada como documentación completa.
+
+- RRHH dispone de un unico control de permisos con selector: historial, documentacion o ambos.
+- La documentacion ya registrada no muestra 'Ingresar documentacion'; solo permite 'Actualizar documentacion' cuando RRHH habilita esa seccion.

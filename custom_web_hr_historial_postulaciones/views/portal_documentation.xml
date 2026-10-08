@@ -27,10 +27,18 @@
                                     <t t-else="">
                                         <div class="alert alert-warning py-2 rounded-3">Documentación pendiente.</div>
                                     </t>
-                                    <a t-att-href="'/my/application/%s/documentation' % applicant.id"
-                                       class="btn btn-primary rounded-pill">
-                                        Ingresar documentación
-                                    </a>
+                                    <t t-if="not doc">
+                                        <a t-att-href="'/my/application/%s/documentation' % applicant.id"
+                                           class="btn btn-primary rounded-pill">
+                                            Ingresar documentación
+                                        </a>
+                                    </t>
+                                    <t t-elif="applicant.portal_can_update_documentation()">
+                                        <a t-att-href="'/my/application/%s/documentation' % applicant.id"
+                                           class="btn btn-outline-primary rounded-pill">
+                                            Actualizar documentación
+                                        </a>
+                                    </t>
                                 </div>
                             </div>
                         </div>

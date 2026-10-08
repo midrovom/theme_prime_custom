@@ -5,11 +5,24 @@ from odoo.exceptions import UserError
 class HrApplicant(models.Model):
     _inherit = 'hr.applicant'
 
-    portal_update_allowed = fields.Boolean(
-        string='Permitir actualización desde portal',
+    portal_update_scope = fields.Selection(
+        [
+            ('none', 'Ninguna sección'),
+            ('history', 'Historial de postulación'),
+            ('documentation', 'Ingreso de documentación'),
+            ('both', 'Historial + documentación'),
+        ],
+        string='Sección habilitada para actualización',
         copy=False,
-        default=False,
-        help='Cuando está activo, el postulante puede editar nuevamente la información enviada desde el portal.',
+        default='none',
+        help='Define qué puede modificar el postulante desde el portal cuando RRHH aplique el permiso.',
+    )
+    portal_update_allowed = fields.Boolean(
+        string='Actualización desde portal habilitada',
+        compute='_compute_portal_update_allowed',
+        store=True,
+        copy=False,
+        help='Indica si existe al menos una sección habilitada para actualización.',
     )
     portal_update_allowed_at = fields.Datetime(
         string='Actualización habilitada el',
@@ -37,6 +50,19 @@ class HrApplicant(models.Model):
         compute='_compute_documentation_complete',
     )
 
+    @api.depends('portal_update_scope')
+    def _compute_portal_update_allowed(self):
+        for applicant in self:
+            applicant.portal_update_allowed = applicant.portal_update_scope not in (False, 'none')
+
+    def portal_can_update_history(self):
+        self.ensure_one()
+        return self.portal_update_scope in ('history', 'both')
+
+    def portal_can_update_documentation(self):
+        self.ensure_one()
+        return self.portal_update_scope in ('documentation', 'both')
+
     @api.depends('stage_id.sequence')
     def _compute_documentation_required(self):
         for applicant in self:
@@ -52,19 +78,14 @@ class HrApplicant(models.Model):
                 for documentation in applicant.applicant_documentation_ids
             )
 
-    def action_allow_portal_update(self):
+    def action_apply_portal_update(self):
         self.ensure_one()
         if not self.portal_user_id:
             raise UserError(_('Esta postulación no tiene un usuario de portal asociado.'))
         self.write({
-            'portal_update_allowed': True,
             'portal_update_allowed_at': fields.Datetime.now(),
             'portal_update_allowed_by': self.env.user.id,
         })
-        return True
-
-    def action_revoke_portal_update(self):
-        self.write({'portal_update_allowed': False})
         return True
 
     def write(self, vals):
