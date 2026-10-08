@@ -22,16 +22,6 @@
                     </div>
 
                     <group col="4" class="mb-3">
-                        <group string="Estado del expediente">
-                            <field name="documentation_required" readonly="1"/>
-                            <field name="documentation_complete" readonly="1"/>
-                            <field name="required_document_uploaded" readonly="1" string="Obligatorios cargados"/>
-                            <field name="required_document_missing" readonly="1" string="Obligatorios faltantes"/>
-                        </group>
-                        <group string="Progreso">
-                            <field name="required_document_total" readonly="1" string="Total obligatorios"/>
-                            <field name="documentation_is_complete" readonly="1" string="Expediente completo"/>
-                        </group>
                         <group string="Postulación">
                             <field name="portal_user_id" readonly="1"/>
                             <field name="portal_update_scope" readonly="1"/>
@@ -39,6 +29,9 @@
                         <group string="Última actualización portal">
                             <field name="portal_update_allowed_at" readonly="1"/>
                             <field name="portal_update_allowed_by" readonly="1"/>
+                        </group>
+                        <group string="Documentación">
+                            <field name="applicant_documentation_ids" readonly="1" options="{'no_open': True}"/>
                         </group>
                     </group>
 
@@ -67,20 +60,6 @@
                                     <span class="ms-1">Revise la cantidad de documentos faltantes indicada en el resumen.</span>
                                 </div>
 
-                                <group col="4" class="mb-4">
-                                    <group string="Obligatorios cargados">
-                                        <field name="required_document_uploaded" readonly="1"/>
-                                    </group>
-                                    <group string="Obligatorios faltantes">
-                                        <field name="required_document_missing" readonly="1"/>
-                                    </group>
-                                    <group string="Total obligatorios">
-                                        <field name="required_document_total" readonly="1"/>
-                                    </group>
-                                    <group string="Recomendaciones">
-                                        <field name="recommendation_count" readonly="1"/>
-                                    </group>
-                                </group>
 
                                 <notebook>
                                     <page string="1. Identificación y hoja de vida">
