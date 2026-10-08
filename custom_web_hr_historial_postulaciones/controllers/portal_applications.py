@@ -158,6 +158,54 @@ class PortalApplications(http.Controller):
             _logger.exception("No se pudo leer %s.%s", record._name, field_name)
             return default
 
+    @http.route('/my/application/<int:applicant_id>/image', type='http', auth='user', website=True, methods=['GET'], csrf=False)
+    def application_image(self, applicant_id, **kwargs):
+        applicant = self._get_owned_applicant(applicant_id)
+        image = self._field_value(applicant, 'image_1920', False)
+        if not image:
+            raise NotFound()
+        try:
+            content = base64.b64decode(image)
+        except Exception:
+            raise NotFound()
+        if content.startswith(b'\x89PNG\r\n\x1a\n'):
+            content_type = 'image/png'
+            extension = 'png'
+        elif content.startswith(b'\xff\xd8\xff'):
+            content_type = 'image/jpeg'
+            extension = 'jpg'
+        else:
+            content_type = 'image/jpeg'
+            extension = 'jpg'
+        return request.make_response(
+            content,
+            headers=[
+                ('Content-Type', content_type),
+                ('Content-Disposition', 'inline; filename="foto_%s.%s"' % (applicant.id, extension)),
+                ('Cache-Control', 'private, max-age=60'),
+            ],
+        )
+
+    @http.route('/my/application/<int:applicant_id>/document/<int:document_id>', type='http', auth='user', website=True, methods=['GET'], csrf=False)
+    def application_document_file(self, applicant_id, document_id, **kwargs):
+        applicant = self._get_owned_applicant(applicant_id)
+        document = request.env['applicant.document'].sudo().browse(document_id).exists()
+        if not document or document.applicant_id.id != applicant.id or not document.file:
+            raise NotFound()
+        try:
+            content = base64.b64decode(document.file)
+        except Exception:
+            raise NotFound()
+        filename = secure_filename(document.filename or ('documento_%s.pdf' % document.id)) or ('documento_%s.pdf' % document.id)
+        return request.make_response(
+            content,
+            headers=[
+                ('Content-Type', 'application/pdf'),
+                ('Content-Disposition', 'inline; filename="%s"' % filename),
+                ('Cache-Control', 'private, max-age=60'),
+            ],
+        )
+
     @http.route('/my/application/<int:applicant_id>/data', type='http', auth='user', website=True, methods=['GET'], csrf=False)
     def application_data(self, applicant_id, **kwargs):
         try:
@@ -200,7 +248,9 @@ class PortalApplications(http.Controller):
                 'job_id': self._field_value(self._field_value(applicant, 'job_id'), 'id', False),
                 'portal_user_id': portal_user_id,
                 'has_image': bool(applicant_image),
+                'image_url': f'/my/application/{applicant.id}/image' if applicant_image else False,
                 'has_curriculum': bool(document_ids),
+                'documents': [],
                 'firstname': self._field_value(candidate, 'firstname', ''),
                 'lastname_paterno': self._field_value(candidate, 'lastname_paterno', ''),
                 'lastname_materno': self._field_value(candidate, 'lastname_materno', ''),
@@ -242,6 +292,13 @@ class PortalApplications(http.Controller):
                 },
                 'references': [],
             }
+
+            for document in document_ids.sorted('id'):
+                payload['documents'].append({
+                    'id': document.id,
+                    'filename': self._field_value(document, 'filename', '') or f'documento_{document.id}.pdf',
+                    'url': f'/my/application/{applicant.id}/document/{document.id}',
+                })
 
             for family in family_ids.sorted('id'):
                 payload['family'].append({

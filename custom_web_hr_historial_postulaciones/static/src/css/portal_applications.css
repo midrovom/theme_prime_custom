@@ -22,3 +22,57 @@
 .js-applicant-edit-form .is-invalid {
     border-color: #dc3545 !important;
 }
+
+
+/* Indicador de carga para la precarga del formulario nativo en modo edición. */
+.portal-edit-loading {
+    padding: 1rem 1.25rem;
+    border: 1px solid rgba(13, 110, 253, .16);
+    border-radius: 1rem;
+    background: #f8fbff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .04);
+}
+
+.portal-edit-loading__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .9rem;
+}
+
+.portal-edit-loading__spinner {
+    width: 1.35rem;
+    height: 1.35rem;
+    flex: 0 0 auto;
+    border: .18rem solid rgba(13, 110, 253, .18);
+    border-top-color: #0d6efd;
+    border-radius: 50%;
+    animation: portalEditSpin .8s linear infinite;
+}
+
+.portal-edit-loading__bar {
+    width: 100%;
+    height: .55rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e9f1fb;
+}
+
+.portal-edit-loading__bar-progress {
+    width: 38%;
+    height: 100%;
+    border-radius: inherit;
+    background: #0d6efd;
+    animation: portalEditProgress 1.5s ease-in-out infinite;
+}
+
+@keyframes portalEditSpin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes portalEditProgress {
+    0% { transform: translateX(-140%); }
+    50% { transform: translateX(120%); }
+    100% { transform: translateX(300%); }
+}

@@ -180,6 +180,30 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
             this.$el.attr("data-portal-edit", "1");
             this.$el.attr("data-edit-applicant-id", applicantId);
             this.$el.attr("action", `/my/application/${applicantId}/update`);
+
+            // Mientras se precarga la información, no permitir avanzar ni
+            // mostrar temporalmente ninguno de los pasos. Al finalizar se
+            // mostrará nuevamente el Paso 1 con toda la información cargada.
+            this.$el.css("visibility", "hidden");
+            this.$el.find("#form-step-1, #form-step-2, #form-step-3").addClass("d-none");
+            this.$el.find("#next-button, #next-button-step2, #prev-button, #prev-button-2, #submit-form").prop("disabled", true);
+
+            if (!this.$el.prev("#portal-edit-loading").length) {
+                this.$el.before(`
+                    <div id="portal-edit-loading" class="portal-edit-loading mb-4" role="status" aria-live="polite" aria-busy="true">
+                        <div class="portal-edit-loading__header">
+                            <div>
+                                <strong class="d-block">Cargando información guardada</strong>
+                                <span class="text-muted">Espere un momento. Estamos preparando nuevamente toda su postulación.</span>
+                            </div>
+                            <span class="portal-edit-loading__spinner" aria-hidden="true"></span>
+                        </div>
+                        <div class="portal-edit-loading__bar" aria-hidden="true">
+                            <div class="portal-edit-loading__bar-progress"></div>
+                        </div>
+                    </div>
+                `);
+            }
         }
 
         const result = await originalStart.apply(this, args);
@@ -201,6 +225,11 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
             await loadApplicantData.call(this, applicantId);
         } catch (error) {
             console.error("No se pudo cargar la información de la postulación", error);
+            this.$el.find("#form-step-1").removeClass("d-none");
+            this.$el.find("#form-step-2, #form-step-3").addClass("d-none");
+            this.$el.find("#next-button, #next-button-step2, #prev-button, #prev-button-2, #submit-form").prop("disabled", false);
+            this.$el.css("visibility", "visible");
+            this.$el.prev("#portal-edit-loading").remove();
             if (!this.$el.prev("#portal-edit-load-error").length) {
                 this.$el.before(`
                     <div id="portal-edit-load-error" class="alert alert-danger rounded-4 mb-4">
@@ -278,6 +307,14 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
         this.$("#form-step-2").addClass("d-none");
         this.$("#form-step-3").addClass("d-none");
 
+        // La precarga terminó: mostrar exclusivamente el Paso 1 y recién
+        // entonces permitir continuar con la navegación nativa.
+        this.$el.find("#form-step-1").removeClass("d-none");
+        this.$el.find("#form-step-2, #form-step-3").addClass("d-none");
+        this.$el.find("#next-button, #next-button-step2, #prev-button, #prev-button-2, #submit-form").prop("disabled", false);
+        this.$el.css("visibility", "visible");
+        this.$el.prev("#portal-edit-loading").remove();
+
         if (!this.$el.prev("#portal-edit-loaded").length) {
             this.$el.before(`
                 <div id="portal-edit-loaded" class="alert alert-success rounded-4 mb-4">
@@ -328,8 +365,17 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
             const preview = this.$("#preview-img")[0];
             const textImg = this.$("#text-img")[0];
             if (preview) {
-                preview.src = `/web/image/hr.applicant/${data.id}/image_1920`;
+                preview.src = data.image_url || `/my/application/${data.id}/image`;
                 preview.style.display = "block";
+                preview.onload = () => { preview.style.display = "block"; };
+                preview.onerror = () => {
+                    console.warn("No se pudo mostrar la fotografía previamente registrada.");
+                    preview.style.display = "none";
+                    if (textImg) {
+                        textImg.textContent = "Fotografía registrada";
+                        textImg.style.display = "block";
+                    }
+                };
             }
             if (textImg) textImg.style.display = "none";
         }
@@ -341,8 +387,15 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
         if (inputCurriculum) inputCurriculum.required = !data.has_curriculum;
 
         if (data.has_curriculum) {
+            const documents = data.documents || [];
+            const links = documents.map(doc => `
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span>✓</span>
+                    <a href="${doc.url}" target="_blank" rel="noopener noreferrer" class="text-success">${doc.filename || 'Documento registrado'}</a>
+                </div>
+            `).join("");
             this.$("#file-selected-message").html(
-                '<div class="text-success custom-message fs-6">Ya existen archivos curriculares registrados. Puede conservarlos o seleccionar nuevos.</div>'
+                `<div class="text-success custom-message fs-6">Ya existen archivos registrados. Puede conservarlos o seleccionar nuevos.<div class="mt-2">${links}</div></div>`
             );
         }
     }
