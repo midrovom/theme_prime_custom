@@ -10,7 +10,7 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
     // ---------------------------------------------------------------
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    const waitFor = async function (selector, minimum = 1, timeout = 20000) {
+    const waitFor = async function (selector, minimum = 1, timeout = 120000) {
         const start = Date.now();
         while (Date.now() - start < timeout) {
             if (this.$(selector).length >= minimum) {
