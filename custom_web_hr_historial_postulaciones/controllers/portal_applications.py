@@ -132,6 +132,34 @@ class PortalApplications(http.Controller):
             {'applicants': applicants},
         )
 
+    @http.route('/my/application/form-catalogs', type='http', auth='user', website=True, methods=['GET'], csrf=False)
+    def application_form_catalogs(self, **kwargs):
+        """Return all static catalogs needed by the native recruitment form in one request."""
+        countries = request.env['res.country'].sudo().search_read([], ['id', 'name'], order='name ASC')
+        states = request.env['res.country.state'].sudo().search_read([], ['id', 'name', 'country_id'], order='name ASC')
+        study_levels = request.env['hr.recruitment.degree'].sudo().search_read([], ['id', 'name'], order='id ASC')
+
+        states_by_country = {}
+        for state in states:
+            country = state.get('country_id')
+            country_id = country[0] if isinstance(country, (list, tuple)) else country
+            if country_id:
+                states_by_country.setdefault(str(country_id), []).append({
+                    'id': state['id'],
+                    'name': state['name'],
+                })
+
+        payload = {
+            'ok': True,
+            'countries': countries,
+            'states_by_country': states_by_country,
+            'study_levels': study_levels,
+        }
+        return request.make_response(
+            json.dumps(payload, ensure_ascii=False),
+            headers=[('Content-Type', 'application/json; charset=utf-8'), ('Cache-Control', 'public, max-age=1800')],
+        )
+
     @http.route('/my/application/<int:applicant_id>/edit', type='http', auth='user', website=True)
     def edit_application(self, applicant_id, **kwargs):
         applicant = self._get_owned_applicant(applicant_id)

@@ -229,23 +229,31 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
     };
 
     async function loadApplicantData(applicantId) {
-        const response = await fetch(`/my/application/${applicantId}/data?ts=${Date.now()}`, {
-            headers: { "Accept": "application/json", "Cache-Control": "no-cache" },
-            credentials: "same-origin",
-            cache: "no-store",
-        });
-
-        const raw = await response.text();
         let data;
-        try {
-            data = JSON.parse(raw);
-        } catch (parseError) {
-            throw new Error(`La respuesta del servidor no es JSON (${response.status}).`);
+        if (window.__portalPreloadApplicant) {
+            data = await window.__portalPreloadApplicant(applicantId);
+        } else {
+            const response = await fetch(`/my/application/${applicantId}/data?ts=${Date.now()}`, {
+                headers: { "Accept": "application/json", "Cache-Control": "no-cache" },
+                credentials: "same-origin",
+                cache: "no-store",
+            });
+
+            const raw = await response.text();
+            try {
+                data = JSON.parse(raw);
+            } catch (parseError) {
+                throw new Error(`La respuesta del servidor no es JSON (${response.status}).`);
+            }
+
+            if (!response.ok || data.ok === false) {
+                const detail = data?.error ? `: ${data.error}` : '';
+                throw new Error(`No fue posible consultar la postulación (${response.status})${detail}`);
+            }
         }
 
-        if (!response.ok || data.ok === false) {
-            const detail = data?.error ? `: ${data.error}` : '';
-            throw new Error(`No fue posible consultar la postulación (${response.status})${detail}`);
+        if (!data || data.ok === false) {
+            throw new Error(data?.error || 'No se pudo obtener la información precargada.');
         }
 
         this.$el.attr("data-existing-image", data.has_image ? "1" : "0");
