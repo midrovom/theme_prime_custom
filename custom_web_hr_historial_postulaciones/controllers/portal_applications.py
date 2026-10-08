@@ -203,6 +203,7 @@ class PortalApplications(http.Controller):
             'medical': medical_values,
             'family': [
                 {
+                    'id': family.id,
                     'familiar_type': family.familiar_type or '',
                     'name': family.name or '',
                     'fallecido': family.fallecido,
@@ -216,6 +217,8 @@ class PortalApplications(http.Controller):
                     'disability': family.disability or '',
                     'disability_type': family.disability_type or '',
                     'disability_percentage': family.disability_percentage or '',
+                    'has_document': bool(family.document_file),
+                    'filename': family.filename or '',
                 }
                 for family in applicant.family_ids.sorted(key=lambda r: (r.familiar_type or '', r.id))
             ],
@@ -329,8 +332,12 @@ class PortalApplications(http.Controller):
             values['image_1920'] = applicant.image_1920
         return values
 
-    def _build_child_commands(self, kwargs):
+    def _build_child_commands(self, kwargs, applicant=None):
         family_lines = []
+        existing_families = {}
+        if applicant:
+            existing_families = {str(rec.id): rec for rec in applicant.family_ids}
+
         k = 1
         while kwargs.get(f'famTipo_{k}') is not None:
             tipo = kwargs.get(f'famTipo_{k}')
@@ -341,12 +348,32 @@ class PortalApplications(http.Controller):
                 name = 'FALLECIDO'
             elif no_tiene:
                 name = 'NO TIENE'
+
+            original = existing_families.get(str(kwargs.get(f'famOriginalId_{k}') or ''))
+
+            document_type = False if fallecido else kwargs.get(f'famTipoDoc_{k}')
+            document_file = False
+            filename = False
+
+            # Si el usuario no seleccionó un nuevo PDF, conservamos el que ya
+            # estaba registrado para ese familiar.
+            uploaded = request.httprequest.files.get(f'famArchivo_{k}')
+            if uploaded and getattr(uploaded, 'filename', ''):
+                content = uploaded.read()
+                if content:
+                    document_file = base64.b64encode(content)
+                    filename = secure_filename(uploaded.filename) or uploaded.filename
+
+            if not document_file and original and original.document_file and not fallecido and not no_tiene:
+                document_file = original.document_file
+                filename = original.filename
+
             family_lines.append((0, 0, {
                 'name': name,
                 'familiar_type': str(tipo) if tipo else False,
                 'fallecido': fallecido,
                 'no_tiene': no_tiene,
-                'document_type': False if fallecido else kwargs.get(f'famTipoDoc_{k}'),
+                'document_type': document_type,
                 'birthdate': False if fallecido else kwargs.get(f'famFecha_{k}'),
                 'phone': False if fallecido else kwargs.get(f'famTelefono_{k}'),
                 'occupation': False if fallecido else kwargs.get(f'famOcupacion_{k}'),
@@ -355,8 +382,8 @@ class PortalApplications(http.Controller):
                 'disability_type': False if fallecido else kwargs.get(f'famDiscTipo_{k}'),
                 'disability_percentage': False if fallecido else kwargs.get(f'famDiscPorcentaje_{k}'),
                 'cedula': False if fallecido else kwargs.get(f'famCedula_{k}'),
-                'filename': False,
-                'document_file': False,
+                'filename': filename,
+                'document_file': document_file,
             }))
             k += 1
 
@@ -479,7 +506,7 @@ class PortalApplications(http.Controller):
                     'lastname_materno': kwargs.get('lastname_materno'),
                 })
 
-            child_values = self._build_child_commands(kwargs)
+            child_values = self._build_child_commands(kwargs, applicant=applicant)
 
             applicant.write(applicant_values)
 
