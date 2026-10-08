@@ -1,6 +1,6 @@
 {
     'name': 'Portal - Historial de Postulaciones',
-    'version': '18.0.1.0.29',
+    'version': '18.0.1.0.30',
     'summary': 'Historial de postulaciones, actualización de datos e ingreso de documentación',
     'description': '''
         Extensión del módulo custom_web_hr_datos_candidatos para el portal.
@@ -24,6 +24,7 @@
     ],
     'data': [
         'security/ir.model.access.csv',
+        'views/portal_update_wizard.xml',
         'views/hr_applicant_views.xml',
         'views/portal_home.xml',
         'views/portal_application_history.xml',

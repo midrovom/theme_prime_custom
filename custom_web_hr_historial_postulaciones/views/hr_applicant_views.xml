@@ -6,7 +6,7 @@
         <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
-                <button name="action_apply_portal_update" type="object" string="Aplicar permisos de portal" class="btn-primary" invisible="not portal_user_id" groups="hr_recruitment.group_hr_recruitment_user"/>
+                <button name="action_open_portal_update_wizard" type="object" string="Habilitar permiso del portal" class="btn-primary" invisible="not portal_user_id" groups="hr_recruitment.group_hr_recruitment_user"/>
             </xpath>
 
             <xpath expr="//notebook" position="inside">

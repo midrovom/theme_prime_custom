@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="portal_update_permission_wizard_view_form" model="ir.ui.view">
+        <field name="name">portal.update.permission.wizard.form</field>
+        <field name="model">portal.update.permission.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Habilitar permiso del portal">
+                <sheet>
+                    <div class="alert alert-info mb-3">
+                        <strong>Seleccione qué podrá actualizar el postulante.</strong>
+                        <div class="mt-1">
+                            El permiso se aplica únicamente a las secciones seleccionadas.
+                        </div>
+                    </div>
+                    <group>
+                        <field name="applicant_id"/>
+                        <field name="portal_update_scope" widget="radio"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_apply" type="object" string="Habilitar" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

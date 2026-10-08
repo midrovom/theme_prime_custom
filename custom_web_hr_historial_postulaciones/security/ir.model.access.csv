@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_applicant_documentation_hr,applicant.documentation hr,model_applicant_documentation,hr_recruitment.group_hr_recruitment_user,1,1,1,1
 access_applicant_documentation_recommendation_hr,applicant.documentation.recommendation hr,model_applicant_documentation_recommendation,hr_recruitment.group_hr_recruitment_user,1,1,1,1
+access_portal_update_permission_wizard_hr,portal.update.permission.wizard hr,model_portal_update_permission_wizard,hr_recruitment.group_hr_recruitment_user,1,1,1,1

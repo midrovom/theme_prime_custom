@@ -78,6 +78,22 @@ class HrApplicant(models.Model):
                 for documentation in applicant.applicant_documentation_ids
             )
 
+    def action_open_portal_update_wizard(self):
+        self.ensure_one()
+        if not self.portal_user_id:
+            raise UserError(_('Esta postulación no tiene un usuario de portal asociado.'))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Habilitar permiso del portal'),
+            'res_model': 'portal.update.permission.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_applicant_id': self.id,
+                'default_portal_update_scope': self.portal_update_scope or 'none',
+            },
+        }
+
     def action_apply_portal_update(self):
         self.ensure_one()
         if not self.portal_user_id:
