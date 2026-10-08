@@ -237,9 +237,8 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
         this.$el.attr("data-existing-image", data.has_image ? "1" : "0");
         this.$el.attr("data-existing-curriculum", data.has_curriculum ? "1" : "0");
 
-        await waitFor.call(this, "#education_container .education-block, #education_container [name^='level_id_']", 1);
-
-        // Primero completamos el Paso 1.
+        // Primero completamos el Paso 1. No bloqueamos la precarga por la
+        // creación asíncrona del bloque de educación del formulario nativo.
         fillStep1.call(this, data);
 
         // También cargamos las variables de salud ANTES de intentar pasar
