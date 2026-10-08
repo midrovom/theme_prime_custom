@@ -64,6 +64,9 @@ publicWidget.registry.PortalApplicantEdit = publicWidget.Widget.extend({
             `);
         }
 
+        // Esperar a que el widget nativo termine de crear sus bloques dinámicos.
+        await this._sleep(250);
+
         try {
             await this._loadApplicantData(applicantId);
         } catch (error) {
@@ -140,6 +143,9 @@ publicWidget.registry.PortalApplicantEdit = publicWidget.Widget.extend({
         this._fillStep1(data);
 
         // El formulario nativo genera los bloques familiares al pasar al paso 2.
+        // Avanzamos internamente para poder crear y completar los bloques, pero
+        // al finalizar regresamos al paso 1 para que el postulante vea el
+        // formulario nativo desde el inicio, ya precargado.
         this.$("#next-button").trigger("click");
         await this._waitFor("#family_container .family-block", Math.max(3, 3 + Number(data.num_hijos || 0)));
         await this._fillStep2(data);
@@ -147,6 +153,19 @@ publicWidget.registry.PortalApplicantEdit = publicWidget.Widget.extend({
         this.$("#next-button-step2").trigger("click");
         await this._waitFor("#experience_container .experience-block", Math.min(3, Math.max(1, data.experience?.length || 1)));
         await this._fillStep3(data);
+
+        // Dejar visible el primer paso del formulario nativo.
+        this.$("#form-step-1").removeClass("d-none");
+        this.$("#form-step-2").addClass("d-none");
+        this.$("#form-step-3").addClass("d-none");
+
+        if (!this.$el.prev("#portal-edit-loaded").length) {
+            this.$el.before(`
+                <div id="portal-edit-loaded" class="alert alert-success rounded-4 mb-4">
+                    La información registrada anteriormente fue cargada. Revise sus datos y continúe con los siguientes pasos.
+                </div>
+            `);
+        }
     },
 
     _fillStep1(data) {
