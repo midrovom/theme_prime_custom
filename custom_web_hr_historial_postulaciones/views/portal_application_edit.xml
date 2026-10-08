@@ -1,9 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!--
-        No se duplica el formulario de reclutamiento.
-        El botón Actualizar redirige al formulario nativo
-        custom_web_hr_datos_candidatos.web_recruitment y application_edit.js
-        lo convierte en modo edición cuando encuentra edit_applicant en la URL.
-    -->
+    <template id="portal_application_edit_loading"
+              inherit_id="custom_web_hr_datos_candidatos.web_recruitment"
+              name="Portal Applicant Edit Loading">
+        <xpath expr="//form[@id='hr_job_recruitment_form']" position="before">
+            <t t-if="request.httprequest.args.get('edit_applicant')">
+                <div id="portal-edit-loading" class="portal-edit-loading mb-4" role="status" aria-live="polite" aria-busy="true">
+                    <div class="portal-edit-loading__header">
+                        <div>
+                            <strong class="d-block">Cargando información guardada</strong>
+                            <span class="text-muted">Espere un momento. Estamos preparando nuevamente toda su postulación.</span>
+                        </div>
+                        <span class="portal-edit-loading__spinner" aria-hidden="true"></span>
+                    </div>
+                    <div class="portal-edit-loading__bar" aria-hidden="true">
+                        <div class="portal-edit-loading__bar-progress"></div>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+        <xpath expr="//form[@id='hr_job_recruitment_form']" position="attributes">
+            <attribute name="t-att-style">"visibility:hidden;" if request.httprequest.args.get('edit_applicant') else ''</attribute>
+        </xpath>
+    </template>
 </odoo>

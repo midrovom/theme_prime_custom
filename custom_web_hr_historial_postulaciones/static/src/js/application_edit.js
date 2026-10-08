@@ -188,22 +188,7 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
             this.$el.find("#form-step-1, #form-step-2, #form-step-3").addClass("d-none");
             this.$el.find("#next-button, #next-button-step2, #prev-button, #prev-button-2, #submit-form").prop("disabled", true);
 
-            if (!this.$el.prev("#portal-edit-loading").length) {
-                this.$el.before(`
-                    <div id="portal-edit-loading" class="portal-edit-loading mb-4" role="status" aria-live="polite" aria-busy="true">
-                        <div class="portal-edit-loading__header">
-                            <div>
-                                <strong class="d-block">Cargando información guardada</strong>
-                                <span class="text-muted">Espere un momento. Estamos preparando nuevamente toda su postulación.</span>
-                            </div>
-                            <span class="portal-edit-loading__spinner" aria-hidden="true"></span>
-                        </div>
-                        <div class="portal-edit-loading__bar" aria-hidden="true">
-                            <div class="portal-edit-loading__bar-progress"></div>
-                        </div>
-                    </div>
-                `);
-            }
+            // El loader se renderiza desde QWeb antes de que el formulario sea visible.
         }
 
         const result = await originalStart.apply(this, args);
