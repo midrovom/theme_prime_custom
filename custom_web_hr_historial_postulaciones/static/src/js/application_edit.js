@@ -298,6 +298,8 @@ if (MultistepForm && !MultistepForm.prototype.__portalEditPatchedV2) {
         this.$el.find("#form-step-2, #form-step-3").addClass("d-none");
         this.$el.find("#next-button, #next-button-step2, #prev-button, #prev-button-2, #submit-form").prop("disabled", false);
         this.$el.siblings("#portal-edit-loading").remove();
+        this.$el.find("#hr_job_recruitment_form").css("display", "");
+        this.$el.css("display", "");
         this.$el.css("visibility", "visible");
 
         if (!this.$el.prev("#portal-edit-loaded").length) {
