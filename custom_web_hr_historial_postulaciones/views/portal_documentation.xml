@@ -51,23 +51,20 @@
 
                 <t t-if="errors">
                     <div class="alert alert-danger rounded-4">
-                        <strong>Falta información o existen archivos inválidos:</strong>
+                        <strong>Revisa la información:</strong>
                         <ul class="mb-0 mt-2">
-                            <t t-foreach="errors" t-as="error">
-                                <li t-esc="error"/>
-                            </t>
+                            <t t-foreach="errors" t-as="error"><li t-esc="error"/></t>
                         </ul>
                     </div>
                 </t>
 
-                <form method="post"
-                      enctype="multipart/form-data"
-                      class="card border-0 shadow-sm rounded-4"
+                <form method="post" enctype="multipart/form-data" class="card border-0 shadow-sm rounded-4"
                       t-attf-action="/my/application/#{applicant.id}/documentation">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <div class="card-body p-4">
                         <div class="alert alert-info rounded-3">
-                            Los documentos con <strong>*</strong> son obligatorios. Los marcados como <strong>opcional</strong> pueden omitirse y completarse posteriormente. Los documentos administrativos deben cargarse en PDF; la fotografía permite JPG o PNG.
+                            Los documentos con <strong>*</strong> son obligatorios. Los demás son opcionales.
+                            Para recomendaciones se requieren <strong>mínimo 2 archivos PDF</strong>.
                         </div>
 
                         <div class="mb-4">
@@ -80,50 +77,71 @@
                                 <t t-if="field_name in ['fotografia', 'cedula_votacion', 'hoja_vida_actualizada']">
                                     <t t-set="label" t-value="document_field[1]"/>
                                     <t t-set="allowed" t-value="document_field[2]"/>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label fw-semibold">
-                                            <t t-esc="label"/>
-                                            <span class="text-danger">*</span>
-                                        </label>
+                                    <div class="col-12 col-md-6 document-upload-card">
+                                        <label class="form-label fw-semibold"><t t-esc="label"/><span class="text-danger">*</span></label>
                                         <input type="file" class="form-control" t-att-name="field_name" t-att-accept="'.' + ',.'.join(allowed)"/>
                                         <t t-if="documentation and documentation[field_name]">
-                                            <div class="small text-success mt-2">Archivo actual: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div>
+                                            <div class="small text-success mt-2">Archivo guardado: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div>
                                         </t>
-                                        <t t-else=""><div class="small text-muted mt-2">Sin archivo cargado.</div></t>
                                     </div>
                                 </t>
                             </t>
                         </div>
 
                         <div class="mt-5 mb-4">
-                            <h5 class="fw-semibold mb-1">Estudios y experiencia</h5>
-                            <p class="text-muted small mb-0">Documentos académicos y laborales; algunos son opcionales.</p>
+                            <h5 class="fw-semibold mb-1">Estudios, experiencia y referencias</h5>
+                            <p class="text-muted small mb-0">Los documentos académicos y laborales individuales son opcionales; las recomendaciones requieren al menos 2 archivos.</p>
                         </div>
                         <div class="row g-4">
                             <t t-foreach="document_fields" t-as="document_field">
                                 <t t-set="field_name" t-value="document_field[0]"/>
-                                <t t-if="field_name in ['historia_iess', 'estudios_titulo', 'cursos_realizados', 'recomendaciones', 'certificados_trabajo']">
+                                <t t-if="field_name in ['historia_iess', 'estudios_titulo', 'cursos_realizados', 'certificados_trabajo']">
                                     <t t-set="label" t-value="document_field[1]"/>
                                     <t t-set="allowed" t-value="document_field[2]"/>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label fw-semibold">
-                                            <t t-esc="label"/>
-                                            <t t-if="field_name in optional_document_fields"><span class="text-muted small"> (opcional)</span></t>
-                                            <t t-else=""><span class="text-danger">*</span></t>
-                                        </label>
+                                    <div class="col-12 col-md-6 document-upload-card">
+                                        <label class="form-label fw-semibold"><t t-esc="label"/><span class="text-muted small"> (opcional)</span></label>
                                         <input type="file" class="form-control" t-att-name="field_name" t-att-accept="'.' + ',.'.join(allowed)"/>
                                         <t t-if="documentation and documentation[field_name]">
-                                            <div class="small text-success mt-2">Archivo actual: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div>
+                                            <div class="small text-success mt-2">Archivo guardado: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div>
                                         </t>
-                                        <t t-else=""><div class="small text-muted mt-2">Sin archivo cargado.</div></t>
                                     </div>
                                 </t>
                             </t>
+
+                            <div class="col-12 document-upload-card border rounded-4 p-3 bg-light">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div>
+                                        <label class="form-label fw-semibold mb-1">Recomendaciones originales y actualizadas <span class="text-danger">*</span></label>
+                                        <div class="small text-muted">No familiares. Debes presentar mínimo 2 recomendaciones.</div>
+                                    </div>
+                                    <div class="badge rounded-pill bg-white text-dark border">Cargadas: <span data-file-count="1"><t t-esc="recommendation_count or 0"/></span> / 2</div>
+                                </div>
+                                <input type="file" class="form-control mt-3" name="recomendaciones" accept="application/pdf,.pdf" multiple="multiple"
+                                       data-file-list-target="#recommendation-file-list" t-att-data-existing-count="recommendation_count or 0" data-minimum-count="2"/>
+                                <div class="small text-muted mt-2" data-file-hint="1">Puedes seleccionar varias a la vez o agregarlas una por una; las selecciones se acumularán.</div>
+                                <div id="recommendation-file-list" class="mt-3"></div>
+                                <t t-if="documentation and documentation.recomendaciones">
+                                    <div class="small text-success mt-3">Recomendación anterior: <span t-esc="documentation.recomendaciones_filename or 'cargada'"/></div>
+                                </t>
+                                <t t-if="documentation and documentation.recommendation_ids">
+                                    <div class="mt-3">
+                                        <div class="small fw-semibold mb-2">Recomendaciones ya guardadas:</div>
+                                        <div class="list-group">
+                                            <t t-foreach="documentation.recommendation_ids" t-as="recommendation">
+                                                <div class="list-group-item d-flex align-items-center justify-content-between">
+                                                    <span><t t-esc="recommendation.filename"/></span>
+                                                    <span class="text-success small">Guardado</span>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
                         </div>
 
                         <div class="mt-5 mb-4">
                             <h5 class="fw-semibold mb-1">Domicilio, banca y salud</h5>
-                            <p class="text-muted small mb-0">Documentos necesarios para completar el expediente de ingreso.</p>
+                            <p class="text-muted small mb-0">Documentos obligatorios para completar el expediente.</p>
                         </div>
                         <div class="row g-4">
                             <t t-foreach="document_fields" t-as="document_field">
@@ -131,11 +149,12 @@
                                 <t t-if="field_name in ['planilla_servicios', 'croquis_domicilio', 'cuenta_banco_internacional', 'certificado_salud']">
                                     <t t-set="label" t-value="document_field[1]"/>
                                     <t t-set="allowed" t-value="document_field[2]"/>
-                                    <div class="col-12 col-md-6">
+                                    <div class="col-12 col-md-6 document-upload-card">
                                         <label class="form-label fw-semibold"><t t-esc="label"/><span class="text-danger">*</span></label>
                                         <input type="file" class="form-control" t-att-name="field_name" t-att-accept="'.' + ',.'.join(allowed)"/>
-                                        <t t-if="documentation and documentation[field_name]"><div class="small text-success mt-2">Archivo actual: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div></t>
-                                        <t t-else=""><div class="small text-muted mt-2">Sin archivo cargado.</div></t>
+                                        <t t-if="documentation and documentation[field_name]">
+                                            <div class="small text-success mt-2">Archivo guardado: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div>
+                                        </t>
                                     </div>
                                 </t>
                             </t>
@@ -143,7 +162,7 @@
 
                         <div class="mt-5 mb-4">
                             <h5 class="fw-semibold mb-1">Documentación condicionada</h5>
-                            <p class="text-muted small mb-0">Estos documentos pueden omitirse cuando no correspondan a la situación del postulante.</p>
+                            <p class="text-muted small mb-0">Puede omitirse cuando no corresponda a la situación del postulante.</p>
                         </div>
                         <div class="row g-4">
                             <t t-foreach="document_fields" t-as="document_field">
@@ -151,11 +170,12 @@
                                 <t t-if="field_name in ['acta_matrimonio', 'documentos_hijos', 'formulario_107']">
                                     <t t-set="label" t-value="document_field[1]"/>
                                     <t t-set="allowed" t-value="document_field[2]"/>
-                                    <div class="col-12 col-md-6">
+                                    <div class="col-12 col-md-6 document-upload-card">
                                         <label class="form-label fw-semibold"><t t-esc="label"/><span class="text-muted small"> (opcional)</span></label>
                                         <input type="file" class="form-control" t-att-name="field_name" t-att-accept="'.' + ',.'.join(allowed)"/>
-                                        <t t-if="documentation and documentation[field_name]"><div class="small text-success mt-2">Archivo actual: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div></t>
-                                        <t t-else=""><div class="small text-muted mt-2">Sin archivo cargado.</div></t>
+                                        <t t-if="documentation and documentation[field_name]">
+                                            <div class="small text-success mt-2">Archivo guardado: <span t-esc="documentation[field_name + '_filename'] or 'cargado'"/></div>
+                                        </t>
                                     </div>
                                 </t>
                             </t>

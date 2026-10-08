@@ -70,8 +70,10 @@ class ApplicantDocumentation(models.Model):
     cursos_realizados = fields.Binary(string='Cursos realizados', attachment=True)
     cursos_realizados_filename = fields.Char(string='Archivo cursos')
 
-    recomendaciones = fields.Binary(string='Recomendaciones', attachment=True, required=True)
-    recomendaciones_filename = fields.Char(string='Archivo recomendaciones', required=True)
+    # Campo legado: se conserva para no perder información ya almacenada antes
+    # de la migración al modelo de múltiples recomendaciones.
+    recomendaciones = fields.Binary(string='Recomendación (legado)', attachment=True)
+    recomendaciones_filename = fields.Char(string='Archivo recomendación (legado)')
 
     certificados_trabajo = fields.Binary(string='Certificados de trabajos anteriores', attachment=True)
     certificados_trabajo_filename = fields.Char(string='Archivo certificados')
@@ -91,6 +93,17 @@ class ApplicantDocumentation(models.Model):
     certificado_salud = fields.Binary(string='Certificado de salud MSP', attachment=True, required=True)
     certificado_salud_filename = fields.Char(string='Archivo certificado salud', required=True)
 
+    recommendation_ids = fields.One2many(
+        'applicant.documentation.recommendation',
+        'documentation_id',
+        string='Recomendaciones',
+        copy=False,
+    )
+    recommendation_count = fields.Integer(
+        string='Cantidad de recomendaciones',
+        compute='_compute_recommendation_count',
+    )
+
     is_complete = fields.Boolean(string='Documentación completa', compute='_compute_is_complete', store=True)
 
     _sql_constraints = [
@@ -101,31 +114,27 @@ class ApplicantDocumentation(models.Model):
         ),
     ]
 
-    @api.depends(*[field for field, _, _ in DOCUMENT_FIELDS if field not in OPTIONAL_DOCUMENT_FIELDS])
+    @api.depends('recommendation_ids', 'recomendaciones', *[field for field, _, _ in DOCUMENT_FIELDS if field not in OPTIONAL_DOCUMENT_FIELDS and field != 'recomendaciones'])
     def _compute_is_complete(self):
         for record in self:
             required_fields = [
                 field for field, _, _ in DOCUMENT_FIELDS
-                if field not in OPTIONAL_DOCUMENT_FIELDS
+                if field not in OPTIONAL_DOCUMENT_FIELDS and field not in {'recomendaciones'}
             ]
-            record.is_complete = all(bool(record[field]) for field in required_fields)
+            recommendation_total = len(record.recommendation_ids) + (1 if record.recomendaciones else 0)
+            record.is_complete = all(bool(record[field]) for field in required_fields) and recommendation_total >= 2
 
-    @api.constrains(*[field for field, _, _ in DOCUMENT_FIELDS if field not in OPTIONAL_DOCUMENT_FIELDS])
-    def _check_required_documents(self):
+    @api.depends('recommendation_ids', 'recomendaciones')
+    def _compute_recommendation_count(self):
         for record in self:
-            missing = [
-                label for field, label, _ in DOCUMENT_FIELDS
-                if field not in OPTIONAL_DOCUMENT_FIELDS and not record[field]
-            ]
-            if missing:
-                raise ValidationError(
-                    _('Falta información/documentación obligatoria:\n- %s') % '\n- '.join(missing)
-                )
+            record.recommendation_count = len(record.recommendation_ids) + (1 if record.recomendaciones else 0)
 
-    @api.constrains(*[f'{field}_filename' for field, _, _ in DOCUMENT_FIELDS])
+    @api.constrains(*[f'{field}_filename' for field, _, _ in DOCUMENT_FIELDS if field != 'recomendaciones'])
     def _check_filenames(self):
         for record in self:
             for field, label, file_type in DOCUMENT_FIELDS:
+                if field == 'recomendaciones':
+                    continue
                 filename_field = f'{field}_filename'
                 filename = (record[filename_field] or '').lower().strip()
                 if not filename:
@@ -136,9 +145,8 @@ class ApplicantDocumentation(models.Model):
                     raise ValidationError(_('La "%s" debe estar en JPG, PNG o PDF.') % label)
 
     def _check_pdf_content(self, values):
-        """Valida de forma conservadora la firma PDF cuando se está recibiendo un PDF."""
         for field, label, file_type in DOCUMENT_FIELDS:
-            if file_type != 'pdf' or not values.get(field):
+            if field == 'recomendaciones' or file_type != 'pdf' or not values.get(field):
                 continue
             filename = (values.get(f'{field}_filename') or '').lower()
             if not filename.endswith('.pdf'):
@@ -159,4 +167,49 @@ class ApplicantDocumentation(models.Model):
 
     def write(self, vals):
         self._check_pdf_content(vals)
+        return super().write(vals)
+
+
+class ApplicantDocumentationRecommendation(models.Model):
+    _name = 'applicant.documentation.recommendation'
+    _description = 'Recomendación de ingreso del postulante'
+    _order = 'create_date asc, id asc'
+
+    documentation_id = fields.Many2one(
+        'applicant.documentation',
+        string='Documentación de ingreso',
+        required=True,
+        ondelete='cascade',
+        index=True,
+    )
+    archivo = fields.Binary(string='Archivo', attachment=True, required=True)
+    filename = fields.Char(string='Archivo', required=True)
+    create_date = fields.Datetime(readonly=True)
+
+    @api.constrains('filename')
+    def _check_filename(self):
+        for record in self:
+            if record.filename and not record.filename.lower().endswith('.pdf'):
+                raise ValidationError(_('Cada recomendación debe estar en formato PDF.'))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for values in vals_list:
+            if values.get('archivo'):
+                try:
+                    raw = base64.b64decode(values['archivo'])
+                except Exception:
+                    raise ValidationError(_('No se pudo leer la recomendación cargada.'))
+                if not raw.startswith(b'%PDF'):
+                    raise ValidationError(_('La recomendación "%s" no parece ser un PDF válido.') % (values.get('filename') or ''))
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get('archivo'):
+            try:
+                raw = base64.b64decode(vals['archivo'])
+            except Exception:
+                raise ValidationError(_('No se pudo leer la recomendación cargada.'))
+            if not raw.startswith(b'%PDF'):
+                raise ValidationError(_('La recomendación no parece ser un PDF válido.'))
         return super().write(vals)

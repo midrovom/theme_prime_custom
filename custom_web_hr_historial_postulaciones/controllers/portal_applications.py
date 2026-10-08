@@ -742,14 +742,37 @@ class PortalApplications(http.Controller):
             raise Forbidden(_('El ingreso de documentación aún no está habilitado para esta postulación.'))
 
         Documentation = request.env['applicant.documentation'].sudo()
+        Recommendation = request.env['applicant.documentation.recommendation'].sudo()
         documentation = Documentation.search([('applicant_id', '=', applicant.id)], limit=1)
+
+        existing_recommendations = len(documentation.recommendation_ids) if documentation else 0
+        legacy_recommendation = 1 if documentation and documentation.recomendaciones else 0
+        recommendation_count = existing_recommendations + legacy_recommendation
+
+        def render_form(errors=None, status=200):
+            return request.render(
+                'custom_web_hr_historial_postulaciones.portal_documentation_form',
+                {
+                    'applicant': applicant,
+                    'documentation': documentation,
+                    'document_fields': DOCUMENT_FIELDS,
+                    'optional_document_fields': OPTIONAL_DOCUMENT_FIELDS,
+                    'errors': errors or [],
+                    'missing': [],
+                    'recommendation_count': recommendation_count,
+                },
+                status=status,
+            )
 
         if request.httprequest.method == 'POST':
             values = {}
             missing = []
             invalid_files = []
 
+            # Todos los documentos individuales mantienen su comportamiento actual.
             for field, label, allowed_extensions in DOCUMENT_FIELDS:
+                if field == 'recomendaciones':
+                    continue
                 file = request.httprequest.files.get(field)
                 if file and file.filename:
                     if not self._check_document_extension(file.filename, allowed_extensions):
@@ -764,31 +787,33 @@ class PortalApplications(http.Controller):
                 elif field not in OPTIONAL_DOCUMENT_FIELDS and (not documentation or not documentation[field]):
                     missing.append(label)
 
+            # Recomendaciones: acumular archivos, nunca reemplazar los anteriores.
+            recommendation_files = []
+            for file in request.httprequest.files.getlist('recomendaciones'):
+                if not file or not file.filename:
+                    continue
+                if not self._check_document_extension(file.filename, ('pdf',)):
+                    invalid_files.append(file.filename)
+                    continue
+                content = file.read()
+                if content:
+                    recommendation_files.append({
+                        'archivo': base64.b64encode(content).decode('ascii'),
+                        'filename': secure_filename(file.filename),
+                    })
+
+            total_recommendations = recommendation_count + len(recommendation_files)
+            if total_recommendations < 2:
+                missing.append(_('Recomendaciones originales y actualizadas: se requieren mínimo 2 archivos PDF.'))
+
             if invalid_files:
-                return request.render(
-                    'custom_web_hr_historial_postulaciones.portal_documentation_form',
-                    {
-                        'applicant': applicant,
-                        'documentation': documentation,
-                        'document_fields': DOCUMENT_FIELDS,
-                        'optional_document_fields': OPTIONAL_DOCUMENT_FIELDS,
-                        'errors': [_('Formato no permitido: %s') % label for label in invalid_files],
-                        'missing': missing,
-                    },
+                return render_form(
+                    [_('Formato no permitido: %s') % label for label in invalid_files] + missing,
+                    status=400,
                 )
 
             if missing:
-                return request.render(
-                    'custom_web_hr_historial_postulaciones.portal_documentation_form',
-                    {
-                        'applicant': applicant,
-                        'documentation': documentation,
-                        'document_fields': DOCUMENT_FIELDS,
-                        'optional_document_fields': OPTIONAL_DOCUMENT_FIELDS,
-                        'errors': [_('Falta información: %s') % label for label in missing],
-                        'missing': missing,
-                    },
-                )
+                return render_form([_('Falta información: %s') % item for item in missing], status=400)
 
             values['applicant_id'] = applicant.id
             try:
@@ -796,6 +821,14 @@ class PortalApplications(http.Controller):
                     documentation.write(values)
                 else:
                     documentation = Documentation.create(values)
+
+                # Guardamos cada recomendación como un registro independiente.
+                for recommendation in recommendation_files:
+                    Recommendation.create({
+                        'documentation_id': documentation.id,
+                        **recommendation,
+                    })
+
             except (ValidationError, ValueError) as exc:
                 return request.render(
                     'custom_web_hr_historial_postulaciones.portal_documentation_form',
@@ -806,20 +839,11 @@ class PortalApplications(http.Controller):
                         'optional_document_fields': OPTIONAL_DOCUMENT_FIELDS,
                         'errors': [str(exc)],
                         'missing': [],
+                        'recommendation_count': len(documentation.recommendation_ids) + (1 if documentation.recomendaciones else 0),
                     },
                     status=400,
                 )
 
             return request.redirect('/my/application-documentation')
 
-        return request.render(
-            'custom_web_hr_historial_postulaciones.portal_documentation_form',
-            {
-                'applicant': applicant,
-                'documentation': documentation,
-                'document_fields': DOCUMENT_FIELDS,
-                'optional_document_fields': OPTIONAL_DOCUMENT_FIELDS,
-                'errors': [],
-                'missing': [],
-            },
-        )
+        return render_form()

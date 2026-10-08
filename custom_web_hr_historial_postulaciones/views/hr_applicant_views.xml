@@ -80,7 +80,16 @@
                                             <field name="estudios_titulo" widget="binary" filename="estudios_titulo_filename" readonly="1"/>
                                             <field name="cursos_realizados" widget="binary" filename="cursos_realizados_filename" readonly="1"/>
                                             <field name="certificados_trabajo" widget="binary" filename="certificados_trabajo_filename" readonly="1"/>
-                                            <field name="recomendaciones" widget="binary" filename="recomendaciones_filename" readonly="1"/>
+                                        </group>
+                                        <group string="Recomendaciones">
+                                            <field name="recommendation_count" readonly="1"/>
+                                            <field name="recomendaciones_filename" string="Recomendación legado" readonly="1" invisible="not recomendaciones"/>
+                                            <field name="recommendation_ids" readonly="1" nolabel="1">
+                                                <list create="0" edit="0" delete="0">
+                                                    <field name="filename" string="Archivo"/>
+                                                    <field name="create_date" string="Fecha de carga"/>
+                                                </list>
+                                            </field>
                                         </group>
                                     </page>
                                     <page string="Domicilio y banca">
