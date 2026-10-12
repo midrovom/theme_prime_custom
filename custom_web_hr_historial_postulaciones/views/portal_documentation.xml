@@ -123,7 +123,6 @@
                                        data-file-list-target="#cedula-votacion-file-list"
                                        t-att-data-existing-count="cedula_count or 0"
                                        data-minimum-count="2" data-max-count="4"/>
-                                <div class="small text-muted mt-2">Archivos cargados: <span data-file-count="1">0</span> / 4</div>
                                 <div class="small text-danger mt-2 d-none" data-file-limit-message="1">Puedes cargar como máximo 4 archivos PDF en este apartado.</div>
                                 <div id="cedula-votacion-file-list" class="mt-3"></div>
                                 <t t-if="documentation and documentation.cedula_votacion">
