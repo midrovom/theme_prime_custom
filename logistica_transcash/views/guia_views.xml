@@ -1,0 +1,189 @@
+<odoo>
+  <record id="view_transcash_guia_list" model="ir.ui.view">
+    <field name="name">transcash.guia.list</field>
+    <field name="model">transcash.guia</field>
+    <field name="arch" type="xml">
+      <list string="Guías" decoration-danger="incidencia_estado == 'abierta'" decoration-success="state == 'pagada'">
+        <field name="name"/>
+        <field name="state" widget="badge"/>
+        <field name="origen"/>
+        <field name="destino"/>
+        <field name="chofer_usuario_id"/>
+        <field name="proveedor_id"/>
+        <field name="destinatario_id"/>
+        <field name="incidencia_estado"/>
+        <field name="fecha_prevista"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_transcash_guia_search" model="ir.ui.view">
+    <field name="name">transcash.guia.search</field>
+    <field name="model">transcash.guia</field>
+    <field name="arch" type="xml">
+      <search string="Buscar guías">
+        <field name="name"/>
+        <field name="external_id_erp"/>
+        <field name="chofer_usuario_id"/>
+        <field name="destinatario_id"/>
+        <filter string="Embarque" name="embarque" domain="[('state','=','embarque')]"/>
+        <filter string="En ruta" name="ruta" domain="[('state','=','ruta')]"/>
+        <filter string="En destino" name="destino" domain="[('state','=','destino')]"/>
+        <filter string="Por recibir" name="revision" domain="[('state','=','revision')]"/>
+        <filter string="Incidencias abiertas" name="incidentes" domain="[('incidencia_estado','=','abierta')]"/>
+        <filter string="Lista para pago" name="pago" domain="[('state','=','lista_pago')]"/>
+        <group expand="0" string="Agrupar por">
+          <filter name="por_estado" string="Estado" context="{'group_by':'state'}"/>
+          <filter name="por_chofer" string="Chofer" context="{'group_by':'chofer_usuario_id'}"/>
+          <filter name="por_proveedor" string="Proveedor" context="{'group_by':'proveedor_id'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  <record id="view_transcash_guia_form" model="ir.ui.view">
+    <field name="name">transcash.guia.form</field>
+    <field name="model">transcash.guia</field>
+    <field name="arch" type="xml">
+      <form string="Guía" create="1">
+        <header>
+          <button name="action_start_loading" type="object" string="Iniciar embarque" class="btn-primary"
+                  invisible="state != 'registrada'" groups="logistica_transcash.group_logistica_bodega"/>
+          <button name="action_depart" type="object" string="Autorizar salida" class="btn-primary"
+                  invisible="state != 'embarque'" groups="logistica_transcash.group_logistica_bodega"/>
+          <button name="action_resolve_incident" type="object" string="Resolver incidencia"
+                  invisible="incidencia_estado != 'abierta'" groups="logistica_transcash.group_logistica_manager"/>
+          <button name="action_ready_payment" type="object" string="Autorizar pago" class="btn-primary"
+                  invisible="state != 'entregada'" groups="logistica_transcash.group_logistica_manager"/>
+          <button name="action_create_vendor_bill" type="object" string="Crear factura proveedor" class="btn-primary"
+                  invisible="state != 'lista_pago'" groups="logistica_transcash.group_logistica_manager"/>
+          <button name="action_verify_payment" type="object" string="Verificar pago"
+                  invisible="state != 'facturada'" groups="logistica_transcash.group_logistica_manager"/>
+          <field name="state" widget="statusbar" statusbar_visible="registrada,embarque,ruta,destino,revision,entregada,lista_pago,facturada,pagada" readonly="1"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><h1><field name="name" placeholder="Número de guía"/></h1></div>
+          <group>
+            <group string="Guía y ruta">
+              <field name="external_id_erp"/>
+              <field name="company_id" groups="base.group_multi_company"/>
+              <field name="origen"/>
+              <field name="destino"/>
+              <field name="placa"/>
+              <field name="fecha_prevista"/>
+              <field name="fecha_salida"/>
+              <field name="fecha_llegada"/>
+            </group>
+            <group string="Intervinientes">
+              <field name="remitente_id"/>
+              <field name="destinatario_id"/>
+              <field name="chofer_usuario_id"/>
+              <field name="transportista_id"/>
+              <field name="proveedor_id"/>
+              <field name="bodega_usuario_id"/>
+            </group>
+          </group>
+          <group string="Carga">
+            <field name="numero_bultos"/>
+            <field name="peso_kg"/>
+            <field name="descripcion_carga"/>
+          </group>
+          <notebook>
+            <page string="Evidencias">
+              <field name="evidencia_ids" readonly="1">
+                <list create="0" delete="0">
+                  <field name="create_date"/>
+                  <field name="tipo"/>
+                  <field name="observacion"/>
+                  <field name="tipo_novedad"/>
+                  <field name="estado" widget="badge"/>
+                  <field name="autor_usuario_id"/>
+                </list>
+              </field>
+            </page>
+            <page string="Recepción">
+              <group>
+                <field name="fecha_entrega"/>
+                <field name="recibido_por"/>
+                <field name="observacion_recepcion"/>
+                <field name="confirmado_por_id"/>
+              </group>
+            </page>
+            <page string="Incidencia">
+              <group>
+                <field name="incidencia_estado" readonly="1"/>
+                <field name="resolucion_incidencia" groups="logistica_transcash.group_logistica_manager"/>
+                <field name="resolucion_por_id"/>
+              </group>
+            </page>
+            <page string="Liquidación" groups="logistica_transcash.group_logistica_manager">
+              <group>
+                <field name="moneda_id"/>
+                <field name="valor_acordado"/>
+                <field name="cuenta_gasto_id"/>
+                <field name="factura_id"/>
+              </group>
+            </page>
+            <page string="Historial">
+              <field name="evento_ids" readonly="1">
+                <list create="0" delete="0">
+                  <field name="create_date"/>
+                  <field name="accion"/>
+                  <field name="usuario_id"/>
+                  <field name="detalle"/>
+                </list>
+              </field>
+            </page>
+            <page string="ERP">
+              <group>
+                <field name="estado_erp" readonly="1"/>
+                <field name="ultima_sync" readonly="1"/>
+              </group>
+            </page>
+          </notebook>
+        </sheet>
+        <chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="action_transcash_guia" model="ir.actions.act_window">
+    <field name="name">Guías</field>
+    <field name="res_model">transcash.guia</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_transcash_guia_search"/>
+  </record>
+  <record id="action_transcash_open" model="ir.actions.act_window">
+    <field name="name">Guías activas</field>
+    <field name="res_model">transcash.guia</field>
+    <field name="view_mode">list,form</field>
+    <field name="domain">[('state','in',['embarque','ruta','destino','revision'])]</field>
+  </record>
+  <record id="action_transcash_incidencias" model="ir.actions.act_window">
+    <field name="name">Incidencias abiertas</field>
+    <field name="res_model">transcash.guia</field>
+    <field name="view_mode">list,form</field>
+    <field name="domain">[('incidencia_estado','=','abierta')]</field>
+  </record>
+  <record id="action_transcash_payment" model="ir.actions.act_window">
+    <field name="name">Liquidaciones</field>
+    <field name="res_model">transcash.guia</field>
+    <field name="view_mode">list,form</field>
+    <field name="domain">[('state','in',['entregada','lista_pago','facturada','pagada'])]</field>
+  </record>
+  <record id="action_transcash_sync" model="ir.actions.server">
+    <field name="name">Sincronizar ahora desde ERP</field>
+    <field name="model_id" ref="model_transcash_guia"/>
+    <field name="state">code</field>
+    <field name="code">action = env['transcash.guia'].action_sync_now()</field>
+  </record>
+  <menuitem id="menu_transcash_root" name="Logística Transcash" sequence="35"
+            groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager"/>
+  <menuitem id="menu_transcash_guias" name="Todas las guías" parent="menu_transcash_root"
+            action="action_transcash_guia" sequence="10"/>
+  <menuitem id="menu_transcash_activas" name="Operación en curso" parent="menu_transcash_root"
+            action="action_transcash_open" sequence="20"/>
+  <menuitem id="menu_transcash_incidentes" name="Incidencias" parent="menu_transcash_root"
+            action="action_transcash_incidencias" sequence="30"/>
+  <menuitem id="menu_transcash_pagos" name="Liquidaciones" parent="menu_transcash_root"
+            action="action_transcash_payment" sequence="40" groups="logistica_transcash.group_logistica_manager"/>
+  <menuitem id="menu_transcash_sync" name="Sincronizar ERP" parent="menu_transcash_root"
+            action="action_transcash_sync" sequence="50" groups="logistica_transcash.group_logistica_manager"/>
+</odoo>

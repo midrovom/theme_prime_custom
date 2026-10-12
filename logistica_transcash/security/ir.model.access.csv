@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_guia_manager,Guia manager,model_transcash_guia,logistica_transcash.group_logistica_manager,1,1,1,0
+access_guia_bodega,Guia bodega,model_transcash_guia,logistica_transcash.group_logistica_bodega,1,0,0,0
+access_evidencia_manager,Evidencia manager,model_transcash_evidencia,logistica_transcash.group_logistica_manager,1,1,1,0
+access_evidencia_bodega,Evidencia bodega,model_transcash_evidencia,logistica_transcash.group_logistica_bodega,1,0,0,0
+access_evento_manager,Bitacora manager,model_transcash_evento,logistica_transcash.group_logistica_manager,1,0,0,0
+access_evento_bodega,Bitacora bodega,model_transcash_evento,logistica_transcash.group_logistica_bodega,1,0,0,0
+access_object_wizard_manager,Wizard objecion manager,model_transcash_object_wizard,logistica_transcash.group_logistica_manager,1,1,1,1
+access_object_wizard_bodega,Wizard objecion bodega,model_transcash_object_wizard,logistica_transcash.group_logistica_bodega,1,1,1,1

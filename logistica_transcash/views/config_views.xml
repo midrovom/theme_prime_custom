@@ -1,0 +1,24 @@
+<odoo>
+  <record id="view_res_config_settings_transcash" model="ir.ui.view">
+    <field name="name">res.config.settings.view.form.transcash</field>
+    <field name="model">res.config.settings</field>
+    <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form" position="inside">
+        <app name="transcash_logistica" string="Logística Transcash">
+          <block title="Integración con ERP de origen">
+            <setting string="URL API de guías" help="Endpoint HTTPS GET que devuelve JSON {guias:[...]}.">
+              <field name="logistica_api_url" placeholder="https://erp.empresa.com/api/guias"/>
+            </setting>
+            <setting string="Token saliente" help="Se envía como Authorization: Bearer en la consulta al ERP.">
+              <field name="logistica_api_outbound_token" password="True"/>
+            </setting>
+            <setting string="Token entrante" help="Requerido para POST /api/transcash/v1/guias.">
+              <field name="logistica_api_inbound_token" password="True"/>
+            </setting>
+          </block>
+        </app>
+      </xpath>
+    </field>
+  </record>
+</odoo>

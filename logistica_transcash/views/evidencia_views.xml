@@ -1,0 +1,64 @@
+<odoo>
+  <record id="view_transcash_evidencia_list" model="ir.ui.view">
+    <field name="name">transcash.evidencia.list</field>
+    <field name="model">transcash.evidencia</field>
+    <field name="arch" type="xml">
+      <list string="Evidencias" create="0" delete="0" decoration-danger="estado == 'objetada'">
+        <field name="create_date"/>
+        <field name="guia_id"/>
+        <field name="tipo"/>
+        <field name="observacion"/>
+        <field name="autor_usuario_id"/>
+        <field name="tipo_novedad"/>
+        <field name="estado" widget="badge"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_transcash_evidencia_form" model="ir.ui.view">
+    <field name="name">transcash.evidencia.form</field>
+    <field name="model">transcash.evidencia</field>
+    <field name="arch" type="xml">
+      <form string="Evidencia" create="0" delete="0" edit="0">
+        <header>
+          <button name="action_approve" type="object" string="Aprobar carga" class="btn-primary"
+                  invisible="tipo != 'carga' or estado not in ('pendiente','objetada')"
+                  groups="logistica_transcash.group_logistica_bodega"/>
+          <button name="action_open_object_wizard" type="object" string="Objetar carga"
+                  invisible="tipo != 'carga' or estado not in ('pendiente','aprobada')"
+                  groups="logistica_transcash.group_logistica_bodega"/>
+          <field name="estado" widget="statusbar" readonly="1"/>
+        </header>
+        <sheet>
+          <group>
+            <group><field name="guia_id"/><field name="tipo"/><field name="tipo_novedad"/>
+              <field name="observacion"/><field name="autor_usuario_id"/></group>
+            <group><field name="archivo_nombre"/><field name="archivo" filename="archivo_nombre"/>
+              <field name="revisado_por_id"/><field name="fecha_revision"/>
+              <field name="motivo_objecion"/><field name="respuesta_chofer"/></group>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="action_transcash_evidencia_carga" model="ir.actions.act_window">
+    <field name="name">Aprobación de evidencias de carga</field>
+    <field name="res_model">transcash.evidencia</field>
+    <field name="view_mode">list,form</field>
+    <field name="domain">[('tipo','=','carga'),('estado','in',['pendiente','objetada'])]</field>
+  </record>
+  <record id="view_transcash_object_wizard_form" model="ir.ui.view">
+    <field name="name">transcash.object.wizard.form</field>
+    <field name="model">transcash.object.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Objetar carga">
+        <group><field name="evidencia_id"/><field name="motivo" required="1"/></group>
+        <footer>
+          <button name="action_confirm" type="object" string="Registrar objeción" class="btn-primary"/>
+          <button string="Cancelar" special="cancel" class="btn-secondary"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+  <menuitem id="menu_transcash_carga" name="Aprobar evidencias de carga" parent="menu_transcash_root"
+            action="action_transcash_evidencia_carga" sequence="25"/>
+</odoo>
