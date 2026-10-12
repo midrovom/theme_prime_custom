@@ -60,3 +60,7 @@ La aplicación permite seleccionar términos nativos de Odoo, por ejemplo a 6 o 
 - El total de cobro, cobros registrados y saldo pendiente en este módulo se controlan a partir de los importes que ingresan los usuarios; el saldo contable real debe contrastarse con las facturas y conciliaciones en Odoo Accounting.
 - La aplicación está diseñada para usuarios internos; no crea un portal de autoservicio para proveedores externos.
 - No se pudo ejecutar una instalación funcional contra una instancia real de Odoo 18 en este entorno. Antes de utilizarla en producción, pruébela en una base de desarrollo con los permisos y flujos de su empresa.
+
+### Corrección de traducciones (versión reparada)
+
+Los archivos `i18n/es.po` y `i18n/es_EC.po` incluyen metadatos por entrada en el formato esperado por Odoo 18. Esta corrección evita el error de instalación `AttributeError: 'NoneType' object has no attribute 'groups'` al cargar las traducciones. Se mantienen las traducciones al español y las referencias de vistas/etiquetas disponibles.

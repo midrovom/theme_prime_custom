@@ -8,397 +8,1206 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: es\n"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.ui.menu,name:customer_incentive_management.menu_customer_incentive_root
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_list
 msgid "Customer Incentives"
 msgstr "Incentivos a clientes"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.ui.menu,name:customer_incentive_management.menu_incentive_requests
 msgid "Requests"
 msgstr "Solicitudes"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.ui.menu,name:customer_incentive_management.menu_incentive_configuration
 msgid "Configuration"
 msgstr "Configuración"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.actions.act_window,name:customer_incentive_management.action_incentive_request_type
+#: model:ir.ui.menu,name:customer_incentive_management.menu_incentive_request_types
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_type_list
 msgid "Request Types"
 msgstr "Tipos de requerimiento"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.actions.report,name:customer_incentive_management.action_report_incentive_request
+#: model:ir.sequence,name:customer_incentive_management.seq_incentive_request
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Customer Incentive Request"
 msgstr "Requerimiento de incentivo a cliente"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Customer Incentive Requests"
 msgstr "Requerimientos de incentivos a clientes"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__name
 msgid "Request Number"
 msgstr "Número de requerimiento"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__company_id
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Company"
 msgstr "Compañía"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__request_type_id
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_type_form
 msgid "Request Type"
 msgstr "Tipo de requerimiento"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__requester_id
 msgid "Requested By"
 msgstr "Solicitado por"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_payment_detail__salesperson_id
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__salesperson_id
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Salesperson"
 msgstr "Vendedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__customer_id
 msgid "Beneficiary Customer"
 msgstr "Cliente beneficiario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__supplier_id
 msgid "Supplier to Recover From"
 msgstr "Proveedor por cobrar"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__request_date
 msgid "Request Date"
 msgstr "Fecha del requerimiento"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__payment_term_id
 msgid "Supplier Collection Terms"
 msgstr "Términos de cobro al proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__language_id
 msgid "Document Language"
 msgstr "Idioma del documento"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__line_ids
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Products / Programs"
 msgstr "Productos / Programas"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__payment_detail_ids
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Seller Payment Details"
 msgstr "Detalle de pagos por vendedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__description
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request_type__description
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Description"
 msgstr "Descripción"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__total_target_qty
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Total Target Qty"
 msgstr "Cantidad objetivo total"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__amount_total
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_list
 msgid "Grand Total"
 msgstr "Total general"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__state
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Status"
 msgstr "Estado"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Draft"
 msgstr "Borrador"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Submitted"
 msgstr "Enviado"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Approved"
 msgstr "Aprobado"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "In Progress"
 msgstr "En ejecución"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Paid to Beneficiary"
 msgstr "Pagado al beneficiario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Pending Supplier Collection"
 msgstr "Pendiente de cobro al proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Closed"
 msgstr "Cerrado"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Rejected"
 msgstr "Rechazado"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__beneficiary_method
 msgid "Beneficiary Settlement Method"
 msgstr "Forma de pago al beneficiario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__collection_method
 msgid "Supplier Collection Method"
 msgstr "Forma de cobro al proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Bank Transfer"
 msgstr "Transferencia bancaria"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Accounting Offset"
 msgstr "Cruce contable"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Beneficiary Payment Journal"
 msgstr "Diario de pago al beneficiario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier Receipt Journal"
 msgstr "Diario de cobro al proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Offset Journal"
 msgstr "Diario para cruces"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Amount to Collect"
 msgstr "Valor por cobrar"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Beneficiary Credit Note"
 msgstr "Nota de crédito al beneficiario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Beneficiary Payment"
 msgstr "Pago al beneficiario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier Collection Invoice"
 msgstr "Factura de cobro al proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier Receipts"
 msgstr "Cobros al proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__evidence_attachment_ids
 msgid "Supporting Documents / Payment Evidence"
 msgstr "Documentos de soporte / Evidencia de pago"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__collection_residual
 msgid "Open Collection Balance"
 msgstr "Saldo pendiente de cobro"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request_line__product_code
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Product No."
 msgstr "No. producto"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Product Code"
 msgstr "Código de producto"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request_line__program_type
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Program Type"
 msgstr "Tipo de programa"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request_line__date_from
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "From Date"
 msgstr "Desde"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request_line__date_to
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "To Date"
 msgstr "Hasta"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request_line__unit_price
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Unit"
 msgstr "Valor unitario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request_line__target_qty
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Target Qty"
 msgstr "Cantidad objetivo"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request_line__total
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Total"
 msgstr "Total"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Payment to Beneficiary"
 msgstr "Pago al beneficiario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Collection from Supplier"
 msgstr "Cobro al proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_payment_detail__method
 msgid "Transaction Type"
 msgstr "Tipo de transacción"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Transfer"
 msgstr "Transferencia"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Accounting Payment"
 msgstr "Pago contable"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_payment_detail__date
 msgid "Date"
 msgstr "Fecha"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Reference"
 msgstr "Referencia"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_payment_detail__evidence_attachment_ids
 msgid "Evidence"
 msgstr "Evidencia"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Submit for Approval"
 msgstr "Enviar a aprobación"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Approve"
 msgstr "Aprobar"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Reject"
 msgstr "Rechazar"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Reset to Draft"
 msgstr "Volver a borrador"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Start Execution"
 msgstr "Iniciar ejecución"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Pay Beneficiary"
 msgstr "Pagar al beneficiario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Apply Beneficiary Offset"
 msgstr "Aplicar cruce al beneficiario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Create Supplier Collection Invoice"
 msgstr "Crear factura de cobro al proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Register Supplier Receipt"
 msgstr "Registrar cobro al proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Apply Supplier Offset"
 msgstr "Aplicar cruce con proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Close Request"
 msgstr "Cerrar requerimiento"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Request Details"
 msgstr "Datos del requerimiento"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Business Partners"
 msgstr "Terceros"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Settlement"
 msgstr "Liquidación"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Payment to Beneficiary"
 msgstr "Pago al beneficiario"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Supplier Collection"
 msgstr "Cobro al proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__payment_detail_ids
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Seller Payment Details"
 msgstr "Detalle de pagos por vendedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Documents and Evidence"
 msgstr "Documentos y evidencias"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Search Incentive Requests"
 msgstr "Buscar requerimientos de incentivos"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "My Requests"
 msgstr "Mis requerimientos"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "My Salesperson Requests"
 msgstr "Requerimientos asignados a mí como vendedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Waiting for Approval"
 msgstr "Pendiente de aprobación"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Pending Collection"
 msgstr "Pendiente de cobro"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Recent Requests"
 msgstr "Requerimientos recientes"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Group By"
 msgstr "Agrupar por"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Customer"
 msgstr "Cliente"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Supplier"
 msgstr "Proveedor"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
 msgid "Payment Terms"
 msgstr "Términos de pago"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__request_type_id
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_search
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_type_form
 msgid "Request Type"
 msgstr "Tipo de requerimiento"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:incentive.request.type,name:customer_incentive_management.incentive_type_rebate
 msgid "Rebate"
 msgstr "Rebate"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:incentive.request.type,name:customer_incentive_management.incentive_type_payment_agreement
 msgid "Payment Agreement"
 msgstr "Acuerdo de pago"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:incentive.request.type,description:customer_incentive_management.incentive_type_rebate
 msgid "Customer incentive or rebate funded by a supplier."
 msgstr "Incentivo o rebate al cliente financiado por un proveedor."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:incentive.request.type,description:customer_incentive_management.incentive_type_payment_agreement
 msgid "Incentive request with supplier collection terms/installments."
 msgstr "Requerimiento de incentivo con términos o cuotas de cobro al proveedor."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Upload at least one supporting document or payment evidence before confirming the transaction."
 msgstr "Adjunte al menos un documento de soporte o evidencia de pago antes de confirmar la transacción."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Add at least one product/program line before submitting the request."
 msgstr "Agregue al menos una línea de producto/programa antes de enviar el requerimiento."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "The grand total must be greater than zero."
 msgstr "El total general debe ser mayor que cero."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Only draft requests can be submitted."
 msgstr "Solo se pueden enviar requerimientos en borrador."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Only submitted requests can be approved."
 msgstr "Solo se pueden aprobar requerimientos enviados."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Only submitted requests can be rejected."
 msgstr "Solo se pueden rechazar requerimientos enviados."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Only approved requests can move to In Progress."
 msgstr "Solo los requerimientos aprobados pueden pasar a En ejecución."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "The beneficiary can only be paid while the request is In Progress."
 msgstr "El beneficiario solo puede recibir el pago cuando el requerimiento está En ejecución."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Select the appropriate bank/cash journal first."
 msgstr "Seleccione primero el diario bancario o de caja correspondiente."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Configure a Sales journal for the selected company first."
 msgstr "Configure primero un diario de ventas para la compañía seleccionada."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Record the beneficiary settlement before creating the supplier collection invoice."
 msgstr "Registre la liquidación del beneficiario antes de crear la factura de cobro al proveedor."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Create the supplier collection invoice first."
 msgstr "Primero cree la factura de cobro al proveedor."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "The receipt amount must be greater than zero and cannot exceed the open invoice balance."
 msgstr "El valor del cobro debe ser mayor que cero y no puede superar el saldo pendiente de la factura."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "The supplier collection invoice must be fully settled before closing."
 msgstr "La factura de cobro al proveedor debe estar totalmente liquidada antes de cerrar el requerimiento."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "To Date cannot be earlier than From Date."
 msgstr "La fecha Hasta no puede ser anterior a la fecha Desde."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Unit cannot be negative."
 msgstr "El valor unitario no puede ser negativo."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Target Qty must be greater than zero."
 msgstr "La cantidad objetivo debe ser mayor que cero."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Request submitted for approval."
 msgstr "Requerimiento enviado para aprobación."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Request approved."
 msgstr "Requerimiento aprobado."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Request rejected."
 msgstr "Requerimiento rechazado."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Execution started."
 msgstr "Ejecución iniciada."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Beneficiary settlement recorded. Method: %s."
 msgstr "Liquidación del beneficiario registrada. Método: %s."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier collection invoice %s was created with payment terms %s."
 msgstr "Se creó la factura de cobro al proveedor %s con los términos de pago %s."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier collection completed."
 msgstr "Cobro al proveedor completado."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Partial supplier receipt registered: %s."
 msgstr "Cobro parcial al proveedor registrado: %s."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier collection fully settled by accounting offset."
 msgstr "Cobro al proveedor liquidado totalmente mediante cruce contable."
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.actions.report,name:customer_incentive_management.action_report_incentive_request
+#: model:ir.sequence,name:customer_incentive_management.seq_incentive_request
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Customer Incentive Request"
 msgstr "Requerimiento de incentivo a cliente"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Request Number:"
 msgstr "Número de requerimiento:"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Request Type:"
 msgstr "Tipo de requerimiento:"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Request Date:"
 msgstr "Fecha del requerimiento:"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Requested By:"
 msgstr "Solicitado por:"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Salesperson:"
 msgstr "Vendedor:"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Beneficiary Customer:"
 msgstr "Cliente beneficiario:"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Supplier:"
 msgstr "Proveedor:"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Payment Terms:"
 msgstr "Términos de pago:"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Status:"
 msgstr "Estado:"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__amount_total
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_list
 msgid "Grand Total"
 msgstr "Total general"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Beneficiary Method:"
 msgstr "Forma de pago al beneficiario:"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Supplier Collection Method:"
 msgstr "Forma de cobro al proveedor:"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Accounting Amount incl. Taxes"
 msgstr "Valor contable incluido impuestos"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__payment_term_id
 msgid "Supplier Collection Terms"
 msgstr "Términos de cobro al proveedor"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.report_incentive_request
 msgid "Accounting Amount incl. Taxes:"
 msgstr "Valor contable incluido impuestos:"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:res.groups,name:customer_incentive_management.group_incentive_user
 msgid "Incentive Request User"
 msgstr "Usuario de requerimientos de incentivos"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:res.groups,name:customer_incentive_management.group_incentive_approver
 msgid "Incentive Approver"
 msgstr "Aprobador de incentivos"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:res.groups,name:customer_incentive_management.group_incentive_accounting
 msgid "Incentive Accounting"
 msgstr "Contabilidad de incentivos"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:res.groups,name:customer_incentive_management.group_incentive_manager
 msgid "Incentive Manager"
 msgstr "Administrador de incentivos"
+
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.module.category,name:customer_incentive_management.module_category_customer_incentive
 msgid "Customer Incentive Management"
 msgstr "Gestión de incentivos a clientes"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request_line__product_id
 msgid "Product"
 msgstr "Producto"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Confirm Beneficiary Settlement"
 msgstr "Confirmar liquidación al beneficiario"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Register Collection Document"
 msgstr "Registrar documento de cobro"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Confirm Transfer Collection"
 msgstr "Confirmar cobro por transferencia"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Confirm Supplier Offset"
 msgstr "Confirmar cruce con proveedor"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__beneficiary_credit_note_id
 msgid "Existing Beneficiary Credit Note"
 msgstr "Nota de crédito existente del beneficiario"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__beneficiary_payment_id
 msgid "Existing Beneficiary Payment"
 msgstr "Pago existente al beneficiario"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__collection_invoice_id
 msgid "Existing Supplier Collection Invoice"
 msgstr "Factura de cobro existente al proveedor"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__collection_document_reference
 msgid "Collection Document / Invoice Reference"
 msgstr "Referencia del documento/factura de cobro"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__collection_document_date
 msgid "Collection Document Date"
 msgstr "Fecha del documento de cobro"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__collection_invoice_amount
 msgid "Amount to Collect (manually entered)"
 msgstr "Importe por cobrar (ingresado manualmente)"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_request__collection_paid_total
 msgid "Collection Registered Total"
 msgstr "Total de cobros registrados"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_payment_detail__payment_id
 msgid "Existing Accounting Payment"
 msgstr "Pago contable existente"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model:ir.model.fields,field_description:customer_incentive_management.field_incentive_payment_detail__reference
 msgid "Reference / Payment No."
 msgstr "Referencia / No. de pago"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Manual process"
 msgstr "Proceso manual"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Enter the payment or offset details below. This form does not create accounting payments or journal entries."
 msgstr "Ingrese abajo los detalles del pago o cruce. Este formulario no crea pagos contables ni asientos."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Enter the collection document manually. This module does not create supplier invoices."
 msgstr "Ingrese manualmente el documento de cobro. Este módulo no crea facturas a proveedores."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
+#: model_terms:ir.ui.view,arch_db:customer_incentive_management.view_incentive_request_form
 msgid "Record each transfer or offset manually. For an offset, perform the real reconciliation separately in Accounting and enter its reference here."
 msgstr "Registre manualmente cada transferencia o cruce. Para un cruce, realice la conciliación desde Contabilidad y registre aquí la referencia."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Only accounting users can record beneficiary settlements and supplier collections."
 msgstr "Solo usuarios contables pueden registrar liquidaciones al beneficiario y cobros al proveedor."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Upload supporting documents or payment evidence before confirming the transaction."
 msgstr "Adjunte documentos de soporte o evidencia de pago antes de confirmar la transacción."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Enter at least one manual payment/offset detail for the beneficiary."
 msgstr "Ingrese al menos un detalle manual de pago/cruce para el beneficiario."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "The manually recorded beneficiary settlement is less than the request total."
 msgstr "La liquidación manual registrada al beneficiario es inferior al total del requerimiento."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Beneficiary settlement manually recorded. No payment or journal entry was created by this module."
 msgstr "Liquidación al beneficiario registrada manualmente. Este módulo no creó pagos ni asientos contables."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Enter the supplier collection document or invoice reference manually."
 msgstr "Ingrese manualmente la referencia del documento o factura de cobro al proveedor."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Enter a collection amount greater than zero."
 msgstr "Ingrese un importe por cobrar mayor que cero."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier collection manually registered with reference %(ref)s and payment terms %(terms)s. No invoice was created by this module."
 msgstr "Cobro al proveedor registrado manualmente con referencia %(ref)s y términos de pago %(terms)s. Este módulo no creó una factura."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Not specified"
 msgstr "No especificado"
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "The request must be Pending Supplier Collection."
 msgstr "El requerimiento debe estar en estado Pendiente de cobro al proveedor."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Enter at least one manual collection detail with the selected method."
 msgstr "Ingrese al menos un detalle de cobro manual con el método seleccionado."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "The manually registered collection total cannot exceed the amount to collect."
 msgstr "El total de cobros registrados manualmente no puede exceder el importe por cobrar."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier collection fully recorded by bank transfer. Actual accounting payment must be registered separately in Odoo Accounting."
 msgstr "Cobro al proveedor registrado completamente por transferencia. El pago contable real debe registrarse por separado en Contabilidad de Odoo."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier transfer manually recorded. Remaining balance: %s. This module did not create an accounting payment."
 msgstr "Transferencia al proveedor registrada manualmente. Saldo pendiente: %s. Este módulo no creó un pago contable."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier offset manually recorded in the request. Perform and reconcile the actual offset in Odoo Accounting separately."
 msgstr "Cruce con el proveedor registrado manualmente en el requerimiento. Realice y concilie el cruce real por separado en Contabilidad de Odoo."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Supplier offset manually recorded. Remaining balance: %s. Perform the accounting reconciliation separately in Odoo Accounting."
 msgstr "Cruce con el proveedor registrado manualmente. Saldo pendiente: %s. Realice la conciliación contable por separado en Odoo."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Only requests pending supplier collection can be closed."
 msgstr "Solo se pueden cerrar requerimientos pendientes de cobro al proveedor."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "The manually registered collection details must settle the full amount before closing."
 msgstr "Los cobros registrados manualmente deben cubrir el importe completo antes de cerrar."
 
+#. module: customer_incentive_management
+#. odoo-python
+#: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Payment/offset detail amount must be greater than zero."
 msgstr "El importe del detalle de pago/cruce debe ser mayor que cero."
