@@ -117,7 +117,7 @@
                             </t>
 
                             <div class="col-12 col-md-6 document-upload-card border rounded-4 p-3 bg-light">
-                                <label class="form-label fw-semibold">Cédula de identidad y certificado de votación (de 2 a 4 archivos PDF) <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold"> 2 Copias de Cédula de identidad y certificado de votación<span class="text-danger">*</span></label>
                                 <div class="small text-muted mb-2">Puedes cargar entre 2 y 4 archivos PDF independientes.</div>
                                 <input type="file" class="form-control" name="cedula_votacion" accept="application/pdf,.pdf" multiple="multiple"
                                        data-file-list-target="#cedula-votacion-file-list"
@@ -156,7 +156,7 @@
 
                             <div class="col-12 document-upload-card border rounded-4 p-3 bg-light">
                                 <div>
-                                    <label class="form-label fw-semibold mb-1">Recomendaciones originales y actualizadas <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold mb-1">Recomendaciones originales y actualizadas, con numero de telefono de la persona (No familiares) <span class="text-danger">*</span></label>
                                     <div class="small text-muted">No familiares. Debes presentar mínimo 2 recomendaciones.</div>
                                 </div>
                                 <input type="file" class="form-control mt-3" name="recomendaciones" accept="application/pdf,.pdf" multiple="multiple"
