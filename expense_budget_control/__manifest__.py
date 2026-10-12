@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+{
+    'name': 'Control de Presupuesto de Gastos',
+    'summary': 'Presupuesto mensual por rubro y cuenta, Excel y sincronización API',
+    'version': '18.0.1.0.0',
+    'category': 'Accounting/Accounting',
+    'author': 'Conedera Desarrollo',
+    'license': 'LGPL-3',
+    'depends': ['base', 'api_administator'],
+    'external_dependencies': {'python': ['openpyxl']},
+    'data': [
+        'security/expense_budget_security.xml',
+        'security/ir.model.access.csv',
+        'views/expense_budget_views.xml',
+        'views/expense_budget_import_views.xml',
+        'views/expense_budget_api_views.xml',
+        'views/expense_budget_menus.xml',
+        'data/expense_budget_cron.xml',
+    ],
+    'application': True,
+    'installable': True,
+}

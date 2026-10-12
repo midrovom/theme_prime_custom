@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Rubros -->
+    <record id="view_expense_budget_category_list" model="ir.ui.view">
+        <field name="name">expense.budget.category.list</field>
+        <field name="model">expense.budget.category</field>
+        <field name="arch" type="xml">
+            <list string="Rubros" decoration-muted="not active">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="company_id"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_expense_budget_category_form" model="ir.ui.view">
+        <field name="name">expense.budget.category.form</field>
+        <field name="model">expense.budget.category</field>
+        <field name="arch" type="xml">
+            <form string="Rubro">
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="name"/>
+                        <field name="company_id"/>
+                        <field name="active"/>
+                    </group>
+                    <field name="account_ids" readonly="True">
+                        <list create="false" delete="false">
+                            <field name="code"/><field name="name"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_expense_budget_category" model="ir.actions.act_window">
+        <field name="name">Rubros</field><field name="res_model">expense.budget.category</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Catálogo de cuentas -->
+    <record id="view_expense_budget_account_list" model="ir.ui.view">
+        <field name="name">expense.budget.account.list</field>
+        <field name="model">expense.budget.account</field>
+        <field name="arch" type="xml">
+            <list string="Cuentas controladas" decoration-muted="not active">
+                <field name="code"/><field name="name"/><field name="category_id"/>
+                <field name="company_id"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_expense_budget_account_form" model="ir.ui.view">
+        <field name="name">expense.budget.account.form</field>
+        <field name="model">expense.budget.account</field>
+        <field name="arch" type="xml">
+            <form string="Cuenta controlada">
+                <sheet>
+                    <group>
+                        <field name="code"/><field name="name"/>
+                        <field name="company_id"/>
+                        <field name="category_id" domain="[('company_id', '=', company_id)]"/>
+                        <field name="active"/>
+                    </group>
+                    <field name="note"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_expense_budget_account" model="ir.actions.act_window">
+        <field name="name">Cuentas controladas</field><field name="res_model">expense.budget.account</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Presupuestos -->
+    <record id="view_expense_budget_list" model="ir.ui.view">
+        <field name="name">expense.budget.list</field><field name="model">expense.budget</field>
+        <field name="arch" type="xml">
+            <list string="Presupuestos anuales" decoration-success="state == 'approved'"
+                  decoration-muted="state == 'closed'">
+                <field name="name"/><field name="year"/>
+                <field name="company_id"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="planned_amount" sum="Total proyectado"/>
+                <field name="actual_amount" sum="Total consumido"/>
+                <field name="variance_amount" sum="Disponible"/>
+                <field name="execution_percentage"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_expense_budget_form" model="ir.ui.view">
+        <field name="name">expense.budget.form</field><field name="model">expense.budget</field>
+        <field name="arch" type="xml">
+            <form string="Presupuesto anual">
+                <header>
+                    <button name="action_approve" string="Aprobar" type="object" class="btn-primary"
+                            invisible="state != 'draft'" groups="expense_budget_control.group_expense_budget_manager"/>
+                    <button name="action_close" string="Cerrar" type="object"
+                            invisible="state != 'approved'" groups="expense_budget_control.group_expense_budget_manager"/>
+                    <button name="action_reopen" string="Volver a borrador" type="object"
+                            invisible="state == 'draft'" groups="expense_budget_control.group_expense_budget_manager"/>
+                    <button name="action_reconcile_expenses" string="Conciliar gastos" type="object"
+                            groups="expense_budget_control.group_expense_budget_manager"/>
+                    <button name="action_sync_api" string="Sincronizar API" type="object"
+                            groups="expense_budget_control.group_expense_budget_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,approved,closed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="state != 'draft'"/>
+                            <field name="year" readonly="state != 'draft'"/>
+                            <field name="company_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="planned_amount" readonly="True"/>
+                            <field name="actual_amount" readonly="True"/>
+                            <field name="variance_amount" readonly="True"/>
+                            <field name="execution_percentage" readonly="True"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Proyecciones mensuales">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="company_id" column_invisible="True"/>
+                                    <field name="currency_id" column_invisible="True"/>
+                                    <field name="account_id" domain="[('company_id', '=', parent.company_id)]"/>
+                                    <field name="category_id" readonly="True"/>
+                                    <field name="month"/>
+                                    <field name="planned_amount" sum="Proyectado"/>
+                                    <field name="actual_amount" readonly="True" sum="Consumido"/>
+                                    <field name="variance_amount" readonly="True" sum="Disponible"/>
+                                    <field name="execution_percentage" readonly="True"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Observaciones"><field name="note"/></page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_expense_budget_search" model="ir.ui.view">
+        <field name="name">expense.budget.search</field><field name="model">expense.budget</field>
+        <field name="arch" type="xml">
+            <search string="Buscar presupuestos">
+                <field name="name"/><field name="year"/><field name="company_id"/>
+                <filter string="Aprobados" name="approved" domain="[('state', '=', 'approved')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Año" name="year_group" context="{'group_by': 'year'}"/>
+                    <filter string="Empresa" name="company_group" context="{'group_by': 'company_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_expense_budget" model="ir.actions.act_window">
+        <field name="name">Presupuestos anuales</field><field name="res_model">expense.budget</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_expense_budget_search"/>
+    </record>
+
+    <!-- Comparativo en lista, tabla dinámica y gráfica -->
+    <record id="view_expense_budget_line_list" model="ir.ui.view">
+        <field name="name">expense.budget.line.list</field><field name="model">expense.budget.line</field>
+        <field name="arch" type="xml">
+            <list string="Proyectado vs. consumido" create="false" edit="false" delete="false"
+                  decoration-danger="variance_amount &lt; 0">
+                <field name="budget_id"/><field name="company_id"/>
+                <field name="account_id"/><field name="category_id"/><field name="month"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="planned_amount" sum="Proyectado"/>
+                <field name="actual_amount" sum="Consumido"/>
+                <field name="variance_amount" sum="Disponible"/>
+                <field name="execution_percentage"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_expense_budget_line_pivot" model="ir.ui.view">
+        <field name="name">expense.budget.line.pivot</field><field name="model">expense.budget.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Análisis presupuestario">
+                <field name="budget_id" type="row"/>
+                <field name="category_id" type="row"/>
+                <field name="month" type="col"/>
+                <field name="planned_amount" type="measure"/>
+                <field name="actual_amount" type="measure"/>
+                <field name="variance_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="view_expense_budget_line_graph" model="ir.ui.view">
+        <field name="name">expense.budget.line.graph</field><field name="model">expense.budget.line</field>
+        <field name="arch" type="xml">
+            <graph string="Proyectado vs. real" type="bar" stacked="0">
+                <field name="month" type="row"/>
+                <field name="planned_amount" type="measure"/>
+                <field name="actual_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+    <record id="view_expense_budget_line_search" model="ir.ui.view">
+        <field name="name">expense.budget.line.search</field><field name="model">expense.budget.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="budget_id"/><field name="account_id"/><field name="category_id"/>
+                <field name="month"/>
+                <filter string="Sobregirados" name="over_budget" domain="[('variance_amount', '&lt;', 0)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Rubro" name="group_category" context="{'group_by': 'category_id'}"/>
+                    <filter string="Mes" name="group_month" context="{'group_by': 'month'}"/>
+                    <filter string="Presupuesto" name="group_budget" context="{'group_by': 'budget_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_expense_budget_comparison" model="ir.actions.act_window">
+        <field name="name">Proyectado vs. real</field><field name="res_model">expense.budget.line</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="view_expense_budget_line_search"/>
+    </record>
+
+    <!-- Movimientos reales -->
+    <record id="view_expense_budget_expense_list" model="ir.ui.view">
+        <field name="name">expense.budget.expense.list</field><field name="model">expense.budget.expense</field>
+        <field name="arch" type="xml">
+            <list string="Gastos reales">
+                <field name="date"/><field name="company_id"/>
+                <field name="account_id"/><field name="category_id"/>
+                <field name="description"/><field name="reference"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="amount" sum="Total gastado"/>
+                <field name="source"/><field name="budget_line_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_expense_budget_expense_form" model="ir.ui.view">
+        <field name="name">expense.budget.expense.form</field><field name="model">expense.budget.expense</field>
+        <field name="arch" type="xml">
+            <form string="Gasto real">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="date"/>
+                            <field name="company_id"/>
+                            <field name="account_id" domain="[('company_id', '=', company_id)]"/>
+                            <field name="category_id" readonly="True"/>
+                            <field name="budget_line_id" readonly="True"/>
+                        </group>
+                        <group>
+                            <field name="description"/><field name="reference"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="amount"/>
+                            <field name="source" readonly="True"/>
+                            <field name="source_key" readonly="True"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_expense_budget_expense_search" model="ir.ui.view">
+        <field name="name">expense.budget.expense.search</field><field name="model">expense.budget.expense</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="description"/><field name="reference"/><field name="account_id"/>
+                <field name="category_id"/><field name="date"/>
+                <filter string="Sin asignar" name="without_budget" domain="[('budget_line_id', '=', False)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Rubro" name="category" context="{'group_by': 'category_id'}"/>
+                    <filter string="Cuenta" name="account" context="{'group_by': 'account_id'}"/>
+                    <filter string="Mes" name="month" context="{'group_by': 'date:month'}"/>
+                    <filter string="Origen" name="source" context="{'group_by': 'source'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_expense_budget_expense" model="ir.actions.act_window">
+        <field name="name">Gastos reales</field><field name="res_model">expense.budget.expense</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_expense_budget_expense_search"/>
+    </record>
+</odoo>

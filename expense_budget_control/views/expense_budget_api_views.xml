@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista independiente: no necesita conocer el XML ID de las vistas del módulo api_administator. -->
+    <record id="view_expense_budget_api_administrator_list" model="ir.ui.view">
+        <field name="name">api.administrator.expense.budget.list</field>
+        <field name="model">api.administrator</field>
+        <field name="priority">35</field>
+        <field name="arch" type="xml">
+            <list string="APIs de gastos">
+                <field name="name"/><field name="company_id"/>
+                <field name="type"/><field name="status"/>
+                <field name="is_expense_budget_sync"/>
+                <button name="button_run_sync" type="object" string="Sincronizar"
+                        icon="fa-refresh"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_expense_budget_api_administrator_form" model="ir.ui.view">
+        <field name="name">api.administrator.expense.budget.form</field>
+        <field name="model">api.administrator</field>
+        <field name="priority">35</field>
+        <field name="arch" type="xml">
+            <form string="API de gastos">
+                <header>
+                    <button name="button_run_sync" type="object" string="Sincronizar gastos"
+                            class="btn-primary" invisible="not is_expense_budget_sync"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/><field name="company_id"/>
+                            <field name="type"/><field name="status"/>
+                            <field name="is_expense_budget_sync"/>
+                        </group>
+                        <group>
+                            <field name="url"/><field name="end_point"/>
+                            <field name="user_id"/><field name="password" password="True"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_expense_budget_api_administrator" model="ir.actions.act_window">
+        <field name="name">APIs de gastos</field>
+        <field name="res_model">api.administrator</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_expense_budget_sync', '=', True)]</field>
+        <field name="context">{'default_is_expense_budget_sync': True, 'default_type': 'get'}</field>
+    </record>
+    <record id="action_expense_budget_api_list_view" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_expense_budget_api_administrator_list"/>
+        <field name="act_window_id" ref="action_expense_budget_api_administrator"/>
+    </record>
+    <record id="action_expense_budget_api_form_view" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_expense_budget_api_administrator_form"/>
+        <field name="act_window_id" ref="action_expense_budget_api_administrator"/>
+    </record>
+    <record id="view_expense_budget_sync_log_list" model="ir.ui.view">
+        <field name="name">expense.budget.sync.log.list</field>
+        <field name="model">expense.budget.sync.log</field>
+        <field name="arch" type="xml">
+            <list string="Historial de sincronización" create="false" edit="false" delete="false"
+                  decoration-danger="status == 'error'">
+                <field name="create_date"/><field name="company_id"/>
+                <field name="api_administrator_id"/><field name="status" widget="badge"/>
+                <field name="created_count"/><field name="updated_count"/>
+                <field name="unchanged_count"/><field name="message"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_expense_budget_sync_log" model="ir.actions.act_window">
+        <field name="name">Historial de sincronización</field>
+        <field name="res_model">expense.budget.sync.log</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

@@ -1,0 +1,121 @@
+# Control de Presupuesto de Gastos — Odoo 18
+
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.0.0`.
+
+## Funciones
+
+- Catálogo de **rubros** y **cuentas controladas**, separado por empresa.
+- Un presupuesto anual por empresa, con importe **proyectado por cuenta y mes**.
+- Gastos reales manuales, importados desde **Excel/CSV** o recibidos de **API Administrator**.
+- Comparación de presupuesto frente al real: consumido, disponible y porcentaje de ejecución.
+- Vistas tipo lista, gráfica de barras y tabla dinámica, con filtros por rubro, cuenta, mes y presupuesto.
+- Registro de sincronizaciones, idempotencia por clave externa y reconciliación de gastos sin línea presupuestaria.
+- Roles de consulta y administrador; reglas de acceso multiempresa.
+
+## Instalación
+
+1. Copie la carpeta `expense_budget_control` a un directorio dentro de `addons_path` de Odoo 18.
+2. Confirme que su módulo personalizado se llama **exactamente `api_administator`** (así se pidió). Debe instalarse y definir el modelo **`api.administrator`**, con método `call_api(api_name, method, company_id, ...)` y `button_run_sync` como en el código de referencia. **Si el nombre técnico real de la carpeta es `api_administrator`**, cambie el elemento correspondiente en `depends` del `__manifest__.py` antes de instalar. No basta con cambiar el nombre visible.
+3. Instale `openpyxl` en el **Python que ejecuta Odoo**: `pip install openpyxl`.
+4. Reinicie Odoo, actualice la lista de aplicaciones e instale **Control de Presupuesto de Gastos**.
+5. En Ajustes → Usuarios, asigne el grupo **Administrador de presupuestos** a los encargados de administrar gastos, y **Consulta de presupuestos** a los lectores. Para acceder a la configuración de `api.administrator` también necesitarán los permisos del módulo externo `api_administator`.
+
+> **Compatibilidad:** código orientado a Odoo 18. Se comprobaron sintaxis y referencias estáticas, pero es obligatorio hacer una prueba de instalación en una base de datos Odoo 18 con la versión concreta de su módulo `api_administator`. No se proporcionó el código completo ni las vistas originales de esa dependencia.
+
+## Primer uso
+
+1. Vaya a **Control de Gastos → Importar Excel/CSV**, elija **Cuentas y rubros**, seleccione la empresa e importe la hoja **Cuentas** del libro de ejemplo.
+2. Vaya a **Presupuestos** y cree, por ejemplo, `Presupuesto 2026`, para la misma empresa y año.
+3. En **Importar Excel/CSV**, seleccione **Proyecciones mensuales**, el presupuesto y la hoja **Proyecciones**. También puede editar las doce proyecciones por cuenta en el propio formulario.
+4. Registre gastos reales a mano o importe la hoja **Gastos** con tipo **Gastos reales**.
+5. En **Proyectado vs. real** vea las desviaciones por rubro, cuenta y mes. Un saldo negativo identifica exceso presupuestario.
+6. Apruebe el presupuesto para bloquear los valores proyectados (los gastos reales siguen registrándose).
+
+### Columnas de Excel
+
+La importación usa la hoja con nombre indicado (si existe) o, en caso contrario, la primera hoja del archivo.
+
+**Cuentas** (rubros y cuentas controladas):
+
+| codigo_rubro | nombre_rubro | codigo_cuenta | nombre_cuenta |
+|---|---|---|---|
+| ADM | Administración | 600100 | Servicios de oficina |
+
+**Proyecciones** (asociadas al presupuesto seleccionado):
+
+| codigo_cuenta | mes | proyectado |
+|---|---|---|
+| 600100 | 1 | 1500 |
+
+**Gastos** (moneda de la empresa):
+
+| identificador | fecha | codigo_cuenta | monto | descripcion | referencia |
+|---|---|---|---|---|---|
+| DOC-0001 | 2026-01-15 | 600100 | 325.50 | Internet | FAC-001 |
+
+El **identificador de gasto es obligatorio y estable**, ya que evita duplicados: volver a importar la misma clave actualiza el movimiento. Las cuentas deben existir antes de importar proyecciones o gastos. Fecha válida: `AAAA-MM-DD` o `DD/MM/AAAA`. Mes: `1`–`12` o nombre en español. Gastos positivos representan consumo; negativos, devolución/reverso. Puede usar CSV UTF-8 con coma o punto y coma. **Guarde los códigos de cuenta como texto en Excel** para conservar ceros iniciales.
+
+El archivo completo debe ser válido; si una fila tiene un error, se revierte la importación entera y se indica el número de fila. Límites: 8 MB y 20.000 filas por archivo.
+
+## Integración API Administrator
+
+El módulo **no sustituye** la autenticación ni el transporte HTTP de `api_administator`. Extiende `api.administrator` con el campo booleano `is_expense_budget_sync`, y llama el método existente `call_api` respetando la forma del ejemplo que proporcionó.
+
+**Configuración:**
+
+1. Abra **Control de Gastos → Configuración → APIs de gastos**.
+2. Cree o edite una configuración con `type = get`, `status = A`, `company_id`, `name`, `url`, `end_point`, `user_id` y `password`.
+3. Active **Sincronizar gastos presupuestarios**. Use preferiblemente una configuración distinta de la usada para sincronización de stock (`is_stock_update`), ya que el botón compartido prioriza sincronizar gastos cuando ambos indicadores están activados.
+4. Use **Sincronizar gastos** en la configuración API o **Sincronizar API** desde un presupuesto de esa empresa.
+5. Consulte los resultados en **Configuración → Historial API**.
+
+**Ejemplo de respuesta JSON**:
+
+```json
+{
+  "success": true,
+  "data": [
+    {"id": "G-0001", "codigo_cuenta": "600100", "fecha": "2026-01-15",
+     "monto": 325.50, "descripcion": "Internet", "referencia": "FAC-001"},
+    {"id": "G-0002", "codigo_cuenta": "600200", "fecha": "2026-01-20",
+     "monto": 900, "descripcion": "Suministros", "referencia": "FAC-002"}
+  ]
+}
+```
+
+También se admite una lista directa, o el arreglo `items` en lugar de `data`. Variantes de campos admitidas: `id/identificador/external_id/id_movimiento`, `codigo_cuenta/cuenta/codigo/account_code`, `fecha/date`, `monto/importe/valor/amount`, `descripcion/detalle/concepto/description`, `referencia/documento/reference`.
+
+**Notas importantes:**
+
+- Cada movimiento API se identifica de forma única por **empresa + ID de configuración API + identificador**, de modo que otra ejecución lo actualiza si cambió, sin duplicarlo.
+- Los gastos sin presupuesto o sin proyección para su mes/cuenta se guardan **sin asignar**; cuando se cree una proyección compatible se vincularán. Puede usar el botón **Conciliar gastos** de un presupuesto.
+- Cada API se procesa en una transacción parcial independiente: si hay registros inválidos, **se revierte esa API** y se registra un error, sin conservar un lote incompleto.
+- La tarea programada `Presupuestos: importar gastos desde API` está **desactivada por defecto**. Active en Ajustes → Técnico → Automatización → Acciones planificadas una vez comprobado el endpoint.
+- El endpoint debe entregar importes en la **moneda base de la empresa**. El módulo **no realiza conversión** de moneda ni deduce impuestos.
+- El módulo registra movimientos externos como gastos de control presupuestario; **no crea facturas ni asientos contables** y no sincroniza automáticamente `account.move.line`. La carga desde la contabilidad Odoo sería una extensión posterior.
+- Las llamadas API utilizan la implementación de `call_api` presente en `api_administator` (en el ejemplo, autenticación por cabeceras `userid/password`). No se almacena una copia de esas credenciales en el módulo presupuestario.
+
+## Verificación y pruebas
+
+Comandos de ejemplo en una instalación con PostgreSQL y Odoo 18:
+
+```bash
+./odoo-bin -d BASE_PRUEBAS -i expense_budget_control --stop-after-init
+./odoo-bin -d BASE_PRUEBAS -u expense_budget_control --test-enable --test-tags /expense_budget_control --stop-after-init
+```
+
+Los tests (`tests/test_budget.py`) validan cálculo del saldo, vínculo de gastos anteriores al presupuesto, importación idempotente y bloqueo de proyecciones aprobadas.
+
+## Estructura
+
+```
+expense_budget_control/
+├── __manifest__.py
+├── models/                  # rubros, cuentas, presupuestos, gastos y API
+├── wizard/                  # importador XLSX/CSV
+├── security/                # ACL y reglas multiempresa
+├── views/                   # listas, formularios, pivote y gráficos
+├── data/                    # tarea programada opcional
+├── tests/                   # pruebas Odoo
+└── docs/plantilla_importacion.xlsx
+```
