@@ -1,0 +1,6 @@
+<odoo>
+    <menuitem id="menu_customer_incentive_root" name="Customer Incentives" sequence="45" groups="customer_incentive_management.group_incentive_user"/>
+    <menuitem id="menu_incentive_requests" name="Requests" parent="menu_customer_incentive_root" action="action_incentive_request" sequence="10" groups="customer_incentive_management.group_incentive_user"/>
+    <menuitem id="menu_incentive_configuration" name="Configuration" parent="menu_customer_incentive_root" sequence="90" groups="customer_incentive_management.group_incentive_manager"/>
+    <menuitem id="menu_incentive_request_types" name="Request Types" parent="menu_incentive_configuration" action="action_incentive_request_type" sequence="10" groups="customer_incentive_management.group_incentive_manager"/>
+</odoo>

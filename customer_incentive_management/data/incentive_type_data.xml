@@ -1,0 +1,14 @@
+<odoo noupdate="1">
+    <record id="incentive_type_rebate" model="incentive.request.type">
+        <field name="name">Rebate</field>
+        <field name="code">rebate</field>
+        <field name="description">Customer incentive or rebate funded by a supplier.</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="incentive_type_payment_agreement" model="incentive.request.type">
+        <field name="name">Payment Agreement</field>
+        <field name="code">payment_agreement</field>
+        <field name="description">Incentive request with supplier collection terms/installments.</field>
+        <field name="sequence">20</field>
+    </record>
+</odoo>

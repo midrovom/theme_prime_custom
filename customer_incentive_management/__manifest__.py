@@ -1,0 +1,22 @@
+{
+    "name": "Customer Incentives & Supplier Collections",
+    "version": "18.0.1.0.0",
+    "category": "Accounting/Accounting",
+    "summary": "Approval workflow for customer incentives, beneficiary payments and supplier recoveries",
+    "description": "Manage manually entered customer incentive requests, approvals, payment/offset evidence and supplier collection tracking.",
+    "author": "Custom Module",
+    "license": "LGPL-3",
+    "depends": ["account", "product", "mail"],
+    "data": [
+        "security/security.xml",
+        "security/ir.model.access.csv",
+        "data/sequence.xml",
+        "data/incentive_type_data.xml",
+        "views/incentive_type_views.xml",
+        "views/incentive_request_views.xml",
+        "report/incentive_report.xml",
+        "views/menu.xml",
+    ],
+    "application": True,
+    "installable": True,
+}
