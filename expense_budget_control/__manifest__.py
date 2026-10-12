@@ -6,7 +6,7 @@
     'category': 'Accounting/Accounting',
     'author': 'Conedera Desarrollo',
     'license': 'LGPL-3',
-    'depends': ['base', 'api_administator'],
+    'depends': ['base', 'api_administrator'],
     'external_dependencies': {'python': ['openpyxl']},
     'data': [
         'security/expense_budget_security.xml',
