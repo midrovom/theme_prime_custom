@@ -83,6 +83,12 @@
                                             <group string="Cédula / certificado de votación - copia 2">
                                                 <field name="cedula_votacion_2" widget="binary" filename="cedula_votacion_filename_2" readonly="1"/>
                                             </group>
+                                            <group string="Cédula / certificado de votación - copia 3">
+                                                <field name="cedula_votacion_3" widget="binary" filename="cedula_votacion_filename_3" readonly="1"/>
+                                            </group>
+                                            <group string="Cédula / certificado de votación - copia 4">
+                                                <field name="cedula_votacion_4" widget="binary" filename="cedula_votacion_filename_4" readonly="1"/>
+                                            </group>
                                         </group>
                                     </page>
 

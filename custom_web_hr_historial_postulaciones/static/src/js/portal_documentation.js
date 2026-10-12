@@ -29,6 +29,8 @@ function initFileInputs() {
         const list = listSelector ? document.querySelector(listSelector) : null;
         const counter = card ? card.querySelector('[data-file-count]') : null;
         const minimum = Number(input.dataset.minimumCount || 0);
+        const maximum = Number(input.dataset.maxCount || 0);
+        const limitMessage = card ? card.querySelector('[data-file-limit-message]') : null;
 
         const syncInput = () => {
             try {
@@ -79,9 +81,19 @@ function initFileInputs() {
 
         input.addEventListener('change', () => {
             const freshFiles = Array.from(input.files || []);
-            input._selectedFiles = input._selectedFiles.concat(freshFiles);
+            const existing = Number(input.dataset.existingCount || 0);
+            const currentTotal = existing + input._selectedFiles.length;
+            const available = maximum > 0 ? Math.max(maximum - currentTotal, 0) : freshFiles.length;
+            const acceptedFiles = maximum > 0 ? freshFiles.slice(0, available) : freshFiles;
+            const rejectedCount = freshFiles.length - acceptedFiles.length;
+
+            input._selectedFiles = input._selectedFiles.concat(acceptedFiles);
             syncInput();
             render();
+
+            if (limitMessage) {
+                limitMessage.classList.toggle('d-none', rejectedCount === 0);
+            }
         });
 
         render();

@@ -16,7 +16,7 @@ OPTIONAL_DOCUMENT_FIELDS = {
 
 DOCUMENT_FIELDS = [
     ('fotografia', 'Fotografía actualizada a color tamaño carnet', 'image'),
-    ('cedula_votacion', '2 copias a color de cédula de identidad y certificado de votación', 'pdf'),
+    ('cedula_votacion', 'De 2 a 4 archivos PDF de cédula de identidad y certificado de votación', 'pdf'),
     ('hoja_vida_actualizada', 'Hoja de vida actualizada', 'pdf'),
     ('historia_iess', 'Historia laboral extraída de la página web del IESS (resumen de empleadores)', 'pdf'),
     ('acta_matrimonio', 'Acta de matrimonio ORIGINAL / unión de hecho registrada en cédula', 'pdf'),
@@ -53,6 +53,10 @@ class ApplicantDocumentation(models.Model):
     cedula_votacion_filename = fields.Char(string='Archivo cédula / votación 1')
     cedula_votacion_2 = fields.Binary(string='Cédula / votación 2', attachment=True)
     cedula_votacion_filename_2 = fields.Char(string='Archivo cédula / votación 2')
+    cedula_votacion_3 = fields.Binary(string='Cédula / votación 3', attachment=True)
+    cedula_votacion_filename_3 = fields.Char(string='Archivo cédula / votación 3')
+    cedula_votacion_4 = fields.Binary(string='Cédula / votación 4', attachment=True)
+    cedula_votacion_filename_4 = fields.Char(string='Archivo cédula / votación 4')
 
     hoja_vida_actualizada = fields.Binary(string='Hoja de vida actualizada', attachment=True)
     hoja_vida_actualizada_filename = fields.Char(string='Archivo hoja de vida actualizada')
@@ -131,7 +135,7 @@ class ApplicantDocumentation(models.Model):
         ),
     ]
 
-    @api.depends('recommendation_ids', 'recomendaciones', 'cedula_votacion', 'cedula_votacion_2', *[field for field, _, _ in DOCUMENT_FIELDS if field not in OPTIONAL_DOCUMENT_FIELDS and field not in {'recomendaciones', 'cedula_votacion'}])
+    @api.depends('recommendation_ids', 'recomendaciones', 'cedula_votacion', 'cedula_votacion_2', 'cedula_votacion_3', 'cedula_votacion_4', *[field for field, _, _ in DOCUMENT_FIELDS if field not in OPTIONAL_DOCUMENT_FIELDS and field not in {'recomendaciones', 'cedula_votacion'}])
     def _compute_is_complete(self):
         for record in self:
             required_fields = [
@@ -139,17 +143,16 @@ class ApplicantDocumentation(models.Model):
                 if field not in OPTIONAL_DOCUMENT_FIELDS and field not in {'recomendaciones', 'cedula_votacion'}
             ]
             recommendation_total = len(record.recommendation_ids) + (1 if record.recomendaciones else 0)
-            cedula_total = int(bool(record.cedula_votacion)) + int(bool(record.cedula_votacion_2))
+            cedula_total = sum(int(bool(record[field])) for field in ('cedula_votacion', 'cedula_votacion_2', 'cedula_votacion_3', 'cedula_votacion_4'))
             record.is_complete = all(bool(record[field]) for field in required_fields) and cedula_total >= 2 and recommendation_total >= 2
 
-    @api.depends('recommendation_ids', 'recomendaciones', 'fotografia', 'cedula_votacion', 'cedula_votacion_2', 'hoja_vida_actualizada', 'planilla_servicios', 'croquis_domicilio', 'cuenta_banco_internacional', 'certificado_salud')
+    @api.depends('recommendation_ids', 'recomendaciones', 'fotografia', 'cedula_votacion', 'cedula_votacion_2', 'cedula_votacion_3', 'cedula_votacion_4', 'hoja_vida_actualizada', 'planilla_servicios', 'croquis_domicilio', 'cuenta_banco_internacional', 'certificado_salud')
     def _compute_required_document_summary(self):
         for record in self:
             total = 10
             uploaded = sum([
                 int(bool(record.fotografia)),
-                int(bool(record.cedula_votacion)),
-                int(bool(record.cedula_votacion_2)),
+                min(sum(int(bool(record[field])) for field in ('cedula_votacion', 'cedula_votacion_2', 'cedula_votacion_3', 'cedula_votacion_4')), 2),
                 int(bool(record.hoja_vida_actualizada)),
                 min(len(record.recommendation_ids) + int(bool(record.recomendaciones)), 2),
                 int(bool(record.planilla_servicios)),
@@ -166,7 +169,7 @@ class ApplicantDocumentation(models.Model):
         for record in self:
             record.recommendation_count = len(record.recommendation_ids) + (1 if record.recomendaciones else 0)
 
-    @api.constrains(*[f'{field}_filename' for field, _, _ in DOCUMENT_FIELDS if field != 'recomendaciones'], 'cedula_votacion_filename_2')
+    @api.constrains(*[f'{field}_filename' for field, _, _ in DOCUMENT_FIELDS if field != 'recomendaciones'], 'cedula_votacion_filename_2', 'cedula_votacion_filename_3', 'cedula_votacion_filename_4')
     def _check_filenames(self):
         for record in self:
             for field, label, file_type in DOCUMENT_FIELDS:
@@ -180,9 +183,10 @@ class ApplicantDocumentation(models.Model):
                     raise ValidationError(_('El documento "%s" debe estar en formato PDF.') % label)
                 if file_type == 'image' and not filename.endswith(('.jpg', '.jpeg', '.png', '.pdf')):
                     raise ValidationError(_('La "%s" debe estar en JPG, PNG o PDF.') % label)
-            filename_2 = (record.cedula_votacion_filename_2 or '').lower().strip()
-            if filename_2 and not filename_2.endswith('.pdf'):
-                raise ValidationError(_('La segunda copia de cédula / certificado de votación debe estar en formato PDF.'))
+            for number in (2, 3, 4):
+                filename = (record[f'cedula_votacion_filename_{number}'] or '').lower().strip()
+                if filename and not filename.endswith('.pdf'):
+                    raise ValidationError(_('El archivo %s de cédula / certificado de votación debe estar en formato PDF.') % number)
 
     def _check_pdf_content(self, values):
         for field, label, file_type in DOCUMENT_FIELDS:
@@ -197,16 +201,18 @@ class ApplicantDocumentation(models.Model):
                 raise ValidationError(_('No se pudo leer el archivo de "%s".') % label)
             if not raw.startswith(b'%PDF'):
                 raise ValidationError(_('El archivo de "%s" no parece ser un PDF válido.') % label)
-        second_content = values.get('cedula_votacion_2')
-        if second_content:
-            filename = (values.get('cedula_votacion_filename_2') or '').lower()
+        for number in (2, 3, 4):
+            content = values.get(f'cedula_votacion_{number}')
+            if not content:
+                continue
+            filename = (values.get(f'cedula_votacion_filename_{number}') or '').lower()
             if filename.endswith('.pdf'):
                 try:
-                    raw = base64.b64decode(second_content)
+                    raw = base64.b64decode(content)
                 except Exception:
-                    raise ValidationError(_('No se pudo leer el segundo archivo de cédula / votación.'))
+                    raise ValidationError(_('No se pudo leer el archivo %s de cédula / votación.') % number)
                 if not raw.startswith(b'%PDF'):
-                    raise ValidationError(_('El segundo archivo de cédula / votación no parece ser un PDF válido.'))
+                    raise ValidationError(_('El archivo %s de cédula / votación no parece ser un PDF válido.') % number)
         return True
 
     @api.model_create_multi

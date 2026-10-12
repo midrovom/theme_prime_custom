@@ -23,7 +23,7 @@ YEARS = list(range(1900, 2027))
 
 DOCUMENT_FIELDS = [
     ('fotografia', 'Fotografía actualizada a color tamaño carnet', ('pdf', 'jpg', 'jpeg', 'png')),
-    ('cedula_votacion', '2 copias a color de cédula de identidad y certificado de votación', ('pdf',)),
+    ('cedula_votacion', 'De 2 a 4 archivos PDF de cédula de identidad y certificado de votación', ('pdf',)),
     ('hoja_vida_actualizada', 'Hoja de vida actualizada', ('pdf',)),
     ('historia_iess', 'Historia laboral extraída de la página web del IESS (resumen de empleadores)', ('pdf',)),
     ('acta_matrimonio', 'Acta de matrimonio ORIGINAL, Si es union de hecho debera estar registrado en la cedula', ('pdf',)),
@@ -754,7 +754,7 @@ class PortalApplications(http.Controller):
         existing_recommendations = len(documentation.recommendation_ids) if documentation else 0
         legacy_recommendation = 1 if documentation and documentation.recomendaciones else 0
         recommendation_count = existing_recommendations + legacy_recommendation
-        cedula_count = int(bool(documentation and documentation.cedula_votacion)) + int(bool(documentation and documentation.cedula_votacion_2))
+        cedula_count = sum(int(bool(documentation and documentation[f'cedula_votacion{suffix}'])) for suffix in ('', '_2', '_3', '_4'))
 
         def render_form(errors=None, status=200):
             return request.render(
@@ -777,7 +777,7 @@ class PortalApplications(http.Controller):
             missing = []
             invalid_files = []
 
-            # Documentos individuales. Cédula/votación se procesa aparte porque admite 2 archivos.
+            # Documentos individuales. Cédula/votación se procesa aparte porque admite hasta 4 archivos.
             for field, label, allowed_extensions in DOCUMENT_FIELDS:
                 if field in {'recomendaciones', 'cedula_votacion'}:
                     continue
@@ -795,7 +795,7 @@ class PortalApplications(http.Controller):
                 elif field not in OPTIONAL_DOCUMENT_FIELDS and (not documentation or not documentation[field]):
                     missing.append(label)
 
-            # Cédula + certificado de votación: admite hasta 2 archivos PDF independientes.
+            # Cédula + certificado de votación: admite entre 2 y 4 archivos PDF independientes.
             identity_files = []
             for file in request.httprequest.files.getlist('cedula_votacion'):
                 if not file or not file.filename:
@@ -810,16 +810,18 @@ class PortalApplications(http.Controller):
                         'filename': secure_filename(file.filename),
                     })
 
-            if cedula_count + len(identity_files) > 2:
-                missing.append(_('Cédula y certificado de votación: máximo 2 archivos PDF.'))
+            if cedula_count + len(identity_files) > 4:
+                missing.append(_('Cédula y certificado de votación: máximo 4 archivos PDF.'))
             elif cedula_count + len(identity_files) < 2:
-                missing.append(_('Cédula y certificado de votación: se requieren 2 archivos PDF.'))
+                missing.append(_('Cédula y certificado de votación: se requieren mínimo 2 archivos PDF.'))
             else:
                 identity_slots = []
-                if not (documentation and documentation.cedula_votacion):
-                    identity_slots.append(('cedula_votacion', 'cedula_votacion_filename'))
-                if not (documentation and documentation.cedula_votacion_2):
-                    identity_slots.append(('cedula_votacion_2', 'cedula_votacion_filename_2'))
+                for number in range(1, 5):
+                    suffix = '' if number == 1 else f'_{number}'
+                    field = f'cedula_votacion{suffix}'
+                    filename_field = f'cedula_votacion_filename{suffix}'
+                    if not (documentation and documentation[field]):
+                        identity_slots.append((field, filename_field))
                 for file_data, slots in zip(identity_files, identity_slots):
                     values[slots[0]] = file_data['content']
                     values[slots[1]] = file_data['filename']
@@ -881,7 +883,7 @@ class PortalApplications(http.Controller):
                         'errors': [str(exc)],
                         'missing': [],
                         'recommendation_count': len(documentation.recommendation_ids) + (1 if documentation.recomendaciones else 0),
-                        'cedula_count': int(bool(documentation.cedula_votacion)) + int(bool(documentation.cedula_votacion_2)),
+                        'cedula_count': sum(int(bool(documentation and documentation[f'cedula_votacion{suffix}'])) for suffix in ('', '_2', '_3', '_4')),
                     },
                     status=400,
                 )
