@@ -171,8 +171,11 @@ class ExpenseBudget(models.Model):
         self.write({'state': 'draft'})
 
     def action_reconcile_expenses(self):
-        if not self.env.user.has_group('expense_budget_control.group_expense_budget_manager'):
+        if not (self.env.user.has_group('expense_budget_control.group_expense_budget_manager')
+                or self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')):
             raise AccessError(_('No tiene permiso para conciliar gastos.'))
+        # Comprueba el acceso a cada presupuesto antes de modificar los gastos vinculados.
+        self.check_access('read')
         reconciled = 0
         for budget in self:
             index = {(line.account_id.id, line.month): line for line in budget.line_ids}
@@ -185,7 +188,9 @@ class ExpenseBudget(models.Model):
             for expense in expenses:
                 line = index.get((expense.account_id.id, str(expense.date.month)))
                 if line:
-                    expense.write({'budget_line_id': line.id})
+                    # El registrador no puede editar gastos; este botón solo concilia
+                    # movimientos ya visibles para él con líneas del mismo presupuesto.
+                    expense.sudo().write({'budget_line_id': line.id})
                     reconciled += 1
         return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
             'title': _('Conciliación completada'),
@@ -208,9 +213,11 @@ class ExpenseBudget(models.Model):
         ).report_action(self)
 
     def action_sync_api(self):
-        if not self.env.user.has_group('expense_budget_control.group_expense_budget_manager'):
+        if not (self.env.user.has_group('expense_budget_control.group_expense_budget_manager')
+                or self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')):
             raise AccessError(_('No tiene permisos para sincronizar gastos.'))
         self.ensure_one()
+        self.check_access('read')
         result = self.env['expense.budget.api.sync']._sync_company(self.company_id)
         return self.env['expense.budget.api.sync']._notification(result)
 
