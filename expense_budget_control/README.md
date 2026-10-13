@@ -1,6 +1,6 @@
 # Control de Presupuesto de Gastos — Odoo 18
 
-Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.1.0`.
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.3.0`.
 
 ## Funciones
 
@@ -16,12 +16,12 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.1.0`.
 ## Instalación
 
 1. Copie la carpeta `expense_budget_control` a un directorio dentro de `addons_path` de Odoo 18.
-2. Confirme que su módulo personalizado se llama **exactamente `api_administator`** (así se pidió). Debe instalarse y definir el modelo **`api.administrator`**, con método `call_api(api_name, method, company_id, ...)` y `button_run_sync` como en el código de referencia. **Si el nombre técnico real de la carpeta es `api_administrator`**, cambie el elemento correspondiente en `depends` del `__manifest__.py` antes de instalar. No basta con cambiar el nombre visible.
+2. Confirme que su módulo personalizado se llama **exactamente `api_administrator`**. Debe instalarse y definir el modelo **`api.administrator`**, con método `call_api(api_name, method, company_id, ...)` y `button_run_sync` como en el código de referencia. La dependencia en el manifiesto ya apunta a `api_administrator`.
 3. Instale `openpyxl` en el **Python que ejecuta Odoo**: `pip install openpyxl`.
 4. Reinicie Odoo, actualice la lista de aplicaciones e instale **Control de Presupuesto de Gastos**.
-5. En Ajustes → Usuarios, asigne el grupo **Administrador de presupuestos** a los encargados de administrar gastos, y **Consulta de presupuestos** a los lectores. Para acceder a la configuración de `api.administrator` también necesitarán los permisos del módulo externo `api_administator`.
+5. En Ajustes → Usuarios, asigne el grupo **Administrador de presupuestos** a los encargados de administrar gastos, y **Consulta de presupuestos** a los lectores. Para acceder a la configuración de `api.administrator` también necesitarán los permisos del módulo externo `api_administrator`.
 
-> **Compatibilidad:** código orientado a Odoo 18. Se comprobaron sintaxis y referencias estáticas, pero es obligatorio hacer una prueba de instalación en una base de datos Odoo 18 con la versión concreta de su módulo `api_administator`. No se proporcionó el código completo ni las vistas originales de esa dependencia.
+> **Compatibilidad:** código orientado a Odoo 18. Se comprobaron sintaxis y referencias estáticas, pero es obligatorio hacer una prueba de instalación en una base de datos Odoo 18 con la versión concreta de su módulo `api_administrator`. No se proporcionó el código completo ni las vistas originales de esa dependencia.
 
 ## Primer uso
 
@@ -71,15 +71,17 @@ Al actualizar una instalación anterior, copie la nueva carpeta y ejecute la act
 
 ## Integración API Administrator
 
-El módulo **no sustituye** la autenticación ni el transporte HTTP de `api_administator`. Extiende `api.administrator` con el campo booleano `is_expense_budget_sync`, y llama el método existente `call_api` respetando la forma del ejemplo que proporcionó.
+El módulo **no sustituye** la autenticación ni el transporte HTTP de `api_administrator`. En **Configuración API de gastos** solo se selecciona una API existente del modelo `api.administrator` mediante el campo **API existente**. No se crean ni se editan URL, usuario o contraseña desde Control de Gastos. La sincronización sigue llamando el método `call_api` existente.
 
 **Configuración:**
 
-1. Abra **Control de Gastos → Configuración → APIs de gastos**.
-2. Cree o edite una configuración con `type = get`, `status = A`, `company_id`, `name`, `url`, `end_point`, `user_id` y `password`.
-3. Active **Sincronizar gastos presupuestarios**. Use preferiblemente una configuración distinta de la usada para sincronización de stock (`is_stock_update`), ya que el botón compartido prioriza sincronizar gastos cuando ambos indicadores están activados.
-4. Use **Sincronizar gastos** en la configuración API o **Sincronizar API** desde un presupuesto de esa empresa.
+1. Cree primero la API en su módulo **API Administrator**, con método `get`, estado `A` y la empresa correspondiente.
+2. Abra **Control de Gastos → Configuración → Configuración API de gastos**.
+3. Seleccione la **Empresa** y elija en **API existente** la API que ya creó (una selección por empresa); guarde.
+4. Pulse **Sincronizar gastos** desde la configuración, o **Sincronizar API** desde un presupuesto de esa empresa.
 5. Consulte los resultados en **Configuración → Historial API**.
+
+**Al actualizar desde la versión 1.2:** entre en **Configuración API de gastos** y seleccione la API existente. El indicador `is_expense_budget_sync` de la versión anterior ya no se utiliza para decidir qué API consume el módulo. No se modifica la configuración original de su API.
 
 **Ejemplo de respuesta JSON**:
 
@@ -99,13 +101,13 @@ También se admite una lista directa, o el arreglo `items` en lugar de `data`. V
 
 **Notas importantes:**
 
-- Cada movimiento API se identifica de forma única por **empresa + ID de configuración API + identificador**, de modo que otra ejecución lo actualiza si cambió, sin duplicarlo.
+- Cada movimiento API se identifica de forma única por **empresa + ID de API Administrator + identificador**, de modo que otra ejecución lo actualiza si cambió, sin duplicarlo.
 - Los gastos sin presupuesto o sin proyección para su mes/cuenta se guardan **sin asignar**; cuando se cree una proyección compatible se vincularán. Puede usar el botón **Conciliar gastos** de un presupuesto.
 - Cada API se procesa en una transacción parcial independiente: si hay registros inválidos, **se revierte esa API** y se registra un error, sin conservar un lote incompleto.
 - La tarea programada `Presupuestos: importar gastos desde API` está **desactivada por defecto**. Active en Ajustes → Técnico → Automatización → Acciones planificadas una vez comprobado el endpoint.
 - El endpoint debe entregar importes en la **moneda base de la empresa**. El módulo **no realiza conversión** de moneda ni deduce impuestos.
 - El módulo registra movimientos externos como gastos de control presupuestario; **no crea facturas ni asientos contables** y no sincroniza automáticamente `account.move.line`. La carga desde la contabilidad Odoo sería una extensión posterior.
-- Las llamadas API utilizan la implementación de `call_api` presente en `api_administator` (en el ejemplo, autenticación por cabeceras `userid/password`). No se almacena una copia de esas credenciales en el módulo presupuestario.
+- Las llamadas API utilizan la implementación de `call_api` presente en `api_administrator` (en el ejemplo, autenticación por cabeceras `userid/password`). No se almacena una copia de esas credenciales en el módulo presupuestario.
 
 ## Verificación y pruebas
 

@@ -9,25 +9,45 @@ from .expense import get_value, as_text
 _logger = logging.getLogger(__name__)
 
 
-class APIAdministrator(models.Model):
-    _inherit = 'api.administrator'
+class ExpenseBudgetAPIConfig(models.Model):
+    _name = 'expense.budget.api.config'
+    _description = 'Selección de API existente para gastos presupuestarios'
+    _rec_name = 'company_id'
+    _check_company_auto = True
 
-    is_expense_budget_sync = fields.Boolean(
-        string='Sincronizar gastos presupuestarios', default=False,
-        help='Activa la importación de movimientos de gastos desde esta API.',
+    company_id = fields.Many2one(
+        'res.company', string='Empresa', required=True, index=True,
+        default=lambda self: self.env.company,
+    )
+    api_administrator_id = fields.Many2one(
+        'api.administrator', string='API existente', required=True,
+        ondelete='restrict', check_company=True,
+        domain="[('company_id', '=', company_id), ('type', '=', 'get'), ('status', '=', 'A')]",
+        help='Seleccione una API GET activa creada previamente en API Administrator.',
     )
 
-    def button_run_sync(self):
-        """Respeta el comportamiento original de stock cuando no es API de gastos."""
+    _sql_constraints = [
+        ('expense_budget_api_company_unique', 'unique(company_id)',
+         'Ya existe una API de gastos seleccionada para esta empresa.'),
+    ]
+
+    @api.constrains('company_id', 'api_administrator_id')
+    def _check_selected_api(self):
         for record in self:
-            if record.is_expense_budget_sync:
-                if not self.env.user.has_group('expense_budget_control.group_expense_budget_manager'):
-                    raise AccessError(_('Requiere el grupo Administrador de presupuestos de gastos.'))
-                result = self.env['expense.budget.api.sync']._sync_company(
-                    record.company_id, api_records=record,
-                )
-                return self.env['expense.budget.api.sync']._notification(result)
-        return super().button_run_sync()
+            selected = record.api_administrator_id
+            if selected and selected.company_id != record.company_id:
+                raise UserError(_('La API seleccionada debe pertenecer a la misma empresa.'))
+            if selected and selected.type != 'get':
+                raise UserError(_('Seleccione una API configurada como GET.'))
+
+    def action_sync(self):
+        if not self.env.user.has_group('expense_budget_control.group_expense_budget_manager'):
+            raise AccessError(_('Requiere el grupo Administrador de presupuestos de gastos.'))
+        self.ensure_one()
+        result = self.env['expense.budget.api.sync']._sync_company(
+            self.company_id, api_records=self.api_administrator_id,
+        )
+        return self.env['expense.budget.api.sync']._notification(result)
 
 
 class ExpenseBudgetSyncLog(models.Model):
@@ -73,13 +93,16 @@ class ExpenseBudgetAPISync(models.AbstractModel):
         """Interno: convocado desde botones protegidos o la tarea programada."""
         company.ensure_one()
         Admin = self.env['api.administrator'].sudo()
+        # La API se define en API Administrator: aquí solo se selecciona su registro.
+        selected = api_records if api_records is not None else self.env[
+            'expense.budget.api.config'
+        ].sudo().search([('company_id', '=', company.id)]).api_administrator_id
         domain = [
             ('company_id', '=', company.id),
             ('type', '=', 'get'),
             ('status', '=', 'A'),
-            ('is_expense_budget_sync', '=', True),
         ]
-        records = api_records.sudo().filtered_domain(domain) if api_records is not None else Admin.search(domain)
+        records = selected.sudo().filtered_domain(domain)
         total = {'created': 0, 'updated': 0, 'unchanged': 0, 'errors': 0, 'apis': len(records)}
         if not records:
             return total
@@ -145,9 +168,6 @@ class ExpenseBudgetAPISync(models.AbstractModel):
     @api.model
     def cron_sync_all(self):
         """Tarea opcional: la instalación la deja desactivada por seguridad."""
-        Admin = self.env['api.administrator'].sudo()
-        companies = Admin.search([
-            ('type', '=', 'get'), ('status', '=', 'A'), ('is_expense_budget_sync', '=', True),
-        ]).mapped('company_id')
+        companies = self.env['expense.budget.api.config'].sudo().search([]).mapped('company_id')
         for company in companies:
             self._sync_company(company)
