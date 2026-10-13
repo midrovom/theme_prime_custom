@@ -116,13 +116,12 @@ class ExpenseBudgetExpense(models.Model):
         expense_date = fields.Date.to_date(expense_date)
         if not expense_date or not company_id or not account_id:
             return self.env['expense.budget.line']
-        budget = self.env['expense.budget'].search([
-            ('company_id', '=', company_id), ('year', '=', expense_date.year),
-        ], limit=1)
-        if not budget:
-            return self.env['expense.budget.line']
+        # Hay varios presupuestos posibles por empresa/año: localizar la
+        # cuenta y el mes directamente, sin tomar el primer presupuesto.
         return self.env['expense.budget.line'].search([
-            ('budget_id', '=', budget.id), ('account_id', '=', account_id),
+            ('budget_id.company_id', '=', company_id),
+            ('budget_id.year', '=', expense_date.year),
+            ('account_id', '=', account_id),
             ('month', '=', str(expense_date.month)),
         ], limit=1)
 

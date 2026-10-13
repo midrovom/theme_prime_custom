@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo.tests.common import TransactionCase, tagged
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 
 @tagged('post_install', '-at_install')
@@ -207,8 +207,10 @@ class TestExpenseBudget(TransactionCase):
             line.with_user(registrar).write({'planned_amount': 700})
         with self.assertRaises(AccessError):
             budget.with_user(approver).action_reopen()
-        with self.assertRaises(AccessError):
-            budget.with_user(registrar).action_close()
+        self.assertEqual(
+            [state[0] for state in budget._fields['state'].selection],
+            ['draft', 'to_approve', 'approved'],
+        )
 
         wizard = self.env['expense.budget.import.wizard'].with_user(registrar).create({
             'import_type': 'expenses', 'company_id': self.company.id,
@@ -316,3 +318,61 @@ class TestExpenseBudget(TransactionCase):
         })
         self.assertEqual(line.actual_amount, 280)
         self.assertEqual(self.budget.actual_amount, 280)
+
+    def test_only_three_states_and_new_rubro_after_approval(self):
+        """Se habilita el siguiente rubro cuando el anterior se aprueba."""
+        Budget = self.env['expense.budget']
+        Line = self.env['expense.budget.line']
+        states = [value for value, _name in Budget._fields['state'].selection]
+        self.assertEqual(states, ['draft', 'to_approve', 'approved'])
+
+        original_line = Line.create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 500,
+        })
+        with self.assertRaises(UserError):
+            Budget.create({
+                'name': 'Otro rubro prematuro', 'year': 2026,
+                'company_id': self.company.id,
+            })
+        self.budget.action_submit()
+        self.assertEqual(self.budget.state, 'to_approve')
+        with self.assertRaises(UserError):
+            Budget.create({
+                'name': 'Otro rubro pendiente', 'year': 2026,
+                'company_id': self.company.id,
+            })
+        self.budget.action_approve()
+        self.assertEqual(self.budget.state, 'approved')
+
+        new_category = self.env['expense.budget.category'].create({
+            'code': 'NEW-TEST', 'name': 'Nuevo rubro',
+            'company_id': self.company.id,
+        })
+        new_account = self.env['expense.budget.account'].create({
+            'code': '6002-TEST', 'name': 'Nueva cuenta',
+            'category_id': new_category.id, 'company_id': self.company.id,
+        })
+        second_budget = Budget.create({
+            'name': 'Presupuesto nuevo rubro', 'year': 2026,
+            'company_id': self.company.id,
+        })
+        self.assertEqual(second_budget.state, 'draft')
+        second_line = Line.create({
+            'budget_id': second_budget.id, 'account_id': new_account.id,
+            'month': '1', 'planned_amount': 300,
+        })
+        expense = self.env['expense.budget.expense'].create({
+            'company_id': self.company.id, 'account_id': new_account.id,
+            'date': '2026-01-18', 'description': 'Consumo del nuevo rubro',
+            'amount': 75,
+        })
+        self.assertEqual(expense.budget_line_id, second_line)
+        self.assertEqual(second_line.actual_amount, 75)
+        self.assertEqual(original_line.actual_amount, 0)
+
+        with self.assertRaises(ValidationError):
+            Line.create({
+                'budget_id': second_budget.id, 'account_id': self.account.id,
+                'month': '1', 'planned_amount': 100,
+            })

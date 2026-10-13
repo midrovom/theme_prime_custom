@@ -19,9 +19,9 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.2`.
 2. Confirme que su módulo personalizado se llama **exactamente `api_administrator`**. Debe instalarse y definir el modelo **`api.administrator`**, con método `call_api(api_name, method, company_id, ...)` y `button_run_sync` como en el código de referencia. La dependencia en el manifiesto ya apunta a `api_administrator`.
 3. Instale `openpyxl` en el **Python que ejecuta Odoo**: `pip install openpyxl`.
 4. Reinicie Odoo, actualice la lista de aplicaciones e instale **Control de Presupuesto de Gastos**.
-5. En Ajustes → Usuarios, asigne el rol adecuado: **Consulta de presupuestos** (solo lectura), **Registro de presupuestos** (crear y editar borradores, importar proyecciones y registrar/corregir gastos reales manualmente), **Aprobador de presupuestos** (aprobar borradores sin editar valores) o **Administrador de presupuestos** (gestión completa, incluyendo API). Los permisos para gestionar `api.administrator` se configuran en el módulo externo `api_administrator`.
+5. En Ajustes → Usuarios, asigne el rol adecuado: **Consulta de presupuestos** (solo lectura), **Registro de presupuestos** (crear y editar borradores, importar proyecciones y registrar/corregir gastos reales manualmente), **Aprobador de presupuestos** (aprobar presupuestos pendientes sin editar valores) o **Administrador de presupuestos** (gestión completa, incluyendo API). Los permisos para gestionar `api.administrator` se configuran en el módulo externo `api_administrator`.
 
-**Flujo de aprobación:** el usuario de Registro guarda el presupuesto y sus líneas en estado **Borrador**. Otro usuario con rol Aprobador pulsa **Aprobar**; ese rol no puede registrar ni modificar importes. El Administrador puede registrar, aprobar, cerrar o reabrir presupuestos. Registro no puede aprobar, cerrar ni reabrir; el Aprobador tampoco puede cerrar ni reabrir. El importador Excel sigue disponible para el Administrador en sus tres modalidades; Registro únicamente puede importar **Proyecciones mensuales**; puede registrar y corregir gastos reales desde **Control de Gastos → Gastos reales**, sin eliminarlos, pero no puede importar gastos desde Excel ni modificar rubros o cuentas.
+**Flujo de aprobación:** el usuario de Registro guarda el presupuesto y sus líneas en estado **Borrador**. El usuario de Registro pulsa **Enviar a aprobar** y otro usuario con rol Aprobador pulsa **Aprobar**; ese rol no puede registrar ni modificar importes. El Administrador puede registrar, aprobar o volver a borrador presupuestos. Registro no puede aprobar ni reabrir; el Aprobador tampoco puede reabrir. El importador Excel sigue disponible para el Administrador en sus tres modalidades; Registro únicamente puede importar **Proyecciones mensuales**; puede registrar y corregir gastos reales desde **Control de Gastos → Gastos reales**, sin eliminarlos, pero no puede importar gastos desde Excel ni modificar rubros o cuentas.
 
 > **Compatibilidad:** código orientado a Odoo 18. Se comprobaron sintaxis y referencias estáticas, pero es obligatorio hacer una prueba de instalación en una base de datos Odoo 18 con la versión concreta de su módulo `api_administrator`. No se proporcionó el código completo ni las vistas originales de esa dependencia.
 
@@ -32,7 +32,7 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.2`.
 3. En **Importar Excel/CSV**, seleccione **Proyecciones mensuales**, el presupuesto y la hoja **Proyecciones**. También puede editar las doce proyecciones por cuenta en el propio formulario.
 4. Registre gastos reales a mano o importe la hoja **Gastos** con tipo **Gastos reales**.
 5. En **Proyectado vs. real** vea las desviaciones por rubro, cuenta y mes. Un saldo negativo identifica exceso presupuestario.
-6. Apruebe el presupuesto para bloquear los valores proyectados (los gastos reales siguen registrándose).
+6. Envíe el presupuesto a aprobación y apruébelo para bloquear los valores proyectados (los gastos reales siguen registrándose). Después puede registrar otro presupuesto para nuevos rubros de la misma empresa y año.
 
 ### Columnas de Excel
 
@@ -136,3 +136,5 @@ expense_budget_control/
 ├── tests/                   # pruebas Odoo
 └── docs/plantilla_importacion.xlsx
 ```
+
+**Estados de presupuestos:** Borrador → Pendiente de aprobación → Aprobado. No hay estado Cerrado. Una vez aprobado un presupuesto, puede crearse otro para nuevos rubros de la misma empresa y año; no se admiten dos presupuestos en preparación a la vez para esa empresa y año ni la duplicación de cuenta/mes entre presupuestos. Al actualizar desde una versión anterior, los presupuestos cerrados se conservan como aprobados.

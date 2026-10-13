@@ -78,7 +78,7 @@ class ExpenseBudget(models.Model):
     currency_id = fields.Many2one('res.currency', related='company_id.currency_id', store=True)
     state = fields.Selection([
         ('draft', 'Borrador'), ('to_approve', 'Pendiente de aprobación'),
-        ('approved', 'Aprobado'), ('closed', 'Cerrado'),
+        ('approved', 'Aprobado'),
     ], default='draft', required=True, string='Estado')
     line_ids = fields.One2many('expense.budget.line', 'budget_id', string='Proyecciones mensuales')
     planned_amount = fields.Monetary(string='Total proyectado', compute='_compute_totals',
@@ -91,10 +91,8 @@ class ExpenseBudget(models.Model):
                                         store=True, digits=(16, 2))
     note = fields.Text(string='Observaciones')
 
-    _sql_constraints = [
-        ('year_company_unique', 'unique(company_id, year)',
-         'Ya existe un presupuesto anual para esta empresa y año.'),
-    ]
+    # Se permiten presupuestos por rubros distintos para la misma empresa y año,
+    # siempre que el anterior ya haya sido aprobado.
 
     @api.depends('line_ids.planned_amount', 'line_ids.actual_amount')
     def _compute_totals(self):
@@ -115,6 +113,22 @@ class ExpenseBudget(models.Model):
     def create(self, vals_list):
         if any(vals.get('state', 'draft') != 'draft' for vals in vals_list):
             raise UserError(_('Los presupuestos nuevos deben registrarse en borrador.'))
+        # No se inicia el siguiente rubro mientras exista un presupuesto de
+        # la empresa/año sin aprobar. Sí se admiten varios ya aprobados.
+        new_periods = set()
+        for vals in vals_list:
+            company_id = vals.get('company_id') or self.env.company.id
+            year = vals.get('year') or fields.Date.context_today(self).year
+            period = (company_id, year)
+            if period in new_periods or self.search_count([
+                ('company_id', '=', company_id), ('year', '=', year),
+                ('state', 'in', ('draft', 'to_approve')),
+            ]):
+                raise UserError(_(
+                    'Ya existe un presupuesto en borrador o pendiente de aprobación '
+                    'para esta empresa y año. Apruébelo antes de registrar otro rubro.'
+                ))
+            new_periods.add(period)
         return super().create(vals_list)
 
     def write(self, vals):
@@ -184,19 +198,19 @@ class ExpenseBudget(models.Model):
         # esta acción controlada eleva permisos para modificar el estado.
         self.sudo().write({'state': 'approved'})
 
-    def action_close(self):
-        if not (self.env.su or self.env.user.has_group(
-            'expense_budget_control.group_expense_budget_manager')):
-            raise AccessError(_('Solo el administrador puede cerrar presupuestos.'))
-        for rec in self:
-            if rec.state != 'approved':
-                raise UserError(_('Solo puede cerrar presupuestos aprobados.'))
-            rec.state = 'closed'
-
     def action_reopen(self):
         if not (self.env.su or self.env.user.has_group(
             'expense_budget_control.group_expense_budget_manager')):
             raise AccessError(_('Solo el administrador puede volver el presupuesto a borrador.'))
+        for rec in self:
+            if self.search_count([
+                ('id', '!=', rec.id), ('company_id', '=', rec.company_id.id),
+                ('year', '=', rec.year), ('state', 'in', ('draft', 'to_approve')),
+            ]):
+                raise UserError(_(
+                    'Existe otro presupuesto en preparación para esta empresa y año. '
+                    'No puede volver este presupuesto a borrador todavía.'
+                ))
         self.write({'state': 'draft'})
 
     def action_reconcile_expenses(self):
@@ -312,6 +326,25 @@ class ExpenseBudgetLine(models.Model):
             if rec.account_id.company_id != rec.budget_id.company_id:
                 raise ValidationError(_('La cuenta debe pertenecer a la empresa del presupuesto.'))
 
+    @api.constrains('budget_id', 'account_id', 'month')
+    def _check_unique_account_month_across_budgets(self):
+        # Una cuenta/mes no debe duplicarse en distintos presupuestos del
+        # mismo año, para no imputar un consumo en dos rubros diferentes.
+        for rec in self:
+            existing = self.sudo().search([
+                ('id', '!=', rec.id),
+                ('budget_id', '!=', rec.budget_id.id),
+                ('budget_id.company_id', '=', rec.budget_id.company_id.id),
+                ('budget_id.year', '=', rec.budget_id.year),
+                ('account_id', '=', rec.account_id.id),
+                ('month', '=', rec.month),
+            ], limit=1)
+            if existing:
+                raise ValidationError(_(
+                    'Esta cuenta ya está presupuestada para el mismo mes y año '
+                    'en otro presupuesto de la empresa.'
+                ))
+
     @api.model_create_multi
     def create(self, vals_list):
         budgets = self.env['expense.budget']
@@ -326,7 +359,7 @@ class ExpenseBudgetLine(models.Model):
     def write(self, vals):
         protected = {'account_id', 'budget_id', 'month', 'planned_amount'}
         if protected.intersection(vals) and any(rec.budget_id.state != 'draft' for rec in self):
-            raise UserError(_('No puede cambiar proyecciones de presupuestos aprobados o cerrados.'))
+            raise UserError(_('No puede cambiar proyecciones de presupuestos pendientes de aprobación o aprobados.'))
         if {'account_id', 'budget_id', 'month'}.intersection(vals) and any(rec.expense_ids for rec in self):
             raise UserError(_('No puede cambiar cuenta, mes o presupuesto de una línea con gastos reales. '
                               'Puede modificar el monto proyectado o volver a conciliar los movimientos.'))
