@@ -77,7 +77,8 @@ class ExpenseBudget(models.Model):
                                  default=lambda self: self.env.company, index=True)
     currency_id = fields.Many2one('res.currency', related='company_id.currency_id', store=True)
     state = fields.Selection([
-        ('draft', 'Borrador'), ('approved', 'Aprobado'), ('closed', 'Cerrado'),
+        ('draft', 'Borrador'), ('to_approve', 'Pendiente de aprobación'),
+        ('approved', 'Aprobado'), ('closed', 'Cerrado'),
     ], default='draft', required=True, string='Estado')
     line_ids = fields.One2many('expense.budget.line', 'budget_id', string='Proyecciones mensuales')
     planned_amount = fields.Monetary(string='Total proyectado', compute='_compute_totals',
@@ -127,12 +128,40 @@ class ExpenseBudget(models.Model):
         if not self.env.su and not self.env.user.has_group(
             'expense_budget_control.group_expense_budget_manager'):
             if vals and any(rec.state != 'draft' for rec in self):
-                raise UserError(_('Solo puede editar presupuestos en borrador.'))
+                # Permitir al registrador editar únicamente el consumo de líneas
+                # existentes, incluso si el presupuesto está enviado/aprobado.
+                commands = vals.get('line_ids', ()) if set(vals) == {'line_ids'} else ()
+                just_actual = bool(commands) and all(
+                    isinstance(command, (tuple, list)) and len(command) >= 3 and
+                    command[0] == 1 and isinstance(command[2], dict) and
+                    set(command[2]) == {'actual_amount'} and
+                    all(command[1] in rec.line_ids.ids for rec in self)
+                    for command in commands
+                )
+                if not (just_actual and self.env.user.has_group(
+                        'expense_budget_control.group_expense_budget_registrar')):
+                    raise UserError(_('Solo puede editar el consumido de presupuestos enviados o aprobados.'))
         if ('year' in vals or 'company_id' in vals) and any(
             rec.state != 'draft' or rec.line_ids for rec in self
         ):
             raise UserError(_('No puede cambiar el año o la empresa de un presupuesto con líneas o aprobado.'))
         return super().write(vals)
+
+    def action_submit(self):
+        """El registrador envía el borrador a revisión, sin poder aprobarlo."""
+        if not (self.env.su or self.env.user.has_group(
+                'expense_budget_control.group_expense_budget_registrar') or
+                self.env.user.has_group('expense_budget_control.group_expense_budget_manager')):
+            raise AccessError(_('Solo Registro de presupuestos o Administrador pueden enviar a aprobar.'))
+        self.check_access('write')
+        for rec in self:
+            if rec.state != 'draft':
+                raise UserError(_('Solo se pueden enviar a aprobación presupuestos en borrador.'))
+            if not rec.line_ids:
+                raise UserError(_('Debe cargar al menos una línea presupuestaria.'))
+        # Única elevación de privilegios: transición controlada de estado.
+        self.sudo().write({'state': 'to_approve'})
+        return True
 
     def action_approve(self):
         # Los botones no constituyen una barrera de seguridad: validar el grupo
@@ -145,8 +174,8 @@ class ExpenseBudget(models.Model):
             raise AccessError(_('Solo el aprobador o el administrador pueden aprobar presupuestos.'))
         self.check_access('read')  # Incluye las reglas multiempresa de Odoo 18.
         for rec in self:
-            if rec.state != 'draft':
-                raise UserError(_('Solo puede aprobar presupuestos en borrador.'))
+            if rec.state != 'to_approve':
+                raise UserError(_('Solo puede aprobar presupuestos enviados a aprobación.'))
             if not rec.line_ids:
                 raise UserError(_('Debe cargar al menos una línea presupuestaria.'))
             if not is_manager and rec.create_uid == self.env.user:
@@ -241,7 +270,12 @@ class ExpenseBudgetLine(models.Model):
     planned_amount = fields.Monetary(string='Proyectado', required=True, default=0,
                                      currency_field='currency_id')
     expense_ids = fields.One2many('expense.budget.expense', 'budget_line_id', string='Gastos reales')
+    # El ajuste manual conserva el cálculo automático de gastos Excel/API.
+    manual_actual_amount = fields.Monetary(
+        string='Ajuste manual del consumido', default=0.0,
+        currency_field='currency_id', copy=False)
     actual_amount = fields.Monetary(string='Consumido', compute='_compute_amounts',
+                                    inverse='_inverse_actual_amount',
                                     store=True, currency_field='currency_id')
     variance_amount = fields.Monetary(string='Disponible', compute='_compute_amounts',
                                       store=True, currency_field='currency_id')
@@ -255,13 +289,22 @@ class ExpenseBudgetLine(models.Model):
          'La proyección no puede ser negativa.'),
     ]
 
-    @api.depends('planned_amount', 'expense_ids.amount')
+    @api.depends('planned_amount', 'expense_ids.amount', 'manual_actual_amount')
     def _compute_amounts(self):
         for rec in self:
-            rec.actual_amount = sum(rec.expense_ids.mapped('amount'))
+            rec.actual_amount = sum(rec.expense_ids.mapped('amount')) + rec.manual_actual_amount
             rec.variance_amount = rec.planned_amount - rec.actual_amount
             rec.execution_percentage = (rec.actual_amount / rec.planned_amount * 100.0
                                         if rec.planned_amount else 0.0)
+
+    def _inverse_actual_amount(self):
+        """Guardar el consumo escrito a mano sin alterar gastos de API/Excel.
+
+        El importe visible es gastos vinculados + ajuste manual. Al escribir
+        un nuevo total, solo cambia el ajuste; el origen de los gastos se conserva.
+        """
+        for rec in self:
+            rec.manual_actual_amount = rec.actual_amount - sum(rec.expense_ids.mapped('amount'))
 
     @api.constrains('account_id', 'budget_id')
     def _check_account_company(self):

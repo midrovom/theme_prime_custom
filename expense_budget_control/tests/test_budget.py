@@ -66,6 +66,7 @@ class TestExpenseBudget(TransactionCase):
             'budget_id': self.budget.id, 'account_id': self.account.id,
             'month': '1', 'planned_amount': 500,
         })
+        self.budget.action_submit()
         self.budget.action_approve()
         with self.assertRaises(UserError):
             line.write({'planned_amount': 600})
@@ -194,6 +195,12 @@ class TestExpenseBudget(TransactionCase):
                 'company_id': self.company.id,
             })
 
+        with self.assertRaises(UserError):
+            budget.with_user(approver).action_approve()  # Aún no se envió.
+        budget.with_user(registrar).action_submit()
+        self.assertEqual(budget.state, 'to_approve')
+        with self.assertRaises(UserError):
+            line.with_user(registrar).write({'planned_amount': 700})
         budget.with_user(approver).action_approve()
         self.assertEqual(budget.state, 'approved')
         with self.assertRaises(UserError):
@@ -224,6 +231,7 @@ class TestExpenseBudget(TransactionCase):
             'budget_id': self.budget.id, 'account_id': self.account.id,
             'month': '10', 'planned_amount': 500,
         })
+        self.budget.action_submit()
         self.budget.action_approve()
         expense = self.env['expense.budget.expense'].with_user(registrar).create({
             'company_id': self.company.id, 'account_id': self.account.id,
@@ -241,3 +249,70 @@ class TestExpenseBudget(TransactionCase):
             expense.unlink()
         with self.assertRaises(AccessError):
             self.budget.with_user(registrar).action_approve()
+
+    def test_registrar_edits_monthly_consumed_and_submits_to_approver(self):
+        """Consumido editable y enviado a aprobación, sin tocar gastos API."""
+        base_group = self.env.ref('base.group_user')
+        registrar_group = self.env.ref('expense_budget_control.group_expense_budget_registrar')
+        approver_group = self.env.ref('expense_budget_control.group_expense_budget_approver')
+        Users = self.env['res.users'].with_context(no_reset_password=True)
+        registrar = Users.create({
+            'name': 'Registro consumido editable',
+            'login': 'test_budget_registro_manual_143',
+            'groups_id': [(6, 0, [base_group.id, registrar_group.id])],
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+        })
+        approver = Users.create({
+            'name': 'Aprobación presupuesto 143',
+            'login': 'test_budget_approver_143',
+            'groups_id': [(6, 0, [base_group.id, approver_group.id])],
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+        })
+        line = self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '3', 'planned_amount': 600,
+        })
+        # Consumo ingresado directamente por el registrador en la proyección.
+        line.with_user(registrar).write({'actual_amount': 150})
+        self.assertEqual(line.actual_amount, 150)
+        self.assertEqual(self.budget.actual_amount, 150)
+        self.assertEqual(line.variance_amount, 450)
+        self.assertEqual(line.execution_percentage, 25)
+
+        # Un movimiento de API sigue contabilizándose sin borrarse ni alterarse.
+        expense = self.env['expense.budget.expense'].create({
+            'company_id': self.company.id, 'account_id': self.account.id,
+            'date': '2026-03-10', 'description': 'API existente',
+            'amount': 40, 'source': 'api', 'source_key': 'api:143:check',
+        })
+        self.assertEqual(line.actual_amount, 190)
+        self.assertEqual(expense.amount, 40)
+        self.assertEqual(line.manual_actual_amount, 150)
+
+        self.budget.with_user(registrar).action_submit()
+        self.assertEqual(self.budget.state, 'to_approve')
+        with self.assertRaises(UserError):
+            self.budget.with_user(registrar).write({'name': 'No editable'})
+        with self.assertRaises(UserError):
+            self.budget.with_user(registrar).write({
+                'line_ids': [(1, line.id, {'planned_amount': 900})],
+            })
+        # Verifica la vía de guardado de la tabla One2many en el formulario.
+        self.budget.with_user(registrar).write({
+            'line_ids': [(1, line.id, {'actual_amount': 250})],
+        })
+        self.assertEqual(line.actual_amount, 250)
+        self.assertEqual(expense.amount, 40)
+        self.assertEqual(line.manual_actual_amount, 210)
+
+        with self.assertRaises(AccessError):
+            self.budget.with_user(registrar).action_approve()
+        self.budget.with_user(approver).action_approve()
+        self.assertEqual(self.budget.state, 'approved')
+        self.budget.with_user(registrar).write({
+            'line_ids': [(1, line.id, {'actual_amount': 280})],
+        })
+        self.assertEqual(line.actual_amount, 280)
+        self.assertEqual(self.budget.actual_amount, 280)
