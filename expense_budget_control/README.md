@@ -1,6 +1,6 @@
 # Control de Presupuesto de Gastos — Odoo 18
 
-Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.3.0`.
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.0`.
 
 ## Funciones
 
@@ -11,7 +11,7 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.3.0`.
 - Vistas tipo lista, gráfica de barras y tabla dinámica, con filtros por rubro, cuenta, mes y presupuesto.
 - **PDF anual imprimible** desde cada presupuesto, agrupado por rubro y cuenta, con columnas mensuales de presupuesto, gasto y ejecución %.
 - Registro de sincronizaciones, idempotencia por clave externa y reconciliación de gastos sin línea presupuestaria.
-- Roles de consulta y administrador; reglas de acceso multiempresa.
+- Roles de consulta, registro, aprobación y administrador; reglas de acceso multiempresa.
 
 ## Instalación
 
@@ -19,7 +19,9 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.3.0`.
 2. Confirme que su módulo personalizado se llama **exactamente `api_administrator`**. Debe instalarse y definir el modelo **`api.administrator`**, con método `call_api(api_name, method, company_id, ...)` y `button_run_sync` como en el código de referencia. La dependencia en el manifiesto ya apunta a `api_administrator`.
 3. Instale `openpyxl` en el **Python que ejecuta Odoo**: `pip install openpyxl`.
 4. Reinicie Odoo, actualice la lista de aplicaciones e instale **Control de Presupuesto de Gastos**.
-5. En Ajustes → Usuarios, asigne el grupo **Administrador de presupuestos** a los encargados de administrar gastos, y **Consulta de presupuestos** a los lectores. Para acceder a la configuración de `api.administrator` también necesitarán los permisos del módulo externo `api_administrator`.
+5. En Ajustes → Usuarios, asigne el rol adecuado: **Consulta de presupuestos** (solo lectura), **Registro de presupuestos** (crear y editar borradores, importar proyecciones), **Aprobador de presupuestos** (aprobar borradores sin editar valores) o **Administrador de presupuestos** (gestión completa, incluyendo API). Los permisos para gestionar `api.administrator` se configuran en el módulo externo `api_administrator`.
+
+**Flujo de aprobación:** el usuario de Registro guarda el presupuesto y sus líneas en estado **Borrador**. Otro usuario con rol Aprobador pulsa **Aprobar**; ese rol no puede registrar ni modificar importes. El Administrador puede registrar, aprobar, cerrar o reabrir presupuestos. Registro no puede aprobar, cerrar ni reabrir; el Aprobador tampoco puede cerrar ni reabrir. El importador Excel sigue disponible para el Administrador en sus tres modalidades; Registro únicamente puede importar **Proyecciones mensuales**, no modificar rubros, cuentas ni gastos.
 
 > **Compatibilidad:** código orientado a Odoo 18. Se comprobaron sintaxis y referencias estáticas, pero es obligatorio hacer una prueba de instalación en una base de datos Odoo 18 con la versión concreta de su módulo `api_administrator`. No se proporcionó el código completo ni las vistas originales de esa dependencia.
 

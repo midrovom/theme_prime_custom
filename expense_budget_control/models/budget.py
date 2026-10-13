@@ -110,7 +110,24 @@ class ExpenseBudget(models.Model):
             if not 2000 <= rec.year <= 2100:
                 raise ValidationError(_('El año debe estar entre 2000 y 2100.'))
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        if any(vals.get('state', 'draft') != 'draft' for vals in vals_list):
+            raise UserError(_('Los presupuestos nuevos deben registrarse en borrador.'))
+        return super().create(vals_list)
+
     def write(self, vals):
+        # El registrador puede editar el borrador, pero no cambiar su estado
+        # mediante escritura directa ni mediante llamadas RPC.
+        if 'state' in vals and not (
+            self.env.su or self.env.user.has_group(
+                'expense_budget_control.group_expense_budget_manager')
+        ):
+            raise AccessError(_('Solo el aprobador puede aprobar desde el botón correspondiente.'))
+        if not self.env.su and not self.env.user.has_group(
+            'expense_budget_control.group_expense_budget_manager'):
+            if vals and any(rec.state != 'draft' for rec in self):
+                raise UserError(_('Solo puede editar presupuestos en borrador.'))
         if ('year' in vals or 'company_id' in vals) and any(
             rec.state != 'draft' or rec.line_ids for rec in self
         ):
@@ -118,20 +135,39 @@ class ExpenseBudget(models.Model):
         return super().write(vals)
 
     def action_approve(self):
+        # Los botones no constituyen una barrera de seguridad: validar el grupo
+        # también en Python antes de elevar privilegios para el cambio de estado.
+        is_manager = self.env.su or self.env.user.has_group(
+            'expense_budget_control.group_expense_budget_manager')
+        is_approver = self.env.user.has_group(
+            'expense_budget_control.group_expense_budget_approver')
+        if not (is_manager or is_approver):
+            raise AccessError(_('Solo el aprobador o el administrador pueden aprobar presupuestos.'))
+        self.check_access('read')  # Incluye las reglas multiempresa de Odoo 18.
         for rec in self:
             if rec.state != 'draft':
                 raise UserError(_('Solo puede aprobar presupuestos en borrador.'))
             if not rec.line_ids:
                 raise UserError(_('Debe cargar al menos una línea presupuestaria.'))
-            rec.state = 'approved'
+            if not is_manager and rec.create_uid == self.env.user:
+                raise AccessError(_('No puede aprobar un presupuesto registrado por usted mismo.'))
+        # El aprobador no tiene permisos genéricos de escritura: únicamente
+        # esta acción controlada eleva permisos para modificar el estado.
+        self.sudo().write({'state': 'approved'})
 
     def action_close(self):
+        if not (self.env.su or self.env.user.has_group(
+            'expense_budget_control.group_expense_budget_manager')):
+            raise AccessError(_('Solo el administrador puede cerrar presupuestos.'))
         for rec in self:
             if rec.state != 'approved':
                 raise UserError(_('Solo puede cerrar presupuestos aprobados.'))
             rec.state = 'closed'
 
     def action_reopen(self):
+        if not (self.env.su or self.env.user.has_group(
+            'expense_budget_control.group_expense_budget_manager')):
+            raise AccessError(_('Solo el administrador puede volver el presupuesto a borrador.'))
         self.write({'state': 'draft'})
 
     def action_reconcile_expenses(self):
@@ -260,7 +296,7 @@ class ExpenseBudgetLine(models.Model):
             year, month = line.budget_id.year, int(line.month)
             start = date(year, month, 1)
             end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
-            Expense.search([
+            Expense.sudo().search([
                 ('company_id', '=', line.company_id.id),
                 ('account_id', '=', line.account_id.id),
                 ('date', '>=', fields.Date.to_string(start)),

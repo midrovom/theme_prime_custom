@@ -22,7 +22,9 @@ class ExpenseBudgetImportWizard(models.TransientModel):
         ('accounts', 'Cuentas y rubros'),
         ('projections', 'Proyecciones mensuales'),
         ('expenses', 'Gastos reales'),
-    ], string='Tipo de importación', required=True, default='accounts')
+    ], string='Tipo de importación', required=True,
+       default=lambda self: ('accounts' if self.env.su or self.env.user.has_group(
+           'expense_budget_control.group_expense_budget_manager') else 'projections'))
     company_id = fields.Many2one('res.company', string='Empresa', required=True,
                                  default=lambda self: self.env.company)
     budget_id = fields.Many2one('expense.budget', string='Presupuesto anual',
@@ -77,8 +79,14 @@ class ExpenseBudgetImportWizard(models.TransientModel):
 
     def action_import(self):
         self.ensure_one()
-        if not self.env.user.has_group('expense_budget_control.group_expense_budget_manager'):
-            raise AccessError(_('Solo un administrador de presupuestos puede importar.'))
+        is_manager = self.env.su or self.env.user.has_group(
+            'expense_budget_control.group_expense_budget_manager')
+        is_registrar = self.env.user.has_group(
+            'expense_budget_control.group_expense_budget_registrar')
+        if not is_manager and not (is_registrar and self.import_type == 'projections'):
+            raise AccessError(_(
+                'Solo el administrador puede importar cuentas y gastos. '
+                'El usuario de registro únicamente puede importar proyecciones mensuales.'))
         if self.company_id not in self.env.user.company_ids:
             raise AccessError(_('No tiene acceso a la empresa elegida.'))
         if self.import_type == 'projections':

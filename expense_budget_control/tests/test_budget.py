@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo.tests.common import TransactionCase, tagged
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 
 @tagged('post_install', '-at_install')
@@ -146,3 +146,65 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(result['annual_total']['execution'], 40)
         self.assertEqual(result['categories'][0]['annual']['execution'], 40)
         self.assertEqual(result['categories'][0]['accounts'][0]['annual']['execution'], 40)
+
+    def test_separated_registration_and_approval_roles(self):
+        base_group = self.env.ref('base.group_user')
+        registrar_group = self.env.ref('expense_budget_control.group_expense_budget_registrar')
+        approver_group = self.env.ref('expense_budget_control.group_expense_budget_approver')
+        Users = self.env['res.users'].with_context(no_reset_password=True)
+        registrar = Users.create({
+            'name': 'Registrador de prueba', 'login': 'test_expense_budget_registrar',
+            'groups_id': [(6, 0, [base_group.id, registrar_group.id])],
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+        })
+        approver = Users.create({
+            'name': 'Aprobador de prueba', 'login': 'test_expense_budget_approver',
+            'groups_id': [(6, 0, [base_group.id, approver_group.id])],
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+        })
+        budget = self.env['expense.budget'].with_user(registrar).create({
+            'name': 'Presupuesto para aprobar', 'year': 2029,
+            'company_id': self.company.id,
+        })
+        line = self.env['expense.budget.line'].with_user(registrar).create({
+            'budget_id': budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 500,
+        })
+        line.with_user(registrar).write({'planned_amount': 600})
+        self.assertEqual(line.planned_amount, 600)
+
+        with self.assertRaises(AccessError):
+            budget.with_user(registrar).action_approve()
+        with self.assertRaises(AccessError):
+            budget.with_user(registrar).write({'state': 'approved'})
+        with self.assertRaises(UserError):
+            self.env['expense.budget'].with_user(registrar).create({
+                'name': 'Alta directa aprobada', 'year': 2031,
+                'company_id': self.company.id, 'state': 'approved',
+            })
+        with self.assertRaises(AccessError):
+            budget.with_user(approver).write({'name': 'Alteración no permitida'})
+        with self.assertRaises(AccessError):
+            line.with_user(approver).write({'planned_amount': 800})
+        with self.assertRaises(AccessError):
+            budget.with_user(approver).create({
+                'name': 'No debe crear', 'year': 2030,
+                'company_id': self.company.id,
+            })
+
+        budget.with_user(approver).action_approve()
+        self.assertEqual(budget.state, 'approved')
+        with self.assertRaises(UserError):
+            line.with_user(registrar).write({'planned_amount': 700})
+        with self.assertRaises(AccessError):
+            budget.with_user(approver).action_reopen()
+        with self.assertRaises(AccessError):
+            budget.with_user(registrar).action_close()
+
+        wizard = self.env['expense.budget.import.wizard'].with_user(registrar).create({
+            'import_type': 'expenses', 'company_id': self.company.id,
+        })
+        with self.assertRaises(AccessError):
+            wizard.action_import()

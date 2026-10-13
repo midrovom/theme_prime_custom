@@ -96,7 +96,7 @@
             <form string="Presupuesto anual">
                 <header>
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary"
-                            invisible="state != 'draft'" groups="expense_budget_control.group_expense_budget_manager"/>
+                            invisible="state != 'draft'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_close" string="Cerrar" type="object"
                             invisible="state != 'approved'" groups="expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_reopen" string="Volver a borrador" type="object"
