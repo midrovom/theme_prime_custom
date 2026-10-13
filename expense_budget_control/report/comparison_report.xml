@@ -23,28 +23,41 @@
                     <div class="page expense-comparison-report">
                         <style type="text/css">
                             .expense-comparison-report { font-family: Arial, sans-serif; color: #233747; }
-                            .expense-comparison-report h2 { font-size: 21px; font-weight: bold; margin: 6px 0 12px; }
-                            .expense-comparison-report .meta { font-size: 12px; line-height: 1.5; margin-bottom: 14px; }
-                            .expense-comparison-report table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
-                            .expense-comparison-report th, .expense-comparison-report td {
-                                border: 1px solid #c4d0d9; padding: 9px 11px; vertical-align: middle;
+                            .expense-comparison-report h2 { font-size: 18px; font-weight: bold; margin: 5px 0 9px; }
+                            .expense-comparison-report .meta { font-size: 10px; line-height: 1.5; margin-bottom: 12px; }
+                            .expense-comparison-report table {
+                                width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px;
                             }
-                            .expense-comparison-report thead th { background: #24445c; color: white; text-align: left; }
+                            .expense-comparison-report th, .expense-comparison-report td {
+                                border-bottom: 1px solid #dde4e9; padding: 7px 5px;
+                                vertical-align: middle; word-wrap: break-word;
+                            }
+                            .expense-comparison-report thead th {
+                                background-color: #24445c; color: white; font-size: 8.8px;
+                                font-weight: bold; text-align: left; border-bottom: 1px solid #24445c;
+                            }
                             .expense-comparison-report td.amount, .expense-comparison-report th.amount {
                                 text-align: right; white-space: nowrap;
                             }
-                            .expense-comparison-report .category-row td { background: #dce8f0; font-weight: bold; }
-                            .expense-comparison-report .account-label { padding-left: 23px; }
-                            .expense-comparison-report .grand-total td {
-                                background: #cfdfeb; font-weight: bold; border-top: 2px solid #24445c;
+                            .expense-comparison-report .category-row td {
+                                background: #dbe9f2; font-weight: bold; border-top: 2px solid #899fac;
                             }
-                            .expense-comparison-report .sub-code { color: #657480; font-weight: normal; }
+                            .expense-comparison-report .account-row td {
+                                background: #edf4f8; font-weight: bold;
+                            }
+                            .expense-comparison-report .category-name { padding-left: 7px; }
+                            .expense-comparison-report .account-name { padding-left: 26px; }
+                            .expense-comparison-report .detail-row td { background: white; }
+                            .expense-comparison-report .detail-row:nth-child(even) td { background: #fafcfd; }
+                            .expense-comparison-report .grand-total td {
+                                background: #d1e0eb; font-weight: bold; border-top: 2px solid #24445c;
+                            }
+                            .expense-comparison-report .empty { padding: 18px; text-align: center; }
                             .expense-comparison-report tr { page-break-inside: avoid; }
                             .expense-comparison-report thead { display: table-header-group; }
-                            .expense-comparison-report .empty { padding: 18px; text-align: center; }
                             @media screen { .expense-comparison-report .table-scroll { overflow-x: auto; } }
                         </style>
-                        <h2>Proyectado vs. real — por rubro y cuenta controlada</h2>
+                        <h2>Proyectado vs. real</h2>
                         <div class="meta">
                             <strong>Empresa:</strong> <span t-esc="o.company_id.name"/>
                             <span> | </span><strong>Año:</strong> <span t-esc="o.year"/>
@@ -59,60 +72,77 @@
                         <div class="table-scroll">
                             <table>
                                 <colgroup>
-                                    <col style="width: 40%;"/>
-                                    <col style="width: 15%;"/>
-                                    <col style="width: 15%;"/>
-                                    <col style="width: 15%;"/>
-                                    <col style="width: 15%;"/>
+                                    <col style="width: 13%;"/>
+                                    <col style="width: 12%;"/>
+                                    <col style="width: 13%;"/>
+                                    <col style="width: 13%;"/>
+                                    <col style="width: 8%;"/>
+                                    <col style="width: 10%;"/>
+                                    <col style="width: 10%;"/>
+                                    <col style="width: 10%;"/>
+                                    <col style="width: 11%;"/>
                                 </colgroup>
                                 <thead>
                                     <tr>
-                                        <th>Rubro / Cuenta controlada</th>
+                                        <th>Presupuesto</th>
+                                        <th>Empresa</th>
+                                        <th>Cuenta controlada</th>
+                                        <th>Rubro</th>
+                                        <th>Mes</th>
                                         <th class="amount">Proyectado</th>
-                                        <th class="amount">Gasto real</th>
+                                        <th class="amount">Consumido</th>
                                         <th class="amount">Disponible</th>
                                         <th class="amount">Ejecución (%)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <t t-if="not data['categories']">
-                                        <tr><td colspan="5" class="empty">No existen proyecciones visibles para los filtros seleccionados.</td></tr>
+                                        <tr><td colspan="9" class="empty">No existen proyecciones visibles para los filtros seleccionados.</td></tr>
                                     </t>
                                     <t t-foreach="data['categories']" t-as="group">
                                         <tr class="category-row">
-                                            <td>
+                                            <td colspan="5" class="category-name">
                                                 <span t-esc="group['category'].name"/>
-                                                <t t-if="group['category'].code">
-                                                    <span class="sub-code"> (<span t-esc="group['category'].code"/>)</span>
-                                                </t>
+                                                <span> (</span><span t-esc="group['line_count']"/><span>)</span>
                                             </td>
                                             <td class="amount" t-esc="'{:,.2f}'.format(group['total']['planned'])"/>
                                             <td class="amount" t-esc="'{:,.2f}'.format(group['total']['actual'])"/>
                                             <td class="amount" t-esc="'{:,.2f}'.format(group['total']['available'])"/>
-                                            <td class="amount" t-esc="'{:.2f}%'.format(group['total']['execution'])"/>
+                                            <td class="amount" t-esc="'{:.2f}'.format(group['total']['execution'])"/>
                                         </tr>
                                         <t t-foreach="group['accounts']" t-as="account">
-                                            <tr>
-                                                <td class="account-label">
+                                            <tr class="account-row">
+                                                <td colspan="5" class="account-name">
                                                     <span t-esc="account['account'].name"/>
-                                                    <t t-if="account['account'].code">
-                                                        <span class="sub-code"> (<span t-esc="account['account'].code"/>)</span>
-                                                    </t>
+                                                    <span> (</span><span t-esc="account['line_count']"/><span>)</span>
                                                 </td>
                                                 <td class="amount" t-esc="'{:,.2f}'.format(account['total']['planned'])"/>
                                                 <td class="amount" t-esc="'{:,.2f}'.format(account['total']['actual'])"/>
                                                 <td class="amount" t-esc="'{:,.2f}'.format(account['total']['available'])"/>
-                                                <td class="amount" t-esc="'{:.2f}%'.format(account['total']['execution'])"/>
+                                                <td class="amount" t-esc="'{:.2f}'.format(account['total']['execution'])"/>
                                             </tr>
+                                            <t t-foreach="account['lines']" t-as="detail">
+                                                <tr class="detail-row">
+                                                    <td t-esc="detail['line'].budget_id.name"/>
+                                                    <td t-esc="detail['line'].company_id.name"/>
+                                                    <td t-esc="detail['line'].account_id.name"/>
+                                                    <td t-esc="detail['line'].category_id.name"/>
+                                                    <td t-esc="detail['month_name']"/>
+                                                    <td class="amount" t-esc="'{:,.2f}'.format(detail['line'].planned_amount)"/>
+                                                    <td class="amount" t-esc="'{:,.2f}'.format(detail['line'].actual_amount)"/>
+                                                    <td class="amount" t-esc="'{:,.2f}'.format(detail['line'].variance_amount)"/>
+                                                    <td class="amount" t-esc="'{:.2f}'.format(detail['line'].execution_percentage)"/>
+                                                </tr>
+                                            </t>
                                         </t>
                                     </t>
                                     <t t-if="data['categories']">
                                         <tr class="grand-total">
-                                            <td>TOTAL GENERAL</td>
+                                            <td colspan="5">TOTAL GENERAL</td>
                                             <td class="amount" t-esc="'{:,.2f}'.format(data['grand_total']['planned'])"/>
                                             <td class="amount" t-esc="'{:,.2f}'.format(data['grand_total']['actual'])"/>
                                             <td class="amount" t-esc="'{:,.2f}'.format(data['grand_total']['available'])"/>
-                                            <td class="amount" t-esc="'{:.2f}%'.format(data['grand_total']['execution'])"/>
+                                            <td class="amount" t-esc="'{:.2f}'.format(data['grand_total']['execution'])"/>
                                         </tr>
                                     </t>
                                 </tbody>

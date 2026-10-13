@@ -497,6 +497,22 @@ class TestExpenseBudget(TransactionCase):
         prepared = report._get_report_values([wizard.id])['reports'][0]
         self.assertEqual(len(prepared['categories']), 1)
         self.assertEqual(len(prepared['categories'][0]['accounts']), 2)
+        # Debajo de cada cuenta debe imprimirse la línea individual,
+        # con presupuesto, empresa, rubro, mes y sus cuatro indicadores.
+        group = prepared['categories'][0]
+        self.assertEqual(group['line_count'], 2)
+        self.assertEqual(sum(acc['line_count'] for acc in group['accounts']), 2)
+        self.assertEqual(sum(len(acc['lines']) for acc in group['accounts']), 2)
+        self.assertEqual(
+            sorted(detail['month_name'] for acc in group['accounts'] for detail in acc['lines']),
+            ['Enero', 'Febrero'],
+        )
+        for acc in group['accounts']:
+            detail = acc['lines'][0]
+            self.assertEqual(detail['line'].budget_id, self.budget)
+            self.assertEqual(detail['line'].company_id, self.company)
+            self.assertEqual(detail['line'].category_id, self.category)
+            self.assertEqual(detail['line'].account_id, acc['account'])
         self.assertEqual(prepared['grand_total']['planned'], 400)
         self.assertEqual(prepared['grand_total']['actual'], 125)
         self.assertEqual(prepared['grand_total']['available'], 275)

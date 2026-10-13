@@ -46,6 +46,7 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         lines = self.env['expense.budget.line'].search(domain)
         category_map = {}
         grand_total = self._empty_totals()
+        month_labels = dict(self.env['expense.budget.line']._fields['month'].selection)
         for line in lines:
             category = line.category_id
             account = line.account_id
@@ -53,15 +54,25 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
                 category_map[category.id] = {
                     'category': category,
                     'accounts_map': {},
+                    'line_count': 0,
                     'total': self._empty_totals(),
                 }
             group = category_map[category.id]
             if account.id not in group['accounts_map']:
                 group['accounts_map'][account.id] = {
                     'account': account,
+                    'lines': [],
+                    'line_count': 0,
                     'total': self._empty_totals(),
                 }
-            self._add_line(group['accounts_map'][account.id]['total'], line)
+            account_group = group['accounts_map'][account.id]
+            account_group['lines'].append({
+                'line': line,
+                'month_name': month_labels.get(line.month, line.month),
+            })
+            account_group['line_count'] += 1
+            group['line_count'] += 1
+            self._add_line(account_group['total'], line)
 
         categories = []
         for group in sorted(category_map.values(), key=lambda item: (
@@ -69,6 +80,12 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             group['accounts'] = sorted(group.pop('accounts_map').values(), key=lambda item: (
                 item['account'].code or '', item['account'].name or '', item['account'].id))
             for account in group['accounts']:
+                # Mostrar las líneas del comparativo dentro de su cuenta, por mes.
+                account['lines'].sort(key=lambda item: (
+                    int(item['line'].month),
+                    item['line'].budget_id.name or '',
+                    item['line'].id,
+                ))
                 self._add_totals(group['total'], account['total'])
             self._add_totals(grand_total, group['total'])
             categories.append(group)
