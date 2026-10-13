@@ -82,14 +82,14 @@
                                         <t t-foreach="report_data['months']" t-as="month">
                                             <th colspan="3" class="month-header" t-esc="month['name']"/>
                                         </t>
-                                        <th rowspan="2">Ejecución anual (%)</th>
+                                        <th rowspan="2">Disponible anual</th>
                                     </tr>
                                     <tr>
                                         <t t-foreach="report_data['months']" t-as="month">
                                             <th>Presupuesto</th>
                                             <th>Gasto</th>
-                                            <!-- Sin título: ejecución porcentual mensual. -->
-                                            <th title="Ejecución (%)"/>
+                                            <!-- Sin título: saldo disponible mensual. -->
+                                            <th title="Disponible"/>
                                         </t>
                                     </tr>
                                 </thead>
@@ -113,12 +113,12 @@
                                                     <t t-if="cell['has_line']"><span t-esc="'{:,.2f}'.format(cell['actual'])"/></t>
                                                     <t t-else="">—</t>
                                                 </td>
-                                                <td class="execution" t-att-style="'color: #aa2222;' if cell['execution'] &gt; 100 else ''">
-                                                    <t t-if="cell['has_line']"><span t-esc="'{:,.2f}%'.format(cell['execution'])"/></t>
+                                                <td class="number">
+                                                    <t t-if="cell['has_line']"><span t-esc="'{:,.2f}'.format(cell['available'])"/></t>
                                                     <t t-else="">—</t>
                                                 </td>
                                             </t>
-                                            <td class="execution" t-att-style="'color: #aa2222;' if group['annual']['execution'] &gt; 100 else ''" t-esc="'{:,.2f}%'.format(group['annual']['execution'])"/>
+                                            <td class="number" t-esc="'{:,.2f}'.format(group['annual']['available'])"/>
                                         </tr>
                                         <t t-foreach="group['accounts']" t-as="account_data">
                                             <tr>
@@ -136,12 +136,12 @@
                                                         <t t-if="cell['has_line']"><span t-esc="'{:,.2f}'.format(cell['actual'])"/></t>
                                                         <t t-else="">—</t>
                                                     </td>
-                                                    <td class="execution" t-att-style="'color: #aa2222; font-weight: bold;' if cell['execution'] &gt; 100 else ''">
-                                                        <t t-if="cell['has_line']"><span t-esc="'{:,.2f}%'.format(cell['execution'])"/></t>
+                                                    <td class="number">
+                                                        <t t-if="cell['has_line']"><span t-esc="'{:,.2f}'.format(cell['available'])"/></t>
                                                         <t t-else="">—</t>
                                                     </td>
                                                 </t>
-                                                <td class="execution" t-att-style="'color: #aa2222; font-weight: bold;' if account_data['annual']['execution'] &gt; 100 else ''" t-esc="'{:,.2f}%'.format(account_data['annual']['execution'])"/>
+                                                <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['available'])"/>
                                             </tr>
                                         </t>
                                     </tbody>
@@ -153,17 +153,16 @@
                                             <t t-set="cell" t-value="report_data['totals'][month['number']]"/>
                                             <td class="number" t-esc="'{:,.2f}'.format(cell['planned'])"/>
                                             <td class="number" t-esc="'{:,.2f}'.format(cell['actual'])"/>
-                                            <td class="execution" t-att-style="'color: #aa2222;' if cell['execution'] &gt; 100 else ''" t-esc="'{:,.2f}%'.format(cell['execution'])"/>
+                                            <td class="number" t-esc="'{:,.2f}'.format(cell['available'])"/>
                                         </t>
-                                        <td class="execution" t-att-style="'color: #aa2222;' if report_data['annual_total']['execution'] &gt; 100 else ''" t-esc="'{:,.2f}%'.format(report_data['annual_total']['execution'])"/>
+                                        <td class="number" t-esc="'{:,.2f}'.format(report_data['annual_total']['available'])"/>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         <div class="report-note">
-                            La columna sin título muestra el porcentaje de <strong>ejecución</strong>
-                            (Gasto / Presupuesto × 100); no representa el saldo restante.
-                            El porcentaje anual se calcula como gasto total del año / presupuesto total del año × 100.
+                            La columna sin título muestra el <strong>disponible</strong> (Presupuesto - Gasto).
+                            La columna final muestra el disponible acumulado del año.
                             Los guiones indican meses sin proyección cargada para la cuenta.
                         </div>
                     </div>

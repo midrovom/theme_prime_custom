@@ -16,7 +16,7 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
 
     @staticmethod
     def _empty_month():
-        return {'planned': 0.0, 'actual': 0.0, 'execution': 0.0, 'has_line': False}
+        return {'planned': 0.0, 'actual': 0.0, 'available': 0.0, 'execution': 0.0, 'has_line': False}
 
     @classmethod
     def _empty_year(cls):
@@ -30,6 +30,7 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
     def _add_amounts(cls, target, source):
         target['planned'] += source['planned']
         target['actual'] += source['actual']
+        target['available'] += source['available']
         target['has_line'] = target['has_line'] or source['has_line']
         target['execution'] = cls._percentage(target['planned'], target['actual'])
 
@@ -70,6 +71,7 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
             month = group['accounts_by_id'][account.id]['months'][line.month]
             month['planned'] += line.planned_amount
             month['actual'] += line.actual_amount
+            month['available'] += line.variance_amount
             month['execution'] = line.execution_percentage
             month['has_line'] = True
 
