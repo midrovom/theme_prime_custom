@@ -2,12 +2,12 @@
 <odoo>
     <!-- Mantener XML ID original: actualizar el formato sin desregistrar reportes existentes. -->
     <record id="paperformat_expense_budget_a4_landscape" model="report.paperformat">
-        <field name="name">Presupuesto anual - 12 meses (formato panorámico ampliado)</field>
+        <field name="name">Presupuesto anual - 12 meses (panorámico 1100 x 280 mm)</field>
         <field name="default" eval="False"/>
         <field name="format">custom</field>
         <field name="orientation">Landscape</field>
-        <field name="page_height">285</field>
-        <field name="page_width">1100</field>
+        <field name="page_height">1100</field>
+        <field name="page_width">280</field>
         <field name="margin_top">57</field>
         <field name="margin_bottom">17</field>
         <field name="margin_left">8</field>
@@ -32,11 +32,15 @@
                             .expense-budget-annual-report .report-table th,
                             .expense-budget-annual-report .report-table td { border: 1px solid #cad2db; padding: 9px 4px; vertical-align: middle; }
                             .expense-budget-annual-report .report-table thead th { background: #24445c; color: white; text-align: center; font-weight: bold; }
-                            .expense-budget-annual-report .report-table thead tr:nth-child(2) th { font-size: 13px; line-height: 1.3; overflow-wrap: anywhere; word-wrap: break-word; }
+                            .expense-budget-annual-report .report-table thead tr:nth-child(2) th { font-size: 13px; line-height: 1.3; white-space: nowrap; word-break: normal; overflow-wrap: normal; }
                             .expense-budget-annual-report .report-table thead .month-header { background: #2f5877; font-size: 17px; padding-top: 12px; padding-bottom: 12px; }
                             .expense-budget-annual-report .report-table .category-row td { background: #dce8f0; font-weight: bold; }
                             .expense-budget-annual-report .report-table .account-name { padding-left: 18px; }
                             .expense-budget-annual-report .report-table .number { text-align: right; white-space: nowrap; }
+                            /* Cada bloque mensual inicia tras un divisor más visible. */
+                            .expense-budget-annual-report .report-table tbody td:nth-child(3n + 2) { border-left: 2px solid #8ea7b9; }
+                            .expense-budget-annual-report .report-table .number,
+                            .expense-budget-annual-report .report-table .execution { font-size: 14px; }
                             .expense-budget-annual-report .report-table .execution { text-align: right; white-space: nowrap; }
                             .expense-budget-annual-report .report-table .total-row td { background: #d7e5ef; font-weight: bold; border-top: 2px solid #24445c; }
                             .expense-budget-annual-report .report-table .category-code { font-size: 13px; color: #657480; font-weight: normal; }
