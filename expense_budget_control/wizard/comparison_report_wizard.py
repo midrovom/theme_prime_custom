@@ -18,11 +18,11 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
         default=lambda self: fields.Date.context_today(self).year,
     )
     category_id = fields.Many2one(
-        'expense.budget.category', string='Rubro (opcional)',
+        'expense.budget.category', string='Rubro',
         domain="[('company_id', '=', company_id)]",
     )
     account_id = fields.Many2one(
-        'expense.budget.account', string='Cuenta controlada (opcional)',
+        'expense.budget.account', string='Cuenta controlada',
         domain="[('company_id', '=', company_id)]",
     )
 
