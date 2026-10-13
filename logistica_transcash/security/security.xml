@@ -13,6 +13,15 @@
         <field name="category_id" ref="module_category_transcash"/>
         <field name="implied_ids" eval="[(4, ref('group_logistica_bodega'))]"/>
     </record>
+    <!-- Perfil declarativo chofer: se agrega AL usuario tipo Portal. No concede
+         usuario interno ni acceso directo a los modelos logísticos. Los permisos
+         de captura se verifican en los controladores por guía asignada. -->
+    <record id="group_transcash_chofer" model="res.groups">
+        <field name="name">Chofer - WebApp móvil</field>
+        <field name="category_id" ref="module_category_transcash"/>
+        <field name="share" eval="True"/>
+        <field name="comment">Perfil chofer: debe ser usuario Portal, estar asignado en Usuario chofer de la guía y acceder a /transcash/guias. No otorga acceso al backend.</field>
+    </record>
     <!-- Los roles funcionales NO implican entre sí permisos de escritura. -->
     <record id="group_transcash_consulta" model="res.groups">
       <field name="name">Consulta de guías (base)</field>

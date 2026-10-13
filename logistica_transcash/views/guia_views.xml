@@ -214,7 +214,17 @@
     <field name="state">code</field>
     <field name="code">action = env['transcash.guia'].action_sync_now()</field>
   </record>
+  <!-- Navegación al portal responsive que se instala como PWA; la ruta
+       también es válida para usuarios Portal desde el navegador del teléfono. -->
+  <record id="action_transcash_mobile" model="ir.actions.act_url">
+    <field name="name">Abrir WebApp móvil Transcash</field>
+    <field name="url">/transcash/guias</field>
+    <field name="target">new</field>
+  </record>
   <menuitem id="menu_transcash_root" name="Logística Transcash" sequence="35"
+            groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_consulta"/>
+  <menuitem id="menu_transcash_mobile" name="Abrir WebApp móvil" parent="menu_transcash_root"
+            action="action_transcash_mobile" sequence="5"
             groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_consulta"/>
   <menuitem id="menu_transcash_guias" name="Todas las guías" parent="menu_transcash_root"
             action="action_transcash_guia" sequence="10"/>
