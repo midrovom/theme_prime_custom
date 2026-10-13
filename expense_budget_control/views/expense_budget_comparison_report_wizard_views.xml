@@ -4,7 +4,7 @@
         <field name="name">expense.budget.comparison.report.wizard.form</field>
         <field name="model">expense.budget.comparison.report.wizard</field>
         <field name="arch" type="xml">
-            <form string="Proyectado vs. real">
+            <form string="Reporte PDF">
                 <group>
                     <field name="company_id" options="{'no_create': True}"/>
                     <field name="year"/>
@@ -20,7 +20,7 @@
         </field>
     </record>
     <record id="action_expense_budget_comparison_report_wizard" model="ir.actions.act_window">
-        <field name="name">Proyectado vs. real</field>
+        <field name="name">Reporte PDF</field>
         <field name="res_model">expense.budget.comparison.report.wizard</field>
         <field name="view_mode">form</field>
         <field name="view_id" ref="view_expense_budget_comparison_report_wizard_form"/>
