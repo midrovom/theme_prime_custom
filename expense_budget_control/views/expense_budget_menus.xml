@@ -1,26 +1,47 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <odoo>
-    <menuitem id="menu_expense_budget_root" name="Control de Gastos" sequence="45"
-              groups="expense_budget_control.group_expense_budget_user"/>
-    <menuitem id="menu_expense_budget_budget" name="Presupuestos" parent="menu_expense_budget_root"
-              action="action_expense_budget" sequence="10"/>
-    <menuitem id="menu_expense_budget_comparison" name="Proyectado vs. real" parent="menu_expense_budget_root"
-              action="action_expense_budget_comparison" sequence="20"/>
-    <menuitem id="menu_expense_budget_expense" name="Gastos reales" parent="menu_expense_budget_root"
-              action="action_expense_budget_expense" sequence="30"/>
-    <menuitem id="menu_expense_budget_config" name="Configuración" parent="menu_expense_budget_root"
-              sequence="40"/>
-    <menuitem id="menu_expense_budget_category" name="Rubros" parent="menu_expense_budget_config"
-              action="action_expense_budget_category" sequence="10"/>
-    <menuitem id="menu_expense_budget_account" name="Cuentas controladas" parent="menu_expense_budget_config"
-              action="action_expense_budget_account" sequence="20"/>
-    <menuitem id="menu_expense_budget_import" name="Importar Excel/CSV" parent="menu_expense_budget_root"
-              action="action_expense_budget_import" sequence="50"
-              groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
-    <menuitem id="menu_expense_budget_api" name="Configuración API de gastos" parent="menu_expense_budget_config"
-              action="action_expense_budget_api_administrator" sequence="30"
-              groups="expense_budget_control.group_expense_budget_manager"/>
-    <menuitem id="menu_expense_budget_sync_log" name="Historial API" parent="menu_expense_budget_config"
-              action="action_expense_budget_sync_log" sequence="40"
-              groups="expense_budget_control.group_expense_budget_manager"/>
+    <menuitem id="menu_expense_budget_root" name="Control de Gastos" sequence="45"/>
+    <menuitem id="menu_expense_budget_budget" name="Presupuestos" parent="menu_expense_budget_root" action="action_expense_budget" sequence="10"/>
+    <menuitem id="menu_expense_budget_approval" name="Aprobación de presupuestos" parent="menu_expense_budget_root" action="action_expense_budget_approval" sequence="15"/>
+    <menuitem id="menu_expense_budget_comparison" name="Proyectado vs. real" parent="menu_expense_budget_root" action="action_expense_budget_comparison" sequence="20"/>
+    <menuitem id="menu_expense_budget_expense" name="Gastos reales" parent="menu_expense_budget_root" action="action_expense_budget_expense" sequence="30"/>
+    <menuitem id="menu_expense_budget_config" name="Configuración" parent="menu_expense_budget_root" sequence="40"/>
+    <menuitem id="menu_expense_budget_category" name="Rubros" parent="menu_expense_budget_config" action="action_expense_budget_category" sequence="10"/>
+    <menuitem id="menu_expense_budget_account" name="Cuentas controladas" parent="menu_expense_budget_config" action="action_expense_budget_account" sequence="20"/>
+    <menuitem id="menu_expense_budget_import" name="Importar Excel/CSV" parent="menu_expense_budget_root" action="action_expense_budget_import" sequence="50"/>
+    <menuitem id="menu_expense_budget_api" name="Configuración API de gastos" parent="menu_expense_budget_config" action="action_expense_budget_api_administrator" sequence="30"/>
+    <menuitem id="menu_expense_budget_sync_log" name="Historial API" parent="menu_expense_budget_config" action="action_expense_budget_sync_log" sequence="40"/>
+    <record id="menu_expense_budget_root" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_user'), ref('expense_budget_control.group_expense_budget_registrar'), ref('expense_budget_control.group_expense_budget_approver'), ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
+    <record id="menu_expense_budget_budget" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_user'), ref('expense_budget_control.group_expense_budget_registrar'), ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
+    <record id="menu_expense_budget_approval" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_approver'), ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
+    <record id="menu_expense_budget_comparison" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_user'), ref('expense_budget_control.group_expense_budget_approver'), ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
+    <record id="menu_expense_budget_expense" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_user'), ref('expense_budget_control.group_expense_budget_approver'), ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
+    <record id="menu_expense_budget_config" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
+    <record id="menu_expense_budget_category" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
+    <record id="menu_expense_budget_account" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
+    <record id="menu_expense_budget_import" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_registrar'), ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
+    <record id="menu_expense_budget_api" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
+    <record id="menu_expense_budget_sync_log" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
 </odoo>

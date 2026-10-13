@@ -138,3 +138,13 @@ expense_budget_control/
 ```
 
 **Estados de presupuestos:** Borrador → Pendiente de aprobación → Aprobado. No hay estado Cerrado. Una vez aprobado un presupuesto, puede crearse otro para nuevos rubros de la misma empresa y año; no se admiten dos presupuestos en preparación a la vez para esa empresa y año ni la duplicación de cuenta/mes entre presupuestos. Al actualizar desde una versión anterior, los presupuestos cerrados se conservan como aprobados.
+
+## Navegación por roles (v1.4.5)
+
+- **Consulta:** Presupuestos, Proyectado vs. real y Gastos reales (solo lectura).
+- **Registro de presupuestos:** exclusivamente los menús **Presupuestos** e **Importar Excel/CSV**. Conserva la edición de consumido en proyecciones, el envío a aprobar y Sincronizar API desde los presupuestos.
+- **Aprobador de presupuestos:** **Aprobación de presupuestos** (solo los pendientes), **Proyectado vs. real** y **Gastos reales** (lectura).
+- **Administrador de presupuestos:** todos los menús, incluyendo Presupuestos, Aprobación, Proyectado vs. real, Gastos reales, Configuración e Importar Excel/CSV.
+
+La visibilidad de menús no cambia el cálculo presupuestario ni la API. Al actualizar desde versiones anteriores se limpia la pertenencia heredada al grupo Consulta para usuarios de Registro, Aprobador o Administrador; el acceso de lectura continúa gracias a un grupo técnico interno.
+

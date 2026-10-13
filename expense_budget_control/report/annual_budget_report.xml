@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <odoo>
     <!-- Mantener XML ID original: actualizar el formato sin desregistrar reportes existentes. -->
     <record id="paperformat_expense_budget_a4_landscape" model="report.paperformat">
@@ -173,7 +173,7 @@
         <field name="paperformat_id" ref="paperformat_expense_budget_a4_landscape"/>
         <field name="binding_model_id" ref="model_expense_budget"/>
         <field name="binding_type">report</field>
-        <field name="groups_id" eval="[(4, ref('expense_budget_control.group_expense_budget_user'))]"/>
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_read')])]"/>
         <field name="print_report_name">'Presupuesto_%s_%s' % (object.year, object.company_id.name.replace(' ', '_'))</field>
     </record>
 </odoo>

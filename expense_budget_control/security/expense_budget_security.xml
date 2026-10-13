@@ -1,30 +1,34 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <odoo>
     <record id="module_category_expense_budget" model="ir.module.category">
         <field name="name">Control de presupuestos de gastos</field>
         <field name="description">Acceso al presupuesto de gastos</field>
         <field name="sequence">42</field>
     </record>
+    <record id="group_expense_budget_read" model="res.groups">
+        <field name="name">Lectura interna de presupuestos</field>
+        <field name="category_id" ref="base.module_category_hidden"/>
+    </record>
     <record id="group_expense_budget_user" model="res.groups">
         <field name="name">Consulta de presupuestos</field>
         <field name="category_id" ref="module_category_expense_budget"/>
+        <field name="implied_ids" eval="[(6, 0, [ref('group_expense_budget_read')])]"/>
     </record>
     <record id="group_expense_budget_registrar" model="res.groups">
         <field name="name">Registro de presupuestos</field>
         <field name="category_id" ref="module_category_expense_budget"/>
-        <field name="implied_ids" eval="[(4, ref('group_expense_budget_user'))]"/>
+        <field name="implied_ids" eval="[(6, 0, [ref('group_expense_budget_read')])]"/>
     </record>
     <record id="group_expense_budget_approver" model="res.groups">
         <field name="name">Aprobador de presupuestos</field>
         <field name="category_id" ref="module_category_expense_budget"/>
-        <field name="implied_ids" eval="[(4, ref('group_expense_budget_user'))]"/>
+        <field name="implied_ids" eval="[(6, 0, [ref('group_expense_budget_read')])]"/>
     </record>
     <record id="group_expense_budget_manager" model="res.groups">
         <field name="name">Administrador de presupuestos</field>
         <field name="category_id" ref="module_category_expense_budget"/>
-        <field name="implied_ids" eval="[(4, ref('group_expense_budget_user'))]"/>
+        <field name="implied_ids" eval="[(6, 0, [ref('group_expense_budget_read')])]"/>
     </record>
-
     <record id="category_company_rule" model="ir.rule">
         <field name="name">Rubros: empresas autorizadas</field>
         <field name="model_id" ref="model_expense_budget_category"/>
