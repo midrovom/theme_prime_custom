@@ -1,0 +1,19 @@
+<odoo>
+  <record id="view_transcash_liquidacion_wizard_form" model="ir.ui.view">
+    <field name="name">transcash.liquidacion.wizard.form</field>
+    <field name="model">transcash.liquidacion.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Configurar liquidación">
+        <group>
+          <field name="guia_id" readonly="1"/>
+          <field name="cuenta_gasto_id"/>
+          <field name="valor_acordado"/>
+        </group>
+        <footer>
+          <button name="action_confirm" type="object" string="Guardar condiciones" class="btn-primary"/>
+          <button special="cancel" string="Cancelar"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+</odoo>

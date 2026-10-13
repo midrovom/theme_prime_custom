@@ -1,173 +1,349 @@
 <odoo>
-  <template id="portal_guias" name="Transcash: Mis guías">
-    <t t-call="portal.portal_layout">
-      <div class="container my-4">
-        <h2>Mis guías de transporte</h2>
-        <p class="text-muted">Se muestran únicamente las guías en las que consta como chofer o destinatario.</p>
-        <div class="table-responsive">
-          <table class="table table-striped table-hover align-middle">
-            <thead><tr><th>Guía</th><th>Estado</th><th>Ruta</th><th>Chofer</th><th>Incidencia</th></tr></thead>
-            <tbody>
-              <t t-foreach="guias" t-as="g">
-                <tr>
-                  <td><a t-att-href="'/transcash/guias/%d' % g.id"><strong t-esc="g.name"/></a></td>
-                  <td><span class="badge bg-secondary" t-esc="dict(g._fields['state'].selection).get(g.state)"/></td>
-                  <td><span t-esc="g.origen or '-'"/> → <span t-esc="g.destino or '-'"/></td>
-                  <td t-esc="g.chofer_usuario_id.name or '-'"/>
-                  <td><span t-if="g.incidencia_estado == 'abierta'" class="badge bg-danger">Abierta</span><span t-else="" t-esc="g.incidencia_estado"/></td>
-                </tr>
-              </t>
-              <tr t-if="not guias"><td colspan="5" class="text-muted">No tiene guías asignadas.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </t>
+  <template id="mobile_head" name="Transcash Mobile Head">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <meta name="theme-color" content="#111f35"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+    <link rel="manifest" href="/transcash/manifest.webmanifest"/>
+    <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=3"/>
+    <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
+    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=4"/>
   </template>
 
-  <template id="portal_guia_detalle" name="Transcash: Detalle de guía">
-    <t t-call="portal.portal_layout">
-      <div class="container my-4">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-          <h2 class="m-0">Guía <span t-esc="guia.name"/></h2>
-          <a href="/transcash/guias" class="btn btn-outline-secondary">Volver a mis guías</a>
-        </div>
-        <div t-if="error" class="alert alert-danger" role="alert"><span t-esc="error"/></div>
-        <div t-if="request.params.get('ok')" class="alert alert-success">Acción registrada correctamente.</div>
-        <div class="row g-3 mb-4">
-          <div class="col-md-6">
-            <div class="card h-100"><div class="card-body">
-              <h5>Ruta y estado</h5>
-              <p><strong>Estado:</strong> <span t-esc="dict(guia._fields['state'].selection).get(guia.state)"/></p>
-              <p><strong>Origen:</strong> <span t-esc="guia.origen or '-'"/></p>
-              <p><strong>Destino:</strong> <span t-esc="guia.destino or '-'"/></p>
-              <p><strong>Placa:</strong> <span t-esc="guia.placa or '-'"/></p>
-              <p><strong>Bultos:</strong> <span t-esc="guia.numero_bultos"/></p>
-            </div></div>
-          </div>
-          <div class="col-md-6">
-            <div class="card h-100"><div class="card-body">
-              <h5>Responsables</h5>
-              <p><strong>Chofer:</strong> <span t-esc="guia.chofer_usuario_id.name or '-'"/></p>
-              <p><strong>Transportista:</strong> <span t-esc="guia.transportista_id.name or '-'"/></p>
-              <p><strong>Proveedor:</strong> <span t-esc="guia.proveedor_id.name or '-'"/></p>
-              <p><strong>Destinatario:</strong> <span t-esc="guia.destinatario_id.name or '-'"/></p>
-              <p><strong>Incidencia:</strong>
-                <span t-att-class="'badge ' + ('bg-danger' if guia.incidencia_estado == 'abierta' else 'bg-secondary')"
-                      t-esc="dict(guia._fields['incidencia_estado'].selection).get(guia.incidencia_estado)"/></p>
-            </div></div>
-          </div>
-        </div>
+  <template id="mobile_brand" name="Transcash Mobile Brand">
+    <div class="tc-brand"><div class="tc-logo">T<span>↗</span></div>
+      <div><strong>TRANSCASH</strong><small>LOGÍSTICA EN MOVIMIENTO</small></div></div>
+  </template>
 
-        <div t-if="es_chofer and guia.state == 'ruta'" class="card mb-4 border-primary">
-          <div class="card-body">
-            <h5>Registro de llegada</h5>
-            <p>Cuando esté en el destino, registre primero la llegada y después suba las evidencias de recepción.</p>
+  <template id="portal_guias" name="Transcash Mobile: Mis Guías">
+    <html lang="es"><head>
+      <title>Mis guías · Transcash</title><t t-call="logistica_transcash.mobile_head"/>
+    </head><body class="tc-app" t-att-data-tc-user-id="request.env.user.id">
+      <div class="tc-shell">
+        <header class="tc-top tc-top-list"><t t-call="logistica_transcash.mobile_brand"/>
+          <div class="tc-avatar" title="Mi cuenta">●</div>
+        </header>
+        <main class="tc-main tc-home">
+          <div class="tc-eyebrow"><span class="tc-live-dot"/> PANEL DE OPERACIONES</div>
+          <h1 class="tc-heading">Mis guías<span class="tc-title-dot">.</span></h1>
+          <p class="tc-muted tc-home-intro">Controla tus entregas desde aquí, con toda la evidencia en un solo lugar.</p>
+          <div class="tc-stat-row">
+            <div class="tc-stat"><div class="tc-stat-icon">▤</div><strong t-esc="len(guias)"/><small>Guías visibles</small></div>
+            <div class="tc-stat"><div class="tc-stat-icon tc-stat-icon-alt">↗</div><strong t-esc="len(guias.filtered(lambda g: g.state == 'ruta'))"/><small>En ruta</small></div>
+            <div class="tc-stat"><div class="tc-stat-icon tc-stat-icon-gold">!</div><strong t-esc="len(guias.filtered(lambda g: g.incidencia_estado == 'abierta'))"/><small>Con novedades</small></div>
+          </div>
+          <div class="tc-section-heading"><h2>Guías asignadas</h2><span class="tc-count" t-esc="len(guias)"/></div>
+          <nav class="tc-filters" aria-label="Filtrar por estado">
+            <t t-foreach="[('todas','Todas'),('embarque','Embarque'),('ruta','En ruta'),('destino','En destino'),('revision','Recepción'),('entregada','Entregadas')]" t-as="filter">
+              <a t-att-href="'/transcash/guias?estado=%s' % filter[0]"
+                 t-att-class="'tc-filter' + (' is-current' if estado_filtro == filter[0] else '')"
+                 t-esc="filter[1]"/>
+            </t>
+          </nav>
+          <div class="tc-cards">
+            <t t-foreach="guias" t-as="g">
+              <a class="tc-guide-card" t-att-href="'/transcash/guias/%d' % g.id"
+                t-att-data-tc-card-id="g.id" t-att-data-tc-card-name="g.name"
+                t-att-data-tc-card-origin="g.origen or ''" t-att-data-tc-card-destination="g.destino or ''"
+                t-att-data-tc-card-state="g.state">
+                <div class="tc-guide-top"><span class="tc-guide-number">GUÍA <strong t-esc="g.name"/></span>
+                  <span t-att-class="'tc-status tc-s-' + g.state" t-esc="dict(g._fields['state'].selection).get(g.state)"/></div>
+                <div class="tc-guide-route"><span class="tc-route-node"/><div>
+                    <div class="tc-route-city" t-esc="g.origen or 'Origen pendiente'"/>
+                    <div class="tc-route-line"><span class="tc-route-arrow">↓</span> DESTINO</div>
+                    <div class="tc-route-city" t-esc="g.destino or 'Destino pendiente'"/>
+                  </div></div>
+                <div class="tc-guide-bottom"><div class="tc-mini-meta">
+                  <span>◧ <t t-esc="g.total_productos"/> productos</span>
+                  <span t-if="g.roturas_pendientes" class="tc-red">! <t t-esc="g.roturas_pendientes"/> rotura(s) por revisar</span>
+                  <span t-elif="g.incidencia_estado == 'abierta'" class="tc-red">! Con incidencia</span>
+                  <span t-else="">✓ Registro disponible</span>
+                  </div><span class="tc-guide-go">→</span></div>
+              </a>
+            </t>
+            <div t-if="not guias" class="tc-empty"><div class="tc-empty-emoji">▤</div>
+              <h3>Sin guías por ahora</h3><p>Cuando te asignen una guía, aparecerá aquí.</p>
+              <a href="/transcash/guias" class="tc-link">Ver todas</a></div>
+          </div>
+        </main>
+        <nav class="tc-bottom" aria-label="Navegación inferior">
+          <a class="tc-bottom-item active" href="/transcash/guias"><span class="tc-nav-icon">▤</span>Mis guías</a>
+          <span class="tc-bottom-divider"/>
+          <a class="tc-bottom-item" href="/transcash/guias?estado=ruta"><span class="tc-nav-icon">↗</span>En ruta</a>
+          <span class="tc-bottom-divider"/>
+          <a class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1"><span class="tc-nav-icon">⇅</span>Pendientes</a>
+        </nav>
+      </div>
+    </body></html>
+  </template>
+
+  <template id="portal_guia_detalle" name="Transcash Mobile: Detalle de guía">
+    <html lang="es"><head>
+      <title><t t-esc="guia.name"/> · Transcash</title><t t-call="logistica_transcash.mobile_head"/>
+    </head><body class="tc-app" t-att-data-tc-user-id="request.env.user.id"
+      t-att-data-tc-guide-id="guia.id" t-att-data-tc-guide-name="guia.name"
+      t-att-data-tc-guide-origin="guia.origen or ''" t-att-data-tc-guide-destination="guia.destino or ''"
+      t-att-data-tc-guide-state="guia.state">
+      <div class="tc-shell">
+        <header class="tc-top tc-top-detail"><a class="tc-back" href="/transcash/guias" aria-label="Volver">←</a>
+          <div class="tc-top-center"><small>DETALLE DE GUÍA</small><strong t-esc="guia.name"/></div>
+          <div class="tc-avatar">T</div>
+        </header>
+        <main class="tc-main tc-detail">
+          <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>Revisa los datos</strong><span t-esc="error"/></div>
+          <div t-if="request.params.get('ok')" class="tc-alert tc-alert-ok" role="status">✓ Información registrada correctamente</div>
+          <section class="tc-hero">
+            <div class="tc-hero-top"><span class="tc-hero-label">ESTADO DEL TRANSPORTE</span>
+              <span t-att-class="'tc-status tc-s-' + guia.state" t-esc="dict(guia._fields['state'].selection).get(guia.state)"/></div>
+            <div class="tc-hero-route"><span class="tc-hero-pin">●</span><div class="tc-hero-stops">
+              <div><small>ORIGEN</small><h1 t-esc="guia.origen or 'Sin origen'"/></div>
+              <div class="tc-hero-travel"><span class="tc-dashline"/><span>↘</span></div>
+              <div><small>DESTINO</small><h2 t-esc="guia.destino or 'Sin destino'"/></div>
+            </div></div>
+            <div class="tc-hero-pills"><span>🚚 <t t-esc="guia.placa or 'Sin placa'"/></span>
+              <span>▤ <t t-esc="guia.total_productos"/> productos</span>
+              <span t-if="guia.incidencia_estado == 'abierta'" class="tc-hero-alert">⚠ Novedades</span></div>
+          </section>
+          <div class="tc-progress" aria-label="Progreso de guía">
+            <div t-att-class="'tc-progress-step ' + ('done' if guia.state != 'registrada' else 'current')"><b>1</b><span>Carga</span></div>
+            <div t-att-class="'tc-progress-step ' + ('done' if guia.state in ('destino','revision','entregada','lista_pago','facturada','pagada') else 'current' if guia.state == 'ruta' else '')"><b>2</b><span>Ruta</span></div>
+            <div t-att-class="'tc-progress-step ' + ('done' if guia.state in ('entregada','lista_pago','facturada','pagada') else 'current' if guia.state in ('destino','revision') else '')"><b>3</b><span>Recepción</span></div>
+            <div t-att-class="'tc-progress-step ' + ('done' if guia.aprobacion_global == 'aprobada' else 'current' if guia.state == 'entregada' else '')"><b>4</b><span>Validación</span></div>
+          </div>
+          <div class="tc-info-strip"><span><b>Chofer</b><t t-esc="guia.chofer_usuario_id.name or 'Por asignar'"/></span>
+            <span><b>Empresa de transporte</b><t t-esc="guia.proveedor_id.name or 'Por asignar'"/></span></div>
+
+          <div t-if="es_chofer and guia.state == 'ruta'" class="tc-action-banner">
+            <div><div class="tc-action-icon">📍</div><strong>¿Ya llegaste al destino?</strong>
+              <small>Confirma tu llegada para registrar la descarga.</small></div>
             <form t-att-action="'/transcash/guias/%d/llegada' % guia.id" method="post">
               <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-              <button type="submit" class="btn btn-primary">He llegado al destino</button>
+              <button class="tc-button tc-button-white" type="submit">Confirmar llegada →</button>
             </form>
           </div>
-        </div>
 
-        <div t-if="(es_chofer and guia.state in ('embarque','ruta','destino','revision')) or (es_receptor and guia.state in ('destino','revision','entregada'))" class="card mb-4">
-          <div class="card-body">
-            <h5>Agregar observación y evidencia</h5>
-            <form t-att-action="'/transcash/guias/%d/evidencia' % guia.id" method="post" enctype="multipart/form-data">
-              <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label" for="evidencia_tipo">Tipo</label>
-                  <select name="tipo" id="evidencia_tipo" class="form-select" required="required">
-                    <option t-if="es_chofer and guia.state == 'embarque'" value="carga">Fotografía / evidencia de carga</option>
-                    <option t-if="es_chofer and guia.state in ('destino','revision')" value="llegada">Fotografía / evidencia de llegada</option>
-                    <option t-if="es_chofer and guia.state in ('embarque','ruta','destino','revision')" value="novedad">Novedad durante el transporte</option>
-                    <option t-if="es_receptor and guia.state in ('destino','revision','entregada')" value="cliente">Observación del destinatario</option>
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label" for="evidencia_novedad">¿Hay daños o diferencias?</label>
-                  <select name="tipo_novedad" id="evidencia_novedad" class="form-select">
-                    <option value="ninguna">Sin novedades</option><option value="rotura">Rotura</option>
-                    <option value="faltante">Faltante</option><option value="otro">Otra incidencia</option>
-                  </select>
-                </div>
-                <div class="col-12">
-                  <label class="form-label" for="evidencia_observacion">Observación</label>
-                  <textarea name="observacion" id="evidencia_observacion" class="form-control" rows="3"
-                            maxlength="4000" required="required" placeholder="Describe el estado de la carga, precintos, embalajes o daños"/>
-                </div>
-                <div class="col-12">
-                  <label class="form-label" for="evidencia_archivo">Foto o PDF (máximo 10 MB)</label>
-                  <input type="file" class="form-control" name="archivo" id="evidencia_archivo"
-                         accept="image/jpeg,image/png,image/webp,application/pdf"/>
-                </div>
-                <div class="col-12"><button type="submit" class="btn btn-primary">Guardar evidencia</button></div>
+          <nav class="tc-tabs" data-tabs="1" aria-label="Secciones de la guía">
+            <button type="button" class="tc-tab active" data-tab="resumen">Resumen</button>
+            <button type="button" class="tc-tab" data-tab="productos">Productos</button>
+            <button type="button" class="tc-tab" data-tab="evidencias">Evidencias</button>
+            <button type="button" class="tc-tab" data-tab="roturas">Roturas <span t-if="guia.roturas_pendientes" class="tc-tab-alert" t-esc="guia.roturas_pendientes"/></button>
+            <button type="button" class="tc-tab" data-tab="historial">Historial</button>
+          </nav>
+          <section class="tc-panel" data-panel="resumen" id="resumen">
+            <div class="tc-section-heading"><h2>Resumen de la operación</h2></div>
+            <div class="tc-summary-grid">
+              <div><span class="tc-small-icon">▣</span><small>BULTOS DECLARADOS</small><strong t-esc="guia.numero_bultos"/></div>
+              <div><span class="tc-small-icon">⚖</span><small>PESO DECLARADO</small><strong><t t-esc="guia.peso_kg"/> kg</strong></div>
+              <div><span class="tc-small-icon">✓</span><small>APROBACIÓN GLOBAL</small><strong t-esc="'Aprobada' if guia.aprobacion_global == 'aprobada' else 'Pendiente'"/></div>
+              <div><span class="tc-small-icon">!</span><small>ROTURAS POR REVISAR</small><strong t-esc="guia.roturas_pendientes"/></div>
+            </div>
+            <div class="tc-section-heading"><h2>Qué hacer ahora</h2></div>
+            <div class="tc-next-card">
+              <div class="tc-next-icon">✦</div>
+              <div>
+                <strong t-if="es_chofer and guia.state == 'embarque'">Documenta la carga</strong>
+                <strong t-elif="es_chofer and guia.state == 'ruta'">Sigue tu recorrido</strong>
+                <strong t-elif="es_chofer and guia.state in ('destino','revision')">Documenta la descarga</strong>
+                <strong t-elif="es_receptor and guia.state == 'revision'">Revisa la recepción</strong>
+                <strong t-else="">Consulta el estado de la guía</strong>
+                <p t-if="guia.state == 'embarque'">Sube fotos o videos. Bodega verificará la carga antes de la salida.</p>
+                <p t-elif="guia.state == 'ruta'">Registra cualquier novedad y confirma cuando llegues.</p>
+                <p t-elif="guia.state in ('destino','revision')">Valida las evidencias de llegada y reporta daños por producto.</p>
+                <p t-else="">Los documentos, observaciones y aprobaciones quedan en el historial.</p>
               </div>
-            </form>
-          </div>
-        </div>
+            </div>
+            <div class="tc-section-heading"><h2>Últimas evidencias</h2><button class="tc-text-button" type="button" data-go-tab="evidencias">Ver todas →</button></div>
+            <div t-if="not evidencias" class="tc-empty-inline">Aún no hay evidencias registradas.</div>
+            <t t-foreach="evidencias[:3]" t-as="ev">
+              <div class="tc-feed-mini"><span class="tc-feed-mini-icon">▧</span><div>
+                  <strong t-esc="dict(ev._fields['tipo'].selection).get(ev.tipo)"/>
+                  <small t-esc="ev.observacion"/></div>
+                <span t-att-class="'tc-dot tc-dot-' + ev.estado"/></div>
+            </t>
+          </section>
 
-        <div class="card mb-4">
-          <div class="card-body">
-            <h5>Evidencias, observaciones y objeciones</h5>
-            <p t-if="not evidencias" class="text-muted">Todavía no existen evidencias registradas.</p>
-            <div t-foreach="evidencias" t-as="ev" class="border rounded p-3 mb-3">
-              <div class="d-flex justify-content-between flex-wrap gap-2">
-                <strong t-esc="dict(ev._fields['tipo'].selection).get(ev.tipo)"/>
-                <span class="badge bg-secondary" t-esc="dict(ev._fields['estado'].selection).get(ev.estado)"/>
+          <section class="tc-panel" data-panel="productos" id="productos">
+            <div class="tc-section-heading"><h2>Detalle de productos</h2><span class="tc-count"><t t-esc="guia.total_productos"/></span></div>
+            <p class="tc-panel-hint">Cantidad embarcada y daños aprobados. Las unidades se respetan por cada producto.</p>
+            <t t-foreach="guia.linea_ids.filtered('vigente_erp')" t-as="ln">
+              <div class="tc-product-card">
+                <div class="tc-product-heading"><div class="tc-box-icon">▦</div><div class="tc-product-name">
+                  <small t-esc="ln.codigo"/><h3 t-esc="ln.producto"/></div></div>
+                <div class="tc-product-kpis">
+                  <div><small>CANTIDAD DE GUÍA</small><strong><t t-esc="ln.cantidad"/> <t t-esc="dict(ln._fields['unidad'].selection).get(ln.unidad)"/></strong></div>
+                  <div><small>ROTURA APROBADA</small><strong t-att-class="'tc-red' if ln.cantidad_rota_aprobada else ''"><t t-esc="ln.cantidad_rota_aprobada"/> <t t-esc="dict(ln._fields['unidad'].selection).get(ln.unidad)"/></strong></div>
+                </div>
+                <div t-if="ln.cantidad_rota_pendiente" class="tc-product-note">⚠ <t t-esc="ln.cantidad_rota_pendiente"/> pendiente(s) de validar</div>
+                <button t-if="(es_chofer and guia.state in ('embarque','ruta','destino','revision')) or (es_receptor and guia.state in ('destino','revision','entregada') and guia.aprobacion_global != 'aprobada') or (es_vendedor and guia.state in ('embarque','ruta','destino','revision') and guia.aprobacion_global != 'aprobada')"
+                        class="tc-inline-action" type="button" t-att-data-damage-line="ln.id">Reportar rotura ↗</button>
               </div>
-              <small class="text-muted"><span t-esc="ev.autor_usuario_id.name or 'Usuario'"/> · <span t-esc="ev.create_date"/></small>
-              <p class="mt-2 mb-2" t-esc="ev.observacion"/>
-              <p t-if="ev.tipo_novedad != 'ninguna'" class="text-danger">Novedad: <span t-esc="ev.tipo_novedad"/></p>
-              <a t-if="ev.archivo" t-att-href="'/transcash/evidencia/%d/archivo' % ev.id" target="_blank" rel="noopener noreferrer"
-                 class="btn btn-sm btn-outline-secondary mb-2">Ver foto / documento</a>
-              <p t-if="ev.motivo_objecion" class="alert alert-warning mb-2"><strong>Objeción:</strong> <span t-esc="ev.motivo_objecion"/></p>
-              <p t-if="ev.respuesta_chofer" class="alert alert-info mb-2"><strong>Respuesta del chofer:</strong> <span t-esc="ev.respuesta_chofer"/></p>
+            </t>
+            <div t-if="not guia.linea_ids.filtered('vigente_erp')" class="tc-empty-inline">El ERP todavía no ha enviado el detalle de productos.</div>
+          </section>
 
-              <div t-if="es_receptor and ev.tipo == 'llegada' and guia.state == 'revision'" class="border-top mt-2 pt-2">
-                <form t-if="ev.estado in ('pendiente','objetada')"
-                      t-att-action="'/transcash/evidencia/%d/revision/aprobar' % ev.id" method="post" class="mb-2">
+          <section class="tc-panel" data-panel="evidencias" id="evidencias">
+            <div class="tc-section-heading"><h2>Registro de evidencias</h2><span class="tc-count"><t t-esc="len(evidencias)"/></span></div>
+            <p class="tc-panel-hint">Fotos y videos de carga, descarga y observaciones. Cada registro conserva su autor y fecha.</p>
+            <t t-foreach="evidencias" t-as="ev"><article class="tc-evidence-card">
+              <div class="tc-evidence-header"><div class="tc-evidence-avatar">◈</div>
+                <div><strong t-esc="dict(ev._fields['tipo'].selection).get(ev.tipo)"/>
+                  <small><t t-esc="ev.autor_usuario_id.name or 'Usuario'"/> · <t t-esc="ev.create_date"/></small></div>
+                <span t-att-class="'tc-review tc-review-' + ev.estado" t-esc="dict(ev._fields['estado'].selection).get(ev.estado)"/></div>
+              <p t-esc="ev.observacion"/>
+              <p t-if="ev.rotura_id" class="tc-evidence-related">Producto: <b t-esc="ev.rotura_id.producto"/> · <t t-esc="ev.rotura_id.cantidad"/> <t t-esc="ev.rotura_id.unidad"/></p>
+              <div t-if="ev.archivo" class="tc-media-box">
+                <img t-if="ev.archivo_mime and ev.archivo_mime.startswith('image/')" loading="lazy"
+                     t-att-src="'/transcash/evidencia/%d/archivo' % ev.id" alt="Evidencia fotográfica"/>
+                <video t-elif="ev.archivo_mime and ev.archivo_mime.startswith('video/')" controls="controls" preload="metadata" playsinline="playsinline"
+                       t-att-src="'/transcash/evidencia/%d/archivo' % ev.id">Video de evidencia</video>
+                <a t-att-href="'/transcash/evidencia/%d/archivo' % ev.id" target="_blank" rel="noopener noreferrer" class="tc-media-link">Abrir archivo ↗</a>
+              </div>
+              <div t-if="ev.motivo_objecion" class="tc-note tc-note-warning"><b>Objeción del destinatario</b><p t-esc="ev.motivo_objecion"/></div>
+              <div t-if="ev.respuesta_chofer" class="tc-note tc-note-info"><b>Respuesta del chofer</b><p t-esc="ev.respuesta_chofer"/></div>
+              <div t-if="es_receptor and ev.tipo == 'llegada' and guia.state == 'revision'" class="tc-evidence-actions">
+                <form t-if="ev.estado in ('pendiente','objetada')" t-att-action="'/transcash/evidencia/%d/revision/aprobar' % ev.id" method="post">
                   <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-                  <button type="submit" class="btn btn-sm btn-success">Aceptar esta evidencia</button>
+                  <button type="submit" class="tc-button tc-button-green">✓ Aceptar evidencia</button>
                 </form>
-                <form t-if="ev.estado in ('pendiente','aprobada')"
-                      t-att-action="'/transcash/evidencia/%d/revision/objetar' % ev.id" method="post">
+                <form t-if="ev.estado in ('pendiente','aprobada')" t-att-action="'/transcash/evidencia/%d/revision/objetar' % ev.id" method="post">
                   <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-                  <label class="form-label">Objetar observación / estado de la mercancía</label>
-                  <textarea name="motivo" class="form-control mb-2" rows="2" minlength="5" maxlength="4000" required="required"/>
-                  <button type="submit" class="btn btn-sm btn-outline-danger">Registrar objeción</button>
+                  <label class="tc-label">Objetar observación</label>
+                  <textarea class="tc-textarea" name="motivo" rows="2" minlength="5" maxlength="4000" required="required" placeholder="Explica el desacuerdo..."/>
+                  <button type="submit" class="tc-button tc-button-outline-red">Enviar objeción</button>
                 </form>
               </div>
               <form t-if="es_chofer and ev.tipo == 'llegada' and ev.estado == 'objetada' and guia.state == 'revision'"
-                    t-att-action="'/transcash/evidencia/%d/respuesta' % ev.id" method="post" class="border-top pt-2 mt-2">
+                    t-att-action="'/transcash/evidencia/%d/respuesta' % ev.id" method="post" class="tc-evidence-actions">
                 <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-                <label class="form-label">Responder a la objeción del destinatario</label>
-                <textarea name="respuesta" class="form-control mb-2" rows="2" required="required" maxlength="4000"/>
-                <button type="submit" class="btn btn-sm btn-outline-primary">Enviar respuesta</button>
+                <label class="tc-label">Responder al destinatario</label>
+                <textarea class="tc-textarea" name="respuesta" rows="2" maxlength="4000" required="required" placeholder="Tu explicación..."/>
+                <button type="submit" class="tc-button tc-button-primary">Enviar respuesta</button>
               </form>
-            </div>
-          </div>
-        </div>
+            </article></t>
+            <div t-if="not evidencias" class="tc-empty-inline">Aún no hay fotos ni videos.</div>
+          </section>
 
-        <div t-if="es_receptor and guia.state == 'revision'" class="card mb-4 border-success">
-          <div class="card-body">
-            <h5>Confirmar entrega física</h5>
-            <p>Puede confirmar la entrega aunque haya reportado daños. Las incidencias abiertas bloquearán la autorización de pago.</p>
+          <section class="tc-panel" data-panel="roturas" id="roturas">
+            <div class="tc-section-heading"><h2>Roturas por producto</h2><span class="tc-count"><t t-esc="len(roturas)"/></span></div>
+            <p class="tc-panel-hint">Cada daño debe identificar el producto, la cantidad y adjuntar evidencia. Administración revisará cada reporte y luego la guía completa.</p>
+            <t t-foreach="roturas" t-as="r"><article class="tc-damage-card">
+              <div class="tc-damage-top"><div><span class="tc-damage-label">REPORTE #<t t-esc="r.id"/></span>
+                <h3 t-esc="r.producto"/><small t-esc="r.codigo"/></div>
+                <span t-att-class="'tc-review tc-review-' + r.estado" t-esc="dict(r._fields['estado'].selection).get(r.estado)"/></div>
+              <div class="tc-damage-qty"><strong><t t-esc="r.cantidad"/> <t t-esc="dict(r._fields['unidad'].selection).get(r.unidad)"/></strong><span>reportados como dañados</span></div>
+              <p t-esc="r.observacion"/>
+              <div class="tc-damage-evidence"><span>▧ <t t-esc="len(r.evidencia_ids)"/> archivo(s) de evidencia</span>
+                <button type="button" class="tc-text-button" data-go-tab="evidencias">Ver evidencias →</button></div>
+              <div t-if="r.motivo_rechazo" class="tc-note tc-note-warning"><b>Motivo de rechazo</b><p t-esc="r.motivo_rechazo"/></div>
+            </article></t>
+            <div t-if="not roturas" class="tc-empty-inline">No se han registrado roturas en esta guía.</div>
+            <div class="tc-approval-card"><span class="tc-approval-icon">✓</span><div><strong>Validación de la guía completa</strong>
+              <p t-if="guia.aprobacion_global == 'aprobada'">Aprobada por administración. Los reportes aprobados pasarán al flujo de nota de crédito.</p>
+              <p t-else="">Pendiente: después de revisar todas las roturas y aceptar la entrega, administración validará la guía total.</p></div></div>
+          </section>
+
+          <section class="tc-panel" data-panel="historial" id="historial">
+            <div class="tc-section-heading"><h2>Historial completo de la guía</h2><span class="tc-count" t-esc="len(historial)"/></div>
+            <p class="tc-panel-hint">Seguimiento de carga, transporte, recepción, objeciones y decisiones. Esta sección es de solo lectura.</p>
+            <div class="tc-timeline">
+              <t t-foreach="historial" t-as="event">
+                <article class="tc-timeline-event">
+                  <span class="tc-timeline-dot"/>
+                  <div><strong t-esc="event.accion"/><time t-esc="event.create_date"/>
+                    <p t-if="event.detalle" t-esc="event.detalle"/>
+                    <small t-if="event.usuario_id" t-esc="event.usuario_id.name"/>
+                  </div>
+                </article>
+              </t>
+            </div>
+            <p t-if="not historial" class="tc-empty-inline">Aún no hay eventos registrados.</p>
+          </section>
+
+          <div t-if="es_receptor and guia.state == 'revision'" class="tc-reception">
+            <div class="tc-section-heading"><h2>Confirmar recepción física</h2></div>
+            <p>Puede recibir con observaciones y daños. La aprobación final de la guía y la nota de crédito se gestionan por separado.</p>
             <form t-att-action="'/transcash/guias/%d/confirmar' % guia.id" method="post">
               <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-              <label class="form-label">Nombre de quien recibe</label>
-              <input type="text" class="form-control mb-3" name="recibido_por" maxlength="160" required="required"/>
-              <label class="form-label">Comentarios de recepción (opcional)</label>
-              <textarea class="form-control mb-3" name="observacion_recepcion" rows="2" maxlength="4000"/>
-              <button type="submit" class="btn btn-success">Confirmar entrega</button>
+              <label class="tc-label">Nombre de quien recibe</label><input class="tc-input" type="text" name="recibido_por" required="required" maxlength="160" placeholder="Nombre y apellido"/>
+              <label class="tc-label">Observaciones de entrega</label><textarea class="tc-textarea" name="observacion_recepcion" rows="2" maxlength="4000" placeholder="Opcional..."/>
+              <button type="submit" class="tc-button tc-button-primary">Confirmar entrega →</button>
             </form>
           </div>
+          <div t-if="guia.fecha_entrega" class="tc-delivered">✓ Entrega física registrada a nombre de <b t-esc="guia.recibido_por"/></div>
+        </main>
+
+        <div t-if="(es_chofer and guia.state in ('embarque','ruta','destino','revision')) or (es_receptor and guia.state in ('destino','revision','entregada') and guia.aprobacion_global != 'aprobada') or (es_vendedor and guia.state in ('embarque','ruta','destino','revision') and guia.aprobacion_global != 'aprobada')" class="tc-floating">
+          <button class="tc-fab" type="button" data-modal-open="action"><span>＋</span> Registrar evidencia / rotura</button>
         </div>
-        <div t-if="guia.fecha_entrega" class="alert alert-success">
-          Entregada a <strong t-esc="guia.recibido_por"/>. Fecha: <span t-esc="guia.fecha_entrega"/>.
+        <nav class="tc-bottom" aria-label="Navegación inferior">
+          <a class="tc-bottom-item" href="/transcash/guias"><span class="tc-nav-icon">▤</span>Guías</a>
+          <button class="tc-bottom-item active" type="button" data-go-tab="resumen"><span class="tc-nav-icon">◉</span>Resumen</button>
+          <button class="tc-bottom-item" type="button" data-go-tab="productos"><span class="tc-nav-icon">▦</span>Productos</button>
+          <button class="tc-bottom-item" type="button" data-go-tab="roturas"><span class="tc-nav-icon">⚠</span>Roturas</button>
+          <a class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1"><span class="tc-nav-icon">⇅</span>Pendientes</a>
+        </nav>
+      </div>
+
+      <div class="tc-modal" id="tc-action-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Registrar evidencia o rotura">
+        <div class="tc-modal-backdrop" data-modal-close="1"/><div class="tc-modal-sheet">
+          <div class="tc-modal-handle"/><div class="tc-modal-top"><h2>Nuevo registro</h2><button class="tc-modal-close" type="button" data-modal-close="1" aria-label="Cerrar">×</button></div>
+          <div class="tc-modal-segment"><button t-if="es_chofer or es_receptor" class="active" data-form-tab="evidencia" type="button">📷 Evidencia</button>
+            <button type="button" data-form-tab="rotura">⚠ Reportar rotura</button></div>
+          <form t-if="es_chofer or es_receptor" class="tc-form-panel" data-form-panel="evidencia" t-att-action="'/transcash/guias/%d/evidencia' % guia.id" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+            <label class="tc-label">Tipo de evidencia</label><select name="tipo" class="tc-input" required="required">
+              <option t-if="es_chofer and guia.state == 'embarque'" value="carga">Carga / embarque</option>
+              <option t-if="es_chofer and guia.state in ('destino','revision')" value="llegada">Llegada / descarga</option>
+              <option t-if="es_chofer and guia.state in ('embarque','ruta','destino','revision')" value="novedad">Novedad en ruta</option>
+              <option t-if="es_receptor and guia.state in ('destino','revision','entregada')" value="cliente">Evidencia del destinatario</option>
+            </select>
+            <label class="tc-label">¿Hay otra novedad?</label><select class="tc-input" name="tipo_novedad">
+              <option value="ninguna">Sin novedad adicional</option>
+              <option value="faltante">Faltantes</option><option value="otro">Otra observación</option>
+            </select>
+            <label class="tc-label">Observaciones</label><textarea class="tc-textarea" rows="3" name="observacion" maxlength="4000" required="required" placeholder="Describe las condiciones de la mercancía..."/>
+            <div class="tc-upload-grid">
+              <label class="tc-upload-option"><span>📷</span><strong>Tomar foto</strong><small>Usar cámara</small>
+                <input type="file" name="archivos" accept="image/*" capture="environment" data-media-input="1"/>
+              </label>
+              <label class="tc-upload-option"><span>🎥</span><strong>Grabar video</strong><small>Cámara del teléfono</small>
+                <input type="file" name="archivos" accept="video/*" capture="environment" data-media-input="1"/>
+              </label>
+            </div>
+            <label class="tc-upload-gallery">＋ Seleccionar de la galería
+              <input type="file" name="archivos" accept="image/*,video/mp4,video/quicktime,video/webm" multiple="multiple" data-media-input="1"/>
+            </label><div class="tc-file-preview" data-file-preview="1">Sin archivos seleccionados</div>
+            <button type="submit" class="tc-button tc-button-primary tc-submit">Guardar evidencia →</button>
+          </form>
+          <form class="tc-form-panel" data-form-panel="rotura" t-att-action="'/transcash/guias/%d/rotura' % guia.id" method="post" enctype="multipart/form-data" t-att-hidden="None if es_vendedor and not es_chofer and not es_receptor else 'hidden'">
+            <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+            <div class="tc-form-advice">⚠ Registra la cantidad dañada por cada producto. Debes adjuntar por lo menos una foto o video.</div>
+            <label class="tc-label">Producto afectado</label><select class="tc-input" name="linea_id" id="tc-damage-product" required="required">
+              <option value="">Seleccionar producto…</option>
+              <t t-foreach="guia.linea_ids.filtered('vigente_erp')" t-as="ln">
+                <option t-att-value="ln.id" t-att-data-max="ln.cantidad" t-att-data-unit="dict(ln._fields['unidad'].selection).get(ln.unidad)">
+                  <t t-esc="ln.codigo"/> · <t t-esc="ln.producto"/>
+                </option>
+              </t>
+            </select>
+            <div class="tc-quantity-help" id="tc-quantity-help">Selecciona un producto para conocer su cantidad.</div>
+            <label class="tc-label">Cantidad con rotura</label>
+            <div class="tc-quantity-control"><input class="tc-input" type="number" name="cantidad_rota" min="0.001" step="0.001" inputmode="decimal" required="required" placeholder="0"/>
+              <span id="tc-unit-label">UND.</span></div>
+            <label class="tc-label">Describe los daños</label><textarea class="tc-textarea" name="observacion" rows="3" maxlength="4000" required="required" placeholder="Ej. 2 cajas con esquinas golpeadas..."/>
+            <div class="tc-upload-grid"><label class="tc-upload-option"><span>📷</span><strong>Foto del daño</strong><small>Capturar</small>
+                <input type="file" name="archivos" accept="image/*" capture="environment" data-media-input="1"/></label>
+              <label class="tc-upload-option"><span>🎥</span><strong>Video del daño</strong><small>Grabar</small>
+                <input type="file" name="archivos" accept="video/*" capture="environment" data-media-input="1"/></label></div>
+            <label class="tc-upload-gallery">＋ Agregar de la galería
+              <input type="file" name="archivos" accept="image/*,video/mp4,video/quicktime,video/webm" multiple="multiple" data-media-input="1"/></label>
+            <div class="tc-file-preview" data-file-preview="1">Evidencia obligatoria · máx. 6 archivos</div>
+            <button type="submit" class="tc-button tc-button-danger tc-submit">Registrar rotura →</button>
+          </form>
+          <p class="tc-privacy-note">🔒 Archivos privados · Fotos 12 MB · Videos 75 MB · Guardado offline disponible</p>
         </div>
       </div>
-    </t>
+    </body></html>
   </template>
 </odoo>

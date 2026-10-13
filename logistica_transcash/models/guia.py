@@ -39,7 +39,6 @@ class Guia(models.Model):
     remitente_id = fields.Many2one('res.partner', string='Remitente')
     destinatario_id = fields.Many2one('res.partner', string='Destinatario', tracking=True)
     chofer_usuario_id = fields.Many2one('res.users', string='Usuario chofer', tracking=True)
-    transportista_id = fields.Many2one('res.partner', string='Transportista / operador')
     proveedor_id = fields.Many2one('res.partner', string='Proveedor a pagar', tracking=True)
     bodega_usuario_id = fields.Many2one('res.users', string='Responsable despacho')
     placa = fields.Char('Placa del vehículo')
@@ -58,19 +57,38 @@ class Guia(models.Model):
 
     moneda_id = fields.Many2one('res.currency', string='Moneda', default=lambda self: self.env.company.currency_id)
     valor_acordado = fields.Monetary('Tarifa de transporte', currency_field='moneda_id',
-                                    groups='logistica_transcash.group_logistica_manager')
+                                    groups='logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad')
     cuenta_gasto_id = fields.Many2one('account.account', string='Cuenta de gasto',
                                       domain="[('account_type','in',['expense','expense_direct_cost'])]",
-                                      groups='logistica_transcash.group_logistica_manager')
+                                      groups='logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad')
     factura_id = fields.Many2one('account.move', string='Factura del proveedor', readonly=True,
-                                 copy=False, groups='logistica_transcash.group_logistica_manager')
+                                 copy=False, groups='logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad')
     incidencia_estado = fields.Selection([
         ('ninguna', 'Sin incidencia'), ('abierta', 'Abierta'), ('resuelta', 'Resuelta'),
     ], default='ninguna', tracking=True, required=True, copy=False)
     resolucion_incidencia = fields.Text('Resolución de incidencia', copy=False)
     resolucion_por_id = fields.Many2one('res.users', string='Resuelta por', readonly=True, copy=False)
 
+    linea_ids = fields.One2many('transcash.guia.linea', 'guia_id', string='Productos de la guía')
+    rotura_ids = fields.One2many('transcash.rotura', 'guia_id', string='Roturas por producto')
+    nota_credito_id = fields.One2many('transcash.nota.credito', 'guia_id', string='Solicitud NC')
+    aprobacion_global = fields.Selection([
+        ('pendiente', 'Pendiente de aprobación total'), ('aprobada', 'Guía aprobada')],
+        default='pendiente', required=True, tracking=True, copy=False)
+    aprobacion_por_id = fields.Many2one('res.users', string='Aprobada por', readonly=True, copy=False)
+    aprobacion_fecha = fields.Datetime('Aprobación total', readonly=True, copy=False)
+    total_productos = fields.Integer(compute='_compute_damage_summary', string='Productos')
+    roturas_pendientes = fields.Integer(compute='_compute_damage_summary', string='Reportes por revisar')
+    roturas_aprobadas = fields.Integer(compute='_compute_damage_summary', string='Reportes aprobados')
     evidencia_ids = fields.One2many('transcash.evidencia', 'guia_id', string='Evidencias')
+
+    @api.depends('linea_ids', 'rotura_ids.estado')
+    def _compute_damage_summary(self):
+        for guia in self:
+            guia.total_productos = len(guia.linea_ids.filtered('vigente_erp'))
+            guia.roturas_pendientes = len(guia.rotura_ids.filtered(lambda r: r.estado == 'pendiente'))
+            guia.roturas_aprobadas = len(guia.rotura_ids.filtered(lambda r: r.estado == 'aprobada'))
+
     evento_ids = fields.One2many('transcash.evento', 'guia_id', string='Trazabilidad')
     estado_erp = fields.Char('Estado reportado por ERP', readonly=True)
     ultima_sync = fields.Datetime('Última sincronización', readonly=True)
@@ -82,18 +100,36 @@ class Guia(models.Model):
     ]
 
     def write(self, vals):
+        # Los importes y datos contables son exclusivos de Contabilidad. El
+        # contexto de RPC no equivale a autorización y no salta estas reglas.
+        if not self.env.su and {'valor_acordado', 'cuenta_gasto_id', 'factura_id'} & set(vals):
+            if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
+                raise UserError(_('Solo Contabilidad puede modificar datos de liquidación.'))
+        if not self.env.su and self.env.user.has_group('logistica_transcash.group_transcash_contabilidad') and not self._is_manager():
+            if set(vals) - {'cuenta_gasto_id', 'valor_acordado'}:
+                raise UserError(_('Contabilidad solo puede editar cuenta de gasto y tarifa antes de facturar.'))
+            if any(g.factura_id for g in self):
+                raise UserError(_('La tarifa del transporte no se modifica después de facturar.'))
+        if not self.env.su and {'proveedor_id','valor_acordado','cuenta_gasto_id'} & set(vals):
+            if any(g.factura_id for g in self):
+                raise UserError(_('No puede cambiar proveedor, tarifa ni cuenta después de facturar.'))
         # Un estado operativo no puede establecerse directamente vía interfaz o RPC.
-        if 'state' in vals and not self.env.context.get('transcash_internal_flow'):
+        flow_fields = {'state','aprobacion_global','aprobacion_por_id','aprobacion_fecha',
+                       'incidencia_estado','resolucion_por_id','confirmado_por_id',
+                       'fecha_entrega','fecha_llegada','fecha_salida', 'factura_id'}
+        if flow_fields & set(vals) and not self.env.su:
+
             raise UserError(_('Use las acciones del flujo para modificar el estado de la guía.'))
         return super().write(vals)
 
-    def _track_event(self, accion, detalle=''):
+    def _track_event(self, accion, detalle='', publico_cliente=True):
         for guia in self:
             self.env['transcash.evento'].sudo().create({
                 'guia_id': guia.id,
                 'usuario_id': self.env.user.id,
                 'accion': accion,
                 'detalle': detalle or '',
+                'publico_cliente': publico_cliente,
             })
 
     def _is_manager(self):
@@ -142,6 +178,11 @@ class Guia(models.Model):
             guia._track_event('Llegada al destino')
         return True
 
+    def _is_seller(self, user=None):
+        user = user or self.env.user
+        return bool(user.has_group('logistica_transcash.group_transcash_vendedor') and
+                    self.company_id in user.company_ids)
+
     def _is_recipient(self, user=None):
         self.ensure_one()
         user = user or self.env.user
@@ -183,26 +224,73 @@ class Guia(models.Model):
                 raise UserError(_('No hay incidencia abierta.'))
             if not (guia.resolucion_incidencia or '').strip():
                 raise UserError(_('Escriba la resolución antes de cerrar la incidencia.'))
-            guia.write({'incidencia_estado': 'resuelta', 'resolucion_por_id': self.env.user.id})
+            guia.sudo().write({'incidencia_estado': 'resuelta', 'resolucion_por_id': self.env.user.id})
             guia._track_event('Incidencia resuelta', guia.resolucion_incidencia[:1000])
         return True
 
-    def action_ready_payment(self):
+    def action_approve_whole_guide(self):
+        """Segunda validación: línea a línea y cierre global de la recepción."""
         if not self._is_manager():
+            raise UserError(_('Solo administración puede validar la guía completa.'))
+        for guia in self:
+            if guia.state != 'entregada' or guia.aprobacion_global != 'pendiente':
+                raise UserError(_('La entrega debe estar confirmada y aún sin aprobar.'))
+            if not guia.linea_ids.filtered('vigente_erp'):
+                raise UserError(_('No existe detalle de productos de ERP.'))
+            if guia.roturas_pendientes:
+                raise UserError(_('Revise y apruebe o rechace todas las roturas por producto.'))
+            arrivals = guia.evidencia_ids.filtered(lambda e: e.tipo == 'llegada')
+            if not arrivals or any(e.estado != 'aprobada' for e in arrivals):
+                raise UserError(_('Las evidencias de llegada deben estar aprobadas y sin objeciones.'))
+            guia.sudo().write({'aprobacion_global': 'aprobada',
+                        'aprobacion_por_id': self.env.user.id,
+                        'aprobacion_fecha': fields.Datetime.now()})
+            guia._track_event('Guía aprobada en su totalidad',
+                              '%d reporte(s) de roturas aprobadas' % guia.roturas_aprobadas)
+        return True
+
+    def action_prepare_credit_request(self):
+        self.ensure_one()
+        request = self.env['transcash.nota.credito'].prepare_from_guide(self)
+        return {'type':'ir.actions.act_window', 'res_model':'transcash.nota.credito',
+                'res_id':request.id, 'view_mode':'form', 'target':'current'}
+
+    def action_configure_liquidation(self):
+        self.ensure_one()
+        if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
+            raise UserError(_('Solo Contabilidad puede configurar la liquidación.'))
+        if self.factura_id or self.state not in ('entregada', 'lista_pago'):
+            raise UserError(_('No puede modificar datos de una guía ya facturada o no entregada.'))
+        return {'type':'ir.actions.act_window', 'name': _('Configurar liquidación'),
+                'res_model': 'transcash.liquidacion.wizard', 'view_mode':'form',
+                'target':'new', 'context': {'default_guia_id':self.id,
+                                           'default_cuenta_gasto_id':self.cuenta_gasto_id.id or False,
+                                           'default_valor_acordado':self.valor_acordado}}
+
+    def action_ready_payment(self):
+        if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
             raise UserError(_('Solo el administrador puede autorizar la liquidación.'))
         for guia in self:
             if guia.state != 'entregada':
                 raise UserError(_('La guía debe estar entregada.'))
+            if guia.aprobacion_global != 'aprobada':
+                raise UserError(_('Primero apruebe el total de la guía.'))
+            if guia.roturas_pendientes:
+                raise UserError(_('Existen roturas pendientes de revisión.'))
+            if guia.roturas_aprobadas and (not guia.nota_credito_id or
+                    guia.nota_credito_id[0].estado != 'emitida' or
+                    not guia.nota_credito_id[0].documento_validado_por_id):
+                raise UserError(_('Primero confirme la nota de crédito por las roturas aprobadas.'))
             if guia.incidencia_estado == 'abierta':
                 raise UserError(_('Resuelva la incidencia antes de autorizar el pago.'))
             if not guia.proveedor_id:
                 raise UserError(_('Falta el proveedor de transporte.'))
-            guia.with_context(transcash_internal_flow=True).write({'state': 'lista_pago'})
-            guia._track_event('Autorizada para liquidación')
+            guia.sudo().write({'state': 'lista_pago'})
+            guia._track_event('Autorizada para liquidación', publico_cliente=False)
         return True
 
     def action_create_vendor_bill(self):
-        if not self._is_manager():
+        if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
             raise UserError(_('Solo el administrador puede generar la factura del proveedor.'))
         self.ensure_one()
         if self.state != 'lista_pago' or self.factura_id:
@@ -226,23 +314,23 @@ class Guia(models.Model):
                 'account_id': self.cuenta_gasto_id.id,
             })],
         })
-        self.with_context(transcash_internal_flow=True).write({'factura_id': bill.id, 'state': 'facturada'})
-        self._track_event('Factura del proveedor creada', bill.name or str(bill.id))
+        self.sudo().write({'factura_id': bill.id, 'state': 'facturada'})
+        self._track_event('Factura del proveedor creada', bill.name or str(bill.id), publico_cliente=False)
         return {
             'type': 'ir.actions.act_window', 'res_model': 'account.move',
             'res_id': bill.id, 'view_mode': 'form', 'target': 'current',
         }
 
     def action_verify_payment(self):
-        if not self._is_manager():
+        if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
             raise UserError(_('Solo el administrador puede verificar pagos.'))
         for guia in self:
             if guia.state != 'facturada' or not guia.factura_id:
                 raise UserError(_('La guía no tiene factura de proveedor asociada.'))
             if guia.factura_id.state != 'posted' or guia.factura_id.payment_state != 'paid':
                 raise UserError(_('La factura debe estar contabilizada y completamente pagada.'))
-            guia.with_context(transcash_internal_flow=True).write({'state': 'pagada'})
-            guia._track_event('Pago verificado')
+            guia.sudo().write({'state': 'pagada'})
+            guia._track_event('Pago verificado', publico_cliente=False)
         return True
 
     @api.model
@@ -279,7 +367,7 @@ class Guia(models.Model):
             vals['fecha_prevista'] = dt.astimezone(timezone.utc).replace(tzinfo=None)
         for incoming, field in {
             'remitente_codigo': 'remitente_id', 'destinatario_codigo': 'destinatario_id',
-            'transportista_codigo': 'transportista_id', 'proveedor_codigo': 'proveedor_id',
+            'proveedor_codigo': 'proveedor_id',
         }.items():
             if incoming in item:
                 if not item[incoming]:
@@ -298,8 +386,58 @@ class Guia(models.Model):
                 if not user:
                     raise ValidationError(_('No existe el usuario chofer: %s') % item['chofer_login'])
                 vals['chofer_usuario_id'] = user.id
+        # Detalles de la guía no se incrustan en vals: reconciliación por ID de línea ERP.
         vals['ultima_sync'] = fields.Datetime.now()
         return vals
+
+    @api.model
+    def _sync_detail(self, guia, item):
+        if 'productos' not in item:
+            return  # No borra ni altera líneas si el ERP no las envía.
+        products = item['productos']
+        if not isinstance(products, list) or len(products) > 300:
+            raise ValidationError(_('productos debe ser una lista de hasta 300 renglones.'))
+        seen = set()
+        Line = self.env['transcash.guia.linea'].sudo()
+        for p in products:
+            if not isinstance(p, dict):
+                raise ValidationError(_('Cada producto debe ser objeto JSON.'))
+            ext = str(p.get('id_linea') or '').strip()
+            codigo = str(p.get('codigo') or '').strip()
+            nombre = str(p.get('descripcion') or '').strip()
+            unit = str(p.get('unidad') or '').lower().strip()
+            aliases = {'m²':'m2', 'metros_cuadrados':'m2', 'pallets':'pallet',
+                       'cajas':'caja', 'kilos':'kg', 'kilogramos':'kg', 'unidades':'unidad'}
+            unit = aliases.get(unit, unit)
+            if not ext or ext in seen or not codigo or not nombre or unit not in ('m2','pallet','caja','kg','unidad'):
+                raise ValidationError(_('Producto sin ID único, código, descripción o unidad válida.'))
+            seen.add(ext)
+            try:
+                qty = float(p.get('cantidad'))
+                price = float(p.get('precio_unitario', 0) or 0)
+            except (ValueError, TypeError):
+                raise ValidationError(_('Cantidad o precio inválido en producto %s.') % codigo)
+            if not (0 < qty < 1e10) or not (0 <= price < 1e10):
+                raise ValidationError(_('Cantidad o precio fuera de rango en %s.') % codigo)
+            values = {'codigo':codigo[:128], 'producto':nombre[:255],
+                      'cantidad':qty, 'unidad':unit, 'precio_unitario':price, 'vigente_erp':True}
+            old = Line.search([('guia_id','=',guia.id),('external_line_id','=',ext)], limit=1)
+            if old:
+                if old.rotura_ids and any(old[f] != values[f] for f in
+                                        ('codigo','producto','cantidad','unidad','precio_unitario')):
+                    raise ValidationError(_('La línea %s tiene roturas; no se permite cambiar su contenido.') % ext)
+                if guia.aprobacion_global == 'aprobada' and any(old[f] != values[f] for f in values):
+                    raise ValidationError(_('La guía ya está aprobada; productos bloqueados.'))
+                old.write(values)
+            else:
+                if guia.aprobacion_global == 'aprobada':
+                    raise ValidationError(_('No se puede agregar productos a una guía aprobada.'))
+                Line.create(dict(values, guia_id=guia.id, external_line_id=ext))
+        missing = Line.search([('guia_id','=',guia.id),('external_line_id','not in',list(seen))])
+        for line in missing:
+            if line.rotura_ids or guia.aprobacion_global == 'aprobada':
+                raise ValidationError(_('No puede retirar la línea %s: tiene roturas o la guía está aprobada.') % line.external_line_id)
+            line.write({'vigente_erp': False})
 
     @api.model
     def sync_payload(self, payload):
@@ -323,14 +461,16 @@ class Guia(models.Model):
                     ], limit=1)
                     if existing:
                         # No sobrescribe valor luego de emitir factura ni campos internos.
-                        if existing.factura_id:
+                        if existing.factura_id or existing.aprobacion_global == 'aprobada':
                             vals.pop('valor_acordado', None)
                             vals.pop('proveedor_id', None)
                         existing.write(vals)
+                        self._sync_detail(existing, item)
                         result['actualizadas'] += 1
                     else:
                         vals['company_id'] = self.env.company.id
                         guia = self.sudo().create(vals)
+                        self._sync_detail(guia, item)
                         guia._track_event('Importada del ERP')
                         result['creadas'] += 1
             except Exception as exc:
@@ -392,6 +532,7 @@ class GuiaEvento(models.Model):
     usuario_id = fields.Many2one('res.users', string='Realizado por', readonly=True)
     accion = fields.Char('Acción', required=True, readonly=True)
     detalle = fields.Text('Detalle', readonly=True)
+    publico_cliente = fields.Boolean('Visible para destinatario', default=True, readonly=True)
     create_date = fields.Datetime('Fecha/hora', readonly=True)
 
     @api.model_create_multi

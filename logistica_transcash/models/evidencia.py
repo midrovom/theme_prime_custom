@@ -16,10 +16,12 @@ class Evidencia(models.Model):
         ('novedad', 'Novedad en tránsito'),
     ], required=True)
     observacion = fields.Text('Observación', required=True)
-    archivo = fields.Binary('Fotografía o documento', attachment=True, copy=False)
+    archivo = fields.Binary('Foto o video', attachment=True, copy=False)
+    rotura_id = fields.Many2one('transcash.rotura', string='Rotura relacionada', ondelete='restrict', index=True)
     archivo_nombre = fields.Char('Archivo')
     archivo_mime = fields.Char('Tipo archivo')
     autor_usuario_id = fields.Many2one('res.users', string='Registrado por', readonly=True)
+    fecha_captura_dispositivo = fields.Char('Fecha informada por el teléfono', readonly=True)
     estado = fields.Selection([
         ('registrada', 'Registrada'), ('pendiente', 'Por aprobar'),
         ('aprobada', 'Aprobada'), ('objetada', 'Objetada'),
@@ -35,12 +37,18 @@ class Evidencia(models.Model):
     fecha_respuesta = fields.Datetime('Fecha de respuesta', readonly=True)
 
     @api.model
-    def register_evidence(self, guia, tipo, observacion, file_data, filename, mime, tipo_novedad='ninguna'):
+    def register_evidence(self, guia, tipo, observacion, file_data, filename, mime, tipo_novedad='ninguna', rotura_id=False):
         """Usado exclusivamente por portal controlado; también valida permisos aquí."""
         user = self.env.user
+        if guia.aprobacion_global == 'aprobada':
+            raise UserError(_('La guía está aprobada y no admite nuevas evidencias.'))
         if tipo in ('carga', 'llegada', 'novedad'):
-            if guia.chofer_usuario_id != user:
-                raise UserError(_('Esta guía no está asignada a su usuario chofer.'))
+            # Vendedores registran exclusivamente medios asociados a la
+            # rotura propia; NO pueden subir novedades operativas generales.
+            seller_damage = bool(rotura_id and tipo == 'novedad' and guia._is_seller(user)
+                                 and self.env['transcash.rotura'].sudo().browse(rotura_id).reportado_por_id == user)
+            if guia.chofer_usuario_id != user and not seller_damage:
+                raise UserError(_('Solo el chofer puede subir esta evidencia, salvo vendedor que documenta su propia rotura.'))
             allowed = {'carga': ('embarque',), 'llegada': ('destino', 'revision'),
                        'novedad': ('embarque', 'ruta', 'destino', 'revision')}
             if guia.state not in allowed[tipo]:
@@ -56,6 +64,12 @@ class Evidencia(models.Model):
             raise UserError(_('Debe escribir una observación.'))
         if tipo in ('carga', 'llegada') and not file_data:
             raise UserError(_('Es obligatoria una foto o documento del embarque o llegada.'))
+        if tipo_novedad == 'rotura' and not rotura_id:
+            raise UserError(_('Seleccione producto, cantidad rota y evidencia en Registrar rotura.'))
+        if rotura_id and not self.sudo().env['transcash.rotura'].browse(rotura_id).exists():
+            raise UserError(_('Rotura inexistente.'))
+        if rotura_id and self.sudo().env['transcash.rotura'].browse(rotura_id).guia_id != guia:
+            raise UserError(_('La rotura no pertenece a esta guía.'))
         if tipo_novedad not in ('ninguna', 'rotura', 'faltante', 'otro'):
             raise UserError(_('La novedad no es válida.'))
         ev = self.sudo().create({
@@ -63,14 +77,21 @@ class Evidencia(models.Model):
             'archivo': file_data or False, 'archivo_nombre': filename or False,
             'archivo_mime': mime or False, 'autor_usuario_id': user.id,
             'estado': 'pendiente' if tipo in ('carga', 'llegada') else 'registrada',
-            'tipo_novedad': tipo_novedad,
+            'tipo_novedad': tipo_novedad, 'rotura_id': rotura_id or False,
         })
         if tipo == 'llegada' and guia.state == 'destino':
             guia.sudo().with_context(transcash_internal_flow=True).write({'state': 'revision'})
-        if tipo_novedad != 'ninguna':
+        if tipo_novedad != 'ninguna' and not rotura_id:
             guia._open_incident('%s: %s' % (tipo_novedad, observacion[:250]))
         guia._track_event('Evidencia registrada', '%s / #%d' % (tipo, ev.id))
         return ev
+
+    def write(self, vals):
+        # The controller / authorized action is the only writer via validated sudo.
+        # ACL or a custom RPC context must never allow rewriting historical media.
+        if not self.env.su:
+            raise UserError(_('Las evidencias y revisiones son inmutables; use las acciones del flujo.'))
+        return super().write(vals)
 
     def action_open_object_wizard(self):
         self.ensure_one()

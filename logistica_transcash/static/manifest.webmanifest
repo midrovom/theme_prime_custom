@@ -1,0 +1,35 @@
+{
+  "name": "Transcash · Logística",
+  "short_name": "Transcash",
+  "description": "PWA con guías, evidencias y roturas por producto, con bandeja de sincronización offline",
+  "start_url": "/transcash/guias",
+  "scope": "/transcash/",
+  "display": "standalone",
+  "background_color": "#f7f9fb",
+  "theme_color": "#111f35",
+  "icons": [
+    {
+      "src": "/logistica_transcash/static/src/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logistica_transcash/static/src/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "id": "/transcash/guias",
+  "lang": "es",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "shortcuts": [
+    {
+      "name": "Pendientes offline",
+      "url": "/transcash/offline",
+      "description": "Consultar evidencias pendientes de sincronización"
+    }
+  ]
+}

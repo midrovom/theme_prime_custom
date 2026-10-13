@@ -16,6 +16,9 @@
             <setting string="Token entrante" help="Requerido para POST /api/transcash/v1/guias.">
               <field name="logistica_api_inbound_token" password="True"/>
             </setting>
+            <setting string="URL de solicitud de nota de crédito" help="POST HTTPS al ERP emisor; el valor económico del reclamo es referencial.">
+              <field name="logistica_credit_api_url" placeholder="https://erp.empresa.com/api/solicitud-nc"/>
+            </setting>
           </block>
         </app>
       </xpath>

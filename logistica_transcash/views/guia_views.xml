@@ -51,12 +51,18 @@
                   invisible="state != 'embarque'" groups="logistica_transcash.group_logistica_bodega"/>
           <button name="action_resolve_incident" type="object" string="Resolver incidencia"
                   invisible="incidencia_estado != 'abierta'" groups="logistica_transcash.group_logistica_manager"/>
+          <button name="action_approve_whole_guide" type="object" string="Aprobar guía completa" class="btn-primary"
+                  invisible="state != 'entregada' or aprobacion_global == 'aprobada'" groups="logistica_transcash.group_logistica_manager"/>
+          <button name="action_prepare_credit_request" type="object" string="Preparar propuesta NC"
+                  invisible="aprobacion_global != 'aprobada' or roturas_aprobadas == 0" groups="logistica_transcash.group_transcash_ventas_admin"/>
+          <button name="action_configure_liquidation" type="object" string="Configurar tarifa y cuenta"
+                  invisible="state not in ('entregada','lista_pago')" groups="logistica_transcash.group_transcash_contabilidad"/>
           <button name="action_ready_payment" type="object" string="Autorizar pago" class="btn-primary"
-                  invisible="state != 'entregada'" groups="logistica_transcash.group_logistica_manager"/>
+                  invisible="state != 'entregada'" groups="logistica_transcash.group_transcash_contabilidad"/>
           <button name="action_create_vendor_bill" type="object" string="Crear factura proveedor" class="btn-primary"
-                  invisible="state != 'lista_pago'" groups="logistica_transcash.group_logistica_manager"/>
+                  invisible="state != 'lista_pago'" groups="logistica_transcash.group_transcash_contabilidad"/>
           <button name="action_verify_payment" type="object" string="Verificar pago"
-                  invisible="state != 'facturada'" groups="logistica_transcash.group_logistica_manager"/>
+                  invisible="state != 'facturada'" groups="logistica_transcash.group_transcash_contabilidad"/>
           <field name="state" widget="statusbar" statusbar_visible="registrada,embarque,ruta,destino,revision,entregada,lista_pago,facturada,pagada" readonly="1"/>
         </header>
         <sheet>
@@ -76,7 +82,6 @@
               <field name="remitente_id"/>
               <field name="destinatario_id"/>
               <field name="chofer_usuario_id"/>
-              <field name="transportista_id"/>
               <field name="proveedor_id"/>
               <field name="bodega_usuario_id"/>
             </group>
@@ -86,7 +91,35 @@
             <field name="peso_kg"/>
             <field name="descripcion_carga"/>
           </group>
+          <group>
+            <group string="Control de aprobación global">
+              <field name="aprobacion_global" readonly="1"/>
+              <field name="aprobacion_por_id"/>
+              <field name="aprobacion_fecha"/>
+            </group>
+            <group string="Reporte de daños">
+              <field name="total_productos"/>
+              <field name="roturas_pendientes"/>
+              <field name="roturas_aprobadas"/>
+            </group>
+          </group>
           <notebook>
+            <page string="Productos de guía">
+              <field name="linea_ids" readonly="1">
+                <list create="0" delete="0"><field name="external_line_id"/>
+                  <field name="codigo"/><field name="producto"/><field name="cantidad"/>
+                  <field name="unidad"/><field name="cantidad_rota_pendiente"/>
+                  <field name="cantidad_rota_aprobada"/><field name="vigente_erp"/>
+                </list>
+              </field>
+            </page>
+            <page string="Roturas por producto">
+              <field name="rotura_ids" readonly="1">
+                <list create="0" delete="0"><field name="linea_id"/><field name="cantidad"/>
+                  <field name="unidad"/><field name="estado" widget="badge"/>
+                  <field name="reportado_por_id"/><field name="create_date"/></list>
+              </field>
+            </page>
             <page string="Evidencias">
               <field name="evidencia_ids" readonly="1">
                 <list create="0" delete="0">
@@ -113,6 +146,13 @@
                 <field name="resolucion_incidencia" groups="logistica_transcash.group_logistica_manager"/>
                 <field name="resolucion_por_id"/>
               </group>
+            </page>
+            <page string="Notas de crédito" groups="logistica_transcash.group_logistica_manager">
+              <field name="nota_credito_id" readonly="1">
+                <list create="0" delete="0"><field name="estado" widget="badge"/>
+                  <field name="referencia_erp"/><field name="numero_erp"/><field name="monto_estimado"/>
+                </list>
+              </field>
             </page>
             <page string="Liquidación" groups="logistica_transcash.group_logistica_manager">
               <group>
@@ -175,7 +215,7 @@
     <field name="code">action = env['transcash.guia'].action_sync_now()</field>
   </record>
   <menuitem id="menu_transcash_root" name="Logística Transcash" sequence="35"
-            groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager"/>
+            groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_consulta"/>
   <menuitem id="menu_transcash_guias" name="Todas las guías" parent="menu_transcash_root"
             action="action_transcash_guia" sequence="10"/>
   <menuitem id="menu_transcash_activas" name="Operación en curso" parent="menu_transcash_root"
@@ -183,7 +223,7 @@
   <menuitem id="menu_transcash_incidentes" name="Incidencias" parent="menu_transcash_root"
             action="action_transcash_incidencias" sequence="30"/>
   <menuitem id="menu_transcash_pagos" name="Liquidaciones" parent="menu_transcash_root"
-            action="action_transcash_payment" sequence="40" groups="logistica_transcash.group_logistica_manager"/>
+            action="action_transcash_payment" sequence="40" groups="logistica_transcash.group_transcash_contabilidad"/>
   <menuitem id="menu_transcash_sync" name="Sincronizar ERP" parent="menu_transcash_root"
             action="action_transcash_sync" sequence="50" groups="logistica_transcash.group_logistica_manager"/>
 </odoo>

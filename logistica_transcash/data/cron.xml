@@ -11,4 +11,13 @@
       <field name="active" eval="True"/>
     </record>
   </data>
+  <record id="ir_cron_transcash_upload_cleanup" model="ir.cron">
+    <field name="name">Transcash: limpiar bloques incompletos (7 días)</field>
+    <field name="user_id" ref="base.user_root"/>
+    <field name="model_id" ref="model_transcash_upload_sesion"/>
+    <field name="state">code</field>
+    <field name="code">model.cron_cleanup_chunks()</field>
+    <field name="interval_number">1</field>
+    <field name="interval_type">days</field>
+  </record>
 </odoo>

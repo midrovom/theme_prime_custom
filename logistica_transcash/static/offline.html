@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#111f35"/><meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>Transcash · Modo sin conexión</title>
+  <link rel="manifest" href="/transcash/manifest.webmanifest"/>
+  <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
+  <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css"/>
+  <script defer src="/logistica_transcash/static/src/js/offline-core.js"></script>
+  <script defer src="/logistica_transcash/static/src/js/offline-app.js"></script>
+</head>
+<body class="tc-app">
+  <div class="tc-shell">
+    <header class="tc-top"><div class="tc-brand"><div class="tc-logo">T<span>↗</span></div><div><strong>TRANSCASH</strong><small>LOGÍSTICA EN MOVIMIENTO</small></div></div>
+      <span id="tc-network-pill" class="tc-connection is-offline">● Sin señal</span></header>
+    <main class="tc-main tc-home">
+      <div class="tc-eyebrow">MODO TRABAJO EN CAMPO</div>
+      <h1 class="tc-heading">Sigue trabajando<span class="tc-title-dot">.</span></h1>
+      <p class="tc-muted tc-home-intro">Captura fotos, videos y roturas. Guardaremos tus reportes en este teléfono hasta poder enviarlos.</p>
+      <div class="tc-offline-banner"><span>☁</span><div><strong id="tc-offline-title">Preparado para trabajar sin Internet</strong>
+        <p id="tc-offline-subtitle">Los registros no están recibidos por el ERP hasta mostrar “Sincronizado”.</p></div></div>
+      <div id="tc-offline-error" role="alert" class="tc-alert tc-alert-error" hidden></div>
+      <div class="tc-sync-summary"><div><small>EN ESTE DISPOSITIVO</small><strong id="tc-pending-total">0 pendientes</strong></div>
+        <button class="tc-button tc-button-primary tc-sync-button" id="tc-force-sync" type="button">↻ Sincronizar</button></div>
+      <div class="tc-section-heading"><h2>Guías disponibles</h2><span class="tc-count" id="tc-offline-guide-count">0</span></div>
+      <div id="tc-offline-guides" class="tc-cards"></div>
+      <section id="tc-offline-compose" class="tc-offline-compose" hidden>
+        <div class="tc-section-heading"><h2 id="tc-offline-compose-title">Nuevo reporte</h2></div>
+        <p class="tc-panel-hint">Se guardará de forma local. La guía y las cantidades se verificarán en el servidor al sincronizar.</p>
+        <div class="tc-modal-segment tc-offline-segment"><button class="active" type="button" data-offline-tab="evidencia">📷 Evidencia</button><button type="button" data-offline-tab="rotura">⚠ Rotura</button></div>
+        <form id="tc-offline-form" class="tc-offline-form">
+          <div id="tc-offline-type-fields"></div>
+          <label class="tc-label" for="tc-offline-comment">Observaciones</label>
+          <textarea id="tc-offline-comment" name="observacion" class="tc-textarea" rows="3" maxlength="4000" required placeholder="Describe lo sucedido..."></textarea>
+          <div class="tc-upload-grid">
+            <label class="tc-upload-option"><span>📷</span><strong>Tomar foto</strong><small>Cámara</small><input type="file" name="archivos" accept="image/*" capture="environment"/></label>
+            <label class="tc-upload-option"><span>🎥</span><strong>Grabar video</strong><small>Cámara</small><input type="file" name="archivos" accept="video/*" capture="environment"/></label>
+          </div>
+          <label class="tc-upload-gallery">＋ Agregar desde galería<input type="file" name="archivos" accept="image/*,video/*" multiple/></label>
+          <div id="tc-offline-file-preview" class="tc-file-preview">Sin archivos seleccionados</div>
+          <button class="tc-button tc-button-primary tc-submit" type="submit">Guardar en teléfono →</button>
+        </form>
+      </section>
+      <div class="tc-section-heading"><h2>Bandeja de pendientes</h2></div>
+      <div id="tc-offline-outbox" class="tc-outbox"></div>
+      <p class="tc-device-warning">🔒 Los archivos pendientes se conservan únicamente en este dispositivo. Protégelo con bloqueo de pantalla y no borres los datos del navegador hasta sincronizar.</p>
+      <button type="button" id="tc-forget-device" class="tc-button tc-button-outline-red tc-forget">Olvidar datos de este dispositivo</button>
+    </main>
+    <nav class="tc-bottom"><a href="/transcash/guias" class="tc-bottom-item"><span class="tc-nav-icon">▤</span>Mis guías</a>
+      <a href="/transcash/offline" class="tc-bottom-item active"><span class="tc-nav-icon">⇅</span>Pendientes</a></nav>
+  </div>
+</body>
+</html>
