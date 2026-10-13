@@ -208,3 +208,36 @@ class TestExpenseBudget(TransactionCase):
         })
         with self.assertRaises(AccessError):
             wizard.action_import()
+
+    def test_registrar_can_enter_and_correct_consumed_without_removing(self):
+        """Registro administra consumos manuales, no aprobaciones ni bajas."""
+        base_group = self.env.ref('base.group_user')
+        registrar_group = self.env.ref('expense_budget_control.group_expense_budget_registrar')
+        registrar = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Registrador de gastos prueba',
+            'login': 'test_expense_budget_registrar_actual',
+            'groups_id': [(6, 0, [base_group.id, registrar_group.id])],
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+        })
+        line = self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '10', 'planned_amount': 500,
+        })
+        self.budget.action_approve()
+        expense = self.env['expense.budget.expense'].with_user(registrar).create({
+            'company_id': self.company.id, 'account_id': self.account.id,
+            'date': '2026-10-13', 'description': 'Consumo registrado manualmente',
+            'amount': 100,
+        })
+        self.assertEqual(expense.source, 'manual')
+        self.assertEqual(expense.budget_line_id, line)
+        self.assertEqual(line.actual_amount, 100)
+        self.assertEqual(line.execution_percentage, 20)
+        expense.write({'amount': 150})
+        self.assertEqual(line.actual_amount, 150)
+        self.assertEqual(line.variance_amount, 350)
+        with self.assertRaises(AccessError):
+            expense.unlink()
+        with self.assertRaises(AccessError):
+            self.budget.with_user(registrar).action_approve()
