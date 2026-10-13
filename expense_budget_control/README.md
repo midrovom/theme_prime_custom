@@ -1,6 +1,6 @@
 # Control de Presupuesto de Gastos — Odoo 18
 
-Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.2`.
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.11`.
 
 ## Funciones
 
@@ -150,3 +150,12 @@ La visibilidad de menús no cambia el cálculo presupuestario ni la API. Al actu
 
 
 **Visibilidad del aprobador (v1.4.6):** tanto en la pestaña Aprobación de presupuestos como en Proyectado vs. real, solo puede consultar presupuestos y proyecciones en estado Pendiente de aprobación o Aprobado. La restricción también se aplica a accesos directos; el Administrador conserva todos los estados.
+
+
+## Imprimir PDF desde Proyectado vs. real (v1.4.11)
+
+1. Abra **Control de Gastos → Proyectado vs. real** (vista de lista).
+2. Pulse **Imprimir PDF**. No necesita seleccionar filas: el asistente permite indicar **Empresa**, **Año** y opcionalmente **Rubro** y **Cuenta controlada**.
+3. Pulse **Imprimir PDF** en el asistente. El reporte A4 horizontal muestra los rubros, sus cuentas y las columnas **Proyectado**, **Gasto real**, **Disponible** y **Ejecución (%)**, con subtotales y total general.
+
+El porcentaje se calcula como consumido total / proyectado total x 100, no como promedio de porcentajes mensuales. No se duplican gastos de API o Excel: se utilizan exclusivamente los totales de las líneas mensuales. Los usuarios Aprobador solo podrán imprimir las líneas de presupuestos pendientes de aprobación o aprobados que ya pueden consultar; los demás roles conservan sus permisos. El PDF anual existente (12 meses) no se altera.

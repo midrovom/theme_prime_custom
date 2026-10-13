@@ -474,3 +474,62 @@ class TestExpenseBudget(TransactionCase):
                 'budget_id': second_budget.id, 'account_id': self.account.id,
                 'month': '1', 'planned_amount': 100,
             })
+
+    def test_comparison_pdf_groups_accounts_and_calculates_weighted_execution(self):
+        """El PDF del comparativo agrupa rubro/cuenta sin promediar porcentajes."""
+        water = self.env['expense.budget.account'].create({
+            'code': '6001-TEST-PDF', 'name': 'Agua',
+            'category_id': self.category.id, 'company_id': self.company.id,
+        })
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 100,
+        }).write({'actual_amount': 50})
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': water.id,
+            'month': '2', 'planned_amount': 300,
+        }).write({'actual_amount': 75})
+
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'company_id': self.company.id, 'year': 2026,
+        })
+        report = self.env['report.expense_budget_control.report_comparison_document']
+        prepared = report._get_report_values([wizard.id])['reports'][0]
+        self.assertEqual(len(prepared['categories']), 1)
+        self.assertEqual(len(prepared['categories'][0]['accounts']), 2)
+        self.assertEqual(prepared['grand_total']['planned'], 400)
+        self.assertEqual(prepared['grand_total']['actual'], 125)
+        self.assertEqual(prepared['grand_total']['available'], 275)
+        self.assertAlmostEqual(prepared['grand_total']['execution'], 31.25)
+        self.assertEqual(wizard.action_print_pdf()['type'], 'ir.actions.report')
+
+        filtered = self.env['expense.budget.comparison.report.wizard'].create({
+            'company_id': self.company.id, 'year': 2026,
+            'category_id': self.category.id, 'account_id': water.id,
+        })
+        data = report._get_report_values([filtered.id])['reports'][0]
+        self.assertEqual(len(data['categories'][0]['accounts']), 1)
+        self.assertEqual(data['grand_total']['actual'], 75)
+
+    def test_comparison_pdf_approver_cannot_see_draft_lines(self):
+        """Imprimir no debe permitir eludir la regla de solo enviados/aprobados."""
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '3', 'planned_amount': 750,
+        })
+        approver_group = self.env.ref('expense_budget_control.group_expense_budget_approver')
+        internal_group = self.env.ref('base.group_user')
+        approver = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Aprobador comprobación PDF',
+            'login': 'test_budget_approver_pdf_1411',
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+            'groups_id': [(6, 0, [internal_group.id, approver_group.id])],
+        })
+        wizard = self.env['expense.budget.comparison.report.wizard'].with_user(approver).create({
+            'company_id': self.company.id, 'year': 2026,
+        })
+        report = self.env['report.expense_budget_control.report_comparison_document'].with_user(approver)
+        self.assertEqual(report._prepare_comparison(wizard)['line_count'], 0)
+        self.budget.action_submit()
+        self.assertEqual(report._prepare_comparison(wizard)['line_count'], 1)

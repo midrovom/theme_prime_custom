@@ -163,6 +163,11 @@
         <field name="name">expense.budget.line.list</field><field name="model">expense.budget.line</field>
         <field name="arch" type="xml">
             <list string="Proyectado vs. consumido" create="false" edit="false" delete="false" decoration-danger="variance_amount &lt; 0">
+                <header>
+                    <button name="%(expense_budget_control.action_expense_budget_comparison_report_wizard)d"
+                            type="action" string="Imprimir PDF" icon="fa-print" display="always"
+                            groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
+                </header>
                 <field name="budget_id"/><field name="company_id"/>
                 <field name="account_id"/><field name="category_id"/><field name="month"/>
                 <field name="currency_id" column_invisible="True"/>
