@@ -288,12 +288,12 @@ class ExpenseBudgetLine(models.Model):
     manual_actual_amount = fields.Monetary(
         string='Ajuste manual del consumido', default=0.0,
         currency_field='currency_id', copy=False)
-    actual_amount = fields.Monetary(string='Consumido', compute='_compute_amounts',
+    actual_amount = fields.Monetary(string='Consumido', compute='_compute_actual_amount',
                                     inverse='_inverse_actual_amount',
                                     store=True, currency_field='currency_id')
-    variance_amount = fields.Monetary(string='Disponible', compute='_compute_amounts',
+    variance_amount = fields.Monetary(string='Disponible', compute='_compute_variance_execution',
                                       store=True, currency_field='currency_id')
-    execution_percentage = fields.Float(string='Ejecución (%)', compute='_compute_amounts',
+    execution_percentage = fields.Float(string='Ejecución (%)', compute='_compute_variance_execution',
                                         store=True, digits=(16, 2))
 
     _sql_constraints = [
@@ -303,10 +303,19 @@ class ExpenseBudgetLine(models.Model):
          'La proyección no puede ser negativa.'),
     ]
 
-    @api.depends('planned_amount', 'expense_ids.amount', 'manual_actual_amount')
-    def _compute_amounts(self):
+    @api.depends('expense_ids.amount', 'manual_actual_amount')
+    def _compute_actual_amount(self):
         for rec in self:
             rec.actual_amount = sum(rec.expense_ids.mapped('amount')) + rec.manual_actual_amount
+
+    @api.depends('planned_amount', 'actual_amount')
+    def _compute_variance_execution(self):
+        """Recalcular indicadores cuando se edita el consumido o el proyectado.
+
+        La función inversa de actual_amount modifica manual_actual_amount;
+        esta dependencia separada asegura la recomputación tras guardar.
+        """
+        for rec in self:
             rec.variance_amount = rec.planned_amount - rec.actual_amount
             rec.execution_percentage = (rec.actual_amount / rec.planned_amount * 100.0
                                         if rec.planned_amount else 0.0)

@@ -20,6 +20,73 @@ class TestExpenseBudget(TransactionCase):
             'name': 'Test presupuestario', 'year': 2026, 'company_id': self.company.id,
         })
 
+    def test_balance_and_execution_recompute_after_save_manual_actual(self):
+        """Guardado manual: ambos indicadores se recalculan y persisten."""
+        Line = self.env['expense.budget.line']
+        line = Line.create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '9', 'planned_amount': 1000,
+        })
+        self.assertEqual(line.variance_amount, 1000)
+        self.assertEqual(line.execution_percentage, 0)
+
+        line.write({'actual_amount': 250})
+        self.env.flush_all()
+        line.invalidate_recordset(['actual_amount', 'variance_amount', 'execution_percentage'])
+        self.assertEqual(line.actual_amount, 250)
+        self.assertEqual(line.variance_amount, 750)
+        self.assertEqual(line.execution_percentage, 25)
+
+        line.write({'actual_amount': 400})
+        self.env.flush_all()
+        line.invalidate_recordset(['actual_amount', 'variance_amount', 'execution_percentage'])
+        self.assertEqual(line.variance_amount, 600)
+        self.assertEqual(line.execution_percentage, 40)
+
+        # El cambio del proyectado también debe actualizar los indicadores.
+        line.write({'planned_amount': 800})
+        self.env.flush_all()
+        line.invalidate_recordset(['variance_amount', 'execution_percentage'])
+        self.assertEqual(line.variance_amount, 400)
+        self.assertEqual(line.execution_percentage, 50)
+
+    def test_budget_manager_multicompany_bypass_not_for_registrar(self):
+        """El administrador no recibe la regla de compañía del módulo."""
+        base = self.env.ref('base.group_user')
+        manager_group = self.env.ref('expense_budget_control.group_expense_budget_manager')
+        registrar_group = self.env.ref('expense_budget_control.group_expense_budget_registrar')
+        company_b = self.env['res.company'].create({
+            'name': 'Empresa secundaria de prueba presupuestaria',
+            'currency_id': self.company.currency_id.id,
+        })
+        Users = self.env['res.users'].with_context(no_reset_password=True)
+        manager = Users.create({
+            'name': 'Administrador multiempresa de prueba',
+            'login': 'test_budget_manager_company_all_147',
+            'groups_id': [(6, 0, [base.id, manager_group.id])],
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+        })
+        registrar = Users.create({
+            'name': 'Registro limitado por empresa',
+            'login': 'test_budget_registrar_company_only_147',
+            'groups_id': [(6, 0, [base.id, registrar_group.id])],
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+        })
+        Budget = self.env['expense.budget']
+        created = Budget.with_user(manager).create({
+            'name': 'Presupuesto empresa secundaria', 'year': 2035,
+            'company_id': company_b.id,
+        })
+        self.assertIn(created.id, Budget.with_user(manager).search([]).ids)
+        self.assertNotIn(created.id, Budget.with_user(registrar).search([]).ids)
+        with self.assertRaises(AccessError):
+            Budget.with_user(registrar).create({
+                'name': 'Registro en empresa no autorizada', 'year': 2036,
+                'company_id': company_b.id,
+            })
+
     def test_planned_vs_actual(self):
         line = self.env['expense.budget.line'].create({
             'budget_id': self.budget.id, 'account_id': self.account.id,

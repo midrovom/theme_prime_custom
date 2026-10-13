@@ -29,25 +29,25 @@
         <field name="category_id" ref="module_category_expense_budget"/>
         <field name="implied_ids" eval="[(6, 0, [ref('group_expense_budget_read')])]"/>
     </record>
-    <record id="category_company_rule" model="ir.rule">
+    <!--El administrador gestiona registros de todas las empresas en este módulo; otros roles conservan su filtro company_ids.--><record id="category_company_rule" model="ir.rule">
         <field name="name">Rubros: empresas autorizadas</field>
         <field name="model_id" ref="model_expense_budget_category"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('expense_budget_control.group_expense_budget_manager') else [('company_id', 'in', company_ids)]</field>
     </record>
     <record id="account_company_rule" model="ir.rule">
         <field name="name">Cuentas: empresas autorizadas</field>
         <field name="model_id" ref="model_expense_budget_account"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('expense_budget_control.group_expense_budget_manager') else [('company_id', 'in', company_ids)]</field>
     </record>
     <record id="budget_company_rule" model="ir.rule">
         <field name="name">Presupuestos: empresas autorizadas</field>
         <field name="model_id" ref="model_expense_budget"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('expense_budget_control.group_expense_budget_manager') else [('company_id', 'in', company_ids)]</field>
     </record>
     <record id="line_company_rule" model="ir.rule">
         <field name="name">Líneas: empresas autorizadas</field>
         <field name="model_id" ref="model_expense_budget_line"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('expense_budget_control.group_expense_budget_manager') else [('company_id', 'in', company_ids)]</field>
     </record>
     <!-- El aprobador solo lee presupuestos enviados o aprobados, incluso
          si intenta entrar por URL, búsquedas o el formulario de líneas. -->
@@ -96,16 +96,16 @@
     <record id="expense_company_rule" model="ir.rule">
         <field name="name">Gastos: empresas autorizadas</field>
         <field name="model_id" ref="model_expense_budget_expense"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('expense_budget_control.group_expense_budget_manager') else [('company_id', 'in', company_ids)]</field>
     </record>
     <record id="api_config_company_rule" model="ir.rule">
         <field name="name">API de gastos: empresas autorizadas</field>
         <field name="model_id" ref="model_expense_budget_api_config"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('expense_budget_control.group_expense_budget_manager') else [('company_id', 'in', company_ids)]</field>
     </record>
     <record id="sync_log_company_rule" model="ir.rule">
         <field name="name">Historial API: empresas autorizadas</field>
         <field name="model_id" ref="model_expense_budget_sync_log"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('expense_budget_control.group_expense_budget_manager') else [('company_id', 'in', company_ids)]</field>
     </record>
 </odoo>
