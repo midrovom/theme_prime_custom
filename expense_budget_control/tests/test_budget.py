@@ -527,6 +527,79 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(len(data['categories'][0]['accounts']), 1)
         self.assertEqual(data['grand_total']['actual'], 75)
 
+    def test_comparison_pdf_category_only_includes_all_accounts_and_budgets(self):
+        """Solo Rubro: todas las cuentas y presupuestos del año, sin filtrar cuenta."""
+        Account = self.env['expense.budget.account']
+        Line = self.env['expense.budget.line']
+        agua = Account.create({
+            'code': 'PDF-AGUA-ALL', 'name': 'Agua',
+            'company_id': self.company.id, 'category_id': self.category.id,
+        })
+        # Primer presupuesto: dos cuentas bajo el mismo rubro.
+        luz_enero = Line.create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 100,
+        })
+        luz_enero.write({'actual_amount': 40})
+        agua_enero = Line.create({
+            'budget_id': self.budget.id, 'account_id': agua.id,
+            'month': '1', 'planned_amount': 100,
+        })
+        agua_enero.write({'actual_amount': 10})
+        self.budget.action_submit()
+        self.budget.action_approve()
+
+        # Segundo presupuesto aprobado o en borrador: debe aparecer también
+        # cuando el administrador imprime todo el rubro.
+        second = self.env['expense.budget'].create({
+            'name': 'Segundo presupuesto del rubro', 'year': 2026,
+            'company_id': self.company.id,
+        })
+        for account, month, planned, actual in (
+                (self.account, '4', 100, 40),
+                (self.account, '9', 50, 0),
+                (agua, '6', 70, 30)):
+            line = Line.create({
+                'budget_id': second.id, 'account_id': account.id,
+                'month': month, 'planned_amount': planned,
+            })
+            line.write({'actual_amount': actual})
+
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'company_id': self.company.id, 'year': 2026,
+            'category_id': self.category.id,
+        })
+        self.assertFalse(wizard.account_id)
+        report = self.env['report.expense_budget_control.report_comparison_document']
+        result = report._prepare_comparison(wizard)
+        self.assertEqual(result['line_count'], 5)
+        self.assertEqual(len(result['categories']), 1)
+        group = result['categories'][0]
+        self.assertEqual(group['line_count'], 5)
+        self.assertEqual(len(group['accounts']), 2)
+        accounts = {entry['account'].id: entry for entry in group['accounts']}
+        self.assertEqual(accounts[self.account.id]['line_count'], 3)
+        self.assertEqual(accounts[agua.id]['line_count'], 2)
+        self.assertEqual(result['grand_total']['planned'], 420)
+        self.assertEqual(result['grand_total']['actual'], 120)
+        self.assertEqual(result['grand_total']['available'], 300)
+        self.assertAlmostEqual(result['grand_total']['execution'], 120 / 420 * 100)
+        self.assertEqual(
+            {detail['line'].budget_id.id for acc in group['accounts']
+             for detail in acc['lines']},
+            {self.budget.id, second.id},
+        )
+
+        # Cambiar el rubro no puede conservar el filtro por una cuenta anterior.
+        wizard.account_id = agua
+        wizard._onchange_category_id()
+        self.assertFalse(wizard.account_id)
+        self.assertEqual(report._prepare_comparison(wizard)['line_count'], 5)
+
+        # Solo cuando se escoge explícitamente Cuenta se limita el reporte.
+        wizard.account_id = agua
+        self.assertEqual(report._prepare_comparison(wizard)['line_count'], 2)
+
     def test_comparison_pdf_approver_cannot_see_draft_lines(self):
         """Imprimir no debe permitir eludir la regla de solo enviados/aprobados."""
         self.env['expense.budget.line'].create({

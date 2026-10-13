@@ -33,8 +33,10 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
 
     @api.onchange('category_id')
     def _onchange_category_id(self):
-        if self.account_id and self.category_id and self.account_id.category_id != self.category_id:
-            self.account_id = False
+        # Al seleccionar únicamente Rubro no conservar una cuenta de un
+        # filtro anterior (ni siquiera si pertenece al mismo rubro).
+        # Dejar la cuenta vacía significa imprimirlas todas.
+        self.account_id = False
 
     @api.constrains('year', 'company_id', 'category_id', 'account_id')
     def _check_filters(self):

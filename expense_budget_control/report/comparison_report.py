@@ -38,8 +38,13 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             ('budget_id.year', '=', wizard.year),
         ]
         if wizard.category_id:
-            domain.append(('category_id', '=', wizard.category_id.id))
+            # Filtrar por la relación actual de la cuenta con su rubro.
+            # No depender del valor almacenado de category_id en proyecciones
+            # antiguas: puede no estar recalculado tras una migración.
+            # Sin cuenta elegida, incluye TODAS las cuentas del rubro.
+            domain.append(('account_id.category_id', '=', wizard.category_id.id))
         if wizard.account_id:
+            # Solo restringir a una cuenta cuando el usuario la elige.
             domain.append(('account_id', '=', wizard.account_id.id))
 
         # Las reglas del modelo impiden incluir borradores cuando imprime el aprobador.
@@ -48,8 +53,8 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         grand_total = self._empty_totals()
         month_labels = dict(self.env['expense.budget.line']._fields['month'].selection)
         for line in lines:
-            category = line.category_id
             account = line.account_id
+            category = account.category_id
             if category.id not in category_map:
                 category_map[category.id] = {
                     'category': category,

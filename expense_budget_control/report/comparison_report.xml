@@ -126,7 +126,7 @@
                                                     <td t-esc="detail['line'].budget_id.name"/>
                                                     <td t-esc="detail['line'].company_id.name"/>
                                                     <td t-esc="detail['line'].account_id.name"/>
-                                                    <td t-esc="detail['line'].category_id.name"/>
+                                                    <td t-esc="detail['line'].account_id.category_id.name"/>
                                                     <td t-esc="detail['month_name']"/>
                                                     <td class="amount" t-esc="'{:,.2f}'.format(detail['line'].planned_amount)"/>
                                                     <td class="amount" t-esc="'{:,.2f}'.format(detail['line'].actual_amount)"/>
