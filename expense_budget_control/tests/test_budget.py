@@ -195,14 +195,29 @@ class TestExpenseBudget(TransactionCase):
                 'company_id': self.company.id,
             })
 
-        with self.assertRaises(UserError):
-            budget.with_user(approver).action_approve()  # Aún no se envió.
+        # El aprobador no puede ver borradores ni sus líneas, ni siquiera
+        # mediante búsqueda directa o apertura por ID.
+        approver_budgets = self.env['expense.budget'].with_user(approver)
+        approver_lines = self.env['expense.budget.line'].with_user(approver)
+        self.assertNotIn(budget.id, approver_budgets.search([]).ids)
+        self.assertNotIn(line.id, approver_lines.search([]).ids)
+        with self.assertRaises(AccessError):
+            budget.with_user(approver).read(['name'])
+        with self.assertRaises(AccessError):
+            line.with_user(approver).read(['planned_amount'])
+        with self.assertRaises(AccessError):
+            budget.with_user(approver).action_approve()  # Borrador no visible.
+
         budget.with_user(registrar).action_submit()
         self.assertEqual(budget.state, 'to_approve')
+        self.assertIn(budget.id, approver_budgets.search([]).ids)
+        self.assertIn(line.id, approver_lines.search([]).ids)
         with self.assertRaises(UserError):
             line.with_user(registrar).write({'planned_amount': 700})
         budget.with_user(approver).action_approve()
         self.assertEqual(budget.state, 'approved')
+        self.assertIn(budget.id, approver_budgets.search([]).ids)
+        self.assertIn(line.id, approver_lines.search([]).ids)
         with self.assertRaises(UserError):
             line.with_user(registrar).write({'planned_amount': 700})
         with self.assertRaises(AccessError):
@@ -217,6 +232,22 @@ class TestExpenseBudget(TransactionCase):
         })
         with self.assertRaises(AccessError):
             wizard.action_import()
+
+    def test_manager_can_see_draft_even_with_approver_role(self):
+        base_group = self.env.ref('base.group_user')
+        manager_group = self.env.ref('expense_budget_control.group_expense_budget_manager')
+        approver_group = self.env.ref('expense_budget_control.group_expense_budget_approver')
+        manager = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Administrador y aprobador de prueba',
+            'login': 'test_expense_budget_manager_with_approver',
+            'groups_id': [(6, 0, [base_group.id, manager_group.id, approver_group.id])],
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+        })
+        self.assertIn(
+            self.budget.id,
+            self.env['expense.budget'].with_user(manager).search([]).ids,
+        )
 
     def test_registrar_can_enter_and_correct_consumed_without_removing(self):
         """Registro administra consumos manuales, no aprobaciones ni bajas."""

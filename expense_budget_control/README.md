@@ -143,8 +143,10 @@ expense_budget_control/
 
 - **Consulta:** Presupuestos, Proyectado vs. real y Gastos reales (solo lectura).
 - **Registro de presupuestos:** exclusivamente los menús **Presupuestos** e **Importar Excel/CSV**. Conserva la edición de consumido en proyecciones, el envío a aprobar y Sincronizar API desde los presupuestos.
-- **Aprobador de presupuestos:** **Aprobación de presupuestos** (solo los pendientes), **Proyectado vs. real** y **Gastos reales** (lectura).
+- **Aprobador de presupuestos:** **Aprobación de presupuestos** (solo pendientes de aprobación y aprobados; nunca borradores), **Proyectado vs. real** y **Gastos reales** (lectura).
 - **Administrador de presupuestos:** todos los menús, incluyendo Presupuestos, Aprobación, Proyectado vs. real, Gastos reales, Configuración e Importar Excel/CSV.
 
 La visibilidad de menús no cambia el cálculo presupuestario ni la API. Al actualizar desde versiones anteriores se limpia la pertenencia heredada al grupo Consulta para usuarios de Registro, Aprobador o Administrador; el acceso de lectura continúa gracias a un grupo técnico interno.
 
+
+**Visibilidad del aprobador (v1.4.6):** tanto en la pestaña Aprobación de presupuestos como en Proyectado vs. real, solo puede consultar presupuestos y proyecciones en estado Pendiente de aprobación o Aprobado. La restricción también se aplica a accesos directos; el Administrador conserva todos los estados.

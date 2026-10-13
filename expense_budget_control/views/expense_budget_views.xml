@@ -158,7 +158,7 @@
         <field name="search_view_id" ref="view_expense_budget_search"/>
     </record>
 
-    <record id="action_expense_budget_approval" model="ir.actions.act_window"><field name="name">Aprobación de presupuestos</field><field name="res_model">expense.budget</field><field name="view_mode">list,form</field><field name="domain">[('state', '=', 'to_approve')]</field><field name="search_view_id" ref="view_expense_budget_search"/></record><!-- Comparativo en lista, tabla dinámica y gráfica -->
+    <record id="action_expense_budget_approval" model="ir.actions.act_window"><field name="name">Aprobación de presupuestos</field><field name="res_model">expense.budget</field><field name="view_mode">list,form</field><field name="domain">[('state', 'in', ('to_approve', 'approved'))]</field><field name="search_view_id" ref="view_expense_budget_search"/></record><!-- Comparativo en lista, tabla dinámica y gráfica -->
     <record id="view_expense_budget_line_list" model="ir.ui.view">
         <field name="name">expense.budget.line.list</field><field name="model">expense.budget.line</field>
         <field name="arch" type="xml">
