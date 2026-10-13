@@ -1,6 +1,11 @@
 <odoo>
-    <menuitem id="menu_customer_incentive_root" name="Customer Incentives" sequence="45" groups="customer_incentive_management.group_incentive_user"/>
-    <menuitem id="menu_incentive_requests" name="Requests" parent="menu_customer_incentive_root" action="action_incentive_request" sequence="10" groups="customer_incentive_management.group_incentive_user"/>
+    <menuitem id="menu_customer_incentive_root" name="Customer Incentives &amp; Supplier Collections" sequence="45" groups="customer_incentive_management.group_incentive_user,customer_incentive_management.group_incentive_approver,customer_incentive_management.group_incentive_treasury,customer_incentive_management.group_incentive_collection,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager"/>
+
+    <menuitem id="menu_incentive_requests" name="Requests" parent="menu_customer_incentive_root" action="action_incentive_request" sequence="10" groups="customer_incentive_management.group_incentive_user,customer_incentive_management.group_incentive_manager"/>
+    <menuitem id="menu_incentive_approval_queue" name="Approval Queue" parent="menu_customer_incentive_root" action="action_incentive_approval_queue" sequence="20" groups="customer_incentive_management.group_incentive_approver,customer_incentive_management.group_incentive_manager"/>
+    <menuitem id="menu_incentive_treasury_queue" name="Beneficiary Payments" parent="menu_customer_incentive_root" action="action_incentive_treasury_queue" sequence="30" groups="customer_incentive_management.group_incentive_treasury,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager"/>
+    <menuitem id="menu_incentive_collection_queue" name="Supplier Collections" parent="menu_customer_incentive_root" action="action_incentive_collection_queue" sequence="40" groups="customer_incentive_management.group_incentive_collection,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager"/>
+
     <menuitem id="menu_incentive_configuration" name="Configuration" parent="menu_customer_incentive_root" sequence="90" groups="customer_incentive_management.group_incentive_manager"/>
     <menuitem id="menu_incentive_request_types" name="Request Types" parent="menu_incentive_configuration" action="action_incentive_request_type" sequence="10" groups="customer_incentive_management.group_incentive_manager"/>
 </odoo>

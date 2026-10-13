@@ -1211,3 +1211,340 @@ msgstr "Los cobros registrados manualmente deben cubrir el importe completo ante
 #: code:addons/customer_incentive_management/models/incentive_request.py:0
 msgid "Payment/offset detail amount must be greater than zero."
 msgstr "El importe del detalle de pago/cruce debe ser mayor que cero."
+
+
+#. module: customer_incentive_management
+msgid "Customer Incentives & Supplier Collections"
+msgstr "Incentivos a clientes y cobro a proveedores"
+
+#. module: customer_incentive_management
+msgid "Approval Queue"
+msgstr "Bandeja de aprobaciones"
+
+#. module: customer_incentive_management
+msgid "Beneficiary Payments"
+msgstr "Pagos al beneficiario"
+
+#. module: customer_incentive_management
+msgid "Supplier Collections"
+msgstr "Cobros a proveedores"
+
+#. module: customer_incentive_management
+msgid "Request Information"
+msgstr "Información del requerimiento"
+
+#. module: customer_incentive_management
+msgid "Beneficiary and Supplier"
+msgstr "Cliente beneficiario y proveedor"
+
+#. module: customer_incentive_management
+msgid "Manual Product / Program Lines"
+msgstr "Líneas manuales de producto/programa"
+
+#. module: customer_incentive_management
+msgid "Accounting Amount"
+msgstr "Importe contable"
+
+#. module: customer_incentive_management
+msgid "Manual Settlement"
+msgstr "Liquidación manual"
+
+#. module: customer_incentive_management
+msgid "Collection Document"
+msgstr "Documento de cobro"
+
+#. module: customer_incentive_management
+msgid "Collection Progress"
+msgstr "Avance del cobro"
+
+#. module: customer_incentive_management
+msgid "Register Collection Movement"
+msgstr "Registrar movimiento de cobro"
+
+#. module: customer_incentive_management
+msgid "Start Supplier Collection"
+msgstr "Iniciar cobro al proveedor"
+
+#. module: customer_incentive_management
+msgid "Confirm Beneficiary Payment"
+msgstr "Confirmar pago al beneficiario"
+
+#. module: customer_incentive_management
+msgid "Responsible Salesperson"
+msgstr "Vendedor responsable"
+
+#. module: customer_incentive_management
+msgid "Operation"
+msgstr "Operación"
+
+#. module: customer_incentive_management
+msgid "Payment Method"
+msgstr "Método de pago"
+
+#. module: customer_incentive_management
+msgid "Requests Assigned to Me"
+msgstr "Requerimientos asignados a mí"
+
+#. module: customer_incentive_management
+msgid "Approved - Awaiting Execution"
+msgstr "Aprobado - pendiente de ejecución"
+
+#. module: customer_incentive_management
+msgid "In Execution"
+msgstr "En ejecución"
+
+#. module: customer_incentive_management
+msgid "Only requesters or incentive managers can create a request."
+msgstr "Solo los solicitantes o administradores de incentivos pueden crear requerimientos."
+
+#. module: customer_incentive_management
+msgid "Use the workflow buttons to change the request status."
+msgstr "Utilice los botones del flujo para cambiar el estado del requerimiento."
+
+#. module: customer_incentive_management
+msgid "A request can only be edited by its requester while it is Draft or Rejected."
+msgstr "El requerimiento solo puede ser editado por quien lo creó mientras esté en Borrador o Rechazado."
+
+#. module: customer_incentive_management
+msgid "Requesters can edit request information only. Payment and collection data belong to Finance."
+msgstr "Los solicitantes solo pueden editar la información del requerimiento. Los pagos y cobros corresponden a Finanzas."
+
+#. module: customer_incentive_management
+msgid "Treasury can edit beneficiary-payment references only during execution."
+msgstr "Tesorería solo puede editar referencias del pago al beneficiario durante la ejecución."
+
+#. module: customer_incentive_management
+msgid "Collection staff can edit supplier-collection data only in the collection stages."
+msgstr "Cobros solo puede editar información de cobro al proveedor durante las etapas de cobro."
+
+#. module: customer_incentive_management
+msgid "You do not have permission to edit this request."
+msgstr "No tiene permisos para editar este requerimiento."
+
+#. module: customer_incentive_management
+msgid "You do not have permission to approve incentive requests."
+msgstr "No tiene permisos para aprobar requerimientos de incentivos."
+
+#. module: customer_incentive_management
+msgid "Only Treasury can register payment to the beneficiary."
+msgstr "Solo Tesorería puede registrar pagos al beneficiario."
+
+#. module: customer_incentive_management
+msgid "Only Supplier Collection / Accounts Receivable can register supplier collections."
+msgstr "Solo Cobros a proveedores / Cuentas por Cobrar puede registrar los cobros al proveedor."
+
+#. module: customer_incentive_management
+msgid "Only the requester can submit this request."
+msgstr "Solo quien creó el requerimiento puede enviarlo."
+
+#. module: customer_incentive_management
+msgid "Only Draft or Rejected requests can be submitted."
+msgstr "Solo se pueden enviar requerimientos en Borrador o Rechazados."
+
+#. module: customer_incentive_management
+msgid "Add at least one manual product/program line."
+msgstr "Agregue al menos una línea manual de producto/programa."
+
+#. module: customer_incentive_management
+msgid "Select the salesperson responsible for this request. The requester and salesperson may be different people."
+msgstr "Seleccione el vendedor responsable del requerimiento. El solicitante y el vendedor pueden ser personas distintas."
+
+#. module: customer_incentive_management
+msgid "Select the supplier collection payment terms before submitting."
+msgstr "Seleccione los términos de cobro al proveedor antes de enviar."
+
+#. module: customer_incentive_management
+msgid "The grand total cannot be negative."
+msgstr "El total general no puede ser negativo."
+
+#. module: customer_incentive_management
+msgid "Request submitted for approval by %s."
+msgstr "Requerimiento enviado a aprobación por %s."
+
+#. module: customer_incentive_management
+msgid "Separation of duties: you cannot approve or reject a request that you submitted or are assigned to as salesperson."
+msgstr "Separación de funciones: no puede aprobar ni rechazar un requerimiento que haya creado o en el que esté asignado como vendedor."
+
+#. module: customer_incentive_management
+msgid "Only requests waiting for approval can be approved."
+msgstr "Solo se pueden aprobar requerimientos pendientes de aprobación."
+
+#. module: customer_incentive_management
+msgid "Only requests waiting for approval can be rejected."
+msgstr "Solo se pueden rechazar requerimientos pendientes de aprobación."
+
+#. module: customer_incentive_management
+msgid "Request rejected. The requester can correct it and submit it again."
+msgstr "Requerimiento rechazado. El solicitante puede corregirlo y volver a enviarlo."
+
+#. module: customer_incentive_management
+msgid "Only submitted or rejected requests can be reset to Draft."
+msgstr "Solo los requerimientos Enviado o Rechazado pueden volver a Borrador."
+
+#. module: customer_incentive_management
+msgid "Request returned to Draft."
+msgstr "El requerimiento volvió a Borrador."
+
+#. module: customer_incentive_management
+msgid "Only approved requests can move to In Execution."
+msgstr "Solo los requerimientos aprobados pueden pasar a En ejecución."
+
+#. module: customer_incentive_management
+msgid "Execution started by Treasury. Beneficiary settlement details can now be recorded."
+msgstr "Tesorería inició la ejecución. Ahora se puede registrar la liquidación al beneficiario."
+
+#. module: customer_incentive_management
+msgid "Beneficiary payment can only be confirmed while the request is In Execution."
+msgstr "El pago al beneficiario solo se puede confirmar cuando el requerimiento está En ejecución."
+
+#. module: customer_incentive_management
+msgid "Enter at least one beneficiary payment or offset detail."
+msgstr "Ingrese al menos un detalle de pago o cruce al beneficiario."
+
+#. module: customer_incentive_management
+msgid "Beneficiary payment/offset details do not cover the accounting amount."
+msgstr "Los detalles de pago/cruce al beneficiario no cubren el importe contable."
+
+#. module: customer_incentive_management
+msgid "Enter a reference for every beneficiary transfer or accounting offset."
+msgstr "Ingrese una referencia para cada transferencia o cruce al beneficiario."
+
+#. module: customer_incentive_management
+msgid "Beneficiary settlement recorded manually. This module did not create a payment or accounting entry."
+msgstr "Liquidación al beneficiario registrada manualmente. Este módulo no creó pagos ni asientos contables."
+
+#. module: customer_incentive_management
+msgid "Record beneficiary settlement before starting supplier collection."
+msgstr "Registre la liquidación al beneficiario antes de iniciar el cobro al proveedor."
+
+#. module: customer_incentive_management
+msgid "The request must have supplier collection terms selected from the beginning."
+msgstr "El requerimiento debe tener seleccionados desde el inicio los términos de cobro al proveedor."
+
+#. module: customer_incentive_management
+msgid "Supplier collection started. Document %(ref)s; agreed terms: %(terms)s. The invoice must be created manually in Accounting."
+msgstr "Se inició el cobro al proveedor. Documento %(ref)s; términos acordados: %(terms)s. La factura debe crearse manualmente en Contabilidad."
+
+#. module: customer_incentive_management
+msgid "Enter at least one transfer or accounting offset detail for supplier collection."
+msgstr "Ingrese al menos un detalle de transferencia o cruce contable para cobrar al proveedor."
+
+#. module: customer_incentive_management
+msgid "Enter a reference for every supplier transfer or accounting offset."
+msgstr "Ingrese una referencia para cada transferencia o cruce al proveedor."
+
+#. module: customer_incentive_management
+msgid "The registered supplier collection total cannot exceed the amount to collect."
+msgstr "El total de cobros al proveedor registrado no puede superar el importe por cobrar."
+
+#. module: customer_incentive_management
+msgid "Supplier collection is fully registered. Actual transfers and offsets must be processed/conciled separately in Odoo Accounting."
+msgstr "El cobro al proveedor está registrado por completo. Las transferencias y cruces reales deben procesarse/conciliarse por separado en Contabilidad de Odoo."
+
+#. module: customer_incentive_management
+msgid "Supplier collection movement registered. Remaining balance: %s. The request stays Pending Supplier Collection."
+msgstr "Movimiento de cobro al proveedor registrado. Saldo pendiente: %s. El requerimiento continúa Pendiente de cobro al proveedor."
+
+#. module: customer_incentive_management
+msgid "Enter the product number manually; this is not linked to Odoo's product catalog."
+msgstr "Ingrese manualmente el número de producto; no está vinculado al catálogo de productos de Odoo."
+
+#. module: customer_incentive_management
+msgid "Enter the program or activity manually, for example Rebate, store repair or advertising."
+msgstr "Ingrese manualmente el programa o actividad, por ejemplo Rebate, arreglo de local o publicidad."
+
+#. module: customer_incentive_management
+msgid "Only the requester can edit product/program lines while the request is Draft or Rejected."
+msgstr "Solo quien creó el requerimiento puede editar sus líneas cuando está en Borrador o Rechazado."
+
+#. module: customer_incentive_management
+msgid "Only the requester can add product/program lines while the request is Draft or Rejected."
+msgstr "Solo quien creó el requerimiento puede agregar líneas cuando está en Borrador o Rechazado."
+
+#. module: customer_incentive_management
+msgid "A product/program line cannot be moved to another request."
+msgstr "Una línea de producto/programa no puede trasladarse a otro requerimiento."
+
+#. module: customer_incentive_management
+msgid "Select a valid operation type."
+msgstr "Seleccione un tipo de operación válido."
+
+#. module: customer_incentive_management
+msgid "Only Treasury can add or edit beneficiary payment details during In Execution."
+msgstr "Solo Tesorería puede agregar o editar detalles de pago al beneficiario durante En ejecución."
+
+#. module: customer_incentive_management
+msgid "Only Supplier Collection can add or edit supplier collection details while Pending Collection."
+msgstr "Solo Cobros puede agregar o editar detalles de cobro al proveedor mientras está Pendiente de cobro."
+
+#. module: customer_incentive_management
+msgid "Select the request for this payment detail."
+msgstr "Seleccione el requerimiento de este detalle de pago."
+
+#. module: customer_incentive_management
+msgid "A payment detail cannot be moved to another request."
+msgstr "Un detalle de pago no puede trasladarse a otro requerimiento."
+
+#. module: customer_incentive_management
+msgid "The requester and salesperson may be different people. Payment terms are selected at the start; supplier invoices are entered manually in Accounting."
+msgstr "El solicitante y el vendedor pueden ser personas distintas. Los términos de pago se seleccionan desde el inicio; las facturas del proveedor se ingresan manualmente en Contabilidad."
+
+#. module: customer_incentive_management
+msgid "Create and post any credit note/payment manually in Accounting first, then link it here if applicable. This module never creates accounting moves or payments."
+msgstr "Primero cree y contabilice manualmente cualquier nota de crédito o pago en Contabilidad y luego vincúlelo aquí, si corresponde. Este módulo nunca crea asientos ni pagos contables."
+
+#. module: customer_incentive_management
+msgid "Record transfer and/or offset movements in the details tab. Partial collections remain pending until the full amount is registered."
+msgstr "Registre los movimientos por transferencia o cruce en la pestaña de detalles. Los cobros parciales permanecen pendientes hasta registrar el importe completo."
+
+#. module: customer_incentive_management
+msgid "Each line identifies the salesperson, whether it is a payment to the beneficiary or a collection from the supplier, the method (transfer or accounting offset), amount, reference and evidence. Finance roles edit details only at their assigned stage."
+msgstr "Cada línea identifica al vendedor, si se trata de un pago al beneficiario o un cobro al proveedor, el método (transferencia o cruce contable), el importe, la referencia y la evidencia. Los roles financieros editan los detalles solo en su etapa correspondiente."
+
+#. module: customer_incentive_management
+msgid "Attach quotations, approval evidence, beneficiary receipts, supplier collection evidence, and any support required at each stage."
+msgstr "Adjunte cotizaciones, evidencia de aprobación, comprobantes de pago al beneficiario, evidencia de cobro al proveedor y los documentos necesarios en cada etapa."
+
+#. module: customer_incentive_management
+msgid "Describe the incentive, store arrangement, advertising activity or other context..."
+msgstr "Describa el incentivo, arreglo del local, actividad publicitaria u otro contexto..."
+
+#. module: customer_incentive_management
+msgid "Seller Payment Detail"
+msgstr "Detalle de pago por vendedor"
+
+#. module: customer_incentive_management
+msgid "Incentive Request User"
+msgstr "Solicitante de incentivos"
+
+#. module: customer_incentive_management
+msgid "Incentive Approver"
+msgstr "Aprobador de incentivos"
+
+#. module: customer_incentive_management
+msgid "Treasury - Beneficiary Payments"
+msgstr "Tesorería - Pagos al beneficiario"
+
+#. module: customer_incentive_management
+msgid "Supplier Collection - Accounts Receivable"
+msgstr "Cobros a proveedores - Cuentas por cobrar"
+
+#. module: customer_incentive_management
+msgid "Incentive Accounting - Treasury and Collection"
+msgstr "Contabilidad de incentivos - Tesorería y cobros"
+
+#. module: customer_incentive_management
+msgid "Incentive Manager"
+msgstr "Administrador de incentivos"
+
+#. module: customer_incentive_management
+msgid "Incentive Requests"
+msgstr "Requerimientos de incentivos"
+
+#. module: customer_incentive_management
+msgid "Beneficiary payment/offset details exceed the accounting amount."
+msgstr "Los detalles de pago/cruce al beneficiario superan el importe contable."
+
+#. module: customer_incentive_management
+msgid "The operation type cannot be changed after the payment detail is created."
+msgstr "No se puede cambiar el tipo de operación después de crear el detalle de pago."

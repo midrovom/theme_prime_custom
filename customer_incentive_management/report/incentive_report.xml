@@ -40,7 +40,7 @@
                             </thead>
                             <tbody>
                                 <tr t-foreach="doc.line_ids" t-as="line">
-                                    <td><span t-field="line.product_code"/></td>
+                                    <td><span t-field="line.product_number"/></td>
                                     <td><span t-field="line.program_type"/></td>
                                     <td><span t-field="line.date_from"/></td>
                                     <td><span t-field="line.date_to"/></td>
@@ -61,8 +61,22 @@
                         <h4>Description</h4>
                         <p t-field="doc.description"/>
                         <div class="mt-3">
-                            <strong>Beneficiary Method:</strong> <span t-field="doc.beneficiary_method"/><br/>
-                            <strong>Supplier Collection Method:</strong> <span t-field="doc.collection_method"/>
+                            <h4>Payment and Collection Details</h4>
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr><th>Date</th><th>Salesperson</th><th>Operation</th><th>Method</th><th>Reference</th><th class="text-end">Amount</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="doc.payment_detail_ids" t-as="detail">
+                                        <td><span t-field="detail.date"/></td>
+                                        <td><span t-field="detail.salesperson_id"/></td>
+                                        <td><span t-field="detail.direction"/></td>
+                                        <td><span t-field="detail.method"/></td>
+                                        <td><span t-field="detail.reference"/></td>
+                                        <td class="text-end"><span t-field="detail.amount"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </t>

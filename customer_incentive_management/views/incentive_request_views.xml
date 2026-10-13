@@ -9,9 +9,11 @@
                 <field name="request_type_id"/>
                 <field name="customer_id"/>
                 <field name="supplier_id"/>
+                <field name="requester_id" optional="show"/>
                 <field name="salesperson_id" optional="show"/>
                 <field name="payment_term_id" optional="hide"/>
                 <field name="amount_total" sum="Grand Total"/>
+                <field name="collection_residual" optional="hide" sum="Open Collection Balance" groups="customer_incentive_management.group_incentive_collection,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager"/>
                 <field name="state" widget="badge"/>
                 <field name="company_id" groups="base.group_multi_company" optional="hide"/>
             </list>
@@ -26,16 +28,19 @@
                 <field name="name"/>
                 <field name="customer_id"/>
                 <field name="supplier_id"/>
+                <field name="requester_id"/>
                 <field name="salesperson_id"/>
                 <field name="request_type_id"/>
                 <field name="payment_term_id"/>
                 <filter name="my_requests" string="My Requests" domain="[('requester_id', '=', uid)]"/>
-                <filter name="my_sales" string="My Salesperson Requests" domain="[('salesperson_id', '=', uid)]"/>
+                <filter name="my_sales" string="Requests Assigned to Me" domain="[('salesperson_id', '=', uid)]"/>
                 <separator/>
-                <filter name="to_approve" string="Waiting for Approval" domain="[('state', '=', 'submitted')]"/>
-                <filter name="in_progress" string="In Progress" domain="[('state', '=', 'execution')]"/>
-                <filter name="pending_collection" string="Pending Collection" domain="[('state', '=', 'pending_collection')]"/>
+                <filter name="to_approve" string="Waiting for Approval" domain="[('state', '=', 'submitted')]" groups="customer_incentive_management.group_incentive_approver,customer_incentive_management.group_incentive_manager"/>
+                <filter name="approved_to_execute" string="Approved - Awaiting Execution" domain="[('state', '=', 'approved')]" groups="customer_incentive_management.group_incentive_treasury,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager"/>
+                <filter name="in_progress" string="In Execution" domain="[('state', '=', 'execution')]" groups="customer_incentive_management.group_incentive_treasury,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager"/>
+                <filter name="pending_collection" string="Pending Supplier Collection" domain="[('state', '=', 'pending_collection')]" groups="customer_incentive_management.group_incentive_collection,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager"/>
                 <filter name="closed" string="Closed" domain="[('state', '=', 'done')]"/>
+                <filter name="rejected" string="Rejected" domain="[('state', '=', 'rejected')]"/>
                 <separator/>
                 <filter name="created_recently" string="Recent Requests" date="request_date"/>
                 <group expand="0" string="Group By">
@@ -43,6 +48,7 @@
                     <filter name="group_type" string="Request Type" context="{'group_by': 'request_type_id'}"/>
                     <filter name="group_customer" string="Customer" context="{'group_by': 'customer_id'}"/>
                     <filter name="group_supplier" string="Supplier" context="{'group_by': 'supplier_id'}"/>
+                    <filter name="group_requester" string="Requested By" context="{'group_by': 'requester_id'}"/>
                     <filter name="group_salesperson" string="Salesperson" context="{'group_by': 'salesperson_id'}"/>
                     <filter name="group_term" string="Payment Terms" context="{'group_by': 'payment_term_id'}"/>
                     <filter name="group_company" string="Company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
@@ -57,48 +63,51 @@
         <field name="arch" type="xml">
             <form string="Customer Incentive Request">
                 <header>
-                    <button name="action_submit" type="object" string="Submit for Approval" class="oe_highlight" invisible="state != 'draft'"/>
-                    <button name="action_approve" type="object" string="Approve" class="oe_highlight" groups="customer_incentive_management.group_incentive_approver" invisible="state != 'submitted'"/>
-                    <button name="action_reject" type="object" string="Reject" groups="customer_incentive_management.group_incentive_approver" invisible="state != 'submitted'"/>
-                    <button name="action_reset_to_draft" type="object" string="Reset to Draft" groups="customer_incentive_management.group_incentive_approver" invisible="state not in ('submitted', 'rejected')"/>
-                    <button name="action_start_execution" type="object" string="Start Execution" class="oe_highlight" groups="customer_incentive_management.group_incentive_approver" invisible="state != 'approved'"/>
-                    <button name="action_pay_beneficiary" type="object" string="Confirm Beneficiary Settlement" class="oe_highlight" groups="customer_incentive_management.group_incentive_accounting" invisible="state != 'execution'"/>
-                    
-                    <button name="action_start_collection" type="object" string="Register Collection Document" class="oe_highlight" groups="customer_incentive_management.group_incentive_accounting" invisible="state != 'beneficiary_paid'"/>
-                    <button name="action_collect_by_transfer" type="object" string="Confirm Transfer Collection" class="oe_highlight" groups="customer_incentive_management.group_incentive_accounting" invisible="state != 'pending_collection' or collection_method != 'transfer'"/>
-                    <button name="action_apply_supplier_offset" type="object" string="Confirm Supplier Offset" class="oe_highlight" groups="customer_incentive_management.group_incentive_accounting" invisible="state != 'pending_collection' or collection_method != 'offset'"/>
-                    <button name="action_close" type="object" string="Close Request" groups="customer_incentive_management.group_incentive_accounting" invisible="state != 'pending_collection'"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,execution,beneficiary_paid,pending_collection,done,rejected"/>
+                    <button name="action_submit" type="object" string="Submit for Approval" class="oe_highlight" invisible="state not in ('draft', 'rejected')" groups="customer_incentive_management.group_incentive_user,customer_incentive_management.group_incentive_manager"/>
+                    <button name="action_approve" type="object" string="Approve" class="oe_highlight" groups="customer_incentive_management.group_incentive_approver,customer_incentive_management.group_incentive_manager" invisible="state != 'submitted'"/>
+                    <button name="action_reject" type="object" string="Reject" groups="customer_incentive_management.group_incentive_approver,customer_incentive_management.group_incentive_manager" invisible="state != 'submitted'"/>
+                    <button name="action_reset_to_draft" type="object" string="Return to Draft" groups="customer_incentive_management.group_incentive_approver,customer_incentive_management.group_incentive_manager" invisible="state not in ('submitted', 'rejected')"/>
+                    <button name="action_start_execution" type="object" string="Start Execution" class="oe_highlight" groups="customer_incentive_management.group_incentive_treasury,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager" invisible="state != 'approved'"/>
+                    <button name="action_pay_beneficiary" type="object" string="Confirm Beneficiary Payment" class="oe_highlight" groups="customer_incentive_management.group_incentive_treasury,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager" invisible="state != 'execution'"/>
+                    <button name="action_start_collection" type="object" string="Start Supplier Collection" class="oe_highlight" groups="customer_incentive_management.group_incentive_collection,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager" invisible="state != 'beneficiary_paid'"/>
+                    <button name="action_confirm_supplier_collection" type="object" string="Register Collection Movement" class="oe_highlight" groups="customer_incentive_management.group_incentive_collection,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager" invisible="state != 'pending_collection'"/>
+                    <field name="state" widget="statusbar" readonly="1" statusbar_visible="draft,submitted,approved,execution,beneficiary_paid,pending_collection,done,rejected"/>
                 </header>
                 <sheet>
+                    <field name="can_edit_request" invisible="1"/>
+                    <field name="can_edit_payment_details" invisible="1"/>
+                    <field name="can_edit_evidence" invisible="1"/>
+                    <field name="can_edit_beneficiary_fields" invisible="1"/>
+                    <field name="can_edit_collection_fields" invisible="1"/>
                     <div class="oe_title">
                         <label for="name"/>
                         <h1><field name="name"/></h1>
                     </div>
                     <group>
-                        <group string="Request Details">
-                            <field name="request_type_id" readonly="state != 'draft'"/>
-                            <field name="request_date" readonly="state != 'draft'"/>
+                        <group string="Request Information">
+                            <field name="request_type_id" readonly="not can_edit_request"/>
+                            <field name="request_date" readonly="not can_edit_request"/>
                             <field name="requester_id" readonly="1"/>
-                            <field name="salesperson_id" readonly="state not in ('draft', 'rejected')"/>
-                            <field name="language_id" options="{'no_create': True}"/>
-                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="salesperson_id" readonly="not can_edit_request"/>
+                            <field name="language_id" options="{'no_create': True}" readonly="not can_edit_request"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="not can_edit_request"/>
                             <field name="currency_id" invisible="1"/>
                         </group>
-                        <group string="Business Partners">
-                            <field name="customer_id" readonly="state != 'draft'"/>
-                            <field name="supplier_id" readonly="state != 'draft'"/>
-                            <field name="payment_term_id" readonly="state not in ('draft', 'rejected')"/>
+                        <group string="Beneficiary and Supplier">
+                            <field name="customer_id" readonly="not can_edit_request"/>
+                            <field name="supplier_id" readonly="not can_edit_request"/>
+                            <field name="payment_term_id" readonly="not can_edit_request"/>
+                            <div class="text-muted">The requester and salesperson may be different people. Payment terms are selected at the start; supplier invoices are entered manually in Accounting.</div>
                         </group>
                     </group>
+
                     <notebook>
-                        <page string="Products / Programs">
-                            <field name="line_ids" readonly="state not in ('draft', 'rejected')">
+                        <page string="Manual Product / Program Lines">
+                            <field name="line_ids" readonly="not can_edit_request">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="product_id" domain="[('sale_ok', '=', True)]"/>
-                                    <field name="product_code" optional="show"/>
-                                    <field name="program_type"/>
+                                    <field name="product_number" string="Product No."/>
+                                    <field name="program_type" string="Program Type"/>
                                     <field name="date_from"/>
                                     <field name="date_to"/>
                                     <field name="unit_price"/>
@@ -106,36 +115,46 @@
                                     <field name="total" sum="Grand Total" readonly="1"/>
                                 </list>
                             </field>
+                            <group col="4" class="oe_subtotal_footer">
+                                <field name="total_target_qty" readonly="1"/>
+                                <field name="amount_total" readonly="1"/>
+                                <field name="accounting_amount_total" readonly="1"/>
+                            </group>
                             <group string="Description">
-                                <field name="description" nolabel="1" placeholder="Describe the incentive, store arrangement, advertising activity or other supporting context..."/>
+                                <field name="description" nolabel="1" readonly="not can_edit_request" placeholder="Describe the incentive, store arrangement, advertising activity or other context..."/>
                             </group>
                         </page>
-                        <page string="Settlement">
+
+                        <page string="Beneficiary Payment" groups="customer_incentive_management.group_incentive_treasury,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager">
                             <group>
-                                <group string="Payment to Beneficiary">
-                                    <field name="beneficiary_method" widget="radio" readonly="state not in ('draft', 'rejected', 'approved', 'execution')"/>
+                                <group string="Manual Settlement">
                                     <field name="accounting_amount_total" readonly="1"/>
-                                    <field name="beneficiary_credit_note_id" readonly="state not in ('draft', 'rejected', 'execution')"/>
-                                    <field name="beneficiary_payment_id" readonly="state not in ('draft', 'rejected', 'execution')"/>
-                                    <separator string="Manual process"/>
-                                    <div class="text-muted">Enter the payment or offset details below. This form does not create accounting payments or journal entries.</div>
+                                    <field name="beneficiary_credit_note_id" readonly="not can_edit_beneficiary_fields"/>
+                                    <field name="beneficiary_payment_id" readonly="not can_edit_beneficiary_fields"/>
+                                    <div class="text-muted">Create and post any credit note/payment manually in Accounting first, then link it here if applicable. This module never creates accounting moves or payments.</div>
                                 </group>
-                                <group string="Supplier Collection">
-                                    <field name="collection_method" widget="radio" readonly="state not in ('draft', 'rejected', 'beneficiary_paid', 'pending_collection')"/>
-                                    <field name="collection_document_reference" readonly="state not in ('beneficiary_paid', 'pending_collection')"/>
-                                    <field name="collection_document_date" readonly="state not in ('beneficiary_paid', 'pending_collection')"/>
-                                    <field name="collection_invoice_amount" readonly="state not in ('beneficiary_paid', 'pending_collection')"/>
-                                    <field name="payment_term_id" readonly="state not in ('draft', 'rejected', 'beneficiary_paid')"/>
-                                    <field name="collection_invoice_id" readonly="state not in ('draft', 'rejected', 'beneficiary_paid', 'pending_collection')"/>
+                            </group>
+                        </page>
+
+                        <page string="Supplier Collection" groups="customer_incentive_management.group_incentive_collection,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager">
+                            <group>
+                                <group string="Collection Document">
+                                    <field name="payment_term_id" readonly="1"/>
+                                    <field name="collection_document_reference" readonly="not can_edit_collection_fields"/>
+                                    <field name="collection_document_date" readonly="not can_edit_collection_fields"/>
+                                    <field name="collection_invoice_amount" readonly="not can_edit_collection_fields"/>
+                                    <field name="collection_invoice_id" readonly="not can_edit_collection_fields"/>
+                                </group>
+                                <group string="Collection Progress">
                                     <field name="collection_paid_total" readonly="1"/>
                                     <field name="collection_residual" readonly="1"/>
-                                    <div class="text-muted">Enter the collection document manually. This module does not create supplier invoices.</div>
+                                    <div class="text-muted">Record transfer and/or offset movements in the details tab. Partial collections remain pending until the full amount is registered.</div>
                                 </group>
                             </group>
-
                         </page>
+
                         <page string="Seller Payment Details">
-                            <field name="payment_detail_ids" readonly="state not in ('execution', 'pending_collection')">
+                            <field name="payment_detail_ids" readonly="not can_edit_payment_details">
                                 <list editable="bottom">
                                     <field name="date"/>
                                     <field name="salesperson_id"/>
@@ -143,14 +162,27 @@
                                     <field name="method"/>
                                     <field name="amount" sum="Total"/>
                                     <field name="reference"/>
-                                    <field name="payment_id" optional="show"/>
+                                    <field name="payment_id" optional="hide" groups="customer_incentive_management.group_incentive_treasury,customer_incentive_management.group_incentive_collection,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager"/>
                                 </list>
+                                <form string="Seller Payment Detail">
+                                    <group>
+                                        <field name="salesperson_id"/>
+                                        <field name="direction"/>
+                                        <field name="method" widget="radio"/>
+                                        <field name="amount"/>
+                                        <field name="date"/>
+                                        <field name="reference"/>
+                                        <field name="payment_id" groups="customer_incentive_management.group_incentive_treasury,customer_incentive_management.group_incentive_collection,customer_incentive_management.group_incentive_accounting,customer_incentive_management.group_incentive_manager"/>
+                                        <field name="evidence_attachment_ids" widget="many2many_binary"/>
+                                    </group>
+                                </form>
                             </field>
-                            <div class="text-muted">Record each transfer or offset manually. For an offset, perform the real reconciliation separately in Accounting and enter its reference here.</div>
+                            <div class="text-muted">Each line identifies the salesperson, whether it is a payment to the beneficiary or a collection from the supplier, the method (transfer or accounting offset), amount, reference and evidence. Finance roles edit details only at their assigned stage.</div>
                         </page>
+
                         <page string="Documents and Evidence">
-                            <field name="evidence_attachment_ids" widget="many2many_binary"/>
-                            <div class="text-muted">Attach approval documents, beneficiary payment receipts, invoices or other supporting evidence.</div>
+                            <field name="evidence_attachment_ids" widget="many2many_binary" readonly="not can_edit_evidence"/>
+                            <div class="text-muted">Attach quotations, approval evidence, beneficiary receipts, supplier collection evidence, and any support required at each stage.</div>
                         </page>
                     </notebook>
                 </sheet>
@@ -164,6 +196,26 @@
         <field name="res_model">incentive.request</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_incentive_request_search"/>
-        <field name="context">{'search_default_my_requests': 1}</field>
+    </record>
+    <record id="action_incentive_approval_queue" model="ir.actions.act_window">
+        <field name="name">Approval Queue</field>
+        <field name="res_model">incentive.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_incentive_request_search"/>
+        <field name="domain">[('state', '=', 'submitted')]</field>
+    </record>
+    <record id="action_incentive_treasury_queue" model="ir.actions.act_window">
+        <field name="name">Beneficiary Payments</field>
+        <field name="res_model">incentive.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_incentive_request_search"/>
+        <field name="domain">[('state', 'in', ('approved', 'execution'))]</field>
+    </record>
+    <record id="action_incentive_collection_queue" model="ir.actions.act_window">
+        <field name="name">Supplier Collections</field>
+        <field name="res_model">incentive.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_incentive_request_search"/>
+        <field name="domain">[('state', 'in', ('beneficiary_paid', 'pending_collection'))]</field>
     </record>
 </odoo>

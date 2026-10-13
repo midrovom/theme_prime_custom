@@ -4,75 +4,134 @@
         <field name="sequence">35</field>
     </record>
 
+    <!-- Each operational responsibility is a separate role. -->
     <record id="group_incentive_user" model="res.groups">
         <field name="name">Incentive Request User</field>
         <field name="category_id" ref="module_category_customer_incentive"/>
-        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="implied_ids" eval="[(5, 0, 0), (4, ref('base.group_user'))]"/>
     </record>
     <record id="group_incentive_approver" model="res.groups">
         <field name="name">Incentive Approver</field>
         <field name="category_id" ref="module_category_customer_incentive"/>
-        <field name="implied_ids" eval="[(4, ref('group_incentive_user'))]"/>
+        <field name="implied_ids" eval="[(5, 0, 0), (4, ref('base.group_user'))]"/>
     </record>
-    <record id="group_incentive_accounting" model="res.groups">
-        <field name="name">Incentive Accounting</field>
+    <record id="group_incentive_treasury" model="res.groups">
+        <field name="name">Treasury - Beneficiary Payments</field>
         <field name="category_id" ref="module_category_customer_incentive"/>
-        <field name="implied_ids" eval="[(4, ref('group_incentive_approver')), (4, ref('account.group_account_user'))]"/>
+        <field name="implied_ids" eval="[(5, 0, 0), (4, ref('base.group_user')), (4, ref('account.group_account_user'))]"/>
+    </record>
+    <record id="group_incentive_collection" model="res.groups">
+        <field name="name">Supplier Collection - Accounts Receivable</field>
+        <field name="category_id" ref="module_category_customer_incentive"/>
+        <field name="implied_ids" eval="[(5, 0, 0), (4, ref('base.group_user')), (4, ref('account.group_account_user'))]"/>
+    </record>
+    <!-- Compatibility role for teams where the same accounting staff handle both sides. -->
+    <record id="group_incentive_accounting" model="res.groups">
+        <field name="name">Incentive Accounting - Treasury and Collection</field>
+        <field name="category_id" ref="module_category_customer_incentive"/>
+        <field name="implied_ids" eval="[(5, 0, 0), (4, ref('group_incentive_treasury')), (4, ref('group_incentive_collection')), (4, ref('account.group_account_user'))]"/>
     </record>
     <record id="group_incentive_manager" model="res.groups">
         <field name="name">Incentive Manager</field>
         <field name="category_id" ref="module_category_customer_incentive"/>
-        <field name="implied_ids" eval="[(4, ref('group_incentive_accounting'))]"/>
+        <field name="implied_ids" eval="[(5, 0, 0), (4, ref('group_incentive_user')), (4, ref('group_incentive_approver')), (4, ref('group_incentive_accounting'))]"/>
     </record>
 
+    <!-- Global company boundary -->
     <record id="rule_incentive_request_company" model="ir.rule">
         <field name="name">Incentive requests limited to allowed companies</field>
         <field name="model_id" ref="model_incentive_request"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="global" eval="True"/>
     </record>
-    <record id="rule_incentive_request_own" model="ir.rule">
-        <field name="name">Users see their requests and salesperson assignments</field>
-        <field name="model_id" ref="model_incentive_request"/>
-        <field name="domain_force">['|', ('requester_id', '=', user.id), ('salesperson_id', '=', user.id)]</field>
-        <field name="groups" eval="[(4, ref('group_incentive_user'))]"/>
-    </record>
-    <record id="rule_incentive_request_approver_all" model="ir.rule">
-        <field name="name">Approvers see all requests in allowed companies</field>
-        <field name="model_id" ref="model_incentive_request"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('group_incentive_approver'))]"/>
-    </record>
     <record id="rule_incentive_line_company" model="ir.rule">
-        <field name="name">Incentive lines limited by parent company</field>
+        <field name="name">Incentive lines limited to allowed companies</field>
         <field name="model_id" ref="model_incentive_request_line"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="global" eval="True"/>
     </record>
+    <record id="rule_incentive_detail_company" model="ir.rule">
+        <field name="name">Payment details limited to allowed companies</field>
+        <field name="model_id" ref="model_incentive_payment_detail"/>
+        <field name="domain_force">[('request_id.company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
 
+    <!-- Requesters only see records they created or that are assigned to them. -->
+    <record id="rule_incentive_request_own" model="ir.rule">
+        <field name="name">Requesters see created or assigned requests</field>
+        <field name="model_id" ref="model_incentive_request"/>
+        <field name="domain_force">['|', ('requester_id', '=', user.id), ('salesperson_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_incentive_user'))]"/>
+    </record>
     <record id="rule_incentive_line_own" model="ir.rule">
-        <field name="name">Users see lines on their requests</field>
+        <field name="name">Requesters see lines on created or assigned requests</field>
         <field name="model_id" ref="model_incentive_request_line"/>
         <field name="domain_force">['|', ('request_id.requester_id', '=', user.id), ('request_id.salesperson_id', '=', user.id)]</field>
         <field name="groups" eval="[(4, ref('group_incentive_user'))]"/>
     </record>
-    <record id="rule_incentive_line_approver_all" model="ir.rule">
-        <field name="name">Approvers see lines in allowed companies</field>
-        <field name="model_id" ref="model_incentive_request_line"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('group_incentive_approver'))]"/>
-    </record>
     <record id="rule_incentive_detail_own" model="ir.rule">
-        <field name="name">Users see details on their requests</field>
+        <field name="name">Requesters see payment details on created or assigned requests</field>
         <field name="model_id" ref="model_incentive_payment_detail"/>
         <field name="domain_force">['|', ('request_id.requester_id', '=', user.id), ('request_id.salesperson_id', '=', user.id)]</field>
         <field name="groups" eval="[(4, ref('group_incentive_user'))]"/>
     </record>
+
+    <!-- Role users can work across their allowed companies without inheriting other role permissions. -->
+    <record id="rule_incentive_request_approver_all" model="ir.rule">
+        <field name="name">Approvers see requests pending their responsibility</field>
+        <field name="model_id" ref="model_incentive_request"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_incentive_approver'))]"/>
+    </record>
+    <record id="rule_incentive_line_approver_all" model="ir.rule">
+        <field name="name">Approvers can read request lines</field>
+        <field name="model_id" ref="model_incentive_request_line"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_incentive_approver'))]"/>
+    </record>
     <record id="rule_incentive_detail_approver_all" model="ir.rule">
-        <field name="name">Approvers see details in allowed companies</field>
+        <field name="name">Approvers can read payment details</field>
         <field name="model_id" ref="model_incentive_payment_detail"/>
         <field name="domain_force">[('request_id.company_id', 'in', company_ids)]</field>
         <field name="groups" eval="[(4, ref('group_incentive_approver'))]"/>
     </record>
 
+    <record id="rule_incentive_request_treasury_all" model="ir.rule">
+        <field name="name">Treasury sees requests for beneficiary payment</field>
+        <field name="model_id" ref="model_incentive_request"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_incentive_treasury'))]"/>
+    </record>
+    <record id="rule_incentive_line_treasury_all" model="ir.rule">
+        <field name="name">Treasury can read request lines</field>
+        <field name="model_id" ref="model_incentive_request_line"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_incentive_treasury'))]"/>
+    </record>
+    <record id="rule_incentive_detail_treasury_all" model="ir.rule">
+        <field name="name">Treasury can manage beneficiary payment details</field>
+        <field name="model_id" ref="model_incentive_payment_detail"/>
+        <field name="domain_force">[('request_id.company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_incentive_treasury'))]"/>
+    </record>
+
+    <record id="rule_incentive_request_collection_all" model="ir.rule">
+        <field name="name">Collection staff see supplier collection requests</field>
+        <field name="model_id" ref="model_incentive_request"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_incentive_collection'))]"/>
+    </record>
+    <record id="rule_incentive_line_collection_all" model="ir.rule">
+        <field name="name">Collection staff can read request lines</field>
+        <field name="model_id" ref="model_incentive_request_line"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_incentive_collection'))]"/>
+    </record>
+    <record id="rule_incentive_detail_collection_all" model="ir.rule">
+        <field name="name">Collection staff can manage collection details</field>
+        <field name="model_id" ref="model_incentive_payment_detail"/>
+        <field name="domain_force">[('request_id.company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_incentive_collection'))]"/>
+    </record>
 </odoo>
