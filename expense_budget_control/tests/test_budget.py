@@ -69,3 +69,80 @@ class TestExpenseBudget(TransactionCase):
         self.budget.action_approve()
         with self.assertRaises(UserError):
             line.write({'planned_amount': 600})
+
+    def test_annual_pdf_grouped_by_category_account_and_month(self):
+        self.category.write({'name': 'Servicios básicos'})
+        water = self.env['expense.budget.account'].create({
+            'code': '6001-TEST', 'name': 'Agua', 'category_id': self.category.id,
+            'company_id': self.company.id,
+        })
+        self.account.write({'name': 'Luz'})
+        january_light = self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 100,
+        })
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': water.id,
+            'month': '1', 'planned_amount': 200,
+        })
+        self.env['expense.budget.expense'].create({
+            'company_id': self.company.id, 'account_id': self.account.id,
+            'date': '2026-01-10', 'description': 'Electricidad', 'amount': 25,
+        })
+        self.env['expense.budget.expense'].create({
+            'company_id': self.company.id, 'account_id': water.id,
+            'date': '2026-01-12', 'description': 'Agua potable', 'amount': 50,
+        })
+
+        report = self.env['report.expense_budget_control.report_annual_budget_document']
+        values = report._get_report_values([self.budget.id])
+        self.assertEqual(len(values['reports']), 1)
+        result = values['reports'][0]
+        self.assertEqual(len(result['quarters']), 4)
+        self.assertEqual(len(result['months']), 12)
+        self.assertEqual(result['months'][11]['name'], 'Diciembre')
+        self.assertEqual(result['quarters'][0]['months'][0]['name'], 'Enero')
+        self.assertEqual(len(result['categories']), 1)
+        category = result['categories'][0]
+        self.assertEqual(category['category'].name, 'Servicios básicos')
+        self.assertEqual({a['account'].name for a in category['accounts']}, {'Luz', 'Agua'})
+        self.assertEqual(category['months']['1']['planned'], 300)
+        self.assertEqual(category['months']['1']['actual'], 75)
+        self.assertEqual(category['months']['1']['execution'], 25)
+        self.assertEqual(result['totals']['1']['execution'], 25)
+        self.assertEqual(category['annual']['planned'], 300)
+        self.assertEqual(category['annual']['actual'], 75)
+        self.assertEqual(category['annual']['execution'], 25)
+        self.assertEqual(result['annual_total']['execution'], 25)
+        self.assertEqual(january_light.execution_percentage, 25)
+        self.assertFalse(result['totals']['2']['has_line'])
+
+        action = self.budget.action_print_annual_pdf()
+        self.assertEqual(action['type'], 'ir.actions.report')
+        self.assertEqual(action['report_name'],
+                         'expense_budget_control.report_annual_budget_document')
+
+    def test_annual_report_uses_weighted_total_for_percentage(self):
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 100,
+        })
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '2', 'planned_amount': 300,
+        })
+        self.env['expense.budget.expense'].create({
+            'company_id': self.company.id, 'account_id': self.account.id,
+            'date': '2026-01-07', 'description': 'Gasto 1', 'amount': 100,
+        })
+        self.env['expense.budget.expense'].create({
+            'company_id': self.company.id, 'account_id': self.account.id,
+            'date': '2026-02-07', 'description': 'Gasto 2', 'amount': 60,
+        })
+        report = self.env['report.expense_budget_control.report_annual_budget_document']
+        result = report._get_report_values([self.budget.id])['reports'][0]
+        self.assertEqual(result['totals']['1']['execution'], 100)
+        self.assertEqual(result['totals']['2']['execution'], 20)
+        self.assertEqual(result['annual_total']['execution'], 40)
+        self.assertEqual(result['categories'][0]['annual']['execution'], 40)
+        self.assertEqual(result['categories'][0]['accounts'][0]['annual']['execution'], 40)

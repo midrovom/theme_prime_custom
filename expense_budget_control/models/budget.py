@@ -164,6 +164,13 @@ class ExpenseBudget(models.Model):
             raise AccessError(_('Solo el administrador del sistema puede ejecutar la tarea API.'))
         return self.env['expense.budget.api.sync'].cron_sync_all()
 
+    def action_print_annual_pdf(self):
+        """Imprime el presupuesto actual en PDF, por rubro, cuenta y mes."""
+        self.ensure_one()
+        return self.env.ref(
+            'expense_budget_control.action_report_expense_budget_annual'
+        ).report_action(self)
+
     def action_sync_api(self):
         if not self.env.user.has_group('expense_budget_control.group_expense_budget_manager'):
             raise AccessError(_('No tiene permisos para sincronizar gastos.'))

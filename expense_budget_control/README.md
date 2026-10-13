@@ -1,6 +1,6 @@
 # Control de Presupuesto de Gastos — Odoo 18
 
-Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.0.0`.
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.1.0`.
 
 ## Funciones
 
@@ -9,6 +9,7 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.0.0`.
 - Gastos reales manuales, importados desde **Excel/CSV** o recibidos de **API Administrator**.
 - Comparación de presupuesto frente al real: consumido, disponible y porcentaje de ejecución.
 - Vistas tipo lista, gráfica de barras y tabla dinámica, con filtros por rubro, cuenta, mes y presupuesto.
+- **PDF anual imprimible** desde cada presupuesto, agrupado por rubro y cuenta, con columnas mensuales de presupuesto, gasto y ejecución %.
 - Registro de sincronizaciones, idempotencia por clave externa y reconciliación de gastos sin línea presupuestaria.
 - Roles de consulta y administrador; reglas de acceso multiempresa.
 
@@ -56,6 +57,17 @@ La importación usa la hoja con nombre indicado (si existe) o, en caso contrario
 El **identificador de gasto es obligatorio y estable**, ya que evita duplicados: volver a importar la misma clave actualiza el movimiento. Las cuentas deben existir antes de importar proyecciones o gastos. Fecha válida: `AAAA-MM-DD` o `DD/MM/AAAA`. Mes: `1`–`12` o nombre en español. Gastos positivos representan consumo; negativos, devolución/reverso. Puede usar CSV UTF-8 con coma o punto y coma. **Guarde los códigos de cuenta como texto en Excel** para conservar ceros iniciales.
 
 El archivo completo debe ser válido; si una fila tiene un error, se revierte la importación entera y se indica el número de fila. Límites: 8 MB y 20.000 filas por archivo.
+
+## Imprimir PDF de presupuesto anual (nuevo)
+
+1. Abra **Control de Gastos → Presupuestos anuales** y seleccione el presupuesto que desea imprimir.
+2. Pulse **Imprimir PDF** en la cabecera. Alternativamente, use la opción **Imprimir → Presupuesto anual por rubro y cuenta**.
+3. El documento incluye **empresa, presupuesto, año y moneda**, seguido de una tabla agrupada por **rubro** (ej. *Servicios básicos*) y debajo sus **cuentas controladas** (ej. *Luz*, *Agua*).
+4. El año se muestra en **una sola tabla de doce meses en A1 horizontal**, con tres columnas por cada mes: **Presupuesto** (valor proyectado), **Gasto** (valor real consumido) y una **columna sin nombre** que presenta el valor del campo **Ejecución (%)**. La columna final muestra el **porcentaje de ejecución anual** por rubro, cuenta y total general; también hay subtotales por rubro y totales mensuales. La tabla es desplazable horizontalmente en la vista HTML cuando la pantalla es estrecha.
+
+**Interpretación:** **Ejecución (%) = Gasto / Presupuesto × 100**; 25 % significa que se ha consumido el 25 % del presupuesto, no que quede el 25 %. El saldo disponible continúa consultándose en el campo **Disponible** del presupuesto. Si un mes no tiene una línea de proyección, el PDF muestra «—». Los gastos no conciliados con una línea no se incluyen en el consumo de esa línea hasta vincularlos mediante **Conciliar gastos**.
+
+Al actualizar una instalación anterior, copie la nueva carpeta y ejecute la actualización del módulo (`-u expense_budget_control`) para registrar la acción de reporte y el diseño QWeb. Para generar PDFs en Odoo se necesita que su servidor tenga configurado `wkhtmltopdf` correctamente.
 
 ## Integración API Administrator
 
@@ -112,6 +124,7 @@ Los tests (`tests/test_budget.py`) validan cálculo del saldo, vínculo de gasto
 expense_budget_control/
 ├── __manifest__.py
 ├── models/                  # rubros, cuentas, presupuestos, gastos y API
+├── report/                  # informe PDF anual QWeb, plantilla y formato A1 apaisado
 ├── wizard/                  # importador XLSX/CSV
 ├── security/                # ACL y reglas multiempresa
 ├── views/                   # listas, formularios, pivote y gráficos

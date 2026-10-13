@@ -10,6 +10,9 @@ Validación estática realizada para el entregable de Odoo 18:
 - **Plantilla:** se confirma la apertura del libro XLSX con las hojas `Cuentas`, `Proyecciones` y `Gastos`.
 - **Parseadores:** fechas, importes con separador decimal español/inglés, normalización de encabezados y rechazo de montos no finitos.
 - **Vistas Odoo 18:** se utiliza `<list>` y `view_mode="list,form"`, no `<tree>`.
+- **Reporte PDF:** se comprobaron sintácticamente la plantilla QWeb, acción `ir.actions.report`, formato A1 horizontal y su botón `action_print_annual_pdf`.
+- **Agrupación:** prueba aislada de rubros, cuentas, los doce meses, subtotales de gasto/proyección, porcentajes de ejecución y meses sin proyección.
+- **Pruebas Odoo:** se añadió un caso para comprobar la estructura del informe y que el botón devuelve una acción `qweb-pdf`.
 
 ## Prueba en una instalación real
 
@@ -21,7 +24,8 @@ La comprobación estática **no sustituye** la validación al instalar Odoo. No 
 4. Reimportar los mismos gastos: no se crean duplicados.
 5. Configurar una API de gastos GET con `status = A`, confirmar que `call_api` devuelve la estructura JSON esperada y ejecutar sincronización.
 6. Validar permisos del grupo lector y del administrador con varias compañías.
-7. Activar el cron solo después de una sincronización manual satisfactoria.
+7. Imprimir PDF desde un presupuesto anual con rubros **Servicios básicos / Luz / Agua**: comprobar agrupación, subtotales, títulos mensuales y doce meses en una sola tabla y porcentaje total anual, así como la columna de ejecución sin rótulo.
+8. Activar el cron solo después de una sincronización manual satisfactoria.
 
 ## Particularidades de la dependencia externa
 
