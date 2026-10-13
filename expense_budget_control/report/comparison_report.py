@@ -35,7 +35,7 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         """Solo sumar líneas legibles por el usuario (sin sudo ni búsqueda de gastos extra)."""
         domain = [
             ('company_id', '=', wizard.company_id.id),
-            ('budget_id.year', '=', wizard.year),
+            ('budget_id.year', '=', int(wizard.year)),
         ]
         if wizard.category_id:
             # Filtrar por la relación actual de la cuenta con su rubro.

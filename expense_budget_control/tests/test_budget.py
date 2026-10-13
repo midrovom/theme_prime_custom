@@ -527,6 +527,19 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(len(data['categories'][0]['accounts']), 1)
         self.assertEqual(data['grand_total']['actual'], 75)
 
+    def test_comparison_report_year_selection(self):
+        wizard_model = self.env['expense.budget.comparison.report.wizard']
+        self.assertEqual(wizard_model._fields['year'].type, 'selection')
+        self.assertIn(('2026', '2026'), wizard_model._selection_years())
+        wizard = wizard_model.create({
+            'company_id': self.company.id,
+            'year': 2026,  # Compatibilidad con año entero de versiones anteriores.
+        })
+        self.assertEqual(wizard.year, '2026')
+        report = self.env['report.expense_budget_control.report_comparison_document']
+        result = report._prepare_comparison(wizard)
+        self.assertEqual(result['wizard'].year, '2026')
+
     def test_comparison_pdf_category_only_includes_all_accounts_and_budgets(self):
         """Solo Rubro: todas las cuentas y presupuestos del año, sin filtrar cuenta."""
         Account = self.env['expense.budget.account']
