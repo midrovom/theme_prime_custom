@@ -65,52 +65,76 @@
                             <t t-if="o.category_id">
                                 <span> | </span><strong>Rubro:</strong> <span t-esc="o.category_id.name"/>
                             </t>
-                            <t t-if="o.account_id">
-                                <span> | </span><strong>Cuenta:</strong> <span t-esc="o.account_id.name"/>
+                            <t t-if="data['selected_accounts']">
+                                <span> | </span><strong>Cuentas:</strong>
+                                <span t-esc="', '.join(data['selected_accounts'].mapped('name'))"/>
                             </t>
                         </div>
                         <div class="table-scroll">
                             <table>
-                                <colgroup>
-                                    <col style="width: 13%;"/>
-                                    <col style="width: 12%;"/>
-                                    <col style="width: 13%;"/>
-                                    <col style="width: 13%;"/>
-                                    <col style="width: 8%;"/>
-                                    <col style="width: 10%;"/>
-                                    <col style="width: 10%;"/>
-                                    <col style="width: 10%;"/>
-                                    <col style="width: 11%;"/>
-                                </colgroup>
-                                <thead>
-                                    <tr>
-                                        <th>Presupuesto</th>
-                                        <th>Empresa</th>
-                                        <th>Cuenta controlada</th>
-                                        <th>Rubro</th>
-                                        <th>Año</th>
-                                        <th class="amount">Proyectado</th>
-                                        <th class="amount">Consumido</th>
-                                        <th class="amount">Disponible</th>
-                                        <th class="amount">Ejecución (%)</th>
-                                    </tr>
-                                </thead>
+                                <t t-if="data['summary_by_category_only']">
+                                    <colgroup>
+                                        <col style="width: 36%;"/>
+                                        <col style="width: 16%;"/>
+                                        <col style="width: 16%;"/>
+                                        <col style="width: 16%;"/>
+                                        <col style="width: 16%;"/>
+                                    </colgroup>
+                                    <thead>
+                                        <tr>
+                                            <th>Rubro</th>
+                                            <th class="amount">Proyectado</th>
+                                            <th class="amount">Consumido</th>
+                                            <th class="amount">Disponible</th>
+                                            <th class="amount">Ejecución (%)</th>
+                                        </tr>
+                                    </thead>
+                                </t>
+                                <t t-else="">
+                                    <colgroup>
+                                        <col style="width: 13%;"/>
+                                        <col style="width: 12%;"/>
+                                        <col style="width: 13%;"/>
+                                        <col style="width: 13%;"/>
+                                        <col style="width: 8%;"/>
+                                        <col style="width: 10%;"/>
+                                        <col style="width: 10%;"/>
+                                        <col style="width: 10%;"/>
+                                        <col style="width: 11%;"/>
+                                    </colgroup>
+                                    <thead>
+                                        <tr>
+                                            <th>Presupuesto</th>
+                                            <th>Empresa</th>
+                                            <th>Cuenta controlada</th>
+                                            <th>Rubro</th>
+                                            <th>Año</th>
+                                            <th class="amount">Proyectado</th>
+                                            <th class="amount">Consumido</th>
+                                            <th class="amount">Disponible</th>
+                                            <th class="amount">Ejecución (%)</th>
+                                        </tr>
+                                    </thead>
+                                </t>
                                 <tbody>
                                     <t t-if="not data['categories']">
-                                        <tr><td colspan="9" class="empty">No existen proyecciones visibles para los filtros seleccionados.</td></tr>
+                                        <tr><td t-att-colspan="5 if data['summary_by_category_only'] else 9" class="empty">No existen proyecciones visibles para los filtros seleccionados.</td></tr>
                                     </t>
                                     <t t-foreach="data['categories']" t-as="group">
                                         <tr class="category-row">
-                                            <td colspan="5" class="category-name">
+                                            <td t-att-colspan="1 if data['summary_by_category_only'] else 5" class="category-name">
                                                 <span t-esc="group['category'].name"/>
-                                                <span> (</span><span t-esc="group['line_count']"/><span>)</span>
+                                                <t t-if="not data['summary_by_category_only']">
+                                                    <span> (</span><span t-esc="group['line_count']"/><span>)</span>
+                                                </t>
                                             </td>
                                             <td class="amount" t-esc="'{:,.2f}'.format(group['total']['planned'])"/>
                                             <td class="amount" t-esc="'{:,.2f}'.format(group['total']['actual'])"/>
                                             <td class="amount" t-esc="'{:,.2f}'.format(group['total']['available'])"/>
                                             <td class="amount" t-esc="'{:.2f}'.format(group['total']['execution'])"/>
                                         </tr>
-                                        <t t-foreach="group['accounts']" t-as="account">
+                                        <t t-if="not data['summary_by_category_only']">
+                                            <t t-foreach="group['accounts']" t-as="account">
                                             <tr class="account-row">
                                                 <td colspan="5" class="account-name">
                                                     <span t-esc="account['account'].name"/>
@@ -134,9 +158,10 @@
                                                     <td class="amount" t-esc="'{:.2f}'.format(detail['line'].execution_percentage)"/>
                                                 </tr>
                                             </t>
+                                            </t>
                                         </t>
                                     </t>
-                                    <t t-if="data['categories']">
+                                    <t t-if="data['categories'] and not data['summary_by_category_only']">
                                         <tr class="grand-total">
                                             <td colspan="5">TOTAL GENERAL</td>
                                             <td class="amount" t-esc="'{:,.2f}'.format(data['grand_total']['planned'])"/>

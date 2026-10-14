@@ -48,9 +48,11 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
                 ('category_id', '=', wizard.category_id.id),
             ])
             domain.append(('account_id', 'in', accounts.ids))
-        if wizard.account_id:
-            # Solo restringir a una cuenta cuando el usuario la elige.
-            domain.append(('account_id', '=', wizard.account_id.id))
+        # El nuevo selector acepta varias cuentas; el campo account_id se
+        # conserva únicamente para compatibilidad con llamadas anteriores.
+        selected_accounts = wizard.account_ids | wizard.account_id
+        if selected_accounts:
+            domain.append(('account_id', 'in', selected_accounts.ids))
 
         # Las reglas del modelo impiden incluir borradores cuando imprime el aprobador.
         lines = self.env['expense.budget.line'].search(domain)
@@ -102,6 +104,9 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
 
         return {
             'wizard': wizard,
+            # Rubro sin cuentas explícitas: imprimir únicamente sus totales.
+            'summary_by_category_only': bool(wizard.category_id and not selected_accounts),
+            'selected_accounts': selected_accounts,
             'categories': categories,
             'grand_total': grand_total,
             'line_count': len(lines),

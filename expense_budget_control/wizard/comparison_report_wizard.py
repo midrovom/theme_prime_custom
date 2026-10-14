@@ -45,15 +45,24 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
         'expense.budget.category', string='Rubro',
         domain="[('company_id', '=', company_id)]",
     )
+    # Campo legado conservado para compatibilidad con asistentes transitorios
+    # existentes y llamadas RPC previas; ya no aparece en la interfaz.
     account_id = fields.Many2one(
-        'expense.budget.account', string='Cuenta controlada',
+        'expense.budget.account', string='Cuenta controlada (legado)',
         domain="[('company_id', '=', company_id)]",
+    )
+    account_ids = fields.Many2many(
+        'expense.budget.account',
+        'expense_budget_comparison_wizard_account_rel',
+        'wizard_id', 'account_id',
+        string='Cuentas controladas',
     )
 
     @api.onchange('company_id')
     def _onchange_company_id(self):
         self.category_id = False
         self.account_id = False
+        self.account_ids = [(5, 0, 0)]
 
     @api.onchange('category_id')
     def _onchange_category_id(self):
@@ -61,8 +70,9 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
         # filtro anterior (ni siquiera si pertenece al mismo rubro).
         # Dejar la cuenta vacía significa imprimirlas todas.
         self.account_id = False
+        self.account_ids = [(5, 0, 0)]
 
-    @api.constrains('year', 'company_id', 'category_id', 'account_id')
+    @api.constrains('year', 'company_id', 'category_id', 'account_id', 'account_ids')
     def _check_filters(self):
         for wizard in self:
             if not 1900 <= int(wizard.year) <= 2100:
@@ -71,9 +81,12 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
                 raise ValidationError(_('El rubro no pertenece a la empresa seleccionada.'))
             if wizard.account_id and wizard.account_id.company_id != wizard.company_id:
                 raise ValidationError(_('La cuenta no pertenece a la empresa seleccionada.'))
-            if (wizard.category_id and wizard.account_id and
-                    wizard.account_id.category_id != wizard.category_id):
-                raise ValidationError(_('La cuenta no pertenece al rubro seleccionado.'))
+            selected_accounts = wizard.account_ids | wizard.account_id
+            if any(account.company_id != wizard.company_id for account in selected_accounts):
+                raise ValidationError(_('Las cuentas deben pertenecer a la empresa seleccionada.'))
+            if wizard.category_id and any(
+                    account.category_id != wizard.category_id for account in selected_accounts):
+                raise ValidationError(_('Todas las cuentas deben pertenecer al rubro seleccionado.'))
 
     def action_print_pdf(self):
         self.ensure_one()

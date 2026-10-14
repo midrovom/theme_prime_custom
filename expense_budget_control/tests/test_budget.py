@@ -613,6 +613,67 @@ class TestExpenseBudget(TransactionCase):
         wizard.account_id = agua
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 2)
 
+    def test_comparison_pdf_multiple_accounts_and_category_summary(self):
+        """Varias cuentas activan el detalle; solo rubro imprime sus totales."""
+        Account = self.env['expense.budget.account']
+        Line = self.env['expense.budget.line']
+        water = Account.create({
+            'code': 'MULTI-AGUA', 'name': 'Agua',
+            'company_id': self.company.id, 'category_id': self.category.id,
+        })
+        internet = Account.create({
+            'code': 'MULTI-INTERNET', 'name': 'Internet',
+            'company_id': self.company.id, 'category_id': self.category.id,
+        })
+        for account, month, planned, actual in (
+                (self.account, '1', 100, 40),
+                (water, '2', 200, 50),
+                (internet, '3', 300, 90)):
+            line = Line.create({
+                'budget_id': self.budget.id, 'account_id': account.id,
+                'month': month, 'planned_amount': planned,
+            })
+            line.write({'actual_amount': actual})
+
+        wizard_model = self.env['expense.budget.comparison.report.wizard']
+        report = self.env['report.expense_budget_control.report_comparison_document']
+        summary_wizard = wizard_model.create({
+            'company_id': self.company.id, 'year': 2026,
+            'category_id': self.category.id,
+        })
+        summary = report._prepare_comparison(summary_wizard)
+        self.assertTrue(summary['summary_by_category_only'])
+        self.assertEqual(summary['line_count'], 3)
+        self.assertEqual(summary['grand_total']['planned'], 600)
+        self.assertEqual(summary['grand_total']['actual'], 180)
+        self.assertEqual(summary['grand_total']['available'], 420)
+        self.assertAlmostEqual(summary['grand_total']['execution'], 30)
+
+        multi_wizard = wizard_model.create({
+            'company_id': self.company.id, 'year': 2026,
+            'category_id': self.category.id,
+            'account_ids': [(6, 0, [self.account.id, water.id])],
+        })
+        selected = report._prepare_comparison(multi_wizard)
+        self.assertFalse(selected['summary_by_category_only'])
+        self.assertEqual(selected['line_count'], 2)
+        self.assertEqual(selected['grand_total']['planned'], 300)
+        self.assertEqual(selected['grand_total']['actual'], 90)
+        self.assertEqual(
+            {item['account'].id for item in selected['categories'][0]['accounts']},
+            {self.account.id, water.id},
+        )
+        self.assertEqual(
+            sum(len(account['lines']) for account in selected['categories'][0]['accounts']),
+            2,
+        )
+        multi_wizard._onchange_category_id()
+        self.assertFalse(multi_wizard.account_ids)
+
+    def test_comparison_year_not_summed_in_grouped_view(self):
+        """El año agrupado debe ser 2026, no 2026 + 2026."""
+        self.assertEqual(self.env['expense.budget.line']._fields['year'].aggregator, 'max')
+
     def test_comparison_pdf_approver_cannot_see_draft_lines(self):
         """Imprimir no debe permitir eludir la regla de solo enviados/aprobados."""
         self.env['expense.budget.line'].create({
