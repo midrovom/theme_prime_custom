@@ -56,10 +56,37 @@ class TestExpenseBudget(TransactionCase):
         with self.assertRaises(AccessError):
             available.with_user(registrar).write({'name': 'Nombre modificado'})
 
-    def test_category_cannot_select_assigned_account_from_another_rubro(self):
+    def test_category_can_select_multiple_existing_accounts_with_one_to_many(self):
+        """El selector admite varias cuentas ya creadas, incluso con rubro previo.
+
+        El vínculo se guarda en expense.budget.account.category_id.
+        """
+        extra = self.env['expense.budget.account'].create({
+            'code': 'AGUA-1421', 'name': 'Agua', 'company_id': self.company.id,
+        })
+        category = self.env['expense.budget.category'].create({
+            'name': 'Servicios básicos nuevos', 'company_id': self.company.id,
+            'account_selection_ids': [(6, 0, [self.account.id, extra.id])],
+        })
+        self.assertEqual(self.account.category_id, category)
+        self.assertEqual(extra.category_id, category)
+        self.assertEqual(set(category.account_ids.ids), {self.account.id, extra.id})
+        self.assertEqual(set(category.account_selection_ids.ids), {self.account.id, extra.id})
+        # La vista ya no oculta las cuentas por tener rubro: el dominio es por empresa.
+        from lxml import etree
+        view = self.env.ref('expense_budget_control.view_expense_budget_category_form')
+        arch = etree.fromstring(view.arch_db.encode())
+        selector = arch.xpath("//field[@name='account_selection_ids']")[0]
+        self.assertNotIn("('category_id', '=', False)", selector.get('domain'))
+
+    def test_category_does_not_reassign_account_with_budget_movements(self):
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 200,
+        })
         with self.assertRaises(ValidationError):
             self.env['expense.budget.category'].create({
-                'name': 'Nuevo rubro', 'company_id': self.company.id,
+                'name': 'Rubro nuevo', 'company_id': self.company.id,
                 'account_selection_ids': [(6, 0, [self.account.id])],
             })
         self.assertEqual(self.account.category_id, self.category)

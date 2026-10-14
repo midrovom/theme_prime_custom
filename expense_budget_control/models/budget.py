@@ -34,7 +34,7 @@ class ExpenseBudgetCategory(models.Model):
     account_selection_ids = fields.Many2many(
         'expense.budget.account', string='Cuentas controladas',
         compute='_compute_account_selection_ids', inverse='_inverse_account_selection_ids',
-        help='Seleccione cuentas previamente cargadas que todavía no tengan rubro.',
+        help='Seleccione varias cuentas existentes de la empresa. Una cuenta puede pertenecer a un solo rubro; si ya pertenece a otro, solo se reasignará si no tiene movimientos ni proyecciones.',
     )
 
     @api.depends('account_ids', 'account_ids.category_id')
@@ -59,18 +59,31 @@ class ExpenseBudgetCategory(models.Model):
                 ))
             added = selected - current
             removed = current - selected
-            if any(account.category_id for account in added):
+            # La búsqueda en el formulario incluye TODAS las cuentas existentes
+            # de la empresa, incluso las ya asignadas a otro rubro. Es una
+            # relación real uno-a-muchos mediante account.category_id: mover una
+            # cuenta cambia su rubro, no crea una segunda relación paralela.
+            # Evitar mover cuentas con histórico para no alterar informes.
+            reassigned = added.filtered(lambda account: account.category_id)
+            if reassigned and (self.env['expense.budget.line'].sudo().search_count([
+                    ('account_id', 'in', reassigned.ids),
+            ]) or self.env['expense.budget.expense'].sudo().search_count([
+                    ('account_id', 'in', reassigned.ids),
+            ])):
                 raise ValidationError(_(
-                    'Una cuenta seleccionada ya pertenece a otro rubro. '
-                    'Seleccione únicamente cuentas sin rubro.'
+                    'No puede cambiar de rubro una cuenta que ya tiene '
+                    'proyecciones o gastos registrados. '
+                    'Seleccione una cuenta sin movimientos.'
                 ))
             # No dejar presupuestos históricos apuntando a una cuenta desligada
             # de su rubro: solo se pueden quitar cuentas nunca presupuestadas.
-            if removed and self.env['expense.budget.line'].sudo().search_count([
+            if removed and (self.env['expense.budget.line'].sudo().search_count([
                 ('account_id', 'in', removed.ids),
-            ]):
+            ]) or self.env['expense.budget.expense'].sudo().search_count([
+                ('account_id', 'in', removed.ids),
+            ])):
                 raise ValidationError(_(
-                    'No puede quitar una cuenta que ya tiene proyecciones registradas.'
+                    'No puede quitar una cuenta que ya tiene proyecciones o gastos registrados.'
                 ))
             if removed:
                 removed.sudo().write({'category_id': False})

@@ -26,8 +26,11 @@
                         <field name="active"/>
                     </group>
                     <group string="Cuentas controladas del rubro">
+                        <!-- Selector múltiple de cuentas existentes. category_id NO
+                             filtra: también permite elegir cuentas de otro rubro
+                             siempre que no tengan histórico presupuestario. -->
                         <field name="account_selection_ids" widget="many2many_tags"
-                               domain="[('company_id', '=', company_id), ('category_id', '=', False)]"
+                               domain="[('company_id', '=', company_id)]"
                                options="{'no_create': True, 'no_create_edit': True}"/>
                     </group>
                 </sheet>
