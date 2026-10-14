@@ -70,7 +70,13 @@ class ExpenseBudget(models.Model):
     _order = 'year desc, id desc'
     _check_company_auto = True
 
+    # El nombre sigue siendo texto para mantener los reportes e integraciones
+    # existentes, pero la interfaz selecciona un rubro ya registrado.
     name = fields.Char(string='Presupuesto', required=True)
+    category_id = fields.Many2one(
+        'expense.budget.category', string='Rubro del presupuesto',
+        ondelete='restrict', check_company=True, index=True,
+    )
     year = fields.Integer(string='Año', required=True,
                           default=lambda self: fields.Date.context_today(self).year, index=True)
     company_id = fields.Many2one('res.company', string='Empresa', required=True,
@@ -103,6 +109,29 @@ class ExpenseBudget(models.Model):
             rec.execution_percentage = (rec.actual_amount / rec.planned_amount * 100.0
                                         if rec.planned_amount else 0.0)
 
+    @api.onchange('category_id')
+    def _onchange_budget_category(self):
+        # El nombre visible e impreso seguirá correspondiendo al rubro elegido.
+        if self.category_id:
+            self.name = self.category_id.name
+
+    @api.onchange('company_id')
+    def _onchange_budget_company(self):
+        if self.category_id and self.category_id.company_id != self.company_id:
+            self.category_id = False
+            self.name = False
+
+    @api.constrains('category_id', 'company_id')
+    def _check_budget_category_company(self):
+        for rec in self:
+            if rec.category_id and rec.category_id.company_id != rec.company_id:
+                raise ValidationError(_('El rubro del presupuesto debe pertenecer a su empresa.'))
+            if rec.category_id and any(
+                    line.account_id.category_id != rec.category_id for line in rec.line_ids):
+                raise ValidationError(_(
+                    'Las cuentas de las proyecciones deben pertenecer al rubro del presupuesto.'
+                ))
+
     @api.constrains('year')
     def _check_year(self):
         for rec in self:
@@ -117,6 +146,13 @@ class ExpenseBudget(models.Model):
         # la empresa/año sin aprobar. Sí se admiten varios ya aprobados.
         new_periods = set()
         for vals in vals_list:
+            if vals.get('category_id'):
+                category = self.env['expense.budget.category'].browse(vals['category_id']).exists()
+                if not category:
+                    raise ValidationError(_('El rubro seleccionado ya no existe.'))
+                vals['name'] = category.name
+                if category.company_id.id != (vals.get('company_id') or self.env.company.id):
+                    raise ValidationError(_('El rubro debe pertenecer a la empresa del presupuesto.'))
             company_id = vals.get('company_id') or self.env.company.id
             year = vals.get('year') or fields.Date.context_today(self).year
             period = (company_id, year)
@@ -132,6 +168,16 @@ class ExpenseBudget(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
+        if 'category_id' in vals:
+            if any(rec.state != 'draft' or rec.line_ids for rec in self):
+                raise UserError(_('No puede cambiar el rubro de un presupuesto con líneas o enviado.'))
+            vals = dict(vals)
+            category = self.env['expense.budget.category'].browse(vals['category_id']).exists()
+            if category:
+                if any(rec.company_id != category.company_id for rec in self) and 'company_id' not in vals:
+                    raise ValidationError(_('El rubro debe pertenecer a la empresa del presupuesto.'))
+                vals['name'] = category.name
+            # No se cambia ni se borra el nombre histórico si se limpia el selector.
         # El registrador puede editar el borrador, pero no cambiar su estado
         # mediante escritura directa ni mediante llamadas RPC.
         if 'state' in vals and not (
@@ -336,6 +382,9 @@ class ExpenseBudgetLine(models.Model):
         for rec in self:
             if rec.account_id.company_id != rec.budget_id.company_id:
                 raise ValidationError(_('La cuenta debe pertenecer a la empresa del presupuesto.'))
+            if (rec.budget_id.category_id and
+                    rec.account_id.category_id != rec.budget_id.category_id):
+                raise ValidationError(_('La cuenta debe pertenecer al rubro seleccionado en el presupuesto.'))
 
     @api.constrains('budget_id', 'account_id', 'month')
     def _check_unique_account_month_across_budgets(self):

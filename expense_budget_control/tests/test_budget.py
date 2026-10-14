@@ -20,6 +20,61 @@ class TestExpenseBudget(TransactionCase):
             'name': 'Test presupuestario', 'year': 2026, 'company_id': self.company.id,
         })
 
+
+    def test_budget_selector_uses_existing_rubro_and_limits_accounts(self):
+        """El formulario selecciona el rubro y no mezcla sus cuentas."""
+        other = self.env['expense.budget.category'].create({
+            'code': 'OTRO-RUBRO-1419', 'name': 'Otros gastos',
+            'company_id': self.company.id,
+        })
+        other_account = self.env['expense.budget.account'].create({
+            'code': 'OTRA-CUENTA-1419', 'name': 'Alquiler',
+            'category_id': other.id, 'company_id': self.company.id,
+        })
+        budget = self.env['expense.budget'].create({
+            'category_id': self.category.id, 'year': 2039,
+            'company_id': self.company.id,
+        })
+        self.assertEqual(budget.name, self.category.name)
+        self.assertEqual(budget.category_id, self.category)
+        line = self.env['expense.budget.line'].create({
+            'budget_id': budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 100,
+        })
+        self.assertEqual(line.category_id, self.category)
+        with self.assertRaises(ValidationError):
+            self.env['expense.budget.line'].create({
+                'budget_id': budget.id, 'account_id': other_account.id,
+                'month': '2', 'planned_amount': 100,
+            })
+        with self.assertRaises(UserError):
+            budget.write({'category_id': other.id})
+
+    def test_comparison_pdf_execution_matches_grouped_view(self):
+        """10% + 0% en Odoo debe imprimir 10%, no la razón global 6,67%."""
+        water = self.env['expense.budget.account'].create({
+            'code': 'AGUA-TEST-1419', 'name': 'Agua',
+            'category_id': self.category.id, 'company_id': self.company.id,
+        })
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 50,
+        })
+        line = self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': water.id,
+            'month': '1', 'planned_amount': 100,
+        })
+        line.write({'actual_amount': 10})
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'company_id': self.company.id, 'year': 2026,
+            'category_id': self.category.id,
+        })
+        data = self.env['report.expense_budget_control.report_comparison_document']._prepare_comparison(wizard)
+        self.assertEqual(data['grand_total']['planned'], 150)
+        self.assertEqual(data['grand_total']['actual'], 10)
+        self.assertAlmostEqual(data['grand_total']['execution'], 10)
+        self.assertTrue(data['summary_by_category_only'])
+
     def test_balance_and_execution_recompute_after_save_manual_actual(self):
         """Guardado manual: ambos indicadores se recalculan y persisten."""
         Line = self.env['expense.budget.line']
@@ -475,8 +530,8 @@ class TestExpenseBudget(TransactionCase):
                 'month': '1', 'planned_amount': 100,
             })
 
-    def test_comparison_pdf_groups_accounts_and_calculates_weighted_execution(self):
-        """El PDF del comparativo agrupa rubro/cuenta sin promediar porcentajes."""
+    def test_comparison_pdf_groups_accounts_and_matches_view_execution(self):
+        """El PDF debe sumar Ejecución (%) igual que la vista agrupada de Odoo."""
         water = self.env['expense.budget.account'].create({
             'code': '6001-TEST-PDF', 'name': 'Agua',
             'category_id': self.category.id, 'company_id': self.company.id,
@@ -516,7 +571,7 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(prepared['grand_total']['planned'], 400)
         self.assertEqual(prepared['grand_total']['actual'], 125)
         self.assertEqual(prepared['grand_total']['available'], 275)
-        self.assertAlmostEqual(prepared['grand_total']['execution'], 31.25)
+        self.assertAlmostEqual(prepared['grand_total']['execution'], 75.0)
         self.assertEqual(wizard.action_print_pdf()['type'], 'ir.actions.report')
 
         filtered = self.env['expense.budget.comparison.report.wizard'].create({
@@ -596,7 +651,7 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(result['grand_total']['planned'], 420)
         self.assertEqual(result['grand_total']['actual'], 120)
         self.assertEqual(result['grand_total']['available'], 300)
-        self.assertAlmostEqual(result['grand_total']['execution'], 120 / 420 * 100)
+        self.assertAlmostEqual(result['grand_total']['execution'], 40 + 10 + 40 + 0 + 30 / 70 * 100)
         self.assertEqual(
             {detail['line'].budget_id.id for acc in group['accounts']
              for detail in acc['lines']},
@@ -647,7 +702,7 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(summary['grand_total']['planned'], 600)
         self.assertEqual(summary['grand_total']['actual'], 180)
         self.assertEqual(summary['grand_total']['available'], 420)
-        self.assertAlmostEqual(summary['grand_total']['execution'], 30)
+        self.assertAlmostEqual(summary['grand_total']['execution'], 95)
 
         multi_wizard = wizard_model.create({
             'company_id': self.company.id, 'year': 2026,

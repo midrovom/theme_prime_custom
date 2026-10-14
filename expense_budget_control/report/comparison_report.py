@@ -17,18 +17,16 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         totals['planned'] += line.planned_amount
         totals['actual'] += line.actual_amount
         totals['available'] += line.variance_amount
-        totals['execution'] = (
-            totals['actual'] / totals['planned'] * 100.0 if totals['planned'] else 0.0
-        )
+        # La vista agrupada de Odoo suma el campo execution_percentage de
+        # sus líneas. El PDF debe mostrar el mismo valor que el sistema.
+        totals['execution'] += line.execution_percentage
 
     @classmethod
     def _add_totals(cls, target, source):
         target['planned'] += source['planned']
         target['actual'] += source['actual']
         target['available'] += source['available']
-        target['execution'] = (
-            target['actual'] / target['planned'] * 100.0 if target['planned'] else 0.0
-        )
+        target['execution'] += source['execution']
 
     @api.model
     def _prepare_comparison(self, wizard):
