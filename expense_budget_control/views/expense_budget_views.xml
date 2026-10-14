@@ -216,10 +216,83 @@
             </search>
         </field>
     </record>
+    <!-- Nueva vista de acumulados ANUALES por cuenta. Las líneas mensuales
+         permanecen intactas para registrar proyecciones en los presupuestos. -->
+    <record id="view_expense_budget_annual_analysis_list" model="ir.ui.view">
+        <field name="name">expense.budget.annual.analysis.list</field>
+        <field name="model">expense.budget.annual.analysis</field>
+        <field name="arch" type="xml">
+            <list string="Proyectado vs. real anual" create="false" edit="false" delete="false"
+                  decoration-danger="variance_amount &lt; 0">
+                <header>
+                    <button name="%(expense_budget_control.action_expense_budget_comparison_report_wizard)d"
+                            type="action" string="Imprimir PDF" icon="fa-print" display="always"
+                            groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
+                </header>
+                <field name="budget_id"/>
+                <field name="company_id"/>
+                <field name="account_id"/>
+                <field name="category_id"/>
+                <field name="year"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="planned_amount" sum="Total proyectado"/>
+                <field name="actual_amount" sum="Total consumido"/>
+                <field name="variance_amount" sum="Total disponible"/>
+                <field name="execution_percentage"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_expense_budget_annual_analysis_pivot" model="ir.ui.view">
+        <field name="name">expense.budget.annual.analysis.pivot</field>
+        <field name="model">expense.budget.annual.analysis</field>
+        <field name="arch" type="xml">
+            <pivot string="Comparativo anual por rubro y cuenta">
+                <field name="category_id" type="row"/>
+                <field name="account_id" type="row"/>
+                <field name="year" type="col"/>
+                <field name="planned_amount" type="measure"/>
+                <field name="actual_amount" type="measure"/>
+                <field name="variance_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="view_expense_budget_annual_analysis_graph" model="ir.ui.view">
+        <field name="name">expense.budget.annual.analysis.graph</field>
+        <field name="model">expense.budget.annual.analysis</field>
+        <field name="arch" type="xml">
+            <graph string="Proyectado vs. real anual" type="bar" stacked="0">
+                <field name="year" type="row"/>
+                <field name="planned_amount" type="measure"/>
+                <field name="actual_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+    <record id="view_expense_budget_annual_analysis_search" model="ir.ui.view">
+        <field name="name">expense.budget.annual.analysis.search</field>
+        <field name="model">expense.budget.annual.analysis</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="year"/>
+                <field name="company_id"/>
+                <field name="category_id"/>
+                <field name="account_id"/>
+                <field name="budget_id"/>
+                <filter string="Sobregirados" name="over_budget" domain="[('variance_amount', '&lt;', 0)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Año" name="group_year" context="{'group_by': 'year'}"/>
+                    <filter string="Rubro" name="group_category" context="{'group_by': 'category_id'}"/>
+                    <filter string="Cuenta controlada" name="group_account" context="{'group_by': 'account_id'}"/>
+                    <filter string="Presupuesto" name="group_budget" context="{'group_by': 'budget_id'}"/>
+                    <filter string="Empresa" name="group_company" context="{'group_by': 'company_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
     <record id="action_expense_budget_comparison" model="ir.actions.act_window">
-        <field name="name">Proyectado vs. real</field><field name="res_model">expense.budget.line</field>
+        <field name="name">Proyectado vs. real</field><field name="res_model">expense.budget.annual.analysis</field>
         <field name="view_mode">list,pivot,graph</field>
-        <field name="search_view_id" ref="view_expense_budget_line_search"/>
+        <field name="search_view_id" ref="view_expense_budget_annual_analysis_search"/>
+        <field name="context">{'search_default_group_category': 1, 'search_default_group_account': 2}</field>
     </record>
 
     <!-- Movimientos reales -->

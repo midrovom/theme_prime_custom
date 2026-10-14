@@ -1,6 +1,6 @@
 # Control de Presupuesto de Gastos — Odoo 18
 
-Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.11`.
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.17`.
 
 ## Funciones
 
@@ -8,8 +8,8 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.11`.
 - Un presupuesto anual por empresa, con importe **proyectado por cuenta y mes**.
 - Gastos reales manuales, importados desde **Excel/CSV** o recibidos de **API Administrator**.
 - Comparación de presupuesto frente al real: consumido, disponible y porcentaje de ejecución.
-- Vistas tipo lista, gráfica de barras y tabla dinámica, con filtros por rubro, cuenta, mes y presupuesto.
-- **PDF anual imprimible** desde cada presupuesto, agrupado por rubro y cuenta, con columnas mensuales de presupuesto, gasto y ejecución %.
+- Vista **Proyectado vs. real anual** en lista, gráfica y tabla dinámica, agrupada por año, rubro y cuenta, sumando los doce meses; sin desglose mensual en esta sección.
+- **PDF anual imprimible** desde cada presupuesto, agrupado por rubro y cuenta, con columnas mensuales de presupuesto, gasto y disponible.
 - Registro de sincronizaciones, idempotencia por clave externa y reconciliación de gastos sin línea presupuestaria.
 - Roles de consulta, registro, aprobación y administrador; reglas de acceso multiempresa.
 
@@ -31,7 +31,7 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.11`.
 2. Vaya a **Presupuestos** y cree, por ejemplo, `Presupuesto 2026`, para la misma empresa y año.
 3. En **Importar Excel/CSV**, seleccione **Proyecciones mensuales**, el presupuesto y la hoja **Proyecciones**. También puede editar las doce proyecciones por cuenta en el propio formulario.
 4. Registre gastos reales a mano o importe la hoja **Gastos** con tipo **Gastos reales**.
-5. En **Proyectado vs. real** vea las desviaciones por rubro, cuenta y mes. Un saldo negativo identifica exceso presupuestario.
+5. En **Proyectado vs. real** vea los acumulados **anuales** por rubro y cuenta. Un saldo negativo identifica exceso presupuestario. Los meses se siguen registrando en **Proyecciones mensuales**, pero no se desglosan en el comparativo anual.
 6. Envíe el presupuesto a aprobación y apruébelo para bloquear los valores proyectados (los gastos reales siguen registrándose). Después puede registrar otro presupuesto para nuevos rubros de la misma empresa y año.
 
 ### Columnas de Excel
@@ -60,12 +60,20 @@ El **identificador de gasto es obligatorio y estable**, ya que evita duplicados:
 
 El archivo completo debe ser válido; si una fila tiene un error, se revierte la importación entera y se indica el número de fila. Límites: 8 MB y 20.000 filas por archivo.
 
+## Proyectado vs. real: vista y PDF ANUALES (v1.4.17)
+
+- La lista **Proyectado vs. real** conserva las columnas **Presupuesto, Empresa, Cuenta controlada, Rubro, Proyectado, Consumido, Disponible y Ejecución (%)**; reemplaza **Mes** por **Año**. Cada fila acumula hasta doce proyecciones mensuales de una cuenta en un **presupuesto específico** y un año. Por tanto, si una cuenta aparece en varios presupuestos del mismo año, habrá una fila anual por cada presupuesto (no doce filas mensuales).
+- Agrupando por Rubro y Cuenta controlada se obtiene el **total anual de cada cuenta** entre los presupuestos correspondientes. La tabla dinámica y gráfica se basan en los mismos acumulados. Ejecución (%) se calcula como `consumido anual / proyectado anual * 100`, **no** como suma ni promedio de porcentajes mensuales.
+- El botón **Imprimir PDF** continúa mostrando el asistente con selección de **Empresa, Año, Rubro y Cuenta controlada**. El archivo generado agrupa **Rubro → Cuenta controlada → detalle anual por presupuesto**, con subtotales, total general y columna **Año** en lugar de **Mes**.
+- **Aprobador** solo acumula presupuestos pendientes de aprobación o aprobados; **Administrador** contempla todos los estados y empresas según los permisos del módulo. El usuario de Consulta conserva las restricciones existentes.
+- Los presupuestos y sus **Proyecciones mensuales** no cambian; la vista anual es una **vista SQL de solo lectura** y no genera ni modifica movimientos.
+
 ## Imprimir PDF de presupuesto anual (nuevo)
 
 1. Abra **Control de Gastos → Presupuestos anuales** y seleccione el presupuesto que desea imprimir.
 2. Pulse **Imprimir PDF** en la cabecera. Alternativamente, use la opción **Imprimir → Presupuesto anual por rubro y cuenta**.
 3. El documento incluye **empresa, presupuesto, año y moneda**, seguido de una tabla agrupada por **rubro** (ej. *Servicios básicos*) y debajo sus **cuentas controladas** (ej. *Luz*, *Agua*).
-4. El año se muestra en **una sola tabla de doce meses en A1 horizontal**, con tres columnas por cada mes: **Presupuesto** (valor proyectado), **Gasto** (valor real consumido) y una **columna sin nombre** que presenta el valor del campo **Ejecución (%)**. La columna final muestra el **porcentaje de ejecución anual** por rubro, cuenta y total general; también hay subtotales por rubro y totales mensuales. La tabla es desplazable horizontalmente en la vista HTML cuando la pantalla es estrecha.
+4. El año se muestra en **una sola tabla de doce meses en formato panorámico**, con tres columnas por cada mes: **Presupuesto** (valor proyectado), **Gasto** (valor real consumido) y una **columna sin nombre** que presenta el valor de **Disponible**. La columna final muestra el **Disponible anual** por rubro, cuenta y total general; también hay subtotales por rubro y totales mensuales. La tabla es desplazable horizontalmente en la vista HTML cuando la pantalla es estrecha.
 
 **Interpretación:** **Ejecución (%) = Gasto / Presupuesto × 100**; 25 % significa que se ha consumido el 25 % del presupuesto, no que quede el 25 %. El saldo disponible continúa consultándose en el campo **Disponible** del presupuesto. Si un mes no tiene una línea de proyección, el PDF muestra «—». Los gastos no conciliados con una línea no se incluyen en el consumo de esa línea hasta vincularlos mediante **Conciliar gastos**.
 
@@ -80,10 +88,54 @@ El módulo **no sustituye** la autenticación ni el transporte HTTP de `api_admi
 1. Cree primero la API en su módulo **API Administrator**, con método `get`, estado `A` y la empresa correspondiente.
 2. Abra **Control de Gastos → Configuración → Configuración API de gastos**.
 3. Seleccione la **Empresa** y elija en **API existente** la API que ya creó (una selección por empresa); guarde.
-4. Pulse **Sincronizar gastos** desde la configuración, o **Sincronizar API** desde un presupuesto de esa empresa.
+4. Pulse **Sincronizar API** desde la configuración, o **Sincronizar API** desde un presupuesto de esa empresa.
 5. Consulte los resultados en **Configuración → Historial API**.
 
 **Al actualizar desde la versión 1.2:** entre en **Configuración API de gastos** y seleccione la API existente. El indicador `is_expense_budget_sync` de la versión anterior ya no se utiliza para decidir qué API consume el módulo. No se modifica la configuración original de su API.
+
+
+### API de rubros y cuentas controladas (v1.4.16)
+
+En **Configuración → Configuración API de gastos** ahora existe el selector opcional
+**API de rubros y cuentas**. Seleccione una API GET activa que **ya exista** en
+`api.administrator`, para la misma empresa. Se conserva **API existente** para
+los movimientos de gastos; si ambas API son la misma, solo se consulta una vez.
+Los botones actuales **Sincronizar API** consumen ambas configuraciones.
+
+La respuesta esperada para un rubro (JSON válido) es:
+
+```json
+{
+  "data": {
+    "company_id": "Conedera",
+    "Code": "101001",
+    "name": "Servicio basico",
+    "cuentas": [
+      {"code": "101001", "name": "Agua"},
+      {"code": "101002", "name": "Luz"},
+      {"code": "101003", "name": "Internet"}
+    ]
+  }
+}
+```
+
+- `data` también puede ser una **lista de rubros** con la misma estructura, o
+  `{"data": {"company_id": "Conedera", "rubros": [...]}}`.
+- Las listas de cuentas pueden llamarse `cuentas`, `accounts`, `cuentas_controladas`
+  o `account_ids`. En cada cuenta, **cada par código/nombre va en su propio objeto**.
+- `company_id` se compara con el nombre o ID de la empresa de Odoo seleccionada.
+  Si no coincide, se rechaza la respuesta para impedir altas en otra empresa.
+- Los rubros se crean en `expense.budget.category`, por **empresa + Code**;
+  las cuentas se crean en `expense.budget.account`, por **empresa + code**, ligadas
+  a su rubro. Si existen, se actualizan nombre, rubro o estado activo.
+- Una segunda sincronización **no duplica rubros ni cuentas**. Una cuenta ausente
+  del JSON **no se elimina**. No se generan presupuestos ni movimientos de gastos
+  a partir del catálogo.
+- Continúa operativa la API anterior de gastos, cuyos movimientos viajan en `data`
+  como lista de objetos con `id`, `codigo_cuenta`, `fecha` y `monto`.
+- Un lote inválido revierte su API y escribe el error en **Historial API**.
+  La instalación se debe probar con el `api_administrator` real.
+
 
 **Ejemplo de respuesta JSON**:
 
@@ -156,6 +208,6 @@ La visibilidad de menús no cambia el cálculo presupuestario ni la API. Al actu
 
 1. Abra **Control de Gastos → Proyectado vs. real** (vista de lista).
 2. Pulse **Imprimir PDF**. No necesita seleccionar filas: el asistente permite indicar **Empresa**, **Año** y opcionalmente **Rubro** y **Cuenta controlada**.
-3. Pulse **Imprimir PDF** en el asistente. El reporte A4 horizontal muestra los rubros, sus cuentas y las columnas **Proyectado**, **Gasto real**, **Disponible** y **Ejecución (%)**, con subtotales y total general.
+3. Pulse **Imprimir PDF** en el asistente. El reporte A4 horizontal presenta **Rubro → Cuenta controlada → presupuesto anual**, y para cada presupuesto las columnas **Presupuesto, Empresa, Cuenta controlada, Rubro, Año, Proyectado, Consumido, Disponible y Ejecución (%)**, con subtotales y total general.
 
 El porcentaje se calcula como consumido total / proyectado total x 100, no como promedio de porcentajes mensuales. No se duplican gastos de API o Excel: se utilizan exclusivamente los totales de las líneas mensuales. Los usuarios Aprobador solo podrán imprimir las líneas de presupuestos pendientes de aprobación o aprobados que ya pueden consultar; los demás roles conservan sus permisos. El PDF anual existente (12 meses) no se altera.

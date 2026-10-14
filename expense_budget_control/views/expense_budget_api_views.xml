@@ -9,6 +9,7 @@
             <list string="Configuración API de gastos" delete="false">
                 <field name="company_id"/>
                 <field name="api_administrator_id"/>
+                <field name="catalog_api_administrator_id"/>
                 <button name="action_sync" type="object" string="Sincronizar" icon="fa-refresh"/>
             </list>
         </field>
@@ -20,13 +21,16 @@
         <field name="arch" type="xml">
             <form string="Configuración API de gastos" delete="false">
                 <header>
-                    <button name="action_sync" type="object" string="Sincronizar gastos"
+                    <button name="action_sync" type="object" string="Sincronizar API"
                             class="btn-primary"/>
                 </header>
                 <sheet>
                     <group>
                         <field name="company_id"/>
                         <field name="api_administrator_id"
+                               domain="[('company_id', '=', company_id), ('type', '=', 'get'), ('status', '=', 'A')]"
+                               options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                        <field name="catalog_api_administrator_id"
                                domain="[('company_id', '=', company_id), ('type', '=', 'get'), ('status', '=', 'A')]"
                                options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                     </group>
