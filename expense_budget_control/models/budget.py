@@ -135,8 +135,8 @@ class ExpenseBudget(models.Model):
     _order = 'year desc, id desc'
     _check_company_auto = True
 
-    # El nombre sigue siendo texto para mantener los reportes e integraciones
-    # existentes, pero la interfaz selecciona un rubro ya registrado.
+    # El nombre del presupuesto es libre; el rubro sigue siendo opcional y
+    # sirve para facilitar la selección de cuentas en las proyecciones.
     name = fields.Char(string='Presupuesto', required=True)
     category_id = fields.Many2one(
         'expense.budget.category', string='Rubro del presupuesto',
@@ -174,17 +174,10 @@ class ExpenseBudget(models.Model):
             rec.execution_percentage = (rec.actual_amount / rec.planned_amount * 100.0
                                         if rec.planned_amount else 0.0)
 
-    @api.onchange('category_id')
-    def _onchange_budget_category(self):
-        # El nombre visible e impreso seguirá correspondiendo al rubro elegido.
-        if self.category_id:
-            self.name = self.category_id.name
-
     @api.onchange('company_id')
     def _onchange_budget_company(self):
         if self.category_id and self.category_id.company_id != self.company_id:
             self.category_id = False
-            self.name = False
 
     @api.constrains('category_id', 'company_id')
     def _check_budget_category_company(self):
@@ -215,7 +208,10 @@ class ExpenseBudget(models.Model):
                 category = self.env['expense.budget.category'].browse(vals['category_id']).exists()
                 if not category:
                     raise ValidationError(_('El rubro seleccionado ya no existe.'))
-                vals['name'] = category.name
+                # Compatibilidad con clientes antiguos que envían solo
+                # category_id: nunca pisar un name escrito expresamente.
+                if not vals.get('name'):
+                    vals['name'] = category.name
                 if category.company_id.id != (vals.get('company_id') or self.env.company.id):
                     raise ValidationError(_('El rubro debe pertenecer a la empresa del presupuesto.'))
             company_id = vals.get('company_id') or self.env.company.id
@@ -241,8 +237,7 @@ class ExpenseBudget(models.Model):
             if category:
                 if any(rec.company_id != category.company_id for rec in self) and 'company_id' not in vals:
                     raise ValidationError(_('El rubro debe pertenecer a la empresa del presupuesto.'))
-                vals['name'] = category.name
-            # No se cambia ni se borra el nombre histórico si se limpia el selector.
+            # Cambiar el rubro opcional no reemplaza el nombre del presupuesto.
         # El registrador puede editar el borrador, pero no cambiar su estado
         # mediante escritura directa ni mediante llamadas RPC.
         if 'state' in vals and not (
