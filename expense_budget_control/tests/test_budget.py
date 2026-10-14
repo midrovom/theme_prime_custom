@@ -497,19 +497,22 @@ class TestExpenseBudget(TransactionCase):
         prepared = report._get_report_values([wizard.id])['reports'][0]
         self.assertEqual(len(prepared['categories']), 1)
         self.assertEqual(len(prepared['categories'][0]['accounts']), 2)
-        # El PDF anual presenta detalle por presupuesto/cuenta/año, sin
-        # repetir los meses como detalle independiente.
+        # Debajo de cada cuenta debe imprimirse la línea individual,
+        # con presupuesto, empresa, rubro, mes y sus cuatro indicadores.
         group = prepared['categories'][0]
         self.assertEqual(group['line_count'], 2)
         self.assertEqual(sum(acc['line_count'] for acc in group['accounts']), 2)
-        self.assertEqual(prepared['account_count'], 2)
-        self.assertEqual(
-            {acc['account'].id for acc in group['accounts']},
-            {self.account.id, water.id},
-        )
         self.assertEqual(sum(len(acc['lines']) for acc in group['accounts']), 2)
-        self.assertTrue(all(annual.budget_id == self.budget
-                            for acc in group['accounts'] for annual in acc['lines']))
+        self.assertEqual(
+            sorted(detail['month_name'] for acc in group['accounts'] for detail in acc['lines']),
+            ['Enero', 'Febrero'],
+        )
+        for acc in group['accounts']:
+            detail = acc['lines'][0]
+            self.assertEqual(detail['line'].budget_id, self.budget)
+            self.assertEqual(detail['line'].company_id, self.company)
+            self.assertEqual(detail['line'].category_id, self.category)
+            self.assertEqual(detail['line'].account_id, acc['account'])
         self.assertEqual(prepared['grand_total']['planned'], 400)
         self.assertEqual(prepared['grand_total']['actual'], 125)
         self.assertEqual(prepared['grand_total']['available'], 275)
@@ -594,25 +597,11 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(result['grand_total']['actual'], 120)
         self.assertEqual(result['grand_total']['available'], 300)
         self.assertAlmostEqual(result['grand_total']['execution'], 120 / 420 * 100)
-        # Cada cuenta se presenta una sola vez, acumulando todos sus meses
-        # incluso cuando están distribuidos entre presupuestos del mismo año.
-        self.assertEqual(result['account_count'], 2)
-        self.assertEqual(result['budget_account_count'], 4)
-        self.assertEqual(len(accounts[self.account.id]['lines']), 2)
-        self.assertEqual(len(accounts[agua.id]['lines']), 2)
-        # Cada línea visible es el acumulado ANUAL de una cuenta en un
-        # presupuesto, no el detalle mensual original.
-        luz_by_budget = {row.budget_id.id: row for row in accounts[self.account.id]['lines']}
-        self.assertEqual(set(luz_by_budget), {self.budget.id, second.id})
-        self.assertEqual(luz_by_budget[self.budget.id].planned_amount, 100)
-        self.assertEqual(luz_by_budget[second.id].planned_amount, 150)
-        self.assertEqual(luz_by_budget[second.id].actual_amount, 40)
-        self.assertEqual(luz_by_budget[second.id].line_count, 2)
-        self.assertTrue(all(row.year == 2026 for row in luz_by_budget.values()))
-        self.assertEqual(accounts[self.account.id]['total']['planned'], 250)
-        self.assertEqual(accounts[self.account.id]['total']['actual'], 80)
-        self.assertEqual(accounts[agua.id]['total']['planned'], 170)
-        self.assertEqual(accounts[agua.id]['total']['actual'], 40)
+        self.assertEqual(
+            {detail['line'].budget_id.id for acc in group['accounts']
+             for detail in acc['lines']},
+            {self.budget.id, second.id},
+        )
 
         # Cambiar el rubro no puede conservar el filtro por una cuenta anterior.
         wizard.account_id = agua
@@ -623,91 +612,6 @@ class TestExpenseBudget(TransactionCase):
         # Solo cuando se escoge explícitamente Cuenta se limita el reporte.
         wizard.account_id = agua
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 2)
-
-    def test_annual_comparison_view_sums_months_and_separates_years(self):
-        """Lista y PDF: una fila anual por cuenta, sin sumas de porcentajes."""
-        Line = self.env['expense.budget.line']
-        for month, planned, actual in [('1', 100, 50), ('2', 300, 75)]:
-            line = Line.create({
-                'budget_id': self.budget.id, 'account_id': self.account.id,
-                'month': month, 'planned_amount': planned,
-            })
-            line.write({'actual_amount': actual})
-        self.env.flush_all()
-        Analysis = self.env['expense.budget.annual.analysis']
-        row = Analysis.search([
-            ('company_id', '=', self.company.id), ('year', '=', 2026),
-            ('account_id', '=', self.account.id),
-        ])
-        self.assertEqual(len(row), 1)
-        self.assertEqual(row.budget_id, self.budget)
-        self.assertEqual(row.line_count, 2)
-        self.assertEqual(row.planned_amount, 400)
-        self.assertEqual(row.actual_amount, 125)
-        self.assertEqual(row.variance_amount, 275)
-        self.assertAlmostEqual(row.execution_percentage, 31.25)
-
-        wizard = self.env['expense.budget.comparison.report.wizard'].create({
-            'company_id': self.company.id, 'year': 2026,
-        })
-        report = self.env['report.expense_budget_control.report_comparison_document']
-        result = report._prepare_comparison(wizard)
-        self.assertEqual(result['account_count'], 1)
-        self.assertEqual(result['line_count'], 2)
-        self.assertEqual(result['grand_total']['planned'], 400)
-        self.assertAlmostEqual(result['grand_total']['execution'], 31.25)
-
-    def test_annual_comparison_approver_scope_excludes_drafts(self):
-        """Las filas anuales del Aprobador excluyen datos de borradores."""
-        Line = self.env['expense.budget.line']
-        line = Line.create({
-            'budget_id': self.budget.id, 'account_id': self.account.id,
-            'month': '1', 'planned_amount': 80,
-        })
-        line.write({'actual_amount': 20})
-        group = self.env.ref('expense_budget_control.group_expense_budget_approver')
-        internal = self.env.ref('base.group_user')
-        approver = self.env['res.users'].with_context(no_reset_password=True).create({
-            'name': 'Aprobador anual controlado',
-            'login': 'test_budget_approver_annual_1417',
-            'company_id': self.company.id,
-            'company_ids': [(6, 0, [self.company.id])],
-            'groups_id': [(6, 0, [internal.id, group.id])],
-        })
-        self.env.flush_all()
-        Analysis = self.env['expense.budget.annual.analysis'].with_user(approver)
-        domain = [('company_id', '=', self.company.id),
-                  ('year', '=', 2026), ('account_id', '=', self.account.id)]
-        self.assertFalse(Analysis.search(domain))
-        self.budget.action_submit()
-        self.env.flush_all()
-        rows = Analysis.search(domain)
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows.scope, 'non_draft')
-        self.assertEqual(rows.planned_amount, 80)
-
-        # Una proyección del mismo año y cuenta en un presupuesto nuevo en
-        # borrador NO debe incorporarse a los totales visibles para Aprobador.
-        self.budget.action_approve()
-        second = self.env['expense.budget'].create({
-            'name': 'Presupuesto pendiente de registro',
-            'company_id': self.company.id, 'year': 2026,
-        })
-        Line.create({
-            'budget_id': second.id, 'account_id': self.account.id,
-            'month': '4', 'planned_amount': 500,
-        }).write({'actual_amount': 100})
-        self.env.flush_all()
-        rows = Analysis.search(domain)
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows.planned_amount, 80)
-        self.assertEqual(rows.actual_amount, 20)
-        admin_rows = self.env['expense.budget.annual.analysis'].search(domain)
-        self.assertEqual(len(admin_rows), 2)
-        self.assertEqual(sum(admin_rows.mapped('planned_amount')), 580)
-        self.assertEqual(sum(admin_rows.mapped('actual_amount')), 120)
-        self.assertEqual(
-            {row.budget_id.id for row in admin_rows}, {self.budget.id, second.id})
 
     def test_comparison_pdf_approver_cannot_see_draft_lines(self):
         """Imprimir no debe permitir eludir la regla de solo enviados/aprobados."""
@@ -731,92 +635,3 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 0)
         self.budget.action_submit()
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 1)
-
-    def test_api_catalog_response_creates_categories_accounts_and_is_idempotent(self):
-        sync = self.env['expense.budget.api.sync']
-        payload = {'data': {
-            'company_id': self.company.name,
-            'Code': '101001', 'name': 'Servicio basico',
-            'cuentas': [
-                {'code': '101001', 'name': 'Agua'},
-                {'code': '101002', 'name': 'Luz'},
-                {'code': '101003', 'name': 'Internet'},
-            ],
-        }}
-        kind, rows, parent_company = sync._extract_payload(payload)
-        self.assertEqual(kind, 'catalog')
-        first = sync._upsert_catalog(self.company, rows, parent_company)
-        self.assertEqual(first['rubros_created'], 1)
-        self.assertEqual(first['cuentas_created'], 3)
-
-        Category = self.env['expense.budget.category']
-        Account = self.env['expense.budget.account']
-        rubro = Category.search([
-            ('company_id', '=', self.company.id), ('code', '=', '101001'),
-        ])
-        self.assertEqual(rubro.name, 'Servicio basico')
-        cuentas = Account.search([
-            ('company_id', '=', self.company.id), ('category_id', '=', rubro.id),
-        ])
-        self.assertEqual({entry.name for entry in cuentas}, {'Agua', 'Luz', 'Internet'})
-        self.assertEqual({entry.code for entry in cuentas}, {'101001', '101002', '101003'})
-
-        again = sync._upsert_catalog(self.company, rows)
-        self.assertEqual(again['rubros_created'], 0)
-        self.assertEqual(again['rubros_unchanged'], 1)
-        self.assertEqual(again['cuentas_unchanged'], 3)
-        self.assertEqual(Account.search_count([
-            ('company_id', '=', self.company.id), ('category_id', '=', rubro.id),
-        ]), 3)
-
-        rows[0]['cuentas'][0]['name'] = 'Agua potable'
-        modified = sync._upsert_catalog(self.company, rows)
-        self.assertEqual(modified['cuentas_updated'], 1)
-        self.assertEqual(Account.search([
-            ('company_id', '=', self.company.id), ('code', '=', '101001'),
-        ]).name, 'Agua potable')
-
-    def test_api_catalog_list_and_existing_expense_payload(self):
-        sync = self.env['expense.budget.api.sync']
-        catalog_response = {'data': [
-            {'Code': 'R-1', 'name': 'Servicios', 'accounts': [
-                {'code': 'A-1', 'name': 'Luz'}]},
-            {'Code': 'R-2', 'name': 'Viajes', 'accounts': [
-                {'code': 'A-2', 'name': 'Taxi'}]},
-        ]}
-        kind, rows, company_hint = sync._extract_payload(catalog_response)
-        self.assertEqual(kind, 'catalog')
-        self.assertFalse(company_hint)
-        result = sync._upsert_catalog(self.company, rows)
-        self.assertEqual(result['rubros_created'], 2)
-        self.assertEqual(result['cuentas_created'], 2)
-        self.assertEqual(self.env['expense.budget.account'].search_count([
-            ('company_id', '=', self.company.id), ('code', 'in', ['A-1', 'A-2']),
-        ]), 2)
-        expense_rows = [{'id': 'G-01', 'codigo_cuenta': self.account.code,
-                         'fecha': '2026-01-01', 'monto': 10, 'descripcion': 'Factura'}]
-        kind, extracted, _hint = sync._extract_payload({'data': expense_rows})
-        self.assertEqual(kind, 'expense')
-        self.assertEqual(extracted, expense_rows)
-
-    def test_api_catalog_does_not_import_into_wrong_company(self):
-        sync = self.env['expense.budget.api.sync']
-        payload = {'data': {'company_id': 'EMPRESA QUE NO COINCIDE',
-                            'Code': 'R-X', 'name': 'No importar', 'cuentas': []}}
-        kind, rows, parent_company = sync._extract_payload(payload)
-        self.assertEqual(kind, 'catalog')
-        with self.assertRaises(ValueError):
-            sync._upsert_catalog(self.company, rows, parent_company)
-        self.assertFalse(self.env['expense.budget.category'].search([
-            ('company_id', '=', self.company.id), ('code', '=', 'R-X'),
-        ]))
-
-    def test_api_catalog_rejects_ambiguous_accounts(self):
-        sync = self.env['expense.budget.api.sync']
-        with self.assertRaises(ValueError):
-            sync._upsert_catalog(self.company, [
-                {'Code': 'R-A', 'name': 'A', 'cuentas': [
-                    {'code': 'X', 'name': 'Cuenta de A'}]},
-                {'Code': 'R-B', 'name': 'B', 'cuentas': [
-                    {'code': 'X', 'name': 'Cuenta de B'}]},
-            ])

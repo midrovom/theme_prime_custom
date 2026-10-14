@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- PDF anual del comparativo. No altera el PDF del presupuesto de 12 meses. -->
+    <!-- Formato propio del comparativo; no altera el PDF anual de 12 meses. -->
     <record id="paperformat_expense_budget_comparison" model="report.paperformat">
         <field name="name">Proyectado vs. real - A4 horizontal</field>
         <field name="default" eval="False"/>
@@ -57,7 +57,7 @@
                             .expense-comparison-report thead { display: table-header-group; }
                             @media screen { .expense-comparison-report .table-scroll { overflow-x: auto; } }
                         </style>
-                        <h2>Proyectado vs. real — resumen anual</h2>
+                        <h2>Proyectado vs. real</h2>
                         <div class="meta">
                             <strong>Empresa:</strong> <span t-esc="o.company_id.name"/>
                             <span> | </span><strong>Año:</strong> <span t-esc="o.year"/>
@@ -97,13 +97,13 @@
                                 </thead>
                                 <tbody>
                                     <t t-if="not data['categories']">
-                                        <tr><td colspan="9" class="empty">No existen proyecciones visibles para el año y los filtros seleccionados.</td></tr>
+                                        <tr><td colspan="9" class="empty">No existen proyecciones visibles para los filtros seleccionados.</td></tr>
                                     </t>
                                     <t t-foreach="data['categories']" t-as="group">
                                         <tr class="category-row">
                                             <td colspan="5" class="category-name">
                                                 <span t-esc="group['category'].name"/>
-                                                <span> (</span><span t-esc="group['annual_count']"/><span>)</span>
+                                                <span> (</span><span t-esc="group['line_count']"/><span>)</span>
                                             </td>
                                             <td class="amount" t-esc="'{:,.2f}'.format(group['total']['planned'])"/>
                                             <td class="amount" t-esc="'{:,.2f}'.format(group['total']['actual'])"/>
@@ -114,24 +114,24 @@
                                             <tr class="account-row">
                                                 <td colspan="5" class="account-name">
                                                     <span t-esc="account['account'].name"/>
-                                                    <span> (</span><span t-esc="account['annual_count']"/><span>)</span>
+                                                    <span> (</span><span t-esc="account['line_count']"/><span>)</span>
                                                 </td>
                                                 <td class="amount" t-esc="'{:,.2f}'.format(account['total']['planned'])"/>
                                                 <td class="amount" t-esc="'{:,.2f}'.format(account['total']['actual'])"/>
                                                 <td class="amount" t-esc="'{:,.2f}'.format(account['total']['available'])"/>
                                                 <td class="amount" t-esc="'{:.2f}'.format(account['total']['execution'])"/>
                                             </tr>
-                                            <t t-foreach="account['lines']" t-as="annual">
+                                            <t t-foreach="account['lines']" t-as="detail">
                                                 <tr class="detail-row">
-                                                    <td t-esc="annual.budget_id.name"/>
-                                                    <td t-esc="annual.company_id.name"/>
-                                                    <td t-esc="annual.account_id.name"/>
-                                                    <td t-esc="annual.category_id.name"/>
-                                                    <td t-esc="annual.year"/>
-                                                    <td class="amount" t-esc="'{:,.2f}'.format(annual.planned_amount)"/>
-                                                    <td class="amount" t-esc="'{:,.2f}'.format(annual.actual_amount)"/>
-                                                    <td class="amount" t-esc="'{:,.2f}'.format(annual.variance_amount)"/>
-                                                    <td class="amount" t-esc="'{:.2f}'.format(annual.execution_percentage)"/>
+                                                    <td t-esc="detail['line'].budget_id.name"/>
+                                                    <td t-esc="detail['line'].company_id.name"/>
+                                                    <td t-esc="detail['line'].account_id.name"/>
+                                                    <td t-esc="detail['line'].account_id.category_id.name"/>
+                                                    <td t-esc="detail['line'].budget_id.year"/>
+                                                    <td class="amount" t-esc="'{:,.2f}'.format(detail['line'].planned_amount)"/>
+                                                    <td class="amount" t-esc="'{:,.2f}'.format(detail['line'].actual_amount)"/>
+                                                    <td class="amount" t-esc="'{:,.2f}'.format(detail['line'].variance_amount)"/>
+                                                    <td class="amount" t-esc="'{:.2f}'.format(detail['line'].execution_percentage)"/>
                                                 </tr>
                                             </t>
                                         </t>
@@ -155,13 +155,13 @@
     </template>
 
     <record id="action_report_expense_budget_comparison" model="ir.actions.report">
-        <field name="name">Proyectado vs. real anual por rubro y cuenta</field>
+        <field name="name">Proyectado vs. real por rubro y cuenta</field>
         <field name="model">expense.budget.comparison.report.wizard</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">expense_budget_control.report_comparison_document</field>
         <field name="report_file">expense_budget_control.report_comparison_document</field>
         <field name="paperformat_id" ref="paperformat_expense_budget_comparison"/>
         <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_user'), ref('expense_budget_control.group_expense_budget_approver'), ref('expense_budget_control.group_expense_budget_manager')])]"/>
-        <field name="print_report_name">'Comparativo_Anual_%s_%s' % (object.year, object.company_id.name.replace(' ', '_'))</field>
+        <field name="print_report_name">'Comparativo_%s_%s' % (object.year, object.company_id.name.replace(' ', '_'))</field>
     </record>
 </odoo>

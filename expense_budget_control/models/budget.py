@@ -280,6 +280,7 @@ class ExpenseBudgetLine(models.Model):
                                  required=True, ondelete='restrict', check_company=True)
     category_id = fields.Many2one('expense.budget.category', related='account_id.category_id',
                                   store=True, string='Rubro', index=True)
+    year = fields.Integer(string='Año', related='budget_id.year', store=True, index=True)
     month = fields.Selection(MONTHS, string='Mes', required=True, index=True)
     planned_amount = fields.Monetary(string='Proyectado', required=True, default=0,
                                      currency_field='currency_id')

@@ -93,17 +93,6 @@
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
-    <!-- Sólo una de las dos versiones agregadas es visible para cada rol. -->
-    <record id="annual_analysis_scope_rule" model="ir.rule">
-        <field name="name">Comparativo anual: alcances por rol</field>
-        <field name="model_id" ref="model_expense_budget_annual_analysis"/>
-        <field name="domain_force">[('scope', '=', 'all')] if user.has_group('expense_budget_control.group_expense_budget_manager') or not user.has_group('expense_budget_control.group_expense_budget_approver') else [('scope', '=', 'non_draft')]</field>
-    </record>
-    <record id="annual_analysis_company_rule" model="ir.rule">
-        <field name="name">Comparativo anual: empresas autorizadas</field>
-        <field name="model_id" ref="model_expense_budget_annual_analysis"/>
-        <field name="domain_force">[(1, '=', 1)] if user.has_group('expense_budget_control.group_expense_budget_manager') else [('company_id', 'in', company_ids)]</field>
-    </record>
     <record id="expense_company_rule" model="ir.rule">
         <field name="name">Gastos: empresas autorizadas</field>
         <field name="model_id" ref="model_expense_budget_expense"/>
