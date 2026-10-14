@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Tres meses por página A3 para conservar legibilidad con 5 columnas/mes. -->
+    <!-- Tres meses por página A3: tres cifras por mes y saldos acumulados al final. -->
     <record id="paperformat_expense_budget_comparison" model="report.paperformat">
         <field name="name">Proyectado vs. real - A3 horizontal mensual</field>
         <field name="default" eval="False"/>
@@ -15,7 +15,7 @@
         <field name="dpi">90</field>
     </record>
 
-    <!-- Fila reutilizable: mes, saldo inicial y saldos acumulados. -->
+    <!-- Fila reutilizable: saldo inicial, detalle mensual y dos saldos finales. -->
     <template id="report_comparison_monthly_row">
         <tr t-att-class="row_class">
             <td class="row-name" t-esc="row_name"/>
@@ -27,9 +27,13 @@
                 <td class="amount" t-esc="'{:,.2f}'.format(cell['planned'])"/>
                 <td class="amount" t-esc="'{:,.2f}'.format(cell['actual'])"/>
                 <td class="amount" t-esc="'{:,.2f}'.format(cell['available'])"/>
-                <td class="amount" t-esc="'{:,.2f}'.format(cell['saldo_actual'])"/>
-                <td class="amount balance" t-esc="'{:,.2f}'.format(cell['saldo_disponible'])"/>
             </t>
+            <!-- Los dos saldos aparecen una sola vez, al final de los meses del bloque.
+                 Usar el último mes seleccionado en esta página incluye los meses intermedios
+                 en los acumulados, aunque no se impriman. -->
+            <t t-set="closing_cell" t-value="row_data['monthly_report']['cells'][page_data['months'][-1]['number']]"/>
+            <td class="amount" t-esc="'{:,.2f}'.format(closing_cell['saldo_actual'])"/>
+            <td class="amount balance" t-esc="'{:,.2f}'.format(closing_cell['saldo_disponible'])"/>
         </tr>
     </template>
 
@@ -80,10 +84,12 @@
                                         <col style="width: 17%;"/>
                                         <t t-if="page_data['opening']"><col style="width: 9%;"/></t>
                                         <t t-foreach="page_data['months']" t-as="month_item">
-                                            <t t-foreach="range(5)" t-as="cell_idx">
-                                                <col t-att-style="'width: {:.4f}%;'.format((74.0 if page_data['opening'] else 83.0) / (len(page_data['months']) * 5))"/>
+                                            <t t-foreach="range(3)" t-as="cell_idx">
+                                                <col t-att-style="'width: {:.4f}%;'.format((52.0 if page_data['opening'] else 61.0) / (len(page_data['months']) * 3))"/>
                                             </t>
                                         </t>
+                                        <col style="width: 11%;"/>
+                                        <col style="width: 11%;"/>
                                     </colgroup>
                                     <thead>
                                         <tr>
@@ -92,22 +98,22 @@
                                                 <th rowspan="2">Disponible inicial<br/>(hasta <span t-esc="page_data['previous_month_name']"/>)</th>
                                             </t>
                                             <t t-foreach="page_data['months']" t-as="month_item">
-                                                <th class="month-head" colspan="5" t-esc="month_item['name']"/>
+                                                <th class="month-head" colspan="3" t-esc="month_item['name']"/>
                                             </t>
+                                            <th rowspan="2">Saldo actual</th>
+                                            <th rowspan="2">Saldo disponible</th>
                                         </tr>
                                         <tr>
                                             <t t-foreach="page_data['months']" t-as="month_item">
                                                 <th>Proyectado</th>
                                                 <th>Consumido</th>
                                                 <th>Disponible</th>
-                                                <th>Saldo actual</th>
-                                                <th>Saldo disponible</th>
                                             </t>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <t t-if="not data['categories']">
-                                            <tr><td t-att-colspan="1 + (1 if page_data['opening'] else 0) + 5 * len(page_data['months'])">No existen proyecciones para los filtros seleccionados.</td></tr>
+                                            <tr><td t-att-colspan="1 + (1 if page_data['opening'] else 0) + 3 * len(page_data['months']) + 2">No existen proyecciones para los filtros seleccionados.</td></tr>
                                         </t>
                                         <t t-foreach="data['categories']" t-as="group">
                                             <t t-call="expense_budget_control.report_comparison_monthly_row">
@@ -143,8 +149,8 @@
                                 </table>
                             </div>
                             <p style="font-size: 9px; margin-top: 11px;">
-                                Saldo actual: consumido acumulado desde enero hasta el mes mostrado.
-                                Saldo disponible: proyectado acumulado menos consumido acumulado.
+                                Saldo actual: consumido acumulado desde enero hasta el último mes del bloque.
+                                Saldo disponible: proyectado acumulado menos consumido acumulado hasta ese mismo mes.
                                 Disponible inicial: saldo de los meses anteriores al primer mes de esta página.
                             </p>
                         </div>
