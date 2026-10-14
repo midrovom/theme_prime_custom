@@ -2,16 +2,16 @@
 <odoo>
     <!-- Una tabla continua y de ancho adaptable con los meses elegidos. -->
     <record id="paperformat_expense_budget_comparison" model="report.paperformat">
-        <field name="name">Proyectado vs. real - meses continuos panorámico</field>
+        <field name="name">Proyectado vs. real - compacto legible</field>
         <field name="default" eval="False"/>
         <field name="format">custom</field>
-        <field name="page_height">1100</field>
+        <field name="page_height">620</field>
         <field name="page_width">280</field>
         <field name="orientation">Landscape</field>
-        <field name="margin_top">45</field>
-        <field name="margin_bottom">16</field>
-        <field name="margin_left">12</field>
-        <field name="margin_right">12</field>
+        <field name="margin_top">38</field>
+        <field name="margin_bottom">14</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
         <field name="header_line" eval="False"/>
         <field name="header_spacing">18</field>
         <field name="dpi">90</field>
@@ -47,12 +47,12 @@
                         <div class="page expense-comparison-monthly">
                             <style type="text/css">
                                 .expense-comparison-monthly { color: #233747; font-family: Arial, sans-serif; }
-                                .expense-comparison-monthly h2 { font-size: 18px; margin: 5px 0 8px; }
-                                .expense-comparison-monthly .meta { font-size: 10px; margin: 0 0 12px; }
-                                .expense-comparison-monthly table { border-collapse: collapse; table-layout: fixed; width: 100%; font-size: 10px; }
-                                .expense-comparison-monthly th, .expense-comparison-monthly td { border: 1px solid #d5e0e8; padding: 4px 3px; vertical-align: middle; }
-                                .expense-comparison-monthly th { color: white; background: #24445c; font-size: 9px; line-height: 1.2; text-align: center; white-space: normal; }
-                                .expense-comparison-monthly th.month-head { font-size: 11px; background: #17364b; }
+                                .expense-comparison-monthly h2 { font-size: 17px; margin: 4px 0 7px; }
+                                .expense-comparison-monthly .meta { font-size: 10px; margin: 0 0 10px; }
+                                .expense-comparison-monthly table { border-collapse: collapse; table-layout: fixed; width: 100%; font-size: 10.5px; }
+                                .expense-comparison-monthly th, .expense-comparison-monthly td { border: 1px solid #d5e0e8; padding: 4px 4px; vertical-align: middle; }
+                                .expense-comparison-monthly th { color: white; background: #24445c; font-size: 9.5px; line-height: 1.2; text-align: center; white-space: normal; }
+                                .expense-comparison-monthly th.month-head { font-size: 11.5px; background: #17364b; }
                                 .expense-comparison-monthly .row-name { text-align: left; white-space: normal; overflow-wrap: break-word; word-wrap: break-word; }
                                 .expense-comparison-monthly .amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
                                 .expense-comparison-monthly .opening { background: #f4f0df; }
@@ -88,14 +88,14 @@
                             <!-- Distribución adaptable: con pocos meses no se estira innecesariamente,
                                  y con 12 se reserva más espacio para cada importe mensual. -->
                             <t t-set="month_count" t-value="len(page_data['months'])"/>
-                            <t t-set="name_width" t-value="21.0 - month_count"/>
-                            <t t-set="opening_width" t-value="15.0 - month_count * 0.8 if page_data['opening'] else 0.0"/>
-                            <t t-set="balance_width" t-value="14.0 - month_count * 0.65"/>
+                            <t t-set="name_width" t-value="18.0"/>
+                            <t t-set="opening_width" t-value="12.0 if page_data['opening'] else 0.0"/>
+                            <t t-set="balance_width" t-value="7.5"/>
                             <t t-set="month_cell_width" t-value="(100.0 - name_width - opening_width - 2.0 * balance_width) / (month_count * 3)"/>
-                            <t t-set="table_width" t-value="100.0 if month_count >= 12 else 26.0 + month_count * 6.3"/>
-                            <t t-set="min_table_width" t-value="210 + (95 if page_data['opening'] else 0) + 3 * month_count * 82 + 2 * 105"/>
+                            <t t-set="table_width" t-value="100.0"/>
+                            <t t-set="min_table_width" t-value="260 + (90 if page_data['opening'] else 0) + 3 * month_count * 72 + 2 * 90"/>
                             <div class="table-scroll">
-                                <table t-att-style="'width: {:.1f}%; min-width: {}px; font-size: {}px;'.format(table_width, min_table_width, 9 if month_count >= 9 else 10)">
+                                <table t-att-style="'width: {:.1f}%; min-width: {}px; font-size: {}px;'.format(table_width, min_table_width, 10 if month_count >= 9 else 10.5)">
                                     <colgroup>
                                         <col t-att-style="'width: {:.4f}%;'.format(name_width)"/>
                                         <t t-if="page_data['opening']"><col t-att-style="'width: {:.4f}%;'.format(opening_width)"/></t>
