@@ -1,88 +1,118 @@
 # -*- coding: utf-8 -*-
-"""Datos del PDF de Proyectado vs. real, agrupados por rubro y cuenta."""
-
+"""Comparativo mensual por rubro, cuenta y presupuesto con saldos acumulados."""
 from odoo import api, models
 
 
 class ReportExpenseBudgetComparison(models.AbstractModel):
     _name = 'report.expense_budget_control.report_comparison_document'
-    _description = 'Reporte Proyectado vs. real por rubro y cuenta'
+    _description = 'Reporte mensual Proyectado vs. real por rubro y cuenta'
 
     @staticmethod
     def _empty_totals():
         return {'planned': 0.0, 'actual': 0.0, 'available': 0.0, 'execution': 0.0}
 
-    @classmethod
-    def _add_line(cls, totals, line):
-        totals['planned'] += line.planned_amount
-        totals['actual'] += line.actual_amount
-        totals['available'] += line.variance_amount
-        # La vista agrupada de Odoo suma el campo execution_percentage de
-        # sus líneas. El PDF debe mostrar el mismo valor que el sistema.
-        totals['execution'] += line.execution_percentage
+    @staticmethod
+    def _empty_months():
+        return {m: {'planned': 0.0, 'actual': 0.0, 'available': 0.0}
+                for m in range(1, 13)}
 
     @classmethod
-    def _add_totals(cls, target, source):
-        target['planned'] += source['planned']
-        target['actual'] += source['actual']
-        target['available'] += source['available']
-        target['execution'] += source['execution']
+    def _add_line(cls, target, line):
+        target['total']['planned'] += line.planned_amount
+        target['total']['actual'] += line.actual_amount
+        target['total']['available'] += line.variance_amount
+        # Conservar el criterio de ejecución de la vista agrupada existente.
+        target['total']['execution'] += line.execution_percentage
+        month = target['monthly'][int(line.month)]
+        month['planned'] += line.planned_amount
+        month['actual'] += line.actual_amount
+        month['available'] += line.variance_amount
+
+    @classmethod
+    def _add_summary(cls, target, source):
+        for key in ('planned', 'actual', 'available', 'execution'):
+            target['total'][key] += source['total'][key]
+        for m in range(1, 13):
+            for key in ('planned', 'actual', 'available'):
+                target['monthly'][m][key] += source['monthly'][m][key]
+
+    @staticmethod
+    def _finish_row(row, month_numbers):
+        """Todas las cifras acumuladas consideran enero..mes, aunque se oculten meses."""
+        selected = set(month_numbers)
+        cells = {}
+        projected_ytd = consumed_ytd = 0.0
+        for number in range(1, 13):
+            monthly = row['monthly'][number]
+            projected_ytd += monthly['planned']
+            consumed_ytd += monthly['actual']
+            if number in selected:
+                cells[number] = {
+                    'planned': monthly['planned'],
+                    'actual': monthly['actual'],
+                    'available': monthly['available'],
+                    # Saldo actual: lo efectivamente consumido desde enero.
+                    'saldo_actual': consumed_ytd,
+                    # Saldo disponible: acumulado de lo proyectado - consumido.
+                    'saldo_disponible': projected_ytd - consumed_ytd,
+                }
+        openings = {m: sum(row['monthly'][n]['available'] for n in range(1, m))
+                    for m in range(1, 13)}
+        row['monthly_report'] = {'cells': cells, 'openings': openings}
 
     @api.model
     def _prepare_comparison(self, wizard):
-        """Solo sumar líneas legibles por el usuario (sin sudo ni búsqueda de gastos extra)."""
+        """Respetar las reglas de empresa y estado; jamás elevar permisos."""
+        selected_months = sorted(wizard.month_ids, key=lambda record: record.number)
+        numbers = [m.number for m in selected_months]
+        # La validación está también en el asistente (evita llamadas directas).
+        if not numbers:
+            from odoo.exceptions import ValidationError
+            from odoo import _
+            raise ValidationError(_('Seleccione al menos un mes para el reporte.'))
+
         domain = [
             ('company_id', '=', wizard.company_id.id),
             ('budget_id.year', '=', int(wizard.year)),
         ]
         if wizard.category_id:
-            # Incluir TODAS las cuentas controladas del rubro seleccionado,
-            # incluso si el valor relacionado almacenado en líneas antiguas
-            # aún no está actualizado. Solo se buscan sus líneas del año.
             accounts = self.env['expense.budget.account'].with_context(
-                active_test=False
-            ).search([
-                ('company_id', '=', wizard.company_id.id),
-                ('category_id', '=', wizard.category_id.id),
-            ])
+                active_test=False).search([
+                    ('company_id', '=', wizard.company_id.id),
+                    ('category_id', '=', wizard.category_id.id),
+                ])
             domain.append(('account_id', 'in', accounts.ids))
-        # El nuevo selector acepta varias cuentas; el campo account_id se
-        # conserva únicamente para compatibilidad con llamadas anteriores.
         selected_accounts = wizard.account_ids | wizard.account_id
         if selected_accounts:
             domain.append(('account_id', 'in', selected_accounts.ids))
 
-        # Las reglas del modelo impiden incluir borradores cuando imprime el aprobador.
+        # Consultar TODOS los meses para calcular disponible inicial y saldos YTD.
         lines = self.env['expense.budget.line'].search(domain)
         category_map = {}
-        grand_total = self._empty_totals()
+        grand_total = {'total': self._empty_totals(), 'monthly': self._empty_months()}
         month_labels = dict(self.env['expense.budget.line']._fields['month'].selection)
         for line in lines:
             account = line.account_id
             category = account.category_id
-            if category.id not in category_map:
-                category_map[category.id] = {
-                    'category': category,
-                    'accounts_map': {},
-                    'line_count': 0,
-                    'total': self._empty_totals(),
-                }
-            group = category_map[category.id]
-            if account.id not in group['accounts_map']:
-                group['accounts_map'][account.id] = {
-                    'account': account,
-                    'lines': [],
-                    'line_count': 0,
-                    'total': self._empty_totals(),
-                }
-            account_group = group['accounts_map'][account.id]
-            account_group['lines'].append({
-                'line': line,
-                'month_name': month_labels.get(line.month, line.month),
+            group = category_map.setdefault(category.id, {
+                'category': category, 'accounts_map': {}, 'line_count': 0,
+                'total': self._empty_totals(), 'monthly': self._empty_months(),
             })
+            account_group = group['accounts_map'].setdefault(account.id, {
+                'account': account, 'lines': [], 'budgets_map': {}, 'line_count': 0,
+                'total': self._empty_totals(), 'monthly': self._empty_months(),
+            })
+            account_group['lines'].append({
+                'line': line, 'month_name': month_labels.get(line.month, line.month),
+            })
+            budget_row = account_group['budgets_map'].setdefault(line.budget_id.id, {
+                'budget': line.budget_id, 'line_count': 0,
+                'total': self._empty_totals(), 'monthly': self._empty_months(),
+            })
+            self._add_line(budget_row, line)
+            budget_row['line_count'] += 1
             account_group['line_count'] += 1
             group['line_count'] += 1
-            self._add_line(account_group['total'], line)
 
         categories = []
         for group in sorted(category_map.values(), key=lambda item: (
@@ -90,24 +120,46 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             group['accounts'] = sorted(group.pop('accounts_map').values(), key=lambda item: (
                 item['account'].code or '', item['account'].name or '', item['account'].id))
             for account in group['accounts']:
-                # Mostrar las líneas del comparativo dentro de su cuenta, por mes.
                 account['lines'].sort(key=lambda item: (
-                    int(item['line'].month),
-                    item['line'].budget_id.name or '',
-                    item['line'].id,
+                    int(item['line'].month), item['line'].budget_id.name or '', item['line'].id,
                 ))
-                self._add_totals(group['total'], account['total'])
-            self._add_totals(grand_total, group['total'])
+                account['budgets'] = sorted(account.pop('budgets_map').values(), key=lambda item: (
+                    item['budget'].name or '', item['budget'].id,
+                ))
+                for budget_row in account['budgets']:
+                    self._add_summary(account, budget_row)
+                    self._finish_row(budget_row, numbers)
+                self._finish_row(account, numbers)
+                self._add_summary(group, account)
+            self._finish_row(group, numbers)
+            self._add_summary(grand_total, group)
             categories.append(group)
+        self._finish_row(grand_total, numbers)
+
+        # A3 apaisado: máximo tres meses (15 columnas) por hoja, legible.
+        pages = []
+        for offset in range(0, len(selected_months), 3):
+            page_months = selected_months[offset:offset + 3]
+            first_month = page_months[0].number
+            pages.append({
+                'months': [{'number': m.number, 'name': m.name} for m in page_months],
+                'first_month': first_month,
+                'opening': first_month > 1,
+                'previous_month_name': month_labels.get(str(first_month - 1), ''),
+                'number': len(pages) + 1,
+            })
 
         return {
             'wizard': wizard,
-            # Rubro sin cuentas explícitas: imprimir únicamente sus totales.
-            'summary_by_category_only': bool(wizard.category_id and not selected_accounts),
             'selected_accounts': selected_accounts,
+            # Mantener modo anterior: solo rubro -> fila de total por rubro.
+            'summary_by_category_only': bool(wizard.category_id and not selected_accounts),
             'categories': categories,
-            'grand_total': grand_total,
+            'grand_total': grand_total['total'],
+            'grand_row': grand_total,
             'line_count': len(lines),
+            'pages': pages,
+            'month_numbers': numbers,
         }
 
     @api.model

@@ -52,20 +52,20 @@
     <!-- El aprobador solo lee presupuestos enviados o aprobados, incluso
          si intenta entrar por URL, búsquedas o el formulario de líneas. -->
     <record id="budget_approver_visible_states_rule" model="ir.rule">
-        <field name="name">Presupuestos: aprobador solo pendientes o aprobados</field>
+        <field name="name">Presupuestos: aprobador solo pendientes, aprobados o rechazados</field>
         <field name="model_id" ref="model_expense_budget"/>
         <field name="groups" eval="[(4, ref('group_expense_budget_approver'))]"/>
-        <field name="domain_force">[('state', 'in', ('to_approve', 'approved'))]</field>
+        <field name="domain_force">[('state', 'in', ('to_approve', 'approved', 'rejected'))]</field>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
     <record id="line_approver_visible_states_rule" model="ir.rule">
-        <field name="name">Proyecciones: aprobador solo pendientes o aprobadas</field>
+        <field name="name">Proyecciones: aprobador solo pendientes, aprobadas o rechazadas</field>
         <field name="model_id" ref="model_expense_budget_line"/>
         <field name="groups" eval="[(4, ref('group_expense_budget_approver'))]"/>
-        <field name="domain_force">[('budget_id.state', 'in', ('to_approve', 'approved'))]</field>
+        <field name="domain_force">[('budget_id.state', 'in', ('to_approve', 'approved', 'rejected'))]</field>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
         <field name="perm_create" eval="False"/>

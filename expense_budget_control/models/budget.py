@@ -149,7 +149,7 @@ class ExpenseBudget(models.Model):
     currency_id = fields.Many2one('res.currency', related='company_id.currency_id', store=True)
     state = fields.Selection([
         ('draft', 'Borrador'), ('to_approve', 'Pendiente de aprobación'),
-        ('approved', 'Aprobado'),
+        ('approved', 'Aprobado'), ('rejected', 'Rechazado'),
     ], default='draft', required=True, string='Estado')
     line_ids = fields.One2many('expense.budget.line', 'budget_id', string='Proyecciones mensuales')
     planned_amount = fields.Monetary(string='Total proyectado', compute='_compute_totals',
@@ -308,6 +308,23 @@ class ExpenseBudget(models.Model):
         # El aprobador no tiene permisos genéricos de escritura: únicamente
         # esta acción controlada eleva permisos para modificar el estado.
         self.sudo().write({'state': 'approved'})
+
+    def action_reject(self):
+        """Rechazo controlado por Aprobador o Administrador, sin devolver a borrador."""
+        is_manager = self.env.su or self.env.user.has_group(
+            'expense_budget_control.group_expense_budget_manager')
+        is_approver = self.env.user.has_group(
+            'expense_budget_control.group_expense_budget_approver')
+        if not (is_manager or is_approver):
+            raise AccessError(_('Solo un aprobador o administrador puede rechazar presupuestos.'))
+        self.check_access('read')
+        for rec in self:
+            if rec.state != 'to_approve':
+                raise UserError(_('Solo se pueden rechazar presupuestos pendientes de aprobación.'))
+            if not is_manager and rec.create_uid == self.env.user:
+                raise AccessError(_('No puede rechazar un presupuesto creado por usted mismo.'))
+        self.sudo().write({'state': 'rejected'})
+        return True
 
     def action_reopen(self):
         if not (self.env.su or self.env.user.has_group(

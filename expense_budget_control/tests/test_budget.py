@@ -416,7 +416,7 @@ class TestExpenseBudget(TransactionCase):
             budget.with_user(approver).action_reopen()
         self.assertEqual(
             [state[0] for state in budget._fields['state'].selection],
-            ['draft', 'to_approve', 'approved'],
+            ['draft', 'to_approve', 'approved', 'rejected'],
         )
 
         wizard = self.env['expense.budget.import.wizard'].with_user(registrar).create({
@@ -547,7 +547,7 @@ class TestExpenseBudget(TransactionCase):
         Budget = self.env['expense.budget']
         Line = self.env['expense.budget.line']
         states = [value for value, _name in Budget._fields['state'].selection]
-        self.assertEqual(states, ['draft', 'to_approve', 'approved'])
+        self.assertEqual(states, ['draft', 'to_approve', 'approved', 'rejected'])
 
         original_line = Line.create({
             'budget_id': self.budget.id, 'account_id': self.account.id,
@@ -821,3 +821,72 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 0)
         self.budget.action_submit()
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 1)
+
+
+    def test_monthly_comparison_with_selected_nonconsecutive_months(self):
+        """Febrero/Abril: inicial de enero y acumulados incluyendo marzo oculto."""
+        Line = self.env['expense.budget.line']
+        for month, planned, actual in (
+                ('1', 100, 30), ('2', 200, 50), ('3', 300, 80), ('4', 400, 120)):
+            line = Line.create({
+                'budget_id': self.budget.id,
+                'account_id': self.account.id,
+                'month': month,
+                'planned_amount': planned,
+            })
+            line.write({'actual_amount': actual})
+        months = self.env['expense.budget.comparison.month'].search([('number', 'in', [2, 4])])
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'year': 2026, 'company_id': self.company.id,
+            'category_id': self.category.id,
+            'month_ids': [(6, 0, months.ids)],
+        })
+        report = self.env['report.expense_budget_control.report_comparison_document']
+        data = report._prepare_comparison(wizard)
+        self.assertEqual([month['number'] for month in data['pages'][0]['months']], [2, 4])
+        group = data['categories'][0]
+        self.assertTrue(data['summary_by_category_only'])
+        self.assertAlmostEqual(group['monthly_report']['openings'][2], 70)
+        feb = group['monthly_report']['cells'][2]
+        self.assertAlmostEqual(feb['planned'], 200)
+        self.assertAlmostEqual(feb['actual'], 50)
+        self.assertAlmostEqual(feb['available'], 150)
+        self.assertAlmostEqual(feb['saldo_actual'], 80)
+        self.assertAlmostEqual(feb['saldo_disponible'], 220)
+        april = group['monthly_report']['cells'][4]
+        self.assertAlmostEqual(april['saldo_actual'], 280)
+        self.assertAlmostEqual(april['saldo_disponible'], 720)
+        self.assertAlmostEqual(group['monthly_report']['openings'][4], 440)
+
+    def test_rejection_is_only_possible_for_approver_while_pending(self):
+        group = self.env.ref('expense_budget_control.group_expense_budget_approver')
+        registrar_group = self.env.ref('expense_budget_control.group_expense_budget_registrar')
+        base_group = self.env.ref('base.group_user')
+        approver = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Aprobador rechazos prueba',
+            'login': 'test_approver_reject_1423',
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+            'groups_id': [(6, 0, [base_group.id, group.id])],
+        })
+        registrar = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Registrador rechazos prueba',
+            'login': 'test_registrar_reject_1423',
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+            'groups_id': [(6, 0, [base_group.id, registrar_group.id])],
+        })
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 100,
+        })
+        with self.assertRaises(AccessError):
+            self.budget.with_user(registrar).action_reject()
+        self.budget.action_submit()
+        self.budget.with_user(approver).action_reject()
+        self.assertEqual(self.budget.state, 'rejected')
+        self.assertIn(self.budget.id, self.env['expense.budget'].with_user(approver).search([]).ids)
+        with self.assertRaises(UserError):
+            self.budget.with_user(approver).action_reject()
+        with self.assertRaises(UserError):
+            self.budget.with_user(approver).action_approve()

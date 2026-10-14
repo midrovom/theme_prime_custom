@@ -99,10 +99,10 @@
                 <header>
                     <button name="action_submit" string="Enviar a aprobar" type="object" class="btn-primary" invisible="state != 'draft'" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
-                    <button name="action_reopen" string="Volver a borrador" type="object" invisible="state == 'draft'" groups="expense_budget_control.group_expense_budget_manager"/>
+                    <button name="action_reject" string="Rechazar" type="object" class="btn-secondary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_print_annual_pdf" string="Imprimir PDF" type="object" icon="fa-print" groups="expense_budget_control.group_expense_budget_read"/>
                     <button name="action_sync_api" string="Sincronizar API" type="object" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,to_approve,approved"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,to_approve,approved,rejected"/>
                 </header>
                 <sheet>
                     <group>
@@ -152,6 +152,7 @@
                 <field name="name"/><field name="year"/><field name="company_id"/>
                 <filter string="Por aprobar" name="to_approve" domain="[('state', '=', 'to_approve')]"/>
                 <filter string="Aprobados" name="approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="Rechazados" name="rejected" domain="[('state', '=', 'rejected')]"/>
                 <group expand="0" string="Agrupar por">
                     <filter string="Año" name="year_group" context="{'group_by': 'year'}"/>
                     <filter string="Empresa" name="company_group" context="{'group_by': 'company_id'}"/>
@@ -165,7 +166,7 @@
         <field name="search_view_id" ref="view_expense_budget_search"/>
     </record>
 
-    <record id="action_expense_budget_approval" model="ir.actions.act_window"><field name="name">Aprobación de presupuestos</field><field name="res_model">expense.budget</field><field name="view_mode">list,form</field><field name="domain">[('state', 'in', ('to_approve', 'approved'))]</field><field name="search_view_id" ref="view_expense_budget_search"/></record><!-- Comparativo en lista, tabla dinámica y gráfica -->
+    <record id="action_expense_budget_approval" model="ir.actions.act_window"><field name="name">Aprobación de presupuestos</field><field name="res_model">expense.budget</field><field name="view_mode">list,form</field><field name="domain">[('state', 'in', ('to_approve', 'approved', 'rejected'))]</field><field name="search_view_id" ref="view_expense_budget_search"/></record><!-- Comparativo en lista, tabla dinámica y gráfica -->
     <record id="view_expense_budget_line_list" model="ir.ui.view">
         <field name="name">expense.budget.line.list</field><field name="model">expense.budget.line</field>
         <field name="arch" type="xml">
@@ -176,7 +177,7 @@
                             groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                 </header>
                 <field name="budget_id"/><field name="company_id"/>
-                <field name="account_id"/><field name="category_id"/><field name="year"/>
+                <field name="account_id"/><field name="category_id"/><field name="year"/><field name="month"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Proyectado"/>
                 <field name="actual_amount" sum="Consumido"/>
