@@ -2,16 +2,16 @@
 <odoo>
     <!-- Mantener XML ID original: actualizar el formato sin desregistrar reportes existentes. -->
     <record id="paperformat_expense_budget_a4_landscape" model="report.paperformat">
-        <field name="name">Presupuesto anual - 12 meses (panorámico 1100 x 280 mm)</field>
+        <field name="name">Presupuesto anual - resumen por año (A4 horizontal)</field>
         <field name="default" eval="False"/>
         <field name="format">custom</field>
         <field name="orientation">Landscape</field>
-        <field name="page_height">1100</field>
-        <field name="page_width">280</field>
-        <field name="margin_top">57</field>
-        <field name="margin_bottom">17</field>
-        <field name="margin_left">8</field>
-        <field name="margin_right">8</field>
+        <field name="page_height">297</field>
+        <field name="page_width">210</field>
+        <field name="margin_top">52</field>
+        <field name="margin_bottom">15</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
         <field name="header_line" eval="False"/>
         <field name="header_spacing">8</field>
         <field name="dpi">90</field>
@@ -25,33 +25,26 @@
                     <div class="page expense-budget-annual-report">
                         <style type="text/css">
                             .expense-budget-annual-report { font-family: Arial, sans-serif; color: #273244; }
-                            .expense-budget-annual-report .report-title { padding-top: 6px; }
-                            .expense-budget-annual-report .report-title { font-size: 30px; line-height: 1.22; font-weight: bold; margin: 0 0 8px 0; }
-                            .expense-budget-annual-report .report-meta { font-size: 18px; line-height: 1.35; margin: 0 0 18px 0; }
-                            .expense-budget-annual-report .report-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 15px; }
+                            .expense-budget-annual-report .report-title { font-size: 22px; line-height: 1.25; font-weight: bold; margin: 0 0 8px 0; }
+                            .expense-budget-annual-report .report-meta { font-size: 12px; line-height: 1.45; margin: 0 0 18px 0; }
+                            .expense-budget-annual-report .report-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
                             .expense-budget-annual-report .report-table th,
-                            .expense-budget-annual-report .report-table td { border: 1px solid #cad2db; padding: 9px 4px; vertical-align: middle; }
-                            .expense-budget-annual-report .report-table thead th { background: #24445c; color: white; text-align: center; font-weight: bold; }
-                            .expense-budget-annual-report .report-table thead tr:nth-child(2) th { font-size: 13px; line-height: 1.3; white-space: nowrap; word-break: normal; overflow-wrap: normal; }
-                            .expense-budget-annual-report .report-table thead .month-header { background: #2f5877; font-size: 17px; padding-top: 12px; padding-bottom: 12px; }
+                            .expense-budget-annual-report .report-table td { border: 1px solid #cad2db; padding: 10px 9px; vertical-align: middle; }
+                            .expense-budget-annual-report .report-table thead th { background: #24445c; color: #fff; text-align: center; font-weight: bold; }
+                            .expense-budget-annual-report .report-table .year-header { background: #2f5877; font-size: 19px; padding-top: 12px; padding-bottom: 12px; }
+                            .expense-budget-annual-report .report-table .column-header { font-size: 12px; white-space: nowrap; }
                             .expense-budget-annual-report .report-table .category-row td { background: #dce8f0; font-weight: bold; }
-                            .expense-budget-annual-report .report-table .account-name { padding-left: 18px; }
-                            .expense-budget-annual-report .report-table .number { text-align: right; white-space: nowrap; }
-                            /* Cada bloque mensual inicia tras un divisor más visible. */
-                            .expense-budget-annual-report .report-table tbody td:nth-child(3n + 2) { border-left: 2px solid #8ea7b9; }
-                            .expense-budget-annual-report .report-table .number,
-                            .expense-budget-annual-report .report-table .execution { font-size: 14px; }
-                            .expense-budget-annual-report .report-table .execution { text-align: right; white-space: nowrap; }
+                            .expense-budget-annual-report .report-table .account-name { padding-left: 22px; }
+                            .expense-budget-annual-report .report-table .number { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
                             .expense-budget-annual-report .report-table .total-row td { background: #d7e5ef; font-weight: bold; border-top: 2px solid #24445c; }
-                            .expense-budget-annual-report .report-table .category-code { font-size: 13px; color: #657480; font-weight: normal; }
+                            .expense-budget-annual-report .report-table .category-code { font-size: 10px; color: #657480; font-weight: normal; }
                             .expense-budget-annual-report .report-table .category-row .category-code { color: #495d70; }
-                            .expense-budget-annual-report .report-note { font-size: 15px; line-height: 1.4; margin-top: 16px; color: #465566; }
+                            .expense-budget-annual-report .report-note { font-size: 10px; line-height: 1.4; margin-top: 14px; color: #465566; }
                             .expense-budget-annual-report .report-table thead { display: table-header-group; }
-                            .expense-budget-annual-report .report-table tfoot { display: table-row-group; }
-                            /* En HTML la tabla se desplaza, sin ocultar meses en pantallas pequeñas. */
+                            .expense-budget-annual-report .report-table tr { page-break-inside: avoid; }
                             @media screen and (max-width: 767px) {
                                 .expense-budget-annual-report .report-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-                                .expense-budget-annual-report .report-table { min-width: 3650px; }
+                                .expense-budget-annual-report .report-table { min-width: 650px; }
                             }
                             @media print {
                                 .expense-budget-annual-report .report-scroll { overflow: visible; }
@@ -68,80 +61,51 @@
                         <div class="report-scroll">
                             <table class="report-table">
                                 <colgroup>
-                                    <col style="width: 15%;"/>
-                                    <t t-foreach="report_data['months']" t-as="month">
-                                        <col style="width: 2.25%;"/>
-                                        <col style="width: 2.25%;"/>
-                                        <col style="width: 2.25%;"/>
-                                    </t>
-                                    <col style="width: 4%;"/>
+                                    <col style="width: 36%;"/>
+                                    <col style="width: 18%;"/>
+                                    <col style="width: 14%;"/>
+                                    <col style="width: 18%;"/>
+                                    <col style="width: 14%;"/>
                                 </colgroup>
                                 <thead>
                                     <tr>
                                         <th rowspan="2" style="text-align: left;">Rubro / Cuenta controlada</th>
-                                        <t t-foreach="report_data['months']" t-as="month">
-                                            <th colspan="3" class="month-header" t-esc="month['name']"/>
-                                        </t>
-                                        <th rowspan="2">Disponible anual</th>
+                                        <th colspan="4" class="year-header" t-esc="o.year"/>
                                     </tr>
                                     <tr>
-                                        <t t-foreach="report_data['months']" t-as="month">
-                                            <th>Presupuesto</th>
-                                            <th>Gasto</th>
-                                            <!-- Sin título: saldo disponible mensual. -->
-                                            <th title="Disponible"/>
-                                        </t>
+                                        <th class="column-header">Presupuesto</th>
+                                        <th class="column-header">Gasto</th>
+                                        <th class="column-header">Disponible</th>
+                                        <th class="column-header">Ejecución (%)</th>
                                     </tr>
                                 </thead>
                                 <t t-if="not report_data['categories']">
-                                    <tbody><tr><td colspan="38" style="text-align:center; padding: 18px;">No hay cuentas presupuestadas para este año.</td></tr></tbody>
+                                    <tbody>
+                                        <tr><td colspan="5" style="text-align:center; padding:18px;">No hay cuentas presupuestadas para este año.</td></tr>
+                                    </tbody>
                                 </t>
                                 <t t-foreach="report_data['categories']" t-as="group">
                                     <tbody>
                                         <tr class="category-row">
                                             <td>
                                                 <span t-esc="group['category'].name"/>
-                                                <span class="category-code"> (<span t-esc="group['category'].code"/>)</span>
+                                                <span t-if="group['category'].code" class="category-code"> (<span t-esc="group['category'].code"/>)</span>
                                             </td>
-                                            <t t-foreach="report_data['months']" t-as="month">
-                                                <t t-set="cell" t-value="group['months'][month['number']]"/>
-                                                <td class="number">
-                                                    <t t-if="cell['has_line']"><span t-esc="'{:,.2f}'.format(cell['planned'])"/></t>
-                                                    <t t-else="">—</t>
-                                                </td>
-                                                <td class="number">
-                                                    <t t-if="cell['has_line']"><span t-esc="'{:,.2f}'.format(cell['actual'])"/></t>
-                                                    <t t-else="">—</t>
-                                                </td>
-                                                <td class="number">
-                                                    <t t-if="cell['has_line']"><span t-esc="'{:,.2f}'.format(cell['available'])"/></t>
-                                                    <t t-else="">—</t>
-                                                </td>
-                                            </t>
+                                            <td class="number" t-esc="'{:,.2f}'.format(group['annual']['planned'])"/>
+                                            <td class="number" t-esc="'{:,.2f}'.format(group['annual']['actual'])"/>
                                             <td class="number" t-esc="'{:,.2f}'.format(group['annual']['available'])"/>
+                                            <td class="number" t-esc="'{:,.2f}%'.format(group['annual']['execution'])"/>
                                         </tr>
                                         <t t-foreach="group['accounts']" t-as="account_data">
                                             <tr>
                                                 <td class="account-name">
                                                     <span t-esc="account_data['account'].name"/>
-                                                    <span class="category-code"> (<span t-esc="account_data['account'].code"/>)</span>
+                                                    <span t-if="account_data['account'].code" class="category-code"> (<span t-esc="account_data['account'].code"/>)</span>
                                                 </td>
-                                                <t t-foreach="report_data['months']" t-as="month">
-                                                    <t t-set="cell" t-value="account_data['months'][month['number']]"/>
-                                                    <td class="number">
-                                                        <t t-if="cell['has_line']"><span t-esc="'{:,.2f}'.format(cell['planned'])"/></t>
-                                                        <t t-else="">—</t>
-                                                    </td>
-                                                    <td class="number">
-                                                        <t t-if="cell['has_line']"><span t-esc="'{:,.2f}'.format(cell['actual'])"/></t>
-                                                        <t t-else="">—</t>
-                                                    </td>
-                                                    <td class="number">
-                                                        <t t-if="cell['has_line']"><span t-esc="'{:,.2f}'.format(cell['available'])"/></t>
-                                                        <t t-else="">—</t>
-                                                    </td>
-                                                </t>
+                                                <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['planned'])"/>
+                                                <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['actual'])"/>
                                                 <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['available'])"/>
+                                                <td class="number" t-esc="'{:,.2f}%'.format(account_data['annual']['execution'])"/>
                                             </tr>
                                         </t>
                                     </tbody>
@@ -149,21 +113,17 @@
                                 <tbody>
                                     <tr class="total-row">
                                         <td>TOTAL GENERAL</td>
-                                        <t t-foreach="report_data['months']" t-as="month">
-                                            <t t-set="cell" t-value="report_data['totals'][month['number']]"/>
-                                            <td class="number" t-esc="'{:,.2f}'.format(cell['planned'])"/>
-                                            <td class="number" t-esc="'{:,.2f}'.format(cell['actual'])"/>
-                                            <td class="number" t-esc="'{:,.2f}'.format(cell['available'])"/>
-                                        </t>
+                                        <td class="number" t-esc="'{:,.2f}'.format(report_data['annual_total']['planned'])"/>
+                                        <td class="number" t-esc="'{:,.2f}'.format(report_data['annual_total']['actual'])"/>
                                         <td class="number" t-esc="'{:,.2f}'.format(report_data['annual_total']['available'])"/>
+                                        <td class="number" t-esc="'{:,.2f}%'.format(report_data['annual_total']['execution'])"/>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         <div class="report-note">
-                            La columna sin título muestra el <strong>disponible</strong> (Presupuesto - Gasto).
-                            La columna final muestra el disponible acumulado del año.
-                            Los guiones indican meses sin proyección cargada para la cuenta.
+                            Valores acumulados de enero a diciembre del año indicado.
+                            Disponible = Presupuesto - Gasto. Ejecución (%) = Gasto / Presupuesto × 100.
                         </div>
                     </div>
                 </t>
