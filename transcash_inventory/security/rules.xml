@@ -1,0 +1,7 @@
+<odoo>
+  <record id="transcash_snapshot_multicompany_rule" model="ir.rule">
+    <field name="name">Inventario: empresas autorizadas</field>
+    <field name="model_id" ref="model_transcash_inventory_snapshot"/>
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+</odoo>

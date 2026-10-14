@@ -1,0 +1,16 @@
+<odoo>
+  <record id="module_category_transcash" model="ir.module.category">
+    <field name="name">Transcash Inventario</field>
+    <field name="sequence">60</field>
+  </record>
+  <record id="group_transcash_user" model="res.groups">
+    <field name="name">Consulta de inventarios</field>
+    <field name="category_id" ref="module_category_transcash"/>
+    <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+  </record>
+  <record id="group_transcash_manager" model="res.groups">
+    <field name="name">Responsable de inventarios (importar)</field>
+    <field name="category_id" ref="module_category_transcash"/>
+    <field name="implied_ids" eval="[(4, ref('group_transcash_user'))]"/>
+  </record>
+</odoo>
