@@ -1,32 +1,10 @@
-
-const csrfToken=document.querySelector('meta[name="transcash-csrf"]')?.content||'';
-const canUpload=document.querySelector('meta[name="transcash-can-upload"]')?.content==='true';
-const modal=document.getElementById('tcUploadModal');
-const launchUpload=()=>{if(!canUpload){alert('No tienes permisos de responsable de inventarios para importar.');return;}modal.hidden=false;};
-const closeUpload=()=>{modal.hidden=true;};
-const startUpload=document.getElementById('tcStartUpload');
-const trigger=document.getElementById('tcUploadBtn');
-if(!canUpload){trigger.style.display='none';startUpload.style.display='none';}
-trigger.addEventListener('click',launchUpload);
-startUpload.addEventListener('click',launchUpload);
-document.getElementById('tcUploadCancel').addEventListener('click',closeUpload);
-modal.addEventListener('click',e=>{if(e.target===modal)closeUpload();});
-document.getElementById('tcUploadForm').addEventListener('submit',async e=>{
- e.preventDefault();const input=document.getElementById('tcUploadFile');
- const status=document.getElementById('tcUploadStatus');const submit=document.getElementById('tcUploadSubmit');
- const file=input.files[0];if(!file)return;
- if(file.size>45*1024*1024){status.textContent='El archivo supera los 45 MB.';return;}
- const body=new FormData();body.append('file',file);body.append('csrf_token',csrfToken);
- status.textContent='Procesando inventario, ventas y compras…';status.className='tc-status ok';submit.disabled=true;
- try {const response=await fetch('/transcash_inventory/upload',{method:'POST',credentials:'same-origin',body});
- const result=await response.json();if(!response.ok||!result.ok)throw new Error(result.error||'Falló la importación.');
- status.textContent='Importación terminada. '+result.products+' productos. Abriendo dashboard…';
- window.location.reload();
- }catch(err){status.textContent='Error: '+err.message;status.className='tc-status';submit.disabled=false;}
-});
-function showUnavailable(message){const root=document.getElementById('tcUnavailable');
- document.getElementById('tcUnavailableText').textContent=message;
- root.hidden=false;
+// La importación se realiza exclusivamente desde Inventario Inteligente → Cargar archivos.
+// No existen modales de carga en la visualización web.
+function showUnavailable(message) {
+ const title=document.getElementById('tcStatusTitle');
+ const text=document.getElementById('tcStatusText');
+ if(title)title.textContent='No hay información disponible';
+ if(text)text.textContent=(message||'No se encontraron datos.')+' Abre Inventario Inteligente → Cargar archivos desde el menú de Odoo para importar el Excel.';
 }
 (async()=>{
  let response;
@@ -37,6 +15,8 @@ function showUnavailable(message){const root=document.getElementById('tcUnavaila
  catch(e){showUnavailable('No se pudo obtener la información del servidor Odoo: '+e.message);return;}
  const DATA=await response.json();
  if(!DATA.products||!DATA.months||!DATA.months.length){showUnavailable('La última importación está incompleta.');return;}
+ document.getElementById('tcStatusArea').hidden=true;
+ document.body.classList.remove('tc-awaiting-data');
  const firstMonth=DATA.months[0],lastMonth=DATA.months[DATA.months.length-1];
  const suspiciousStock=DATA.summary.stock_catalogo>0&&(DATA.summary.stock_fuente>DATA.summary.stock_catalogo*2||DATA.summary.stock_fuente<DATA.summary.stock_catalogo*.1);
  const risk=document.querySelector('.risk-banner');

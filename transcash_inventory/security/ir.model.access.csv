@@ -2,3 +2,5 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_transcash_inventory_user,transcash.inventory.snapshot.user,model_transcash_inventory_snapshot,transcash_inventory.group_transcash_user,1,0,0,0
 access_transcash_inventory_manager,transcash.inventory.snapshot.manager,model_transcash_inventory_snapshot,transcash_inventory.group_transcash_manager,1,0,1,0
 access_transcash_inventory_system,transcash.inventory.snapshot.system,model_transcash_inventory_snapshot,base.group_system,1,0,1,0
+access_transcash_import_manager,transcash.inventory.import.wizard.manager,model_transcash_inventory_import_wizard,transcash_inventory.group_transcash_manager,1,1,1,1
+access_transcash_import_system,transcash.inventory.import.wizard.system,model_transcash_inventory_import_wizard,base.group_system,1,1,1,1

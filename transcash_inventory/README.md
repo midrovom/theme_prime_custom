@@ -4,7 +4,7 @@ Módulo independiente para Odoo 18 Community que mantiene el mismo diseño del d
 
 ## Funcionalidad incluida
 
-- Importación manual de un archivo `.xlsx` con las hojas **Productos**, **Stock**, **Ventas** y **Compras** (estructura del archivo `Analisis Transcash inventarios.xlsx`).
+- Importación mediante el menú nativo **Cargar archivos** (sin modal) de un archivo `.xlsx` con las hojas **Productos**, **Stock**, **Ventas** y **Compras** (estructura del archivo `Analisis Transcash inventarios.xlsx`).
 - Procesamiento en el servidor con lectores OOXML estándar, sin `pandas` ni `openpyxl`.
 - Ocho apartados: Resumen ejecutivo, ABC/rentabilidad, cobertura/riesgo, simulación de reposición, bodegas, proveedores, explorador de productos y auditoría.
 - Filtros interactivos por meses, categoría, marca, bodega y búsqueda de código/descripción/proveedor.
@@ -19,7 +19,7 @@ Módulo independiente para Odoo 18 Community que mantiene el mismo diseño del d
 2. Asegura que el usuario del servicio Odoo pueda leer la carpeta y los archivos, reinicia el servicio Odoo correspondiente.
 3. En Odoo: **Aplicaciones → Actualizar lista de aplicaciones**, busca `TRANSCASH | Inventario Inteligente` e instálalo.
 4. Ve a **Ajustes → Usuarios** y asigna uno de los roles del módulo: **Consulta de inventarios** o **Responsable de inventarios (importar)**. Los administradores con el grupo Ajustes también pueden gestionar la carga.
-5. Abre la aplicación **Inventario Inteligente → Dashboard** y pulsa **Importar Excel**. Carga tu Excel de cuatro hojas; el primer análisis tarda varios segundos dependiendo de CPU/memoria.
+5. Abre **Inventario Inteligente → Cargar archivos**, selecciona el Excel de cuatro hojas y pulsa **Procesar archivo y abrir dashboard**. La aplicación abrirá el **Dashboard** automáticamente. Si aún no hay datos, el dashboard muestra un aviso integrado en la página, nunca un modal.
 
 ### Instalación desde consola (opcional)
 
@@ -81,7 +81,7 @@ transcash_inventory/
 ├── services/processor.py       # XLSX → registros normalizados → dashboard JSON
 ├── controllers/routes.py       # Sesión Odoo, importación CSRF y entrega de datos
 ├── static/src/dashboard.html   # Maquetación original Transcash
-├── static/src/dashboard.css    # Estilo original + ventana de carga
+├── static/src/dashboard.css    # Estilo original + aviso no intrusivo sin datos
 ├── static/src/dashboard.js     # Gráficos, filtros y simulador; datos dinámicos
 ├── static/src/odoo_action.*    # Integración nativa en menú/cliente OWL Odoo
 ├── security/                    # ACL, grupos y regla multiempresa
@@ -91,3 +91,11 @@ transcash_inventory/
 ## Verificación efectuada
 
 El importador fue probado en Python con el archivo original y coincidieron sus principales cifras. La visualización fue probada en Chromium con datos servidos de forma simulada: navegación, filtros, panel de reposición, productos y ventana de importación sin errores JavaScript. **No se ha realizado una instalación ni prueba E2E dentro de una instancia real de Odoo 18**; se recomienda instalar en staging antes de producción.
+
+## Cambios versión 18.0.1.1.0
+
+- Eliminado por completo el modal de carga y el bloqueo de pantalla cuando no hay importaciones.
+- Nuevo menú **Inventario Inteligente → Cargar archivos**, visible para Responsable de Inventarios y administradores.
+- Carga nativa Odoo con validación de Excel, barra de acción y redirección al dashboard cuando la versión se almacena correctamente.
+- Cuando no existen datos, un aviso informativo se muestra dentro de la página sin bloquear la navegación.
+- Para actualizar una instalación existente usa `-u transcash_inventory` (no `-i`), reinicia el servicio y actualiza los recursos web del navegador.

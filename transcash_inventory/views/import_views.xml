@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_transcash_import_wizard_form" model="ir.ui.view">
+        <field name="name">transcash.inventory.import.wizard.form</field>
+        <field name="model">transcash.inventory.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Cargar archivo Excel">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Cargar datos de inventario</h1>
+                        <p class="text-muted">Importa un archivo Excel para actualizar el dashboard interactivo sin modificar su visualización.</p>
+                    </div>
+                    <group>
+                        <field name="company_id" readonly="1"/>
+                        <field name="file_name" invisible="1"/>
+                        <field name="file_data" widget="binary" filename="file_name" required="1"/>
+                    </group>
+                    <div class="alert alert-info" role="alert">
+                        <strong>Formato admitido:</strong> un archivo .xlsx de hasta 45 MB con las hojas
+                        <strong>Productos, Stock, Ventas y Compras</strong>.
+                        Al finalizar se crea una nueva versión, se conserva el historial
+                        y se abre automáticamente el dashboard actualizado.
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_import" string="Procesar archivo y abrir dashboard" type="object" class="btn-primary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_transcash_import" model="ir.actions.act_window">
+        <field name="name">Cargar archivos</field>
+        <field name="res_model">transcash.inventory.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_transcash_import_wizard_form"/>
+        <field name="target">current</field>
+    </record>
+</odoo>
