@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Una tabla continua con todos los meses elegidos, sin bloques de tres. -->
+    <!-- Una tabla continua y de ancho adaptable con los meses elegidos. -->
     <record id="paperformat_expense_budget_comparison" model="report.paperformat">
         <field name="name">Proyectado vs. real - meses continuos panorámico</field>
         <field name="default" eval="False"/>
@@ -49,12 +49,12 @@
                                 .expense-comparison-monthly { color: #233747; font-family: Arial, sans-serif; }
                                 .expense-comparison-monthly h2 { font-size: 18px; margin: 5px 0 8px; }
                                 .expense-comparison-monthly .meta { font-size: 10px; margin: 0 0 12px; }
-                                .expense-comparison-monthly table { border-collapse: collapse; table-layout: fixed; width: 100%; font-size: 11px; }
-                                .expense-comparison-monthly th, .expense-comparison-monthly td { border: 1px solid #d5e0e8; padding: 6px 4px; overflow-wrap: normal; }
-                                .expense-comparison-monthly th { color: white; background: #24445c; font-size: 10px; text-align: center; white-space: nowrap; }
-                                .expense-comparison-monthly th.month-head { font-size: 12px; background: #17364b; }
-                                .expense-comparison-monthly .row-name { text-align: left; }
-                                .expense-comparison-monthly .amount { text-align: right; white-space: nowrap; }
+                                .expense-comparison-monthly table { border-collapse: collapse; table-layout: fixed; width: 100%; font-size: 10px; }
+                                .expense-comparison-monthly th, .expense-comparison-monthly td { border: 1px solid #d5e0e8; padding: 4px 3px; vertical-align: middle; }
+                                .expense-comparison-monthly th { color: white; background: #24445c; font-size: 9px; line-height: 1.2; text-align: center; white-space: normal; }
+                                .expense-comparison-monthly th.month-head { font-size: 11px; background: #17364b; }
+                                .expense-comparison-monthly .row-name { text-align: left; white-space: normal; overflow-wrap: break-word; word-wrap: break-word; }
+                                .expense-comparison-monthly .amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
                                 .expense-comparison-monthly .opening { background: #f4f0df; }
                                 .expense-comparison-monthly .balance { background: #edf5f0; }
                                 .expense-comparison-monthly .category-row td { background: #dbe9f2; font-weight: bold; }
@@ -63,7 +63,14 @@
                                 .expense-comparison-monthly .grand-row td { background: #d1e0eb; font-weight: bold; }
                                 .expense-comparison-monthly tr { page-break-inside: avoid; }
                                 .expense-comparison-monthly thead { display: table-header-group; }
-                                @media screen { .expense-comparison-monthly .table-scroll { overflow-x: auto; } }
+                                .expense-comparison-monthly .table-scroll { max-width: 100%; }
+                                @media screen {
+                                    .expense-comparison-monthly .table-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+                                }
+                                @media screen and (max-width: 768px) {
+                                    .expense-comparison-monthly h2 { font-size: 16px; }
+                                    .expense-comparison-monthly .meta { font-size: 11px; }
+                                }
                             </style>
                             <h2>Proyectado vs. real — comparativo mensual</h2>
                             <div class="meta">
@@ -78,22 +85,31 @@
                                     <span t-esc="', '.join(data['selected_accounts'].mapped('name'))"/>
                                 </t>
                             </div>
+                            <!-- Distribución adaptable: con pocos meses no se estira innecesariamente,
+                                 y con 12 se reserva más espacio para cada importe mensual. -->
+                            <t t-set="month_count" t-value="len(page_data['months'])"/>
+                            <t t-set="name_width" t-value="21.0 - month_count"/>
+                            <t t-set="opening_width" t-value="15.0 - month_count * 0.8 if page_data['opening'] else 0.0"/>
+                            <t t-set="balance_width" t-value="14.0 - month_count * 0.65"/>
+                            <t t-set="month_cell_width" t-value="(100.0 - name_width - opening_width - 2.0 * balance_width) / (month_count * 3)"/>
+                            <t t-set="table_width" t-value="100.0 if month_count >= 12 else 26.0 + month_count * 6.3"/>
+                            <t t-set="min_table_width" t-value="210 + (95 if page_data['opening'] else 0) + 3 * month_count * 82 + 2 * 105"/>
                             <div class="table-scroll">
-                                <table>
+                                <table t-att-style="'width: {:.1f}%; min-width: {}px; font-size: {}px;'.format(table_width, min_table_width, 9 if month_count >= 9 else 10)">
                                     <colgroup>
-                                        <col style="width: 17%;"/>
-                                        <t t-if="page_data['opening']"><col style="width: 9%;"/></t>
+                                        <col t-att-style="'width: {:.4f}%;'.format(name_width)"/>
+                                        <t t-if="page_data['opening']"><col t-att-style="'width: {:.4f}%;'.format(opening_width)"/></t>
                                         <t t-foreach="page_data['months']" t-as="month_item">
                                             <t t-foreach="range(3)" t-as="cell_idx">
-                                                <col t-att-style="'width: {:.4f}%;'.format((52.0 if page_data['opening'] else 61.0) / (len(page_data['months']) * 3))"/>
+                                                <col t-att-style="'width: {:.4f}%;'.format(month_cell_width)"/>
                                             </t>
                                         </t>
-                                        <col style="width: 11%;"/>
-                                        <col style="width: 11%;"/>
+                                        <col t-att-style="'width: {:.4f}%;'.format(balance_width)"/>
+                                        <col t-att-style="'width: {:.4f}%;'.format(balance_width)"/>
                                     </colgroup>
                                     <thead>
                                         <tr>
-                                            <th rowspan="2">Rubro / Cuenta / Presupuesto</th>
+                                            <th rowspan="2">Rubro</th>
                                             <t t-if="page_data['opening']">
                                                 <th rowspan="2">Disponible inicial<br/>(hasta <span t-esc="page_data['previous_month_name']"/>)</th>
                                             </t>

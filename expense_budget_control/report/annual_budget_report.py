@@ -92,12 +92,12 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
             group['accounts'] = accounts
             for account_data in accounts:
                 account_data['annual'] = self._annual_from_months(account_data['months'])
-                for month_number, source in account_data['months'].items():
-                    if source['has_line']:
-                        self._add_amounts(group['months'][month_number], source)
-            for month_number, source in group['months'].items():
-                if source['has_line']:
-                    self._add_amounts(grand_totals[month_number], source)
+                for month_number, month_values in account_data['months'].items():
+                    if month_values['has_line']:
+                        self._add_amounts(group['months'][month_number], month_values)
+            for month_number, month_values in group['months'].items():
+                if month_values['has_line']:
+                    self._add_amounts(grand_totals[month_number], month_values)
             group['annual'] = self._annual_from_months(group['months'])
             result_categories.append(group)
 
