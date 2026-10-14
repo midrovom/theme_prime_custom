@@ -111,7 +111,7 @@
                                         <tr>
                                             <th rowspan="2">Rubro</th>
                                             <t t-if="page_data['opening']">
-                                                <th rowspan="2">Disponible inicial<br/>(hasta <span t-esc="page_data['previous_month_name']"/>)</th>
+                                                <th rowspan="2">Disponible inicial</th>
                                             </t>
                                             <t t-foreach="page_data['months']" t-as="month_item">
                                                 <th class="month-head" colspan="3" t-esc="month_item['name']"/>
