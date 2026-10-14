@@ -139,6 +139,8 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
 
 class ReportAnnualExpenseBudgetFromWizard(models.AbstractModel):
     _name = 'report.expense_budget_control.report_annual_budget_wizard_document'
+    # Nombre SQL corto: PostgreSQL limita los identificadores a 63 caracteres.
+    _table = 'expense_budget_annual_wizard_rpt'
     _description = 'Presupuesto anual desde el asistente Proyectado vs. real'
 
     @api.model
