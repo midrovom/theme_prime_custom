@@ -45,15 +45,19 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
 
     @api.model
     def _prepare_budget(self, budget):
-        """Construye una matriz de las cuentas proyectadas del presupuesto indicado.
+        """Conservar el informe anual existente de un presupuesto individual."""
+        return self._prepare_lines(budget.line_ids, budget, budget.name)
 
-        Los importes de gastos se toman del campo ``actual_amount`` de cada
-        línea, que ya considera consumos manuales, Excel y API. No se vuelven
-        a sumar movimientos, evitando divergencias en los resultados.
+    @api.model
+    def _prepare_lines(self, lines, source, budget_name):
+        """Preparar el mismo formato anual con líneas de uno o varios presupuestos.
+
+        La búsqueda de líneas del asistente se realiza sin sudo, respetando
+        las reglas multiempresa y de visibilidad del aprobador.
         """
         categories = {}
         grand_totals = self._empty_year()
-        for line in budget.line_ids:
+        for line in lines:
             category = line.category_id
             account = line.account_id
             if category.id not in categories:
@@ -108,7 +112,8 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
                 ],
             })
         return {
-            'budget': budget,
+            'budget': source,
+            'budget_name': budget_name,
             'categories': result_categories,
             'totals': grand_totals,
             'annual_total': self._annual_from_months(grand_totals),
@@ -129,4 +134,38 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
             'doc_model': 'expense.budget',
             'docs': budgets,
             'reports': [self._prepare_budget(budget) for budget in budgets],
+        }
+
+
+class ReportAnnualExpenseBudgetFromWizard(models.AbstractModel):
+    _name = 'report.expense_budget_control.report_annual_budget_wizard_document'
+    _description = 'Presupuesto anual desde el asistente Proyectado vs. real'
+
+    @api.model
+    def _prepare_wizard(self, wizard):
+        domain = [
+            ('company_id', '=', wizard.company_id.id),
+            ('budget_id.year', '=', int(wizard.year)),
+        ]
+        if wizard.category_id:
+            domain.append(('account_id.category_id', '=', wizard.category_id.id))
+        selected_accounts = wizard.account_ids | wizard.account_id
+        if selected_accounts:
+            domain.append(('account_id', 'in', selected_accounts.ids))
+
+        lines = self.env['expense.budget.line'].search(domain)
+        title = wizard.category_id.name if wizard.category_id else 'Todos los presupuestos'
+        return self.env['report.expense_budget_control.report_annual_budget_document']._prepare_lines(
+            lines, wizard, title,
+        )
+
+    @api.model
+    def _get_report_values(self, docids, data=None):
+        wizards = self.env['expense.budget.comparison.report.wizard'].browse(docids).exists()
+        wizards.check_access('read')
+        return {
+            'doc_ids': wizards.ids,
+            'doc_model': 'expense.budget.comparison.report.wizard',
+            'docs': wizards,
+            'reports': [self._prepare_wizard(wizard) for wizard in wizards],
         }

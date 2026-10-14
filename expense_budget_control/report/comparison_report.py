@@ -40,9 +40,9 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
     def _finish_row(row, month_numbers):
         """Saldo inicial del período anterior y consumos de los meses elegidos.
 
-        Los saldos de cada bloque de hasta tres meses son independientes:
+        Todos los meses elegidos se representan en un único bloque continuo:
         - Inicial: disponible acumulado hasta el mes anterior al primero.
-        - Actual: solo consumos de los meses *seleccionados* en el bloque.
+        - Actual: consumo solo de los meses seleccionados.
         - Disponible final: inicial menos actual (sin añadir proyecciones).
         """
         selected_months = sorted(set(month_numbers))
@@ -61,16 +61,16 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             openings[number] = prior_available
             prior_available += row['monthly'][number]['available']
 
-        period_closings = {}
-        for offset in range(0, len(selected_months), 3):
-            block = selected_months[offset:offset + 3]
-            first_month = block[0]
-            opening = openings[first_month]
-            consumed = sum(row['monthly'][month]['actual'] for month in block)
-            period_closings[first_month] = {
+        # Un único cierre después del último mes seleccionado (sin subdivisión).
+        first_month = selected_months[0]
+        opening = openings[first_month]
+        consumed = sum(row['monthly'][month]['actual'] for month in selected_months)
+        period_closings = {
+            first_month: {
                 'saldo_actual': consumed,
                 'saldo_disponible': opening - consumed,
-            }
+            },
+        }
         row['monthly_report'] = {
             'cells': cells,
             'openings': openings,
@@ -153,18 +153,15 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             categories.append(group)
         self._finish_row(grand_total, numbers)
 
-        # A3 apaisado: máximo tres meses por bloque para mantener legibilidad.
-        pages = []
-        for offset in range(0, len(selected_months), 3):
-            page_months = selected_months[offset:offset + 3]
-            first_month = page_months[0].number
-            pages.append({
-                'months': [{'number': m.number, 'name': m.name} for m in page_months],
-                'first_month': first_month,
-                'opening': first_month > 1,
-                'previous_month_name': month_labels.get(str(first_month - 1), ''),
-                'number': len(pages) + 1,
-            })
+        # Todos los meses elegidos se dibujan juntos en la misma tabla.
+        first_month = selected_months[0].number
+        pages = [{
+            'months': [{'number': m.number, 'name': m.name} for m in selected_months],
+            'first_month': first_month,
+            'opening': first_month > 1,
+            'previous_month_name': month_labels.get(str(first_month - 1), ''),
+            'number': 1,
+        }]
 
         return {
             'wizard': wizard,

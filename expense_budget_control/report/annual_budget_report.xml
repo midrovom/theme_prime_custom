@@ -53,10 +53,10 @@
                         </style>
                         <h2 class="report-title">Presupuesto anual de gastos</h2>
                         <div class="report-meta">
-                            <strong>Presupuesto:</strong> <span t-esc="o.name"/>
+                            <strong>Presupuesto:</strong> <span t-esc="report_data['budget_name']"/>
                             <span> | </span><strong>Año:</strong> <span t-esc="o.year"/>
                             <span> | </span><strong>Empresa:</strong> <span t-esc="o.company_id.name"/>
-                            <span> | </span><strong>Moneda:</strong> <span t-esc="o.currency_id.name"/>
+                            <span> | </span><strong>Moneda:</strong> <span t-esc="o.company_id.currency_id.name"/>
                         </div>
                         <div class="report-scroll">
                             <table class="report-table">
@@ -138,9 +138,24 @@
         <field name="report_name">expense_budget_control.report_annual_budget_document</field>
         <field name="report_file">expense_budget_control.report_annual_budget_document</field>
         <field name="paperformat_id" ref="paperformat_expense_budget_a4_landscape"/>
-        <field name="binding_model_id" ref="model_expense_budget"/>
+        <!-- Impresión deshabilitada en la ficha/menú Imprimir de presupuestos. -->
+        <field name="binding_model_id" eval="False"/>
         <field name="binding_type">report</field>
         <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_read')])]"/>
         <field name="print_report_name">'Presupuesto_%s_%s' % (object.year, object.company_id.name.replace(' ', '_'))</field>
+    </record>
+    <!-- Mantener exactamente la plantilla anual, ahora también desde el asistente. -->
+    <template id="report_annual_budget_wizard_document">
+        <t t-call="expense_budget_control.report_annual_budget_document"/>
+    </template>
+    <record id="action_report_expense_budget_annual_wizard" model="ir.actions.report">
+        <field name="name">Presupuesto anual por rubro y cuenta</field>
+        <field name="model">expense.budget.comparison.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">expense_budget_control.report_annual_budget_wizard_document</field>
+        <field name="report_file">expense_budget_control.report_annual_budget_wizard_document</field>
+        <field name="paperformat_id" ref="paperformat_expense_budget_a4_landscape"/>
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_user'), ref('expense_budget_control.group_expense_budget_approver'), ref('expense_budget_control.group_expense_budget_manager')])]"/>
+        <field name="print_report_name">'Comparativo_Anual_%s_%s' % (object.year, object.company_id.name.replace(' ', '_'))</field>
     </record>
 </odoo>

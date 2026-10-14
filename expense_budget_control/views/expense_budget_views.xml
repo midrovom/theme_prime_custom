@@ -100,7 +100,6 @@
                     <button name="action_submit" string="Enviar a aprobar" type="object" class="btn-primary" invisible="state != 'draft'" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_reject" string="Rechazar" type="object" class="btn-secondary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
-                    <button name="action_print_annual_pdf" string="Imprimir PDF" type="object" icon="fa-print" groups="expense_budget_control.group_expense_budget_read"/>
                     <button name="action_sync_api" string="Sincronizar API" type="object" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,to_approve,approved,rejected"/>
                 </header>

@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Tres meses por página A3: tres cifras por mes y saldos acumulados al final. -->
+    <!-- Una tabla continua con todos los meses elegidos, sin bloques de tres. -->
     <record id="paperformat_expense_budget_comparison" model="report.paperformat">
-        <field name="name">Proyectado vs. real - A3 horizontal mensual</field>
+        <field name="name">Proyectado vs. real - meses continuos panorámico</field>
         <field name="default" eval="False"/>
-        <field name="format">A3</field>
+        <field name="format">custom</field>
+        <field name="page_height">1100</field>
+        <field name="page_width">280</field>
         <field name="orientation">Landscape</field>
         <field name="margin_top">45</field>
         <field name="margin_bottom">16</field>
@@ -28,8 +30,8 @@
                 <td class="amount" t-esc="'{:,.2f}'.format(cell['actual'])"/>
                 <td class="amount" t-esc="'{:,.2f}'.format(cell['available'])"/>
             </t>
-            <!-- Al final: consumo SOLO de los meses elegidos en el bloque.
-                 Saldo disponible = saldo inicial anterior - dicho consumo. -->
+            <!-- Al final: consumo de todos los meses seleccionados en el informe.
+                 Saldo disponible = saldo inicial anterior menos ese consumo. -->
             <t t-set="closing_balance" t-value="row_data['monthly_report']['period_closings'][page_data['first_month']]"/>
             <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['saldo_actual'])"/>
             <td class="amount balance" t-esc="'{:,.2f}'.format(closing_balance['saldo_disponible'])"/>
@@ -47,10 +49,10 @@
                                 .expense-comparison-monthly { color: #233747; font-family: Arial, sans-serif; }
                                 .expense-comparison-monthly h2 { font-size: 18px; margin: 5px 0 8px; }
                                 .expense-comparison-monthly .meta { font-size: 10px; margin: 0 0 12px; }
-                                .expense-comparison-monthly table { border-collapse: collapse; table-layout: fixed; width: 100%; font-size: 8px; }
+                                .expense-comparison-monthly table { border-collapse: collapse; table-layout: fixed; width: 100%; font-size: 11px; }
                                 .expense-comparison-monthly th, .expense-comparison-monthly td { border: 1px solid #d5e0e8; padding: 6px 4px; overflow-wrap: normal; }
-                                .expense-comparison-monthly th { color: white; background: #24445c; font-size: 8px; text-align: center; white-space: nowrap; }
-                                .expense-comparison-monthly th.month-head { font-size: 10px; background: #17364b; }
+                                .expense-comparison-monthly th { color: white; background: #24445c; font-size: 10px; text-align: center; white-space: nowrap; }
+                                .expense-comparison-monthly th.month-head { font-size: 12px; background: #17364b; }
                                 .expense-comparison-monthly .row-name { text-align: left; }
                                 .expense-comparison-monthly .amount { text-align: right; white-space: nowrap; }
                                 .expense-comparison-monthly .opening { background: #f4f0df; }
@@ -75,7 +77,6 @@
                                     <span> | </span><strong>Cuentas:</strong>
                                     <span t-esc="', '.join(data['selected_accounts'].mapped('name'))"/>
                                 </t>
-                                <span> | </span><strong>Bloque:</strong> <span t-esc="page_data['number']"/> / <span t-esc="len(data['pages'])"/>
                             </div>
                             <div class="table-scroll">
                                 <table>
@@ -148,8 +149,8 @@
                                 </table>
                             </div>
                             <p style="font-size: 9px; margin-top: 11px;">
-                                Disponible inicial: saldo disponible acumulado hasta el mes anterior al primero del bloque.
-                                Saldo actual: suma del consumido de los meses seleccionados en este bloque.
+                                Disponible inicial: saldo disponible acumulado hasta el mes anterior al primero seleccionado.
+                                Saldo actual: suma del consumido de todos los meses seleccionados.
                                 Saldo disponible: disponible inicial menos saldo actual. El disponible de cada mes es proyectado menos consumido.
                             </p>
                         </div>

@@ -138,6 +138,7 @@ class TestExpenseBudget(TransactionCase):
         wizard = self.env['expense.budget.comparison.report.wizard'].create({
             'company_id': self.company.id, 'year': 2026,
             'category_id': self.category.id,
+            'month_ids': [(6, 0, self.env['expense.budget.comparison.month'].search([('number', '=', 1)]).ids)],
         })
         data = self.env['report.expense_budget_control.report_comparison_document']._prepare_comparison(wizard)
         self.assertEqual(data['grand_total']['planned'], 150)
@@ -617,6 +618,7 @@ class TestExpenseBudget(TransactionCase):
 
         wizard = self.env['expense.budget.comparison.report.wizard'].create({
             'company_id': self.company.id, 'year': 2026,
+            'month_ids': [(6, 0, self.env['expense.budget.comparison.month'].search([]).ids)],
         })
         report = self.env['report.expense_budget_control.report_comparison_document']
         prepared = report._get_report_values([wizard.id])['reports'][0]
@@ -647,6 +649,7 @@ class TestExpenseBudget(TransactionCase):
         filtered = self.env['expense.budget.comparison.report.wizard'].create({
             'company_id': self.company.id, 'year': 2026,
             'category_id': self.category.id, 'account_id': water.id,
+            'month_ids': [(6, 0, self.env['expense.budget.comparison.month'].search([]).ids)],
         })
         data = report._get_report_values([filtered.id])['reports'][0]
         self.assertEqual(len(data['categories'][0]['accounts']), 1)
@@ -706,6 +709,7 @@ class TestExpenseBudget(TransactionCase):
         wizard = self.env['expense.budget.comparison.report.wizard'].create({
             'company_id': self.company.id, 'year': 2026,
             'category_id': self.category.id,
+            'month_ids': [(6, 0, self.env['expense.budget.comparison.month'].search([]).ids)],
         })
         self.assertFalse(wizard.account_id)
         report = self.env['report.expense_budget_control.report_comparison_document']
@@ -816,12 +820,24 @@ class TestExpenseBudget(TransactionCase):
         })
         wizard = self.env['expense.budget.comparison.report.wizard'].with_user(approver).create({
             'company_id': self.company.id, 'year': 2026,
+            'month_ids': [(6, 0, self.env['expense.budget.comparison.month'].search([]).ids)],
         })
         report = self.env['report.expense_budget_control.report_comparison_document'].with_user(approver)
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 0)
         self.budget.action_submit()
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 1)
 
+
+    def test_report_months_start_unselected(self):
+        """El usuario elige los meses; no se precargan los doce."""
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'company_id': self.company.id,
+            'year': 2026,
+        })
+        self.assertFalse(wizard.month_ids)
+        from odoo.exceptions import ValidationError
+        with self.assertRaises(ValidationError):
+            wizard.action_print_pdf()
 
     def test_monthly_comparison_with_selected_nonconsecutive_months(self):
         """Febrero/Abril: inicial de enero y consumo solo de meses elegidos."""
@@ -887,8 +903,8 @@ class TestExpenseBudget(TransactionCase):
         self.assertAlmostEqual(closing['saldo_actual'], 140)
         self.assertAlmostEqual(closing['saldo_disponible'], 410)
 
-    def test_comparison_pdf_balance_multiple_three_month_blocks(self):
-        """Cada hoja usa saldo previo a su primer mes y consumos de su bloque."""
+    def test_comparison_pdf_balance_all_selected_months_in_one_row(self):
+        """Todos los meses elegidos se imprimen juntos y con un saldo único."""
         Line = self.env['expense.budget.line']
         for month in range(1, 7):
             line = Line.create({
@@ -906,14 +922,12 @@ class TestExpenseBudget(TransactionCase):
         })
         report = self.env['report.expense_budget_control.report_comparison_document']
         data = report._prepare_comparison(wizard)
-        self.assertEqual([page['first_month'] for page in data['pages']], [2, 5])
+        self.assertEqual(len(data['pages']), 1)
+        self.assertEqual([month['number'] for month in data['pages'][0]['months']], [2, 3, 4, 5])
         row = data['categories'][0]['monthly_report']
         self.assertAlmostEqual(row['openings'][2], 90)
-        self.assertAlmostEqual(row['period_closings'][2]['saldo_actual'], 30)
-        self.assertAlmostEqual(row['period_closings'][2]['saldo_disponible'], 60)
-        self.assertAlmostEqual(row['openings'][5], 360)
-        self.assertAlmostEqual(row['period_closings'][5]['saldo_actual'], 10)
-        self.assertAlmostEqual(row['period_closings'][5]['saldo_disponible'], 350)
+        self.assertAlmostEqual(row['period_closings'][2]['saldo_actual'], 40)
+        self.assertAlmostEqual(row['period_closings'][2]['saldo_disponible'], 50)
 
     def test_rejection_is_only_possible_for_approver_while_pending(self):
         group = self.env.ref('expense_budget_control.group_expense_budget_approver')
@@ -947,3 +961,54 @@ class TestExpenseBudget(TransactionCase):
             self.budget.with_user(approver).action_reject()
         with self.assertRaises(UserError):
             self.budget.with_user(approver).action_approve()
+
+
+@tagged('post_install', '-at_install')
+class TestExpenseBudgetReportPeriod(TransactionCase):
+    def setUp(self):
+        super().setUp()
+        self.company = self.env.company
+        self.category = self.env['expense.budget.category'].create({
+            'code': 'PERIODO-TEST', 'name': 'Servicios de prueba', 'company_id': self.company.id,
+        })
+        self.account = self.env['expense.budget.account'].create({
+            'code': 'PERIODO-CTA', 'name': 'Luz', 'company_id': self.company.id,
+            'category_id': self.category.id,
+        })
+        self.budget = self.env['expense.budget'].create({
+            'name': 'Presupuesto de prueba por períodos',
+            'company_id': self.company.id, 'year': 2049,
+        })
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '2', 'planned_amount': 200, 'actual_amount': 50,
+        })
+
+    def test_annual_report_from_wizard_without_months(self):
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'company_id': self.company.id, 'year': '2049', 'period': 'year',
+            'category_id': self.category.id,
+        })
+        action = wizard.action_print_pdf()
+        self.assertEqual(action['report_name'],
+                         'expense_budget_control.report_annual_budget_wizard_document')
+        values = self.env[
+            'report.expense_budget_control.report_annual_budget_wizard_document'
+        ]._get_report_values([wizard.id])
+        report = values['reports'][0]
+        self.assertEqual(report['annual_total']['planned'], 200)
+        self.assertEqual(report['annual_total']['actual'], 50)
+        self.assertEqual(report['annual_total']['available'], 150)
+
+    def test_monthly_report_requires_selected_months(self):
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'company_id': self.company.id, 'year': '2049', 'period': 'month',
+        })
+        with self.assertRaises(ValidationError):
+            wizard.action_print_pdf()
+        month = self.env['expense.budget.comparison.month'].search([('number', '=', 2)], limit=1)
+        self.assertTrue(month)
+        wizard.month_ids = [(6, 0, month.ids)]
+        action = wizard.action_print_pdf()
+        self.assertEqual(action['report_name'],
+                         'expense_budget_control.report_comparison_document')

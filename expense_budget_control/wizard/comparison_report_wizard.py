@@ -40,11 +40,15 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
         default=lambda self: str(fields.Date.context_today(self).year),
     )
 
+    period = fields.Selection(
+        [('month', 'Mes'), ('year', 'Año')],
+        string='Período', required=True, default='month',
+    )
+
     month_ids = fields.Many2many(
         'expense.budget.comparison.month',
         'expense_budget_comparison_wizard_month_rel',
         'wizard_id', 'month_id', string='Meses del reporte',
-        default=lambda self: self.env['expense.budget.comparison.month'].search([]),
         help='Seleccione los meses que se incluirán. Los saldos acumulados toman en cuenta los meses previos aunque no estén seleccionados.',
     )
 
@@ -96,8 +100,6 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
     @api.constrains('year', 'company_id', 'category_id', 'account_id', 'account_ids', 'month_ids')
     def _check_filters(self):
         for wizard in self:
-            if not wizard.month_ids:
-                raise ValidationError(_('Seleccione al menos un mes para el reporte.'))
             if not 1900 <= int(wizard.year) <= 2100:
                 raise ValidationError(_('Seleccione un año válido entre 1900 y 2100.'))
             if wizard.category_id and wizard.category_id.company_id != wizard.company_id:
@@ -114,6 +116,10 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
     def action_print_pdf(self):
         self.ensure_one()
         self.check_access('read')
+        if self.period == 'year':
+            return self.env.ref(
+                'expense_budget_control.action_report_expense_budget_annual_wizard'
+            ).report_action(self)
         if not self.month_ids:
             raise ValidationError(_('Seleccione al menos un mes para el reporte.'))
         return self.env.ref(
