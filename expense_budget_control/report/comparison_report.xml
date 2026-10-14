@@ -81,7 +81,7 @@
                                         <t t-if="page_data['opening']"><col style="width: 9%;"/></t>
                                         <t t-foreach="page_data['months']" t-as="month_item">
                                             <t t-foreach="range(5)" t-as="cell_idx">
-                                                <col t-att-style="'width: %.4f%%;' % ((74.0 if page_data['opening'] else 83.0) / (len(page_data['months']) * 5))"/>
+                                                <col t-att-style="'width: {:.4f}%;'.format((74.0 if page_data['opening'] else 83.0) / (len(page_data['months']) * 5))"/>
                                             </t>
                                         </t>
                                     </colgroup>
