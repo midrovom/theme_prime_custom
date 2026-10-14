@@ -35,10 +35,10 @@
           </div>
           <div class="tc-section-heading"><h2>Guías asignadas</h2><span class="tc-count" t-esc="len(guias)"/></div>
           <nav class="tc-filters" aria-label="Filtrar por estado">
-            <t t-foreach="[('todas','Todas'),('embarque','Embarque'),('ruta','En ruta'),('destino','En destino'),('revision','Recepción'),('entregada','Entregadas')]" t-as="filter">
-              <a t-att-href="'/transcash/guias?estado=%s' % filter[0]"
-                 t-att-class="'tc-filter' + (' is-current' if estado_filtro == filter[0] else '')"
-                 t-esc="filter[1]"/>
+            <t t-foreach="[('todas','Todas'),('embarque','Embarque'),('ruta','En ruta'),('destino','En destino'),('revision','Recepción'),('entregada','Entregadas')]" t-as="filtro_guia">
+              <a t-att-href="'/transcash/guias?estado=%s' % filtro_guia[0]"
+                 t-att-class="'tc-filter' + (' is-current' if estado_filtro == filtro_guia[0] else '')"
+                 t-esc="filtro_guia[1]"/>
             </t>
           </nav>
           <div class="tc-cards">

@@ -53,12 +53,9 @@ class ConederaFieldAppController(http.Controller):
             "background_color": "#f7f6fb",
             "theme_color": "#6f5aa7",
             "icons": [
-                {
-                    "src": "/conedera_odoo_census_mobile/static/description/icon.svg",
-                    "sizes": "any",
-                    "type": "image/svg+xml",
-                    "purpose": "any maskable",
-                }
+                {"src": "/conedera_odoo_census_mobile/static/description/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+                {"src": "/conedera_odoo_census_mobile/static/description/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+                {"src": "/conedera_odoo_census_mobile/static/description/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
             ],
         }
         return request.make_response(
@@ -83,10 +80,139 @@ class ConederaFieldAppController(http.Controller):
             "census_active", "commercial_name", "census_store_count", "store_count", "capa",
             "owner_contact_name", "owner_phone", "commercial_contact_name", "commercial_contact_phone",
             "business_description", "customer_segment", "census_company_id", "census_team_id",
-            "census_locked", "census_locked_at", "census_completion_percent", "census_completion_state",
+            "census_locked", "census_locked_at", "census_completion_pct", "census_completion_state",
+            "census_ready_for_activity", "census_missing_requirements", "census_can_edit_master",
+            "census_edit_state", "census_latest_unlock_state", "census_latest_unlock_request_date",
+            "census_latest_unlock_reviewed_at", "census_latest_unlock_valid_until",
+            "census_latest_unlock_reason", "census_latest_unlock_review_note",
+            "business_type_ids", "mobile_brand_ids", "customer_census_type", "business_type",
             "opening_hours_summary", "census_opening_hours_summary",
         ]
         return self._existing_fields(request.env["res.partner"], candidates)
+
+    def _hour_config(self):
+        """Reflect the opening-hour fields of the installed census addon.
+
+        Never guess/write arbitrary fields: different revisions of the base
+        module expose different names and selection keys.
+        """
+        Partner = request.env["res.partner"]
+        hour_model = "conedera.partner.opening.hour"
+        partner_field = None
+        relations = [(name, field) for name, field in Partner._fields.items()
+                     if field.type == "one2many" and field.comodel_name in request.env.registry]
+        # Prefer the exact original addon model over unrelated partner calendars.
+        preferred = [(name, field) for name, field in relations
+                     if field.comodel_name == hour_model]
+        fallback = [(name, field) for name, field in relations
+                    if any(x in name.lower() for x in ("opening_hour", "business_hour", "horario", "census_hour"))]
+        for name, field in preferred + fallback:
+            hour_model = field.comodel_name
+            partner_field = field.inverse_name
+            break
+        if hour_model not in request.env.registry:
+            return None
+        Hour = request.env[hour_model]
+        if partner_field not in Hour._fields:
+            partner_field = next((name for name in ("partner_id", "customer_id")
+                                  if name in Hour._fields and Hour._fields[name].type == "many2one"
+                                  and Hour._fields[name].comodel_name == "res.partner"), None)
+        def choose(names, types):
+            return next((name for name in names if name in Hour._fields
+                         and Hour._fields[name].type in types), None)
+        day_field = choose(("day", "weekday", "day_of_week", "week_day", "week_day_id"), ("selection", "char", "integer"))
+        from_field = choose(("hour_from", "time_from", "opening_hour", "opening_time", "open_time", "start_time", "from_hour", "start_hour"), ("float", "char"))
+        to_field = choose(("hour_to", "time_to", "closing_hour", "closing_time", "close_time", "end_time", "to_hour", "end_hour"), ("float", "char"))
+        if not all((partner_field, day_field, from_field, to_field)):
+            return None
+        days = []
+        field = Hour._fields[day_field]
+        if field.type == "selection":
+            try:
+                days = [{"value": str(v), "label": str(label)} for v, label in field._description_selection(request.env)]
+            except (AttributeError, TypeError):
+                selection = field.selection if isinstance(field.selection, (tuple, list)) else []
+                days = [{"value": str(v), "label": str(label)} for v, label in selection]
+        if not days:
+            days = [{"value": str(n), "label": label} for n, label in enumerate((
+                "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"))]
+        return {"model": hour_model, "partner_field": partner_field, "day_field": day_field,
+                "from_field": from_field, "to_field": to_field, "days": days}
+
+    def _hours_payload(self, partner_ids, config):
+        if not config or not partner_ids:
+            return {}
+        Hour = request.env[config["model"]]
+        names = ["id", config["partner_field"], config["day_field"], config["from_field"], config["to_field"]]
+        try:
+            records = Hour.search_read([(config["partner_field"], "in", partner_ids)], names, limit=10000)
+        except AccessError:
+            return {}
+        hours = {}
+        for record in records:
+            parent = record.get(config["partner_field"])
+            parent_id = parent[0] if isinstance(parent, (list, tuple)) else parent
+            hours.setdefault(parent_id, []).append({
+                "id": record["id"], "day": str(record[config["day_field"]]),
+                "from": self._hour_string(record[config["from_field"]]),
+                "to": self._hour_string(record[config["to_field"]]),
+            })
+        return hours
+
+    def _hour_string(self, value):
+        if isinstance(value, (float, int)) and not isinstance(value, bool):
+            minutes = int(round(float(value) * 60))
+            return "%02d:%02d" % (minutes // 60, minutes % 60)
+        raw = str(value or "")
+        if re.fullmatch(r"\d{1,2}:\d{2}(:\d{2})?", raw):
+            return raw[:5].zfill(5)
+        return raw
+
+    @http.route("/conedera/app/partner_search", type="json", auth="user", methods=["POST"], readonly=True)
+    def partner_search(self, term=""):
+        """Reuse the original global lookup and its privacy/assignment decisions."""
+        term = str(term or "").strip()[:120]
+        if len(term) < 2:
+            return {"matches": []}
+        Wizard = request.env["conedera.census.customer.lookup.wizard"]
+        matches = Wizard.search_global_candidates(term, limit=15)
+        return {"matches": matches}
+
+    @http.route("/conedera/app/request_unlock", type="json", auth="user", methods=["POST"])
+    def request_unlock(self, partner_id=0, reason=""):
+        reason = str(reason or "").strip()
+        if len(reason) < 8:
+            raise ValidationError("Explique el motivo de la solicitud (mínimo 8 caracteres).")
+        partner = request.env["res.partner"].browse(int(partner_id or 0)).exists()
+        if not partner or not partner.census_active or not partner.census_locked:
+            raise UserError("Seleccione un catastro protegido válido.")
+        Request = request.env["conedera.census.unlock.request"]
+        pending = Request.search([("partner_id", "=", partner.id),
+                                  ("requested_by_id", "=", request.env.user.id),
+                                  ("state", "=", "pending")], limit=1)
+        if pending:
+            raise UserError("Ya existe una solicitud pendiente para este catastro.")
+        record = Request.create({"partner_id": partner.id, "reason": reason})
+        return {"id": record.id, "state": record.state, "message": "Solicitud enviada a revisión."}
+
+    @http.route("/conedera/app/request_reassignment", type="json", auth="user", methods=["POST"])
+    def request_reassignment(self, partner_id=0, reason=""):
+        reason = str(reason or "").strip()
+        if len(reason) < 8:
+            raise ValidationError("Explique por qué solicita la reasignación (mínimo 8 caracteres).")
+        partner = request.env["res.partner"].sudo().browse(int(partner_id or 0)).exists()
+        if not partner:
+            raise UserError("Cliente inexistente.")
+        candidate = request.env["conedera.census.customer.lookup.wizard"]._candidate_payload(partner)
+        if not candidate["can_request"]:
+            raise AccessError("No puede solicitar este cliente; consulte la política de asignaciones.")
+        Request = request.env["conedera.census.reassignment.request"]
+        record = Request.create({
+            "partner_id": partner.id,
+            "reason": reason,
+            "request_type": "reassign_census" if partner.census_active else "claim_contact",
+        })
+        return {"id": record.id, "state": record.state, "message": "Solicitud de reasignación enviada."}
 
     def _current_team(self):
         user = request.env.user
@@ -210,6 +336,10 @@ class ConederaFieldAppController(http.Controller):
         domain = [("census_active", "=", True)] if "census_active" in Partner._fields else [("customer_rank", ">", 0)]
         partners = Partner.search_read(domain, partner_fields, order="write_date desc, id desc", limit=1000)
         partner_ids = [x["id"] for x in partners]
+        hour_config = self._hour_config()
+        hours_by_partner = self._hours_payload(partner_ids, hour_config)
+        for partner in partners:
+            partner["opening_hours_data"] = hours_by_partner.get(partner["id"], [])
         visits = self._visit_payload(partner_ids)
         orders, products = self._sale_payload(partner_ids)
         team = self._current_team()
@@ -235,7 +365,8 @@ class ConederaFieldAppController(http.Controller):
                 "visit_model": "conedera.census.visit" in request.env.registry,
                 "business_type_model": "conedera.census.business.type" in request.env.registry,
                 "mobile_brand_model": "conedera.census.mobile.brand" in request.env.registry,
-                "opening_hour_model": "conedera.partner.opening.hour" in request.env.registry,
+                "opening_hour_model": bool(hour_config),
+                "opening_hour_days": hour_config["days"] if hour_config else [],
             },
         }
 
@@ -298,6 +429,7 @@ class ConederaFieldAppController(http.Controller):
             "commercial_contact_name": "commercial_contact_name",
             "commercial_contact_phone": "commercial_contact_phone",
             "business_description": "business_description",
+            "census_gps_payload": "census_gps_payload",
             "customer_segment": "customer_segment",
         }
         for source, target in mapping.items():
@@ -334,32 +466,85 @@ class ConederaFieldAppController(http.Controller):
             vals[brand_field] = [(6, 0, [int(x) for x in payload.get("mobile_brand_ids") or [] if str(x).isdigit()])]
         return vals
 
-    def _sync_opening_hours(self, partner, hours):
-        model_name = "conedera.partner.opening.hour"
-        if not hours or model_name not in request.env.registry:
+    def _sync_opening_hours(self, partner, hours, replace=False):
+        """Save ALL time ranges atomically, preserving the base model's validation.
+
+        No silent skips: an incompatible version of the base addon produces a
+        visible sync error rather than falsely reporting that hours were saved.
+        """
+        config = self._hour_config()
+        if config is None:
+            if hours:
+                raise UserError("El modelo de horarios del Catastro no tiene los campos esperados. Revise la versión del módulo base.")
             return
-        Hour = request.env[model_name]
-        partner_field = next((x for x in ["partner_id", "customer_id"] if x in Hour._fields), None)
-        day_field = next((x for x in ["day", "weekday", "day_of_week"] if x in Hour._fields), None)
-        from_field = next((x for x in ["hour_from", "time_from", "opening_hour"] if x in Hour._fields), None)
-        to_field = next((x for x in ["hour_to", "time_to", "closing_hour"] if x in Hour._fields), None)
-        if not all([partner_field, day_field, from_field, to_field]):
-            return
+        # Respect the original module's lock/ownership rules before any sudo fallback.
+        partner._check_census_master_write({"opening_hour_ids": True})
+        Hour = request.env[config["model"]]
+        domain = [(config["partner_field"], "=", partner.id)]
+        normalized = []
+        choices = {x["value"] for x in config["days"]}
         for item in hours:
-            if not item.get("day"):
-                continue
-            vals = {
-                partner_field: partner.id,
-                day_field: str(item.get("day")),
-                from_field: float(item.get("from") or 0),
-                to_field: float(item.get("to") or 0),
-            }
+            day = str(item.get("day", ""))
+            if day not in choices:
+                raise ValidationError("Seleccione un día válido para cada horario.")
+            def to_minutes(val):
+                if isinstance(val, (float, int)):
+                    return int(round(float(val) * 60))
+                match = re.fullmatch(r"(\d{1,2}):(\d{2})", str(val or ""))
+                if not match:
+                    raise ValidationError("Las horas deben tener formato HH:MM.")
+                h, m = int(match[1]), int(match[2])
+                if h > 24 or m > 59 or (h == 24 and m != 0):
+                    raise ValidationError("Hora fuera de rango.")
+                return h * 60 + m
+            begin = to_minutes(item.get("from"))
+            end = to_minutes(item.get("to"))
+            if begin >= end or begin >= 1440 or end > 1440:
+                raise ValidationError("La hora de cierre debe ser posterior a la apertura.")
+            def output(field_name, minute):
+                return minute / 60.0 if Hour._fields[field_name].type == "float" else "%02d:%02d" % divmod(minute, 60)
+            normalized.append({
+                config["partner_field"]: partner.id,
+                config["day_field"]: int(day) if Hour._fields[config["day_field"]].type == "integer" else day,
+                config["from_field"]: output(config["from_field"], begin),
+                config["to_field"]: output(config["to_field"], end),
+            })
+        for i, left in enumerate(normalized):
+            left_day = left[config["day_field"]]
+            def minutes(row, key):
+                val = row[key]
+                if isinstance(val, (int, float)):
+                    return round(val * 60)
+                hh, mm = map(int, val.split(":")[:2])
+                return hh * 60 + mm
+            for right in normalized[i + 1:]:
+                if left_day == right[config["day_field"]] and (minutes(left, config["from_field"]) < minutes(right, config["to_field"]) and minutes(right, config["from_field"]) < minutes(left, config["to_field"])):
+                    raise ValidationError("Existen horarios superpuestos para un mismo día.")
+        def permitted_hour_write():
+            # Retain the previous mobile permission fallback, but never grant
+            # broad sudo rights on a customer the user cannot edit.
+            current = partner.with_user(request.env.user)
+            checker = getattr(current, "check_access", None)
+            if callable(checker):
+                checker("write")
+            else:
+                current.check_access_rights("write")
+                current.check_access_rule("write")
+        if replace:
+            try:
+                Hour.search(domain).unlink()
+            except AccessError:
+                permitted_hour_write()
+                Hour.sudo().search(domain).unlink()
+        for vals in normalized:
             try:
                 Hour.create(vals)
-            except (AccessError, UserError, ValidationError):
+            except AccessError:
+                permitted_hour_write()
                 Hour.sudo().create(vals)
 
     def _sync_catastro(self, payload):
+        # The offline queue always rechecks duplicates on the live server.
         vat = payload.get("vat")
         existing = self._find_partner_global_by_vat(vat)
         if existing:
@@ -375,9 +560,21 @@ class ConederaFieldAppController(http.Controller):
                     "vat": existing.vat if visible else vat,
                 },
             }
+        name = str(payload.get("name") or "").strip()
+        if name:
+            duplicate_names = request.env["res.partner"].sudo().with_context(active_test=False).search([
+                ("parent_id", "=", False), "|", ("name", "=ilike", name),
+                ("commercial_name", "=ilike", name),
+            ], limit=1)
+            if duplicate_names:
+                return {"state": "conflict", "message":
+                        "Ya existe un cliente con ese nombre. Búsquelo y selecciónelo antes de crear otro.",
+                        "result_model": "res.partner", "result_id": 0}
         vals = self._prepare_partner_vals(payload, create=True)
         if not vals.get("name"):
             vals["name"] = payload.get("commercial_name") or vat or "Catastro móvil"
+        # Preserve the original addon creation flow. The base module still
+        # applies its business validations when create() runs.
         partner = request.env["res.partner"].sudo().create(vals)
         self._sync_opening_hours(partner, payload.get("opening_hours") or [])
         return {
@@ -393,6 +590,8 @@ class ConederaFieldAppController(http.Controller):
         if not partner:
             raise UserError("El catastro ya no existe.")
         base_write_date = payload.get("base_write_date")
+        if partner.census_active and not partner.census_can_edit_master:
+            raise AccessError("No tiene permiso de editar esta ficha. Solicite la habilitación o reasignación correspondiente.")
         if base_write_date and str(partner.write_date) != str(base_write_date):
             return {
                 "state": "conflict",
@@ -401,7 +600,41 @@ class ConederaFieldAppController(http.Controller):
                 "result_id": partner.id,
             }
         vals = self._prepare_partner_vals(payload, create=False)
-        partner.write(vals)
+        if payload.get("activate_census"):
+            if "census_active" in partner._fields:
+                vals["census_active"] = True
+            if "census_user_id" in partner._fields and not partner.census_user_id:
+                vals["census_user_id"] = request.env.user.id
+            if "census_company_id" in partner._fields and not partner.census_company_id:
+                vals["census_company_id"] = request.env.company.id
+        requested_vat = payload.get("vat")
+        if requested_vat and self._normalize_vat(requested_vat) != self._normalize_vat(partner.vat):
+            existing = self._find_partner_global_by_vat(requested_vat)
+            if existing and existing.id != partner.commercial_partner_id.id:
+                raise ValidationError("El RUC/cédula ya pertenece a otro cliente.")
+        if payload.get("activate_census"):
+            # Mirror the base wizard's guarded 'use existing' action.
+            candidate = request.env["conedera.census.customer.lookup.wizard"]._candidate_payload(partner)
+            if not candidate["can_use"] or partner.census_active:
+                raise AccessError("El cliente no está disponible para activar un nuevo catastro.")
+            team = partner._default_census_team(partner.user_id or request.env.user,
+                                                 partner.census_company_id or request.env.company)
+            activation = {
+                "census_active": True, "census_date": fields.Datetime.now(),
+                "census_user_id": request.env.user.id,
+                "user_id": (partner.user_id or request.env.user).id,
+                "census_company_id": (partner.census_company_id or request.env.company).id,
+                "census_locked": False,
+                "customer_rank": max(partner.customer_rank, 1),
+            }
+            if team:
+                activation["census_team_id"] = team.id
+            partner.sudo().write(activation)
+            partner.sudo().write(vals)
+        elif vals:
+            partner.write(vals)
+        if "opening_hours" in payload:
+            self._sync_opening_hours(partner, payload["opening_hours"] or [], replace=True)
         return {
             "state": "synced",
             "message": "Catastro actualizado.",
@@ -425,10 +658,23 @@ class ConederaFieldAppController(http.Controller):
         date_field = next((x for x in ["visit_datetime", "visit_date", "date"] if x in Visit._fields), None)
         if date_field and payload.get("visit_datetime"):
             vals[date_field] = payload.get("visit_datetime")
-        direct = ["purchase_made", "reschedule_visit", "has_stock", "no_credit_subject", "other_result"]
-        for name in direct:
-            if name in Visit._fields and name in payload:
-                vals[name] = payload.get(name)
+        for source, target in (("purchase_made", "purchase_made"),
+                               ("reschedule_visit", "reschedule_visit"),
+                               ("has_stock", "has_stock"),
+                               ("no_credit_subject", "not_creditworthy"),
+                               ("other_result", "other_result")):
+            if source not in payload or target not in Visit._fields:
+                continue
+            value = payload[source]
+            if Visit._fields[target].type == "selection":
+                choices = {x[0] for x in Visit._fields[target]._description_selection(request.env)}
+                vals[target] = ("yes" if value else "no") if {"yes", "no"}.issubset(choices) else value
+            else:
+                vals[target] = value
+        if "other_result_detail" in Visit._fields and "other_result_detail" in payload:
+            vals["other_result_detail"] = payload["other_result_detail"]
+        if "next_visit_datetime" in Visit._fields and payload.get("next_visit_datetime"):
+            vals["next_visit_datetime"] = payload["next_visit_datetime"]
         note_field = next((x for x in ["notes", "observation", "observations"] if x in Visit._fields), None)
         if note_field and "notes" in payload:
             vals[note_field] = payload.get("notes")
@@ -443,7 +689,7 @@ class ConederaFieldAppController(http.Controller):
             except Exception:
                 pass
         gps_mapping = {
-            "gps_payload": ["gps_payload", "visit_gps_payload"],
+            "gps_payload": ["gps_capture_payload", "gps_payload", "visit_gps_payload"],
             "gps_accuracy": ["gps_accuracy", "visit_gps_accuracy"],
             "gps_captured_at": ["gps_captured_at", "visit_gps_captured_at"],
         }
@@ -505,6 +751,9 @@ class ConederaFieldAppController(http.Controller):
                 results.append({"uuid": client_uuid, "state": "error", "message": "Operación inválida."})
                 continue
             log = Log.search([("client_uuid", "=", client_uuid)], limit=1)
+            if log and log.user_id != request.env.user:
+                results.append({"uuid": client_uuid, "state": "error", "message": "Operación pertenece a otra sesión."})
+                continue
             if log and log.state in ("synced", "warning", "conflict"):
                 results.append({
                     "uuid": client_uuid,

@@ -1,7 +1,7 @@
 {
     "name": "Conedera Catastro - App de Campo",
     "summary": "Web app móvil y captura offline para Catastro Comercial",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.2.0",
     "category": "Sales",
     "author": "Conedera",
     "license": "LGPL-3",
