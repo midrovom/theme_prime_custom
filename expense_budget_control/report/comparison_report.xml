@@ -15,7 +15,7 @@
         <field name="dpi">90</field>
     </record>
 
-    <!-- Fila reutilizable: saldo inicial, detalle mensual y dos saldos finales. -->
+    <!-- Fila reutilizable: saldo anterior, detalle mensual y dos saldos finales. -->
     <template id="report_comparison_monthly_row">
         <tr t-att-class="row_class">
             <td class="row-name" t-esc="row_name"/>
@@ -28,12 +28,11 @@
                 <td class="amount" t-esc="'{:,.2f}'.format(cell['actual'])"/>
                 <td class="amount" t-esc="'{:,.2f}'.format(cell['available'])"/>
             </t>
-            <!-- Los dos saldos aparecen una sola vez, al final de los meses del bloque.
-                 Usar el último mes seleccionado en esta página incluye los meses intermedios
-                 en los acumulados, aunque no se impriman. -->
-            <t t-set="closing_cell" t-value="row_data['monthly_report']['cells'][page_data['months'][-1]['number']]"/>
-            <td class="amount" t-esc="'{:,.2f}'.format(closing_cell['saldo_actual'])"/>
-            <td class="amount balance" t-esc="'{:,.2f}'.format(closing_cell['saldo_disponible'])"/>
+            <!-- Al final: consumo SOLO de los meses elegidos en el bloque.
+                 Saldo disponible = saldo inicial anterior - dicho consumo. -->
+            <t t-set="closing_balance" t-value="row_data['monthly_report']['period_closings'][page_data['first_month']]"/>
+            <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['saldo_actual'])"/>
+            <td class="amount balance" t-esc="'{:,.2f}'.format(closing_balance['saldo_disponible'])"/>
         </tr>
     </template>
 
@@ -149,9 +148,9 @@
                                 </table>
                             </div>
                             <p style="font-size: 9px; margin-top: 11px;">
-                                Saldo actual: consumido acumulado desde enero hasta el último mes del bloque.
-                                Saldo disponible: proyectado acumulado menos consumido acumulado hasta ese mismo mes.
-                                Disponible inicial: saldo de los meses anteriores al primer mes de esta página.
+                                Disponible inicial: saldo disponible acumulado hasta el mes anterior al primero del bloque.
+                                Saldo actual: suma del consumido de los meses seleccionados en este bloque.
+                                Saldo disponible: disponible inicial menos saldo actual. El disponible de cada mes es proyectado menos consumido.
                             </p>
                         </div>
                     </t>

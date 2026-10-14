@@ -824,7 +824,7 @@ class TestExpenseBudget(TransactionCase):
 
 
     def test_monthly_comparison_with_selected_nonconsecutive_months(self):
-        """Febrero/Abril: inicial de enero y acumulados incluyendo marzo oculto."""
+        """Febrero/Abril: inicial de enero y consumo solo de meses elegidos."""
         Line = self.env['expense.budget.line']
         for month, planned, actual in (
                 ('1', 100, 30), ('2', 200, 50), ('3', 300, 80), ('4', 400, 120)):
@@ -851,12 +851,69 @@ class TestExpenseBudget(TransactionCase):
         self.assertAlmostEqual(feb['planned'], 200)
         self.assertAlmostEqual(feb['actual'], 50)
         self.assertAlmostEqual(feb['available'], 150)
-        self.assertAlmostEqual(feb['saldo_actual'], 80)
-        self.assertAlmostEqual(feb['saldo_disponible'], 220)
         april = group['monthly_report']['cells'][4]
-        self.assertAlmostEqual(april['saldo_actual'], 280)
-        self.assertAlmostEqual(april['saldo_disponible'], 720)
+        self.assertAlmostEqual(april['planned'], 400)
+        self.assertAlmostEqual(april['actual'], 120)
+        self.assertAlmostEqual(april['available'], 280)
         self.assertAlmostEqual(group['monthly_report']['openings'][4], 440)
+        # Marzo no seleccionado no suma a Saldo actual (50 + 120).
+        closing = group['monthly_report']['period_closings'][2]
+        self.assertAlmostEqual(closing['saldo_actual'], 170)
+        self.assertAlmostEqual(closing['saldo_disponible'], -100)
+
+    def test_comparison_pdf_balance_follows_previous_period_and_selected_months(self):
+        """En marzo, inicial de enero-febrero; final = inicial - gastos marzo/abril."""
+        Line = self.env['expense.budget.line']
+        for month, planned, actual in (
+                ('1', 500, 100), ('2', 200, 50),
+                ('3', 150, 60), ('4', 250, 80), ('5', 300, 90)):
+            line = Line.create({
+                'budget_id': self.budget.id, 'account_id': self.account.id,
+                'month': month, 'planned_amount': planned,
+            })
+            line.write({'actual_amount': actual})
+        months = self.env['expense.budget.comparison.month'].search([
+            ('number', 'in', [3, 4]),
+        ])
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'year': 2026, 'company_id': self.company.id,
+            'category_id': self.category.id,
+            'month_ids': [(6, 0, months.ids)],
+        })
+        report = self.env['report.expense_budget_control.report_comparison_document']
+        group = report._prepare_comparison(wizard)['categories'][0]
+        self.assertAlmostEqual(group['monthly_report']['openings'][3], 550)
+        closing = group['monthly_report']['period_closings'][3]
+        self.assertAlmostEqual(closing['saldo_actual'], 140)
+        self.assertAlmostEqual(closing['saldo_disponible'], 410)
+
+    def test_comparison_pdf_balance_multiple_three_month_blocks(self):
+        """Cada hoja usa saldo previo a su primer mes y consumos de su bloque."""
+        Line = self.env['expense.budget.line']
+        for month in range(1, 7):
+            line = Line.create({
+                'budget_id': self.budget.id, 'account_id': self.account.id,
+                'month': str(month), 'planned_amount': 100,
+            })
+            line.write({'actual_amount': 10})
+        months = self.env['expense.budget.comparison.month'].search([
+            ('number', 'in', [2, 3, 4, 5]),
+        ])
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'year': 2026, 'company_id': self.company.id,
+            'category_id': self.category.id,
+            'month_ids': [(6, 0, months.ids)],
+        })
+        report = self.env['report.expense_budget_control.report_comparison_document']
+        data = report._prepare_comparison(wizard)
+        self.assertEqual([page['first_month'] for page in data['pages']], [2, 5])
+        row = data['categories'][0]['monthly_report']
+        self.assertAlmostEqual(row['openings'][2], 90)
+        self.assertAlmostEqual(row['period_closings'][2]['saldo_actual'], 30)
+        self.assertAlmostEqual(row['period_closings'][2]['saldo_disponible'], 60)
+        self.assertAlmostEqual(row['openings'][5], 360)
+        self.assertAlmostEqual(row['period_closings'][5]['saldo_actual'], 10)
+        self.assertAlmostEqual(row['period_closings'][5]['saldo_disponible'], 350)
 
     def test_rejection_is_only_possible_for_approver_while_pending(self):
         group = self.env.ref('expense_budget_control.group_expense_budget_approver')
