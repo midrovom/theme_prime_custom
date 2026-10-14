@@ -21,6 +21,49 @@ class TestExpenseBudget(TransactionCase):
         })
 
 
+    def test_create_category_from_budget_selector_with_unassigned_accounts(self):
+        """Un registrador crea el rubro y elige cuentas ya existentes sin rubro."""
+        base_group = self.env.ref('base.group_user')
+        registrar_group = self.env.ref('expense_budget_control.group_expense_budget_registrar')
+        registrar = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Registrador rubro y cuentas',
+            'login': 'test_expense_budget_category_registrar_1420',
+            'groups_id': [(6, 0, [base_group.id, registrar_group.id])],
+            'company_id': self.company.id,
+            'company_ids': [(6, 0, [self.company.id])],
+        })
+        available = self.env['expense.budget.account'].create({
+            'code': 'AGUA-1420', 'name': 'Agua', 'company_id': self.company.id,
+        })
+        self.assertFalse(available.category_id)
+        category = self.env['expense.budget.category'].with_user(registrar).create({
+            'name': 'Servicios básicos de prueba',
+            'company_id': self.company.id,
+            'account_selection_ids': [(6, 0, [available.id])],
+        })
+        self.assertTrue(category.code.startswith('RUB-'))
+        self.assertEqual(available.category_id, category)
+        budget = self.env['expense.budget'].with_user(registrar).create({
+            'category_id': category.id, 'year': 2042, 'company_id': self.company.id,
+        })
+        self.assertEqual(budget.name, category.name)
+        line = self.env['expense.budget.line'].with_user(registrar).create({
+            'budget_id': budget.id, 'account_id': available.id,
+            'month': '1', 'planned_amount': 100,
+        })
+        self.assertEqual(line.account_id.category_id, category)
+        # No convertir al registrador en administrador del catálogo.
+        with self.assertRaises(AccessError):
+            available.with_user(registrar).write({'name': 'Nombre modificado'})
+
+    def test_category_cannot_select_assigned_account_from_another_rubro(self):
+        with self.assertRaises(ValidationError):
+            self.env['expense.budget.category'].create({
+                'name': 'Nuevo rubro', 'company_id': self.company.id,
+                'account_selection_ids': [(6, 0, [self.account.id])],
+            })
+        self.assertEqual(self.account.category_id, self.category)
+
     def test_budget_selector_uses_existing_rubro_and_limits_accounts(self):
         """El formulario selecciona el rubro y no mezcla sus cuentas."""
         other = self.env['expense.budget.category'].create({

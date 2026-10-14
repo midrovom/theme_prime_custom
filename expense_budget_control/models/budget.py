@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import date
+from uuid import uuid4
 
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
@@ -18,12 +19,63 @@ class ExpenseBudgetCategory(models.Model):
     _rec_name = 'name'
     _check_company_auto = True
 
-    code = fields.Char(string='Código de rubro', required=True, index=True)
+    # Código generado para permitir crear rubros directamente desde Presupuesto.
+    # Quien necesite un código externo puede reemplazarlo en el formulario.
+    code = fields.Char(string='Código de rubro', required=True, index=True,
+                       default=lambda self: 'RUB-' + uuid4().hex[:12].upper())
     name = fields.Char(string='Rubro', required=True)
     company_id = fields.Many2one('res.company', string='Empresa', required=True,
                                  default=lambda self: self.env.company, index=True)
     active = fields.Boolean(default=True)
     account_ids = fields.One2many('expense.budget.account', 'category_id', string='Cuentas')
+    # Selector de cuentas existentes. El vínculo persistente sigue siendo
+    # expense.budget.account.category_id, de modo que Excel, informes y gastos
+    # consultan exactamente los mismos datos (sin tabla paralela de relaciones).
+    account_selection_ids = fields.Many2many(
+        'expense.budget.account', string='Cuentas controladas',
+        compute='_compute_account_selection_ids', inverse='_inverse_account_selection_ids',
+        help='Seleccione cuentas previamente cargadas que todavía no tengan rubro.',
+    )
+
+    @api.depends('account_ids', 'account_ids.category_id')
+    def _compute_account_selection_ids(self):
+        for category in self:
+            category.account_selection_ids = category.account_ids
+
+    def _inverse_account_selection_ids(self):
+        # Registro puede crear un rubro y asociar cuentas sin obtener permiso
+        # general de edición sobre el catálogo de cuentas.
+        if not (self.env.su or self.env.user.has_group(
+                'expense_budget_control.group_expense_budget_manager') or
+                self.env.user.has_group(
+                    'expense_budget_control.group_expense_budget_registrar')):
+            raise AccessError(_('No tiene permiso para relacionar cuentas con rubros.'))
+        for category in self:
+            selected = category.account_selection_ids
+            current = category.account_ids
+            if any(account.company_id != category.company_id for account in selected):
+                raise ValidationError(_(
+                    'Todas las cuentas seleccionadas deben pertenecer a la empresa del rubro.'
+                ))
+            added = selected - current
+            removed = current - selected
+            if any(account.category_id for account in added):
+                raise ValidationError(_(
+                    'Una cuenta seleccionada ya pertenece a otro rubro. '
+                    'Seleccione únicamente cuentas sin rubro.'
+                ))
+            # No dejar presupuestos históricos apuntando a una cuenta desligada
+            # de su rubro: solo se pueden quitar cuentas nunca presupuestadas.
+            if removed and self.env['expense.budget.line'].sudo().search_count([
+                ('account_id', 'in', removed.ids),
+            ]):
+                raise ValidationError(_(
+                    'No puede quitar una cuenta que ya tiene proyecciones registradas.'
+                ))
+            if removed:
+                removed.sudo().write({'category_id': False})
+            if added:
+                added.sudo().write({'category_id': category.id})
 
     _sql_constraints = [
         ('category_company_code_unique', 'unique(company_id, code)',
@@ -42,7 +94,7 @@ class ExpenseBudgetAccount(models.Model):
 
     code = fields.Char(string='Código de cuenta', required=True, index=True)
     name = fields.Char(string='Cuenta de gasto', required=True)
-    category_id = fields.Many2one('expense.budget.category', string='Rubro', required=True,
+    category_id = fields.Many2one('expense.budget.category', string='Rubro',
                                   ondelete='restrict', check_company=True)
     company_id = fields.Many2one('res.company', string='Empresa', required=True,
                                  default=lambda self: self.env.company, index=True)

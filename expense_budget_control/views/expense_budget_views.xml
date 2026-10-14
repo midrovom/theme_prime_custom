@@ -25,11 +25,11 @@
                         <field name="company_id"/>
                         <field name="active"/>
                     </group>
-                    <field name="account_ids" readonly="True">
-                        <list create="false" delete="false">
-                            <field name="code"/><field name="name"/>
-                        </list>
-                    </field>
+                    <group string="Cuentas controladas del rubro">
+                        <field name="account_selection_ids" widget="many2many_tags"
+                               domain="[('company_id', '=', company_id), ('category_id', '=', False)]"
+                               options="{'no_create': True, 'no_create_edit': True}"/>
+                    </group>
                 </sheet>
             </form>
         </field>
@@ -108,7 +108,8 @@
                             <field name="name" invisible="True"/>
                             <field name="category_id" string="Presupuesto" readonly="state != 'draft'"
                                    required="True" domain="[('company_id', '=', company_id)]"
-                                   options="{'no_create': True, 'no_create_edit': True}"/>
+                                   context="{'default_company_id': company_id}"
+                                   options="{'no_quick_create': True}"/>
                             <field name="year" readonly="state != 'draft'"/>
                         </group>
                         <group>
