@@ -23,7 +23,17 @@
             <td class="row-name" t-esc="row_name"/>
             <!-- El rubro identifica el grupo: sus importes se muestran solo en TOTAL GENERAL. -->
             <t t-if="row_class == 'category-row'">
-                <td t-att-colspan="(1 if page_data['opening'] else 0) + 3 * len(page_data['months']) + 2"/>
+                <!-- Celdas vacías individuales: conservar toda la cuadrícula del PDF. -->
+                <t t-if="page_data['opening']">
+                    <td class="amount opening"/>
+                </t>
+                <t t-foreach="page_data['months']" t-as="month_item">
+                    <td class="amount"/>
+                    <td class="amount"/>
+                    <td class="amount"/>
+                </t>
+                <td class="amount"/>
+                <td class="amount balance"/>
             </t>
             <t t-else="">
                 <t t-if="page_data['opening']">
@@ -65,6 +75,7 @@
                                 .expense-comparison-monthly .balance { background: #edf5f0; }
                                 .expense-comparison-monthly .category-row td { background: #dbe9f2; font-weight: bold; }
                                 .expense-comparison-monthly .account-row td { background: #edf4f8; font-weight: bold; }
+                                .expense-comparison-monthly .budget-row td { background: #f4f8fb; }
                                 .expense-comparison-monthly .budget-row .row-name { padding-left: 21px; }
                                 .expense-comparison-monthly .grand-row td { background: #d1e0eb; font-weight: bold; }
                                 .expense-comparison-monthly tr { page-break-inside: avoid; }
@@ -121,7 +132,7 @@
                                             <t t-foreach="page_data['months']" t-as="month_item">
                                                 <th class="month-head" colspan="3" t-esc="month_item['name']"/>
                                             </t>
-                                            <th rowspan="2">Consumo Actual</th>
+                                            <th rowspan="2">Saldo actual</th>
                                             <th rowspan="2">Saldo disponible</th>
                                         </tr>
                                         <tr>
