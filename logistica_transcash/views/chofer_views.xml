@@ -10,6 +10,7 @@
         <field name="empresa_transporte_id"/>
         <field name="acceso_activado" widget="boolean_toggle" readonly="1"/>
         <field name="activo"/>
+        <field name="carga_autonoma" readonly="1"/>
       </list>
     </field>
   </record>
@@ -41,6 +42,12 @@
               <field name="telefono" readonly="1"/>
               <field name="acceso_activado" readonly="1"/>
               <field name="activo"/>
+              <field name="carga_autonoma" groups="logistica_transcash.group_logistica_manager"/>
+              <div class="alert alert-warning" role="alert" groups="logistica_transcash.group_logistica_manager">
+                Habilite carga autónoma solo a choferes de confianza: pueden cerrar guías con evidencias pendientes,
+                pero no omitir evidencias ni autorizar la salida de los vehículos.
+              </div>
+        <field name="carga_autonoma" readonly="1"/>
             </group>
             <group string="Transporte">
               <field name="empresa_transporte_id"/>

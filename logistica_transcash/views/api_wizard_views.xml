@@ -1,0 +1,47 @@
+<odoo>
+  <record id="view_transcash_api_wizard_form" model="ir.ui.view">
+    <field name="name">transcash.api.wizard.form</field>
+    <field name="model">transcash.api.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Integración ERP · Transcash" delete="0">
+        <sheet>
+          <div class="oe_title"><h1>Integración API con el ERP</h1>
+            <p>Configure cómo recibir guías, consultar novedades y solicitar notas de crédito.</p></div>
+          <group string="1. Consultar guías en el ERP (saliente)">
+            <field name="api_url" placeholder="https://erp.empresa.com/api/guias"/>
+            <field name="api_outbound_token" password="True" placeholder="Token Bearer de lectura"/>
+            <field name="sync_active"/>
+            <field name="interval_minutes" invisible="not sync_active"/>
+            <field name="last_sync" readonly="1"/>
+          </group>
+          <group string="2. Recibir guías desde el ERP (entrante)">
+            <field name="inbound_endpoint" readonly="1"/>
+            <field name="api_inbound_token" password="True" placeholder="Bearer token del ERP de origen"/>
+            <div class="alert alert-info" role="alert">El ERP debe realizar un POST JSON con <strong>Authorization: Bearer TOKEN</strong>. Los contactos deben estar creados por Referencia interna y el chofer debe existir por login.</div>
+          </group>
+          <group string="3. Notas de crédito">
+            <field name="credit_api_url" placeholder="https://erp.empresa.com/api/solicitar-nc"/>
+            <field name="callback_endpoint" readonly="1"/>
+          </group>
+          <div class="alert alert-warning" role="alert">Utilice HTTPS. No copie tokens en capturas o mensajes. El botón Probar conexión hace un GET sin importar registros; Sincronizar ahora sí importa guías. La ejecución automática utiliza el cron de Transcash.</div>
+        </sheet>
+        <footer>
+          <button name="action_save" type="object" string="Guardar configuración" class="btn-primary"/>
+          <button name="action_test" type="object" string="Probar conexión (solo lectura)"/>
+          <button name="action_sync" type="object" string="Sincronizar guías ahora"/>
+          <button name="action_generate_token" type="object" string="Generar token entrante"/>
+          <button string="Cerrar" special="cancel"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+  <record id="action_transcash_api_wizard" model="ir.actions.act_window">
+    <field name="name">Configurar integración API</field>
+    <field name="res_model">transcash.api.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="view_id" ref="view_transcash_api_wizard_form"/>
+    <field name="target">current</field>
+  </record>
+  <menuitem id="menu_transcash_api_settings" name="Configuración API / ERP" parent="menu_transcash_root"
+            action="action_transcash_api_wizard" sequence="70" groups="logistica_transcash.group_logistica_manager"/>
+</odoo>

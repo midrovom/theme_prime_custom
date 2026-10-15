@@ -41,6 +41,9 @@ class Guia(models.Model):
     observacion_carga = fields.Text('Observación general de carga (legado)', copy=False)
     observacion_inicio_carga = fields.Text('Observación de inicio de carga', copy=False)
     observacion_fin_carga = fields.Text('Observación de fin de carga', copy=False)
+    cierre_carga_autonomo = fields.Boolean('Carga cerrada con permiso autónomo', readonly=True, copy=False, default=False)
+    cierre_carga_usuario_id = fields.Many2one('res.users', 'Chofer que cerró carga autónoma', readonly=True, copy=False)
+    cierre_carga_fecha = fields.Datetime('Fecha de cierre autónomo', readonly=True, copy=False)
     tipo_documento = fields.Char('Tipo de documento transportado')
     numero_documento = fields.Char('Número de documento transportado')
     ruc_chofer = fields.Char('RUC / identificación del chofer')
@@ -114,7 +117,8 @@ class Guia(models.Model):
     def create(self, vals_list):
         if not self.env.su:
             prohibited = {'embarque_id','aprobacion_global','incidencia_estado',
-                          'fecha_salida','fecha_llegada','fecha_entrega','factura_id','state'}
+                          'fecha_salida','fecha_llegada','fecha_entrega','factura_id','state',
+                          'cierre_carga_autonomo','cierre_carga_usuario_id','cierre_carga_fecha'}
             if any(prohibited.intersection(v) for v in vals_list):
                 raise UserError(_('Los estados y el embarque se asignan mediante el flujo autorizado.'))
         return super().create(vals_list)
@@ -142,7 +146,8 @@ class Guia(models.Model):
         # Un estado operativo no puede establecerse directamente vía interfaz o RPC.
         flow_fields = {'state','aprobacion_global','aprobacion_por_id','aprobacion_fecha',
                        'incidencia_estado','resolucion_por_id','confirmado_por_id',
-                       'fecha_entrega','fecha_llegada','fecha_salida', 'factura_id'}
+                       'fecha_entrega','fecha_llegada','fecha_salida', 'factura_id',
+                       'cierre_carga_autonomo','cierre_carga_usuario_id','cierre_carga_fecha'}
         if flow_fields & set(vals) and not self.env.su:
 
             raise UserError(_('Use las acciones del flujo para modificar el estado de la guía.'))
@@ -207,10 +212,27 @@ class Guia(models.Model):
             if not (user == guia.chofer_usuario_id and user.has_group('logistica_transcash.group_transcash_chofer')) and not self._is_manager():
                 raise UserError(_('Solo el chofer de esta guía puede finalizar su carga.'))
             cargadas = guia.evidencia_ids.filtered(lambda e: e.tipo == 'carga')
-            if not cargadas or any(e.estado != 'aprobada' for e in cargadas):
-                raise UserError(_('Bodega debe aprobar todas las evidencias de carga antes de finalizar.'))
-            guia.sudo().write({'state':'embarcada'})
-            guia._track_event('Guía cargada', guia.observacion_fin_carga or '')
+            if not cargadas or not any(e.archivo for e in cargadas):
+                raise UserError(_('Adjunte al menos una foto o video de carga sincronizado con el servidor antes de finalizar.'))
+            driver_permission = self.env['transcash.chofer'].sudo().search([('usuario_id','=',user.id),
+                ('activo','=',True), ('carga_autonoma','=',True)], limit=1)
+            autonomous = bool(user == guia.chofer_usuario_id and
+                user.has_group('logistica_transcash.group_transcash_chofer') and
+                driver_permission and driver_permission.acceso_activado)
+            if autonomous:
+                if any(e.estado == 'objetada' for e in cargadas):
+                    raise UserError(_('Una evidencia de carga está objetada por Bodega. Resuelva la objeción antes de finalizar.'))
+                # No atribuir una aprobación falsa a Bodega. La evidencia sigue en estado
+                # pendiente y la guía guarda el responsable y la hora de la excepción.
+                guia.sudo().write({'state':'embarcada', 'cierre_carga_autonomo':True,
+                    'cierre_carga_usuario_id':user.id,'cierre_carga_fecha':fields.Datetime.now()})
+                guia._track_event('Carga cerrada por chofer con permiso autónomo',
+                    'Sin aprobación previa de Bodega; evidencias originales conservadas')
+            else:
+                if any(e.estado != 'aprobada' for e in cargadas):
+                    raise UserError(_('Bodega debe aprobar todas las evidencias de carga antes de finalizar.'))
+                guia.sudo().write({'state':'embarcada'})
+                guia._track_event('Guía cargada y evidencias aprobadas', guia.observacion_fin_carga or '')
         return True
 
     def action_arrive(self):

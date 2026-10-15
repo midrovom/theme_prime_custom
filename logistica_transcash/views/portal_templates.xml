@@ -6,9 +6,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=500"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=520"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
-    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=500"/>
+    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=520"/>
   </template>
 
   <template id="mobile_brand" name="Transcash Mobile Brand">
@@ -148,6 +148,33 @@
             <span><b>Empresa de transporte</b><t t-esc="guia.proveedor_id.name or 'Por asignar'"/></span></div>
 
           <a t-if="es_chofer and guia.embarque_id" class="tc-button tc-button-outline tc-journeys-link" t-att-href="'/transcash/embarques/%s' % guia.embarque_id.id">🚚 Volver a mi embarque</a>
+
+          <!-- Atajos operativos contextuales: solo chofer asignado. -->
+          <section t-if="es_chofer and guia.embarque_id and guia.embarque_id.state == 'preparacion' and guia.state in ('registrada','embarque','embarcada')"
+                   class="tc-quick-actions" aria-label="Acciones rápidas de la guía">
+            <div class="tc-quick-header"><strong>⚡ Acciones rápidas</strong><span>Guía <t t-esc="guia.name"/></span></div>
+            <div class="tc-quick-buttons">
+              <form t-if="guia.state == 'registrada'" t-att-action="'/transcash/embarques/%d/guia/%d/iniciar' % (guia.embarque_id.id,guia.id)" method="post">
+                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                <input type="hidden" name="return_to" value="guia"/>
+                <button type="submit" class="tc-button tc-button-primary">▶ Iniciar carga</button>
+              </form>
+              <button t-if="guia.state == 'embarque'" type="button" class="tc-button tc-button-outline"
+                      data-quick-modal="evidencia" data-quick-evidence-type="carga">📷 Foto / video de carga</button>
+              <button t-if="guia.state == 'embarque'" type="button" class="tc-button tc-button-outline"
+                      data-quick-modal="rotura">⚠ Reportar rotura</button>
+              <form t-if="guia.state == 'embarque'" t-att-action="'/transcash/embarques/%d/guia/%d/finalizar' % (guia.embarque_id.id,guia.id)" method="post">
+                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                <input type="hidden" name="return_to" value="guia"/>
+                <button type="submit" class="tc-button tc-button-primary">✓ Terminar carga</button>
+              </form>
+              <a t-if="guia.state == 'embarcada'" class="tc-button tc-button-outline"
+                 t-att-href="'/transcash/embarques/%s' % guia.embarque_id.id">🚚 Ver embarque</a>
+            </div>
+            <p t-if="guia.state == 'embarque' and carga_autonoma_habilitada" class="tc-quick-hint">✓ Carga autónoma habilitada: puedes terminar tras sincronizar fotos o videos; no necesitas esperar la aprobación de Bodega.</p>
+            <p t-elif="guia.state == 'embarque'" class="tc-quick-hint">Necesitas al menos una evidencia sincronizada y la aprobación de Bodega antes de terminar.</p>
+            <p t-if="guia.state == 'embarcada' and guia.cierre_carga_autonomo" class="tc-quick-hint">Carga cerrada con permiso autónomo. Pendiente de autorización de salida.</p>
+          </section>
           <div t-if="es_chofer and guia.state == 'ruta'" class="tc-action-banner">
             <div><div class="tc-action-icon">📍</div><strong>¿Ya llegaste al destino?</strong>
               <small>Confirma tu llegada para registrar la descarga.</small></div>

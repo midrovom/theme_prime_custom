@@ -111,8 +111,10 @@ class Evidencia(models.Model):
             guia = ev.guia_id
             if ev.tipo == 'carga':
                 guia._check_dispatcher()
-                if guia.state != 'embarque':
-                    raise UserError(_('La guía ya no está en embarque.'))
+                if guia.state != 'embarque' and not (guia.cierre_carga_autonomo and
+                        guia.state in ('embarcada','ruta','destino','revision','entregada') and
+                        guia.aprobacion_global != 'aprobada'):
+                    raise UserError(_('Solo es posible revisar esta carga antes de aprobar la guía completa.'))
             elif ev.tipo == 'llegada':
                 if not guia._is_recipient() and not guia._is_manager():
                     raise UserError(_('Solo el destinatario valida la evidencia de llegada.'))
@@ -134,8 +136,10 @@ class Evidencia(models.Model):
             guia = ev.guia_id
             if ev.tipo == 'carga':
                 guia._check_dispatcher()
-                if guia.state != 'embarque':
-                    raise UserError(_('La guía ya salió de embarque.'))
+                if guia.state != 'embarque' and not (guia.cierre_carga_autonomo and
+                        guia.state in ('embarcada','ruta','destino','revision','entregada') and
+                        guia.aprobacion_global != 'aprobada'):
+                    raise UserError(_('La revisión de la evidencia ya está cerrada.'))
             elif ev.tipo == 'llegada':
                 if not guia._is_recipient():
                     raise UserError(_('Solo el destinatario puede objetar la entrega.'))

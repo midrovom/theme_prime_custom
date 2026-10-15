@@ -25,6 +25,12 @@ class TranscashChofer(models.Model):
     company_id = fields.Many2one('res.company', string='Compañía', required=True,
                                  default=lambda self: self.env.company)
     activo = fields.Boolean(default=True, string='Registro activo')
+    carga_autonoma = fields.Boolean(
+        string='Permitir finalizar carga sin aprobación previa de bodega',
+        default=False, copy=False,
+        help='Permite cerrar la carga de guías asignadas aunque sus evidencias estén pendientes. '
+             'Exige evidencia de carga y no permite cerrar evidencias objetadas. '
+             'No autoriza la salida del vehículo.')
     acceso_activado = fields.Boolean(string='Acceso chofer habilitado', compute='_compute_acceso_activado')
 
     _sql_constraints = [
@@ -38,6 +44,12 @@ class TranscashChofer(models.Model):
         for rec in self:
             rec.acceso_activado = bool(group and rec.usuario_id and
                                       group in rec.usuario_id.sudo().groups_id)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if any(vals.get('carga_autonoma') for vals in vals_list) and not self.env.user.has_group('logistica_transcash.group_logistica_manager'):
+            raise AccessError(_('Solo Administración de logística puede habilitar la carga autónoma.'))
+        return super().create(vals_list)
 
     @api.constrains('usuario_id')
     def _check_portal(self):
@@ -69,6 +81,8 @@ class TranscashChofer(models.Model):
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
     def write(self, vals):
+        if 'carga_autonoma' in vals and not self.env.user.has_group('logistica_transcash.group_logistica_manager'):
+            raise AccessError(_('Solo Administración de logística puede habilitar la carga autónoma.'))
         # Al desactivar desde la casilla también se revoca efectivamente el grupo.
         result = super().write(vals)
         if vals.get('activo') is False:

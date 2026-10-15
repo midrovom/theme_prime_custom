@@ -74,6 +74,9 @@ class TranscashPortal(http.Controller):
         return request.render('logistica_transcash.portal_guia_detalle', {
             'guia': guia,
             'es_chofer': bool(guia.chofer_usuario_id.id == request.env.user.id and request.env.user.has_group('logistica_transcash.group_transcash_chofer')),
+            'carga_autonoma_habilitada': bool(request.env['transcash.chofer'].sudo().search([
+                ('usuario_id','=',request.env.user.id), ('activo','=',True), ('carga_autonoma','=',True)],
+                limit=1)) and request.env.user.has_group('logistica_transcash.group_transcash_chofer'),
             'es_receptor': guia._is_recipient(request.env.user),
             'es_vendedor': guia._is_seller(request.env.user),
             'evidencias': guia.evidencia_ids.sorted('create_date', reverse=True),

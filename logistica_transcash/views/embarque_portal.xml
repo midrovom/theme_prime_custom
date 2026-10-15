@@ -11,6 +11,14 @@
           <h1 class="tc-heading">Mis embarques<span class="tc-title-dot">.</span></h1>
           <p class="tc-muted">Agrupa varias guías en un viaje. La recepción y las roturas se documentan por guía.</p>
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>Revisa tu selección</strong><span t-esc="error"/></div>
+          <div t-if="es_chofer and embarque_activo" class="tc-next-card" role="status">
+            <div class="tc-next-icon">🚚</div>
+            <div>
+              <strong>Ya tienes un embarque en curso: <t t-esc="embarque_activo.name"/></strong>
+              <p>No puedes crear otro hasta entregar todas las guías. Si el viaje sigue en preparación puedes añadir guías que llegaron después por API.</p>
+              <a class="tc-button tc-button-primary" t-att-href="'/transcash/embarques/%s' % embarque_activo.id">Continuar mi embarque →</a>
+            </div>
+          </div>
           <div class="tc-embark-layout">
             <section class="tc-embark-section">
               <div class="tc-section-heading"><h2>Viajes</h2><span class="tc-count" t-esc="len(embarques)"/></div>
@@ -29,7 +37,7 @@
                 <div t-if="not embarques" class="tc-empty-inline">No hay embarques todavía.</div>
               </div>
             </section>
-            <section class="tc-embark-section" t-if="es_chofer">
+            <section class="tc-embark-section" t-if="es_chofer and not embarque_activo">
               <div class="tc-section-heading"><h2>Crear embarque</h2></div>
               <p class="tc-panel-hint">Selecciona las guías que recoges en el mismo vehículo y pertenecen a la misma empresa de transporte. Necesitas señal para crear un embarque.</p>
               <form class="tc-embark-form" action="/transcash/embarques/crear" method="post">
@@ -81,6 +89,28 @@
             <span><b>Origen</b><t t-esc="embarque.origen or 'Pendiente'"/></span></div>
           <div t-if="embarque.observacion_general" class="tc-next-card"><div class="tc-next-icon">✎</div>
             <div><strong>Observación del embarque</strong><p t-esc="embarque.observacion_general"/></div></div>
+          <section id="tc-add-guides" t-if="es_chofer and embarque.state == 'preparacion'" class="tc-embark-section tc-add-guides-panel">
+            <div class="tc-section-heading"><h2>＋ Agregar guías a este embarque</h2></div>
+            <p class="tc-panel-hint">¿Llegó una guía nueva desde el ERP después de crear el embarque? Actualiza la lista, selecciónala y agrégala. Solo verás guías asignadas a ti y con la misma empresa y placa.</p>
+            <a class="tc-button tc-button-outline" t-att-href="'/transcash/embarques/%s#tc-add-guides' % embarque.id">↻ Actualizar lista de guías</a>
+            <form t-if="guias_adicionales" t-att-action="'/transcash/embarques/%s/guias/agregar' % embarque.id"
+                  method="post" class="tc-embark-form">
+              <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+              <div class="tc-embark-options">
+                <t t-foreach="guias_adicionales" t-as="nueva">
+                  <label class="tc-embark-select">
+                    <input type="checkbox" name="guias" t-att-value="nueva.id"/>
+                    <span><strong t-esc="nueva.name"/>
+                      <small><t t-esc="nueva.destinatario_id.name or 'Destinatario sin asignar'"/> · <t t-esc="nueva.placa or 'Sin placa'"/></small>
+                      <small t-esc="nueva.destino or 'Sin destino'"/>
+                    </span>
+                  </label>
+                </t>
+              </div>
+              <button class="tc-button tc-button-primary" type="submit">＋ Agregar guías seleccionadas</button>
+            </form>
+            <div t-else="" class="tc-empty-inline">No hay guías adicionales disponibles. Usa «Actualizar lista» cuando el ERP registre una nueva.</div>
+          </section>
           <div class="tc-section-heading"><h2>Guías del embarque</h2><span class="tc-count" t-esc="embarque.cantidad_guias"/></div>
           <div class="tc-embark-guides">
             <t t-foreach="embarque.guia_ids.sorted('id')" t-as="g">
@@ -105,7 +135,7 @@
                     <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
                     <label class="tc-label">Observación final de carga</label>
                     <textarea class="tc-textarea" name="observacion" rows="2" maxlength="4000" placeholder="Bultos cargados, daños observados…"/>
-                    <button type="submit" class="tc-button tc-button-primary">✓ Terminar carga (requiere aprobación de bodega)</button>
+                    <button type="submit" class="tc-button tc-button-primary">✓ Terminar carga de guía</button>
                   </form>
                 </div>
                 <a class="tc-inline-action" t-att-href="'/transcash/guias/%s' % g.id">Ver productos, evidencia, roturas y recepción →</a>
@@ -114,7 +144,7 @@
           </div>
           <form t-if="es_chofer and embarque.state == 'preparacion'" t-att-action="'/transcash/embarques/%s/embarcar' % embarque.id"
                 method="post" class="tc-embark-finalize"><input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-            <p class="tc-panel-hint">Cuando cada guía esté cargada y Bodega haya aprobado sus evidencias, marca el embarque completo como Embarcado. Bodega autorizará la salida en Odoo.</p>
+            <p class="tc-panel-hint">Primero termina la carga de cada guía. Choferes con carga autónoma no esperan la aprobación de las evidencias; los demás sí la requieren. Bodega autoriza la salida del vehículo.</p>
             <button class="tc-button tc-button-primary" type="submit">🚚 Marcar embarque completo</button>
           </form>
           <div t-if="embarque.state == 'embarcado'" class="tc-next-card"><div class="tc-next-icon">✓</div>

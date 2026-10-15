@@ -54,12 +54,52 @@ class Embarque(models.Model):
             rec.guias_entregadas = len(rec.guia_ids.filtered(lambda g: g.state in
                 ('entregada','lista_pago','facturada','pagada')))
 
+    # Estados que impiden iniciar otro viaje. "Embarcado" no equivale a
+    # "terminado": también hay que entregar todas las guías.
+    _ACTIVE_STATES = ('preparacion', 'embarcado', 'ruta')
+
+    @api.model
+    def _lock_driver_operation(self, driver_id):
+        """Serializa la creación de viajes del mismo chofer entre sesiones/HTTP.
+
+        Dos peticiones con guías distintas podrían pasar un search() normal
+        simultáneamente. Advisory lock PostgreSQL transaccional por chofer:
+        se libera automáticamente al confirmar o revertir la transacción.
+        """
+        self.env.cr.execute('SELECT pg_advisory_xact_lock(%s, %s)', (570052, int(driver_id)))
+
+    @api.model
+    def _active_driver_trip(self, driver_id, exclude_id=None):
+        """Consulta actual de BD, sin depender de la caché ORM de otra pestaña."""
+        self.env['transcash.embarque'].flush_model(['state', 'chofer_usuario_id'])
+        self.env.cr.execute("""SELECT id FROM transcash_embarque
+             WHERE chofer_usuario_id = %s AND state IN ('preparacion','embarcado','ruta')
+             AND (%s IS NULL OR id != %s)
+             ORDER BY id DESC LIMIT 1""", (int(driver_id), exclude_id, exclude_id))
+        match = self.env.cr.fetchone()
+        return self.sudo().browse(match[0]) if match else self.browse()
+
     @api.model_create_multi
     def create(self, vals_list):
-        # Creation from portal goes through create_from_guides(); never permit direct
-        # RPC creation with arbitrary state, provider, or financial fields.
+        # Solo el flujo controlado de la WebApp crea embarques, incluso con sudo.
         if not self.env.su:
             raise AccessError(_('Cree el embarque desde el flujo autorizado de la WebApp.'))
+        seen_drivers = set()
+        for vals in vals_list:
+            driver_id = vals.get('chofer_usuario_id')
+            state = vals.get('state') or 'preparacion'
+            if state in self._ACTIVE_STATES:
+                if not driver_id:
+                    raise UserError(_('El embarque necesita un chofer.'))
+                if driver_id in seen_drivers:
+                    raise UserError(_('No puede crear dos embarques activos para un mismo chofer.'))
+                seen_drivers.add(driver_id)
+        for driver_id in sorted(seen_drivers):
+            self._lock_driver_operation(driver_id)
+            active = self._active_driver_trip(driver_id)
+            if active:
+                raise UserError(_('Ya tiene el embarque %s en curso (%s). Termínelo antes de crear otro.') %
+                                (active.name, dict(self._fields['state'].selection).get(active.state)))
         for vals in vals_list:
             if vals.get('name', 'Nuevo') == 'Nuevo':
                 vals['name'] = self.env['ir.sequence'].sudo().next_by_code('transcash.embarque') or 'Nuevo'
@@ -80,6 +120,24 @@ class Embarque(models.Model):
             if set(vals) & {'observacion_general'}:
                 if not self.env.user.has_group('logistica_transcash.group_logistica_manager'):
                     raise AccessError(_('Use el portal del chofer para registrar observaciones.'))
+        # Protege también actualizaciones de estado hechas por acciones RPC,
+        # migraciones o sudo: jamás reabra otro viaje activo del mismo chofer.
+        if {'state', 'chofer_usuario_id'} & set(vals):
+            checks = []
+            for trip in self:
+                state = vals.get('state', trip.state)
+                if state in self._ACTIVE_STATES:
+                    driver_id = vals.get('chofer_usuario_id', trip.chofer_usuario_id.id)
+                    checks.append((trip.id, driver_id))
+            driver_ids = [driver for _, driver in checks]
+            if len(driver_ids) != len(set(driver_ids)):
+                raise UserError(_('No puede activar dos embarques del mismo chofer al mismo tiempo.'))
+            for driver_id in sorted(set(driver_ids)):
+                self._lock_driver_operation(driver_id)
+            for trip_id, driver_id in checks:
+                other = self._active_driver_trip(driver_id, exclude_id=trip_id)
+                if other:
+                    raise UserError(_('El chofer ya tiene el embarque %s en curso.') % other.name)
         return super().write(vals)
 
     def unlink(self):
@@ -97,8 +155,14 @@ class Embarque(models.Model):
             raise UserError(_('Selección de guías incorrecta.'))
         if not ids or len(ids) > 100:
             raise UserError(_('Seleccione de 1 a 100 guías.'))
-        # Lock avoid creating two competing trips in separate tabs simultaneously.
-        self.env.cr.execute('SELECT id FROM transcash_guia WHERE id = ANY(%s) FOR UPDATE', (ids,))
+        # Bloqueo por chofer, ANTES de bloquear guías: evita dos viajes con guías
+        # diferentes en pestañas/teléfonos distintos y mantiene orden de locks.
+        self._lock_driver_operation(user.id)
+        active = self._active_driver_trip(user.id)
+        if active:
+            raise UserError(_('Ya tiene el embarque %s en curso. Abra ese embarque para agregar guías nuevas; ' 
+                              'solo podrá crear otro cuando el actual esté entregado.') % active.name)
+        self.env.cr.execute('SELECT id FROM transcash_guia WHERE id = ANY(%s) ORDER BY id FOR UPDATE', (ids,))
         guias = self.env['transcash.guia'].sudo().browse(ids).exists()
         guias.invalidate_recordset(['embarque_id','state'])
         if len(guias) != len(ids):
@@ -124,6 +188,49 @@ class Embarque(models.Model):
             g._track_event('Programada para recogida', publico_cliente=True)
             g._track_event('Vinculada al embarque %s' % result.name, publico_cliente=False)
         return result
+
+    def action_add_guides(self, guia_ids):
+        """Anexa guías llegadas por API a un embarque aún en preparación.
+
+        Valida la asignación en BD y serializa contra otros choferes, pestañas
+        y la acción "marcar embarcado". No reinicia guías ya cargadas.
+        """
+        self.ensure_one()
+        self._check_driver()
+        try:
+            ids = list(dict.fromkeys(int(i) for i in guia_ids))
+        except (ValueError, TypeError):
+            raise UserError(_('Selección de guías incorrecta.'))
+        if not ids or len(ids) > 100:
+            raise UserError(_('Seleccione entre 1 y 100 guías.'))
+        self._lock_driver_operation(self.env.user.id)
+        self.env.cr.execute('SELECT id FROM transcash_embarque WHERE id = %s FOR UPDATE', (self.id,))
+        self.invalidate_recordset(['state', 'guia_ids'])
+        if self.state != 'preparacion':
+            raise UserError(_('Solo puede agregar guías mientras el embarque esté en Preparación.'))
+        self.env.cr.execute('SELECT id FROM transcash_guia WHERE id = ANY(%s) ORDER BY id FOR UPDATE', (ids,))
+        guias = self.env['transcash.guia'].sudo().browse(ids).exists()
+        guias.invalidate_recordset(['state', 'embarque_id', 'chofer_usuario_id', 'proveedor_id', 'placa', 'company_id'])
+        if len(guias) != len(ids):
+            raise UserError(_('Una o varias guías no existen. Actualice la lista.'))
+        if len(self.guia_ids) + len(guias) > 100:
+            raise UserError(_('El embarque admite como máximo 100 guías.'))
+        for guia in guias:
+            if guia.chofer_usuario_id != self.env.user:
+                raise AccessError(_('Solo puede agregar guías asignadas a su usuario.'))
+            if guia.state != 'registrada' or guia.embarque_id:
+                raise UserError(_('La guía %s ya tiene un embarque o comenzó su carga.') % guia.name)
+            if guia.company_id != self.company_id or guia.proveedor_id != self.proveedor_id:
+                raise UserError(_('La guía %s corresponde a otra compañía o empresa de transporte.') % guia.name)
+            if (guia.placa or '').strip().upper() != (self.placa or '').strip().upper():
+                raise UserError(_('La guía %s tiene una placa distinta a la del embarque.') % guia.name)
+        guias.sudo().write({'embarque_id': self.id})
+        for guia in guias:
+            guia._track_event('Programada para recogida', publico_cliente=True)
+            guia._track_event('Agregada posteriormente al embarque %s' % self.name,
+                              publico_cliente=False)
+        self.message_post(body=_('%s guía(s) agregada(s) mientras el embarque estaba en preparación.') % len(guias))
+        return True
 
     def _check_driver(self):
         for rec in self:
@@ -170,6 +277,10 @@ class Embarque(models.Model):
     def action_mark_embarked(self):
         self._check_driver()
         for rec in self:
+            # Mismo orden de locks que al añadir: chofer -> embarque.
+            self._lock_driver_operation(rec.chofer_usuario_id.id)
+            self.env.cr.execute('SELECT id FROM transcash_embarque WHERE id = %s FOR UPDATE', (rec.id,))
+            rec.invalidate_recordset(['state', 'guia_ids'])
             if rec.state != 'preparacion' or not rec.guia_ids:
                 raise UserError(_('El embarque debe tener guías en preparación.'))
             if any(g.state != 'embarcada' for g in rec.guia_ids):

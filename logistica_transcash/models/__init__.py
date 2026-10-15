@@ -12,3 +12,5 @@ from . import upload
 from . import liquidacion
 from . import chofer
 from . import embarque
+
+from . import api_wizard

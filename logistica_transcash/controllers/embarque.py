@@ -23,11 +23,27 @@ class EmbarquePortal(TranscashPortal):
         rec = request.env['transcash.embarque'].sudo().browse(embark_id).exists()
         return rec if self._can_see_embark(rec) else False
 
+    def _late_guides(self, embark):
+        """Guías recientes disponibles que comparten chofer, empresa y placa."""
+        user = request.env.user
+        if not (user.has_group('logistica_transcash.group_transcash_chofer') and
+                embark.chofer_usuario_id == user and embark.state == 'preparacion'):
+            return request.env['transcash.guia'].sudo().browse()
+        items = request.env['transcash.guia'].sudo().search([
+            ('chofer_usuario_id', '=', user.id),
+            ('state', '=', 'registrada'), ('embarque_id', '=', False),
+            ('company_id', '=', embark.company_id.id),
+            ('proveedor_id', '=', embark.proveedor_id.id),
+        ], order='create_date desc', limit=200)
+        placa = (embark.placa or '').strip().upper()
+        return items.filtered(lambda g: (g.placa or '').strip().upper() == placa)[:100]
+
     def _render(self, rec, error=None):
         driver = (request.env.user.has_group('logistica_transcash.group_transcash_chofer') and
                   rec.chofer_usuario_id.id == request.env.user.id)
         return request.render('logistica_transcash.portal_embarque_detalle', {
             'embarque':rec, 'es_chofer':driver, 'error':error,
+            'guias_adicionales': self._late_guides(rec) if driver else request.env['transcash.guia'].sudo().browse(),
             'csrf_token':request.csrf_token(),
         })
 
@@ -44,6 +60,12 @@ class EmbarquePortal(TranscashPortal):
         else:
             return request.not_found()
         recs = request.env['transcash.embarque'].sudo().search(domain, order='create_date desc', limit=100)
+        activo = request.env['transcash.embarque'].sudo().browse()
+        if user.has_group('logistica_transcash.group_transcash_chofer'):
+            activo = request.env['transcash.embarque'].sudo().search([
+                ('chofer_usuario_id', '=', user.id),
+                ('state', 'in', ['preparacion','embarcado','ruta']),
+            ], order='create_date desc', limit=1)
         disponibles = request.env['transcash.guia'].sudo()
         if user.has_group('logistica_transcash.group_transcash_chofer'):
             disponibles = disponibles.search([
@@ -51,7 +73,8 @@ class EmbarquePortal(TranscashPortal):
                 ('embarque_id','=',False), ('proveedor_id','!=',False),
             ], order='create_date desc', limit=100)
         return request.render('logistica_transcash.portal_embarques', {
-            'embarques':recs,'disponibles':disponibles,'csrf_token':request.csrf_token(),
+            'embarques':recs,'disponibles':disponibles,'embarque_activo':activo,
+            'csrf_token':request.csrf_token(),
             'es_chofer': user.has_group('logistica_transcash.group_transcash_chofer'),
             'error':kw.get('error'),
         })
@@ -65,6 +88,19 @@ class EmbarquePortal(TranscashPortal):
             # Show clean error without writing side effects to database.
             return request.redirect('/transcash/embarques?error=' + quote(str(err)[:250]))
         return request.redirect('/transcash/embarques/%s?ok=1' % embarque.id)
+
+    @http.route('/transcash/embarques/<int:embark_id>/guias/agregar',
+                type='http', auth='user', website=True, methods=['POST'], csrf=True)
+    def add_guides(self, embark_id, **post):
+        embarque = self._get(embark_id)
+        if not embarque:
+            return request.not_found()
+        try:
+            ids = request.httprequest.form.getlist('guias')
+            embarque.action_add_guides(ids)
+        except (UserError, AccessError, ValidationError, ValueError) as err:
+            return self._render(embarque, str(err))
+        return request.redirect('/transcash/embarques/%s?ok=1#tc-add-guides' % embark_id)
 
     @http.route('/transcash/embarques/<int:embark_id>',type='http',auth='user',website=True,methods=['GET'])
     def embark_detail(self, embark_id, **kw):
@@ -86,7 +122,13 @@ class EmbarquePortal(TranscashPortal):
             else:
                 return request.not_found()
         except (UserError, AccessError, ValidationError) as err:
+            if post.get('return_to') == 'guia':
+                guia = self._guide(guide_id)
+                if guia:
+                    return self._render_guide(guia, str(err))
             return self._render(embarque, str(err))
+        if post.get('return_to') == 'guia':
+            return request.redirect('/transcash/guias/%s?ok=1' % guide_id)
         return request.redirect('/transcash/embarques/%s?ok=1' % embark_id)
 
     @http.route('/transcash/embarques/<int:embark_id>/embarcar',type='http',auth='user',website=True,methods=['POST'],csrf=True)

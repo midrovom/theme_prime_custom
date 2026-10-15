@@ -102,6 +102,8 @@
             <field name="peso_kg"/>
             <field name="descripcion_carga"/>
             <field name="observacion_inicio_carga" readonly="1"/><field name="observacion_fin_carga" readonly="1"/>
+            <field name="cierre_carga_autonomo" readonly="1"/><field name="cierre_carga_usuario_id" readonly="1" invisible="not cierre_carga_autonomo"/>
+            <field name="cierre_carga_fecha" readonly="1" invisible="not cierre_carga_autonomo"/>
           </group>
           <group>
             <group string="Control de aprobación global">
@@ -234,13 +236,13 @@
     <field name="url">/transcash/guias</field>
     <field name="target">new</field>
   </record>
-  <menuitem id="menu_transcash_root" name="Logística Transcash" sequence="35"
+  <menuitem id="menu_transcash_root" name="Logística Transcash" action="action_transcash_guia" sequence="35"
             groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_consulta"/>
-  <menuitem id="menu_transcash_mobile" name="Abrir WebApp móvil" parent="menu_transcash_root"
-            action="action_transcash_mobile" sequence="5"
+  <menuitem id="menu_transcash_mobile" name="WebApp / acceso opcional" parent="menu_transcash_root"
+            action="action_transcash_mobile" sequence="90"
             groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_consulta"/>
-  <menuitem id="menu_transcash_guias" name="Todas las guías" parent="menu_transcash_root"
-            action="action_transcash_guia" sequence="10"/>
+  <menuitem id="menu_transcash_guias" name="Guías (escritorio Odoo)" parent="menu_transcash_root"
+            action="action_transcash_guia" sequence="6"/>
   <menuitem id="menu_transcash_activas" name="Operación en curso" parent="menu_transcash_root"
             action="action_transcash_open" sequence="20"/>
   <menuitem id="menu_transcash_incidentes" name="Incidencias" parent="menu_transcash_root"

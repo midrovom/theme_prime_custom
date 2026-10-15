@@ -33,3 +33,4 @@ access_embarque_manager,Embarques logística,model_transcash_embarque,logistica_
 access_embarque_bodega,Embarques bodega,model_transcash_embarque,logistica_transcash.group_logistica_bodega,1,0,0,0
 access_embarque_consulta,Embarques consulta,model_transcash_embarque,logistica_transcash.group_transcash_consulta,1,0,0,0
 access_embarque_wizard,Wizard tarifa embarque,model_transcash_embarque_liquidacion_wizard,logistica_transcash.group_transcash_contabilidad,1,1,1,1
+access_api_wizard_manager,Transcash API config,model_transcash_api_wizard,logistica_transcash.group_logistica_manager,1,1,1,1

@@ -204,3 +204,22 @@ body.tc-modal-open{overflow:hidden}
 .tc-embark-detail .tc-hero,.tc-embark-detail .tc-embark-guides{max-width:none}
 @media(max-width:900px){.tc-embark-layout,.tc-embark-guides{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:600px){.tc-embark-form,.tc-embark-guide{padding:14px}.tc-embark-layout{gap:22px}.tc-journeys-link{max-width:none;width:100%}}
+
+/* V5.1 acciones rápidas: legibles en teléfono y escritorio */
+.tc-quick-actions{border:1px solid #cdebe5;border-radius:17px;background:linear-gradient(125deg,#f5fffc,#eef9f7);padding:16px;margin:12px 0 18px;box-shadow:0 7px 16px rgba(13,80,72,.055)}
+.tc-quick-header{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px;color:#183d37;margin-bottom:12px}
+.tc-quick-header span{font-size:12px;font-weight:600;color:#6b837d}
+.tc-quick-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.tc-quick-buttons>*{margin:0;min-width:0}
+.tc-quick-buttons .tc-button{width:100%;min-height:50px;padding:12px 9px;font-size:13px;white-space:normal;line-height:1.3;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer}
+.tc-quick-hint{margin:13px 0 0;font-size:12px;color:#496b66;line-height:1.45}
+@media(min-width:1024px){.tc-quick-actions{padding:20px 24px}.tc-quick-buttons{display:flex;flex-wrap:wrap}.tc-quick-buttons>*{flex:1 1 190px;max-width:290px}.tc-quick-buttons .tc-button{font-size:14px}}
+@media(max-width:375px){.tc-quick-buttons{grid-template-columns:1fr}}
+
+/* V5.2: alta tardía de guías - controles cómodos en móvil/escritorio */
+.tc-add-guides-panel{margin:22px 0 28px;padding:20px;border:1px solid #cfe8e1;border-radius:18px;background:#f5fbf8}
+.tc-add-guides-panel .tc-embark-form{margin-top:14px}
+.tc-add-guides-panel .tc-embark-options{grid-template-columns:repeat(auto-fit,minmax(235px,1fr));max-height:360px}
+.tc-add-guides-panel .tc-button{margin-top:10px}
+.tc-next-card .tc-button{display:inline-flex;margin-top:12px;width:auto}
+@media(max-width:600px){.tc-add-guides-panel{padding:14px;margin:18px 0}.tc-add-guides-panel .tc-embark-options{grid-template-columns:minmax(0,1fr)}.tc-add-guides-panel .tc-button,.tc-next-card .tc-button{width:100%;justify-content:center}}

@@ -44,6 +44,15 @@
       modal.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('tc-modal-open');
     }
+    document.querySelectorAll('[data-quick-modal]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        openModal(button.dataset.quickModal);
+        if (button.dataset.quickEvidenceType && modal) {
+          var typeSelect = modal.querySelector('[data-form-panel="evidencia"] select[name="tipo"]');
+          if (typeSelect) typeSelect.value = button.dataset.quickEvidenceType;
+        }
+      });
+    });
     document.querySelectorAll('[data-modal-open]').forEach(function (b) { b.addEventListener('click', function () { openModal(); }); });
     document.querySelectorAll('[data-modal-close]').forEach(function (b) { b.addEventListener('click', closeModal); });
     document.querySelectorAll('[data-form-tab]').forEach(function (b) { b.addEventListener('click', function () { selectForm(b.dataset.formTab); }); });
