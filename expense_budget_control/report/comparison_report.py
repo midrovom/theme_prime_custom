@@ -105,12 +105,13 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             ('budget_id.year', '=', int(wizard.year)),
         ]
         if wizard.category_id:
-            accounts = self.env['expense.budget.account'].with_context(
-                active_test=False).search([
-                    ('company_id', '=', wizard.company_id.id),
-                    ('category_id', '=', wizard.category_id.id),
-                ])
-            domain.append(('account_id', 'in', accounts.ids))
+            # Usar el rubro de la línea o el de su cuenta, sin una búsqueda
+            # intermedia del catálogo que pueda excluir líneas históricas.
+            domain.extend([
+                '|',
+                ('account_id.category_id', '=', wizard.category_id.id),
+                ('category_id', '=', wizard.category_id.id),
+            ])
         selected_accounts = wizard.account_ids | wizard.account_id
         if selected_accounts:
             domain.append(('account_id', 'in', selected_accounts.ids))
@@ -122,7 +123,7 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         month_labels = dict(self.env['expense.budget.line']._fields['month'].selection)
         for line in lines:
             account = line.account_id
-            category = account.category_id
+            category = wizard.category_id if wizard.category_id else (account.category_id or line.category_id)
             group = category_map.setdefault(category.id, {
                 'category': category, 'accounts_map': {}, 'line_count': 0,
                 'total': self._empty_totals(), 'monthly': self._empty_months(),

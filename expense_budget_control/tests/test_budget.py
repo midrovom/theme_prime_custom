@@ -1036,3 +1036,33 @@ class TestExpenseBudgetReportPeriod(TransactionCase):
                          'expense_budget_control.report_comparison_document')
         report = self.env['report.expense_budget_control.report_comparison_document']._prepare_comparison(wizard)
         self.assertEqual([m['number'] for m in report['pages'][0]['months']], [2])
+
+    def test_budget_consumed_readonly_in_form_lines(self):
+        """En presupuestos, las proyecciones no dejan editar Consumido."""
+        from lxml import etree
+        view = self.env.ref('expense_budget_control.view_expense_budget_form')
+        arch = etree.fromstring(view.arch_db.encode())
+        fields = arch.xpath("//field[@name='line_ids']/list/field[@name='actual_amount']")
+        self.assertEqual(len(fields), 1)
+        self.assertIn(fields[0].get('readonly'), ('1', 'True'))
+
+    def test_comparison_rubro_includes_budget_values_in_total_general(self):
+        """Un rubro seleccionado no debe perder sus líneas ni sus importes."""
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'company_id': self.company.id, 'year': '2049',
+            'category_id': self.category.id,
+        })
+        data = self.env['report.expense_budget_control.report_comparison_document']._prepare_comparison(wizard)
+        self.assertTrue(data['summary_by_category_only'])
+        self.assertEqual(data['line_count'], 1)
+        self.assertEqual(len(data['categories']), 1)
+        self.assertEqual(data['categories'][0]['category'], self.category)
+        self.assertEqual(data['grand_total']['planned'], 200)
+        self.assertEqual(data['grand_total']['actual'], 50)
+        self.assertEqual(data['grand_total']['available'], 150)
+        grand = data['grand_row']['monthly_report']
+        self.assertEqual(grand['cells'][2]['planned'], 200)
+        self.assertEqual(grand['cells'][2]['actual'], 50)
+        self.assertEqual(grand['cells'][2]['available'], 150)
+        self.assertEqual(grand['period_closings'][1]['saldo_disponible'], 150)
+

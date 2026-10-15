@@ -131,7 +131,7 @@
                                     <field name="category_id" string="Rubro" readonly="True"/>
                                     <field name="month" readonly="parent.state != 'draft'"/>
                                     <field name="planned_amount" readonly="parent.state != 'draft'" sum="Proyectado"/>
-                                    <field name="actual_amount" sum="Consumido"/>
+                                    <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="variance_amount" readonly="True" sum="Disponible"/>
                                     <field name="execution_percentage" readonly="True"/>
                                 </list>
