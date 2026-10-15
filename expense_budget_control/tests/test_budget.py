@@ -609,6 +609,75 @@ class TestExpenseBudget(TransactionCase):
                 'month': '1', 'planned_amount': 100,
             })
 
+    def test_comparison_no_account_filter_lists_every_budgeted_account(self):
+        """Con cuentas vacías incluir cuentas presupuestadas de todos los rubros.
+
+        El filtro opcional de rubro y la selección explícita deben conservarse.
+        Las cuentas del catálogo que no tienen proyecciones no se imprimen.
+        """
+        Account = self.env['expense.budget.account']
+        Category = self.env['expense.budget.category']
+        Line = self.env['expense.budget.line']
+        water = Account.create({
+            'code': 'PDF-AUTO-WATER', 'name': 'Agua',
+            'category_id': self.category.id, 'company_id': self.company.id,
+        })
+        unbudgeted = Account.create({
+            'code': 'PDF-AUTO-NO-BUDGET', 'name': 'Internet',
+            'category_id': self.category.id, 'company_id': self.company.id,
+        })
+        other_category = Category.create({
+            'code': 'PDF-AUTO-OTHER', 'name': 'Transporte',
+            'company_id': self.company.id,
+        })
+        travel = Account.create({
+            'code': 'PDF-AUTO-TRAVEL', 'name': 'Pasajes',
+            'category_id': other_category.id, 'company_id': self.company.id,
+        })
+        for account, month, planned in (
+                (self.account, '1', 100),
+                (water, '2', 200),
+                (travel, '3', 300)):
+            Line.create({
+                'budget_id': self.budget.id,
+                'account_id': account.id,
+                'month': month,
+                'planned_amount': planned,
+            })
+        Report = self.env['report.expense_budget_control.report_comparison_document']
+        Wizard = self.env['expense.budget.comparison.report.wizard']
+        wizard = Wizard.create({
+            'company_id': self.company.id, 'year': '2026',
+        })
+        self.assertFalse(wizard.account_ids)
+        result = Report._prepare_comparison(wizard)
+        account_ids = {
+            account['account'].id
+            for group in result['categories'] for account in group['accounts']
+        }
+        self.assertEqual(account_ids, {self.account.id, water.id, travel.id})
+        self.assertNotIn(unbudgeted.id, account_ids)
+        self.assertEqual(result['line_count'], 3)
+        self.assertEqual(result['grand_total']['planned'], 600)
+        self.assertEqual([m['number'] for m in result['pages'][0]['months']],
+                         list(range(1, 13)))
+
+        # Rubro sin seleccionar cuentas: todas las cuentas presupuestadas del rubro.
+        wizard.category_id = self.category
+        filtered = Report._prepare_comparison(wizard)
+        ids_with_category = {
+            account['account'].id
+            for group in filtered['categories'] for account in group['accounts']
+        }
+        self.assertEqual(ids_with_category, {self.account.id, water.id})
+        self.assertEqual(filtered['grand_total']['planned'], 300)
+
+        # Una cuenta elegida expresamente sí limita el PDF.
+        wizard.account_ids = [(6, 0, [water.id])]
+        only_water = Report._prepare_comparison(wizard)
+        self.assertEqual(only_water['line_count'], 1)
+        self.assertEqual(only_water['grand_total']['planned'], 200)
+
     def test_comparison_pdf_groups_accounts_and_matches_view_execution(self):
         """El PDF debe sumar Ejecución (%) igual que la vista agrupada de Odoo."""
         water = self.env['expense.budget.account'].create({
@@ -750,8 +819,8 @@ class TestExpenseBudget(TransactionCase):
         wizard.account_id = agua
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 2)
 
-    def test_comparison_rubro_includes_unbudgeted_accounts_and_account_names_in_pdf(self):
-        """Solo rubro: mostrar Luz, Agua y cuentas sin proyección, sin perder los totales."""
+    def test_comparison_rubro_excludes_unbudgeted_accounts_and_names_in_pdf(self):
+        """Sin filtro de cuenta, incluir solo las que tienen presupuesto en el año."""
         from lxml import etree
 
         water = self.env['expense.budget.account'].create({
@@ -772,9 +841,8 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(result['line_count'], 1)
         self.assertEqual(result['grand_total']['planned'], 150)
         accounts = result['categories'][0]['accounts']
-        self.assertEqual({r['account'].id for r in accounts},
-                         {self.account.id, water.id})
-        self.assertEqual(next(r for r in accounts if r['account'] == water)['total']['planned'], 0)
+        self.assertEqual({r['account'].id for r in accounts}, {self.account.id})
+        self.assertNotIn(water.id, [entry['account'].id for entry in accounts])
 
         template = self.env.ref('expense_budget_control.report_comparison_document')
         arch = etree.fromstring(template.arch_db.encode('utf-8'))

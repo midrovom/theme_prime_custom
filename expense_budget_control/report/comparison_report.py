@@ -106,10 +106,15 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
                 ('category_id', '=', wizard.category_id.id),
             ])
         selected_accounts = wizard.account_ids | wizard.account_id
+        # Sin cuentas seleccionadas NO limitar por cuenta: recuperar todas las
+        # líneas presupuestarias visibles del año, empresa y rubro consultados.
+        # Cuando el usuario elige una o varias cuentas sí se restringe a ellas.
         if selected_accounts:
             domain.append(('account_id', 'in', selected_accounts.ids))
 
-        # Consultar TODOS los meses para obtener el saldo anterior al primer mes.
+        # Consultar TODOS los meses (incluso los no impresos) para calcular el
+        # saldo inicial. Solo se consideran cuentas con líneas presupuestarias
+        # reales, sin añadir registros vacíos del catálogo por defecto.
         lines = self.env['expense.budget.line'].search(domain)
         category_map = {}
         grand_total = {'total': self._empty_totals(), 'monthly': self._empty_months()}
@@ -136,24 +141,6 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             budget_row['line_count'] += 1
             account_group['line_count'] += 1
             group['line_count'] += 1
-
-        # Con solo un rubro seleccionado, incluir TODAS sus cuentas visibles
-        # para la empresa, aunque alguna todavía no tenga proyecciones ese año.
-        # La búsqueda respeta las reglas de acceso del usuario (sin sudo).
-        if wizard.category_id and not selected_accounts:
-            group = category_map.setdefault(wizard.category_id.id, {
-                'category': wizard.category_id, 'accounts_map': {}, 'line_count': 0,
-                'total': self._empty_totals(), 'monthly': self._empty_months(),
-            })
-            category_accounts = self.env['expense.budget.account'].search([
-                ('company_id', '=', wizard.company_id.id),
-                ('category_id', '=', wizard.category_id.id),
-            ])
-            for account in category_accounts:
-                group['accounts_map'].setdefault(account.id, {
-                    'account': account, 'lines': [], 'budgets_map': {}, 'line_count': 0,
-                    'total': self._empty_totals(), 'monthly': self._empty_months(),
-                })
 
         categories = []
         for group in sorted(category_map.values(), key=lambda item: (
