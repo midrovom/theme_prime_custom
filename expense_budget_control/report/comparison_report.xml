@@ -36,7 +36,7 @@
                     <td class="amount" t-esc="'{:,.2f}'.format(cell['available'])"/>
                 </t>
                 <!-- Al final: consumo de los meses seleccionados.
-                     Saldo disponible = proyectado inicial + nuevos proyectados - consumo. -->
+                     Saldo disponible = disponible inicial + suma del disponible de los meses seleccionados. -->
                 <t t-set="closing_balance" t-value="row_data['monthly_report']['period_closings'][page_data['first_month']]"/>
                 <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['saldo_actual'])"/>
                 <td class="amount balance" t-esc="'{:,.2f}'.format(closing_balance['saldo_disponible'])"/>
@@ -116,7 +116,7 @@
                                         <tr>
                                             <th rowspan="2">Rubro</th>
                                             <t t-if="page_data['opening']">
-                                                <th rowspan="2">Saldo inicial<br/>(proyectado de <span t-esc="page_data['previous_month_name']"/>)</th>
+                                                <th rowspan="2">Saldo inicial<br/>(disponible de <span t-esc="page_data['previous_month_name']"/>)</th>
                                             </t>
                                             <t t-foreach="page_data['months']" t-as="month_item">
                                                 <th class="month-head" colspan="3" t-esc="month_item['name']"/>

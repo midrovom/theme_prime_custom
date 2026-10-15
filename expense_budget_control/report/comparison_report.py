@@ -41,11 +41,12 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
 
     @staticmethod
     def _finish_row(row, month_numbers):
-        """Sumar el proyectado inicial y los proyectados del período consultado.
+        """Calcular saldos del reporte sin alterar las proyecciones mensuales.
 
-        El inicial es el proyectado del mes inmediatamente anterior al primero
-        seleccionado (cero si comienza en enero). Solo los meses seleccionados
-        aportan nuevos proyectados y consumidos al saldo final.
+        Saldo inicial: disponible del mes inmediatamente anterior al primero
+        seleccionado (proyectado menos consumido del mes previo).
+        Saldo actual: suma de consumos de los meses seleccionados.
+        Saldo disponible: inicial más los disponibles de los meses elegidos.
         """
         selected_months = sorted(set(month_numbers))
         cells = {
@@ -56,21 +57,19 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             }
             for number in selected_months
         }
-        # El inicial es el PROYECTADO del mes previo, no la suma de saldos
-        # disponibles ni un importe de consumo de meses anteriores.
         openings = {
-            number: (row['monthly'][number - 1]['planned'] if number > 1 else 0.0)
+            number: (row['monthly'][number - 1]['available'] if number > 1 else 0.0)
             for number in range(1, 13)
         }
 
         first_month = selected_months[0]
         opening = openings[first_month]
-        projected = sum(row['monthly'][month]['planned'] for month in selected_months)
         consumed = sum(row['monthly'][month]['actual'] for month in selected_months)
+        period_available = sum(row['monthly'][month]['available'] for month in selected_months)
         period_closings = {
             first_month: {
                 'saldo_actual': consumed,
-                'saldo_disponible': opening + projected - consumed,
+                'saldo_disponible': opening + period_available,
             },
         }
         row['monthly_report'] = {
