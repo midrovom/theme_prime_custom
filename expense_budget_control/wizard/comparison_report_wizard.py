@@ -40,16 +40,11 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
         default=lambda self: str(fields.Date.context_today(self).year),
     )
 
-    period = fields.Selection(
-        [('month', 'Mes'), ('year', 'Año')],
-        string='Período', required=True, default='month',
-    )
-
     month_ids = fields.Many2many(
         'expense.budget.comparison.month',
         'expense_budget_comparison_wizard_month_rel',
         'wizard_id', 'month_id', string='Meses del reporte',
-        help='Seleccione los meses que se incluirán. Los saldos acumulados toman en cuenta los meses previos aunque no estén seleccionados.',
+        help='Seleccione meses específicos o deje vacío para imprimir los 12 meses del año. Los saldos anteriores se calculan automáticamente.',
     )
 
     @api.model_create_multi
@@ -116,12 +111,9 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
     def action_print_pdf(self):
         self.ensure_one()
         self.check_access('read')
-        if self.period == 'year':
-            return self.env.ref(
-                'expense_budget_control.action_report_expense_budget_annual_wizard'
-            ).report_action(self)
-        if not self.month_ids:
-            raise ValidationError(_('Seleccione al menos un mes para el reporte.'))
+        # Un asistente mensual exclusivamente. Sin meses marcados = año completo.
+        # La selección efectiva se resuelve en el modelo del reporte, sin
+        # modificar la selección visible ni grabar los 12 meses en el wizard.
         return self.env.ref(
             'expense_budget_control.action_report_expense_budget_comparison'
         ).report_action(self)

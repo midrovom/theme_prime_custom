@@ -135,8 +135,9 @@ class ExpenseBudget(models.Model):
     _order = 'year desc, id desc'
     _check_company_auto = True
 
-    # El nombre del presupuesto es libre; el rubro sigue siendo opcional y
-    # sirve para facilitar la selección de cuentas en las proyecciones.
+    # El nombre del presupuesto es libre. El rubro de cada proyección se
+    # obtiene de su cuenta controlada; category_id se conserva por compatibilidad
+    # con presupuestos previos, sin restringir las líneas nuevas.
     name = fields.Char(string='Presupuesto', required=True)
     category_id = fields.Many2one(
         'expense.budget.category', string='Rubro del presupuesto',
@@ -184,11 +185,6 @@ class ExpenseBudget(models.Model):
         for rec in self:
             if rec.category_id and rec.category_id.company_id != rec.company_id:
                 raise ValidationError(_('El rubro del presupuesto debe pertenecer a su empresa.'))
-            if rec.category_id and any(
-                    line.account_id.category_id != rec.category_id for line in rec.line_ids):
-                raise ValidationError(_(
-                    'Las cuentas de las proyecciones deben pertenecer al rubro del presupuesto.'
-                ))
 
     @api.constrains('year')
     def _check_year(self):
@@ -459,9 +455,6 @@ class ExpenseBudgetLine(models.Model):
         for rec in self:
             if rec.account_id.company_id != rec.budget_id.company_id:
                 raise ValidationError(_('La cuenta debe pertenecer a la empresa del presupuesto.'))
-            if (rec.budget_id.category_id and
-                    rec.account_id.category_id != rec.budget_id.category_id):
-                raise ValidationError(_('La cuenta debe pertenecer al rubro seleccionado en el presupuesto.'))
 
     @api.constrains('budget_id', 'account_id', 'month')
     def _check_unique_account_month_across_budgets(self):

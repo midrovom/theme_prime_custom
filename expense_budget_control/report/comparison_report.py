@@ -20,13 +20,16 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
     def _add_line(cls, target, line):
         target['total']['planned'] += line.planned_amount
         target['total']['actual'] += line.actual_amount
-        target['total']['available'] += line.variance_amount
+        # Evitar usar una variación almacenada desactualizada: disponible
+        # es siempre presupuesto proyectado de la línea menos su consumo.
+        available = line.planned_amount - line.actual_amount
+        target['total']['available'] += available
         # Conservar el criterio de ejecución de la vista agrupada existente.
         target['total']['execution'] += line.execution_percentage
         month = target['monthly'][int(line.month)]
         month['planned'] += line.planned_amount
         month['actual'] += line.actual_amount
-        month['available'] += line.variance_amount
+        month['available'] += available
 
     @classmethod
     def _add_summary(cls, target, source):
@@ -63,7 +66,12 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
 
         # Un único cierre después del último mes seleccionado (sin subdivisión).
         first_month = selected_months[0]
-        opening = openings[first_month]
+        # Si el periodo comienza en enero, no existe saldo de un periodo
+        # anterior: usar el proyectado inicial del periodo consultado.
+        # Para febrero en adelante, conservar el saldo disponible del cierre
+        # anterior, como en los reportes previos.
+        opening = (openings[first_month] if first_month > 1 else
+                   sum(row['monthly'][month]['planned'] for month in selected_months))
         consumed = sum(row['monthly'][month]['actual'] for month in selected_months)
         period_closings = {
             first_month: {
@@ -80,13 +88,17 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
     @api.model
     def _prepare_comparison(self, wizard):
         """Respetar las reglas de empresa y estado; jamás elevar permisos."""
-        selected_months = sorted(wizard.month_ids, key=lambda record: record.number)
+        # Si no hay selección, imprimir enero-diciembre sin preseleccionarlos
+        # en el asistente. Consultar sin sudo: las ACL del catálogo siguen activas.
+        selected_months = wizard.month_ids or self.env[
+            'expense.budget.comparison.month'
+        ].search([], order='number')
+        selected_months = sorted(selected_months, key=lambda record: record.number)
         numbers = [m.number for m in selected_months]
-        # La validación está también en el asistente (evita llamadas directas).
         if not numbers:
             from odoo.exceptions import ValidationError
             from odoo import _
-            raise ValidationError(_('Seleccione al menos un mes para el reporte.'))
+            raise ValidationError(_('No se encontraron meses configurados para imprimir.'))
 
         domain = [
             ('company_id', '=', wizard.company_id.id),

@@ -101,6 +101,8 @@
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_reject" string="Rechazar" type="object" class="btn-secondary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_sync_api" string="Sincronizar API" type="object" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
+                    <button name="action_print_annual_pdf" string="Imprimir PDF" type="object" icon="fa-print"
+                            groups="expense_budget_control.group_expense_budget_read"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,to_approve,approved,rejected"/>
                 </header>
                 <sheet>
@@ -108,10 +110,6 @@
                         <group>
                             <field name="company_id" readonly="state != 'draft'"/>
                             <field name="name" string="Presupuesto" readonly="state != 'draft'"/>
-                            <field name="category_id" string="Rubro" readonly="state != 'draft'"
-                                   domain="[('company_id', '=', company_id)]"
-                                   context="{'default_company_id': company_id}"
-                                   options="{'no_quick_create': True}"/>
                             <field name="year" readonly="state != 'draft'"/>
                         </group>
                         <group>
@@ -129,7 +127,7 @@
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="currency_id" column_invisible="True"/>
                                     <field name="account_id" readonly="parent.state != 'draft'"
-                                           domain="[('company_id', '=', parent.company_id), ('category_id', '=?', parent.category_id)]"/>
+                                           domain="[('company_id', '=', parent.company_id)]"/>
                                     <field name="category_id" string="Rubro" readonly="True"/>
                                     <field name="month" readonly="parent.state != 'draft'"/>
                                     <field name="planned_amount" readonly="parent.state != 'draft'" sum="Proyectado"/>
