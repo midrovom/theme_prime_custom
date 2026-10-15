@@ -170,11 +170,11 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <p style="font-size: 9px; margin-top: 11px;">
+                            <!-- <p style="font-size: 9px; margin-top: 11px;">
                                 Disponible inicial: saldo disponible acumulado hasta el mes anterior al primero seleccionado.
                                 Saldo actual: suma del consumido de todos los meses seleccionados.
                                 Saldo disponible: disponible inicial menos saldo actual. El disponible de cada mes es proyectado menos consumido.
-                            </p>
+                            </p> -->
                         </div>
                     </t>
                 </t>
