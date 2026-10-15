@@ -91,10 +91,10 @@
                                                 <span t-esc="group['category'].name"/>
                                                 <span t-if="group['category'].code" class="category-code"> (<span t-esc="group['category'].code"/>)</span>
                                             </td>
-                                            <td class="number" t-esc="'{:,.2f}'.format(group['annual']['planned'])"/>
-                                            <td class="number" t-esc="'{:,.2f}'.format(group['annual']['actual'])"/>
-                                            <td class="number" t-esc="'{:,.2f}'.format(group['annual']['available'])"/>
-                                            <td class="number" t-esc="'{:,.2f}%'.format(group['annual']['execution'])"/>
+                                            <td class="number"></td>
+                                            <td class="number"></td>
+                                            <td class="number"></td>
+                                            <td class="number"></td>
                                         </tr>
                                         <t t-foreach="group['accounts']" t-as="account_data">
                                             <tr>
