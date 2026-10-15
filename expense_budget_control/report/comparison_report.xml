@@ -121,7 +121,7 @@
                                             <t t-foreach="page_data['months']" t-as="month_item">
                                                 <th class="month-head" colspan="3" t-esc="month_item['name']"/>
                                             </t>
-                                            <th rowspan="2">Saldo actual</th>
+                                            <th rowspan="2">Consumo Actual</th>
                                             <th rowspan="2">Saldo disponible</th>
                                         </tr>
                                         <tr>
