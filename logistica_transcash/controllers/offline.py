@@ -81,11 +81,11 @@ class TranscashPWA(http.Controller):
             return False
         if kind == 'rotura':
             if (guia.chofer_usuario_id == user and user.has_group('logistica_transcash.group_transcash_chofer')) or guia._is_seller(user):
-                return guia.state in ('embarque','ruta','destino','revision')
+                return guia.state in ('embarque','embarcada','ruta','destino','revision')
             return guia._is_recipient(user) and guia.state in ('destino','revision','entregada')
         if kind == 'evidencia':
             if guia.chofer_usuario_id == user and user.has_group('logistica_transcash.group_transcash_chofer'):
-                return guia.state in ('embarque','ruta','destino','revision')
+                return guia.state in ('embarque','embarcada','ruta','destino','revision')
             return guia._is_recipient(user) and guia.state in ('destino','revision','entregada')
         return False
 

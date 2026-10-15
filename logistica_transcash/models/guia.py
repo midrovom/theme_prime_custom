@@ -25,7 +25,8 @@ class Guia(models.Model):
     company_id = fields.Many2one('res.company', required=True, default=lambda self: self.env.company)
     state = fields.Selection([
         ('registrada', 'Registrada'),
-        ('embarque', 'En embarque'),
+        ('embarque', 'En carga'),
+        ('embarcada', 'Cargada'),
         ('ruta', 'En ruta'),
         ('destino', 'En destino'),
         ('revision', 'Pendiente de recepción'),
@@ -35,6 +36,16 @@ class Guia(models.Model):
         ('pagada', 'Pagada'),
         ('cancelada', 'Cancelada'),
     ], default='registrada', required=True, tracking=True, index=True)
+
+    embarque_id = fields.Many2one('transcash.embarque', string='Embarque / viaje', index=True, ondelete='restrict', copy=False, tracking=True)
+    observacion_carga = fields.Text('Observación general de carga (legado)', copy=False)
+    observacion_inicio_carga = fields.Text('Observación de inicio de carga', copy=False)
+    observacion_fin_carga = fields.Text('Observación de fin de carga', copy=False)
+    tipo_documento = fields.Char('Tipo de documento transportado')
+    numero_documento = fields.Char('Número de documento transportado')
+    ruc_chofer = fields.Char('RUC / identificación del chofer')
+    fecha_inicio_traslado = fields.Datetime('Inicio de traslado (ERP)')
+    fecha_fin_traslado = fields.Datetime('Fin de traslado (ERP)')
 
     remitente_id = fields.Many2one('res.partner', string='Remitente')
     destinatario_id = fields.Many2one('res.partner', string='Destinatario', tracking=True)
@@ -99,7 +110,22 @@ class Guia(models.Model):
         ('value_non_negative', 'CHECK (valor_acordado >= 0)', 'La tarifa no puede ser negativa.'),
     ]
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        if not self.env.su:
+            prohibited = {'embarque_id','aprobacion_global','incidencia_estado',
+                          'fecha_salida','fecha_llegada','fecha_entrega','factura_id','state'}
+            if any(prohibited.intersection(v) for v in vals_list):
+                raise UserError(_('Los estados y el embarque se asignan mediante el flujo autorizado.'))
+        return super().create(vals_list)
+
     def write(self, vals):
+        if not self.env.su and {'chofer_usuario_id','proveedor_id','placa'} & set(vals) and any(g.embarque_id for g in self):
+            raise UserError(_('No cambie el chofer, transportista ni placa de una guía vinculada a embarque.'))
+        if not self.env.su and 'embarque_id' in vals:
+            raise UserError(_('Asigne o retire guías usando las acciones del embarque.'))
+        if not self.env.su and {'observacion_carga','observacion_inicio_carga','observacion_fin_carga'} & set(vals):
+            raise UserError(_('Las observaciones de carga se registran desde el embarque.'))
         # Los importes y datos contables son exclusivos de Contabilidad. El
         # contexto de RPC no equivale a autorización y no salta estas reglas.
         if not self.env.su and {'valor_acordado', 'cuenta_gasto_id', 'factura_id'} & set(vals):
@@ -148,6 +174,8 @@ class Guia(models.Model):
     def action_start_loading(self):
         self._check_dispatcher()
         for guia in self:
+            if guia.embarque_id:
+                raise UserError(_('Inicie esta guía desde el embarque asignado.'))
             if guia.state != 'registrada':
                 raise UserError(_('La guía debe estar registrada.'))
             guia.sudo().with_context(transcash_internal_flow=True).write({'state': 'embarque'})
@@ -157,8 +185,10 @@ class Guia(models.Model):
     def action_depart(self):
         self._check_dispatcher()
         for guia in self:
+            if guia.embarque_id:
+                raise UserError(_('Autorice la salida desde el embarque completo.'))
             if guia.state != 'embarque':
-                raise UserError(_('La guía debe estar en embarque.'))
+                raise UserError(_('La guía debe estar en carga.'))
             cargas = guia.evidencia_ids.filtered(lambda e: e.tipo == 'carga')
             if not cargas or any(e.estado != 'aprobada' for e in cargas):
                 raise UserError(_('Es obligatorio que bodega apruebe todas las evidencias de carga.'))
@@ -166,6 +196,21 @@ class Guia(models.Model):
                 raise UserError(_('Asigne un usuario chofer antes de autorizar la salida.'))
             guia.sudo().with_context(transcash_internal_flow=True).write({'state': 'ruta', 'fecha_salida': fields.Datetime.now()})
             guia._track_event('Salida autorizada')
+        return True
+
+    def action_mark_loaded(self):
+        """Terminar carga de una guía; el despacho debe haber aprobado la evidencia."""
+        for guia in self:
+            if not guia.embarque_id or guia.state != 'embarque':
+                raise UserError(_('La guía debe estar en carga dentro de un embarque.'))
+            user = self.env.user
+            if not (user == guia.chofer_usuario_id and user.has_group('logistica_transcash.group_transcash_chofer')) and not self._is_manager():
+                raise UserError(_('Solo el chofer de esta guía puede finalizar su carga.'))
+            cargadas = guia.evidencia_ids.filtered(lambda e: e.tipo == 'carga')
+            if not cargadas or any(e.estado != 'aprobada' for e in cargadas):
+                raise UserError(_('Bodega debe aprobar todas las evidencias de carga antes de finalizar.'))
+            guia.sudo().write({'state':'embarcada'})
+            guia._track_event('Guía cargada', guia.observacion_fin_carga or '')
         return True
 
     def action_arrive(self):
@@ -208,6 +253,8 @@ class Guia(models.Model):
                 'confirmado_por_id': self.env.user.id,
             })
             guia._track_event('Entrega confirmada', 'Recibido por: %s' % receiver_name)
+            if guia.embarque_id:
+                guia.embarque_id._refresh_delivered_state()
         return True
 
     def _open_incident(self, detail):
@@ -256,6 +303,8 @@ class Guia(models.Model):
                 'res_id':request.id, 'view_mode':'form', 'target':'current'}
 
     def action_configure_liquidation(self):
+        if any(self.mapped('embarque_id')):
+            raise UserError(_('La liquidación de estas guías se administra en el embarque, no por guía.'))
         self.ensure_one()
         if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
             raise UserError(_('Solo Contabilidad puede configurar la liquidación.'))
@@ -268,6 +317,8 @@ class Guia(models.Model):
                                            'default_valor_acordado':self.valor_acordado}}
 
     def action_ready_payment(self):
+        if any(self.mapped('embarque_id')):
+            raise UserError(_('La liquidación de estas guías se administra en el embarque, no por guía.'))
         if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
             raise UserError(_('Solo el administrador puede autorizar la liquidación.'))
         for guia in self:
@@ -290,6 +341,8 @@ class Guia(models.Model):
         return True
 
     def action_create_vendor_bill(self):
+        if any(self.mapped('embarque_id')):
+            raise UserError(_('La liquidación de estas guías se administra en el embarque, no por guía.'))
         if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
             raise UserError(_('Solo el administrador puede generar la factura del proveedor.'))
         self.ensure_one()
@@ -322,6 +375,8 @@ class Guia(models.Model):
         }
 
     def action_verify_payment(self):
+        if any(self.mapped('embarque_id')):
+            raise UserError(_('La liquidación de estas guías se administra en el embarque, no por guía.'))
         if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
             raise UserError(_('Solo el administrador puede verificar pagos.'))
         for guia in self:
@@ -344,6 +399,16 @@ class Guia(models.Model):
     def _external_values(self, item):
         if not isinstance(item, dict):
             raise ValidationError(_('Cada guía debe ser un objeto JSON.'))
+        item = dict(item)
+        # Variaciones de nombres en ERPs externos sin cambiar el contrato principal.
+        for alias, canonical in {
+            'tipo_documento_transporte':'tipo_documento',
+            'numero_documento_transporte':'numero_documento',
+            'placa_vehiculo':'placa',
+            'identificacion_chofer':'ruc_chofer',
+        }.items():
+            if alias in item and canonical not in item:
+                item[canonical] = item[alias]
         guide_id = str(item.get('id_externo') or '').strip()
         number = str(item.get('numero_guia') or '').strip()
         if not guide_id or not number:
@@ -351,6 +416,9 @@ class Guia(models.Model):
         vals = {'external_id_erp': guide_id, 'name': number}
         for incoming, field in {
             'origen': 'origen', 'destino': 'destino', 'placa': 'placa',
+            'direccion_origen': 'origen', 'direccion_destino': 'destino',
+            'tipo_documento':'tipo_documento', 'numero_documento':'numero_documento',
+            'ruc_chofer':'ruc_chofer',
             'descripcion_carga': 'descripcion_carga', 'estado_erp': 'estado_erp',
         }.items():
             if incoming in item:
@@ -359,6 +427,19 @@ class Guia(models.Model):
                                 'valor_acordado': 'valor_acordado'}.items():
             if incoming in item and item[incoming] is not None:
                 vals[field] = float(item[incoming]) if field != 'numero_bultos' else int(item[incoming])
+        for api_field, db_field in [('fecha_inicio_traslado','fecha_inicio_traslado'),
+                                    ('fecha_fin_traslado','fecha_fin_traslado')]:
+            if api_field in item:
+                if not item[api_field]:
+                    vals[db_field] = False
+                else:
+                    try:
+                        d = datetime.fromisoformat(str(item[api_field]).replace('Z','+00:00'))
+                    except ValueError as exc:
+                        raise ValidationError(_('Fecha inválida en %s') % api_field) from exc
+                    if d.tzinfo is None:
+                        raise ValidationError(_('%s debe incluir zona horaria.') % api_field)
+                    vals[db_field] = d.astimezone(timezone.utc).replace(tzinfo=None)
         if 'fecha_prevista' in item and item['fecha_prevista']:
             dt = datetime.fromisoformat(item['fecha_prevista'].replace('Z', '+00:00'))
             if dt.tzinfo is None:
@@ -386,6 +467,11 @@ class Guia(models.Model):
                 if not user:
                     raise ValidationError(_('No existe el usuario chofer: %s') % item['chofer_login'])
                 vals['chofer_usuario_id'] = user.id
+        if 'empresa_transporte_codigo' in item and 'proveedor_codigo' not in item:
+            partner = self._partner_by_ref(item['empresa_transporte_codigo'])
+            if not partner:
+                raise ValidationError(_('Empresa transportista no encontrada: %s') % item['empresa_transporte_codigo'])
+            vals['proveedor_id'] = partner.id
         # Detalles de la guía no se incrustan en vals: reconciliación por ID de línea ERP.
         vals['ultima_sync'] = fields.Datetime.now()
         return vals
@@ -403,24 +489,30 @@ class Guia(models.Model):
             if not isinstance(p, dict):
                 raise ValidationError(_('Cada producto debe ser objeto JSON.'))
             ext = str(p.get('id_linea') or '').strip()
-            codigo = str(p.get('codigo') or '').strip()
+            codigo = str(p.get('sku') or p.get('codigo') or '').strip()
             nombre = str(p.get('descripcion') or '').strip()
             unit = str(p.get('unidad') or '').lower().strip()
-            aliases = {'m²':'m2', 'metros_cuadrados':'m2', 'pallets':'pallet',
-                       'cajas':'caja', 'kilos':'kg', 'kilogramos':'kg', 'unidades':'unidad'}
+            aliases = {'m²':'m2', 'metros_cuadrados':'m2', 'metro_cuadrado':'m2', 'metros cuadrados':'m2',
+                       'pallets':'pallet', 'und':'unidad', 'unid':'unidad', 'u':'unidad',
+                       'cajas':'caja', 'metro':'metro', 'metros':'metro', 'm':'metro', 'kilos':'kg', 'kilogramos':'kg', 'unidades':'unidad'}
             unit = aliases.get(unit, unit)
-            if not ext or ext in seen or not codigo or not nombre or unit not in ('m2','pallet','caja','kg','unidad'):
+            if not ext or ext in seen or not codigo or not nombre or unit not in ('m2','pallet','caja','kg','metro','unidad'):
                 raise ValidationError(_('Producto sin ID único, código, descripción o unidad válida.'))
             seen.add(ext)
             try:
                 qty = float(p.get('cantidad'))
                 price = float(p.get('precio_unitario', 0) or 0)
+                peso_linea = float(p.get('peso_kg',0) or 0)
+                pallets = float(p.get('pallets', 0) or 0)
+                cajas = float(p.get('cajas', 0) or 0)
             except (ValueError, TypeError):
                 raise ValidationError(_('Cantidad o precio inválido en producto %s.') % codigo)
-            if not (0 < qty < 1e10) or not (0 <= price < 1e10):
+            import math
+            if not all(math.isfinite(x) and 0 <= x < 1e10 for x in (price, peso_linea, pallets, cajas)) or not (math.isfinite(qty) and 0 < qty < 1e10):
                 raise ValidationError(_('Cantidad o precio fuera de rango en %s.') % codigo)
             values = {'codigo':codigo[:128], 'producto':nombre[:255],
-                      'cantidad':qty, 'unidad':unit, 'precio_unitario':price, 'vigente_erp':True}
+                      'cantidad':qty, 'unidad':unit, 'precio_unitario':price,
+                      'peso_kg':peso_linea, 'pallets_info':pallets, 'cajas_info':cajas, 'vigente_erp':True}
             old = Line.search([('guia_id','=',guia.id),('external_line_id','=',ext)], limit=1)
             if old:
                 if old.rotura_ids and any(old[f] != values[f] for f in
@@ -461,6 +553,12 @@ class Guia(models.Model):
                     ], limit=1)
                     if existing:
                         # No sobrescribe valor luego de emitir factura ni campos internos.
+                        if existing.embarque_id:
+                            for field in ('chofer_usuario_id','proveedor_id','placa'):
+                                if field in vals and vals[field] != (existing[field].id if field.endswith('_id') else existing[field]):
+                                    raise ValidationError(_('Guía en embarque: el ERP intenta cambiar %s. Revise la reasignación.') % field)
+                            for field in ('valor_acordado','cuenta_gasto_id'):
+                                vals.pop(field, None)
                         if existing.factura_id or existing.aprobacion_global == 'aprobada':
                             vals.pop('valor_acordado', None)
                             vals.pop('proveedor_id', None)

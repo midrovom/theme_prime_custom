@@ -6,7 +6,7 @@ from odoo.tools import float_compare
 
 
 UNIDADES = [
-    ('m2', 'm²'), ('pallet', 'Pallets'), ('caja', 'Cajas'),
+    ('m2', 'm²'), ('metro', 'Metros lineales'), ('pallet', 'Pallets'), ('caja', 'Cajas'),
     ('kg', 'kg'), ('unidad', 'Unidades'),
 ]
 
@@ -19,10 +19,13 @@ class GuiaLinea(models.Model):
     guia_id = fields.Many2one('transcash.guia', required=True, ondelete='cascade', index=True)
     secuencia = fields.Integer(default=10)
     external_line_id = fields.Char('ID línea ERP', required=True, index=True)
-    codigo = fields.Char('Código/SKU', required=True)
+    codigo = fields.Char('SKU', required=True)
     producto = fields.Char('Descripción del producto', required=True)
     cantidad = fields.Float('Cantidad embarcada', digits=(16, 3), required=True)
-    unidad = fields.Selection(UNIDADES, required=True, string='Unidad de medida')
+    unidad = fields.Selection(UNIDADES, required=True, string='Unidad de cantidad')
+    peso_kg = fields.Float('Peso declarado (kg)', digits=(16, 3), readonly=True)
+    pallets_info = fields.Float('Pallets (conversión ERP)', digits=(16, 3), readonly=True)
+    cajas_info = fields.Float('Cajas (conversión ERP)', digits=(16, 3), readonly=True)
     precio_unitario = fields.Monetary('Valor unitario de referencia', currency_field='moneda_id')
     moneda_id = fields.Many2one(related='guia_id.moneda_id', store=True)
     vigente_erp = fields.Boolean('Vigente en ERP', default=True)
@@ -91,7 +94,7 @@ class Rotura(models.Model):
         if not linea or linea.guia_id != guia or not linea.vigente_erp:
             raise UserError(_('Seleccione un producto vigente de esta guía.'))
         if is_driver or guia._is_seller(user):
-            if guia.state not in ('embarque', 'ruta', 'destino', 'revision'):
+            if guia.state not in ('embarque', 'embarcada', 'ruta', 'destino', 'revision'):
                 raise UserError(_('El chofer no puede reportar daños en este estado.'))
         elif guia.state not in ('destino', 'revision', 'entregada'):
             raise UserError(_('El destinatario todavía no puede reportar daños.'))
@@ -131,7 +134,7 @@ class Rotura(models.Model):
 
     def _check_manager(self):
         if not self.env.user.has_group('logistica_transcash.group_transcash_ventas_admin'):
-            raise UserError(_('Solo administración logística puede aprobar las roturas.'))
+            raise UserError(_('Solo Administración de Ventas puede aprobar las roturas.'))
 
     def write(self, vals):
         protected = {'guia_id','linea_id','cantidad','observacion','reportado_por_id','estado'}

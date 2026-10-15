@@ -50,7 +50,7 @@ class Evidencia(models.Model):
             if not (guia.chofer_usuario_id == user and user.has_group('logistica_transcash.group_transcash_chofer')) and not seller_damage:
                 raise UserError(_('Solo el chofer puede subir esta evidencia, salvo vendedor que documenta su propia rotura.'))
             allowed = {'carga': ('embarque',), 'llegada': ('destino', 'revision'),
-                       'novedad': ('embarque', 'ruta', 'destino', 'revision')}
+                       'novedad': ('embarque', 'embarcada', 'ruta', 'destino', 'revision')}
             if guia.state not in allowed[tipo]:
                 raise UserError(_('No puede registrar esta evidencia en el estado actual.'))
         elif tipo == 'cliente':

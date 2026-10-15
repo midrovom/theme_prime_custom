@@ -1,0 +1,4 @@
+<odoo><record id="seq_transcash_embarque" model="ir.sequence">
+  <field name="name">Embarques Transcash</field><field name="code">transcash.embarque</field>
+  <field name="prefix">EMB/%(year)s/</field><field name="padding">5</field>
+</record></odoo>

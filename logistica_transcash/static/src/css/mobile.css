@@ -180,3 +180,27 @@ body.tc-modal-open{overflow:hidden}
   .tc-panel[data-panel="evidencias"] .tc-evidence-card,
   .tc-panel[data-panel="roturas"] .tc-damage-card{width:100%;display:block}
 }
+
+/* V5: journeys; responsive to desktop and mobile. */
+.tc-journeys-link{display:inline-flex;margin:0 0 24px;text-decoration:none;justify-content:center;max-width:380px}
+.tc-embark-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start}
+.tc-embark-section{min-width:0}
+.tc-embark-list,.tc-embark-guides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.tc-embark-section .tc-embark-list{grid-template-columns:minmax(0,1fr)}
+.tc-embark-card{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tc-embark-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;opacity:.82}
+.tc-embark-form,.tc-embark-guide{padding:20px;border:1px solid #dfe7ec;border-radius:18px;background:#fff}
+.tc-embark-options{display:grid;gap:8px;max-height:420px;overflow:auto;margin:12px 0 20px}
+.tc-embark-select{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:1px solid #dfe7ec;cursor:pointer}
+.tc-embark-select:has(input:checked){border-color:#197c83;background:#effafa}
+.tc-embark-select input{width:20px;height:20px;flex:none;accent-color:#197c83}
+.tc-embark-select span{display:flex;flex-direction:column;gap:4px}
+.tc-embark-select small{display:block;color:#667684}
+.tc-embark-guide{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tc-embark-guide-link{font-size:1rem;font-weight:800;text-decoration:none;color:#153e65}
+.tc-embark-actions{display:grid;gap:12px;border-top:1px solid #e7edf0;padding-top:12px}
+.tc-embark-actions form{display:grid;gap:10px}
+.tc-embark-finalize{padding:20px;border:1px solid #dfe7ec;border-radius:16px;margin:24px 0;background:#f6fafb}
+.tc-embark-detail .tc-hero,.tc-embark-detail .tc-embark-guides{max-width:none}
+@media(max-width:900px){.tc-embark-layout,.tc-embark-guides{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.tc-embark-form,.tc-embark-guide{padding:14px}.tc-embark-layout{gap:22px}.tc-journeys-link{max-width:none;width:100%}}

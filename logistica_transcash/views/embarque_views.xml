@@ -1,0 +1,92 @@
+<odoo>
+  <record id="view_transcash_embarque_list" model="ir.ui.view">
+    <field name="name">transcash.embarque.list</field>
+    <field name="model">transcash.embarque</field>
+    <field name="arch" type="xml">
+      <list string="Embarques" create="0" delete="0" decoration-success="state == 'entregado'">
+        <field name="name"/><field name="state" widget="badge"/>
+        <field name="chofer_usuario_id"/><field name="proveedor_id"/>
+        <field name="placa"/><field name="origen"/>
+        <field name="cantidad_guias"/><field name="guias_entregadas"/>
+        <field name="fecha_salida"/>
+        <field name="pago_estado" groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
+        <field name="valor_acordado" groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_transcash_embarque_search" model="ir.ui.view">
+    <field name="name">transcash.embarque.search</field>
+    <field name="model">transcash.embarque</field>
+    <field name="arch" type="xml">
+      <search><field name="name"/><field name="chofer_usuario_id"/><field name="proveedor_id"/>
+        <field name="placa"/><filter name="activas" string="Operación abierta" domain="[('state','in',['preparacion','embarcado','ruta'])]"/>
+        <filter name="entregadas" string="Entregados" domain="[('state','=','entregado')]"/>
+        <group expand="0" string="Agrupar por"><filter name="chofer" string="Chofer" context="{'group_by':'chofer_usuario_id'}"/>
+          <filter name="proveedor" string="Empresa de transporte" context="{'group_by':'proveedor_id'}"/>
+          <filter name="estado" string="Estado" context="{'group_by':'state'}"/></group>
+      </search>
+    </field>
+  </record>
+  <record id="view_transcash_embarque_form" model="ir.ui.view">
+    <field name="name">transcash.embarque.form</field>
+    <field name="model">transcash.embarque</field>
+    <field name="arch" type="xml">
+      <form string="Embarque" create="0" delete="0">
+        <header>
+          <button name="action_depart" type="object" string="Autorizar salida de todas las guías" class="btn-primary"
+             invisible="state != 'embarcado'" groups="logistica_transcash.group_logistica_bodega"/>
+          <button name="action_configure_liquidation" type="object" string="Configurar costo del embarque"
+             invisible="pago_estado != 'pendiente'" groups="logistica_transcash.group_transcash_contabilidad"/>
+          <button name="action_ready_payment" type="object" string="Autorizar liquidación" class="btn-primary"
+             invisible="state != 'entregado' or pago_estado != 'pendiente'" groups="logistica_transcash.group_transcash_contabilidad"/>
+          <button name="action_create_vendor_bill" type="object" string="Factura proveedor" class="btn-primary"
+             invisible="pago_estado != 'autorizado'" groups="logistica_transcash.group_transcash_contabilidad"/>
+          <button name="action_verify_payment" type="object" string="Verificar pago"
+             invisible="pago_estado != 'facturado'" groups="logistica_transcash.group_transcash_contabilidad"/>
+          <field name="state" widget="statusbar" statusbar_visible="preparacion,embarcado,ruta,entregado"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+          <group><group string="Transporte"><field name="company_id" groups="base.group_multi_company"/>
+            <field name="chofer_usuario_id"/><field name="proveedor_id"/>
+            <field name="placa"/><field name="origen"/>
+            <field name="fecha_creacion"/><field name="fecha_embarcado"/>
+            <field name="fecha_salida"/><field name="fecha_entrega"/></group>
+          <group string="Control"><field name="cantidad_guias"/><field name="guias_entregadas"/>
+            <field name="observacion_general" readonly="1"/></group></group>
+          <group string="Liquidación del embarque" groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager">
+            <field name="pago_estado"/><field name="valor_acordado" readonly="1"/><field name="moneda_id" invisible="1"/>
+            <field name="cuenta_gasto_id" readonly="1"/><field name="factura_id"/></group>
+          <notebook><page string="Guías transportadas">
+            <field name="guia_ids" readonly="1"><list create="0" delete="0">
+              <field name="name"/><field name="tipo_documento"/><field name="numero_documento"/>
+              <field name="destinatario_id"/><field name="destino"/>
+              <field name="state" widget="badge"/><field name="observacion_inicio_carga"/><field name="observacion_fin_carga"/>
+              <field name="roturas_pendientes"/><field name="incidencia_estado"/>
+            </list></field>
+          </page></notebook>
+        </sheet><chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="view_transcash_embarque_wizard_form" model="ir.ui.view">
+    <field name="name">transcash.embarque.liquidacion.wizard.form</field>
+    <field name="model">transcash.embarque.liquidacion.wizard</field>
+    <field name="arch" type="xml"><form string="Costo total del embarque"><group>
+      <field name="embarque_id"/><field name="valor_acordado"/><field name="cuenta_gasto_id"/>
+    </group><footer><button name="action_confirm" type="object" string="Guardar" class="btn-primary"/>
+      <button string="Cancelar" special="cancel"/></footer></form></field>
+  </record>
+  <record id="action_transcash_embarques" model="ir.actions.act_window">
+    <field name="name">Embarques / viajes</field><field name="res_model">transcash.embarque</field>
+    <field name="view_mode">list,form</field><field name="context">{'search_default_activas':1}</field>
+  </record>
+  <record id="action_transcash_embarques_pagos" model="ir.actions.act_window">
+    <field name="name">Liquidar embarques</field><field name="res_model">transcash.embarque</field>
+    <field name="view_mode">list,form</field><field name="domain">[('state','=','entregado')]</field>
+  </record>
+  <menuitem id="menu_transcash_embarques" name="Embarques / viajes" parent="menu_transcash_root"
+      action="action_transcash_embarques" sequence="8" groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta"/>
+  <menuitem id="menu_transcash_embarques_pagos" name="Liquidación por embarque" parent="menu_transcash_root"
+      action="action_transcash_embarques_pagos" sequence="41" groups="logistica_transcash.group_transcash_contabilidad"/>
+</odoo>

@@ -18,6 +18,8 @@ class LiquidacionWizard(models.TransientModel):
         if not user.has_group('logistica_transcash.group_transcash_contabilidad'):
             raise UserError(_('Solo Contabilidad puede editar parámetros de liquidación.'))
         guia = self.guia_id
+        if guia.embarque_id:
+            raise UserError(_('El costo de esta guía se liquida por embarque.'))
         if guia.company_id not in user.company_ids or guia.state not in ('entregada','lista_pago') or guia.factura_id:
             raise UserError(_('La guía no está habilitada para configurar su pago.'))
         if self.valor_acordado <= 0:

@@ -22,6 +22,12 @@
         <field name="share" eval="True"/>
         <field name="comment">Perfil chofer: debe ser usuario Portal, estar asignado en Usuario chofer de la guía y acceder a /transcash/guias. No otorga acceso al backend.</field>
     </record>
+    <record id="group_transcash_transportista" model="res.groups">
+      <field name="name">Empresa transportista: consulta de embarques (Portal)</field>
+      <field name="category_id" ref="module_category_transcash"/>
+      <field name="share" eval="True"/>
+      <field name="comment">Permite consultar los embarques de la empresa asociada a su cuenta Portal, sin modificarlos ni ver importes.</field>
+    </record>
     <!-- Los roles funcionales NO implican entre sí permisos de escritura. -->
     <record id="group_transcash_consulta" model="res.groups">
       <field name="name">Consulta de guías (base)</field>
@@ -143,6 +149,12 @@
       <field name="model_id" ref="model_transcash_sync_operacion"/>
       <field name="groups" eval="[(4, ref('group_logistica_manager'))]"/>
       <field name="domain_force">[('guia_id.company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_embarque_consulta_company" model="ir.rule">
+      <field name="name">Embarques: compañía autorizada</field>
+      <field name="model_id" ref="model_transcash_embarque"/>
+      <field name="groups" eval="[(4,ref('group_transcash_consulta')),(4,ref('group_logistica_bodega'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
     </record>
     <!-- No se conceden ACL de modelos al portal: todas las vistas móviles
          comprueban expresamente chofer_usuario_id o destinatario_id. -->

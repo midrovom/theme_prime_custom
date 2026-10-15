@@ -47,6 +47,8 @@ class TranscashPortal(http.Controller):
         if user.has_group('logistica_transcash.group_transcash_consulta') or user.has_group('logistica_transcash.group_logistica_bodega'):
             return [('company_id','in', user.company_ids.ids)]
         recipient = ('destinatario_id', 'child_of', partner.id if partner else 0)
+        if user.has_group('logistica_transcash.group_transcash_transportista'):
+            return [('proveedor_id.commercial_partner_id','=',partner.id if partner else 0)]
         if user.has_group('logistica_transcash.group_transcash_chofer'):
             return ['|', ('chofer_usuario_id', '=', user.id), recipient]
         return [recipient]
@@ -58,7 +60,9 @@ class TranscashPortal(http.Controller):
         user = request.env.user
         if not (guia.chofer_usuario_id.id == user.id and user.has_group('logistica_transcash.group_transcash_chofer')) and not guia._is_recipient(user) and not (
                 user.has_group('logistica_transcash.group_transcash_consulta') or
-                user.has_group('logistica_transcash.group_logistica_bodega')):
+                user.has_group('logistica_transcash.group_logistica_bodega') or
+                (user.has_group('logistica_transcash.group_transcash_transportista') and
+                 guia.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id)):
             return False
         if guia.company_id not in user.company_ids and not user.share:
             return False
@@ -83,7 +87,7 @@ class TranscashPortal(http.Controller):
         guides = request.env['transcash.guia'].sudo().search(
             self._visible_domain(), order='create_date desc', limit=150)
         selected = kwargs.get('estado') or 'todas'
-        choices = ('todas','embarque','ruta','destino','revision','entregada')
+        choices = ('todas','embarque','embarcada','ruta','destino','revision','entregada')
         if selected not in choices:
             selected = 'todas'
         if selected != 'todas':
