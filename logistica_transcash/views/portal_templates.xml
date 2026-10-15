@@ -6,9 +6,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=520"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=530"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
-    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=520"/>
+    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=530"/>
   </template>
 
   <template id="mobile_brand" name="Transcash Mobile Brand">
@@ -123,6 +123,45 @@
         <main class="tc-main tc-detail">
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>Revisa los datos</strong><span t-esc="error"/></div>
           <div t-if="request.params.get('ok')" class="tc-alert tc-alert-ok" role="status">✓ Información registrada correctamente</div>
+          <!-- Ruta guiada: acciones siempre visibles, sin navegar por múltiples pestañas. -->
+          <section t-if="es_chofer" class="tc-guided-flow" aria-label="Mi siguiente acción">
+            <div class="tc-guided-heading"><span>⚡ MODO CHOFER</span><h2>¿Qué hacemos ahora?</h2>
+              <small>Guía <t t-esc="guia.name"/> · Sigue estos pasos</small></div>
+            <div class="tc-guided-rail"><span t-att-class="'is-done' if guia.state != 'registrada' else 'is-current'">1. Carga</span>
+              <span t-att-class="'is-done' if guia.state in ('destino','revision','entregada','lista_pago','facturada','pagada') else 'is-current' if guia.state in ('embarcada','ruta') else ''">2. Viaje</span>
+              <span t-att-class="'is-done' if guia.state in ('entregada','lista_pago','facturada','pagada') else 'is-current' if guia.state in ('destino','revision') else ''">3. Entrega</span></div>
+            <div class="tc-guided-buttons">
+              <form t-if="guia.state == 'registrada' and guia.embarque_id and guia.embarque_id.state == 'preparacion'" t-att-action="'/transcash/embarques/%d/guia/%d/iniciar' % (guia.embarque_id.id,guia.id)" method="post">
+                <input name="csrf_token" type="hidden" t-att-value="csrf_token"/><input name="return_to" type="hidden" value="guia"/>
+                <button class="tc-action-tile tc-action-tile-primary" type="submit"><b>01</b><span>▶ Iniciar carga</span><small>Comienza la guía</small></button></form>
+              <button t-if="guia.state == 'embarque'" type="button" class="tc-action-tile tc-action-tile-primary" data-quick-modal="evidencia" data-quick-evidence-type="carga"><b>02</b><span>📷 Evidencia de carga</span><small>Foto o video</small></button>
+              <form t-if="guia.state == 'embarque' and guia.embarque_id" t-att-action="'/transcash/embarques/%d/guia/%d/finalizar' % (guia.embarque_id.id,guia.id)" method="post">
+                <input name="csrf_token" type="hidden" t-att-value="csrf_token"/><input name="return_to" type="hidden" value="guia"/>
+                <button class="tc-action-tile" type="submit"><b>03</b><span>✓ Terminar carga</span><small>Validar evidencias</small></button></form>
+              <a t-if="guia.state == 'embarcada' and guia.embarque_id" t-att-href="'/transcash/embarques/%s' % guia.embarque_id.id" class="tc-action-tile tc-action-tile-primary"><b>04</b><span>🚚 Cerrar embarque</span><small>Cuando todas estén cargadas</small></a>
+              <div t-if="guia.state == 'embarcada'" class="tc-guided-wait">⏳ Bodega autoriza la salida del embarque.</div>
+              <form t-if="guia.state == 'ruta'" t-att-action="'/transcash/guias/%d/llegada' % guia.id" method="post">
+                <input name="csrf_token" type="hidden" t-att-value="csrf_token"/>
+                <button class="tc-action-tile tc-action-tile-primary" type="submit"><b>05</b><span>📍 Llegué al destino</span><small>Registrar arribo</small></button></form>
+              <button t-if="guia.state in ('destino','revision')" class="tc-action-tile tc-action-tile-primary" type="button" data-quick-modal="evidencia" data-quick-evidence-type="llegada"><b>06</b><span>🎥 Fotos / video de descarga</span><small>Cómo llegó la mercancía</small></button>
+              <button t-if="guia.state in ('embarque','embarcada','ruta','destino','revision')" type="button" class="tc-action-tile" data-quick-modal="rotura"><b>!</b><span>⚠ Reportar rotura</span><small>Por SKU y cantidad</small></button>
+              <button t-if="guia.state in ('embarcada','ruta','destino','revision')" type="button" class="tc-action-tile" data-quick-modal="evidencia" data-quick-evidence-type="novedad"><b>✎</b><span>Registrar novedad</span><small>Observación y evidencia</small></button>
+              <div t-if="guia.state in ('entregada','lista_pago','facturada','pagada')" class="tc-guided-done">✓ Guía entregada. Puedes consultar todas las evidencias.</div>
+            </div>
+            <a t-if="guia.embarque_id" t-att-href="'/transcash/embarques/%d' % guia.embarque_id.id" class="tc-guided-return">↗ Ver todas las guías de mi embarque</a>
+          </section>
+          <!-- Cliente nunca accede al conjunto de guías del embarque. -->
+          <section t-if="es_receptor and not es_chofer" class="tc-guided-flow tc-customer-flow" aria-label="Recepción del cliente">
+            <div class="tc-guided-heading"><span>📦 PORTAL DEL CLIENTE</span><h2>Seguimiento de mi guía</h2>
+              <small>La carga, ruta y descarga son de consulta. Solo puedes intervenir en tu recepción.</small></div>
+            <div class="tc-guided-buttons">
+              <button class="tc-action-tile" type="button" data-go-tab="evidencias"><b>👁</b><span>Ver fotos y videos</span><small>Carga y entrega · lectura</small></button>
+              <button class="tc-action-tile" type="button" data-go-tab="historial"><b>↗</b><span>Ver seguimiento</span><small>Estados y comentarios</small></button>
+              <button t-if="guia.state in ('destino','revision','entregada') and guia.aprobacion_global != 'aprobada'" class="tc-action-tile tc-action-tile-primary" type="button" data-quick-modal="evidencia" data-quick-evidence-type="cliente"><b>📷</b><span>Evidencia de recepción</span><small>Foto, video y novedades</small></button>
+              <button t-if="guia.state in ('destino','revision','entregada') and guia.aprobacion_global != 'aprobada'" class="tc-action-tile" type="button" data-quick-modal="rotura"><b>⚠</b><span>Reportar rotura</span><small>Producto y cantidad</small></button>
+              <a t-if="guia.state == 'revision'" href="#recepcion-cliente" class="tc-action-tile tc-action-tile-primary"><b>✓</b><span>Aceptar recepción</span><small>Con observaciones si aplica</small></a>
+            </div>
+          </section>
           <section class="tc-hero">
             <div class="tc-hero-top"><span class="tc-hero-label">ESTADO DEL TRANSPORTE</span>
               <span t-att-class="'tc-status tc-s-' + guia.state" t-esc="dict(guia._fields['state'].selection).get(guia.state)"/></div>
@@ -148,41 +187,6 @@
             <span><b>Empresa de transporte</b><t t-esc="guia.proveedor_id.name or 'Por asignar'"/></span></div>
 
           <a t-if="es_chofer and guia.embarque_id" class="tc-button tc-button-outline tc-journeys-link" t-att-href="'/transcash/embarques/%s' % guia.embarque_id.id">🚚 Volver a mi embarque</a>
-
-          <!-- Atajos operativos contextuales: solo chofer asignado. -->
-          <section t-if="es_chofer and guia.embarque_id and guia.embarque_id.state == 'preparacion' and guia.state in ('registrada','embarque','embarcada')"
-                   class="tc-quick-actions" aria-label="Acciones rápidas de la guía">
-            <div class="tc-quick-header"><strong>⚡ Acciones rápidas</strong><span>Guía <t t-esc="guia.name"/></span></div>
-            <div class="tc-quick-buttons">
-              <form t-if="guia.state == 'registrada'" t-att-action="'/transcash/embarques/%d/guia/%d/iniciar' % (guia.embarque_id.id,guia.id)" method="post">
-                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-                <input type="hidden" name="return_to" value="guia"/>
-                <button type="submit" class="tc-button tc-button-primary">▶ Iniciar carga</button>
-              </form>
-              <button t-if="guia.state == 'embarque'" type="button" class="tc-button tc-button-outline"
-                      data-quick-modal="evidencia" data-quick-evidence-type="carga">📷 Foto / video de carga</button>
-              <button t-if="guia.state == 'embarque'" type="button" class="tc-button tc-button-outline"
-                      data-quick-modal="rotura">⚠ Reportar rotura</button>
-              <form t-if="guia.state == 'embarque'" t-att-action="'/transcash/embarques/%d/guia/%d/finalizar' % (guia.embarque_id.id,guia.id)" method="post">
-                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-                <input type="hidden" name="return_to" value="guia"/>
-                <button type="submit" class="tc-button tc-button-primary">✓ Terminar carga</button>
-              </form>
-              <a t-if="guia.state == 'embarcada'" class="tc-button tc-button-outline"
-                 t-att-href="'/transcash/embarques/%s' % guia.embarque_id.id">🚚 Ver embarque</a>
-            </div>
-            <p t-if="guia.state == 'embarque' and carga_autonoma_habilitada" class="tc-quick-hint">✓ Carga autónoma habilitada: puedes terminar tras sincronizar fotos o videos; no necesitas esperar la aprobación de Bodega.</p>
-            <p t-elif="guia.state == 'embarque'" class="tc-quick-hint">Necesitas al menos una evidencia sincronizada y la aprobación de Bodega antes de terminar.</p>
-            <p t-if="guia.state == 'embarcada' and guia.cierre_carga_autonomo" class="tc-quick-hint">Carga cerrada con permiso autónomo. Pendiente de autorización de salida.</p>
-          </section>
-          <div t-if="es_chofer and guia.state == 'ruta'" class="tc-action-banner">
-            <div><div class="tc-action-icon">📍</div><strong>¿Ya llegaste al destino?</strong>
-              <small>Confirma tu llegada para registrar la descarga.</small></div>
-            <form t-att-action="'/transcash/guias/%d/llegada' % guia.id" method="post">
-              <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-              <button class="tc-button tc-button-white" type="submit">Confirmar llegada →</button>
-            </form>
-          </div>
 
           <nav class="tc-tabs" data-tabs="1" aria-label="Secciones de la guía">
             <button type="button" class="tc-tab active" data-tab="resumen">Resumen</button>
@@ -324,7 +328,7 @@
             <p t-if="not historial" class="tc-empty-inline">Aún no hay eventos registrados.</p>
           </section>
 
-          <div t-if="es_receptor and guia.state == 'revision'" class="tc-reception">
+          <div t-if="es_receptor and guia.state == 'revision'" class="tc-reception" id="recepcion-cliente">
             <div class="tc-section-heading"><h2>Confirmar recepción física</h2></div>
             <p>Puede recibir con observaciones y daños. La aprobación final de la guía y la nota de crédito se gestionan por separado.</p>
             <form t-att-action="'/transcash/guias/%d/confirmar' % guia.id" method="post">

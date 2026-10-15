@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+  <t t-name="logistica_transcash.MediaPreview" owl="1">
+    <div class="tc-backend-media">
+      <t t-if="props.record.resId and props.record.data.archivo_mime and props.record.data.archivo_mime.startsWith('image/')">
+        <img t-att-src="'/transcash/evidencia/' + props.record.resId + '/archivo'" alt="Foto de evidencia" loading="lazy"/>
+      </t>
+      <t t-elif="props.record.resId and props.record.data.archivo_mime and props.record.data.archivo_mime.startsWith('video/')">
+        <video controls="controls" preload="metadata" playsinline="playsinline" t-att-src="'/transcash/evidencia/' + props.record.resId + '/archivo'">
+          Su navegador no reproduce este formato. Pruebe MP4 (H.264).
+        </video>
+      </t>
+      <t t-else="">
+        <span class="text-muted">No hay multimedia para mostrar.</span>
+      </t>
+    </div>
+  </t>
+</templates>

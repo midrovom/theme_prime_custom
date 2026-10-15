@@ -50,6 +50,7 @@
     <field name="arch" type="xml">
       <form string="Guía" create="1">
         <header>
+          <button name="action_open_evidence_gallery" type="object" string="Ver fotos y videos" icon="fa-picture-o"/>
           <button name="action_start_loading" type="object" string="Iniciar carga (guía antigua)" class="btn-primary"
                   invisible="state != 'registrada' or embarque_id" groups="logistica_transcash.group_logistica_bodega"/>
           <button name="action_depart" type="object" string="Autorizar salida" class="btn-primary"

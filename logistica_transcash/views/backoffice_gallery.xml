@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+ <template id="backoffice_gallery" name="Transcash: Galería privada de evidencias">
+  <html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Fotos y videos · <t t-esc="guia.name"/></title>
+    <style>
+      body{font:15px system-ui,-apple-system,sans-serif;color:#19334a;background:#f4f7fa;margin:0}
+      header{background:#122a43;color:white;padding:24px max(20px,calc((100% - 1160px)/2))}header h1{margin:0 0 8px;font-size:24px}header p{margin:0;color:#bfcedd}
+      main{max-width:1160px;margin:28px auto;padding:0 20px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+      article{background:white;border:1px solid #dce5ed;border-radius:14px;overflow:hidden;box-shadow:0 7px 18px #1831480a}
+      .media{background:#101b28;min-height:200px;display:grid;place-items:center}.media img,.media video{width:100%;max-height:420px;object-fit:contain}.meta{padding:17px}
+      .meta b{display:block;margin-bottom:5px}.meta small{color:#64788b}.meta p{white-space:pre-wrap;line-height:1.5}
+      .back{color:#c6f3e9;text-decoration:none;font-weight:700}
+    </style>
+  </head><body>
+    <header><h1>Galería de la guía <t t-esc="guia.name"/></h1>
+      <p>Fotos y videos de carga, viaje, descarga y recepción · Solo lectura</p></header>
+    <main><p><a href="/web" class="back" style="color:#0c7564">← Ir al escritorio Odoo</a></p>
+      <div t-if="not evidencias">Esta guía todavía no tiene fotografías o videos.</div>
+      <div class="grid"><t t-foreach="evidencias" t-as="ev">
+        <article t-att-id="'evidencia-%d' % ev.id"><div class="media">
+          <img t-if="ev.archivo_mime and ev.archivo_mime.startswith('image/')" t-att-src="'/transcash/evidencia/%d/archivo' % ev.id" loading="lazy" alt="Fotografía de evidencia"/>
+          <video t-elif="ev.archivo_mime and ev.archivo_mime.startswith('video/')" controls="controls" playsinline="playsinline" preload="metadata" t-att-src="'/transcash/evidencia/%d/archivo' % ev.id">Video no compatible; se recomienda MP4/H.264.</video>
+        </div><div class="meta"><b t-esc="dict(ev._fields['tipo'].selection).get(ev.tipo)"/>
+           <small><t t-esc="ev.autor_usuario_id.name or 'Usuario'"/> · <t t-esc="ev.create_date"/> · <t t-esc="dict(ev._fields['estado'].selection).get(ev.estado)"/></small>
+           <p t-esc="ev.observacion"/>
+        </div></article>
+      </t></div>
+    </main>
+  </body></html>
+ </template>
+</odoo>

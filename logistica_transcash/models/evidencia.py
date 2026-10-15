@@ -36,6 +36,15 @@ class Evidencia(models.Model):
     respuesta_chofer = fields.Text('Respuesta del chofer', readonly=True)
     fecha_respuesta = fields.Datetime('Fecha de respuesta', readonly=True)
 
+    def action_open_gallery(self):
+        self.ensure_one()
+        self.guia_id._check_internal_gallery_access()
+        return {
+            'type': 'ir.actions.act_url',
+            'url': '/transcash/backoffice/guias/%d/galeria#evidencia-%d' % (self.guia_id.id, self.id),
+            'target': 'new',
+        }
+
     @api.model
     def register_evidence(self, guia, tipo, observacion, file_data, filename, mime, tipo_novedad='ninguna', rotura_id=False):
         """Usado exclusivamente por portal controlado; también valida permisos aquí."""

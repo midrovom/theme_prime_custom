@@ -153,6 +153,26 @@ class Guia(models.Model):
             raise UserError(_('Use las acciones del flujo para modificar el estado de la guía.'))
         return super().write(vals)
 
+    def _check_internal_gallery_access(self):
+        """Protege galería de backoffice, incluso cuando se llama por RPC."""
+        self.ensure_one()
+        user = self.env.user
+        permitted = (user.has_group('logistica_transcash.group_transcash_consulta')
+                     or user.has_group('logistica_transcash.group_logistica_bodega'))
+        if user.share or not permitted or self.company_id not in user.company_ids:
+            from odoo.exceptions import AccessError
+            raise AccessError(_('No dispone de acceso a esta galería.'))
+        return True
+
+    def action_open_evidence_gallery(self):
+        self.ensure_one()
+        self._check_internal_gallery_access()
+        return {
+            'type': 'ir.actions.act_url',
+            'url': '/transcash/backoffice/guias/%d/galeria' % self.id,
+            'target': 'new',
+        }
+
     def _track_event(self, accion, detalle='', publico_cliente=True):
         for guia in self:
             self.env['transcash.evento'].sudo().create({

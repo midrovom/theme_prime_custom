@@ -75,6 +75,18 @@
         <main class="tc-main tc-detail tc-embark-detail">
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>No se pudo completar</strong><span t-esc="error"/></div>
           <div t-if="request.params.get('ok')" class="tc-alert tc-alert-ok" role="status">✓ Información actualizada</div>
+          <section t-if="es_chofer" class="tc-guided-flow tc-embark-flow">
+            <div class="tc-guided-heading"><span>🚚 MI VIAJE ACTUAL</span><h2>Control del embarque</h2>
+              <small>1. Inicia carga por guía → 2. Adjunta evidencia → 3. Finaliza cada carga → 4. Embarque completo → 5. Ruta y recepción</small></div>
+            <div class="tc-guided-buttons">
+              <a t-if="embarque.state == 'preparacion'" href="#tc-add-guides" class="tc-action-tile"><b>＋</b><span>Agregar guías</span><small>Incluye las nuevas del ERP</small></a>
+              <a t-if="embarque.state == 'preparacion' and embarque.guia_ids.filtered(lambda g: g.state in ('registrada','embarque'))" t-att-href="'/transcash/guias/%d' % embarque.guia_ids.filtered(lambda g: g.state in ('registrada','embarque'))[0].id" class="tc-action-tile tc-action-tile-primary"><b>📦</b><span>Continuar carga</span><small>Primera guía pendiente</small></a>
+              <a t-if="embarque.state == 'preparacion'" href="#tc-fin-embarque" class="tc-action-tile"><b>✓</b><span>Finalizar embarque</span><small>Al completar todas las guías</small></a>
+              <a t-if="embarque.state == 'ruta' and embarque.guia_ids.filtered(lambda g: g.state == 'ruta')" t-att-href="'/transcash/guias/%d' % embarque.guia_ids.filtered(lambda g: g.state == 'ruta')[0].id" class="tc-action-tile tc-action-tile-primary"><b>📍</b><span>Llegar a destino</span><small>Registrar cada entrega</small></a>
+              <div t-if="embarque.state == 'embarcado'" class="tc-guided-wait">⏳ Carga lista; Bodega autoriza salida.</div>
+              <div t-if="embarque.state == 'entregado'" class="tc-guided-done">✓ Embarque finalizado.</div>
+            </div>
+          </section>
           <section class="tc-hero">
             <div class="tc-hero-top"><span class="tc-hero-label">ESTADO DEL EMBARQUE</span>
               <span t-att-class="'tc-status tc-s-' + embarque.state" t-esc="dict(embarque._fields['state'].selection).get(embarque.state)"/></div>
@@ -143,7 +155,7 @@
             </t>
           </div>
           <form t-if="es_chofer and embarque.state == 'preparacion'" t-att-action="'/transcash/embarques/%s/embarcar' % embarque.id"
-                method="post" class="tc-embark-finalize"><input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                method="post" class="tc-embark-finalize" id="tc-fin-embarque"><input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
             <p class="tc-panel-hint">Primero termina la carga de cada guía. Choferes con carga autónoma no esperan la aprobación de las evidencias; los demás sí la requieren. Bodega autoriza la salida del vehículo.</p>
             <button class="tc-button tc-button-primary" type="submit">🚚 Marcar embarque completo</button>
           </form>

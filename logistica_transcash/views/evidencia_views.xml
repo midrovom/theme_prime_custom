@@ -20,6 +20,7 @@
     <field name="arch" type="xml">
       <form string="Evidencia" create="0" delete="0" edit="0">
         <header>
+          <button name="action_open_gallery" type="object" string="Ver foto / reproducir video" icon="fa-play-circle"/>
           <button name="action_approve" type="object" string="Aprobar carga" class="btn-primary"
                   invisible="tipo != 'carga' or estado not in ('pendiente','objetada')"
                   groups="logistica_transcash.group_logistica_bodega"/>
@@ -32,9 +33,12 @@
           <group>
             <group><field name="guia_id"/><field name="tipo"/><field name="tipo_novedad"/>
               <field name="observacion"/><field name="autor_usuario_id"/></group>
-            <group><field name="archivo_nombre"/><field name="archivo" filename="archivo_nombre"/>
+            <group><field name="archivo_nombre" readonly="1"/><field name="archivo_mime" readonly="1"/>
               <field name="revisado_por_id"/><field name="fecha_revision"/>
               <field name="motivo_objecion"/><field name="respuesta_chofer"/></group>
+          </group>
+          <group string="Vista previa en Odoo">
+            <field name="archivo_mime" widget="transcash_media_preview" readonly="1" nolabel="1"/>
           </group>
         </sheet>
       </form>
