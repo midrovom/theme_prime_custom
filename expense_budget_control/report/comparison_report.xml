@@ -21,20 +21,26 @@
     <template id="report_comparison_monthly_row">
         <tr t-att-class="row_class">
             <td class="row-name" t-esc="row_name"/>
-            <t t-if="page_data['opening']">
-                <td class="amount opening" t-esc="'{:,.2f}'.format(row_data['monthly_report']['openings'][page_data['first_month']])"/>
+            <!-- El rubro identifica el grupo: sus importes se muestran solo en TOTAL GENERAL. -->
+            <t t-if="row_class == 'category-row'">
+                <td t-att-colspan="(1 if page_data['opening'] else 0) + 3 * len(page_data['months']) + 2"/>
             </t>
-            <t t-foreach="page_data['months']" t-as="month_item">
-                <t t-set="cell" t-value="row_data['monthly_report']['cells'][month_item['number']]"/>
-                <td class="amount" t-esc="'{:,.2f}'.format(cell['planned'])"/>
-                <td class="amount" t-esc="'{:,.2f}'.format(cell['actual'])"/>
-                <td class="amount" t-esc="'{:,.2f}'.format(cell['available'])"/>
+            <t t-else="">
+                <t t-if="page_data['opening']">
+                    <td class="amount opening" t-esc="'{:,.2f}'.format(row_data['monthly_report']['openings'][page_data['first_month']])"/>
+                </t>
+                <t t-foreach="page_data['months']" t-as="month_item">
+                    <t t-set="cell" t-value="row_data['monthly_report']['cells'][month_item['number']]"/>
+                    <td class="amount" t-esc="'{:,.2f}'.format(cell['planned'])"/>
+                    <td class="amount" t-esc="'{:,.2f}'.format(cell['actual'])"/>
+                    <td class="amount" t-esc="'{:,.2f}'.format(cell['available'])"/>
+                </t>
+                <!-- Al final: consumo de todos los meses seleccionados en el informe.
+                     Saldo disponible = saldo inicial anterior menos ese consumo. -->
+                <t t-set="closing_balance" t-value="row_data['monthly_report']['period_closings'][page_data['first_month']]"/>
+                <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['saldo_actual'])"/>
+                <td class="amount balance" t-esc="'{:,.2f}'.format(closing_balance['saldo_disponible'])"/>
             </t>
-            <!-- Al final: consumo de todos los meses seleccionados en el informe.
-                 Saldo disponible = saldo inicial anterior menos ese consumo. -->
-            <t t-set="closing_balance" t-value="row_data['monthly_report']['period_closings'][page_data['first_month']]"/>
-            <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['saldo_actual'])"/>
-            <td class="amount balance" t-esc="'{:,.2f}'.format(closing_balance['saldo_disponible'])"/>
         </tr>
     </template>
 
@@ -111,7 +117,7 @@
                                         <tr>
                                             <th rowspan="2">Rubro</th>
                                             <t t-if="page_data['opening']">
-                                                <th rowspan="2">Disponible inicial</th>
+                                                <th rowspan="2">Disponible inicial<br/>(hasta <span t-esc="page_data['previous_month_name']"/>)</th>
                                             </t>
                                             <t t-foreach="page_data['months']" t-as="month_item">
                                                 <th class="month-head" colspan="3" t-esc="month_item['name']"/>
@@ -154,7 +160,7 @@
                                                 </t>
                                             </t>
                                         </t>
-                                        <t t-if="data['categories'] and not data['summary_by_category_only']">
+                                        <t t-if="data['categories']">
                                             <t t-call="expense_budget_control.report_comparison_monthly_row">
                                                 <t t-set="row_data" t-value="data['grand_row']"/>
                                                 <t t-set="row_class" t-value="'grand-row'"/>
@@ -164,11 +170,11 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <!-- <p style="font-size: 9px; margin-top: 11px;">
+                            <p style="font-size: 9px; margin-top: 11px;">
                                 Disponible inicial: saldo disponible acumulado hasta el mes anterior al primero seleccionado.
                                 Saldo actual: suma del consumido de todos los meses seleccionados.
                                 Saldo disponible: disponible inicial menos saldo actual. El disponible de cada mes es proyectado menos consumido.
-                            </p> -->
+                            </p>
                         </div>
                     </t>
                 </t>
