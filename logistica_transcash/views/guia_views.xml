@@ -89,6 +89,9 @@
               <field name="fecha_prevista"/>
               <field name="fecha_salida"/>
               <field name="fecha_llegada"/>
+              <field name="fecha_cierre_chofer" readonly="1"/>
+              <field name="cierre_entrega_chofer_usuario_id" readonly="1"/>
+              <field name="fecha_entrega" readonly="1"/>
             </group>
             <group string="Intervinientes">
               <field name="remitente_id"/>
@@ -103,6 +106,8 @@
             <field name="peso_kg"/>
             <field name="descripcion_carga"/>
             <field name="observacion_inicio_carga" readonly="1"/><field name="observacion_fin_carga" readonly="1"/>
+            <field name="observacion_cierre_chofer" readonly="1"/>
+            <field name="persona_presente_chofer" readonly="1"/>
             <field name="cierre_carga_autonomo" readonly="1"/><field name="cierre_carga_usuario_id" readonly="1" invisible="not cierre_carga_autonomo"/>
             <field name="cierre_carga_fecha" readonly="1" invisible="not cierre_carga_autonomo"/>
           </group>

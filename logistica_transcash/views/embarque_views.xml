@@ -7,7 +7,7 @@
         <field name="name"/><field name="state" widget="badge"/>
         <field name="chofer_usuario_id"/><field name="proveedor_id"/>
         <field name="placa"/><field name="origen"/>
-        <field name="cantidad_guias"/><field name="guias_entregadas"/>
+        <field name="cantidad_guias"/><field name="guias_cerradas_chofer"/><field name="guias_entregadas"/>
         <field name="fecha_salida"/>
         <field name="pago_estado" groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
         <field name="valor_acordado" groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
@@ -52,7 +52,7 @@
             <field name="placa"/><field name="origen"/>
             <field name="fecha_creacion"/><field name="fecha_embarcado"/>
             <field name="fecha_salida"/><field name="fecha_entrega"/></group>
-          <group string="Control"><field name="cantidad_guias"/><field name="guias_entregadas"/>
+          <group string="Control"><field name="cantidad_guias"/><field name="guias_cerradas_chofer"/><field name="guias_entregadas"/>
             <field name="observacion_general" readonly="1"/></group></group>
           <group string="Liquidación del embarque" groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager">
             <field name="pago_estado"/><field name="valor_acordado" readonly="1"/><field name="moneda_id" invisible="1"/>
@@ -61,7 +61,7 @@
             <field name="guia_ids" readonly="1"><list create="0" delete="0">
               <field name="name"/><field name="tipo_documento"/><field name="numero_documento"/>
               <field name="destinatario_id"/><field name="destino"/>
-              <field name="state" widget="badge"/><field name="observacion_inicio_carga"/><field name="observacion_fin_carga"/>
+              <field name="state" widget="badge"/><field name="fecha_cierre_chofer"/><field name="observacion_inicio_carga"/><field name="observacion_fin_carga"/>
               <field name="roturas_pendientes"/><field name="incidencia_estado"/>
             </list></field>
           </page></notebook>

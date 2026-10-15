@@ -93,11 +93,14 @@ class Rotura(models.Model):
             raise UserError(_('No está asignado a esta guía.'))
         if not linea or linea.guia_id != guia or not linea.vigente_erp:
             raise UserError(_('Seleccione un producto vigente de esta guía.'))
-        if is_driver or guia._is_seller(user):
-            if guia.state not in ('embarque', 'embarcada', 'ruta', 'destino', 'revision'):
-                raise UserError(_('El chofer no puede reportar daños en este estado.'))
-        elif guia.state not in ('destino', 'revision', 'entregada'):
-            raise UserError(_('El destinatario todavía no puede reportar daños.'))
+        if is_driver:
+            if guia.fecha_cierre_chofer or guia.state not in ('embarque','embarcada','ruta','destino','revision'):
+                raise UserError(_('El conductor cerró su entrega; los reclamos posteriores los registra el cliente o Ventas.'))
+        elif guia._is_seller(user):
+            if guia.state not in ('embarque','embarcada','ruta','destino','revision','entregada'):
+                raise UserError(_('El vendedor no puede registrar daños en este estado.'))
+        elif guia.state not in ('revision', 'entregada'):
+            raise UserError(_('El cliente puede reportar daños después del cierre del chofer.'))
         if guia.aprobacion_global == 'aprobada':
             raise UserError(_('La guía ya fue aprobada; solicite reapertura administrativa.'))
         if not (observacion or '').strip():

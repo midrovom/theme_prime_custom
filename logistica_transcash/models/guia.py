@@ -29,8 +29,8 @@ class Guia(models.Model):
         ('embarcada', 'Cargada'),
         ('ruta', 'En ruta'),
         ('destino', 'En destino'),
-        ('revision', 'Pendiente de recepción'),
-        ('entregada', 'Entregada'),
+        ('revision', 'Entrega cerrada por chofer / revisión del cliente'),
+        ('entregada', 'Recepción confirmada por cliente'),
         ('lista_pago', 'Lista para pago'),
         ('facturada', 'Factura proveedor creada'),
         ('pagada', 'Pagada'),
@@ -64,7 +64,12 @@ class Guia(models.Model):
     fecha_prevista = fields.Datetime('Llegada prevista')
     fecha_salida = fields.Datetime('Salida real', readonly=True, copy=False)
     fecha_llegada = fields.Datetime('Llegada real', readonly=True, copy=False)
-    fecha_entrega = fields.Datetime('Entrega confirmada', readonly=True, copy=False)
+    # La operación del chofer se cierra sin esperar la recepción del cliente.
+    fecha_cierre_chofer = fields.Datetime('Entrega finalizada por chofer', readonly=True, copy=False, tracking=True)
+    cierre_entrega_chofer_usuario_id = fields.Many2one('res.users', 'Cierre realizado por', readonly=True, copy=False)
+    observacion_cierre_chofer = fields.Text('Observaciones de entrega del chofer', readonly=True, copy=False)
+    persona_presente_chofer = fields.Char('Persona indicada por chofer (sin validar)', readonly=True, copy=False)
+    fecha_entrega = fields.Datetime('Recepción confirmada por cliente', readonly=True, copy=False)
     recibido_por = fields.Char('Nombre de quien recibe', readonly=True, copy=False)
     observacion_recepcion = fields.Text('Observación general de recepción', readonly=True, copy=False)
     confirmado_por_id = fields.Many2one('res.users', 'Confirmación por', readonly=True, copy=False)
@@ -118,7 +123,9 @@ class Guia(models.Model):
         if not self.env.su:
             prohibited = {'embarque_id','aprobacion_global','incidencia_estado',
                           'fecha_salida','fecha_llegada','fecha_entrega','factura_id','state',
-                          'cierre_carga_autonomo','cierre_carga_usuario_id','cierre_carga_fecha'}
+                          'cierre_carga_autonomo','cierre_carga_usuario_id','cierre_carga_fecha',
+                          'fecha_cierre_chofer','cierre_entrega_chofer_usuario_id',
+                          'observacion_cierre_chofer','persona_presente_chofer'}
             if any(prohibited.intersection(v) for v in vals_list):
                 raise UserError(_('Los estados y el embarque se asignan mediante el flujo autorizado.'))
         return super().create(vals_list)
@@ -147,7 +154,9 @@ class Guia(models.Model):
         flow_fields = {'state','aprobacion_global','aprobacion_por_id','aprobacion_fecha',
                        'incidencia_estado','resolucion_por_id','confirmado_por_id',
                        'fecha_entrega','fecha_llegada','fecha_salida', 'factura_id',
-                       'cierre_carga_autonomo','cierre_carga_usuario_id','cierre_carga_fecha'}
+                       'cierre_carga_autonomo','cierre_carga_usuario_id','cierre_carga_fecha',
+                          'fecha_cierre_chofer','cierre_entrega_chofer_usuario_id',
+                          'observacion_cierre_chofer','persona_presente_chofer'}
         if flow_fields & set(vals) and not self.env.su:
 
             raise UserError(_('Use las acciones del flujo para modificar el estado de la guía.'))
@@ -263,6 +272,47 @@ class Guia(models.Model):
                 raise UserError(_('La guía debe estar en ruta.'))
             guia.sudo().with_context(transcash_internal_flow=True).write({'state': 'destino', 'fecha_llegada': fields.Datetime.now()})
             guia._track_event('Llegada al destino')
+        return True
+
+    def action_close_driver_delivery(self, observation='', contact_name=''):
+        """Cierre operativo, independiente de aprobación y reclamos del cliente.
+
+        Una entrega físicamente cerrada libera el embarque SOLO cuando todas sus
+        guías se cerraron; Contabilidad aún espera recepción, daños y NC.
+        """
+        self.ensure_one()
+        for guia in self:
+            user = self.env.user
+            if guia.chofer_usuario_id != user or not user.has_group('logistica_transcash.group_transcash_chofer'):
+                raise UserError(_('Solo el chofer asignado puede finalizar su entrega.'))
+            # Serializar con crear otro viaje y cerrar las otras guías del mismo
+            # embarque. El bloqueo se libera automáticamente al hacer commit.
+            if guia.embarque_id:
+                guia.embarque_id._lock_driver_operation(user.id)
+            self.env.cr.execute('SELECT id FROM transcash_guia WHERE id = %s FOR UPDATE', (guia.id,))
+            guia.invalidate_recordset(['state', 'fecha_llegada', 'fecha_cierre_chofer'])
+            if guia.fecha_cierre_chofer:
+                # Reintento HTTP después de perder señal: no crear otro cierre.
+                return True
+            if guia.state not in ('destino', 'revision'):
+                raise UserError(_('Primero registre su llegada al destino.'))
+            if not guia.fecha_llegada:
+                raise UserError(_('Primero registre la llegada real al destino.'))
+            fotos_descarga = guia.evidencia_ids.filtered(lambda e: e.tipo == 'llegada' and e.archivo)
+            if not fotos_descarga:
+                raise UserError(_('Suba y sincronice al menos una foto o video de descarga antes de finalizar. No necesita esperar la aprobación del cliente.'))
+            now = fields.Datetime.now()
+            guia.sudo().write({
+                'state': 'revision',
+                'fecha_cierre_chofer': now,
+                'cierre_entrega_chofer_usuario_id': user.id,
+                'observacion_cierre_chofer': (observation or '').strip()[:4000],
+                'persona_presente_chofer': (contact_name or '').strip()[:160],
+            })
+            guia._track_event('Chofer finalizó la entrega',
+                (observation or '').strip()[:1000] or 'Mercancía descargada, pendiente de revisión del cliente')
+            if guia.embarque_id:
+                guia.embarque_id._refresh_delivered_state()
         return True
 
     def _is_seller(self, user=None):

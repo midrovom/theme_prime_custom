@@ -62,11 +62,13 @@ class Evidencia(models.Model):
                        'novedad': ('embarque', 'embarcada', 'ruta', 'destino', 'revision')}
             if guia.state not in allowed[tipo]:
                 raise UserError(_('No puede registrar esta evidencia en el estado actual.'))
+            if tipo in ('llegada', 'novedad') and guia.fecha_cierre_chofer and not seller_damage:
+                raise UserError(_('La entrega del chofer ya fue cerrada. El cliente puede registrar observaciones y evidencias posteriores.'))
         elif tipo == 'cliente':
             if not guia._is_recipient(user):
                 raise UserError(_('Solo el destinatario puede añadir observaciones de recepción.'))
-            if guia.state not in ('destino', 'revision', 'entregada'):
-                raise UserError(_('La recepción no está habilitada.'))
+            if guia.state not in ('revision', 'entregada'):
+                raise UserError(_('La recepción se habilita cuando el chofer finaliza su entrega.'))
         else:
             raise UserError(_('Tipo de evidencia no permitido.'))
         if not (observacion or '').strip():
@@ -88,8 +90,8 @@ class Evidencia(models.Model):
             'estado': 'pendiente' if tipo in ('carga', 'llegada') else 'registrada',
             'tipo_novedad': tipo_novedad, 'rotura_id': rotura_id or False,
         })
-        if tipo == 'llegada' and guia.state == 'destino':
-            guia.sudo().with_context(transcash_internal_flow=True).write({'state': 'revision'})
+        # La llegada y sus medios NO cierran la entrega del conductor.
+        # Solo el botón explícito 'Finalizar mi entrega' la pasa a revisión.
         if tipo_novedad != 'ninguna' and not rotura_id:
             guia._open_incident('%s: %s' % (tipo_novedad, observacion[:250]))
         guia._track_event('Evidencia registrada', '%s / #%d' % (tipo, ev.id))

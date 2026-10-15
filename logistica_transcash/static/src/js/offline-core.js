@@ -80,6 +80,9 @@
     var files = draft.files || [];
     validateFiles(files);
     if (!draft.userId || !draft.guideId || ['evidencia', 'rotura'].indexOf(draft.kind) === -1) throw new Error('Guía y usuario requeridos.');
+    if (!(draft.fields.observacion || '').trim() && draft.kind === 'evidencia' && draft.fields.tipo === 'llegada') {
+      draft.fields.observacion = 'Evidencia de descarga sin novedades declaradas por el chofer';
+    }
     if (!(draft.fields.observacion || '').trim()) throw new Error('Escribe una observación.');
     if (draft.kind === 'rotura' && (!files.length || !draft.fields.linea_id || !(Number(String(draft.fields.cantidad_rota || '').replace(',', '.')) > 0))) {
       throw new Error('La rotura requiere un producto, cantidad y una foto o video.');

@@ -6,9 +6,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=530"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=540"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
-    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=530"/>
+    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=540"/>
   </template>
 
   <template id="mobile_brand" name="Transcash Mobile Brand">
@@ -85,6 +85,7 @@
                   </div></div>
                 <div class="tc-guide-bottom"><div class="tc-mini-meta">
                   <span>◧ <t t-esc="g.total_productos"/> productos</span>
+                  <span t-if="g.fecha_cierre_chofer and not g.fecha_entrega">✓ Chofer finalizó · pendiente cliente</span>
                   <span t-if="g.roturas_pendientes" class="tc-red">! <t t-esc="g.roturas_pendientes"/> rotura(s) por revisar</span>
                   <span t-elif="g.incidencia_estado == 'abierta'" class="tc-red">! Con incidencia</span>
                   <span t-else="">✓ Registro disponible</span>
@@ -129,7 +130,7 @@
               <small>Guía <t t-esc="guia.name"/> · Sigue estos pasos</small></div>
             <div class="tc-guided-rail"><span t-att-class="'is-done' if guia.state != 'registrada' else 'is-current'">1. Carga</span>
               <span t-att-class="'is-done' if guia.state in ('destino','revision','entregada','lista_pago','facturada','pagada') else 'is-current' if guia.state in ('embarcada','ruta') else ''">2. Viaje</span>
-              <span t-att-class="'is-done' if guia.state in ('entregada','lista_pago','facturada','pagada') else 'is-current' if guia.state in ('destino','revision') else ''">3. Entrega</span></div>
+              <span t-att-class="'is-done' if guia.fecha_cierre_chofer or guia.state in ('entregada','lista_pago','facturada','pagada') else 'is-current' if guia.state in ('destino','revision') else ''">3. Entrega</span></div>
             <div class="tc-guided-buttons">
               <form t-if="guia.state == 'registrada' and guia.embarque_id and guia.embarque_id.state == 'preparacion'" t-att-action="'/transcash/embarques/%d/guia/%d/iniciar' % (guia.embarque_id.id,guia.id)" method="post">
                 <input name="csrf_token" type="hidden" t-att-value="csrf_token"/><input name="return_to" type="hidden" value="guia"/>
@@ -143,9 +144,20 @@
               <form t-if="guia.state == 'ruta'" t-att-action="'/transcash/guias/%d/llegada' % guia.id" method="post">
                 <input name="csrf_token" type="hidden" t-att-value="csrf_token"/>
                 <button class="tc-action-tile tc-action-tile-primary" type="submit"><b>05</b><span>📍 Llegué al destino</span><small>Registrar arribo</small></button></form>
-              <button t-if="guia.state in ('destino','revision')" class="tc-action-tile tc-action-tile-primary" type="button" data-quick-modal="evidencia" data-quick-evidence-type="llegada"><b>06</b><span>🎥 Fotos / video de descarga</span><small>Cómo llegó la mercancía</small></button>
-              <button t-if="guia.state in ('embarque','embarcada','ruta','destino','revision')" type="button" class="tc-action-tile" data-quick-modal="rotura"><b>!</b><span>⚠ Reportar rotura</span><small>Por SKU y cantidad</small></button>
-              <button t-if="guia.state in ('embarcada','ruta','destino','revision')" type="button" class="tc-action-tile" data-quick-modal="evidencia" data-quick-evidence-type="novedad"><b>✎</b><span>Registrar novedad</span><small>Observación y evidencia</small></button>
+              <button t-if="guia.state == 'destino' or (guia.state == 'revision' and not guia.fecha_cierre_chofer)" class="tc-action-tile tc-action-tile-primary" type="button" data-quick-modal="evidencia" data-quick-evidence-type="llegada"><b>06</b><span>📸 Foto / video de descarga</span><small>Subir evidencia al servidor</small></button>
+              <form t-if="guia.state in ('destino','revision') and not guia.fecha_cierre_chofer" t-att-action="'/transcash/guias/%d/finalizar-entrega' % guia.id" method="post" class="tc-driver-close-form">
+                <input name="csrf_token" type="hidden" t-att-value="csrf_token"/>
+                <details class="tc-quick-note"><summary>＋ Agregar observación (opcional)</summary>
+                  <label class="tc-label" for="tc-cierre-observacion">Observación de entrega</label>
+                  <textarea id="tc-cierre-observacion" class="tc-textarea" name="observacion" rows="2" maxlength="4000" placeholder="Ej.: Se entregaron todas las cajas"/>
+                  <label class="tc-label" for="tc-persona-presente">Persona presente (opcional)</label>
+                  <input id="tc-persona-presente" class="tc-input" name="persona_presente" maxlength="160" placeholder="Nombre indicado por chofer"/>
+                </details>
+                <button class="tc-action-tile tc-action-tile-primary tc-driver-close-btn" type="submit"><b>✓</b><span>Finalizar mi entrega</span><small>El cliente revisa después. Continúa con la siguiente guía.</small></button>
+              </form>
+              <div t-if="guia.fecha_cierre_chofer" class="tc-guided-done">✓ Tu entrega está finalizada. El cliente podrá comentar y confirmar después. Ya puedes continuar tu viaje.</div>
+              <button t-if="guia.state in ('embarque','embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer" type="button" class="tc-action-tile" data-quick-modal="rotura"><b>!</b><span>⚠ Reportar rotura</span><small>Por SKU y cantidad</small></button>
+              <button t-if="guia.state in ('embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer" type="button" class="tc-action-tile" data-quick-modal="evidencia" data-quick-evidence-type="novedad"><b>✎</b><span>Registrar novedad</span><small>Observación y evidencia</small></button>
               <div t-if="guia.state in ('entregada','lista_pago','facturada','pagada')" class="tc-guided-done">✓ Guía entregada. Puedes consultar todas las evidencias.</div>
             </div>
             <a t-if="guia.embarque_id" t-att-href="'/transcash/embarques/%d' % guia.embarque_id.id" class="tc-guided-return">↗ Ver todas las guías de mi embarque</a>
@@ -153,12 +165,12 @@
           <!-- Cliente nunca accede al conjunto de guías del embarque. -->
           <section t-if="es_receptor and not es_chofer" class="tc-guided-flow tc-customer-flow" aria-label="Recepción del cliente">
             <div class="tc-guided-heading"><span>📦 PORTAL DEL CLIENTE</span><h2>Seguimiento de mi guía</h2>
-              <small>La carga, ruta y descarga son de consulta. Solo puedes intervenir en tu recepción.</small></div>
+              <small>Observa las fotos y el viaje. Cuando el chofer finalice la entrega podrás comentar y aceptar u objetar la recepción.</small></div>
             <div class="tc-guided-buttons">
               <button class="tc-action-tile" type="button" data-go-tab="evidencias"><b>👁</b><span>Ver fotos y videos</span><small>Carga y entrega · lectura</small></button>
               <button class="tc-action-tile" type="button" data-go-tab="historial"><b>↗</b><span>Ver seguimiento</span><small>Estados y comentarios</small></button>
-              <button t-if="guia.state in ('destino','revision','entregada') and guia.aprobacion_global != 'aprobada'" class="tc-action-tile tc-action-tile-primary" type="button" data-quick-modal="evidencia" data-quick-evidence-type="cliente"><b>📷</b><span>Evidencia de recepción</span><small>Foto, video y novedades</small></button>
-              <button t-if="guia.state in ('destino','revision','entregada') and guia.aprobacion_global != 'aprobada'" class="tc-action-tile" type="button" data-quick-modal="rotura"><b>⚠</b><span>Reportar rotura</span><small>Producto y cantidad</small></button>
+              <button t-if="guia.state in ('revision','entregada') and guia.aprobacion_global != 'aprobada'" class="tc-action-tile tc-action-tile-primary" type="button" data-quick-modal="evidencia" data-quick-evidence-type="cliente"><b>📷</b><span>Evidencia de recepción</span><small>Foto, video y novedades</small></button>
+              <button t-if="guia.state in ('revision','entregada') and guia.aprobacion_global != 'aprobada'" class="tc-action-tile" type="button" data-quick-modal="rotura"><b>⚠</b><span>Reportar rotura</span><small>Producto y cantidad</small></button>
               <a t-if="guia.state == 'revision'" href="#recepcion-cliente" class="tc-action-tile tc-action-tile-primary"><b>✓</b><span>Aceptar recepción</span><small>Con observaciones si aplica</small></a>
             </div>
           </section>
@@ -210,12 +222,13 @@
                 <strong t-if="es_chofer and guia.state == 'embarque'">Documenta la carga</strong>
                 <strong t-elif="es_chofer and guia.state == 'embarcada'">Carga lista; espera autorización de salida</strong>
                 <strong t-elif="es_chofer and guia.state == 'ruta'">Sigue tu recorrido</strong>
-                <strong t-elif="es_chofer and guia.state in ('destino','revision')">Documenta la descarga</strong>
+                <strong t-elif="es_chofer and guia.fecha_cierre_chofer">Entrega finalizada, pendiente de cliente</strong>
+                <strong t-elif="es_chofer and guia.state in ('destino','revision')">Sube foto y finaliza la entrega</strong>
                 <strong t-elif="es_receptor and guia.state == 'revision'">Revisa la recepción</strong>
                 <strong t-else="">Consulta el estado de la guía</strong>
                 <p t-if="guia.state == 'embarque'">Sube fotos o videos. Bodega verificará la carga antes de la salida.</p>
                 <p t-elif="guia.state == 'embarcada'">Bodega debe autorizar la salida de todo el embarque.</p>
-                <p t-elif="guia.state == 'ruta'">Registra cualquier novedad y confirma cuando llegues.</p>
+                <p t-elif="guia.state == 'ruta'">Registra tu llegada; toma foto o video y cierra la entrega. No esperas al cliente.</p>
                 <p t-elif="guia.state in ('destino','revision')">Valida las evidencias de llegada y reporta daños por producto.</p>
                 <p t-else="">Los documentos, observaciones y aprobaciones quedan en el historial.</p>
               </div>
@@ -243,7 +256,7 @@
                 </div>
                 <p class="tc-panel-hint">Peso: <t t-esc="ln.peso_kg"/> kg · Pallets: <t t-esc="ln.pallets_info"/> · Cajas: <t t-esc="ln.cajas_info"/> (conversiones informativas del ERP)</p>
                 <div t-if="ln.cantidad_rota_pendiente" class="tc-product-note">⚠ <t t-esc="ln.cantidad_rota_pendiente"/> pendiente(s) de validar</div>
-                <button t-if="(es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision')) or (es_receptor and guia.state in ('destino','revision','entregada') and guia.aprobacion_global != 'aprobada') or (es_vendedor and guia.state in ('embarque','embarcada','ruta','destino','revision') and guia.aprobacion_global != 'aprobada')"
+                <button t-if="(es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer) or (es_receptor and guia.state in ('revision','entregada') and guia.aprobacion_global != 'aprobada') or (es_vendedor and guia.state in ('embarque','embarcada','ruta','destino','revision') and guia.aprobacion_global != 'aprobada')"
                         class="tc-inline-action" type="button" t-att-data-damage-line="ln.id">Reportar rotura ↗</button>
               </div>
             </t>
@@ -330,7 +343,7 @@
 
           <div t-if="es_receptor and guia.state == 'revision'" class="tc-reception" id="recepcion-cliente">
             <div class="tc-section-heading"><h2>Confirmar recepción física</h2></div>
-            <p>Puede recibir con observaciones y daños. La aprobación final de la guía y la nota de crédito se gestionan por separado.</p>
+            <p>El chofer ya finalizó su parte. Puedes revisar fotografías, comentar, objetar o reportar roturas sin detener su siguiente viaje. El trámite de pago es independiente.</p>
             <form t-att-action="'/transcash/guias/%d/confirmar' % guia.id" method="post">
               <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
               <label class="tc-label">Nombre de quien recibe</label><input class="tc-input" type="text" name="recibido_por" required="required" maxlength="160" placeholder="Nombre y apellido"/>
@@ -338,10 +351,11 @@
               <button type="submit" class="tc-button tc-button-primary">Confirmar entrega →</button>
             </form>
           </div>
-          <div t-if="guia.fecha_entrega" class="tc-delivered">✓ Entrega física registrada a nombre de <b t-esc="guia.recibido_por"/></div>
+          <div t-if="guia.fecha_cierre_chofer" class="tc-delivered">✓ Entrega finalizada por chofer el <t t-esc="guia.fecha_cierre_chofer"/>. Recepción del cliente: <b t-esc="'Confirmada' if guia.fecha_entrega else 'Pendiente'"/>.</div>
+          <div t-if="guia.fecha_entrega" class="tc-delivered">✓ Cliente confirmó recepción a nombre de <b t-esc="guia.recibido_por"/></div>
         </main>
 
-        <div t-if="(es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision')) or (es_receptor and guia.state in ('destino','revision','entregada') and guia.aprobacion_global != 'aprobada') or (es_vendedor and guia.state in ('embarque','embarcada','ruta','destino','revision') and guia.aprobacion_global != 'aprobada')" class="tc-floating">
+        <div t-if="(es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer) or (es_receptor and guia.state in ('revision','entregada') and guia.aprobacion_global != 'aprobada') or (es_vendedor and guia.state in ('embarque','embarcada','ruta','destino','revision') and guia.aprobacion_global != 'aprobada')" class="tc-floating">
           <button class="tc-fab" type="button" data-modal-open="action"><span>＋</span> Registrar evidencia / rotura</button>
         </div>
         <nav class="tc-bottom" aria-label="Navegación inferior">
@@ -362,15 +376,15 @@
             <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
             <label class="tc-label">Tipo de evidencia</label><select name="tipo" class="tc-input" required="required">
               <option t-if="es_chofer and guia.state == 'embarque'" value="carga">Carga / embarque</option>
-              <option t-if="es_chofer and guia.state in ('destino','revision')" value="llegada">Llegada / descarga</option>
-              <option t-if="es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision')" value="novedad">Novedad en ruta</option>
-              <option t-if="es_receptor and guia.state in ('destino','revision','entregada')" value="cliente">Evidencia del destinatario</option>
+              <option t-if="es_chofer and guia.state in ('destino','revision') and not guia.fecha_cierre_chofer" value="llegada">Llegada / descarga</option>
+              <option t-if="es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer" value="novedad">Novedad en ruta</option>
+              <option t-if="es_receptor and guia.state in ('revision','entregada')" value="cliente">Evidencia del destinatario</option>
             </select>
             <label class="tc-label">¿Hay otra novedad?</label><select class="tc-input" name="tipo_novedad">
               <option value="ninguna">Sin novedad adicional</option>
               <option value="faltante">Faltantes</option><option value="otro">Otra observación</option>
             </select>
-            <label class="tc-label">Observaciones</label><textarea class="tc-textarea" rows="3" name="observacion" maxlength="4000" required="required" placeholder="Describe las condiciones de la mercancía..."/>
+            <label class="tc-label" for="tc-evidence-comment">Observaciones <small>(opcionales en descarga)</small></label><textarea id="tc-evidence-comment" class="tc-textarea" rows="2" name="observacion" maxlength="4000" placeholder="Sin novedades durante la descarga"/>
             <div class="tc-upload-grid">
               <label class="tc-upload-option"><span>📷</span><strong>Tomar foto</strong><small>Usar cámara</small>
                 <input type="file" name="archivos" accept="image/*" capture="environment" data-media-input="1"/>

@@ -80,13 +80,15 @@ class TranscashPWA(http.Controller):
         if guia.aprobacion_global == 'aprobada':
             return False
         if kind == 'rotura':
-            if (guia.chofer_usuario_id == user and user.has_group('logistica_transcash.group_transcash_chofer')) or guia._is_seller(user):
-                return guia.state in ('embarque','embarcada','ruta','destino','revision')
-            return guia._is_recipient(user) and guia.state in ('destino','revision','entregada')
+            if guia.chofer_usuario_id == user and user.has_group('logistica_transcash.group_transcash_chofer'):
+                return not guia.fecha_cierre_chofer and guia.state in ('embarque','embarcada','ruta','destino')
+            if guia._is_seller(user):
+                return guia.state in ('embarque','embarcada','ruta','destino','revision','entregada')
+            return guia._is_recipient(user) and guia.state in ('revision','entregada')
         if kind == 'evidencia':
             if guia.chofer_usuario_id == user and user.has_group('logistica_transcash.group_transcash_chofer'):
-                return guia.state in ('embarque','embarcada','ruta','destino','revision')
-            return guia._is_recipient(user) and guia.state in ('destino','revision','entregada')
+                return not guia.fecha_cierre_chofer and guia.state in ('embarque','embarcada','ruta','destino')
+            return guia._is_recipient(user) and guia.state in ('revision','entregada')
         return False
 
     def _upload_args(self, data, require_chunk=False):

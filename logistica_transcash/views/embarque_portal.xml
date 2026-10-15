@@ -15,7 +15,7 @@
             <div class="tc-next-icon">🚚</div>
             <div>
               <strong>Ya tienes un embarque en curso: <t t-esc="embarque_activo.name"/></strong>
-              <p>No puedes crear otro hasta entregar todas las guías. Si el viaje sigue en preparación puedes añadir guías que llegaron después por API.</p>
+              <p>Un embarque a la vez: después de finalizar las entregas como chofer puedes iniciar otro. La revisión del cliente ocurre después y no te detiene.</p>
               <a class="tc-button tc-button-primary" t-att-href="'/transcash/embarques/%s' % embarque_activo.id">Continuar mi embarque →</a>
             </div>
           </div>
@@ -30,7 +30,7 @@
                     <strong t-esc="e.proveedor_id.name"/><div class="tc-embark-meta">
                       <span>🚚 <t t-esc="e.placa or 'Sin placa'"/></span>
                       <span>📦 <t t-esc="e.cantidad_guias"/> guías</span>
-                      <span>✓ <t t-esc="e.guias_entregadas"/> entregadas</span></div>
+                      <span>✓ <t t-esc="e.guias_cerradas_chofer"/> cerradas · <t t-esc="e.guias_entregadas"/> confirmadas</span></div>
                     <div class="tc-guide-bottom"><span t-esc="e.origen or 'Origen sin indicar'"/><span class="tc-guide-go">→</span></div>
                   </a>
                 </t>
@@ -77,14 +77,14 @@
           <div t-if="request.params.get('ok')" class="tc-alert tc-alert-ok" role="status">✓ Información actualizada</div>
           <section t-if="es_chofer" class="tc-guided-flow tc-embark-flow">
             <div class="tc-guided-heading"><span>🚚 MI VIAJE ACTUAL</span><h2>Control del embarque</h2>
-              <small>1. Inicia carga por guía → 2. Adjunta evidencia → 3. Finaliza cada carga → 4. Embarque completo → 5. Ruta y recepción</small></div>
+              <small>1. Cargar → 2. Salir → 3. Llegar → 4. Foto de descarga → 5. Finalizar entrega · la revisión del cliente es posterior</small></div>
             <div class="tc-guided-buttons">
               <a t-if="embarque.state == 'preparacion'" href="#tc-add-guides" class="tc-action-tile"><b>＋</b><span>Agregar guías</span><small>Incluye las nuevas del ERP</small></a>
               <a t-if="embarque.state == 'preparacion' and embarque.guia_ids.filtered(lambda g: g.state in ('registrada','embarque'))" t-att-href="'/transcash/guias/%d' % embarque.guia_ids.filtered(lambda g: g.state in ('registrada','embarque'))[0].id" class="tc-action-tile tc-action-tile-primary"><b>📦</b><span>Continuar carga</span><small>Primera guía pendiente</small></a>
               <a t-if="embarque.state == 'preparacion'" href="#tc-fin-embarque" class="tc-action-tile"><b>✓</b><span>Finalizar embarque</span><small>Al completar todas las guías</small></a>
-              <a t-if="embarque.state == 'ruta' and embarque.guia_ids.filtered(lambda g: g.state == 'ruta')" t-att-href="'/transcash/guias/%d' % embarque.guia_ids.filtered(lambda g: g.state == 'ruta')[0].id" class="tc-action-tile tc-action-tile-primary"><b>📍</b><span>Llegar a destino</span><small>Registrar cada entrega</small></a>
+              <a t-if="embarque.state == 'ruta' and embarque.guia_ids.filtered(lambda g: g.state in ('ruta','destino') and not g.fecha_cierre_chofer)" t-att-href="'/transcash/guias/%d' % embarque.guia_ids.filtered(lambda g: g.state in ('ruta','destino') and not g.fecha_cierre_chofer)[0].id" class="tc-action-tile tc-action-tile-primary"><b>📍</b><span>Llegar a destino</span><small>Registrar cada entrega</small></a>
               <div t-if="embarque.state == 'embarcado'" class="tc-guided-wait">⏳ Carga lista; Bodega autoriza salida.</div>
-              <div t-if="embarque.state == 'entregado'" class="tc-guided-done">✓ Embarque finalizado.</div>
+              <div t-if="embarque.state == 'entregado'" class="tc-guided-done">✓ Finalizaste todas tus entregas. Puedes crear otro embarque. El cliente revisa sus guías después.</div>
             </div>
           </section>
           <section class="tc-hero">
@@ -95,7 +95,7 @@
               <div><small>EMPRESA DE TRANSPORTE</small><h2 t-esc="embarque.proveedor_id.name"/></div>
             </div></div>
             <div class="tc-hero-pills"><span>📦 <t t-esc="embarque.cantidad_guias"/> guías</span>
-              <span>✓ <t t-esc="embarque.guias_entregadas"/> entregadas</span></div>
+              <span>✓ <t t-esc="embarque.guias_cerradas_chofer"/> cerradas por chofer · <t t-esc="embarque.guias_entregadas"/> confirmadas por cliente</span></div>
           </section>
           <div class="tc-info-strip"><span><b>Chofer</b><t t-esc="embarque.chofer_usuario_id.name"/></span>
             <span><b>Origen</b><t t-esc="embarque.origen or 'Pendiente'"/></span></div>
@@ -127,6 +127,7 @@
           <div class="tc-embark-guides">
             <t t-foreach="embarque.guia_ids.sorted('id')" t-as="g">
               <article class="tc-embark-guide">
+                <div t-if="g.fecha_cierre_chofer" class="tc-guided-done">✓ Chofer finalizó esta entrega · <t t-esc="'Cliente confirmó recepción' if g.fecha_entrega else 'Cliente por confirmar'"/></div>
                 <div class="tc-guide-top"><a t-att-href="'/transcash/guias/%s' % g.id" class="tc-embark-guide-link">GUÍA <t t-esc="g.name"/> ↗</a>
                   <span t-att-class="'tc-status tc-s-' + g.state" t-esc="dict(g._fields['state'].selection).get(g.state)"/></div>
                 <p><strong t-esc="g.destinatario_id.name or 'Por asignar'"/><span> · </span><t t-esc="g.destino or 'Destino por confirmar'"/></p>
@@ -161,7 +162,7 @@
           </form>
           <div t-if="embarque.state == 'embarcado'" class="tc-next-card"><div class="tc-next-icon">✓</div>
             <div><strong>Carga completa</strong><p>Pendiente de autorización de salida por Bodega.</p></div></div>
-          <div t-if="embarque.state == 'entregado'" class="tc-delivered">✓ Todas las guías fueron entregadas. La liquidación corresponde a Contabilidad.</div>
+          <div t-if="embarque.state == 'entregado'" class="tc-delivered">✓ El chofer finalizó todas sus entregas. Puede iniciar otro embarque. Contabilidad liquidará cuando los clientes confirmen y se resuelvan las novedades.</div>
         </main>
         <nav class="tc-bottom"><a class="tc-bottom-item active" href="/transcash/embarques">🚚 Embarques</a>
           <a class="tc-bottom-item" href="/transcash/guias">▤ Guías</a>

@@ -141,9 +141,12 @@ class TranscashPortal(http.Controller):
             files = self._uploaded_files()
             if tipo in ('carga','llegada') and not files:
                 raise UserError(_('Adjunte al menos una foto o video.'))
+            note = (post.get('observacion') or '').strip()
+            if tipo == 'llegada' and not note:
+                note = 'Evidencia de descarga sin novedades declaradas por el chofer'
             for file in (files or [(False,False,False)]):
                 request.env['transcash.evidencia'].register_evidence(
-                    guia, tipo, post.get('observacion') or '', *file,
+                    guia, tipo, note, *file,
                     post.get('tipo_novedad') or 'ninguna')
         except (UserError, ValidationError, ValueError) as err:
             return self._render_guide(guia, str(err))
@@ -176,6 +179,26 @@ class TranscashPortal(http.Controller):
         except UserError as err:
             return self._render_guide(guia, str(err))
         return request.redirect('/transcash/guias/%s?ok=1' % guide_id)
+
+    @http.route('/transcash/guias/<int:guide_id>/finalizar-entrega', type='http', auth='user',
+                website=True, methods=['POST'], csrf=True)
+    def close_driver_delivery(self, guide_id, **post):
+        guia = self._guide(guide_id)
+        if not guia:
+            return request.not_found()
+        try:
+            guia.action_close_driver_delivery(post.get('observacion') or '', post.get('persona_presente') or '')
+        except (UserError, ValidationError) as err:
+            return self._render_guide(guia, str(err))
+        # Llevar al conductor a la siguiente entrega pendiente, sin pasos extra.
+        trip = guia.embarque_id
+        if trip:
+            following = trip.guia_ids.filtered(lambda g: g.id != guia.id and
+                g.state in ('ruta','destino') and not g.fecha_cierre_chofer)
+            if following:
+                return request.redirect('/transcash/guias/%d?ok=1' % following[0].id)
+            return request.redirect('/transcash/embarques/%d?ok=1' % trip.id)
+        return request.redirect('/transcash/guias/%d?ok=1' % guide_id)
 
     @http.route('/transcash/evidencia/<int:evidence_id>/revision/<string:decision>',
                 type='http', auth='user', website=True, methods=['POST'], csrf=True)

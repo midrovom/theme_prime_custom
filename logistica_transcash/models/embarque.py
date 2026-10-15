@@ -13,7 +13,7 @@ class Embarque(models.Model):
     company_id = fields.Many2one('res.company', required=True, default=lambda self: self.env.company, readonly=True)
     state = fields.Selection([
         ('preparacion', 'Preparación'), ('embarcado', 'Embarcado'),
-        ('ruta', 'En ruta'), ('entregado', 'Entregado'),
+        ('ruta', 'En ruta'), ('entregado', 'Entregas finalizadas por chofer'),
         ('cancelado', 'Cancelado'),
     ], default='preparacion', required=True, tracking=True, readonly=True, index=True)
     chofer_usuario_id = fields.Many2one('res.users', 'Chofer', required=True, readonly=True, index=True)
@@ -23,11 +23,12 @@ class Embarque(models.Model):
     fecha_creacion = fields.Datetime('Creación', default=fields.Datetime.now, readonly=True)
     fecha_embarcado = fields.Datetime('Carga completada', readonly=True, copy=False)
     fecha_salida = fields.Datetime('Salida real', readonly=True, copy=False)
-    fecha_entrega = fields.Datetime('Última entrega', readonly=True, copy=False)
+    fecha_entrega = fields.Datetime('Último cierre operativo del chofer', readonly=True, copy=False)
     observacion_general = fields.Text('Observaciones del embarque')
     guia_ids = fields.One2many('transcash.guia', 'embarque_id', string='Guías')
     cantidad_guias = fields.Integer('Guías', compute='_compute_guia_stats')
-    guias_entregadas = fields.Integer('Entregadas', compute='_compute_guia_stats')
+    guias_entregadas = fields.Integer('Recepciones confirmadas', compute='_compute_guia_stats')
+    guias_cerradas_chofer = fields.Integer('Entregas cerradas por chofer', compute='_compute_guia_stats')
 
     moneda_id = fields.Many2one('res.currency', related='company_id.currency_id', readonly=True)
     valor_acordado = fields.Monetary('Costo total del embarque', currency_field='moneda_id',
@@ -47,15 +48,17 @@ class Embarque(models.Model):
         ('embarque_tarifa_positiva', 'CHECK(valor_acordado >= 0)', 'Costo de flete inválido.'),
     ]
 
-    @api.depends('guia_ids', 'guia_ids.state')
+    @api.depends('guia_ids', 'guia_ids.state', 'guia_ids.fecha_cierre_chofer')
     def _compute_guia_stats(self):
         for rec in self:
             rec.cantidad_guias = len(rec.guia_ids)
             rec.guias_entregadas = len(rec.guia_ids.filtered(lambda g: g.state in
                 ('entregada','lista_pago','facturada','pagada')))
+            rec.guias_cerradas_chofer = len(rec.guia_ids.filtered(lambda g: g.fecha_cierre_chofer or
+                g.state in ('entregada','lista_pago','facturada','pagada')))
 
-    # Estados que impiden iniciar otro viaje. "Embarcado" no equivale a
-    # "terminado": también hay que entregar todas las guías.
+    # Estados operativos activos: se liberan cuando el chofer cierra TODAS
+    # las entregas. La revisión del cliente y la liquidación no lo retienen.
     _ACTIVE_STATES = ('preparacion', 'embarcado', 'ruta')
 
     @api.model
@@ -161,7 +164,7 @@ class Embarque(models.Model):
         active = self._active_driver_trip(user.id)
         if active:
             raise UserError(_('Ya tiene el embarque %s en curso. Abra ese embarque para agregar guías nuevas; ' 
-                              'solo podrá crear otro cuando el actual esté entregado.') % active.name)
+                              'solo podrá crear otro cuando cierre todas las entregas del viaje.') % active.name)
         self.env.cr.execute('SELECT id FROM transcash_guia WHERE id = ANY(%s) ORDER BY id FOR UPDATE', (ids,))
         guias = self.env['transcash.guia'].sudo().browse(ids).exists()
         guias.invalidate_recordset(['embarque_id','state'])
@@ -301,9 +304,15 @@ class Embarque(models.Model):
         return True
 
     def _refresh_delivered_state(self):
+        """Libera al chofer tras su última entrega, sin esperar al cliente.
+
+        Las guías históricas ya confirmadas cuentan igualmente como cerradas.
+        'Entregado' en embarque indica cierre OPERATIVO, no autorización de pago.
+        """
         for rec in self.sudo():
-            if rec.state == 'ruta' and rec.guia_ids and all(g.state in
-                    ('entregada','lista_pago','facturada','pagada') for g in rec.guia_ids):
+            if rec.state == 'ruta' and rec.guia_ids and all(
+                    g.fecha_cierre_chofer or g.state in ('entregada','lista_pago','facturada','pagada')
+                    for g in rec.guia_ids):
                 rec.write({'state':'entregado','fecha_entrega':fields.Datetime.now()})
 
     def _check_accounting(self):
@@ -318,6 +327,8 @@ class Embarque(models.Model):
             if rec.state != 'entregado' or not rec.guia_ids:
                 raise UserError(_('Todas las guías del embarque deben estar entregadas.'))
             for guia in rec.guia_ids:
+                if guia.state not in ('entregada','lista_pago','facturada','pagada'):
+                    raise UserError(_('El cliente aún no ha confirmado la recepción de la guía %s.') % guia.name)
                 if guia.aprobacion_global != 'aprobada' or guia.roturas_pendientes or guia.incidencia_estado == 'abierta':
                     raise UserError(_('La guía %s aún tiene revisiones, daños o incidencias abiertas.') % guia.name)
                 if guia.roturas_aprobadas:

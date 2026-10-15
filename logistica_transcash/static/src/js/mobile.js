@@ -44,12 +44,35 @@
       modal.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('tc-modal-open');
     }
+    var evidenceType = modal && modal.querySelector('[data-form-panel="evidencia"] select[name="tipo"]');
+    var evidenceComment = modal && modal.querySelector('[data-form-panel="evidencia"] textarea[name="observacion"]');
+    function updateCommentRequirement() {
+      if (!evidenceType || !evidenceComment) return;
+      evidenceComment.required = evidenceType.value !== 'llegada';
+      evidenceComment.placeholder = evidenceType.value === 'llegada' ? 'Opcional · indica una novedad si existe' : 'Describe la evidencia';
+    }
+    if (evidenceType) {
+      evidenceType.addEventListener('change', updateCommentRequirement);
+      updateCommentRequirement();
+    }
     document.querySelectorAll('[data-quick-modal]').forEach(function (button) {
       button.addEventListener('click', function () {
         openModal(button.dataset.quickModal);
         if (button.dataset.quickEvidenceType && modal) {
           var typeSelect = modal.querySelector('[data-form-panel="evidencia"] select[name="tipo"]');
-          if (typeSelect) typeSelect.value = button.dataset.quickEvidenceType;
+          if (typeSelect) {
+            typeSelect.value = button.dataset.quickEvidenceType;
+            typeSelect.dispatchEvent(new Event('change'));
+          }
+        }
+      });
+    });
+    document.querySelectorAll('.tc-driver-close-form').forEach(function (form) {
+      form.addEventListener('submit', function () {
+        var button = form.querySelector('button[type="submit"]');
+        if (button) {
+          button.disabled = true;
+          button.querySelector('span').textContent = 'Finalizando entrega…';
         }
       });
     });
