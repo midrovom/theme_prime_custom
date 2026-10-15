@@ -82,7 +82,6 @@
                             <div class="meta">
                                 <strong>Empresa:</strong> <span t-esc="o.company_id.name"/>
                                 <span> | </span><strong>Año:</strong> <span t-esc="o.year"/>
-                                <span> | </span><strong>Moneda:</strong> <span t-esc="o.company_id.currency_id.name"/>
                                 <t t-if="o.category_id">
                                     <span> | </span><strong>Rubro:</strong> <span t-esc="o.category_id.name"/>
                                 </t>
@@ -170,11 +169,6 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <!-- <p style="font-size: 9px; margin-top: 11px;">
-                                Disponible inicial: saldo disponible acumulado hasta el mes anterior al primero seleccionado.
-                                Saldo actual: suma del consumido de todos los meses seleccionados.
-                                Saldo disponible: disponible inicial menos saldo actual. El disponible de cada mes es proyectado menos consumido.
-                            </p> -->
                         </div>
                     </t>
                 </t>
