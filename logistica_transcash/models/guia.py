@@ -170,7 +170,7 @@ class Guia(models.Model):
 
     def action_arrive(self):
         for guia in self:
-            if guia.chofer_usuario_id != self.env.user and not self._is_manager():
+            if (guia.chofer_usuario_id != self.env.user or not self.env.user.has_group('logistica_transcash.group_transcash_chofer')) and not self._is_manager():
                 raise UserError(_('Solo el chofer asignado puede registrar la llegada.'))
             if guia.state != 'ruta':
                 raise UserError(_('La guía debe estar en ruta.'))

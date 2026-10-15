@@ -79,3 +79,104 @@ body.tc-modal-open{overflow:hidden}
 .tc-timeline-event time,.tc-timeline-event small{display:block;color:#94a4b2;font-size:10px;margin-top:4px}
 .tc-timeline-event p{font-size:12px;margin-top:7px;overflow-wrap:anywhere;color:#60758a}
 .tc-upload-progress{color:#087e72!important;font-weight:800}
+
+/* V4.2: una misma WebApp con diseño móvil y un espacio de trabajo real en escritorio. */
+.tc-desktop-sidebar,.tc-desktop-list-tools{display:none}
+.tc-sidebar-link:focus-visible,.tc-filter:focus-visible,.tc-guide-card:focus-visible,
+.tc-tab:focus-visible,.tc-fab:focus-visible{outline:3px solid #10be92;outline-offset:3px}
+@media (min-width: 1024px){
+  body.tc-app{background:#eef3f7;font-size:15px}
+  .tc-shell{max-width:none;width:100%;min-height:100vh;margin:0;box-shadow:none;
+    display:grid;grid-template-columns:258px minmax(0,1fr);grid-template-rows:79px auto minmax(0,1fr);
+    align-items:start;background:#f5f8fb}
+  .tc-desktop-sidebar{grid-column:1;grid-row:1 / 4;display:flex;flex-direction:column;
+    position:sticky;top:0;height:100vh;overflow-y:auto;background:linear-gradient(165deg,#152a43,#0f2034);
+    color:#e5edf4;padding:32px 19px 23px;z-index:18;min-width:0}
+  .tc-sidebar-brand{padding:0 11px 34px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:24px}
+  .tc-sidebar-brand .tc-brand strong{color:#fff;font-size:16px}
+  .tc-sidebar-brand .tc-brand small{color:#9fb2c5}
+  .tc-sidebar-brand>small{display:block;font-weight:750;letter-spacing:1.5px;font-size:9px;color:#7893a9;margin-top:19px}
+  .tc-sidebar-caption{font-size:10px;font-weight:800;letter-spacing:1.6px;color:#7c9ab3;margin:18px 12px 12px}
+  .tc-sidebar-link{display:flex;align-items:center;gap:12px;border-radius:12px;padding:13px 13px;
+    color:#bbccda!important;font-size:13px;font-weight:700;transition:background .15s,color .15s;min-height:46px}
+  .tc-sidebar-link>span{display:grid;place-items:center;background:rgba(255,255,255,.07);border-radius:9px;
+    width:32px;height:32px;flex:none;color:#bdcede;font-size:19px}
+  .tc-sidebar-link:hover,.tc-sidebar-link.is-active{color:white!important;background:rgba(255,255,255,.10)}
+  .tc-sidebar-link.is-active>span{background:#18b991;color:white}
+  .tc-sidebar-bottom{margin-top:auto;padding:22px 9px 4px}
+  .tc-sidebar-user{display:flex;align-items:center;gap:11px;border-top:1px solid rgba(255,255,255,.11);padding-top:19px}
+  .tc-sidebar-user-avatar{width:40px;height:40px;border-radius:50%;background:#24475d;color:#2bdfb5;display:grid;place-items:center;flex:none}
+  .tc-sidebar-user strong{display:block;max-width:165px;overflow-wrap:anywhere;font-size:12px}
+  .tc-sidebar-user small{display:block;color:#93aabd;font-size:11px;margin-top:3px}
+  .tc-sidebar-bottom p{font-size:10px;color:#7995ae;margin-top:19px}
+  .tc-top{grid-column:2;grid-row:1;position:sticky;top:0;z-index:14;width:100%;height:79px;
+    padding:0 42px;border-bottom:1px solid #e4edf2;box-shadow:0 3px 14px rgba(15,41,67,.025)}
+  .tc-top .tc-brand{display:none}
+  .tc-top-list:before{content:'OPERACIONES  /  GUÍAS';font-size:11px;font-weight:850;letter-spacing:1.4px;color:#7c8d9f}
+  .tc-top-detail .tc-top-center{text-align:left;margin-right:auto;margin-left:15px}
+  .tc-top-detail .tc-top-center strong{font-size:15px}
+  .tc-live-status{grid-column:2;grid-row:2;width:100%;padding:10px 42px;max-width:none;border:0;
+    border-bottom:1px solid #caefdf;justify-content:flex-end;gap:30px}
+  .tc-main{grid-column:2;grid-row:3;width:100%;max-width:1500px;margin:0 auto;
+    padding:42px clamp(27px,4vw,66px) 110px}
+  .tc-heading{font-size:47px;letter-spacing:-2px}
+  .tc-home-intro{font-size:14px;max-width:700px}
+  .tc-stat-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:17px;margin:30px 0 36px}
+  .tc-stat{padding:19px 22px;min-height:125px}
+  .tc-stat strong{font-size:33px}
+  .tc-stat small{font-size:12px}
+  .tc-section-heading h2{font-size:20px}
+  .tc-desktop-list-tools{display:block;background:#fff;border:1px solid #e6edf3;border-radius:15px;
+    padding:14px 18px 17px;box-shadow:var(--tc-shadow);margin-bottom:20px}
+  .tc-desktop-list-tools label{display:block;font-size:11px;letter-spacing:.2px;font-weight:800;
+    color:#51677d;margin-bottom:9px}
+  .tc-searchbox{display:flex;align-items:center;gap:10px;border:1px solid #dee7ee;background:#f9fbfd;border-radius:10px;
+    max-width:620px;padding:0 14px}
+  .tc-searchbox>span{font-size:26px;color:#8799ab;line-height:1}
+  .tc-searchbox input{font:inherit;font-size:14px;min-height:44px;border:0;outline:0;width:100%;background:transparent;color:#1a354b}
+  .tc-filters{margin:0 0 20px;padding:0 0 3px;gap:10px;overflow:visible;flex-wrap:wrap}
+  .tc-filter{font-size:12px;padding:10px 15px}
+  .tc-cards{grid-template-columns:repeat(auto-fill,minmax(min(100%,315px),1fr));gap:20px;align-items:stretch}
+  .tc-guide-card{padding:22px;border-radius:18px;transition:transform .14s,box-shadow .14s}
+  .tc-guide-card:hover{transform:translateY(-3px);box-shadow:0 13px 30px rgba(14,46,71,.12)}
+  .tc-guide-route{min-height:141px;padding:24px 0 20px}
+  .tc-guide-route .tc-route-city{font-size:17px}
+  .tc-guide-bottom{min-height:53px}
+  .tc-bottom{display:none}
+  .tc-detail{max-width:1450px;padding-top:34px}
+  .tc-hero{padding:29px 34px}
+  .tc-hero-stops h1,.tc-hero-stops h2{font-size:28px}
+  .tc-hero-route{max-width:900px}
+  .tc-progress{max-width:960px;margin:27px auto}
+  .tc-info-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;padding:17px 23px}
+  .tc-tabs{position:sticky;top:79px;z-index:9;margin:18px 0 21px;padding:0 12px;
+    background:#f5f8fb;gap:34px;box-shadow:0 5px 9px rgba(15,43,67,.02)}
+  .tc-tab{font-size:13px;min-height:52px}
+  .tc-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+  .tc-summary-grid>div{padding:18px;min-height:117px}
+  .tc-panel[data-panel="evidencias"] .tc-evidence-card,
+  .tc-panel[data-panel="roturas"] .tc-damage-card{display:inline-block;vertical-align:top;
+    width:calc(50% - 13px);margin-right:10px;min-height:180px}
+  .tc-panel[data-panel="evidencias"] .tc-evidence-card img,
+  .tc-panel[data-panel="evidencias"] .tc-evidence-card video{max-height:310px}
+  .tc-floating{bottom:27px;left:auto;right:33px;transform:none;width:340px;padding:0;z-index:15}
+  .tc-fab{font-size:14px;border-radius:14px;padding:15px 18px}
+  .tc-modal{align-items:center;padding:28px}
+  .tc-modal-sheet{width:min(680px,94vw);max-height:calc(100vh - 56px);border-radius:23px;padding:23px 31px 28px;
+    box-shadow:0 25px 95px rgba(4,18,34,.32)}
+  .tc-modal-handle{display:none}
+  .tc-modal-top h2{font-size:23px}
+  .tc-offline-banner{margin-top:16px}
+  .tc-offline-compose{max-width:900px}
+  .tc-sync-summary{max-width:1100px}
+  .tc-outbox{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+  .tc-forget{max-width:350px}
+}
+@media(min-width:1024px) and (max-width:1210px){
+  .tc-shell{grid-template-columns:220px minmax(0,1fr)}
+  .tc-desktop-sidebar{padding:22px 11px}
+  .tc-main{padding-left:29px;padding-right:29px}
+  .tc-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tc-panel[data-panel="evidencias"] .tc-evidence-card,
+  .tc-panel[data-panel="roturas"] .tc-damage-card{width:100%;display:block}
+}

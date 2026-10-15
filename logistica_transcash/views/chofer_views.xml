@@ -1,0 +1,80 @@
+<odoo>
+  <record id="view_transcash_chofer_list" model="ir.ui.view">
+    <field name="name">transcash.chofer.list</field>
+    <field name="model">transcash.chofer</field>
+    <field name="arch" type="xml">
+      <list string="Choferes" create="1">
+        <field name="usuario_id"/>
+        <field name="correo"/>
+        <field name="telefono"/>
+        <field name="empresa_transporte_id"/>
+        <field name="acceso_activado" widget="boolean_toggle" readonly="1"/>
+        <field name="activo"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_transcash_chofer_form" model="ir.ui.view">
+    <field name="name">transcash.chofer.form</field>
+    <field name="model">transcash.chofer</field>
+    <field name="arch" type="xml">
+      <form string="Chofer de Transcash">
+        <header>
+          <button name="action_activar_acceso" type="object" string="Habilitar acceso de chofer"
+                  class="btn-primary" groups="logistica_transcash.group_logistica_manager"
+                  invisible="acceso_activado or not activo"/>
+          <button name="action_desactivar_acceso" type="object" string="Deshabilitar acceso"
+                  groups="logistica_transcash.group_logistica_manager" invisible="not acceso_activado"/>
+          <button name="action_abrir_webapp" type="object" string="Abrir WebApp"
+                  invisible="not acceso_activado"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><h1><field name="nombre" readonly="1"/></h1></div>
+          <div class="alert alert-info" role="alert">
+            <strong>Activación del chofer:</strong> abra Contactos, cree el conductor y utilice
+            Acción → Otorgar acceso al portal. Después seleccione ese usuario aquí, guarde
+            y pulse <strong>Habilitar acceso de chofer</strong>. Finalmente asígnelo en una guía.
+          </div>
+          <group>
+            <group string="Cuenta y permisos">
+              <field name="usuario_id" options="{'no_create': True, 'no_create_edit': True}"/>
+              <field name="correo" readonly="1"/>
+              <field name="telefono" readonly="1"/>
+              <field name="acceso_activado" readonly="1"/>
+              <field name="activo"/>
+            </group>
+            <group string="Transporte">
+              <field name="empresa_transporte_id"/>
+              <field name="company_id" groups="base.group_multi_company"/>
+            </group>
+          </group>
+          <p>El chofer abre <strong>/transcash/guias</strong> con su cuenta Portal.
+             Solo ve guías asignadas. Su cuenta no recibe acceso al ERP administrativo.</p>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="view_transcash_chofer_search" model="ir.ui.view">
+    <field name="name">transcash.chofer.search</field>
+    <field name="model">transcash.chofer</field>
+    <field name="arch" type="xml">
+      <search string="Buscar choferes">
+        <field name="usuario_id"/>
+        <field name="correo"/>
+        <filter name="activos" string="Activos" domain="[('activo','=',True)]"/>
+      </search>
+    </field>
+  </record>
+  <record id="action_transcash_chofer" model="ir.actions.act_window">
+    <field name="name">Choferes / Acceso a la WebApp</field>
+    <field name="res_model">transcash.chofer</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_transcash_chofer_search"/>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Registre a sus choferes</p>
+      <p>Primero otórgueles acceso Portal desde Contactos. Luego agréguelos aquí y habilite el perfil Chofer.</p>
+    </field>
+  </record>
+  <menuitem id="menu_transcash_chofer" name="Choferes y acceso móvil"
+            parent="menu_transcash_root" action="action_transcash_chofer" sequence="8"
+            groups="logistica_transcash.group_logistica_manager,logistica_transcash.group_logistica_bodega"/>
+</odoo>

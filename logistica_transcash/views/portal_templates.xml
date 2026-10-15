@@ -6,9 +6,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=3"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=420"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
-    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=4"/>
+    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=420"/>
   </template>
 
   <template id="mobile_brand" name="Transcash Mobile Brand">
@@ -16,16 +16,37 @@
       <div><strong>TRANSCASH</strong><small>LOGÍSTICA EN MOVIMIENTO</small></div></div>
   </template>
 
+  <template id="portal_desktop_sidebar" name="Transcash: navegación escritorio">
+    <aside class="tc-desktop-sidebar" aria-label="Navegación de Transcash en computadora">
+      <div class="tc-sidebar-brand"><t t-call="logistica_transcash.mobile_brand"/><small>ESPACIO DE OPERACIONES</small></div>
+      <div class="tc-sidebar-caption">OPERACIÓN</div>
+      <a href="/transcash/guias" t-att-class="'tc-sidebar-link' + (' is-active' if request.httprequest.path == '/transcash/guias' else '')"><span>▤</span> Todas las guías</a>
+      <a href="/transcash/guias?estado=embarque" class="tc-sidebar-link"><span>▣</span> Embarque</a>
+      <a href="/transcash/guias?estado=ruta" class="tc-sidebar-link"><span>↗</span> En ruta</a>
+      <a href="/transcash/guias?estado=revision" class="tc-sidebar-link"><span>✓</span> Recepción</a>
+      <div class="tc-sidebar-caption">HERRAMIENTAS</div>
+      <a href="/transcash/offline" class="tc-sidebar-link" data-tc-pending-link="1"><span>⇅</span> Sincronización y pendientes</a>
+      <a t-if="not request.env.user.share" href="/web" class="tc-sidebar-link"><span>⚙</span> Administrar en Odoo</a>
+      <div class="tc-sidebar-bottom"><div class="tc-sidebar-user"><span class="tc-sidebar-user-avatar">●</span>
+        <div><strong t-esc="request.env.user.name"/>
+          <small t-if="request.env.user.has_group('logistica_transcash.group_transcash_chofer')">Chofer · Portal</small>
+          <small t-elif="request.env.user.share">Usuario Portal</small>
+          <small t-else="">Personal autorizado</small>
+        </div></div><p>Transcash · Seguimiento y evidencias</p></div>
+    </aside>
+  </template>
+
   <template id="portal_guias" name="Transcash Mobile: Mis Guías">
     <html lang="es"><head>
       <title>Mis guías · Transcash</title><t t-call="logistica_transcash.mobile_head"/>
     </head><body class="tc-app" t-att-data-tc-user-id="request.env.user.id">
       <div class="tc-shell">
+        <t t-call="logistica_transcash.portal_desktop_sidebar"/>
         <header class="tc-top tc-top-list"><t t-call="logistica_transcash.mobile_brand"/>
-          <div class="tc-avatar" title="Mi cuenta">●</div>
+          <div class="tc-avatar" t-att-title="request.env.user.name">●</div>
         </header>
         <main class="tc-main tc-home">
-          <div class="tc-eyebrow"><span class="tc-live-dot"/> PANEL DE OPERACIONES</div>
+          <div class="tc-eyebrow"><span class="tc-live-dot"/> PANEL DE OPERACIONES · ACCESO SEGURO</div>
           <h1 class="tc-heading">Mis guías<span class="tc-title-dot">.</span></h1>
           <p class="tc-muted tc-home-intro">Controla tus entregas desde aquí, con toda la evidencia en un solo lugar.</p>
           <div class="tc-stat-row">
@@ -34,6 +55,12 @@
             <div class="tc-stat"><div class="tc-stat-icon tc-stat-icon-gold">!</div><strong t-esc="len(guias.filtered(lambda g: g.incidencia_estado == 'abierta'))"/><small>Con novedades</small></div>
           </div>
           <div class="tc-section-heading"><h2>Guías asignadas</h2><span class="tc-count" t-esc="len(guias)"/></div>
+          <div class="tc-desktop-list-tools">
+            <label for="tc-guide-search">Buscar por número de guía, origen o destino</label>
+            <div class="tc-searchbox"><span aria-hidden="true">⌕</span>
+              <input type="search" id="tc-guide-search" placeholder="Ej. G-2034, Quito, Guayaquil…" autocomplete="off"/>
+            </div>
+          </div>
           <nav class="tc-filters" aria-label="Filtrar por estado">
             <t t-foreach="[('todas','Todas'),('embarque','Embarque'),('ruta','En ruta'),('destino','En destino'),('revision','Recepción'),('entregada','Entregadas')]" t-as="filtro_guia">
               <a t-att-href="'/transcash/guias?estado=%s' % filtro_guia[0]"
@@ -86,6 +113,7 @@
       t-att-data-tc-guide-origin="guia.origen or ''" t-att-data-tc-guide-destination="guia.destino or ''"
       t-att-data-tc-guide-state="guia.state">
       <div class="tc-shell">
+        <t t-call="logistica_transcash.portal_desktop_sidebar"/>
         <header class="tc-top tc-top-detail"><a class="tc-back" href="/transcash/guias" aria-label="Volver">←</a>
           <div class="tc-top-center"><small>DETALLE DE GUÍA</small><strong t-esc="guia.name"/></div>
           <div class="tc-avatar">T</div>

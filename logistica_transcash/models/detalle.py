@@ -85,11 +85,12 @@ class Rotura(models.Model):
     def register_damage(self, guia, linea, cantidad, observacion, archivos):
         """Archivos: lista de (base64, nombre, mime). Operación atómica con bloqueo por renglón."""
         user = self.env.user
-        if user != guia.chofer_usuario_id and not guia._is_recipient(user) and not guia._is_seller(user):
+        is_driver = (user == guia.chofer_usuario_id and user.has_group('logistica_transcash.group_transcash_chofer'))
+        if not is_driver and not guia._is_recipient(user) and not guia._is_seller(user):
             raise UserError(_('No está asignado a esta guía.'))
         if not linea or linea.guia_id != guia or not linea.vigente_erp:
             raise UserError(_('Seleccione un producto vigente de esta guía.'))
-        if user == guia.chofer_usuario_id or guia._is_seller(user):
+        if is_driver or guia._is_seller(user):
             if guia.state not in ('embarque', 'ruta', 'destino', 'revision'):
                 raise UserError(_('El chofer no puede reportar daños en este estado.'))
         elif guia.state not in ('destino', 'revision', 'entregada'):
@@ -117,8 +118,8 @@ class Rotura(models.Model):
             'guia_id': guia.id, 'linea_id': linea.id, 'cantidad': cantidad,
             'observacion': observacion.strip()[:4000], 'reportado_por_id': user.id,
         })
-        tipo = ('novedad' if guia._is_seller(user) and user != guia.chofer_usuario_id else
-                'cliente' if guia._is_recipient(user) and user != guia.chofer_usuario_id else
+        tipo = ('novedad' if guia._is_seller(user) and not is_driver else
+                'cliente' if guia._is_recipient(user) and not is_driver else
                 'carga' if guia.state == 'embarque' else 'llegada' if guia.state in ('destino', 'revision') else 'novedad')
         for b64, name, mime in archivos:
             self.env['transcash.evidencia'].register_evidence(

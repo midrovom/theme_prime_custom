@@ -47,7 +47,7 @@ class Evidencia(models.Model):
             # rotura propia; NO pueden subir novedades operativas generales.
             seller_damage = bool(rotura_id and tipo == 'novedad' and guia._is_seller(user)
                                  and self.env['transcash.rotura'].sudo().browse(rotura_id).reportado_por_id == user)
-            if guia.chofer_usuario_id != user and not seller_damage:
+            if not (guia.chofer_usuario_id == user and user.has_group('logistica_transcash.group_transcash_chofer')) and not seller_damage:
                 raise UserError(_('Solo el chofer puede subir esta evidencia, salvo vendedor que documenta su propia rotura.'))
             allowed = {'carga': ('embarque',), 'llegada': ('destino', 'revision'),
                        'novedad': ('embarque', 'ruta', 'destino', 'revision')}
@@ -158,7 +158,7 @@ class Evidencia(models.Model):
 
     def answer_objection(self, reply):
         for ev in self:
-            if ev.guia_id.chofer_usuario_id != self.env.user or ev.tipo != 'llegada':
+            if (ev.guia_id.chofer_usuario_id != self.env.user or not self.env.user.has_group('logistica_transcash.group_transcash_chofer')) or ev.tipo != 'llegada':
                 raise UserError(_('Solo el chofer puede responder a su evidencia de llegada.'))
             if ev.estado != 'objetada' or ev.guia_id.state != 'revision':
                 raise UserError(_('La objeción no está abierta.'))

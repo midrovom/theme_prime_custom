@@ -46,15 +46,17 @@ class TranscashPortal(http.Controller):
         partner = user.partner_id.commercial_partner_id
         if user.has_group('logistica_transcash.group_transcash_consulta') or user.has_group('logistica_transcash.group_logistica_bodega'):
             return [('company_id','in', user.company_ids.ids)]
-        return ['|', ('chofer_usuario_id', '=', user.id),
-                ('destinatario_id', 'child_of', partner.id if partner else 0)]
+        recipient = ('destinatario_id', 'child_of', partner.id if partner else 0)
+        if user.has_group('logistica_transcash.group_transcash_chofer'):
+            return ['|', ('chofer_usuario_id', '=', user.id), recipient]
+        return [recipient]
 
     def _guide(self, guide_id):
         guia = request.env['transcash.guia'].sudo().browse(guide_id).exists()
         if not guia:
             return False
         user = request.env.user
-        if guia.chofer_usuario_id.id != user.id and not guia._is_recipient(user) and not (
+        if not (guia.chofer_usuario_id.id == user.id and user.has_group('logistica_transcash.group_transcash_chofer')) and not guia._is_recipient(user) and not (
                 user.has_group('logistica_transcash.group_transcash_consulta') or
                 user.has_group('logistica_transcash.group_logistica_bodega')):
             return False
@@ -67,7 +69,7 @@ class TranscashPortal(http.Controller):
         historial = guia.evento_ids if interno else guia.evento_ids.filtered('publico_cliente')
         return request.render('logistica_transcash.portal_guia_detalle', {
             'guia': guia,
-            'es_chofer': guia.chofer_usuario_id.id == request.env.user.id,
+            'es_chofer': bool(guia.chofer_usuario_id.id == request.env.user.id and request.env.user.has_group('logistica_transcash.group_transcash_chofer')),
             'es_receptor': guia._is_recipient(request.env.user),
             'es_vendedor': guia._is_seller(request.env.user),
             'evidencias': guia.evidencia_ids.sorted('create_date', reverse=True),

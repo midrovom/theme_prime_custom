@@ -6,12 +6,23 @@
   <title>Transcash · Modo sin conexión</title>
   <link rel="manifest" href="/transcash/manifest.webmanifest"/>
   <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-  <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css"/>
+  <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=420"/>
   <script defer src="/logistica_transcash/static/src/js/offline-core.js"></script>
   <script defer src="/logistica_transcash/static/src/js/offline-app.js"></script>
 </head>
 <body class="tc-app">
   <div class="tc-shell">
+    <aside class="tc-desktop-sidebar" aria-label="Navegación de Transcash en computadora">
+      <div class="tc-sidebar-brand"><div class="tc-brand"><div class="tc-logo">T<span>↗</span></div><div><strong>TRANSCASH</strong><small>LOGÍSTICA EN MOVIMIENTO</small></div></div><small>ESPACIO DE OPERACIONES</small></div>
+      <div class="tc-sidebar-caption">OPERACIÓN</div>
+      <a href="/transcash/guias" class="tc-sidebar-link"><span>▤</span> Todas las guías</a>
+      <a href="/transcash/guias?estado=embarque" class="tc-sidebar-link"><span>▣</span> Embarque</a>
+      <a href="/transcash/guias?estado=ruta" class="tc-sidebar-link"><span>↗</span> En ruta</a>
+      <a href="/transcash/guias?estado=revision" class="tc-sidebar-link"><span>✓</span> Recepción</a>
+      <div class="tc-sidebar-caption">HERRAMIENTAS</div>
+      <a href="/transcash/offline" class="tc-sidebar-link is-active"><span>⇅</span> Sincronización y pendientes</a>
+      <div class="tc-sidebar-bottom"><p>Transcash · Seguimiento y evidencias</p></div>
+    </aside>
     <header class="tc-top"><div class="tc-brand"><div class="tc-logo">T<span>↗</span></div><div><strong>TRANSCASH</strong><small>LOGÍSTICA EN MOVIMIENTO</small></div></div>
       <span id="tc-network-pill" class="tc-connection is-offline">● Sin señal</span></header>
     <main class="tc-main tc-home">

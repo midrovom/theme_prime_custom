@@ -210,3 +210,18 @@
     if (navigator.onLine) requestSync();
   });
 }());
+
+/* Escritorio: búsqueda instantánea de guías ya autorizadas por el servidor. */
+document.addEventListener('DOMContentLoaded', function () {
+  var field = document.getElementById('tc-guide-search');
+  if (!field) return;
+  var cards = Array.from(document.querySelectorAll('.tc-guide-card'));
+  field.addEventListener('input', function () {
+    var query = (field.value || '').trim().toLocaleLowerCase();
+    cards.forEach(function (card) {
+      var haystack = [card.dataset.tcCardName, card.dataset.tcCardOrigin,
+                      card.dataset.tcCardDestination].join(' ').toLocaleLowerCase();
+      card.hidden = Boolean(query) && haystack.indexOf(query) === -1;
+    });
+  });
+});
