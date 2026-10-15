@@ -56,7 +56,6 @@
                             <strong>Presupuesto:</strong> <span t-esc="report_data['budget_name']"/>
                             <span> | </span><strong>Año:</strong> <span t-esc="o.year"/>
                             <span> | </span><strong>Empresa:</strong> <span t-esc="o.company_id.name"/>
-                            <span> | </span><strong>Moneda:</strong> <span t-esc="o.company_id.currency_id.name"/>
                         </div>
                         <div class="report-scroll">
                             <table class="report-table">
