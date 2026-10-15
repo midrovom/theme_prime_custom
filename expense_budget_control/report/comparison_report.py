@@ -43,8 +43,8 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
     def _finish_row(row, month_numbers):
         """Calcular saldos del reporte sin alterar las proyecciones mensuales.
 
-        Saldo inicial: disponible del mes inmediatamente anterior al primero
-        seleccionado (proyectado menos consumido del mes previo).
+        Saldo inicial: saldo disponible acumulado desde enero hasta el mes
+        anterior al primero seleccionado (suma de proyectado menos consumido).
         Saldo actual: suma de consumos de los meses seleccionados.
         Saldo disponible: inicial más los disponibles de los meses elegidos.
         """
@@ -57,10 +57,14 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             }
             for number in selected_months
         }
-        openings = {
-            number: (row['monthly'][number - 1]['available'] if number > 1 else 0.0)
-            for number in range(1, 13)
-        }
+        # Arrastrar el saldo de todos los períodos anteriores, no únicamente
+        # el disponible del mes inmediatamente previo. Es independiente de
+        # qué meses se imprimieron en consultas anteriores.
+        openings = {}
+        accumulated_available = 0.0
+        for number in range(1, 13):
+            openings[number] = accumulated_available
+            accumulated_available += row['monthly'][number]['available']
 
         first_month = selected_months[0]
         opening = openings[first_month]
