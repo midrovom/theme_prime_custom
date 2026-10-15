@@ -41,12 +41,11 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
 
     @staticmethod
     def _finish_row(row, month_numbers):
-        """Saldo inicial del período anterior y consumos de los meses elegidos.
+        """Sumar el proyectado inicial y los proyectados del período consultado.
 
-        Todos los meses elegidos se representan en un único bloque continuo:
-        - Inicial: disponible acumulado hasta el mes anterior al primero.
-        - Actual: consumo solo de los meses seleccionados.
-        - Disponible final: inicial menos actual (sin añadir proyecciones).
+        El inicial es el proyectado del mes inmediatamente anterior al primero
+        seleccionado (cero si comienza en enero). Solo los meses seleccionados
+        aportan nuevos proyectados y consumidos al saldo final.
         """
         selected_months = sorted(set(month_numbers))
         cells = {
@@ -57,26 +56,21 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             }
             for number in selected_months
         }
-        # Meses previos de calendario, aunque no formen parte de la selección.
-        openings = {}
-        prior_available = 0.0
-        for number in range(1, 13):
-            openings[number] = prior_available
-            prior_available += row['monthly'][number]['available']
+        # El inicial es el PROYECTADO del mes previo, no la suma de saldos
+        # disponibles ni un importe de consumo de meses anteriores.
+        openings = {
+            number: (row['monthly'][number - 1]['planned'] if number > 1 else 0.0)
+            for number in range(1, 13)
+        }
 
-        # Un único cierre después del último mes seleccionado (sin subdivisión).
         first_month = selected_months[0]
-        # Si el periodo comienza en enero, no existe saldo de un periodo
-        # anterior: usar el proyectado inicial del periodo consultado.
-        # Para febrero en adelante, conservar el saldo disponible del cierre
-        # anterior, como en los reportes previos.
-        opening = (openings[first_month] if first_month > 1 else
-                   sum(row['monthly'][month]['planned'] for month in selected_months))
+        opening = openings[first_month]
+        projected = sum(row['monthly'][month]['planned'] for month in selected_months)
         consumed = sum(row['monthly'][month]['actual'] for month in selected_months)
         period_closings = {
             first_month: {
                 'saldo_actual': consumed,
-                'saldo_disponible': opening - consumed,
+                'saldo_disponible': opening + projected - consumed,
             },
         }
         row['monthly_report'] = {
