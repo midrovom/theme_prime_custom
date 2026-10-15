@@ -142,7 +142,7 @@
                                                 <t t-set="row_class" t-value="'category-row'"/>
                                                 <t t-set="row_name" t-value="group['category'].name or 'Sin rubro'"/>
                                             </t>
-                                            <t t-if="not data['summary_by_category_only']">
+                                            <t>
                                                 <t t-foreach="group['accounts']" t-as="account">
                                                     <t t-call="expense_budget_control.report_comparison_monthly_row">
                                                         <t t-set="row_data" t-value="account"/>
@@ -153,7 +153,7 @@
                                                         <t t-call="expense_budget_control.report_comparison_monthly_row">
                                                             <t t-set="row_data" t-value="budget_row"/>
                                                             <t t-set="row_class" t-value="'budget-row'"/>
-                                                            <t t-set="row_name" t-value="budget_row['budget'].name"/>
+                                                            <t t-set="row_name" t-value="account['account'].name"/>
                                                         </t>
                                                     </t>
                                                 </t>

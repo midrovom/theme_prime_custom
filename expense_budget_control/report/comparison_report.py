@@ -144,6 +144,24 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             account_group['line_count'] += 1
             group['line_count'] += 1
 
+        # Con solo un rubro seleccionado, incluir TODAS sus cuentas visibles
+        # para la empresa, aunque alguna todavía no tenga proyecciones ese año.
+        # La búsqueda respeta las reglas de acceso del usuario (sin sudo).
+        if wizard.category_id and not selected_accounts:
+            group = category_map.setdefault(wizard.category_id.id, {
+                'category': wizard.category_id, 'accounts_map': {}, 'line_count': 0,
+                'total': self._empty_totals(), 'monthly': self._empty_months(),
+            })
+            category_accounts = self.env['expense.budget.account'].search([
+                ('company_id', '=', wizard.company_id.id),
+                ('category_id', '=', wizard.category_id.id),
+            ])
+            for account in category_accounts:
+                group['accounts_map'].setdefault(account.id, {
+                    'account': account, 'lines': [], 'budgets_map': {}, 'line_count': 0,
+                    'total': self._empty_totals(), 'monthly': self._empty_months(),
+                })
+
         categories = []
         for group in sorted(category_map.values(), key=lambda item: (
                 item['category'].code or '', item['category'].name or '', item['category'].id)):
@@ -179,7 +197,8 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         return {
             'wizard': wizard,
             'selected_accounts': selected_accounts,
-            # Mantener modo anterior: solo rubro -> fila de total por rubro.
+            # Se conserva el indicador legado; el PDF ahora detalla las cuentas
+            # incluso cuando se selecciona únicamente el rubro.
             'summary_by_category_only': bool(wizard.category_id and not selected_accounts),
             'categories': categories,
             'grand_total': grand_total['total'],

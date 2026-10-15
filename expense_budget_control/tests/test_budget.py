@@ -750,6 +750,41 @@ class TestExpenseBudget(TransactionCase):
         wizard.account_id = agua
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 2)
 
+    def test_comparison_rubro_includes_unbudgeted_accounts_and_account_names_in_pdf(self):
+        """Solo rubro: mostrar Luz, Agua y cuentas sin proyección, sin perder los totales."""
+        from lxml import etree
+
+        water = self.env['expense.budget.account'].create({
+            'code': 'AGUA-SIN-MOV-1439', 'name': 'Agua',
+            'company_id': self.company.id, 'category_id': self.category.id,
+        })
+        self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': self.account.id,
+            'month': '1', 'planned_amount': 150,
+        })
+        wizard = self.env['expense.budget.comparison.report.wizard'].create({
+            'company_id': self.company.id, 'year': 2026,
+            'category_id': self.category.id,
+        })
+        result = self.env[
+            'report.expense_budget_control.report_comparison_document'
+        ]._prepare_comparison(wizard)
+        self.assertEqual(result['line_count'], 1)
+        self.assertEqual(result['grand_total']['planned'], 150)
+        accounts = result['categories'][0]['accounts']
+        self.assertEqual({r['account'].id for r in accounts},
+                         {self.account.id, water.id})
+        self.assertEqual(next(r for r in accounts if r['account'] == water)['total']['planned'], 0)
+
+        template = self.env.ref('expense_budget_control.report_comparison_document')
+        arch = etree.fromstring(template.arch_db.encode('utf-8'))
+        # El detalle no se omite cuando solo se selecciona el rubro.
+        self.assertFalse(arch.xpath("//*[contains(@t-if, 'summary_by_category_only')]"))
+        # Las filas de presupuestos muestran el nombre de su cuenta, no el name
+        # del presupuesto (por ejemplo, Luz en vez de Presupuesto Enero).
+        budget_names = arch.xpath("""//*[@t-set='row_name' and @t-value="account['account'].name"]""")
+        self.assertEqual(len(budget_names), 1)
+
     def test_comparison_pdf_multiple_accounts_and_category_summary(self):
         """Varias cuentas activan el detalle; solo rubro imprime sus totales."""
         Account = self.env['expense.budget.account']
