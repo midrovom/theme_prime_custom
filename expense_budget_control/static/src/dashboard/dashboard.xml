@@ -126,7 +126,7 @@
                         <t t-else="">
                             <t t-if="this.pieSlices.length">
                                 <div class="o_ebd_pie_layout">
-                                    <svg viewBox="0 0 100 100" class="o_ebd_pie" role="img"
+                                    <svg viewBox="0 0 100 100" width="220" height="220" preserveAspectRatio="xMidYMid meet" class="o_ebd_pie" role="img"
                                          t-att-aria-label="'Distribución del gasto en ' + this.periodName">
                                         <t t-foreach="this.pieSlices" t-as="slice" t-key="slice.id">
                                             <t t-if="slice.full">

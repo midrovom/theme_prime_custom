@@ -94,3 +94,107 @@
     .o_ebc_budget_form .o_form_sheet { padding-inline: 8px; }
     .o_ebc_budget_form .o_group .o_group { max-width: 100%; }
 }
+
+
+/* v1.4.55: gráficos visibles y desplazables en el cliente móvil de Odoo.
+   El contenedor de acciones de Odoo limita la altura del viewport; el dashboard
+   debe gestionar su propio scroll para no recortar los gráficos tras los filtros. */
+@media screen and (max-width: 991.98px) {
+    .o_ebd_root {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .o_ebd_root .o_ebd_charts,
+    .o_ebd_root .o_ebd_charts > .o_ebd_panel {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        flex: 0 0 auto;
+    }
+    .o_ebd_root .o_ebd_bar_chart {
+        display: flex;
+        width: 100%;
+        height: 190px;
+        min-height: 190px;
+        flex: 0 0 auto;
+        overflow: visible;
+    }
+    .o_ebd_root .o_ebd_bar_item {
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 0;
+    }
+    .o_ebd_root .o_ebd_bar_space {
+        display: flex;
+        flex: 1 1 0;
+        flex-direction: column;
+        justify-content: flex-end;
+        min-height: 0;
+    }
+    .o_ebd_root .o_ebd_bar { width: 100%; flex: 0 0 auto; }
+    .o_ebd_root .o_ebd_account_chart {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-height: 340px;
+        min-height: 60px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    .o_ebd_root .o_ebd_account_bar_track { min-width: 0; }
+    .o_ebd_root .o_ebd_pie_layout {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+        gap: 14px;
+    }
+    .o_ebd_root svg.o_ebd_pie {
+        display: block;
+        flex: 0 0 auto;
+        box-sizing: border-box;
+        width: 200px;
+        height: 200px;
+        max-width: 100%;
+        min-height: 180px;
+        margin: 0 auto;
+        overflow: visible;
+    }
+    .o_ebd_root .o_ebd_pie_legend {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        max-height: 230px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+}
+@media screen and (max-width: 575.98px) {
+    .o_ebd_root .o_ebd_bar_chart {
+        height: 175px;
+        min-height: 175px;
+    }
+    .o_ebd_root svg.o_ebd_pie {
+        width: 185px;
+        height: 185px;
+        min-height: 185px;
+    }
+    .o_ebd_root .o_ebd_account_bar_row {
+        display: grid;
+        grid-template-columns: minmax(85px, 40%) minmax(0, 1fr);
+        gap: 6px;
+    }
+    .o_ebd_root .o_ebd_account_bar_amount {
+        grid-column: 2;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+}
