@@ -159,3 +159,22 @@ La visibilidad de menús no cambia el cálculo presupuestario ni la API. Al actu
 3. Pulse **Imprimir PDF** en el asistente. El reporte A4 horizontal muestra los rubros, sus cuentas y las columnas **Proyectado**, **Gasto real**, **Disponible** y **Ejecución (%)**, con subtotales y total general.
 
 El porcentaje se calcula como consumido total / proyectado total x 100, no como promedio de porcentajes mensuales. No se duplican gastos de API o Excel: se utilizan exclusivamente los totales de las líneas mensuales. Los usuarios Aprobador solo podrán imprimir las líneas de presupuestos pendientes de aprobación o aprobados que ya pueden consultar; los demás roles conservan sus permisos. El PDF anual existente (12 meses) no se altera.
+
+
+## Dashboard interactivo (v1.4.46)
+
+En **Control de Gastos → Dashboard de gastos**, los usuarios de Consulta,
+Aprobación y Administración pueden elegir Empresa, Año, Rubro y Cuenta
+controlada. El gráfico de barras muestra el consumo mensual total del filtro
+y permite pulsar un mes para examinar sus cuentas; el pastel presenta el
+reparto anual del consumo por cuenta. Al pulsar una cuenta, el gráfico de
+barras se filtra para ver en qué meses tuvo mayores gastos.
+
+El dashboard usa `expense.budget.line.actual_amount`, incluyendo gastos
+registrados/importados y ajustes ya incluidos en ese campo. Se respetan
+las reglas existentes de visibilidad por estado y empresa (sin `sudo`).
+
+En el PDF de Proyectado vs. real se oculta **Consumo inicial**, pero se
+conserva en el cálculo del **Consumo actual**. Se incorpora la columna
+**Total proyectado = Consumo actual + Saldo disponible**, ubicada antes de
+Consumo actual. **Consumo corte** y los saldos no modifican sus fórmulas.

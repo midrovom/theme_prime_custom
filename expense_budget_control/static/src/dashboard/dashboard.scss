@@ -1,0 +1,56 @@
+.o_ebd_root {
+    --ebd-ink: #25384b;
+    --ebd-border: #d7e2ea;
+    padding: clamp(14px, 2vw, 30px);
+    height: 100%;
+    overflow-y: auto;
+    color: var(--ebd-ink);
+    background: #f5f8fb;
+    .o_ebd_header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    h1 { font-size: 25px; margin: 0 0 4px; font-weight: 700; }
+    h2 { font-size: 17px; margin: 0 0 4px; font-weight: 650; }
+    p { margin: 0; }
+    .o_ebd_header p, .o_ebd_panel_heading p { color: #66798a; font-size: 12px; }
+    .o_ebd_filters { display: grid; grid-template-columns: repeat(4, minmax(145px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .o_ebd_filters label { font-size: 12px; font-weight: 600; min-width: 0; }
+    .o_ebd_filters select { margin-top: 5px; font-weight: normal; }
+    .o_ebd_kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .o_ebd_kpi, .o_ebd_panel { border: 1px solid var(--ebd-border); border-radius: 12px; background: white; box-shadow: 0 2px 7px #283e520b; }
+    .o_ebd_kpi { display: flex; flex-direction: column; gap: 5px; padding: 16px; }
+    .o_ebd_kpi span { color: #698093; font-size: 12px; }
+    .o_ebd_kpi strong { font-size: clamp(16px, 1.8vw, 23px); overflow-wrap: anywhere; }
+    .o_ebd_kpi small { color: #728596; }
+    .o_ebd_charts { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 16px; }
+    .o_ebd_panel { padding: 18px; min-width: 0; }
+    .o_ebd_panel_heading { margin-bottom: 20px; }
+    .o_ebd_bar_chart { display: flex; align-items: stretch; gap: clamp(2px, 0.7vw, 10px); min-height: 240px; border-bottom: 1px solid #e0e9ef; }
+    .o_ebd_bar_item { flex: 1; min-width: 0; cursor: pointer; border: 0; background: none; padding: 0; display: flex; flex-direction: column; align-items: stretch; gap: 6px; color: #64798c; }
+    .o_ebd_bar_item:focus-visible { outline: 2px solid #1b7998; outline-offset: 2px; border-radius: 3px; }
+    .o_ebd_bar_space { display: flex; flex: 1; min-height: 190px; flex-direction: column; justify-content: end; }
+    .o_ebd_bar { display: block; background: #3894af; min-height: 0; border-radius: 4px 4px 0 0; transition: height .2s ease, background-color .2s; }
+    .o_ebd_bar_item:hover .o_ebd_bar, .o_ebd_bar_item.is-selected .o_ebd_bar { background: #e7a25a; }
+    .o_ebd_bar_month { font-size: 11px; text-align: center; padding-bottom: 8px; }
+    .o_ebd_pie_layout { display: grid; grid-template-columns: minmax(130px, 1fr) minmax(145px, 1.1fr); align-items: center; gap: 16px; }
+    .o_ebd_pie { width: 100%; max-width: 280px; overflow: visible; }
+    .o_ebd_pie path, .o_ebd_pie circle { cursor: pointer; stroke: white; stroke-width: .5; transition: opacity .15s; }
+    .o_ebd_pie path:hover, .o_ebd_pie circle:hover { opacity: .78; }
+    .o_ebd_pie_legend { display: flex; flex-direction: column; max-height: 250px; overflow-y: auto; gap: 4px; }
+    .o_ebd_legend_item { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 7px; border: 0; background: none; text-align: left; border-radius: 5px; padding: 6px; font-size: 12px; color: var(--ebd-ink); }
+    .o_ebd_legend_item:hover, .o_ebd_legend_item.is-selected { background: #eaf3f7; }
+    .o_ebd_legend_item strong { font-size: 11px; }
+    .o_ebd_dot { height: 10px; width: 10px; border-radius: 3px; }
+    .o_ebd_detail { margin-top: 16px; }
+    .o_ebd_detail_table { overflow-x: auto; }
+    .o_ebd_empty { color: #788c9c; padding: 14px 0; font-size: 13px; }
+    .o_ebd_loading { padding: 30px; text-align: center; color: #728596; }
+    @media (max-width: 1200px) { .o_ebd_filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 950px) { .o_ebd_charts { grid-template-columns: minmax(0, 1fr); } }
+    @media (max-width: 600px) {
+        .o_ebd_filters, .o_ebd_kpis { grid-template-columns: minmax(0, 1fr); }
+        .o_ebd_pie_layout { grid-template-columns: minmax(0, 1fr); }
+        .o_ebd_pie { max-width: 220px; margin: 0 auto; }
+        .o_ebd_panel { padding: 12px; }
+        .o_ebd_bar_chart { gap: 2px; }
+        .o_ebd_bar_month { font-size: 10px; }
+    }
+}

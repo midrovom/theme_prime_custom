@@ -11,6 +11,12 @@
     <menuitem id="menu_expense_budget_import" name="Importar Excel/CSV" parent="menu_expense_budget_root" action="action_expense_budget_import" sequence="50"/>
     <menuitem id="menu_expense_budget_api" name="Configuración API de gastos" parent="menu_expense_budget_config" action="action_expense_budget_api_administrator" sequence="30"/>
     <menuitem id="menu_expense_budget_sync_log" name="Historial API" parent="menu_expense_budget_config" action="action_expense_budget_sync_log" sequence="40"/>
+    <menuitem id="menu_expense_budget_dashboard" name="Dashboard de gastos"
+              parent="menu_expense_budget_root" action="action_expense_budget_dashboard"
+              sequence="18"/>
+    <record id="menu_expense_budget_dashboard" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_user'), ref('expense_budget_control.group_expense_budget_approver'), ref('expense_budget_control.group_expense_budget_manager')])]"/>
+    </record>
     <record id="menu_expense_budget_root" model="ir.ui.menu">
         <field name="groups_id" eval="[(6, 0, [ref('expense_budget_control.group_expense_budget_user'), ref('expense_budget_control.group_expense_budget_registrar'), ref('expense_budget_control.group_expense_budget_approver'), ref('expense_budget_control.group_expense_budget_manager')])]"/>
     </record>

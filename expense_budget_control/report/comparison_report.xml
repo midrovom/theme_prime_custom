@@ -17,7 +17,7 @@
         <field name="dpi">90</field>
     </record>
 
-    <!-- Fila reutilizable: consumos inicial y corte, detalle mensual y saldos conservados. -->
+    <!-- Fila reutilizable: saldo inicial, meses, consumo corte, total proyectado y saldos. -->
     <template id="report_comparison_monthly_row">
         <tr t-att-class="row_class">
             <td class="row-name" t-esc="row_name"/>
@@ -25,7 +25,6 @@
             <t t-if="row_class == 'category-row'">
                 <!-- Celdas vacías individuales: conservar toda la cuadrícula del PDF. -->
                 <t t-if="page_data['opening']">
-                    <td class="amount opening"/>
                     <td class="amount opening"/>
                 </t>
                 <t t-foreach="page_data['months']" t-as="month_item">
@@ -35,11 +34,11 @@
                 </t>
                 <td class="amount"/>
                 <td class="amount"/>
+                <td class="amount"/>
                 <td class="amount balance"/>
             </t>
             <t t-else="">
                 <t t-if="page_data['opening']">
-                    <td class="amount opening" t-esc="'{:,.2f}'.format(row_data['monthly_report']['consumption_openings'][page_data['first_month']])"/>
                     <td class="amount opening" t-esc="'{:,.2f}'.format(row_data['monthly_report']['openings'][page_data['first_month']])"/>
                 </t>
                 <t t-foreach="page_data['months']" t-as="month_item">
@@ -53,6 +52,7 @@
                      Saldo disponible conserva exactamente su fórmula actual. -->
                 <t t-set="closing_balance" t-value="row_data['monthly_report']['period_closings'][page_data['first_month']]"/>
                 <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['saldo_actual'])"/>
+                <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['consumo_actual'] + closing_balance['saldo_disponible'])"/>
                 <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['consumo_actual'])"/>
                 <td class="amount balance" t-esc="'{:,.2f}'.format(closing_balance['saldo_disponible'])"/>
             </t>
@@ -110,7 +110,7 @@
                                  y con 12 se reserva más espacio para cada importe mensual. -->
                             <t t-set="month_count" t-value="len(page_data['months'])"/>
                             <!-- Anchos por columna: las nuevas columnas no comprimen los meses. -->
-                            <t t-set="min_table_width" t-value="240 + (220 if page_data['opening'] else 0) + 3 * month_count * 82 + 3 * 110"/>
+                            <t t-set="min_table_width" t-value="240 + (110 if page_data['opening'] else 0) + 3 * month_count * 82 + 4 * 110"/>
                             <t t-set="name_width" t-value="24000.0 / min_table_width"/>
                             <t t-set="opening_width" t-value="11000.0 / min_table_width if page_data['opening'] else 0.0"/>
                             <t t-set="balance_width" t-value="11000.0 / min_table_width"/>
@@ -122,7 +122,6 @@
                                         <col t-att-style="'width: {:.4f}%;'.format(name_width)"/>
                                         <t t-if="page_data['opening']">
                                             <col t-att-style="'width: {:.4f}%;'.format(opening_width)"/>
-                                            <col t-att-style="'width: {:.4f}%;'.format(opening_width)"/>
                                         </t>
                                         <t t-foreach="page_data['months']" t-as="month_item">
                                             <t t-foreach="range(3)" t-as="cell_idx">
@@ -132,18 +131,19 @@
                                         <col t-att-style="'width: {:.4f}%;'.format(balance_width)"/>
                                         <col t-att-style="'width: {:.4f}%;'.format(balance_width)"/>
                                         <col t-att-style="'width: {:.4f}%;'.format(balance_width)"/>
+                                        <col t-att-style="'width: {:.4f}%;'.format(balance_width)"/>
                                     </colgroup>
                                     <thead>
                                         <tr>
                                             <th rowspan="2">Rubro</th>
                                             <t t-if="page_data['opening']">
-                                                <th rowspan="2">Consumo inicial<br/>(hasta <span t-esc="page_data['previous_month_name']"/>)</th>
                                                 <th rowspan="2">Saldo inicial<br/>(disponible de <span t-esc="page_data['previous_month_name']"/>)</th>
                                             </t>
                                             <t t-foreach="page_data['months']" t-as="month_item">
                                                 <th class="month-head" colspan="3" t-esc="month_item['name']"/>
                                             </t>
                                             <th rowspan="2">Consumo corte</th>
+                                            <th rowspan="2">Total proyectado</th>
                                             <th rowspan="2">Consumo actual</th>
                                             <th rowspan="2">Saldo disponible</th>
                                         </tr>
@@ -157,7 +157,7 @@
                                     </thead>
                                     <tbody>
                                         <t t-if="not data['categories']">
-                                            <tr><td t-att-colspan="1 + (2 if page_data['opening'] else 0) + 3 * len(page_data['months']) + 3">No existen proyecciones para los filtros seleccionados.</td></tr>
+                                            <tr><td t-att-colspan="1 + (1 if page_data['opening'] else 0) + 3 * len(page_data['months']) + 4">No existen proyecciones para los filtros seleccionados.</td></tr>
                                         </t>
                                         <t t-foreach="data['categories']" t-as="group">
                                             <t t-call="expense_budget_control.report_comparison_monthly_row">
