@@ -69,9 +69,14 @@ class TestSeleccionGuiasRuta(TransactionCase):
         self.assertIn(legacy_by_code, eligible)
         self.assertIn(unassigned, eligible)
         self.assertNotIn(wrong_destination, eligible)
-        self.assertNotIn(wrong_driver, eligible)
-        self.assertNotIn(wrong_carrier, eligible)
-        self.assertEqual(route.guias_disponibles, 3)
+        # V5.15: Logística puede elegir otro chofer o transportista solo si
+        # acepta expresamente y deja trazabilidad de la reasignación.
+        self.assertIn(wrong_driver, eligible)
+        self.assertIn(wrong_carrier, eligible)
+        self.assertFalse(route._es_guia_elegible(wrong_driver))
+        self.assertFalse(route._es_guia_elegible(wrong_carrier))
+        self.assertTrue(route._es_guia_elegible(wrong_driver, permitir_reasignacion=True))
+        self.assertEqual(route.guias_disponibles, 5)
         self.assertEqual(route.guias_pendientes_destino, 5)
 
     def test_confirma_guias_del_erp_y_completa_asignaciones_vacias(self):
@@ -118,5 +123,8 @@ class TestSeleccionGuiasRuta(TransactionCase):
             'seleccion_guia_ids': [(6, 0, [guide.id])],
         })
         result = record._onchange_filtros_guias()
-        self.assertFalse(record.seleccion_guia_ids)
-        self.assertIn('warning', result)
+        # V5.15: se conserva la selección si solo cambia el transportista,
+        # porque requiere autorización explícita antes de confirmar.
+        self.assertEqual(record.seleccion_guia_ids, guide)
+        self.assertFalse(result)
+        self.assertTrue(record._motivos_reasignacion(guide))

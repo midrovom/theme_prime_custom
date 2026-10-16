@@ -105,6 +105,10 @@ class HojaRuta(models.Model):
     tarifa_id = fields.Many2one('transcash.tarifa.traslado', readonly=True)
     moneda_id = fields.Many2one('res.currency', related='company_id.currency_id')
     tarifa_referencial = fields.Monetary(currency_field='moneda_id', readonly=True)
+    reasignacion_autorizada = fields.Boolean('Reasignación autorizada por Logística',
+                                             copy=False, readonly=True, default=False)
+    reasignacion_autorizada_por_id = fields.Many2one('res.users',
+        string='Reasignación revisada por', readonly=True, copy=False)
 
     @api.model
     def _check_operator(self):
@@ -147,59 +151,87 @@ class HojaRuta(models.Model):
             ruta.cantidad_guias_seleccionadas = len(ruta.seleccion_guia_ids)
 
 
-    def _domain_guias_elegibles(self, validar_filtros=True):
-        """Único criterio compartido por los contadores y el selector en la vista.
+    @api.model
+    def _normalizar_nombre_destino(self, nombre):
+        """Comparación exacta normalizada; no se aceptan destinos aproximados."""
+        return ' '.join((nombre or '').strip().casefold().split())
 
-        destino_id manda. Se admite código ERP histórico únicamente cuando la
-        guía todavía no tiene destino_id (migraciones o registros antiguos).
+    def _coincide_destino(self, guia):
+        self.ensure_one()
+        if not self.destino_id:
+            return False
+        # Una vinculación al maestro, si existe, es la fuente definitiva.
+        if guia.destino_id:
+            return guia.destino_id == self.destino_id
+        if (guia.destino_codigo or '').strip():
+            return (guia.destino_codigo or '').strip().upper() == self.destino_id.codigo
+        # Algunas guías del ERP llegaron con el nombre de ciudad pero SIN código.
+        # Se aceptan solo coincidencias exactas en el maestro (sin adivinar).
+        nombres = {self._normalizar_nombre_destino(x) for x in
+                   (self.destino_id.name, self.destino_id.ciudad) if x}
+        return bool(nombres.intersection(self._normalizar_nombre_destino(x) for x in
+                                         (guia.destino_ciudad, guia.destino) if x))
+
+    def _motivos_reasignacion(self, guia):
+        """Diferencias operativas; NO son cambios de destino ni de compañía."""
+        self.ensure_one()
+        motivos = []
+        if guia.chofer_usuario_id and guia.chofer_usuario_id != self.chofer_usuario_id:
+            motivos.append(_('chofer ERP: %s') % guia.chofer_usuario_id.display_name)
+        # El ERP puede referenciar un contacto de la misma empresa de transporte.
+        if (guia.proveedor_id and self.proveedor_id and
+                guia.proveedor_id.commercial_partner_id != self.proveedor_id.commercial_partner_id):
+            motivos.append(_('transportista ERP: %s') % guia.proveedor_id.display_name)
+        return motivos
+
+    def _domain_guias_elegibles(self, validar_filtros=True):
+        """Búsqueda de candidatos: los mismos datos que luego valida el servidor.
+
+        Se permiten guías de la compañía sin ruta ni embarque, aun cuando el ERP
+        asignó otro chofer/transporte: el cambio requiere aceptación explícita.
+        El destino textual sin código se valida después con _coincide_destino.
         """
         self.ensure_one()
         if not self.company_id or not self.destino_id:
             return [('id', '=', 0)]
-        domain = [
+        base = [
             ('company_id', '=', self.company_id.id),
             ('state', '=', 'registrada'),
             ('embarque_id', '=', False),
             ('hoja_ruta_id', '=', False),
-            '|', ('destino_id', '=', self.destino_id.id),
-            '&', ('destino_id', '=', False), ('destino_codigo', '=', self.destino_id.codigo),
         ]
-        if validar_filtros:
-            if not self.chofer_usuario_id or not self.proveedor_id:
-                return [('id', '=', 0)]
-            domain.extend([
-                '|', ('chofer_usuario_id', '=', False),
-                     ('chofer_usuario_id', '=', self.chofer_usuario_id.id),
-                '|', ('proveedor_id', '=', False),
-                     ('proveedor_id', '=', self.proveedor_id.id),
-            ])
-        return domain
+        if not validar_filtros:
+            return base
+        # Prefiltro SQL para no ocultar guías válidas cuando hay miles de
+        # registros en otros destinos; validación exacta posterior en Python.
+        from odoo.osv import expression
+        cod = self.destino_id.codigo
+        nombres = list({v for v in (self.destino_id.ciudad, self.destino_id.name) if v})
+        opciones = [[('destino_id', '=', self.destino_id.id)],
+                    [('destino_codigo', '=ilike', cod)]]
+        for nombre in nombres:
+            opciones.extend([[('destino_ciudad', '=ilike', nombre)],
+                             [('destino', '=ilike', nombre)]])
+        return expression.AND([base, expression.OR(opciones)])
 
     @api.depends('company_id', 'destino_id', 'chofer_usuario_id', 'proveedor_id')
     def _compute_guias_seleccionables(self):
         Guia = self.env['transcash.guia']
         for ruta in self:
-            ruta.guias_pendientes_destino = Guia.search_count(
-                ruta._domain_guias_elegibles(validar_filtros=False))
-            ruta.guias_disponibles = Guia.search_count(
-                ruta._domain_guias_elegibles(validar_filtros=True))
+            pendientes = Guia.search(ruta._domain_guias_elegibles(validar_filtros=True))
+            ruta.guias_pendientes_destino = len(pendientes.filtered(ruta._coincide_destino))
+            ruta.guias_disponibles = len(pendientes.filtered(
+                lambda guia: ruta._es_guia_elegible(guia, permitir_reasignacion=True))) if (
+                    ruta.chofer_usuario_id and ruta.proveedor_id) else 0
 
-    def _es_guia_elegible(self, guia):
-        """Revisión final del servidor, incluso si se evita el filtro de UI."""
+    def _es_guia_elegible(self, guia, permitir_reasignacion=False):
+        """Una guía nunca cambia de destino ni se duplica en dos rutas."""
         self.ensure_one()
-        if (guia.company_id != self.company_id or guia.state != 'registrada'
-                or guia.embarque_id or guia.hoja_ruta_id):
+        if (not self.chofer_usuario_id or not self.proveedor_id or
+                guia.company_id != self.company_id or guia.state != 'registrada'
+                or guia.embarque_id or guia.hoja_ruta_id or not self._coincide_destino(guia)):
             return False
-        if guia.destino_id:
-            if guia.destino_id != self.destino_id:
-                return False
-        elif (guia.destino_codigo or '').strip().upper() != self.destino_id.codigo:
-            return False
-        if guia.chofer_usuario_id and guia.chofer_usuario_id != self.chofer_usuario_id:
-            return False
-        if guia.proveedor_id and guia.proveedor_id != self.proveedor_id:
-            return False
-        return True
+        return permitir_reasignacion or not self._motivos_reasignacion(guia)
 
     @api.onchange('company_id', 'destino_id', 'chofer_usuario_id', 'proveedor_id')
     def _onchange_filtros_guias(self):
@@ -207,7 +239,7 @@ class HojaRuta(models.Model):
         if not self.seleccion_guia_ids:
             return
         anteriores = self.seleccion_guia_ids
-        validas = anteriores.filtered(lambda g: self._es_guia_elegible(g)) if (
+        validas = anteriores.filtered(lambda g: self._es_guia_elegible(g, permitir_reasignacion=True)) if (
             self.company_id and self.destino_id and self.chofer_usuario_id and self.proveedor_id
         ) else self.env['transcash.guia']
         if len(validas) != len(anteriores):
@@ -233,7 +265,9 @@ class HojaRuta(models.Model):
             'type': 'ir.actions.act_window',
             'name': _('Guías disponibles para %s') % self.name,
             'res_model': 'transcash.guia', 'view_mode': 'list,form',
-            'domain': self._domain_guias_elegibles(),
+            'domain': [('id', 'in', self.env['transcash.guia'].search(
+                self._domain_guias_elegibles()).filtered(
+                    lambda g: self._es_guia_elegible(g, permitir_reasignacion=True)).ids)],
             'context': {'create': False, 'edit': False, 'delete': False},
             'target': 'current',
         }
@@ -254,6 +288,7 @@ class HojaRuta(models.Model):
             if {'destino_codigo','destino_nombre'} & set(vals) and 'destino_id' not in vals:
                 raise AccessError(_('El destino se selecciona desde el maestro.'))
             forbidden = {'state','embarque_id','guia_ids','tarifa_referencial', 'tarifa_id',
+                         'reasignacion_autorizada','reasignacion_autorizada_por_id',
                          'fecha_video','video_por_id'}
             if forbidden & set(vals):
                 raise AccessError(_('Los estados y vínculos se cambian con las acciones del flujo.'))
@@ -263,6 +298,9 @@ class HojaRuta(models.Model):
             if {'video_carga','video_nombre','video_mime'} & set(vals) and any(r.state != 'planificada' or
                     (r.embarque_id and r.embarque_id.state != 'preparacion') for r in self):
                 raise UserError(_('El video solo puede incorporarse antes de liberar el embarque al chofer.'))
+        if not self.env.su and {'chofer_usuario_id','proveedor_id','destino_id','company_id'} & set(vals):
+            vals = dict(vals, reasignacion_autorizada=False, reasignacion_autorizada_por_id=False)
+            # write is allowed to clear the flag when editing an unconfirmed route.
         if 'destino_id' in vals or 'company_id' in vals:
             if len(self) != 1:
                 raise UserError(_('Cambie el destino de una sola hoja de ruta a la vez.'))
@@ -288,19 +326,22 @@ class HojaRuta(models.Model):
             guia_ids = sorted(ruta.seleccion_guia_ids.ids)
             self.env.cr.execute('SELECT id FROM transcash_guia WHERE id = ANY(%s) ORDER BY id FOR UPDATE', (guia_ids,))
             guides = ruta.seleccion_guia_ids.sudo()
-            guides.invalidate_recordset(['hoja_ruta_id','embarque_id','state'])
+            guides.invalidate_recordset(['hoja_ruta_id','embarque_id','state',
+                'chofer_usuario_id','proveedor_id','destino_id','destino_codigo','destino_ciudad'])
             for guia in guides:
-                if not ruta._es_guia_elegible(guia):
+                if not ruta._es_guia_elegible(guia, permitir_reasignacion=True):
                     if guia.chofer_usuario_id and guia.chofer_usuario_id != ruta.chofer_usuario_id:
                         raise UserError(_('La guía %s pertenece al chofer %s. Seleccione el chofer correcto; no se puede reasignar sin revisar la guía.') % (guia.name, guia.chofer_usuario_id.name))
                     if guia.proveedor_id and guia.proveedor_id != ruta.proveedor_id:
                         raise UserError(_('La guía %s está asignada al transportista %s. Seleccione el transportista correcto.') % (guia.name, guia.proveedor_id.display_name))
-                    if (guia.destino_id != ruta.destino_id if guia.destino_id else
-                            (guia.destino_codigo or '').strip().upper() != ruta.destino_id.codigo):
+                    if not ruta._coincide_destino(guia):
                         raise UserError(_('La guía %s tiene otro destino. Verifique el maestro y el código del ERP.') % guia.name)
                     raise UserError(_('La guía %s no está pendiente, ya está asignada o pertenece a otra compañía.') % guia.name)
-                # Se completan campos aún no asignados por el ERP; nunca se pisa
-                # un chofer o transportista diferente en una guía ya importada.
+                if ruta._motivos_reasignacion(guia) and not ruta.reasignacion_autorizada:
+                    raise UserError(_('La guía %s tiene un chofer o transportista diferente al de la ruta. '
+                                      'Abra «Agregar / quitar guías» y autorice expresamente la reasignación.') % guia.name)
+                # El operador escogió el chofer/empresa de la ruta: si la guía
+                # difiere, queda constancia individual de la decisión.
             tarifa = self.env['transcash.tarifa.traslado'].sudo().search([
                 ('company_id','=',ruta.company_id.id),('tipo_vehiculo','=',ruta.tipo_vehiculo),
                 ('destino_id','=',ruta.destino_id.id),('active','=',True)], limit=1)
@@ -309,6 +350,7 @@ class HojaRuta(models.Model):
                                 (ruta.tipo_vehiculo, ruta.destino_codigo))
             for guia in guides:
                 changes = {'hoja_ruta_id': ruta.id}
+                diferencia = ruta._motivos_reasignacion(guia)
                 if guia.chofer_usuario_id != ruta.chofer_usuario_id:
                     changes['chofer_usuario_id'] = ruta.chofer_usuario_id.id
                 if guia.proveedor_id != ruta.proveedor_id:
@@ -316,6 +358,15 @@ class HojaRuta(models.Model):
                 if (guia.placa or '').strip().upper() != (ruta.placa or '').strip().upper():
                     changes['placa'] = ruta.placa
                 guia.sudo().write(changes)
+                if diferencia:
+                    guia._track_event(_('Reasignación autorizada al confirmar hoja de ruta'),
+                        _('Ruta: %(ruta)s. Valores anteriores: %(datos)s. Aprobó: %(usuario)s.') %
+                        {'ruta': ruta.name, 'datos': ', '.join(diferencia),
+                         'usuario': ruta.reasignacion_autorizada_por_id.display_name or self.env.user.display_name},
+                        publico_cliente=False)
+                if not guia.destino_id and ruta._coincide_destino(guia):
+                    guia.sudo().write({'destino_id': ruta.destino_id.id,
+                                       'destino_codigo': ruta.destino_id.codigo})
             ruta.sudo().write({'state':'planificada','tarifa_id':tarifa.id,'tarifa_referencial':tarifa.precio})
             for guia in guides:
                 guia._track_event('Asignada a hoja de ruta %s' % ruta.name)

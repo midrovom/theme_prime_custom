@@ -55,8 +55,9 @@
                       icon="fa-search" invisible="not id or not destino_id or not chofer_usuario_id or not proveedor_id"/>
             </group>
             <div class="alert alert-warning" invisible="state != 'borrador' or not destino_id or not chofer_usuario_id or not proveedor_id or guias_disponibles != 0" role="status">
-              No hay guías que cumplan todos los filtros. Pulse «Agregar / quitar guías»:
-              el asistente mostrará también guías bloqueadas con el motivo para poder revisarlas.
+              No hay guías pendientes de este destino. Abra «Agregar / quitar guías»
+              y busque por número para conocer el motivo de bloqueo. El chofer y transportista
+              distintos del ERP pueden ser reasignados únicamente con autorización explícita.
             </div>
             <field name="seleccion_guia_ids" widget="many2many_tags" readonly="1"
                    options="{'no_open': True, 'no_create': True}"/>
@@ -91,19 +92,38 @@
         <group col="2">
           <field name="guias_pendientes_destino" readonly="1"/>
           <field name="total_disponibles" readonly="1"/>
+          <field name="cantidad_reasignacion" readonly="1"/>
+        </group>
+        <group>
+          <field name="buscar_numero" placeholder="Escriba el número de guía o documento"/>
+          <button name="action_buscar" type="object" string="Buscar / Actualizar resultados"
+                  icon="fa-search" class="btn-secondary"/>
         </group>
         <field name="seleccion_inicial_ids" invisible="1"/>
+        <field name="chofer_inicial_id" invisible="1"/>
+        <field name="proveedor_inicial_id" invisible="1"/>
+        <field name="destino_inicial_id" invisible="1"/>
         <field name="aviso" readonly="1" invisible="not aviso" nolabel="1"/>
         <div class="alert alert-info" role="note">
           Marque la casilla «Agregar» de cada guía y pulse «Guardar selección».
-          Si una fila indica «No disponible», revise el motivo; no se reasignarán guías
-          de otro chofer, otra empresa o destino sin corregir primero los datos.
+          Verde: guía disponible. Amarillo: asignación de chofer o transportista del ERP
+          diferente; puede seleccionarla si autoriza expresamente el cambio. Rojo: guía
+          de otro destino, estado no permitido o utilizada en otro viaje; no es seleccionable.
         </div>
+        <div class="alert alert-warning" invisible="cantidad_reasignacion == 0" role="note">
+          Hay guías disponibles cuya asignación ERP es distinta de la ruta elegida.
+          Si decide incluirlas, autorice el cambio antes de guardar: quedará registrado
+          quién lo hizo y los datos anteriores.
+        </div>
+        <field name="permitir_reasignar"/>
         <field name="linea_ids" nolabel="1">
-          <list editable="bottom" create="0" delete="0" default_order="id asc">
-            <field name="disponible" column_invisible="True"/>
+          <list editable="bottom" create="0" delete="0" default_order="id asc"
+                decoration-danger="not disponible" decoration-warning="requiere_reasignacion"
+                decoration-success="disponible and not requiere_reasignacion">
+            <field name="requiere_reasignacion" column_invisible="True"/>
             <field name="seleccionada" readonly="not disponible"/>
             <field name="guia_id" readonly="1"/>
+            <field name="disponible" readonly="1" optional="show"/>
             <field name="numero_documento" readonly="1"/>
             <field name="destinatario_id" readonly="1" optional="show"/>
             <field name="chofer_usuario_id" readonly="1" optional="show"/>

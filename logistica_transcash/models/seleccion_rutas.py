@@ -1,4 +1,4 @@
-"""V5.14: selector explícito de guías para una hoja de ruta en borrador.
+"""V5.15: selector de guías, reasignación explícita y diagnóstico de bloqueo.
 
 Evita depender de la búsqueda many2many_tags del formulario de Odoo y
 permite diagnosticar rápidamente una lista de guías vacía.
@@ -7,7 +7,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError, AccessError
 
 
-MAX_GUIAS_EN_SELECTOR = 500
+MAX_GUIAS_EN_SELECTOR = 150
 
 
 class SeleccionarGuiasRutaWizard(models.TransientModel):
@@ -18,6 +18,12 @@ class SeleccionarGuiasRutaWizard(models.TransientModel):
     company_id = fields.Many2one('res.company', related='ruta_id.company_id', readonly=True)
     chofer_usuario_id = fields.Many2one('res.users', related='ruta_id.chofer_usuario_id', readonly=True)
     proveedor_id = fields.Many2one('res.partner', related='ruta_id.proveedor_id', readonly=True)
+    chofer_inicial_id = fields.Many2one('res.users', readonly=True)
+    proveedor_inicial_id = fields.Many2one('res.partner', readonly=True)
+    destino_inicial_id = fields.Many2one('transcash.destino', readonly=True)
+    permitir_reasignar = fields.Boolean('Confirmo cambiar el chofer y/o transportista según esta hoja de ruta')
+    cantidad_reasignacion = fields.Integer('Guías que requieren revisión', readonly=True)
+    buscar_numero = fields.Char('Buscar por número de guía o documento')
     destino_id = fields.Many2one('transcash.destino', related='ruta_id.destino_id', readonly=True)
     linea_ids = fields.One2many('transcash.seleccionar.guias.ruta.linea', 'wizard_id',
                                 string='Guías para marcar')
@@ -29,7 +35,8 @@ class SeleccionarGuiasRutaWizard(models.TransientModel):
     aviso = fields.Text(readonly=True)
 
     @api.model
-    def abrir_para_ruta(self, ruta):
+    def abrir_para_ruta(self, ruta, buscar_numero=False, ids_ya_marcados=None,
+                        permitir_reasignar=None):
         ruta.ensure_one()
         ruta._check_operator()
         if ruta.company_id not in self.env.user.company_ids:
@@ -38,44 +45,58 @@ class SeleccionarGuiasRutaWizard(models.TransientModel):
             raise UserError(_('Solo puede agregar guías cuando la hoja de ruta está en Borrador.'))
         if not ruta.destino_id or not ruta.chofer_usuario_id or not ruta.proveedor_id:
             raise UserError(_('Antes de agregar guías, indique destino, chofer y empresa transportista.'))
-        available = self.env['transcash.guia'].search(ruta._domain_guias_elegibles(),
-                                                      order='name asc', limit=MAX_GUIAS_EN_SELECTOR + 1)
-        selected_before = ruta.seleccion_guia_ids
-        # Incluir una muestra de guías bloqueadas, con el motivo claro, cuando
-        # aparentemente no hay nada seleccionable (o algunas no coinciden).
         Guia = self.env['transcash.guia']
-        otras = Guia.search(ruta._domain_guias_elegibles(validar_filtros=False), limit=80)
-        if len(otras) < 50:
-            otras |= Guia.search([('company_id', '=', ruta.company_id.id),
-                                   ('state', '=', 'registrada'),
-                                   ('embarque_id', '=', False),
-                                   ('hoja_ruta_id', '=', False)], limit=80)
-        # No perder una guía ya seleccionada al reabrir el asistente.
-        selected_ids = set(selected_before.ids)
-        candidates = (selected_before | available[:MAX_GUIAS_EN_SELECTOR] | otras).sorted('name')
-        # Las coincidencias primero; el resto aparece para diagnóstico.
-        candidates = candidates.sorted(key=lambda g: (not ruta._es_guia_elegible(g), g.name or ''))
+        query = (buscar_numero or '').strip()
+        base_domain = ruta._domain_guias_elegibles(validar_filtros=not bool(query))
+        if query:
+            from odoo.osv import expression
+            filtro = ['|', ('name', 'ilike', query), ('numero_documento', 'ilike', query)]
+            base_domain = expression.AND([base_domain, filtro])
+        candidatas = Guia.search(base_domain, order='create_date desc,id desc',
+                                 limit=MAX_GUIAS_EN_SELECTOR + 1)
+        selected_before = ruta.seleccion_guia_ids
+        # Incluir las seleccionadas aun si se busca otra guía distinta.
+        if ids_ya_marcados is not None:
+            selected_before = Guia.browse(ids_ya_marcados).exists()
+        # Diagnóstico: incluir guías fuera del destino únicamente al buscar un
+        # número concreto. No se debe mezclar una guía de otro destino por error.
+        if query and len(candidatas) < MAX_GUIAS_EN_SELECTOR:
+            otras = Guia.search([
+                ('company_id', '=', ruta.company_id.id),
+                '|', ('name', 'ilike', query), ('numero_documento', 'ilike', query)],
+                limit=30)
+            candidatas |= otras
+        candidates = (selected_before | candidatas[:MAX_GUIAS_EN_SELECTOR]).sorted(
+            key=lambda g: (not ruta._es_guia_elegible(g, permitir_reasignacion=True),
+                           bool(ruta._motivos_reasignacion(g)), g.name or ''))
+        reassign_count = len(candidates.filtered(lambda g:
+            ruta._es_guia_elegible(g, permitir_reasignacion=True) and ruta._motivos_reasignacion(g)))
+        visible_disponibles = len(candidates.filtered(lambda g:
+            ruta._es_guia_elegible(g, permitir_reasignacion=True)))
         aviso = False
-        total = ruta.guias_disponibles
-        if total > MAX_GUIAS_EN_SELECTOR:
-            aviso = _('Se muestran como máximo %s guías en el selector. Si necesita otras, '\
-                      'confirme esta selección y vuelva a abrirlo.') % MAX_GUIAS_EN_SELECTOR
-        elif not available and not selected_before:
-            aviso = _('No hay guías para seleccionar. Revise que estén en estado Registrada, '\
-                      'tengan el mismo destino, chofer y transportista (o estén sin asignar), '\
-                      'y no pertenezcan a otra ruta o embarque. Guías pendientes para el destino: %s.') % ruta.guias_pendientes_destino
-        elif selected_before and len(selected_before) > MAX_GUIAS_EN_SELECTOR:
-            aviso = _('Esta ruta ya contiene más de %s guías. Revise el volumen antes de añadir otras.') % MAX_GUIAS_EN_SELECTOR
+        if len(candidatas) > MAX_GUIAS_EN_SELECTOR:
+            aviso = _('Hay más de %s guías pendientes. Busque por número de guía o documento para encontrarlas.') % MAX_GUIAS_EN_SELECTOR
+        elif not visible_disponibles:
+            aviso = _('No hay guías habilitadas. Compruebe el resultado del filtro en cada fila, '
+                      'el destino de la ruta y que la guía no esté utilizada por otro embarque.')
         wizard = self.create({
             'ruta_id': ruta.id,
-            'total_disponibles': total,
+            'chofer_inicial_id': ruta.chofer_usuario_id.id,
+            'proveedor_inicial_id': ruta.proveedor_id.id,
+            'destino_inicial_id': ruta.destino_id.id,
+            'total_disponibles': ruta.guias_disponibles,
             'guias_pendientes_destino': ruta.guias_pendientes_destino,
-            'seleccion_inicial_ids': [(6, 0, selected_before.ids)],
+            'cantidad_reasignacion': reassign_count,
+            'buscar_numero': query,
+            'permitir_reasignar': ruta.reasignacion_autorizada if permitir_reasignar is None else permitir_reasignar,
+            'seleccion_inicial_ids': [(6, 0, ruta.seleccion_guia_ids.ids)],
             'linea_ids': [(0, 0, {
                 'guia_id': guia.id,
-                'seleccionada': guia.id in selected_ids,
-                'disponible': guia.id in selected_ids or ruta._es_guia_elegible(guia),
-                'motivo': (self._motivo_guia(ruta, guia) + (_(' — desmarque esta guía') if guia.id in selected_ids and not ruta._es_guia_elegible(guia) else '')),
+                'seleccionada': guia.id in selected_before.ids,
+                'disponible': ruta._es_guia_elegible(guia, permitir_reasignacion=True),
+                'requiere_reasignacion': bool(ruta._motivos_reasignacion(guia)) and
+                    ruta._es_guia_elegible(guia, permitir_reasignacion=True),
+                'motivo': self._motivo_guia(ruta, guia),
             }) for guia in candidates],
             'aviso': aviso,
         })
@@ -90,22 +111,24 @@ class SeleccionarGuiasRutaWizard(models.TransientModel):
 
     @api.model
     def _motivo_guia(self, ruta, guia):
-        if ruta._es_guia_elegible(guia):
-            return _('Disponible')
         if guia.company_id != ruta.company_id:
-            return _('Otra compañía')
+            return _('Bloqueada: otra compañía')
         if guia.state != 'registrada':
-            return _('Guía no está registrada')
+            return _('Bloqueada: estado %s (debe estar Registrada)') % dict(guia._fields['state'].selection).get(guia.state, guia.state)
         if guia.hoja_ruta_id or guia.embarque_id:
-            return _('Ya asignada a ruta o embarque')
-        if (guia.destino_id != ruta.destino_id if guia.destino_id else
-                (guia.destino_codigo or '').strip().upper() != ruta.destino_id.codigo):
-            return _('Otro destino')
-        if guia.chofer_usuario_id and guia.chofer_usuario_id != ruta.chofer_usuario_id:
-            return _('Otro chofer')
-        if guia.proveedor_id and guia.proveedor_id != ruta.proveedor_id:
-            return _('Otra empresa transportista')
-        return _('No disponible')
+            return _('Bloqueada: ya pertenece a ruta o embarque')
+        if not ruta._coincide_destino(guia):
+            return _('Bloqueada: destino diferente o sin destino homologado')
+        motivos = ruta._motivos_reasignacion(guia)
+        if motivos:
+            return _('Requiere autorización: %s') % ', '.join(motivos)
+        return _('Disponible para agregar')
+
+    def action_buscar(self):
+        """Refrescar candidatos sin perder las casillas ya marcadas en el diálogo."""
+        self.ensure_one()
+        ids = self.linea_ids.filtered('seleccionada').mapped('guia_id').ids
+        return self.abrir_para_ruta(self.ruta_id, self.buscar_numero, ids, self.permitir_reasignar)
 
     def action_aplicar(self):
         self.ensure_one()
@@ -115,6 +138,10 @@ class SeleccionarGuiasRutaWizard(models.TransientModel):
             raise AccessError(_('No puede modificar esta ruta.'))
         if ruta.state != 'borrador':
             raise UserError(_('La ruta ya fue confirmada; no puede modificar sus guías.'))
+        if (ruta.chofer_usuario_id != self.chofer_inicial_id or
+                ruta.proveedor_id != self.proveedor_inicial_id or
+                ruta.destino_id != self.destino_inicial_id):
+            raise UserError(_('Cambió el chofer, transportista o destino mientras el selector estaba abierto. Vuelva a abrirlo.'))
         # Bloquear la fila de la ruta para evitar sobrescrituras entre dos operadores.
         self.env.cr.execute('SELECT id FROM transcash_hoja_ruta WHERE id = %s FOR UPDATE', (ruta.id,))
         ruta.invalidate_recordset(['seleccion_guia_ids', 'state'])
@@ -130,10 +157,21 @@ class SeleccionarGuiasRutaWizard(models.TransientModel):
             selected.invalidate_recordset(['state', 'embarque_id', 'hoja_ruta_id', 'chofer_usuario_id',
                                            'proveedor_id', 'destino_id', 'destino_codigo', 'company_id'])
             for guia in selected:
-                if not ruta._es_guia_elegible(guia):
-                    raise UserError(_('La guía %s dejó de estar disponible o tiene otro chofer, '\
-                                      'empresa de transporte o destino. Actualice la selección.') % guia.name)
-        ruta.write({'seleccion_guia_ids': [(6, 0, selected.ids)]})
+                if not ruta._es_guia_elegible(guia, permitir_reasignacion=True):
+                    raise UserError(_('La guía %(guia)s no se puede agregar: %(motivo)s. '
+                                      'Actualice el selector.') %
+                                    {'guia': guia.name, 'motivo': self._motivo_guia(ruta, guia)})
+            if not self.permitir_reasignar:
+                diferentes = selected.filtered(lambda g: ruta._motivos_reasignacion(g))
+                if diferentes:
+                    raise UserError(_('La guía %s tiene otro chofer o transportista. '
+                                      'Active la autorización de reasignación antes de guardar.') % diferentes[0].name)
+        # Únicamente el asistente autorizado establece esta decisión, no la vista.
+        ruta.sudo().write({
+            'seleccion_guia_ids': [(6, 0, selected.ids)],
+            'reasignacion_autorizada': bool(self.permitir_reasignar),
+            'reasignacion_autorizada_por_id': self.env.user.id if self.permitir_reasignar else False,
+        })
         return {
             'type': 'ir.actions.act_window',
             'name': _('Hoja de ruta'),
@@ -159,4 +197,5 @@ class SeleccionarGuiasRutaLinea(models.TransientModel):
     proveedor_id = fields.Many2one(related='guia_id.proveedor_id', readonly=True)
     peso_kg = fields.Float(related='guia_id.peso_kg', readonly=True)
     disponible = fields.Boolean('Disponible', readonly=True)
+    requiere_reasignacion = fields.Boolean('Requiere reasignación', readonly=True)
     motivo = fields.Char('Resultado del filtro', readonly=True)

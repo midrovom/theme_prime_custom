@@ -67,18 +67,23 @@ class TestSelectorRealV514(TransactionCase):
         wiz2.action_aplicar()
         self.assertEqual(ruta.seleccion_guia_ids, g2)
 
-    def test_muestra_motivo_y_bloquea_transportista_distinto(self):
-        blocked = self._guide('GUIA-V514-BLOCK', proveedor_id=self.other_carrier.id)
+    def test_diferencia_transportista_requiere_aprobacion_explicita(self):
+        other = self._guide('GUIA-V514-BLOCK', proveedor_id=self.other_carrier.id)
         ruta = self._route()
         wiz = self._open(ruta)
-        line = wiz.linea_ids.filtered(lambda l: l.guia_id == blocked)
+        line = wiz.linea_ids.filtered(lambda l: l.guia_id == other)
         self.assertTrue(line)
-        self.assertFalse(line.disponible)
-        self.assertIn('transportista', line.motivo)
-        line.write({'seleccionada': True})  # RPC malicioso: no puede eludir servidor
-        with self.assertRaisesRegex(UserError, 'dejó de estar disponible'):
+        self.assertTrue(line.disponible)
+        self.assertTrue(line.requiere_reasignacion)
+        self.assertIn('autorización', line.motivo)
+        line.write({'seleccionada': True})
+        with self.assertRaisesRegex(UserError, 'autorización de reasignación'):
             wiz.action_aplicar()
         self.assertFalse(ruta.seleccion_guia_ids)
+        wiz.write({'permitir_reasignar': True})
+        wiz.action_aplicar()
+        self.assertEqual(ruta.seleccion_guia_ids, other)
+        self.assertTrue(ruta.reasignacion_autorizada)
 
     def test_dos_ventanas_no_pisan_la_seleccion_entre_si(self):
         g1 = self._guide('GUIA-V514-WIN1')
