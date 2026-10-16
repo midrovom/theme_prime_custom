@@ -2,109 +2,116 @@
 <templates xml:space="preserve">
   <t t-name="logistica_transcash.OperacionDashboard" owl="1">
     <div class="tc-bi o_action">
-      <aside class="tc-bi-nav">
-        <div class="tc-bi-logo"><span class="tc-bi-spark">◆</span><span>TRANSCASH<small>INTELIGENCIA LOGÍSTICA</small></span></div>
+      <aside class="tc-bi-nav" aria-label="Navegación analítica">
+        <div class="tc-bi-logo">
+          <span class="tc-bi-brandmark">◆</span>
+          <span>TRANSCASH <small>INTELIGENCIA LOGÍSTICA</small></span>
+        </div>
         <div class="tc-bi-nav-caption">CENTRO DE CONTROL</div>
-        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'resumen' ? 'on' : '')" data-page="resumen" t-on-click="showSection">◈ <span>Resumen ejecutivo</span></button>
-        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'transportistas' ? 'on' : '')" data-page="transportistas" t-on-click="showSection">▣ <span>Transportistas</span></button>
-        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'choferes' ? 'on' : '')" data-page="choferes" t-on-click="showSection">♧ <span>Choferes</span></button>
-        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'destinos' ? 'on' : '')" data-page="destinos" t-on-click="showSection">⌾ <span>Destinos</span></button>
-        <div class="tc-bi-nav-caption">CALIDAD DE LA CARGA</div>
-        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'marcas' ? 'on' : '')" data-page="marcas" t-on-click="showSection">▤ <span>Roturas por marca</span></button>
-        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'proveedores_producto' ? 'on' : '')" data-page="proveedores_producto" t-on-click="showSection">▦ <span>Fabricantes y proveedores</span></button>
-        <div class="tc-bi-nav-foot">Acceso restringido por permiso de analítica. Los importes financieros no se incluyen en este dashboard.</div>
+        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'resumen' ? 'on' : '')" data-page="resumen" t-on-click="showSection"><span class="tc-bi-navicon">◈</span><span>Resumen ejecutivo</span></button>
+        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'transportistas' ? 'on' : '')" data-page="transportistas" t-on-click="showSection"><span class="tc-bi-navicon">▣</span><span>Transportistas</span></button>
+        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'choferes' ? 'on' : '')" data-page="choferes" t-on-click="showSection"><span class="tc-bi-navicon">♧</span><span>Choferes</span></button>
+        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'destinos' ? 'on' : '')" data-page="destinos" t-on-click="showSection"><span class="tc-bi-navicon">⌾</span><span>Destinos</span></button>
+        <div class="tc-bi-nav-caption tc-bi-nav-second">CALIDAD DE TRANSPORTE</div>
+        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'marcas' ? 'on' : '')" data-page="marcas" t-on-click="showSection"><span class="tc-bi-navicon">▤</span><span>Roturas por marca</span></button>
+        <button type="button" t-att-class="'tc-bi-menu ' + (state.page === 'proveedores_producto' ? 'on' : '')" data-page="proveedores_producto" t-on-click="showSection"><span class="tc-bi-navicon">▦</span><span>Proveedores de producto</span></button>
+        <div class="tc-bi-nav-foot"><div class="tc-bi-nav-lock">◉ Analítica restringida</div>Indicadores de guías y viajes. Sin permisos de modificación operativa.</div>
       </aside>
       <div class="tc-bi-main">
-        <div class="tc-bi-head">
-          <div><div class="tc-bi-eyebrow">TRANSCASH · CENTRO DE INTELIGENCIA</div>
+        <header class="tc-bi-head">
+          <div class="tc-bi-headline">
+            <div class="tc-bi-eyebrow">CENTRO DE CONTROL <span class="tc-bi-dot">•</span> OPERACIONES</div>
             <h1 t-esc="pageTitle()"/>
-            <p>Viajes, destinos, mercancía transportada e incidencias documentadas.</p>
+            <p>Seguimiento operativo y calidad del transporte en tiempo real desde Odoo.</p>
           </div>
           <div class="tc-bi-actions">
-            <button type="button" class="tc-bi-btn" t-if="state.data &amp;&amp; state.data.puede_consultar_novedades" t-on-click="openIncidents">Control de novedades ↗</button>
+            <button type="button" class="tc-bi-btn" t-if="state.data &amp;&amp; state.data.puede_consultar_novedades" t-on-click="openIncidents">⚑ Control de novedades</button>
             <button type="button" class="tc-bi-btn tc-bi-green" t-on-click="exportEverything" t-att-disabled="!state.data || state.loading">↓ Exportar informe Excel</button>
           </div>
-        </div>
-        <div class="tc-bi-body">
-          <div class="tc-bi-filters">
-            <label>DESDE<input type="date" t-att-value="state.desde" t-on-change="changeStart"/></label>
-            <label>HASTA<input type="date" t-att-value="state.hasta" t-on-change="changeEnd"/></label>
-            <label>FRECUENCIA<select t-att-value="state.periodo" t-on-change="changePeriod">
-              <option value="dia">Diaria</option><option value="semana">Semanal</option><option value="mes">Mensual</option>
-            </select></label>
-            <button class="tc-bi-btn" type="button" t-on-click="refresh" t-att-disabled="state.loading">↻ Actualizar</button>
-            <span class="tc-bi-filter-desc">Corte por fecha real de salida del embarque · pesos en kg</span>
-          </div>
-          <t t-if="state.loading"><div class="tc-bi-alert">Calculando indicadores…</div></t>
-          <t t-if="state.error"><div class="alert alert-danger" t-esc="state.error"/></t>
+        </header>
+        <main class="tc-bi-body">
+          <section class="tc-bi-filters" aria-label="Filtros del informe">
+            <div class="tc-bi-filter-title"><strong>Filtros del informe</strong><span>Actualiza los periodos para recalcular todos los indicadores.</span></div>
+            <div class="tc-bi-filter-fields">
+              <label>DESDE <input type="date" t-att-value="state.desde" t-on-change="changeStart"/></label>
+              <label>HASTA <input type="date" t-att-value="state.hasta" t-on-change="changeEnd"/></label>
+              <label>AGRUPACIÓN <select t-att-value="state.periodo" t-on-change="changePeriod"><option value="dia">Por día</option><option value="semana">Por semana</option><option value="mes">Por mes</option></select></label>
+              <button type="button" class="tc-bi-btn tc-bi-update" t-on-click="refresh" t-att-disabled="state.loading">↻ Actualizar datos</button>
+              <span class="tc-bi-filter-desc">Base: fecha real de salida</span>
+            </div>
+          </section>
+          <t t-if="state.loading"><div class="tc-bi-loading" role="status"><span class="tc-bi-spinner"/> Consultando información logística…</div></t>
+          <t t-if="state.error"><div class="tc-bi-error" role="alert"><div><strong>No se pudieron cargar los indicadores</strong><p t-esc="state.error"/></div><button type="button" class="tc-bi-btn" t-on-click="refresh">Reintentar</button></div></t>
           <t t-if="state.data">
+            <div class="tc-bi-section-heading"><div><span>INDICADORES ESENCIALES</span><h2>Resumen del periodo</h2></div><div class="tc-bi-period" t-esc="state.desde + ' — ' + state.hasta"/></div>
             <div class="tc-bi-kpis">
-              <div class="tc-bi-kpi"><small>VIAJES REALIZADOS</small><strong t-esc="number(state.data.kpis.viajes)"/><span>Embarques únicos con salida</span></div>
-              <div class="tc-bi-kpi"><small>GUÍAS TRANSPORTADAS</small><strong t-esc="number(state.data.kpis.guias)"/><span>Entregas documentadas</span></div>
-              <div class="tc-bi-kpi"><small>TONELADAS</small><strong t-esc="number(state.data.kpis.toneladas)"/><span><t t-esc="number(state.data.kpis.kg)"/> kg</span></div>
-              <div class="tc-bi-kpi"><small>GUÍAS CON ROTURA</small><strong class="tc-bi-red" t-esc="number(state.data.kpis.guias_rotura)"/><span><t t-esc="percent(state.data.kpis.pct_guias_rotura)"/> del total</span></div>
-              <div class="tc-bi-kpi"><small>NOVEDADES</small><strong t-esc="number(state.data.kpis.guias_novedad)"/><span><t t-esc="number(state.data.kpis.novedades_abiertas)"/> pendientes</span></div>
-              <div class="tc-bi-kpi"><small>PESO DAÑADO ESTIMADO</small><strong class="tc-bi-amber" t-esc="number(state.data.kpis.kg_rotura_estimados)"/><span>kg estimados</span></div>
+              <div class="tc-bi-kpi"><div class="tc-bi-kpi-head"><small>VIAJES REALIZADOS</small><span class="tc-bi-kpi-icon">⛟</span></div><strong t-esc="number(state.data.kpis.viajes)"/><span>Embarques únicos con salida</span></div>
+              <div class="tc-bi-kpi"><div class="tc-bi-kpi-head"><small>GUÍAS TRANSPORTADAS</small><span class="tc-bi-kpi-icon">▤</span></div><strong t-esc="number(state.data.kpis.guias)"/><span>Guías incluidas en los viajes</span></div>
+              <div class="tc-bi-kpi"><div class="tc-bi-kpi-head"><small>TONELADAS MOVILIZADAS</small><span class="tc-bi-kpi-icon">◈</span></div><strong t-esc="number(state.data.kpis.toneladas)"/><span><t t-esc="number(state.data.kpis.kg)"/> kg transportados</span></div>
+              <div class="tc-bi-kpi"><div class="tc-bi-kpi-head"><small>GUÍAS CON ROTURA</small><span class="tc-bi-kpi-icon tc-bi-danger">⚑</span></div><strong class="tc-bi-red" t-esc="number(state.data.kpis.guias_rotura)"/><span><t t-esc="percent(state.data.kpis.pct_guias_rotura)"/> de guías transportadas</span></div>
+              <div class="tc-bi-kpi"><div class="tc-bi-kpi-head"><small>GUÍAS CON NOVEDADES</small><span class="tc-bi-kpi-icon tc-bi-warn">!</span></div><strong t-esc="number(state.data.kpis.guias_novedad)"/><span><t t-esc="number(state.data.kpis.novedades_abiertas)"/> novedades abiertas</span></div>
+              <div class="tc-bi-kpi"><div class="tc-bi-kpi-head"><small>KG DE ROTURA ESTIMADOS</small><span class="tc-bi-kpi-icon tc-bi-warn">≈</span></div><strong class="tc-bi-amber" t-esc="number(state.data.kpis.kg_rotura_estimados)"/><span>Estimación según peso por producto</span></div>
             </div>
             <t t-if="state.page === 'resumen'">
               <div class="tc-bi-layout">
                 <section class="tc-bi-card">
-                  <div class="tc-bi-cardhead"><h2>Viajes por periodo</h2><button class="tc-bi-smallbtn" type="button" t-on-click="exportCurrent">↓ Excel</button></div>
+                  <div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">TENDENCIA</span><h2>Viajes por periodo</h2><small>Embarques con salida real registrada</small></div><button class="tc-bi-smallbtn" type="button" t-on-click="exportCurrent">↓ Excel</button></div>
                   <div class="tc-bi-chart" t-if="state.data.tendencia.length">
                     <t t-foreach="state.data.tendencia" t-as="p" t-key="p.periodo">
                       <div class="tc-bi-barrow"><span t-esc="p.periodo"/><div class="tc-bi-track"><div class="tc-bi-fill" t-att-style="'width:' + p.porcentaje + '%'"/></div><b t-esc="p.viajes"/></div>
                     </t>
-                  </div>
-                  <div t-else="" class="tc-bi-empty">No existen embarques con salida en este periodo.</div>
+                  </div><div t-else="" class="tc-bi-empty">No hay embarques con salida registrada para este periodo.</div>
                 </section>
                 <section class="tc-bi-card tc-bi-summary">
-                  <div class="tc-bi-cardhead"><h2>Control y calidad</h2></div>
+                  <div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">CALIDAD DE ENTREGAS</span><h2>Estado de la operación</h2><small>Incidencias y roturas registradas</small></div></div>
+                  <div class="tc-bi-quality"><div><span>Guías con rotura</span><b t-esc="percent(state.data.kpis.pct_guias_rotura)"/></div><div class="tc-bi-quality-track"><div class="tc-bi-quality-fill" t-att-style="'width:' + qualityPct(state.data.kpis.pct_guias_rotura) + '%'"/></div></div>
                   <div class="tc-bi-summaryrow"><span>Guías con incidencias</span><strong t-esc="number(state.data.kpis.guias_novedad)"/></div>
                   <div class="tc-bi-summaryrow"><span>Reportes de rotura</span><strong t-esc="number(state.data.kpis.reportes_rotura)"/></div>
-                  <div class="tc-bi-summaryrow"><span>Guías con rotura (%)</span><strong t-esc="percent(state.data.kpis.pct_guias_rotura)"/></div>
+                  <div class="tc-bi-summaryrow"><span>Novedades abiertas</span><strong class="tc-bi-amber" t-esc="number(state.data.kpis.novedades_abiertas)"/></div>
                   <div class="tc-bi-summaryrow"><span>Toneladas movilizadas</span><strong t-esc="number(state.data.kpis.toneladas)"/></div>
-                  <p>Selecciona una categoría en el menú para comparar transportistas, choferes, destinos o productos.</p>
+                  <p>Las roturas se calculan a partir de reportes no rechazados; los kilogramos dañados son estimaciones.</p>
                 </section>
               </div>
-              <section class="tc-bi-card tc-bi-notes"><h2>Reglas de cálculo</h2><ul><t t-foreach="state.data.notas" t-as="note" t-key="note"><li t-esc="note"/></t></ul></section>
+              <div class="tc-bi-layout tc-bi-equal">
+                <section class="tc-bi-card">
+                  <div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">OPERACIÓN</span><h2>Destinos más frecuentes</h2></div><button type="button" class="tc-bi-smallbtn" data-page="destinos" t-on-click="showSection">Ver detalle →</button></div>
+                  <t t-if="state.data.destinos.length">
+                    <t t-foreach="topRows('destinos', 'viajes', 6)" t-as="r" t-key="r.clave">
+                      <div class="tc-bi-rankingrow"><span t-att-title="r.nombre" t-esc="r.nombre"/><div class="tc-bi-track"><div class="tc-bi-fill tc-bi-blue" t-att-style="'width:' + barWidth('destinos','viajes',r.viajes) + '%'"/></div><b t-esc="r.viajes"/></div>
+                    </t>
+                  </t><div t-else="" class="tc-bi-empty">No hay destinos disponibles.</div>
+                </section>
+                <section class="tc-bi-card">
+                  <div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">PROVEEDORES</span><h2>Viajes por transportista</h2></div><button type="button" class="tc-bi-smallbtn" data-page="transportistas" t-on-click="showSection">Ver detalle →</button></div>
+                  <t t-if="state.data.transportistas.length">
+                    <t t-foreach="topRows('transportistas', 'viajes', 6)" t-as="r" t-key="r.clave">
+                      <div class="tc-bi-rankingrow"><span t-att-title="r.nombre" t-esc="r.nombre"/><div class="tc-bi-track"><div class="tc-bi-fill" t-att-style="'width:' + barWidth('transportistas','viajes',r.viajes) + '%'"/></div><b t-esc="r.viajes"/></div>
+                    </t>
+                  </t><div t-else="" class="tc-bi-empty">No hay transportistas disponibles.</div>
+                </section>
+              </div>
+              <details class="tc-bi-methodology"><summary>Metodología y criterios de cálculo</summary><ul><t t-foreach="state.data.notas" t-as="note" t-key="note"><li t-esc="note"/></t></ul></details>
             </t>
             <t t-else="">
-              <section class="tc-bi-card">
-                <div class="tc-bi-cardhead"><div><h2 t-esc="pageTitle()"/><small>Filtra y ordena los datos. El Excel se obtiene del servidor con el mismo periodo seleccionado.</small></div>
-                  <button class="tc-bi-smallbtn tc-bi-export" type="button" t-on-click="exportCurrent">↓ Exportar tabla a Excel</button>
-                </div>
-                <div class="tc-bi-tablefilters"><input type="search" placeholder="Buscar en esta tabla…" t-att-value="state.busqueda" t-on-input="changeSearch"/>
+              <section class="tc-bi-card tc-bi-data-card">
+                <div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">ANÁLISIS DETALLADO</span><h2 t-esc="pageTitle()"/><small>Datos consolidados. Utiliza los filtros y descarga la tabla para analizarla.</small></div><button class="tc-bi-smallbtn tc-bi-export" type="button" t-on-click="exportCurrent">↓ Exportar tabla Excel</button></div>
+                <div class="tc-bi-tablefilters"><label class="tc-bi-searchbox">Buscar <input type="search" placeholder="Nombre, código, destino…" t-att-value="state.busqueda" t-on-input="changeSearch"/></label>
                   <label>Ordenar por<select t-att-value="state.sort" t-on-change="changeSort">
-                    <option value="novedades">Novedades</option><option value="roturas">Guías con rotura</option><option value="pct_novedad">% novedades</option><option value="pct_rotura">% roturas</option>
-                    <option value="viajes">Viajes</option><option value="guias">Guías</option><option value="reportes">Reportes de daño</option>
-                    <option value="kg_estimados">Kg dañados</option><option value="peso_kg">Peso trasladado</option>
-                  </select></label>
-                  <span><t t-esc="tableRows().length"/> resultados</span>
+                    <option value="novedades">Novedades</option><option value="roturas">Guías con rotura</option><option value="pct_novedad">% novedades</option><option value="pct_rotura">% roturas</option><option value="viajes">Viajes</option><option value="guias">Guías</option><option value="reportes">Reportes de daño</option><option value="kg_estimados">Kg dañados</option><option value="peso_kg">Peso transportado</option>
+                  </select></label><span class="tc-bi-count"><t t-esc="tableRows().length"/> registros</span>
                 </div>
-                <div class="tc-bi-tablewrap">
-                  <table class="tc-bi-table"><thead><tr>
-                    <th t-esc="isProductPage() ? 'Marca / proveedor del producto' : 'Chofer / transportista / destino'"/>
-                    <t t-if="isProductPage()"><th>Reportes</th><th>Guías con rotura</th><th>Guías expuestas</th><th>% afectadas</th><th>Kg daño estimado</th><th>Cantidades por unidad</th></t>
-                    <t t-else=""><th>Viajes</th><th>Guías</th><th>Novedades</th><th>Guías rotas</th><th>% novedades</th><th>% roturas</th></t>
-                  </tr></thead><tbody>
-                    <t t-foreach="tableRows()" t-as="r" t-key="r.clave">
-                      <tr><td><strong t-esc="r.nombre"/></td>
-                        <t t-if="isProductPage()">
-                          <td t-esc="r.reportes"/><td t-esc="r.guias"/><td t-esc="r.guias_transportadas"/>
-                          <td t-esc="percent(r.pct_guias_danadas)"/><td t-esc="number(r.kg_estimados)"/><td t-esc="r.cantidades"/>
-                        </t><t t-else="">
-                          <td t-esc="r.viajes"/><td t-esc="r.guias"/><td t-esc="r.novedades"/><td t-esc="r.roturas"/>
-                          <td t-esc="percent(r.pct_novedad)"/><td t-esc="percent(r.pct_rotura)"/>
-                        </t>
-                      </tr>
-                    </t>
-                  </tbody></table>
-                </div>
-                <p class="tc-bi-footer-note">Las cifras corresponden a los registros autorizados para este usuario. Las cantidades de unidades diferentes no se suman entre sí.</p>
+                <div class="tc-bi-tablewrap"><table class="tc-bi-table"><thead><tr><th t-esc="isProductPage() ? 'Marca / proveedor de producto' : 'Chofer / transportista / destino'"/>
+                  <t t-if="isProductPage()"><th>Reportes</th><th>Guías dañadas</th><th>Guías expuestas</th><th>% afectadas</th><th>Kg daño estimado</th><th>Cantidades / unidad</th></t>
+                  <t t-else=""><th>Viajes</th><th>Guías</th><th>Novedades</th><th>Guías rotas</th><th>% novedades</th><th>% roturas</th></t>
+                </tr></thead><tbody><t t-foreach="tableRows()" t-as="r" t-key="r.clave"><tr><td><strong t-esc="r.nombre"/></td>
+                    <t t-if="isProductPage()"><td t-esc="r.reportes"/><td t-esc="r.guias"/><td t-esc="r.guias_transportadas"/><td t-esc="percent(r.pct_guias_danadas)"/><td t-esc="number(r.kg_estimados)"/><td t-esc="r.cantidades"/></t>
+                    <t t-else=""><td t-esc="r.viajes"/><td t-esc="r.guias"/><td t-esc="r.novedades"/><td t-esc="r.roturas"/><td t-esc="percent(r.pct_novedad)"/><td t-esc="percent(r.pct_rotura)"/></t>
+                  </tr></t></tbody></table><div t-if="!tableRows().length" class="tc-bi-empty">No hay resultados que coincidan con tu búsqueda.</div></div>
+                <p class="tc-bi-footer-note">Ranking limitado a 30 grupos por dimensión. El Excel conserva el periodo y la búsqueda. No se mezclan unidades de productos diferentes.</p>
               </section>
             </t>
           </t>
-        </div>
+        </main>
       </div>
     </div>
   </t>

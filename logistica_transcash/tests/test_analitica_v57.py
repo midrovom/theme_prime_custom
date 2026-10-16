@@ -62,3 +62,17 @@ class TestAnaliticaV57(TransactionCase):
         self.assertEqual(result['kpis']['viajes'],1)
         self.assertEqual(result['kpis']['guias'],1)
         self.assertTrue(any(x['nombre']=='UIO' for x in result['destinos']))
+
+    def test_dashboard_rankings_reales_v511(self):
+        """Regresión: grupos no vacíos (IDs y códigos) no deben causar KeyError.
+
+        V5.10 sobrescribía la columna de ordenación con el ID de transportista,
+        chofer o destino. Esto provocaba Server Error cuando había viajes.
+        """
+        data = self.env['transcash.dashboard.service'].with_user(self.analyst).get_dashboard(
+            'dia', '2026-10-15', '2026-10-15')
+        self.assertEqual(data['kpis']['viajes'], 1)
+        self.assertEqual(data['transportistas'][0]['nombre'], self.supplier.display_name)
+        self.assertEqual(data['choferes'][0]['nombre'], self.driver.display_name)
+        self.assertEqual(data['destinos'][0]['clave'], 'UIO')
+        self.assertEqual(data['tendencia'][0]['viajes'], 1)

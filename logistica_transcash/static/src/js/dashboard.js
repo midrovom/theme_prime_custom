@@ -29,10 +29,41 @@ class TranscashDashboard extends Component {
                 this.state.periodo, this.state.desde, this.state.hasta,
             ]);
         } catch (err) {
-            this.state.error = err.message || "Error al consultar indicadores";
+            this.state.data = null;
+            // No exponer trazas internas o nombres de tablas al usuario.
+            // Los detalles técnicos quedan disponibles en el log de Odoo.
+            console.error("Transcash dashboard: error consultando indicadores", err);
+            this.state.error = this.readableError(err);
         } finally {
             this.state.loading = false;
         }
+    }
+
+    readableError(err) {
+        const raw = String(err?.data?.message || err?.message || "");
+        if (/AccessError|acceso|autorizaci[oó]n|permission|access denied/i.test(raw)) {
+            return "Tu usuario no tiene permiso para consultar estos datos. Revisa el grupo de Analítica.";
+        }
+        if (/rango|fecha|date range/i.test(raw)) {
+            return "Revisa el rango de fechas seleccionado (máximo 367 días).";
+        }
+        if (/network|conexi[oó]n|failed to fetch/i.test(raw)) {
+            return "Se interrumpió la conexión. Verifica tu red y pulsa Reintentar.";
+        }
+        return "Odoo no pudo completar la consulta del dashboard. Pulsa Reintentar; si continúa, revisa el log del servicio Odoo en el servidor.";
+    }
+    qualityPct(value) {
+        const v = Number(value) || 0;
+        return Math.min(100, Math.max(0, v));
+    }
+    topRows(section, field, limit = 6) {
+        const rows = (this.state.data && this.state.data[section]) || [];
+        return [...rows].sort((a, b) => (Number(b[field]) || 0) - (Number(a[field]) || 0)).slice(0, limit);
+    }
+    barWidth(section, field, value) {
+        const rows = (this.state.data && this.state.data[section]) || [];
+        const max = rows.reduce((v, r) => Math.max(v, Number(r[field]) || 0), 0);
+        return max ? Math.min(100, Math.max(0, 100 * (Number(value) || 0) / max)).toFixed(1) : 0;
     }
 
     changePeriod(ev) { this.state.periodo = ev.target.value; this.refresh(); }

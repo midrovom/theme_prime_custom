@@ -174,16 +174,19 @@ class TranscashDashboard(models.AbstractModel):
                 v=collection[key]; v['name'] = (l.marca_nombre if collection is brand else l.proveedor_producto_nombre) or key
                 v['reportes'] += 1; v['guias'].add(r.guia_id.id)
                 v['kg_estimados'] += kg; v['cantidades'][l.unidad] += qty
-        def summary(info, key):
+        # IMPORTANTE: la clave del grupo (ID de chofer o código de destino)
+        # no debe sobrescribir la columna por la que se ordena el ranking.
+        # Antes sucedía y provocaba KeyError/"Server Error" con viajes reales.
+        def summary(info, sort_field):
             rows=[]
-            for key, v in info.items():
+            for group_key, v in info.items():
                 n=v['guias']
-                rows.append({'clave':str(key),'nombre':v['name'],'viajes':len(v['viajes']), 'guias':n,
+                rows.append({'clave':str(group_key),'nombre':v['name'],'viajes':len(v['viajes']), 'guias':n,
                     'novedades':v['novedades'], 'roturas':v['roturas'],
                     'pct_novedad':round(100*v['novedades']/n,1) if n else 0.,
                     'pct_rotura':round(100*v['roturas']/n,1) if n else 0.,
                     'peso_kg':round(v.get('peso_kg',0.),2)})
-            return sorted(rows,key=lambda r:(-r[key],-r['guias'],r['nombre']))[:30]
+            return sorted(rows,key=lambda r:(-r[sort_field],-r['guias'],r['nombre']))[:30]
         def ranking(info):
             return sorted(({'clave':str(key),'nombre':v['name'],'reportes':v['reportes'], 'guias':len(v['guias']),
                 'kg_estimados':round(v['kg_estimados'],2),
