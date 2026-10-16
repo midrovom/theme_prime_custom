@@ -144,8 +144,10 @@ class TranscashDashboard(models.AbstractModel):
             line_weight = sum(max(0.0,l.peso_kg or 0) for l in ls)
             kg = line_weight if line_weight > 0 else max(0.0,g.peso_kg or 0)
             weight_total += kg
-            key = (g.destino_codigo or g.destino_ciudad or g.destino or 'Destino sin código').strip()
-            info=dest[key]; info['name']=key; info['viajes'].add(trip.id)
+            key = ((g.destino_id and g.destino_id.codigo) or
+                   g.destino_codigo or g.destino_ciudad or g.destino or 'Destino sin código').strip()
+            label = (g.destino_id and g.destino_id.name) or g.destino_ciudad or g.destino or key
+            info=dest[key]; info['name']='%s · %s' % (label,key) if label != key else key; info['viajes'].add(trip.id)
             info['guias'] += 1; info['peso_kg'] += kg
             novelty = g.id in incident_guide_ids
             damage = g.id in damaged_guide_ids

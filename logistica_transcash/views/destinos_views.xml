@@ -1,0 +1,30 @@
+<odoo>
+  <record id="view_transcash_destino_list" model="ir.ui.view">
+    <field name="name">transcash.destino.list</field>
+    <field name="model">transcash.destino</field>
+    <field name="arch" type="xml"><list decoration-muted="not active">
+      <field name="active"/><field name="codigo"/><field name="name"/>
+      <field name="ciudad"/><field name="provincia"/><field name="fuente"/>
+      <field name="company_id" groups="base.group_multi_company"/>
+    </list></field>
+  </record>
+  <record id="view_transcash_destino_form" model="ir.ui.view">
+    <field name="name">transcash.destino.form</field>
+    <field name="model">transcash.destino</field>
+    <field name="arch" type="xml"><form string="Destino logístico">
+      <sheet><group><field name="active"/><field name="company_id" groups="base.group_multi_company"/>
+        <field name="codigo" placeholder="EC-UIO"/>
+        <field name="name" placeholder="Quito"/>
+        <field name="ciudad"/><field name="provincia"/><field name="fuente" readonly="1"/>
+      </group>
+      <div class="alert alert-info">El código debe coincidir exactamente con destino_codigo que envía tu ERP en la guía. No se permite cambiar un código que ya está en uso; desactiva destinos históricos en lugar de eliminarlos.</div>
+      </sheet></form></field>
+  </record>
+  <record id="action_transcash_destinos" model="ir.actions.act_window">
+    <field name="name">Maestro de destinos</field><field name="res_model">transcash.destino</field>
+    <field name="view_mode">list,form</field>
+  </record>
+  <menuitem id="menu_transcash_destinos" name="Maestro de destinos" parent="menu_transcash_root"
+    sequence="11" action="action_transcash_destinos"
+    groups="logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_operador_rutas"/>
+</odoo>

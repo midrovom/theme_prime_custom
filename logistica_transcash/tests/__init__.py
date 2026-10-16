@@ -8,3 +8,5 @@ from . import test_pagos_v56
 
 from . import test_analitica_v57
 from . import test_rutas_v59
+
+from . import test_destinos_v512

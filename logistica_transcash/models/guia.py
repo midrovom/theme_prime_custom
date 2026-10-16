@@ -519,6 +519,14 @@ class Guia(models.Model):
             if not partner:
                 raise ValidationError(_('Empresa transportista no encontrada: %s') % item['empresa_transporte_codigo'])
             vals['proveedor_id'] = partner.id
+        # El mismo POST /api/transcash/v1/guias homologa el destino antes de crear la guía.
+        # No se exige una API adicional. Un código ya registrado nunca se renombra desde el ERP.
+        if vals.get('destino_codigo'):
+            destination = self.env['transcash.destino'].obtener_desde_erp(
+                vals['destino_codigo'], vals.get('destino_ciudad'), vals.get('destino_provincia'),
+                self.env.company.id)
+            vals['destino_codigo'] = destination.codigo
+            vals['destino_id'] = destination.id
         # Detalles de la guía no se incrustan en vals: reconciliación por ID de línea ERP.
         vals['ultima_sync'] = fields.Datetime.now()
         return vals
@@ -609,7 +617,8 @@ class Guia(models.Model):
                         # prevalece tras la confirmación de Logística: evitar que el
                         # cron ERP la modifique silenciosamente en una nueva importación.
                         if existing.embarque_id or existing.hoja_ruta_id:
-                            for field in ('chofer_usuario_id','proveedor_id','placa'):
+                            for field in ('destino_id', 'destino_codigo', 'destino_ciudad',
+                                          'destino_provincia', 'destino', 'chofer_usuario_id','proveedor_id','placa'):
                                 vals.pop(field, None)
                         if existing.aprobacion_global == 'aprobada':
                             vals.pop('proveedor_id', None)

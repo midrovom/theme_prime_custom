@@ -17,9 +17,12 @@ class TestHojasRuta(TransactionCase):
         })
         cls.vendor = cls.env['res.partner'].create({'name':'Empresa transportista V59'})
         cls.customer = cls.env['res.partner'].create({'name':'Destinatario V59'})
+        cls.destino = cls.env['transcash.destino'].with_user(cls.manager).create({
+            'company_id':cls.env.company.id,'codigo':'EC-QUI','name':'Quito',
+            'ciudad':'Quito', 'provincia':'Pichincha'})
         cls.env['transcash.tarifa.traslado'].with_user(cls.manager).create({
             'company_id':cls.env.company.id, 'tipo_vehiculo':'camion',
-            'destino_codigo':'EC-QUI', 'destino_nombre':'Quito', 'precio':125.0})
+            'destino_id':cls.destino.id, 'precio':125.0})
         cls.guide = cls.env['transcash.guia'].sudo().create({
             'name':'TEST-59-01', 'company_id':cls.env.company.id,
             'chofer_usuario_id':cls.driver.id,'proveedor_id':cls.vendor.id,
@@ -38,8 +41,8 @@ class TestHojasRuta(TransactionCase):
         route = self.env['transcash.hoja.ruta'].with_user(self.manager).create({
             'company_id':self.env.company.id, 'chofer_usuario_id':self.driver.id,
             'proveedor_id':self.vendor.id, 'placa':'ABC-999',
-            'tipo_vehiculo':'camion', 'destino_codigo':'EC-QUI',
-            'destino_nombre':'Quito', 'seleccion_guia_ids':[(6,0,[self.guide.id])],
+            'tipo_vehiculo':'camion', 'destino_id':self.destino.id,
+            'seleccion_guia_ids':[(6,0,[self.guide.id])],
         })
         route.with_user(self.manager).action_confirm_route()
         self.assertEqual(route.state,'planificada')
@@ -78,8 +81,8 @@ class TestHojasRuta(TransactionCase):
         ruta1 = self.env['transcash.hoja.ruta'].with_user(self.manager).create({
             'company_id':self.env.company.id, 'chofer_usuario_id':self.driver.id,
             'proveedor_id':self.vendor.id, 'placa':'ABC-999',
-            'tipo_vehiculo':'camion', 'destino_codigo':'EC-QUI',
-            'destino_nombre':'Quito', 'seleccion_guia_ids':[(6,0,[self.guide.id])],
+            'tipo_vehiculo':'camion', 'destino_id':self.destino.id,
+            'seleccion_guia_ids':[(6,0,[self.guide.id])],
         })
         ruta1.with_user(self.manager).action_confirm_route()
         first_wizard = self.env['transcash.armar.embarque.wizard'].with_user(self.manager).create({
@@ -95,8 +98,8 @@ class TestHojasRuta(TransactionCase):
         ruta2 = self.env['transcash.hoja.ruta'].with_user(self.manager).create({
             'company_id':self.env.company.id, 'chofer_usuario_id':self.driver.id,
             'proveedor_id':self.vendor.id, 'placa':'ABC-999',
-            'tipo_vehiculo':'camion', 'destino_codigo':'EC-QUI',
-            'destino_nombre':'Quito', 'seleccion_guia_ids':[(6,0,[guide2.id])],
+            'tipo_vehiculo':'camion', 'destino_id':self.destino.id,
+            'seleccion_guia_ids':[(6,0,[guide2.id])],
         })
         ruta2.with_user(self.manager).action_confirm_route()
         second_wizard = self.env['transcash.armar.embarque.wizard'].with_user(self.manager).create({

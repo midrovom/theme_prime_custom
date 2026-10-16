@@ -14,8 +14,9 @@ class TarifaTraslado(models.Model):
     active = fields.Boolean(default=True)
     company_id = fields.Many2one('res.company', required=True, default=lambda self: self.env.company)
     tipo_vehiculo = fields.Selection(TIPO_VEHICULO, required=True)
-    destino_codigo = fields.Char(required=True, index=True)
-    destino_nombre = fields.Char(required=True)
+    destino_id = fields.Many2one('transcash.destino', string='Destino', index=True, ondelete='restrict')
+    destino_codigo = fields.Char('Código destino (histórico)', required=True, index=True, readonly=True)
+    destino_nombre = fields.Char('Nombre destino (histórico)', required=True, readonly=True)
     moneda_id = fields.Many2one('res.currency', related='company_id.currency_id')
     precio = fields.Monetary(required=True, currency_field='moneda_id')
     _sql_constraints = [
@@ -24,13 +25,39 @@ class TarifaTraslado(models.Model):
         ('tarifa_positiva', 'CHECK(precio > 0)', 'La tarifa debe ser mayor que cero.'),
     ]
 
+    @api.model
+    def _destination_values(self, vals):
+        vals = dict(vals)
+        dest_id = vals.get('destino_id')
+        if not dest_id:
+            raise ValidationError(_('Seleccione un destino del maestro de destinos.'))
+        dest = self.env['transcash.destino'].sudo().browse(dest_id).exists()
+        company_id = vals.get('company_id') or self.env.company.id
+        if not dest or not dest.active or dest.company_id.id != company_id:
+            raise ValidationError(_('Destino no activo o no corresponde a la compañía.'))
+        vals.update(destino_codigo=dest.codigo, destino_nombre=dest.name)
+        return vals
+
+    @api.onchange('destino_id')
+    def _onchange_destino(self):
+        if self.destino_id:
+            self.destino_codigo = self.destino_id.codigo
+            self.destino_nombre = self.destino_id.name
+
     @api.model_create_multi
     def create(self, vals_list):
         self._check_edit_permission()
-        return super().create(vals_list)
+        return super().create([self._destination_values(vals) for vals in vals_list])
 
     def write(self, vals):
         self._check_edit_permission()
+        if 'destino_id' in vals or 'company_id' in vals:
+            if len(self) != 1:
+                raise UserError(_('Edite el destino de una tarifa a la vez.'))
+            vals = self._destination_values(dict(vals, destino_id=vals.get('destino_id',self.destino_id.id),
+                                                  company_id=vals.get('company_id',self.company_id.id)))
+        elif 'destino_codigo' in vals or 'destino_nombre' in vals:
+            raise AccessError(_('El destino solo puede elegirse desde el catálogo.'))
         return super().write(vals)
 
     def unlink(self):
@@ -56,8 +83,9 @@ class HojaRuta(models.Model):
     proveedor_id = fields.Many2one('res.partner', required=True, string='Empresa transportista')
     placa = fields.Char('Placa', required=True)
     tipo_vehiculo = fields.Selection(TIPO_VEHICULO, required=True, default='camion')
-    destino_codigo = fields.Char('Código de destino', required=True)
-    destino_nombre = fields.Char('Destino / ciudad', required=True)
+    destino_id = fields.Many2one('transcash.destino', string='Destino', index=True, ondelete='restrict')
+    destino_codigo = fields.Char('Código destino (histórico)', required=True, readonly=True)
+    destino_nombre = fields.Char('Destino / ciudad (histórico)', required=True, readonly=True)
     origen = fields.Char('Origen')
     embarque_id = fields.Many2one('transcash.embarque', readonly=True, index=True, ondelete='restrict')
     # Selección en formulario; en confirmación se asigna la FK real en cada guía.
@@ -85,10 +113,29 @@ class HojaRuta(models.Model):
                              user.has_group('logistica_transcash.group_logistica_manager')):
             raise AccessError(_('Solo Logística puede planificar rutas o evidenciar su carga.'))
 
+    @api.model
+    def _destination_values(self, vals):
+        vals = dict(vals)
+        if not vals.get('destino_id'):
+            raise ValidationError(_('Seleccione el destino de la hoja de ruta desde el maestro.'))
+        dest = self.env['transcash.destino'].sudo().browse(vals['destino_id']).exists()
+        company_id = vals.get('company_id') or self.env.company.id
+        if not dest or not dest.active or dest.company_id.id != company_id:
+            raise ValidationError(_('Destino no disponible para la compañía.'))
+        vals.update(destino_codigo=dest.codigo, destino_nombre=dest.name)
+        return vals
+
+    @api.onchange('destino_id')
+    def _onchange_destino(self):
+        if self.destino_id:
+            self.destino_codigo = self.destino_id.codigo
+            self.destino_nombre = self.destino_id.name
+
     @api.model_create_multi
     def create(self, vals_list):
         if not self.env.su:
             self._check_operator()
+        vals_list = [self._destination_values(vals) for vals in vals_list]
         for vals in vals_list:
             if vals.get('name', 'Nuevo') == 'Nuevo':
                 vals['name'] = self.env['ir.sequence'].sudo().next_by_code('transcash.hoja.ruta') or 'RUTA/Nueva'
@@ -97,16 +144,23 @@ class HojaRuta(models.Model):
     def write(self, vals):
         if not self.env.su:
             self._check_operator()
+            if {'destino_codigo','destino_nombre'} & set(vals) and 'destino_id' not in vals:
+                raise AccessError(_('El destino se selecciona desde el maestro.'))
             forbidden = {'state','embarque_id','guia_ids','tarifa_referencial', 'tarifa_id',
                          'fecha_video','video_por_id'}
             if forbidden & set(vals):
                 raise AccessError(_('Los estados y vínculos se cambian con las acciones del flujo.'))
             if any(r.state != 'borrador' for r in self) and {'seleccion_guia_ids','chofer_usuario_id',
-                    'proveedor_id','placa','tipo_vehiculo','destino_codigo','company_id'} & set(vals):
+                    'proveedor_id','placa','tipo_vehiculo','destino_id','destino_codigo','company_id'} & set(vals):
                 raise UserError(_('La ruta ya está confirmada; no altere su composición.'))
             if {'video_carga','video_nombre','video_mime'} & set(vals) and any(r.state != 'planificada' or
                     (r.embarque_id and r.embarque_id.state != 'preparacion') for r in self):
                 raise UserError(_('El video solo puede incorporarse antes de liberar el embarque al chofer.'))
+        if 'destino_id' in vals or 'company_id' in vals:
+            if len(self) != 1:
+                raise UserError(_('Cambie el destino de una sola hoja de ruta a la vez.'))
+            vals = self._destination_values(dict(vals, destino_id=vals.get('destino_id',self.destino_id.id),
+                                                  company_id=vals.get('company_id',self.company_id.id)))
         return super().write(vals)
 
     def unlink(self):
@@ -120,6 +174,8 @@ class HojaRuta(models.Model):
         for ruta in self:
             if ruta.company_id not in self.env.user.company_ids:
                 raise AccessError(_('Ruta de una compañía no autorizada.'))
+            if not ruta.destino_id or not ruta.destino_id.active:
+                raise UserError(_('Seleccione un destino activo en la hoja de ruta.'))
             if ruta.state != 'borrador' or not ruta.seleccion_guia_ids:
                 raise UserError(_('Seleccione al menos una guía en una ruta borrador.'))
             guia_ids = sorted(ruta.seleccion_guia_ids.ids)
@@ -131,11 +187,12 @@ class HojaRuta(models.Model):
                     raise UserError(_('La guía %s ya se está transportando o pertenece a otra compañía.') % guia.name)
                 # La planificación operativa asigna chofer, transportista y placa;
                 # la API conserva el resto de los datos comerciales y de producto.
-                if (guia.destino_codigo or '').strip().upper() != (ruta.destino_codigo or '').strip().upper():
+                if ((guia.destino_id and guia.destino_id.id != ruta.destino_id.id) or
+                    ((guia.destino_codigo or '').strip().upper() != ruta.destino_id.codigo)):
                     raise UserError(_('La guía %s debe corresponder al destino de esta ruta.') % guia.name)
             tarifa = self.env['transcash.tarifa.traslado'].sudo().search([
                 ('company_id','=',ruta.company_id.id),('tipo_vehiculo','=',ruta.tipo_vehiculo),
-                ('destino_codigo','=',ruta.destino_codigo),('active','=',True)], limit=1)
+                ('destino_id','=',ruta.destino_id.id),('active','=',True)], limit=1)
             if not tarifa:
                 raise UserError(_('Configure una tarifa para vehículo %s, destino %s.') %
                                 (ruta.tipo_vehiculo, ruta.destino_codigo))

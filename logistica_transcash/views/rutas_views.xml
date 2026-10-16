@@ -3,7 +3,7 @@
     <field name="name">transcash.hoja.ruta.list</field><field name="model">transcash.hoja.ruta</field>
     <field name="arch" type="xml"><list decoration-success="state == 'aceptada'" decoration-warning="state == 'planificada'">
       <field name="name"/><field name="state" widget="badge"/><field name="embarque_id"/>
-      <field name="destino_nombre"/><field name="tipo_vehiculo"/><field name="placa"/>
+      <field name="destino_id"/><field name="tipo_vehiculo"/><field name="placa"/>
       <field name="chofer_usuario_id"/><field name="proveedor_id"/><field name="tarifa_referencial"/>
     </list></field>
   </record>
@@ -18,7 +18,7 @@
                 groups="logistica_transcash.group_transcash_operador_rutas"/>
         <field name="state" widget="statusbar" statusbar_visible="borrador,planificada,cargada,aceptada"/>
       </header>
-      <sheet><div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+      <sheet><field name="company_id" invisible="1"/><div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
         <group><group string="Transporte">
           <field name="company_id" groups="base.group_multi_company" readonly="state != 'borrador'"/>
           <field name="chofer_usuario_id" readonly="state != 'borrador'"/>
@@ -27,8 +27,11 @@
           <field name="tipo_vehiculo" readonly="state != 'borrador'"/>
           <field name="origen" readonly="state != 'borrador'"/>
         </group><group string="Destino y tarifa">
-          <field name="destino_codigo" readonly="state != 'borrador'"/>
-          <field name="destino_nombre" readonly="state != 'borrador'"/>
+          <field name="destino_id" required="1" readonly="state != 'borrador'"
+                 domain="[('company_id','=',company_id),('active','=',True)]"
+                 options="{'no_create': True, 'no_create_edit': True}"/>
+          <field name="destino_codigo" readonly="1"/>
+          <field name="destino_nombre" readonly="1"/>
           <field name="embarque_id" readonly="1"/>
           <field name="tarifa_id" readonly="1"/>
           <field name="moneda_id" invisible="1"/>
@@ -36,7 +39,7 @@
         </group></group>
         <notebook>
           <page string="Guías de la ruta"><field name="seleccion_guia_ids" widget="many2many_tags"
-                 readonly="state != 'borrador'" domain="[('state','=','registrada'),('embarque_id','=',False)]"/>
+                 readonly="state != 'borrador'" domain="[('state','=','registrada'),('embarque_id','=',False),('destino_codigo','=',destino_codigo)]"/>
             <field name="guia_ids" readonly="1"><list create="0" delete="0">
               <field name="name"/><field name="destinatario_id"/><field name="destino"/><field name="state"/>
             </list></field>
@@ -57,13 +60,18 @@
   <record id="view_transcash_tarifa_list" model="ir.ui.view">
     <field name="name">transcash.tarifa.traslado.list</field><field name="model">transcash.tarifa.traslado</field>
     <field name="arch" type="xml"><list><field name="active"/><field name="tipo_vehiculo"/>
-      <field name="destino_codigo"/><field name="destino_nombre"/><field name="precio"/></list></field>
+      <field name="destino_id"/><field name="destino_codigo"/><field name="precio"/></list></field>
   </record>
   <record id="view_transcash_tarifa_form" model="ir.ui.view">
     <field name="name">transcash.tarifa.traslado.form</field><field name="model">transcash.tarifa.traslado</field>
-    <field name="arch" type="xml"><form><sheet><group><field name="active"/>
+    <field name="arch" type="xml"><form><sheet><field name="company_id" invisible="1"/><group><field name="active"/>
       <field name="company_id" groups="base.group_multi_company"/>
-      <field name="tipo_vehiculo"/><field name="destino_codigo"/><field name="destino_nombre"/>
+      <field name="tipo_vehiculo"/>
+      <field name="destino_id" required="1"
+        domain="[('company_id','=',company_id),('active','=',True)]"
+        options="{'no_create': True, 'no_create_edit': True}"/>
+      <field name="destino_codigo" readonly="1"/>
+      <field name="destino_nombre" readonly="1"/>
       <field name="moneda_id" invisible="1"/><field name="precio"/></group></sheet></form></field>
   </record>
   <record id="view_transcash_armar_wizard" model="ir.ui.view">

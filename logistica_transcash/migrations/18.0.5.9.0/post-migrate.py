@@ -10,6 +10,7 @@ def migrate(cr, version):
     env = api.Environment(cr, SUPERUSER_ID, {})
     Embarque = env['transcash.embarque'].sudo()
     Ruta = env['transcash.hoja.ruta'].sudo()
+    Destino = env['transcash.destino'].sudo().with_context(active_test=False)
     for emb in Embarque.search([('state','=','preparacion'),('ruta_ids','=',False)]):
         if not emb.guia_ids:
             continue
@@ -20,6 +21,14 @@ def migrate(cr, version):
             grouped[code] |= guide
         for code, guides in grouped.items():
             first = guides[0]
+            # Compatible también con actualización directa desde V5.8: las rutas
+            # necesitan destino del maestro desde V5.12.
+            clean_code = Destino._normalizar_codigo(code)
+            dest = Destino.search([('company_id','=',emb.company_id.id),
+                                  ('codigo','=',clean_code)],limit=1)
+            if not dest:
+                dest = Destino.create({'company_id':emb.company_id.id,'codigo':clean_code,
+                    'name':first.destino_ciudad or first.destino or clean_code,'fuente':'migrado'})
             route = Ruta.create({
                 'name':'RUTA/MIG/%s/%s' % (emb.id, first.id),
                 'company_id':emb.company_id.id,
@@ -28,8 +37,7 @@ def migrate(cr, version):
                 'placa':emb.placa or 'SIN-PLACA',
                 'tipo_vehiculo':emb.tipo_vehiculo or 'camion',
                 'origen':emb.origen,
-                'destino_codigo':code,
-                'destino_nombre':first.destino_ciudad or first.destino or code,
+                'destino_id':dest.id,
                 'embarque_id':emb.id,
                 'state':'planificada',
                 'observaciones':'Ruta migrada de V5.8. Logística debe subir y validar video de carga.',

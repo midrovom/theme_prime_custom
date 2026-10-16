@@ -52,3 +52,5 @@ access_armar_embarque,Armar embarque wizard,model_transcash_armar_embarque_wizar
 access_embarque_operator,Operador consulta embarque,model_transcash_embarque,logistica_transcash.group_transcash_operador_rutas,1,0,0,0
 access_guia_operator,Operador consulta guia,model_transcash_guia,logistica_transcash.group_transcash_operador_rutas,1,0,0,0
 access_linea_operator,Operador consulta productos,model_transcash_guia_linea,logistica_transcash.group_transcash_operador_rutas,1,0,0,0
+access_destino_manager,Maestro destinos admin,model_transcash_destino,logistica_transcash.group_logistica_manager,1,1,1,0
+access_destino_operator,Consultar maestro destinos,model_transcash_destino,logistica_transcash.group_transcash_operador_rutas,1,0,0,0

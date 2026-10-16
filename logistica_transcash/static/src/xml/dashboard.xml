@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
   <t t-name="logistica_transcash.OperacionDashboard" owl="1">
-    <div class="tc-bi o_action">
+    <div class="tc-bi">
       <aside class="tc-bi-nav" aria-label="Navegación analítica">
         <div class="tc-bi-logo">
           <span class="tc-bi-brandmark">◆</span>

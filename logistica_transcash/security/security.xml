@@ -236,4 +236,10 @@
       <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
       <field name="domain_force">[('guia_id.company_id','in',company_ids)]</field>
     </record>
+    <record id="rule_destino_company" model="ir.rule">
+      <field name="name">Destinos por compañía autorizada</field>
+      <field name="model_id" ref="model_transcash_destino"/>
+      <field name="groups" eval="[(4,ref('group_logistica_manager')),(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
 </odoo>
