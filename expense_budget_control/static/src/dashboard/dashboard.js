@@ -58,12 +58,15 @@ export class ExpenseBudgetDashboard extends Component {
     onCategoryChange(event) {
         this.state.categoryId = event.target.value;
         this.state.accountId = "";
-        this.state.selectedMonth = -1;
     }
 
     onAccountChange(event) {
         this.state.accountId = event.target.value;
-        this.state.selectedMonth = -1;
+    }
+
+    onMonthChange(event) {
+        const month = Number(event.target.value);
+        this.state.selectedMonth = Number.isInteger(month) && month >= 0 && month < 12 ? month : -1;
     }
 
     toggleAccount(accountId) {
@@ -105,11 +108,15 @@ export class ExpenseBudgetDashboard extends Component {
             amount,
             height: `${amount > 0 ? Math.max(2, (amount / max) * 100) : 0}%`,
             active: this.state.selectedMonth === index,
+            muted: this.state.selectedMonth >= 0 && this.state.selectedMonth !== index,
         }));
     }
 
     get totalSpent() {
-        return this.monthlyAmounts.reduce((sum, value) => sum + value, 0);
+        const monthly = this.monthlyAmounts;
+        return this.state.selectedMonth < 0
+            ? monthly.reduce((sum, value) => sum + value, 0)
+            : monthly[this.state.selectedMonth];
     }
 
     get peak() {
@@ -123,11 +130,15 @@ export class ExpenseBudgetDashboard extends Component {
     }
 
     get pieAccounts() {
-        // El pastel compara las cuentas del rubro; elegir una porción filtra
-        // el gráfico de barras sin alterar las proporciones del conjunto.
+        // Las proporciones comparan las cuentas del rubro en el mes filtrado.
+        // En "Todos los meses" muestran el acumulado anual. Pulsar una porción
+        // selecciona esa cuenta sin cambiar los valores de las otras porciones.
+        const selectedMonth = this.state.selectedMonth;
         return this.categoryAccounts.map((account) => ({
             ...account,
-            amount: account.months.reduce((sum, value) => sum + value, 0),
+            amount: selectedMonth < 0
+                ? account.months.reduce((sum, value) => sum + value, 0)
+                : account.months[selectedMonth],
         })).filter((account) => account.amount > 0).sort((a, b) => b.amount - a.amount);
     }
 
@@ -171,6 +182,11 @@ export class ExpenseBudgetDashboard extends Component {
     get periodName() {
         return this.state.selectedMonth < 0 ? "Todos los meses" :
             this.state.data.month_names[this.state.selectedMonth];
+    }
+
+    get totalSpentLabel() {
+        return this.state.selectedMonth < 0 ? "Gasto acumulado del año" :
+            `Gasto en ${this.periodName}`;
     }
 
     get scopeName() {

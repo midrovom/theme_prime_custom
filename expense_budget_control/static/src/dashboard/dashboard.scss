@@ -11,7 +11,7 @@
     h2 { font-size: 17px; margin: 0 0 4px; font-weight: 650; }
     p { margin: 0; }
     .o_ebd_header p, .o_ebd_panel_heading p { color: #66798a; font-size: 12px; }
-    .o_ebd_filters { display: grid; grid-template-columns: repeat(4, minmax(145px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .o_ebd_filters { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
     .o_ebd_filters label { font-size: 12px; font-weight: 600; min-width: 0; }
     .o_ebd_filters select { margin-top: 5px; font-weight: normal; }
     .o_ebd_kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
@@ -29,6 +29,8 @@
     .o_ebd_bar_space { display: flex; flex: 1; min-height: 190px; flex-direction: column; justify-content: end; }
     .o_ebd_bar { display: block; background: #3894af; min-height: 0; border-radius: 4px 4px 0 0; transition: height .2s ease, background-color .2s; }
     .o_ebd_bar_item:hover .o_ebd_bar, .o_ebd_bar_item.is-selected .o_ebd_bar { background: #e7a25a; }
+    .o_ebd_bar_item.is-dimmed .o_ebd_bar { opacity: .45; }
+    .o_ebd_bar_item.is-dimmed:hover .o_ebd_bar { opacity: 1; }
     .o_ebd_bar_month { font-size: 11px; text-align: center; padding-bottom: 8px; }
     .o_ebd_pie_layout { display: grid; grid-template-columns: minmax(130px, 1fr) minmax(145px, 1.1fr); align-items: center; gap: 16px; }
     .o_ebd_pie { width: 100%; max-width: 280px; overflow: visible; }
