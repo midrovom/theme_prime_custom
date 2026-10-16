@@ -1105,6 +1105,40 @@ class TestExpenseBudget(TransactionCase):
         self.assertAlmostEqual(following['period_closings'][6]['saldo_actual'], 90)
         self.assertAlmostEqual(following['period_closings'][6]['saldo_disponible'], 620)
 
+    def test_consumo_inicial_corte_y_actual_no_alteran_saldo(self):
+        """El corte conserva la suma seleccionada; actual añade los previos."""
+        report = self.env['report.expense_budget_control.report_comparison_document']
+        row = {'monthly': report._empty_months()}
+        for month, planned, actual in (
+                (1, 250, 100), (2, 200, 60), (3, 170, 50),
+                (4, 70, 20), (5, 90, 10), (6, 110, 25),
+                (7, 120, 30), (8, 130, 40)):
+            row['monthly'][month].update({
+                'planned': planned, 'actual': actual,
+                'available': planned - actual,
+            })
+
+        report._finish_row(row, [2, 3, 4])
+        first = row['monthly_report']
+        self.assertAlmostEqual(first['consumption_openings'][2], 100)
+        self.assertAlmostEqual(first['period_closings'][2]['saldo_actual'], 130)
+        self.assertAlmostEqual(first['period_closings'][2]['consumo_actual'], 230)
+        self.assertAlmostEqual(first['period_closings'][2]['saldo_disponible'], 460)
+
+        report._finish_row(row, [6, 7, 8])
+        following = row['monthly_report']
+        self.assertAlmostEqual(following['consumption_openings'][6], 240)
+        self.assertAlmostEqual(following['period_closings'][6]['saldo_actual'], 95)
+        self.assertAlmostEqual(following['period_closings'][6]['consumo_actual'], 335)
+        # Valor calculado con la fórmula previa, sin cambios.
+        self.assertAlmostEqual(following['period_closings'][6]['saldo_disponible'], 805)
+
+        report._finish_row(row, [1, 2, 3])
+        january = row['monthly_report']
+        self.assertAlmostEqual(january['consumption_openings'][1], 0)
+        self.assertAlmostEqual(january['period_closings'][1]['saldo_actual'], 210)
+        self.assertAlmostEqual(january['period_closings'][1]['consumo_actual'], 210)
+
     def test_opening_includes_unselected_intermediate_month(self):
         """El valor de mayo también se arrastra al consultar desde junio."""
         report = self.env['report.expense_budget_control.report_comparison_document']

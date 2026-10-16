@@ -45,7 +45,9 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
 
         Saldo inicial: saldo disponible acumulado desde enero hasta el mes
         anterior al primero seleccionado (suma de proyectado menos consumido).
-        Saldo actual: suma de consumos de los meses seleccionados.
+        Consumo corte (campo saldo_actual): consumos de los meses seleccionados.
+        Consumo inicial: consumos acumulados hasta el mes previo a la consulta.
+        Consumo actual: consumo inicial más consumo corte.
         Saldo disponible: inicial más los disponibles de los meses elegidos.
         """
         selected_months = sorted(set(month_numbers))
@@ -61,10 +63,14 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         # el disponible del mes inmediatamente previo. Es independiente de
         # qué meses se imprimieron en consultas anteriores.
         openings = {}
+        consumption_openings = {}
         accumulated_available = 0.0
+        accumulated_consumption = 0.0
         for number in range(1, 13):
             openings[number] = accumulated_available
+            consumption_openings[number] = accumulated_consumption
             accumulated_available += row['monthly'][number]['available']
+            accumulated_consumption += row['monthly'][number]['actual']
 
         first_month = selected_months[0]
         opening = openings[first_month]
@@ -73,12 +79,14 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         period_closings = {
             first_month: {
                 'saldo_actual': consumed,
+                'consumo_actual': consumption_openings[first_month] + consumed,
                 'saldo_disponible': opening + period_available,
             },
         }
         row['monthly_report'] = {
             'cells': cells,
             'openings': openings,
+            'consumption_openings': consumption_openings,
             'period_closings': period_closings,
         }
 
