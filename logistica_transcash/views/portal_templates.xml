@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=550"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=550"/>
-  </template>
+  <script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
 
   <template id="mobile_brand" name="Transcash Mobile Brand">
     <div class="tc-brand"><div class="tc-logo">T<span>↗</span></div>
@@ -57,7 +57,7 @@
             <div class="tc-stat"><div class="tc-stat-icon tc-stat-icon-alt">↗</div><strong t-esc="len(guias.filtered(lambda g: g.state == 'ruta'))"/><small>En ruta</small></div>
             <div class="tc-stat"><div class="tc-stat-icon tc-stat-icon-gold">!</div><strong t-esc="len(guias.filtered(lambda g: g.incidencia_estado == 'abierta'))"/><small>Con novedades</small></div>
           </div>
-          <a t-if="request.env.user.has_group('logistica_transcash.group_transcash_chofer') or request.env.user.has_group('logistica_transcash.group_transcash_transportista')" class="tc-button tc-button-primary tc-journeys-link" href="/transcash/embarques">🚚 Mis embarques / Crear embarque →</a>
+          <a t-if="request.env.user.has_group('logistica_transcash.group_transcash_chofer') or request.env.user.has_group('logistica_transcash.group_transcash_transportista')" class="tc-button tc-button-primary tc-journeys-link" href="/transcash/embarques">🚚 Mis viajes asignados →</a>
           <div class="tc-section-heading"><h2>Guías asignadas</h2><span class="tc-count" t-esc="len(guias)"/></div>
           <div class="tc-desktop-list-tools">
             <label for="tc-guide-search">Buscar por número de guía, origen o destino</label>
@@ -67,17 +67,12 @@
           </div>
           <nav class="tc-filters" aria-label="Filtrar por estado">
             <t t-foreach="[('todas','Todas'),('embarque','En carga'),('embarcada','Cargada'),('ruta','En ruta'),('destino','En destino'),('revision','Recepción'),('entregada','Entregadas')]" t-as="filtro_guia">
-              <a t-att-href="'/transcash/guias?estado=%s' % filtro_guia[0]"
-                 t-att-class="'tc-filter' + (' is-current' if estado_filtro == filtro_guia[0] else '')"
-                 t-esc="filtro_guia[1]"/>
+              <a t-att-href="'/transcash/guias?estado=%s' % filtro_guia[0]" t-att-class="'tc-filter' + (' is-current' if estado_filtro == filtro_guia[0] else '')" t-esc="filtro_guia[1]"/>
             </t>
           </nav>
           <div class="tc-cards">
             <t t-foreach="guias" t-as="g">
-              <a class="tc-guide-card" t-att-href="'/transcash/guias/%d' % g.id"
-                t-att-data-tc-card-id="g.id" t-att-data-tc-card-name="g.name"
-                t-att-data-tc-card-origin="g.origen or ''" t-att-data-tc-card-destination="g.destino or ''"
-                t-att-data-tc-card-state="g.state">
+              <a class="tc-guide-card" t-att-href="'/transcash/guias/%d' % g.id" t-att-data-tc-card-id="g.id" t-att-data-tc-card-name="g.name" t-att-data-tc-card-origin="g.origen or ''" t-att-data-tc-card-destination="g.destino or ''" t-att-data-tc-card-state="g.state">
                 <div class="tc-guide-top"><span class="tc-guide-number">GUÍA <strong t-esc="g.name"/></span>
                   <span t-att-class="'tc-status tc-s-' + g.state" t-esc="dict(g._fields['state'].selection).get(g.state)"/></div>
                 <div class="tc-guide-route"><span class="tc-route-node"/><div>
@@ -113,10 +108,7 @@
   <template id="portal_guia_detalle" name="Transcash Mobile: Detalle de guía">
     <html lang="es"><head>
       <title><t t-esc="guia.name"/> · Transcash</title><t t-call="logistica_transcash.mobile_head"/>
-    </head><body class="tc-app" t-att-data-tc-user-id="request.env.user.id"
-      t-att-data-tc-guide-id="guia.id" t-att-data-tc-guide-name="guia.name"
-      t-att-data-tc-guide-origin="guia.origen or ''" t-att-data-tc-guide-destination="guia.destino or ''"
-      t-att-data-tc-guide-state="guia.state">
+    </head><body class="tc-app" t-att-data-tc-user-id="request.env.user.id" t-att-data-tc-guide-id="guia.id" t-att-data-tc-guide-name="guia.name" t-att-data-tc-guide-origin="guia.origen or ''" t-att-data-tc-guide-destination="guia.destino or ''" t-att-data-tc-guide-state="guia.state">
       <div class="tc-shell">
         <t t-call="logistica_transcash.portal_desktop_sidebar"/>
         <header class="tc-top tc-top-detail"><a class="tc-back" href="/transcash/guias" aria-label="Volver">←</a>
@@ -134,16 +126,7 @@
               <span t-att-class="'is-done' if guia.state in ('destino','revision','entregada','lista_pago','facturada','pagada') else 'is-current' if guia.state in ('embarcada','ruta') else ''">2. Viaje</span>
               <span t-att-class="'is-done' if guia.fecha_cierre_chofer or guia.state in ('entregada','lista_pago','facturada','pagada') else 'is-current' if guia.state in ('destino','revision') else ''">3. Entrega</span></div>
             <div class="tc-guided-buttons">
-              <form t-if="guia.state == 'registrada' and guia.embarque_id and guia.embarque_id.state == 'preparacion'" t-att-action="'/transcash/embarques/%d/guia/%d/iniciar' % (guia.embarque_id.id,guia.id)" method="post">
-                <input name="csrf_token" type="hidden" t-att-value="csrf_token"/><input name="return_to" type="hidden" value="guia"/>
-                <button class="tc-action-tile tc-action-tile-primary" type="submit"><b>01</b><span>▶ Iniciar carga</span><small>Comienza la guía</small></button></form>
-              <button t-if="guia.state == 'embarque'" type="button" class="tc-action-tile tc-action-tile-primary" data-quick-modal="evidencia" data-quick-evidence-type="carga"><b>02</b><span>📷 Evidencia de carga</span><small>Foto o video</small></button>
-              <form t-if="guia.state == 'embarque' and guia.embarque_id" t-att-action="'/transcash/embarques/%d/guia/%d/finalizar' % (guia.embarque_id.id,guia.id)" method="post">
-                <input name="csrf_token" type="hidden" t-att-value="csrf_token"/><input name="return_to" type="hidden" value="guia"/>
-                <button class="tc-action-tile" type="submit"><b>03</b><span>✓ Terminar carga</span><small>Validar evidencias</small></button></form>
-              <a t-if="guia.state == 'embarcada' and guia.embarque_id" t-att-href="'/transcash/embarques/%s' % guia.embarque_id.id" class="tc-action-tile tc-action-tile-primary"><b>04</b><span>🚚 Cerrar embarque</span><small>Cuando todas estén cargadas</small></a>
-              <div t-if="guia.state == 'embarcada'" class="tc-guided-wait">⏳ Bodega autoriza la salida del embarque.</div>
-              <form t-if="guia.state == 'ruta'" t-att-action="'/transcash/guias/%d/llegada' % guia.id" method="post">
+              <a t-if="guia.hoja_ruta_id and guia.state in ('registrada','embarcada') and guia.embarque_id" class="tc-action-tile tc-action-tile-primary" t-att-href="'/transcash/embarques/%s' % guia.embarque_id.id"><b>▶</b><span>Revisar y aceptar carga</span><small>Desde tu embarque, con videos por ruta</small></a><form t-if="guia.state == 'ruta'" t-att-action="'/transcash/guias/%d/llegada' % guia.id" method="post">
                 <input name="csrf_token" type="hidden" t-att-value="csrf_token"/>
                 <button class="tc-action-tile tc-action-tile-primary" type="submit"><b>05</b><span>📍 Llegué al destino</span><small>Registrar arribo</small></button></form>
               <button t-if="guia.state == 'destino' or (guia.state == 'revision' and not guia.fecha_cierre_chofer)" class="tc-action-tile tc-action-tile-primary" type="button" data-quick-modal="evidencia" data-quick-evidence-type="llegada"><b>06</b><span>📸 Foto / video de descarga</span><small>Subir evidencia al servidor</small></button>
@@ -159,11 +142,15 @@
                   <label class="tc-label" for="tc-cierre-observacion">Observación de entrega</label>
                   <textarea id="tc-cierre-observacion" class="tc-textarea" name="observacion" rows="2" maxlength="4000" placeholder="Deja vacío si no hubo novedades"/>
                 </details>
-                <button class="tc-action-tile tc-action-tile-primary tc-driver-close-btn" type="submit"><b>✓</b><span>Terminar entrega y continuar</span><small>Se requiere evidencia sincronizada y nombre del receptor. El cliente revisará después.</small></button>
+                <div t-if="guia.hoja_ruta_id" class="tc-sign-box">
+ <label>✍ Firma de quien recibe <strong>Obligatoria</strong></label>
+ <p>Solicita al receptor firmar con el dedo o el mouse.</p>
+ <canvas class="tc-sign-canvas" width="600" height="230" aria-label="Área para firmar"/>
+ <input type="hidden" name="firma_png" class="tc-sign-value"/>
+ <button type="button" class="tc-sign-clear">↶ Borrar firma</button>
+ </div><button class="tc-action-tile tc-action-tile-primary tc-driver-close-btn" type="submit"><b>✓</b><span>Terminar entrega y continuar</span><small>Se requiere evidencia sincronizada y nombre del receptor. El cliente revisará después.</small></button>
               </form>
               <div t-if="guia.fecha_cierre_chofer" class="tc-guided-done">✓ Tu entrega está finalizada. El cliente podrá comentar y confirmar después. Ya puedes continuar tu viaje.</div>
-              <button t-if="guia.state in ('embarque','embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer" type="button" class="tc-action-tile" data-quick-modal="rotura"><b>!</b><span>⚠ Reportar rotura</span><small>Por SKU y cantidad</small></button>
-              <button t-if="guia.state in ('embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer" type="button" class="tc-action-tile" data-quick-modal="evidencia" data-quick-evidence-type="novedad"><b>✎</b><span>Registrar novedad</span><small>Observación y evidencia</small></button>
               <div t-if="guia.state in ('entregada','lista_pago','facturada','pagada')" class="tc-guided-done">✓ Guía entregada. Puedes consultar todas las evidencias.</div>
             </div>
             <a t-if="guia.embarque_id" t-att-href="'/transcash/embarques/%d' % guia.embarque_id.id" class="tc-guided-return">↗ Ver todas las guías de mi embarque</a>
@@ -271,8 +258,7 @@
                 </div>
                 <p class="tc-panel-hint">Peso: <t t-esc="ln.peso_kg"/> kg · Pallets: <t t-esc="ln.pallets_info"/> · Cajas: <t t-esc="ln.cajas_info"/> (conversiones informativas del ERP)</p>
                 <div t-if="ln.cantidad_rota_pendiente" class="tc-product-note">⚠ <t t-esc="ln.cantidad_rota_pendiente"/> pendiente(s) de validar</div>
-                <button t-if="(es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer) or (es_receptor and guia.state in ('revision','entregada') and guia.aprobacion_global != 'aprobada') or (es_vendedor and guia.state in ('embarque','embarcada','ruta','destino','revision') and guia.aprobacion_global != 'aprobada')"
-                        class="tc-inline-action" type="button" t-att-data-damage-line="ln.id">Reportar rotura ↗</button>
+                <button t-if="(es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer) or (es_receptor and guia.state in ('revision','entregada') and guia.aprobacion_global != 'aprobada') or (es_vendedor and guia.state in ('embarque','embarcada','ruta','destino','revision') and guia.aprobacion_global != 'aprobada')" class="tc-inline-action" type="button" t-att-data-damage-line="ln.id">Reportar rotura ↗</button>
               </div>
             </t>
             <div t-if="not guia.linea_ids.filtered('vigente_erp')" class="tc-empty-inline">El ERP todavía no ha enviado el detalle de productos.</div>
@@ -289,10 +275,8 @@
               <p t-esc="ev.observacion"/>
               <p t-if="ev.rotura_id" class="tc-evidence-related">Producto: <b t-esc="ev.rotura_id.producto"/> · <t t-esc="ev.rotura_id.cantidad"/> <t t-esc="ev.rotura_id.unidad"/></p>
               <div t-if="ev.archivo" class="tc-media-box">
-                <img t-if="ev.archivo_mime and ev.archivo_mime.startswith('image/')" loading="lazy"
-                     t-att-src="'/transcash/evidencia/%d/archivo' % ev.id" alt="Evidencia fotográfica"/>
-                <video t-elif="ev.archivo_mime and ev.archivo_mime.startswith('video/')" controls="controls" preload="metadata" playsinline="playsinline"
-                       t-att-src="'/transcash/evidencia/%d/archivo' % ev.id">Video de evidencia</video>
+                <img t-if="ev.archivo_mime and ev.archivo_mime.startswith('image/')" loading="lazy" t-att-src="'/transcash/evidencia/%d/archivo' % ev.id" alt="Evidencia fotográfica"/>
+                <video t-elif="ev.archivo_mime and ev.archivo_mime.startswith('video/')" controls="controls" preload="metadata" playsinline="playsinline" t-att-src="'/transcash/evidencia/%d/archivo' % ev.id">Video de evidencia</video>
                 <a t-att-href="'/transcash/evidencia/%d/archivo' % ev.id" target="_blank" rel="noopener noreferrer" class="tc-media-link">Abrir archivo ↗</a>
               </div>
               <div t-if="ev.motivo_objecion" class="tc-note tc-note-warning"><b>Objeción del destinatario</b><p t-esc="ev.motivo_objecion"/></div>
@@ -309,8 +293,7 @@
                   <button type="submit" class="tc-button tc-button-outline-red">Enviar objeción</button>
                 </form>
               </div>
-              <form t-if="es_chofer and ev.tipo == 'llegada' and ev.estado == 'objetada' and guia.state == 'revision'"
-                    t-att-action="'/transcash/evidencia/%d/respuesta' % ev.id" method="post" class="tc-evidence-actions">
+              <form t-if="es_chofer and ev.tipo == 'llegada' and ev.estado == 'objetada' and guia.state == 'revision'" t-att-action="'/transcash/evidencia/%d/respuesta' % ev.id" method="post" class="tc-evidence-actions">
                 <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
                 <label class="tc-label">Responder al destinatario</label>
                 <textarea class="tc-textarea" name="respuesta" rows="2" maxlength="4000" required="required" placeholder="Tu explicación..."/>
@@ -392,7 +375,7 @@
             </div>
           </section>
           <div t-if="guia.fecha_cierre_chofer" class="tc-delivered">✓ Entrega finalizada por chofer el <t t-esc="guia.fecha_cierre_chofer"/>. Recepción del cliente: <b t-esc="('Confirmada (histórico)' if guia.resultado_recepcion == 'pendiente' else dict(guia._fields['resultado_recepcion'].selection).get(guia.resultado_recepcion)) if guia.fecha_entrega else 'Pendiente'"/>.</div>
-          <div t-if="guia.fecha_entrega" class="tc-delivered">✓ Cliente confirmó recepción a nombre de <b t-esc="guia.recibido_por"/> · <t t-esc="dict(guia._fields['resultado_recepcion'].selection).get(guia.resultado_recepcion)"/></div>
+          <div t-if="guia.firma_receptor and (es_receptor or es_chofer or es_vendedor)" class="tc-sign-saved"><strong>Firma registrada por el chofer en la recepción</strong><img t-att-src="'/transcash/guias/%d/firma' % guia.id" alt="Firma de quien recibe"/></div><div t-if="guia.fecha_entrega" class="tc-delivered">✓ Cliente confirmó recepción a nombre de <b t-esc="guia.recibido_por"/> · <t t-esc="dict(guia._fields['resultado_recepcion'].selection).get(guia.resultado_recepcion)"/></div>
         </main>
 
         <div t-if="(es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer) or (es_receptor and guia.state in ('revision','entregada') and guia.aprobacion_global != 'aprobada') or (es_vendedor and guia.state in ('embarque','embarcada','ruta','destino','revision') and guia.aprobacion_global != 'aprobada')" class="tc-floating">
@@ -411,13 +394,11 @@
         <div class="tc-modal-backdrop" data-modal-close="1"/><div class="tc-modal-sheet">
           <div class="tc-modal-handle"/><div class="tc-modal-top"><h2>Nuevo registro</h2><button class="tc-modal-close" type="button" data-modal-close="1" aria-label="Cerrar">×</button></div>
           <div class="tc-modal-segment"><button t-if="es_chofer or es_receptor" class="active" data-form-tab="evidencia" type="button">📷 Evidencia</button>
-            <button type="button" data-form-tab="rotura">⚠ Reportar rotura</button></div>
+            <button type="button" data-form-tab="rotura" t-if="es_receptor or es_vendedor">⚠ Reportar rotura</button></div>
           <form t-if="es_chofer or es_receptor" class="tc-form-panel" data-form-panel="evidencia" t-att-action="'/transcash/guias/%d/evidencia' % guia.id" method="post" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
             <label class="tc-label">Tipo de evidencia</label><select name="tipo" class="tc-input" required="required">
-              <option t-if="es_chofer and guia.state == 'embarque'" value="carga">Carga / embarque</option>
               <option t-if="es_chofer and guia.state in ('destino','revision') and not guia.fecha_cierre_chofer" value="llegada">Llegada / descarga</option>
-              <option t-if="es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer" value="novedad">Novedad en ruta</option>
               <option t-if="es_receptor and guia.state in ('revision','entregada')" value="cliente">Evidencia del destinatario</option>
             </select>
             <label class="tc-label">¿Hay otra novedad?</label><select class="tc-input" name="tipo_novedad">
@@ -438,7 +419,7 @@
             </label><div class="tc-file-preview" data-file-preview="1">Sin archivos seleccionados</div>
             <button type="submit" class="tc-button tc-button-primary tc-submit">Guardar evidencia →</button>
           </form>
-          <form class="tc-form-panel" data-form-panel="rotura" t-att-action="'/transcash/guias/%d/rotura' % guia.id" method="post" enctype="multipart/form-data" t-att-hidden="None if es_vendedor and not es_chofer and not es_receptor else 'hidden'">
+          <form class="tc-form-panel" data-form-panel="rotura" t-att-action="'/transcash/guias/%d/rotura' % guia.id" method="post" enctype="multipart/form-data" t-att-hidden="None if es_vendedor and not es_chofer and not es_receptor else 'hidden'" t-if="es_receptor or es_vendedor">
             <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
             <div class="tc-form-advice">⚠ Registra la cantidad dañada por cada producto. Debes adjuntar por lo menos una foto o video.</div>
             <label class="tc-label">Producto afectado</label><select class="tc-input" name="linea_id" id="tc-damage-product" required="required">

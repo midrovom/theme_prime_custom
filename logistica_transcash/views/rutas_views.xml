@@ -1,0 +1,98 @@
+<odoo>
+  <record id="view_transcash_ruta_list" model="ir.ui.view">
+    <field name="name">transcash.hoja.ruta.list</field><field name="model">transcash.hoja.ruta</field>
+    <field name="arch" type="xml"><list decoration-success="state == 'aceptada'" decoration-warning="state == 'planificada'">
+      <field name="name"/><field name="state" widget="badge"/><field name="embarque_id"/>
+      <field name="destino_nombre"/><field name="tipo_vehiculo"/><field name="placa"/>
+      <field name="chofer_usuario_id"/><field name="proveedor_id"/><field name="tarifa_referencial"/>
+    </list></field>
+  </record>
+  <record id="view_transcash_ruta_form" model="ir.ui.view">
+    <field name="name">transcash.hoja.ruta.form</field><field name="model">transcash.hoja.ruta</field>
+    <field name="arch" type="xml"><form string="Hoja de ruta" delete="0">
+      <header>
+        <button name="action_confirm_route" string="1. Confirmar ruta" type="object" class="btn-primary"
+                invisible="state != 'borrador'" groups="logistica_transcash.group_transcash_operador_rutas"/>
+        <button name="action_validate_video" string="2. Validar video de carga" type="object" class="btn-primary"
+                invisible="state not in ('planificada','cargada') or not embarque_id"
+                groups="logistica_transcash.group_transcash_operador_rutas"/>
+        <field name="state" widget="statusbar" statusbar_visible="borrador,planificada,cargada,aceptada"/>
+      </header>
+      <sheet><div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+        <group><group string="Transporte">
+          <field name="company_id" groups="base.group_multi_company" readonly="state != 'borrador'"/>
+          <field name="chofer_usuario_id" readonly="state != 'borrador'"/>
+          <field name="proveedor_id" readonly="state != 'borrador'"/>
+          <field name="placa" readonly="state != 'borrador'"/>
+          <field name="tipo_vehiculo" readonly="state != 'borrador'"/>
+          <field name="origen" readonly="state != 'borrador'"/>
+        </group><group string="Destino y tarifa">
+          <field name="destino_codigo" readonly="state != 'borrador'"/>
+          <field name="destino_nombre" readonly="state != 'borrador'"/>
+          <field name="embarque_id" readonly="1"/>
+          <field name="tarifa_id" readonly="1"/>
+          <field name="moneda_id" invisible="1"/>
+          <field name="tarifa_referencial" readonly="1"/>
+        </group></group>
+        <notebook>
+          <page string="Guías de la ruta"><field name="seleccion_guia_ids" widget="many2many_tags"
+                 readonly="state != 'borrador'" domain="[('state','=','registrada'),('embarque_id','=',False)]"/>
+            <field name="guia_ids" readonly="1"><list create="0" delete="0">
+              <field name="name"/><field name="destinatario_id"/><field name="destino"/><field name="state"/>
+            </list></field>
+          </page>
+          <page string="Evidencia de carga (Logística)">
+            <group><field name="observaciones" readonly="state == 'aceptada'"/>
+              <field name="video_nombre" invisible="1"/>
+              <field name="video_carga" filename="video_nombre" widget="binary" readonly="state == 'aceptada'"/>
+              <button name="action_open_video" type="object" string="▶ Ver video en navegador" invisible="state not in ('cargada','aceptada')"/>
+              <field name="video_mime" readonly="1"/><field name="fecha_video" readonly="1"/>
+              <field name="video_por_id" readonly="1"/>
+            </group>
+            <div class="alert alert-info">Después de guardar el video, pulsa «Validar video». El chofer podrá reproducirlo desde su WebApp.</div>
+          </page>
+        </notebook>
+      </sheet><chatter/></form></field>
+  </record>
+  <record id="view_transcash_tarifa_list" model="ir.ui.view">
+    <field name="name">transcash.tarifa.traslado.list</field><field name="model">transcash.tarifa.traslado</field>
+    <field name="arch" type="xml"><list><field name="active"/><field name="tipo_vehiculo"/>
+      <field name="destino_codigo"/><field name="destino_nombre"/><field name="precio"/></list></field>
+  </record>
+  <record id="view_transcash_tarifa_form" model="ir.ui.view">
+    <field name="name">transcash.tarifa.traslado.form</field><field name="model">transcash.tarifa.traslado</field>
+    <field name="arch" type="xml"><form><sheet><group><field name="active"/>
+      <field name="company_id" groups="base.group_multi_company"/>
+      <field name="tipo_vehiculo"/><field name="destino_codigo"/><field name="destino_nombre"/>
+      <field name="moneda_id" invisible="1"/><field name="precio"/></group></sheet></form></field>
+  </record>
+  <record id="view_transcash_armar_wizard" model="ir.ui.view">
+    <field name="name">transcash.armar.embarque.wizard.form</field>
+    <field name="model">transcash.armar.embarque.wizard</field>
+    <field name="arch" type="xml"><form string="Armar embarque">
+      <group>
+        <field name="embarque_id" readonly="1"/>
+        <field name="ruta_ids" widget="many2many_tags"
+          domain="[('state','in',['planificada','cargada']),('embarque_id','=',False)]"/>
+      </group>
+      <group string="Valor calculado antes de registrar" class="tc-valor-embarque">
+        <field name="moneda_id" invisible="1"/>
+        <field name="importe_nuevas_rutas" readonly="1"/>
+        <field name="importe_rutas_existentes" readonly="1" invisible="not embarque_id"/>
+        <field name="importe_total_estimado" readonly="1"/>
+      </group>
+      <div class="alert alert-info" role="status">El total es referencial y se obtiene de las tarifas de cada hoja de ruta. El jefe de Logística puede negociar un valor final distinto antes de aprobar el flete.</div>
+      <footer><button name="action_confirm" string="Registrar embarque con este valor" type="object" class="btn-primary"/>
+        <button special="cancel" string="Cancelar"/></footer></form></field>
+  </record>
+  <record id="action_transcash_rutas" model="ir.actions.act_window">
+    <field name="name">Hojas de ruta</field><field name="res_model">transcash.hoja.ruta</field><field name="view_mode">list,form</field>
+  </record>
+  <record id="action_transcash_tarifas" model="ir.actions.act_window">
+    <field name="name">Tarifario de traslados</field><field name="res_model">transcash.tarifa.traslado</field><field name="view_mode">list,form</field>
+  </record>
+  <menuitem id="menu_transcash_rutas" name="Hojas de ruta" parent="menu_transcash_root"
+            sequence="6" action="action_transcash_rutas" groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
+  <menuitem id="menu_transcash_tarifas" name="Tarifario por destino y vehículo" parent="menu_transcash_root"
+            sequence="12" action="action_transcash_tarifas" groups="logistica_transcash.group_logistica_manager"/>
+</odoo>

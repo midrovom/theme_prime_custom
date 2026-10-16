@@ -10,7 +10,6 @@
         <field name="empresa_transporte_id"/>
         <field name="acceso_activado" widget="boolean_toggle" readonly="1"/>
         <field name="activo"/>
-        <field name="carga_autonoma" readonly="1"/>
       </list>
     </field>
   </record>
@@ -33,7 +32,7 @@
           <div class="alert alert-info" role="alert">
             <strong>Activación del chofer:</strong> abra Contactos, cree el conductor y utilice
             Acción → Otorgar acceso al portal. Después seleccione ese usuario aquí, guarde
-            y pulse <strong>Habilitar acceso de chofer</strong>. Finalmente asígnelo en una guía.
+            y pulse <strong>Habilitar acceso de chofer</strong>. Finalmente asígnelo en una hoja de ruta creada por Logística.
           </div>
           <group>
             <group string="Cuenta y permisos">
@@ -42,12 +41,6 @@
               <field name="telefono" readonly="1"/>
               <field name="acceso_activado" readonly="1"/>
               <field name="activo"/>
-              <field name="carga_autonoma" groups="logistica_transcash.group_logistica_manager"/>
-              <div class="alert alert-warning" role="alert" groups="logistica_transcash.group_logistica_manager">
-                Habilite carga autónoma solo a choferes de confianza: pueden cerrar guías con evidencias pendientes,
-                pero no omitir evidencias ni autorizar la salida de los vehículos.
-              </div>
-        <field name="carga_autonoma" readonly="1"/>
             </group>
             <group string="Transporte">
               <field name="empresa_transporte_id"/>
@@ -55,7 +48,7 @@
             </group>
           </group>
           <p>El chofer abre <strong>/transcash/guias</strong> con su cuenta Portal.
-             Solo ve guías asignadas. Su cuenta no recibe acceso al ERP administrativo.</p>
+             Solo ve sus embarques y guías; acepta la carga e informa la entrega con evidencia y firma. Su cuenta no recibe acceso al ERP administrativo.</p>
         </sheet>
       </form>
     </field>

@@ -16,3 +16,4 @@ from . import embarque
 
 from . import api_wizard
 from . import analitica
+from . import rutas

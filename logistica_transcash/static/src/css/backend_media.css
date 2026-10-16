@@ -1,3 +1,16 @@
 .tc-backend-media{max-width:min(100%,780px);background:#f4f7fa;border:1px solid #dfe7ed;border-radius:13px;padding:10px;min-height:90px}
 .tc-backend-media img,.tc-backend-media video{display:block;max-width:100%;max-height:540px;object-fit:contain;border-radius:9px;margin:auto}
 .tc-backend-media video{width:100%;background:#101820}
+
+/* V5.10: total del embarque visible en la ficha y el asistente */
+.tc-valor-embarque {
+    background: #f0f8f6;
+    border: 1px solid #c9e6dd;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin: 10px 0 18px;
+}
+.tc-valor-embarque .o_field_monetary {
+    font-size: 1.22rem;
+    font-weight: 750;
+}

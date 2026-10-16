@@ -8,10 +8,15 @@
         <field name="category_id" ref="module_category_transcash"/>
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
     </record>
+    <record id="group_transcash_operador_rutas" model="res.groups">
+        <field name="name">Operador Logística: planificar rutas y registrar carga</field>
+        <field name="category_id" ref="module_category_transcash"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
     <record id="group_logistica_manager" model="res.groups">
         <field name="name">Administrador de logística</field>
         <field name="category_id" ref="module_category_transcash"/>
-        <field name="implied_ids" eval="[(4, ref('group_logistica_bodega'))]"/>
+        <field name="implied_ids" eval="[(4, ref('group_logistica_bodega')),(4, ref('group_transcash_operador_rutas'))]"/>
     </record>
     <!-- Perfil declarativo chofer: se agrega AL usuario tipo Portal. No concede
          usuario interno ni acceso directo a los modelos logísticos. Los permisos
@@ -201,4 +206,34 @@
     </record>
     <!-- No se conceden ACL de modelos al portal: todas las vistas móviles
          comprueban expresamente chofer_usuario_id o destinatario_id. -->
+    <record id="rule_operator_rutas_company" model="ir.rule">
+      <field name="name">Transcash rutas: compañía del operador</field>
+      <field name="model_id" ref="model_transcash_hoja_ruta"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_operator_tarifa_company" model="ir.rule">
+      <field name="name">Transcash tarifario: compañía del operador</field>
+      <field name="model_id" ref="model_transcash_tarifa_traslado"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_operator_guia_company" model="ir.rule">
+      <field name="name">Transcash guías: compañía del operador</field>
+      <field name="model_id" ref="model_transcash_guia"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_operator_embarque_company" model="ir.rule">
+      <field name="name">Transcash embarques: compañía del operador</field>
+      <field name="model_id" ref="model_transcash_embarque"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_operator_detalle_company" model="ir.rule">
+      <field name="name">Transcash productos: compañía del operador</field>
+      <field name="model_id" ref="model_transcash_guia_linea"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('guia_id.company_id','in',company_ids)]</field>
+    </record>
 </odoo>

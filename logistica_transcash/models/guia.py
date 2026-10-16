@@ -605,10 +605,12 @@ class Guia(models.Model):
                         ('company_id', '=', self.env.company.id),
                     ], limit=1)
                     if existing:
-                        if existing.embarque_id:
+                        # La asignación operativa de rutas (chofer/proveedor/placa)
+                        # prevalece tras la confirmación de Logística: evitar que el
+                        # cron ERP la modifique silenciosamente en una nueva importación.
+                        if existing.embarque_id or existing.hoja_ruta_id:
                             for field in ('chofer_usuario_id','proveedor_id','placa'):
-                                if field in vals and vals[field] != (existing[field].id if field.endswith('_id') else existing[field]):
-                                    raise ValidationError(_('Guía en embarque: el ERP intenta cambiar %s.') % field)
+                                vals.pop(field, None)
                         if existing.aprobacion_global == 'aprobada':
                             vals.pop('proveedor_id', None)
                         existing.write(vals)

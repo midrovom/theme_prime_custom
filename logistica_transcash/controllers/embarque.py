@@ -141,3 +141,90 @@ class EmbarquePortal(TranscashPortal):
         except (UserError, AccessError, ValidationError) as err:
             return self._render(embarque, str(err))
         return request.redirect('/transcash/embarques/%s?ok=1' % embark_id)
+
+class AceptacionCargaController(http.Controller):
+    def _get(self, embark_id):
+        return EmbarquePortal()._get(embark_id)
+
+    def _render(self, embark, error=None):
+        return EmbarquePortal()._render(embark, error)
+
+    @http.route('/transcash/embarques/<int:embark_id>/aceptar-salir',
+                type='http', auth='user', website=True, methods=['POST'], csrf=True)
+    def accept_depart(self, embark_id, **post):
+        emb = self._get(embark_id)
+        if not emb:
+            return request.not_found()
+        try:
+            emb.action_accept_and_depart()
+        except (UserError, AccessError, ValidationError) as err:
+            return self._render(emb, str(err))
+        return request.redirect('/transcash/embarques/%d?ok=1' % emb.id)
+
+    @http.route('/transcash/embarques/<int:embark_id>/observar',
+                type='http', auth='user', website=True, methods=['POST'], csrf=True)
+    def dispute_packing(self, embark_id, **post):
+        emb = self._get(embark_id)
+        if not emb:
+            return request.not_found()
+        try:
+            emb.action_report_discrepancy(post.get('motivo') or '')
+        except (UserError, AccessError, ValidationError) as err:
+            return self._render(emb, str(err))
+        return request.redirect('/transcash/embarques/%d?ok=1' % emb.id)
+
+    @http.route('/transcash/rutas/<int:ruta_id>/video',
+                type='http', auth='user', website=True, methods=['GET'])
+    def video_route(self, ruta_id, **kw):
+        import base64
+        from werkzeug.utils import secure_filename
+        ruta = request.env['transcash.hoja.ruta'].sudo().browse(ruta_id).exists()
+        if not ruta or ruta.state not in ('cargada','aceptada') or not ruta.video_carga:
+            return request.not_found()
+        user = request.env.user
+        authorized = ((user.has_group('logistica_transcash.group_transcash_chofer') and
+                       ruta.chofer_usuario_id == user) or
+                      (user.has_group('logistica_transcash.group_transcash_transportista') and
+                       ruta.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id) or
+                      (not user.share and ruta.company_id in user.company_ids and
+                       (user.has_group('logistica_transcash.group_transcash_consulta') or
+                        user.has_group('logistica_transcash.group_transcash_operador_rutas'))))
+        if not authorized:
+            return request.not_found()
+        data = base64.b64decode(ruta.video_carga)
+        mime = ruta.video_mime
+        if mime not in ('video/mp4', 'video/webm', 'video/quicktime'):
+            return request.not_found()
+        headers = [('Content-Type',mime),('X-Content-Type-Options','nosniff'),
+                   ('Cache-Control','private, no-store'),
+                   ('Content-Disposition','inline; filename="%s"' % secure_filename(ruta.video_nombre or 'carga.mp4')),
+                   ('Accept-Ranges','bytes')]
+        import re
+        range_header = request.httprequest.headers.get('Range', '')
+        if range_header:
+            match = re.fullmatch(r'bytes=(\d*)-(\d*)', range_header.strip())
+            if not match or (not match.group(1) and not match.group(2)):
+                return request.make_response(b'', headers=[('Content-Range','bytes */%d' % len(data))], status=416)
+            start = int(match.group(1)) if match.group(1) else max(0,len(data)-int(match.group(2)))
+            end = min(int(match.group(2)),len(data)-1) if match.group(2) else len(data)-1
+            if start < 0 or start > end or start >= len(data):
+                return request.make_response(b'', headers=[('Content-Range','bytes */%d' % len(data))], status=416)
+            headers += [('Content-Range','bytes %d-%d/%d'%(start,end,len(data))),
+                        ('Content-Length',str(end-start+1))]
+            return request.make_response(data[start:end+1],headers=headers,status=206)
+        headers.append(('Content-Length',str(len(data))))
+        return request.make_response(data,headers=headers)
+
+class FirmaController(http.Controller):
+    @http.route('/transcash/guias/<int:guide_id>/firma', type='http', auth='user', website=True, methods=['GET'])
+    def guide_signature(self, guide_id, **kw):
+        import base64
+        guide = TranscashPortal()._guide(guide_id)
+        if not guide or not guide.firma_receptor:
+            return request.not_found()
+        data = base64.b64decode(guide.firma_receptor)
+        if not data.startswith(b'\x89PNG\r\n\x1a\n'):
+            return request.not_found()
+        return request.make_response(data, headers=[
+            ('Content-Type','image/png'),('X-Content-Type-Options','nosniff'),
+            ('Cache-Control','private, no-store'),('Content-Disposition','inline')])

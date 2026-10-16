@@ -1,7 +1,7 @@
 {
     'name': 'Transcash - Seguimiento de Guias',
     'summary': 'Control de embarques, evidencias, recepcion, incidencias y pago del transporte',
-    'version': '18.0.5.8.0',
+    'version': '18.0.5.10.0',
     'category': 'Operations/Inventory',
     'license': 'LGPL-3',
     'author': 'Transcash',
@@ -11,6 +11,7 @@
         'security/ir.model.access.csv',
         'views/guia_views.xml',
         'views/embarque_views.xml',
+        'views/rutas_views.xml',
         'views/chofer_views.xml',
         'views/evidencia_views.xml',
         'views/detalle_views.xml',

@@ -5,7 +5,7 @@
     <field name="arch" type="xml">
       <list string="Guías" decoration-danger="incidencia_estado == 'abierta'" decoration-success="state == 'pagada'">
         <field name="name"/>
-        <field name="embarque_id"/>
+        <field name="embarque_id"/><field name="hoja_ruta_id"/>
         <field name="tipo_documento"/><field name="numero_documento"/>
         <field name="state" widget="badge"/>
         <field name="origen"/>
@@ -68,7 +68,7 @@
           <group>
             <group string="Guía y ruta">
               <field name="external_id_erp"/>
-              <field name="embarque_id" readonly="1"/>
+              <field name="embarque_id" readonly="1"/><field name="hoja_ruta_id" readonly="1"/>
               <field name="tipo_documento"/>
               <field name="numero_documento"/>
               <field name="ruc_chofer"/>
@@ -100,6 +100,8 @@
             <field name="observacion_inicio_carga" readonly="1"/><field name="observacion_fin_carga" readonly="1"/>
             <field name="observacion_cierre_chofer" readonly="1"/>
             <field name="persona_presente_chofer" readonly="1"/>
+            <field name="firma_receptor" widget="image" readonly="1"/>
+            <field name="firma_receptor_fecha" readonly="1"/>
             <field name="cierre_carga_autonomo" readonly="1"/><field name="cierre_carga_usuario_id" readonly="1" invisible="not cierre_carga_autonomo"/>
             <field name="cierre_carga_fecha" readonly="1" invisible="not cierre_carga_autonomo"/>
           </group>
@@ -229,7 +231,7 @@
     <field name="target">new</field>
   </record>
   <menuitem id="menu_transcash_root" name="Logística Transcash" action="action_transcash_guia" sequence="35"
-            groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_consulta"/>
+            groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_consulta,logistica_transcash.group_transcash_operador_rutas"/>
   <menuitem id="menu_transcash_mobile" name="WebApp / acceso opcional" parent="menu_transcash_root"
             action="action_transcash_mobile" sequence="90"
             groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_consulta"/>

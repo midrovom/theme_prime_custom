@@ -189,7 +189,7 @@ class TranscashPortal(http.Controller):
         if not guia:
             return request.not_found()
         try:
-            guia.action_close_driver_delivery(post.get('observacion') or '', post.get('persona_presente') or '')
+            guia.action_close_driver_delivery(post.get('observacion') or '', post.get('persona_presente') or '', post.get('firma_png') or '')
         except (UserError, ValidationError) as err:
             return self._render_guide(guia, str(err))
         # Llevar al conductor a la siguiente entrega pendiente, sin pasos extra.

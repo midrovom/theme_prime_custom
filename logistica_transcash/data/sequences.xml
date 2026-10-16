@@ -6,4 +6,5 @@
   <field name="code">transcash.pago.liquidacion</field>
   <field name="prefix">LQ/%(year)s/</field>
   <field name="padding">5</field>
-</record></odoo>
+</record>  <record id="seq_transcash_hoja_ruta" model="ir.sequence"><field name="name">Hoja de ruta Transcash</field><field name="code">transcash.hoja.ruta</field><field name="prefix">RUTA/%(year)s/</field><field name="padding">5</field></record>
+</odoo>

@@ -1,0 +1,7 @@
+.tc-sign-box { padding: 16px; margin: 12px 0; border: 1px solid #d9e7ed; background: #f5fafc; border-radius: 16px; }
+.tc-sign-box label { display: block; font-size: 15px; font-weight: 800; margin-bottom: 5px; }
+.tc-sign-box p { color: #60758b; font-size: 13px; margin: 0 0 10px; }
+.tc-sign-canvas { display: block; background: #fff; border: 2px dashed #bacddb; border-radius: 12px; width: 100%; max-width: 600px; height: auto; touch-action: none; cursor: crosshair; }
+.tc-sign-clear { color: #176d7d; background: transparent; padding: 9px; border: 0; cursor: pointer; font-size: 13px; }
+.tc-sign-saved { margin: 10px 0; border-radius: 12px; padding: 12px; background: #f5fafc; }
+.tc-sign-saved img { display: block; max-height: 130px; max-width: 100%; margin-top: 8px; background: white; }
