@@ -30,7 +30,7 @@
                     </select>
                 </label>
                 <label>Mes
-                    <select class="form-select" t-att-value="String(state.selectedMonth)" t-on-change="onMonthChange">
+                    <select class="form-select" t-att-value="state.selectedMonth" t-on-change="onMonthChange">
                         <option value="-1">Todos los meses</option>
                         <t t-foreach="state.data.month_names" t-as="month_name" t-key="month_name_index">
                             <option t-att-value="month_name_index" t-esc="month_name"/>
