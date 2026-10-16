@@ -1,0 +1,54 @@
+<odoo>
+  <record id="view_transcash_novedad_resumen_search" model="ir.ui.view">
+    <field name="name">transcash.novedad.resumen.search</field>
+    <field name="model">transcash.novedad.resumen</field>
+    <field name="arch" type="xml">
+      <search string="Control de incidencias">
+        <field name="guia_id"/><field name="embarque_id"/><field name="proveedor_id"/>
+        <field name="chofer_usuario_id"/><field name="destino"/>
+        <filter name="abiertas" string="Abiertas" domain="[('incidencia_estado','=','abierta')]"/>
+        <filter name="danos_pendientes" string="Roturas pendientes" domain="[('reportes_pendientes','&gt;',0)]"/>
+        <filter name="recepcion_novedad" string="Recepción con novedades" domain="[('resultado_recepcion','=','con_novedades')]"/>
+        <group expand="0" string="Agrupar por">
+          <filter name="grupo_proveedor" string="Transportista" context="{'group_by':'proveedor_id'}"/>
+          <filter name="grupo_chofer" string="Chofer" context="{'group_by':'chofer_usuario_id'}"/>
+          <filter name="grupo_destino" string="Destino" context="{'group_by':'destino'}"/>
+          <filter name="grupo_estado" string="Estado" context="{'group_by':'incidencia_estado'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  <record id="view_transcash_novedad_resumen_list" model="ir.ui.view">
+    <field name="name">transcash.novedad.resumen.list</field>
+    <field name="model">transcash.novedad.resumen</field>
+    <field name="arch" type="xml"><list string="Seguimiento de novedades" create="0" edit="0" delete="0"
+          decoration-danger="incidencia_estado == 'abierta'" decoration-warning="reportes_pendientes &gt; 0">
+      <field name="guia_id"/><field name="embarque_id"/><field name="destino"/>
+      <field name="proveedor_id"/><field name="chofer_usuario_id"/>
+      <field name="fecha_cierre_chofer"/><field name="resultado_recepcion" widget="badge"/>
+      <field name="incidencia_estado" widget="badge"/>
+      <field name="reportes_rotura"/><field name="reportes_pendientes"/>
+      <field name="reportes_aprobados"/><field name="peso_roto_estimado_kg"/>
+    </list></field>
+  </record>
+  <record id="view_transcash_novedad_resumen_form" model="ir.ui.view">
+    <field name="name">transcash.novedad.resumen.form</field>
+    <field name="model">transcash.novedad.resumen</field>
+    <field name="arch" type="xml"><form string="Resumen de incidencia" create="0" edit="0" delete="0">
+      <sheet><group><group><field name="guia_id"/><field name="embarque_id"/><field name="destino"/>
+      <field name="chofer_usuario_id"/><field name="proveedor_id"/></group>
+      <group><field name="incidencia_estado"/><field name="resultado_recepcion"/>
+      <field name="reportes_rotura"/><field name="reportes_pendientes"/>
+      <field name="peso_roto_estimado_kg"/></group></group>
+      <div class="alert alert-info" role="alert">Abra la guía para revisar los archivos originales, las respuestas y el trámite de nota de crédito. Este resumen es de solo lectura.</div>
+      </sheet>
+    </form></field>
+  </record>
+  <record id="action_transcash_novedades" model="ir.actions.act_window">
+    <field name="name">Control de novedades y roturas</field><field name="res_model">transcash.novedad.resumen</field>
+    <field name="view_mode">list,form</field>
+  </record>
+  <menuitem id="menu_transcash_novedades" name="Control de novedades" parent="menu_transcash_root"
+    action="action_transcash_novedades" sequence="38"
+    groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta"/>
+</odoo>

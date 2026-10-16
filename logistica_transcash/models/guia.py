@@ -58,6 +58,10 @@ class Guia(models.Model):
     placa = fields.Char('Placa del vehículo')
     origen = fields.Char('Origen')
     destino = fields.Char('Destino')
+    destino_codigo = fields.Char('Código de destino (ERP)', index=True)
+    destino_ciudad = fields.Char('Ciudad de destino')
+    destino_provincia = fields.Char('Provincia / región destino')
+
     numero_bultos = fields.Integer('Bultos')
     peso_kg = fields.Float('Peso (kg)')
     descripcion_carga = fields.Text('Descripción de mercancía')
@@ -68,7 +72,11 @@ class Guia(models.Model):
     fecha_cierre_chofer = fields.Datetime('Entrega finalizada por chofer', readonly=True, copy=False, tracking=True)
     cierre_entrega_chofer_usuario_id = fields.Many2one('res.users', 'Cierre realizado por', readonly=True, copy=False)
     observacion_cierre_chofer = fields.Text('Observaciones de entrega del chofer', readonly=True, copy=False)
-    persona_presente_chofer = fields.Char('Persona indicada por chofer (sin validar)', readonly=True, copy=False)
+    persona_presente_chofer = fields.Char('Nombre de quien recibe (declarado por chofer)', readonly=True, copy=False)
+    resultado_recepcion = fields.Selection([('pendiente','Pendiente de cliente'),
+        ('conforme','Recibido conforme'), ('con_novedades','Recibido con novedades'),
+        ('historica','Confirmada antes de V5.5')],
+        string='Resultado de recepción del cliente', default='pendiente', readonly=True, copy=False, tracking=True)
     fecha_entrega = fields.Datetime('Recepción confirmada por cliente', readonly=True, copy=False)
     recibido_por = fields.Char('Nombre de quien recibe', readonly=True, copy=False)
     observacion_recepcion = fields.Text('Observación general de recepción', readonly=True, copy=False)
@@ -77,11 +85,6 @@ class Guia(models.Model):
     moneda_id = fields.Many2one('res.currency', string='Moneda', default=lambda self: self.env.company.currency_id)
     valor_acordado = fields.Monetary('Tarifa de transporte', currency_field='moneda_id',
                                     groups='logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad')
-    cuenta_gasto_id = fields.Many2one('account.account', string='Cuenta de gasto',
-                                      domain="[('account_type','in',['expense','expense_direct_cost'])]",
-                                      groups='logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad')
-    factura_id = fields.Many2one('account.move', string='Factura del proveedor', readonly=True,
-                                 copy=False, groups='logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad')
     incidencia_estado = fields.Selection([
         ('ninguna', 'Sin incidencia'), ('abierta', 'Abierta'), ('resuelta', 'Resuelta'),
     ], default='ninguna', tracking=True, required=True, copy=False)
@@ -122,10 +125,10 @@ class Guia(models.Model):
     def create(self, vals_list):
         if not self.env.su:
             prohibited = {'embarque_id','aprobacion_global','incidencia_estado',
-                          'fecha_salida','fecha_llegada','fecha_entrega','factura_id','state',
+                          'fecha_salida','fecha_llegada','fecha_entrega','state',
                           'cierre_carga_autonomo','cierre_carga_usuario_id','cierre_carga_fecha',
                           'fecha_cierre_chofer','cierre_entrega_chofer_usuario_id',
-                          'observacion_cierre_chofer','persona_presente_chofer'}
+                          'observacion_cierre_chofer','persona_presente_chofer','resultado_recepcion'}
             if any(prohibited.intersection(v) for v in vals_list):
                 raise UserError(_('Los estados y el embarque se asignan mediante el flujo autorizado.'))
         return super().create(vals_list)
@@ -137,26 +140,17 @@ class Guia(models.Model):
             raise UserError(_('Asigne o retire guías usando las acciones del embarque.'))
         if not self.env.su and {'observacion_carga','observacion_inicio_carga','observacion_fin_carga'} & set(vals):
             raise UserError(_('Las observaciones de carga se registran desde el embarque.'))
-        # Los importes y datos contables son exclusivos de Contabilidad. El
-        # contexto de RPC no equivale a autorización y no salta estas reglas.
-        if not self.env.su and {'valor_acordado', 'cuenta_gasto_id', 'factura_id'} & set(vals):
-            if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
-                raise UserError(_('Solo Contabilidad puede modificar datos de liquidación.'))
-        if not self.env.su and self.env.user.has_group('logistica_transcash.group_transcash_contabilidad') and not self._is_manager():
-            if set(vals) - {'cuenta_gasto_id', 'valor_acordado'}:
-                raise UserError(_('Contabilidad solo puede editar cuenta de gasto y tarifa antes de facturar.'))
-            if any(g.factura_id for g in self):
-                raise UserError(_('La tarifa del transporte no se modifica después de facturar.'))
-        if not self.env.su and {'proveedor_id','valor_acordado','cuenta_gasto_id'} & set(vals):
-            if any(g.factura_id for g in self):
-                raise UserError(_('No puede cambiar proveedor, tarifa ni cuenta después de facturar.'))
+        # Los fletes de versiones anteriores son sólo históricos: el jefe de
+        # Logística fija la tarifa exclusivamente en el embarque.
+        if not self.env.su and 'valor_acordado' in vals:
+            raise UserError(_('El valor del transporte se negocia en el embarque.'))
         # Un estado operativo no puede establecerse directamente vía interfaz o RPC.
         flow_fields = {'state','aprobacion_global','aprobacion_por_id','aprobacion_fecha',
                        'incidencia_estado','resolucion_por_id','confirmado_por_id',
-                       'fecha_entrega','fecha_llegada','fecha_salida', 'factura_id',
+                       'fecha_entrega','fecha_llegada','fecha_salida',
                        'cierre_carga_autonomo','cierre_carga_usuario_id','cierre_carga_fecha',
                           'fecha_cierre_chofer','cierre_entrega_chofer_usuario_id',
-                          'observacion_cierre_chofer','persona_presente_chofer'}
+                          'observacion_cierre_chofer','persona_presente_chofer','resultado_recepcion'}
         if flow_fields & set(vals) and not self.env.su:
 
             raise UserError(_('Use las acciones del flujo para modificar el estado de la guía.'))
@@ -301,16 +295,22 @@ class Guia(models.Model):
             fotos_descarga = guia.evidencia_ids.filtered(lambda e: e.tipo == 'llegada' and e.archivo)
             if not fotos_descarga:
                 raise UserError(_('Suba y sincronice al menos una foto o video de descarga antes de finalizar. No necesita esperar la aprobación del cliente.'))
+            # El nombre del receptor es obligatorio para cerrar la entrega,
+            # pero se conserva como declaración del chofer, NO como conformidad.
+            name = ' '.join((contact_name or '').split())
+            if len(name) < 3 or not any(ch.isalpha() for ch in name):
+                raise UserError(_('Escriba el nombre y apellido de la persona que recibió la mercadería.'))
             now = fields.Datetime.now()
             guia.sudo().write({
                 'state': 'revision',
                 'fecha_cierre_chofer': now,
                 'cierre_entrega_chofer_usuario_id': user.id,
                 'observacion_cierre_chofer': (observation or '').strip()[:4000],
-                'persona_presente_chofer': (contact_name or '').strip()[:160],
+                'persona_presente_chofer': name[:160],
             })
             guia._track_event('Chofer finalizó la entrega',
-                (observation or '').strip()[:1000] or 'Mercancía descargada, pendiente de revisión del cliente')
+                'Receptor declarado por chofer: %s. %s' % (name[:160],
+                 (observation or '').strip()[:600] or 'Sin novedades declaradas'))
             if guia.embarque_id:
                 guia.embarque_id._refresh_delivered_state()
         return True
@@ -326,25 +326,52 @@ class Guia(models.Model):
         return bool(self.destinatario_id and user.partner_id and
                     self.destinatario_id.commercial_partner_id == user.partner_id.commercial_partner_id)
 
-    def action_confirm_delivery(self, receiver_name, comment=''):
+    def action_confirm_delivery(self, receiver_name, comment='', resultado='conforme'):
+        """Recepción posterior e independiente del cierre del chofer.
+
+        * Conforme: revisa en conjunto las evidencias pendientes de descarga.
+        * Con novedades: deja el reclamo abierto, sin impedir otro viaje del chofer.
+          Las roturas requieren su propio registro por producto con archivos.
+        """
         for guia in self:
-            if not guia._is_recipient() and not self._is_manager():
+            if not guia._is_recipient() and not guia._is_manager():
                 raise UserError(_('Solo el destinatario puede confirmar esta entrega.'))
             if guia.state != 'revision':
-                raise UserError(_('La guía debe estar pendiente de recepción.'))
+                raise UserError(_('La guía todavía no está pendiente de recepción del cliente.'))
+            if resultado not in ('conforme', 'con_novedades'):
+                raise UserError(_('Seleccione recepción conforme o con novedades.'))
+            receiver_name = ' '.join((receiver_name or '').split())
+            if len(receiver_name) < 3 or not any(ch.isalpha() for ch in receiver_name):
+                raise UserError(_('Escriba el nombre completo de quien recibe.'))
+            comment = (comment or '').strip()
             llegadas = guia.evidencia_ids.filtered(lambda e: e.tipo == 'llegada')
-            if not llegadas or any(e.estado == 'pendiente' for e in llegadas):
-                raise UserError(_('El destinatario debe revisar todas las evidencias de llegada.'))
-            receiver_name = (receiver_name or '').strip()
-            if not receiver_name:
-                raise UserError(_('Indique el nombre de quien recibe.'))
+            if not llegadas:
+                raise UserError(_('Todavía no hay evidencias de llegada para revisar.'))
+            if resultado == 'conforme':
+                if (guia.incidencia_estado == 'abierta' or
+                    any(r.estado != 'rechazada' for r in guia.rotura_ids) or
+                    any(e.estado == 'objetada' for e in llegadas) or
+                    any(e.tipo == 'cliente' and e.tipo_novedad != 'ninguna'
+                        for e in guia.evidencia_ids)):
+                    raise UserError(_('La guía tiene reclamos o evidencias objetadas. Use «Recibí con novedades» para no perderlos.'))
+            else:
+                if len(comment) < 5:
+                    raise UserError(_('Describa la novedad (mínimo cinco caracteres). Para roturas agregue producto, cantidad y evidencia.'))
+                guia._open_incident('Novedad de recepción: %s' % comment[:250])
+            # Un solo gesto revisa las fotos sin exigir una aprobación por archivo.
+            # Una evidencia OBJETADA jamás se aprueba automáticamente.
+            for evidencia in llegadas.filtered(lambda e: e.estado == 'pendiente'):
+                evidencia.action_approve()
             guia.sudo().with_context(transcash_internal_flow=True).write({
                 'state': 'entregada', 'fecha_entrega': fields.Datetime.now(),
                 'recibido_por': receiver_name[:160],
-                'observacion_recepcion': (comment or '')[:4000],
+                'observacion_recepcion': comment[:4000],
+                'resultado_recepcion': resultado,
                 'confirmado_por_id': self.env.user.id,
             })
-            guia._track_event('Entrega confirmada', 'Recibido por: %s' % receiver_name)
+            guia._track_event('Recepción confirmada por cliente' if resultado == 'conforme'
+                else 'Cliente recibió con novedades',
+                'Recibido por: %s. %s' % (receiver_name[:160], comment[:600]))
             if guia.embarque_id:
                 guia.embarque_id._refresh_delivered_state()
         return True
@@ -395,90 +422,16 @@ class Guia(models.Model):
                 'res_id':request.id, 'view_mode':'form', 'target':'current'}
 
     def action_configure_liquidation(self):
-        if any(self.mapped('embarque_id')):
-            raise UserError(_('La liquidación de estas guías se administra en el embarque, no por guía.'))
-        self.ensure_one()
-        if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
-            raise UserError(_('Solo Contabilidad puede configurar la liquidación.'))
-        if self.factura_id or self.state not in ('entregada', 'lista_pago'):
-            raise UserError(_('No puede modificar datos de una guía ya facturada o no entregada.'))
-        return {'type':'ir.actions.act_window', 'name': _('Configurar liquidación'),
-                'res_model': 'transcash.liquidacion.wizard', 'view_mode':'form',
-                'target':'new', 'context': {'default_guia_id':self.id,
-                                           'default_cuenta_gasto_id':self.cuenta_gasto_id.id or False,
-                                           'default_valor_acordado':self.valor_acordado}}
+        raise UserError(_('El flete se negocia por embarque en Logística. Las guías independientes históricas se conservan para consulta.'))
 
     def action_ready_payment(self):
-        if any(self.mapped('embarque_id')):
-            raise UserError(_('La liquidación de estas guías se administra en el embarque, no por guía.'))
-        if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
-            raise UserError(_('Solo el administrador puede autorizar la liquidación.'))
-        for guia in self:
-            if guia.state != 'entregada':
-                raise UserError(_('La guía debe estar entregada.'))
-            if guia.aprobacion_global != 'aprobada':
-                raise UserError(_('Primero apruebe el total de la guía.'))
-            if guia.roturas_pendientes:
-                raise UserError(_('Existen roturas pendientes de revisión.'))
-            if guia.roturas_aprobadas and (not guia.nota_credito_id or
-                    guia.nota_credito_id[0].estado != 'emitida' or
-                    not guia.nota_credito_id[0].documento_validado_por_id):
-                raise UserError(_('Primero confirme la nota de crédito por las roturas aprobadas.'))
-            if guia.incidencia_estado == 'abierta':
-                raise UserError(_('Resuelva la incidencia antes de autorizar el pago.'))
-            if not guia.proveedor_id:
-                raise UserError(_('Falta el proveedor de transporte.'))
-            guia.sudo().write({'state': 'lista_pago'})
-            guia._track_event('Autorizada para liquidación', publico_cliente=False)
-        return True
+        raise UserError(_('La aprobación financiera se realiza por embarque, no por guía.'))
 
     def action_create_vendor_bill(self):
-        if any(self.mapped('embarque_id')):
-            raise UserError(_('La liquidación de estas guías se administra en el embarque, no por guía.'))
-        if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
-            raise UserError(_('Solo el administrador puede generar la factura del proveedor.'))
-        self.ensure_one()
-        if self.state != 'lista_pago' or self.factura_id:
-            raise UserError(_('La guía debe estar lista para pago y sin factura previa.'))
-        if not self.proveedor_id or not self.cuenta_gasto_id:
-            raise UserError(_('Configure el proveedor y la cuenta contable de gasto.'))
-        if self.valor_acordado <= 0:
-            raise UserError(_('La tarifa acordada debe ser mayor que cero.'))
-        if self.moneda_id != self.company_id.currency_id:
-            raise UserError(_('Este MVP exige la misma moneda de la compañía; no convierte divisas.'))
-        bill = self.env['account.move'].with_company(self.company_id).create({
-            'move_type': 'in_invoice',
-            'partner_id': self.proveedor_id.id,
-            'company_id': self.company_id.id,
-            'invoice_origin': self.name,
-            'ref': 'TRANSPORTE/%s' % self.name,
-            'invoice_line_ids': [(0, 0, {
-                'name': 'Flete de guía %s' % self.name,
-                'quantity': 1.0,
-                'price_unit': self.valor_acordado,
-                'account_id': self.cuenta_gasto_id.id,
-            })],
-        })
-        self.sudo().write({'factura_id': bill.id, 'state': 'facturada'})
-        self._track_event('Factura del proveedor creada', bill.name or str(bill.id), publico_cliente=False)
-        return {
-            'type': 'ir.actions.act_window', 'res_model': 'account.move',
-            'res_id': bill.id, 'view_mode': 'form', 'target': 'current',
-        }
+        raise UserError(_('Transcash no emite facturas en Odoo Contabilidad. El proveedor adjunta su factura a la liquidación documental.'))
 
     def action_verify_payment(self):
-        if any(self.mapped('embarque_id')):
-            raise UserError(_('La liquidación de estas guías se administra en el embarque, no por guía.'))
-        if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
-            raise UserError(_('Solo el administrador puede verificar pagos.'))
-        for guia in self:
-            if guia.state != 'facturada' or not guia.factura_id:
-                raise UserError(_('La guía no tiene factura de proveedor asociada.'))
-            if guia.factura_id.state != 'posted' or guia.factura_id.payment_state != 'paid':
-                raise UserError(_('La factura debe estar contabilizada y completamente pagada.'))
-            guia.sudo().write({'state': 'pagada'})
-            guia._track_event('Pago verificado', publico_cliente=False)
-        return True
+        raise UserError(_('Los pagos se registran en Liquidaciones de transporte.'))
 
     @api.model
     def _partner_by_ref(self, code):
@@ -512,11 +465,13 @@ class Guia(models.Model):
             'tipo_documento':'tipo_documento', 'numero_documento':'numero_documento',
             'ruc_chofer':'ruc_chofer',
             'descripcion_carga': 'descripcion_carga', 'estado_erp': 'estado_erp',
+            'destino_codigo': 'destino_codigo', 'destino_ciudad':'destino_ciudad',
+            'destino_provincia':'destino_provincia',
         }.items():
             if incoming in item:
                 vals[field] = str(item[incoming] or '')[:500 if field == 'descripcion_carga' else 255]
         for incoming, field in {'bultos': 'numero_bultos', 'peso_kg': 'peso_kg',
-                                'valor_acordado': 'valor_acordado'}.items():
+}.items():
             if incoming in item and item[incoming] is not None:
                 vals[field] = float(item[incoming]) if field != 'numero_bultos' else int(item[incoming])
         for api_field, db_field in [('fecha_inicio_traslado','fecha_inicio_traslado'),
@@ -604,11 +559,17 @@ class Guia(models.Model):
                 raise ValidationError(_('Cantidad o precio fuera de rango en %s.') % codigo)
             values = {'codigo':codigo[:128], 'producto':nombre[:255],
                       'cantidad':qty, 'unidad':unit, 'precio_unitario':price,
-                      'peso_kg':peso_linea, 'pallets_info':pallets, 'cajas_info':cajas, 'vigente_erp':True}
+                      'peso_kg':peso_linea, 'pallets_info':pallets, 'cajas_info':cajas, 'vigente_erp':True,
+                      'marca_codigo':str(p.get('marca_codigo') or '')[:128],
+                      'marca_nombre':str(p.get('marca_nombre') or '')[:255],
+                      'proveedor_producto_codigo':str(p.get('proveedor_producto_codigo') or '')[:128],
+                      'proveedor_producto_nombre':str(p.get('proveedor_producto_nombre') or '')[:255]}
             old = Line.search([('guia_id','=',guia.id),('external_line_id','=',ext)], limit=1)
             if old:
                 if old.rotura_ids and any(old[f] != values[f] for f in
-                                        ('codigo','producto','cantidad','unidad','precio_unitario')):
+                                        ('codigo','producto','cantidad','unidad','precio_unitario', 'peso_kg',
+                                         'marca_codigo','marca_nombre',
+                                         'proveedor_producto_codigo','proveedor_producto_nombre')):
                     raise ValidationError(_('La línea %s tiene roturas; no se permite cambiar su contenido.') % ext)
                 if guia.aprobacion_global == 'aprobada' and any(old[f] != values[f] for f in values):
                     raise ValidationError(_('La guía ya está aprobada; productos bloqueados.'))
@@ -644,15 +605,11 @@ class Guia(models.Model):
                         ('company_id', '=', self.env.company.id),
                     ], limit=1)
                     if existing:
-                        # No sobrescribe valor luego de emitir factura ni campos internos.
                         if existing.embarque_id:
                             for field in ('chofer_usuario_id','proveedor_id','placa'):
                                 if field in vals and vals[field] != (existing[field].id if field.endswith('_id') else existing[field]):
-                                    raise ValidationError(_('Guía en embarque: el ERP intenta cambiar %s. Revise la reasignación.') % field)
-                            for field in ('valor_acordado','cuenta_gasto_id'):
-                                vals.pop(field, None)
-                        if existing.factura_id or existing.aprobacion_global == 'aprobada':
-                            vals.pop('valor_acordado', None)
+                                    raise ValidationError(_('Guía en embarque: el ERP intenta cambiar %s.') % field)
+                        if existing.aprobacion_global == 'aprobada':
                             vals.pop('proveedor_id', None)
                         existing.write(vals)
                         self._sync_detail(existing, item)

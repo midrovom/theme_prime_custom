@@ -1,0 +1,9 @@
+<odoo>
+  <record id="action_transcash_dashboard" model="ir.actions.client">
+    <field name="name">Indicadores de transporte</field>
+    <field name="tag">transcash_dashboard</field>
+  </record>
+  <menuitem id="menu_transcash_dashboard" name="Transcash · Indicadores"
+    action="action_transcash_dashboard" sequence="6"
+    groups="logistica_transcash.group_transcash_dashboard"/>
+</odoo>

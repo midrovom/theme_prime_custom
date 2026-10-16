@@ -144,6 +144,8 @@ class TranscashPortal(http.Controller):
             note = (post.get('observacion') or '').strip()
             if tipo == 'llegada' and not note:
                 note = 'Evidencia de descarga sin novedades declaradas por el chofer'
+            if tipo == 'cliente' and not note and files and post.get('tipo_novedad', 'ninguna') == 'ninguna':
+                note = 'Fotografía o video de recepción aportado por el destinatario'
             for file in (files or [(False,False,False)]):
                 request.env['transcash.evidencia'].register_evidence(
                     guia, tipo, note, *file,
@@ -238,7 +240,7 @@ class TranscashPortal(http.Controller):
         if not guia or not guia._is_recipient(request.env.user):
             return request.not_found()
         try:
-            guia.action_confirm_delivery(post.get('recibido_por'), post.get('observacion_recepcion'))
+            guia.action_confirm_delivery(post.get('recibido_por'), post.get('observacion_recepcion'), post.get('resultado') or 'conforme')
         except UserError as err:
             return self._render_guide(guia, str(err))
         return request.redirect('/transcash/guias/%s?ok=1' % guide_id)

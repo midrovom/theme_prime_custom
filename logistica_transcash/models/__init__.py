@@ -9,8 +9,10 @@ from . import credito
 from . import sync
 
 from . import upload
+from . import pagos
 from . import liquidacion
 from . import chofer
 from . import embarque
 
 from . import api_wizard
+from . import analitica

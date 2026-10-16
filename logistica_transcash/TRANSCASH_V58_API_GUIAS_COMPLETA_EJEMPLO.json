@@ -1,0 +1,101 @@
+{
+  "guias": [
+    {
+      "id_externo": "ERP-GUIA-2026-008215",
+      "numero_guia": "G-008215",
+      "tipo_documento": "FACTURA",
+      "numero_documento": "001-002-000418251",
+      "estado_erp": "CONFIRMADA",
+      "chofer_login": "chofer01@transporte.example",
+      "ruc_chofer": "0912345678001",
+      "proveedor_codigo": "TRANSP-0007",
+      "remitente_codigo": "BOD-GYE-01",
+      "destinatario_codigo": "CLI-00351",
+      "placa": "GAA-1234",
+      "direccion_origen": "Km 12 vía a Daule, Guayaquil, Ecuador",
+      "direccion_destino": "Av. de los Shyris y Portugal, Quito, Ecuador",
+      "destino_codigo": "EC-UIO-CENTRO",
+      "destino_ciudad": "Quito",
+      "destino_provincia": "Pichincha",
+      "fecha_inicio_traslado": "2026-10-16T07:00:00-05:00",
+      "fecha_fin_traslado": "2026-10-17T18:00:00-05:00",
+      "fecha_prevista": "2026-10-17T18:00:00-05:00",
+      "descripcion_carga": "Porcelanato y accesorios",
+      "bultos": 105,
+      "peso_kg": 2450.0,
+      "productos": [
+        {
+          "id_linea": "ERP-GUIA-2026-008215-01",
+          "sku": "POR-6060-B",
+          "descripcion": "Porcelanato 60 x 60 Beige",
+          "cantidad": 120.5,
+          "unidad": "m2",
+          "peso_kg": 2200.0,
+          "pallets": 2.0,
+          "cajas": 85.0,
+          "precio_unitario": 18.5,
+          "marca_codigo": "MAR-101",
+          "marca_nombre": "Cerámica Ejemplo",
+          "proveedor_producto_codigo": "FAB-005",
+          "proveedor_producto_nombre": "Fabricante A S.A."
+        },
+        {
+          "id_linea": "ERP-GUIA-2026-008215-02",
+          "sku": "ACC-0008",
+          "descripcion": "Accesorio de instalación",
+          "cantidad": 20,
+          "unidad": "unidad",
+          "peso_kg": 250.0,
+          "pallets": 0.0,
+          "cajas": 20.0,
+          "precio_unitario": 8.0,
+          "marca_codigo": "MAR-202",
+          "marca_nombre": "Marca Accesorios",
+          "proveedor_producto_codigo": "PROD-020",
+          "proveedor_producto_nombre": "Importadora B S.A."
+        }
+      ]
+    },
+    {
+      "id_externo": "ERP-GUIA-2026-008216",
+      "numero_guia": "G-008216",
+      "tipo_documento": "GUIA_REMISION",
+      "numero_documento": "002-001-000012364",
+      "estado_erp": "CONFIRMADA",
+      "chofer_login": "chofer01@transporte.example",
+      "ruc_chofer": "0912345678001",
+      "proveedor_codigo": "TRANSP-0007",
+      "remitente_codigo": "BOD-GYE-01",
+      "destinatario_codigo": "CLI-00110",
+      "placa": "GAA-1234",
+      "direccion_origen": "Km 12 vía a Daule, Guayaquil, Ecuador",
+      "direccion_destino": "Calle Sucre 123, Ambato, Ecuador",
+      "destino_codigo": "EC-AMB-CENTRO",
+      "destino_ciudad": "Ambato",
+      "destino_provincia": "Tungurahua",
+      "fecha_inicio_traslado": "2026-10-16T07:00:00-05:00",
+      "fecha_fin_traslado": "2026-10-17T14:00:00-05:00",
+      "fecha_prevista": "2026-10-17T14:00:00-05:00",
+      "descripcion_carga": "Revestimientos",
+      "bultos": 32,
+      "peso_kg": 460.0,
+      "productos": [
+        {
+          "id_linea": "ERP-GUIA-2026-008216-01",
+          "sku": "CER-3030-G",
+          "descripcion": "Cerámica gris 30 x 30",
+          "cantidad": 75.0,
+          "unidad": "m2",
+          "peso_kg": 460.0,
+          "pallets": 1.0,
+          "cajas": 32.0,
+          "precio_unitario": 11.0,
+          "marca_codigo": "MAR-101",
+          "marca_nombre": "Cerámica Ejemplo",
+          "proveedor_producto_codigo": "FAB-005",
+          "proveedor_producto_nombre": "Fabricante A S.A."
+        }
+      ]
+    }
+  ]
+}

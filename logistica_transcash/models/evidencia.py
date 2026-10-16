@@ -129,7 +129,11 @@ class Evidencia(models.Model):
             elif ev.tipo == 'llegada':
                 if not guia._is_recipient() and not guia._is_manager():
                     raise UserError(_('Solo el destinatario valida la evidencia de llegada.'))
-                if guia.state != 'revision':
+                if guia.state == 'entregada':
+                    if not (guia.resultado_recepcion == 'con_novedades' and
+                            guia.incidencia_estado == 'resuelta' and guia._is_manager()):
+                        raise UserError(_('La evidencia objetada exige resolver primero la incidencia y validación administrativa.'))
+                elif guia.state != 'revision':
                     raise UserError(_('Solo se pueden aprobar evidencias durante la revisión.'))
             else:
                 raise UserError(_('Esta evidencia no requiere aprobación.'))

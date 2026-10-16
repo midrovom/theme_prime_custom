@@ -21,6 +21,11 @@ class GuiaLinea(models.Model):
     external_line_id = fields.Char('ID línea ERP', required=True, index=True)
     codigo = fields.Char('SKU', required=True)
     producto = fields.Char('Descripción del producto', required=True)
+    marca_codigo = fields.Char('Código de marca (ERP)', index=True)
+    marca_nombre = fields.Char('Marca', index=True)
+    proveedor_producto_codigo = fields.Char('Código de proveedor del producto (ERP)', index=True)
+    proveedor_producto_nombre = fields.Char('Proveedor / fabricante del producto', index=True)
+
     cantidad = fields.Float('Cantidad embarcada', digits=(16, 3), required=True)
     unidad = fields.Selection(UNIDADES, required=True, string='Unidad de cantidad')
     peso_kg = fields.Float('Peso declarado (kg)', digits=(16, 3), readonly=True)

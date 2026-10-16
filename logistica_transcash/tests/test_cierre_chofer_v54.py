@@ -58,7 +58,7 @@ class TestCierreChofer(TransactionCase):
         first, second = self.guides[0], self.guides[1]
         ev_first = self._arrive_with_photo(first)
         ev_second = self._arrive_with_photo(second)
-        first.sudo().with_user(self.driver).sudo().action_close_driver_delivery('Entregado sin observaciones')
+        first.sudo().with_user(self.driver).sudo().action_close_driver_delivery('Entregado sin observaciones', 'María Paz')
         self.assertEqual(first.state, 'revision')
         self.assertTrue(first.fecha_cierre_chofer)
         self.assertFalse(first.fecha_entrega)
@@ -68,7 +68,7 @@ class TestCierreChofer(TransactionCase):
         first.sudo().with_user(self.driver).sudo().action_close_driver_delivery('Reintento')
         self.assertEqual(first.fecha_cierre_chofer, closure_date)
         # Segunda entrega cierra el viaje, aunque ambos clientes sigan pendientes.
-        second.sudo().with_user(self.driver).sudo().action_close_driver_delivery()
+        second.sudo().with_user(self.driver).sudo().action_close_driver_delivery('', 'Carlos León')
         self.assertEqual(self.trip.state, 'entregado')
         self.assertEqual(self.trip.guias_cerradas_chofer, 2)
         self.assertEqual(self.trip.guias_entregadas, 0)
@@ -104,7 +104,7 @@ class TestCierreChofer(TransactionCase):
         self._arrive_media_direct(first)
         with self.assertRaises(UserError):
             first.sudo().with_user(self.other_driver).sudo().action_close_driver_delivery()
-        first.sudo().with_user(self.driver).sudo().action_close_driver_delivery()
+        first.sudo().with_user(self.driver).sudo().action_close_driver_delivery('', 'Ana Rivera')
         with self.assertRaises(UserError):
             self.env['transcash.evidencia'].with_user(self.driver).register_evidence(
                 first, 'llegada', 'Intento posterior', 'YQ==', 'foto2.jpg', 'image/jpeg')

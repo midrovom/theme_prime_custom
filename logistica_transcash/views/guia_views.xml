@@ -9,7 +9,7 @@
         <field name="tipo_documento"/><field name="numero_documento"/>
         <field name="state" widget="badge"/>
         <field name="origen"/>
-        <field name="destino"/>
+        <field name="destino"/><field name="destino_codigo"/><field name="destino_ciudad"/><field name="destino_provincia"/>
         <field name="chofer_usuario_id"/>
         <field name="proveedor_id"/>
         <field name="destinatario_id"/>
@@ -61,14 +61,6 @@
                   invisible="state != 'entregada' or aprobacion_global == 'aprobada'" groups="logistica_transcash.group_logistica_manager"/>
           <button name="action_prepare_credit_request" type="object" string="Preparar propuesta NC"
                   invisible="aprobacion_global != 'aprobada' or roturas_aprobadas == 0" groups="logistica_transcash.group_transcash_ventas_admin"/>
-          <button name="action_configure_liquidation" type="object" string="Configurar tarifa y cuenta"
-                  invisible="state not in ('entregada','lista_pago') or embarque_id" groups="logistica_transcash.group_transcash_contabilidad"/>
-          <button name="action_ready_payment" type="object" string="Autorizar pago" class="btn-primary"
-                  invisible="state != 'entregada' or embarque_id" groups="logistica_transcash.group_transcash_contabilidad"/>
-          <button name="action_create_vendor_bill" type="object" string="Crear factura proveedor" class="btn-primary"
-                  invisible="state != 'lista_pago' or embarque_id" groups="logistica_transcash.group_transcash_contabilidad"/>
-          <button name="action_verify_payment" type="object" string="Verificar pago"
-                  invisible="state != 'facturada' or embarque_id" groups="logistica_transcash.group_transcash_contabilidad"/>
           <field name="state" widget="statusbar" statusbar_visible="registrada,embarque,embarcada,ruta,destino,revision,entregada" readonly="1"/>
         </header>
         <sheet>
@@ -127,7 +119,8 @@
             <page string="Productos de guía">
               <field name="linea_ids" readonly="1">
                 <list create="0" delete="0"><field name="external_line_id"/>
-                  <field name="codigo"/><field name="producto"/><field name="cantidad"/>
+                  <field name="codigo"/><field name="producto"/>
+                  <field name="marca_nombre"/><field name="proveedor_producto_nombre"/><field name="cantidad"/>
                   <field name="unidad"/><field name="peso_kg"/><field name="pallets_info"/><field name="cajas_info"/>
                   <field name="cantidad_rota_pendiente"/>
                   <field name="cantidad_rota_aprobada"/><field name="vigente_erp"/>
@@ -157,6 +150,7 @@
               <group>
                 <field name="fecha_entrega"/>
                 <field name="recibido_por"/>
+                <field name="resultado_recepcion" readonly="1"/>
                 <field name="observacion_recepcion"/>
                 <field name="confirmado_por_id"/>
               </group>
@@ -174,14 +168,6 @@
                   <field name="referencia_erp"/><field name="numero_erp"/><field name="monto_estimado"/>
                 </list>
               </field>
-            </page>
-            <page string="Liquidación antigua (guía independiente)" groups="logistica_transcash.group_logistica_manager" invisible="embarque_id">
-              <group>
-                <field name="moneda_id"/>
-                <field name="valor_acordado"/>
-                <field name="cuenta_gasto_id"/>
-                <field name="factura_id"/>
-              </group>
             </page>
             <page string="Historial">
               <field name="evento_ids" readonly="1">

@@ -1,4 +1,4 @@
-"""Embarque: unidad de salida física y factura de flete; las guías retienen sus daños."""
+"""Embarque: operación y negociación; factura y pago en documentos independientes."""
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError, AccessError
 
@@ -33,15 +33,46 @@ class Embarque(models.Model):
     moneda_id = fields.Many2one('res.currency', related='company_id.currency_id', readonly=True)
     valor_acordado = fields.Monetary('Costo total del embarque', currency_field='moneda_id',
             groups='logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager')
-    cuenta_gasto_id = fields.Many2one('account.account', 'Cuenta de gasto',
-            domain="[('account_type','in',['expense','expense_direct_cost'])]",
-            groups='logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager')
-    factura_id = fields.Many2one('account.move', 'Factura de transporte', readonly=True, copy=False,
-            groups='logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager')
-    pago_estado = fields.Selection([('pendiente','No liquidado'), ('autorizado','Autorizado'),
-        ('facturado','Factura registrada'), ('pagado','Pagado')], default='pendiente',
-        required=True, readonly=True, tracking=True,
-        groups='logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager')
+    legado_liquidacion_bloqueada = fields.Boolean('Liquidación histórica a conciliar', default=False,
+        readonly=True, help='Impide doble cobro de viajes cuyo pago inició en versiones vinculadas a Contabilidad.')
+    estado_aprobacion = fields.Selection([
+        ('pendiente','Pendiente de aprobación logística'),
+        ('aprobado','Aprobado por Logística'),
+    ], default='pendiente', required=True, readonly=True, tracking=True)
+    aprobacion_excepcional = fields.Boolean('Aprobación con incidencias abiertas', readonly=True, copy=False, default=False)
+    motivo_excepcion_pago = fields.Text('Motivo de la autorización excepcional', readonly=True, copy=False)
+    excepcion_por_id = fields.Many2one('res.users', 'Autorizado excepcionalmente por', readonly=True, copy=False)
+    excepcion_fecha = fields.Datetime('Autorización excepcional', readonly=True, copy=False)
+    incidencias_pendientes = fields.Integer('Guías con novedades abiertas', compute='_compute_incidencias_pendientes')
+    aprobado_por_id = fields.Many2one('res.users', 'Aprobado por', readonly=True, copy=False)
+    aprobado_fecha = fields.Datetime('Fecha de aprobación', readonly=True, copy=False)
+    notas_revision_logistica = fields.Text('Revisión del jefe de Logística', readonly=True)
+    liquidacion_linea_id = fields.One2many('transcash.pago.liquidacion.linea', 'embarque_id', string='Liquidación documental', readonly=True)
+    estado_financiero = fields.Selection([
+        ('pendiente','Pendiente de aprobación'),
+        ('aprobado','Aprobado / pendiente de liquidación'),
+        ('borrador','En preparación por proveedor'),
+        ('revision','Factura en revisión'),
+        ('observada','Factura observada'),
+        ('proceso_pago','En proceso de pago'),
+        ('parcial','Pago parcial'),
+        ('pagada','Pagado'),
+    ], compute='_compute_estado_financiero', string='Estado de pago')
+
+    @api.depends('estado_aprobacion','liquidacion_linea_id.liquidacion_id.estado')
+    def _compute_estado_financiero(self):
+        for rec in self:
+            if rec.liquidacion_linea_id:
+                rec.estado_financiero = rec.liquidacion_linea_id[0].liquidacion_id.estado
+            else:
+                rec.estado_financiero = 'aprobado' if rec.estado_aprobacion == 'aprobado' else 'pendiente'
+
+    @api.depends('guia_ids.incidencia_estado', 'guia_ids.resultado_recepcion', 'guia_ids.rotura_ids.estado')
+    def _compute_incidencias_pendientes(self):
+        for rec in self:
+            rec.incidencias_pendientes = len(rec.guia_ids.filtered(
+                lambda g: g.incidencia_estado == 'abierta' or
+                g.resultado_recepcion == 'con_novedades' or g.roturas_pendientes))
 
     _sql_constraints = [
         ('embarque_num_compania_uniq', 'unique(name,company_id)', 'Número de embarque ya registrado.'),
@@ -112,14 +143,15 @@ class Embarque(models.Model):
         if not self.env.su:
             protected = {'name','company_id','state','chofer_usuario_id','proveedor_id',
                          'placa','origen','fecha_embarcado','fecha_salida','fecha_entrega',
-                         'factura_id','pago_estado'}
+                         'estado_aprobacion','aprobado_por_id','aprobado_fecha','notas_revision_logistica',
+                         'aprobacion_excepcional','motivo_excepcion_pago','excepcion_por_id','excepcion_fecha'}
             if set(vals) & protected:
                 raise AccessError(_('Para cambiar el embarque use las acciones autorizadas.'))
-            if set(vals) & {'valor_acordado','cuenta_gasto_id'}:
-                if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
-                    raise AccessError(_('Solo Contabilidad configura el costo de los embarques.'))
-                if any(rec.pago_estado != 'pendiente' for rec in self):
-                    raise UserError(_('El costo no se modifica luego de aprobar la liquidación.'))
+            if set(vals) & {'valor_acordado'}:
+                if not self.env.user.has_group('logistica_transcash.group_logistica_manager'):
+                    raise AccessError(_('Solo el jefe de Logística negocia la tarifa del viaje.'))
+                if any(rec.estado_aprobacion != 'pendiente' or rec.liquidacion_linea_id for rec in self):
+                    raise UserError(_('No se puede cambiar el flete aprobado o ya liquidado.'))
             if set(vals) & {'observacion_general'}:
                 if not self.env.user.has_group('logistica_transcash.group_logistica_manager'):
                     raise AccessError(_('Use el portal del chofer para registrar observaciones.'))
@@ -315,15 +347,17 @@ class Embarque(models.Model):
                     for g in rec.guia_ids):
                 rec.write({'state':'entregado','fecha_entrega':fields.Datetime.now()})
 
-    def _check_accounting(self):
-        if not self.env.user.has_group('logistica_transcash.group_transcash_contabilidad'):
-            raise AccessError(_('Solo Contabilidad puede liquidar embarques.'))
+    def _check_logistics_finance(self):
+        if not self.env.user.has_group('logistica_transcash.group_logistica_manager'):
+            raise AccessError(_('Solo el jefe de Logística aprueba los fletes.'))
         for rec in self:
             if rec.company_id not in self.env.user.company_ids:
-                raise AccessError(_('No tiene acceso contable a la compañía del embarque.'))
+                raise AccessError(_('No está autorizado para esta compañía.'))
 
     def _ensure_finance_ready(self):
         for rec in self:
+            if rec.legado_liquidacion_bloqueada:
+                raise UserError(_('Este viaje tenía una liquidación en la versión antigua. Concíliela antes de volver a liquidar.'))
             if rec.state != 'entregado' or not rec.guia_ids:
                 raise UserError(_('Todas las guías del embarque deben estar entregadas.'))
             for guia in rec.guia_ids:
@@ -336,74 +370,103 @@ class Embarque(models.Model):
                     if not notes:
                         raise UserError(_('Falta confirmar la nota de crédito de la guía %s.') % guia.name)
 
+    def action_open_exception_wizard(self):
+        self.ensure_one()
+        self._check_logistics_finance()
+        if not self.env.user.has_group('logistica_transcash.group_transcash_aprobacion_excepcional'):
+            raise AccessError(_('No tiene el permiso adicional de autorización excepcional.'))
+        if self.estado_aprobacion != 'pendiente':
+            raise UserError(_('Este embarque ya tiene una decisión de aprobación.'))
+        return {'type': 'ir.actions.act_window', 'res_model': 'transcash.aprobacion.excepcion.wizard',
+                'view_mode': 'form', 'target': 'new', 'name': _('Autorizar flete con incidencias'),
+                'context': {'default_embarque_id': self.id}}
+
+    def _approve_exception(self, reason):
+        self.ensure_one()
+        self._check_logistics_finance()
+        if not self.env.user.has_group('logistica_transcash.group_transcash_aprobacion_excepcional'):
+            raise AccessError(_('No tiene el permiso especial de aprobación con incidencias.'))
+        reason = (reason or '').strip()
+        if len(reason) < 15 or len(reason) > 2000:
+            raise ValidationError(_('Describa claramente el motivo de la excepción (15 a 2000 caracteres).'))
+        # El cierre del chofer es el ÚNICO requisito operativo exceptuado:
+        # no exige aceptación del cliente, resolución de NC o roturas.
+        self.env.cr.execute('SELECT id FROM transcash_embarque WHERE id = %s FOR UPDATE', (self.id,))
+        self.invalidate_recordset(['state','estado_aprobacion','guia_ids'])
+        self.env.cr.execute('SELECT id FROM transcash_guia WHERE embarque_id = %s ORDER BY id FOR UPDATE', (self.id,))
+        self.guia_ids.invalidate_recordset(['fecha_cierre_chofer','state'])
+        if self.estado_aprobacion != 'pendiente' or self.liquidacion_linea_id:
+            raise UserError(_('El embarque ya fue aprobado o liquidado.'))
+        if self.legado_liquidacion_bloqueada:
+            raise UserError(_('Existe una liquidación histórica por conciliar.'))
+        if self.state != 'entregado' or not self.guia_ids or any(
+                not g.fecha_cierre_chofer and g.state not in ('entregada','lista_pago','facturada','pagada')
+                for g in self.guia_ids):
+            raise UserError(_('Todas las guías deben tener su entrega cerrada por el chofer.'))
+        if not self.proveedor_id or self.valor_acordado <= 0:
+            raise UserError(_('Defina empresa transportista y tarifa positiva antes de aprobar.'))
+        self.sudo().write({'estado_aprobacion':'aprobado','aprobado_por_id':self.env.uid,
+            'aprobado_fecha':fields.Datetime.now(), 'aprobacion_excepcional':True,
+            'motivo_excepcion_pago':reason,'excepcion_por_id':self.env.uid,
+            'excepcion_fecha':fields.Datetime.now(), 'notas_revision_logistica':reason})
+        self.message_post(body=_('APROBACIÓN EXCEPCIONAL con incidencias pendientes. Responsable: %s. Motivo: %s') %
+                          (self.env.user.name, reason))
+        for g in self.guia_ids:
+            g._track_event('Flete autorizado con incidencias pendientes', reason[:600], publico_cliente=False)
+        return True
+
     def action_configure_liquidation(self):
         self.ensure_one()
-        self._check_accounting()
-        if self.pago_estado != 'pendiente':
-            raise UserError(_('El embarque ya está en proceso de liquidación.'))
-        return {'type':'ir.actions.act_window', 'name':_('Costo del embarque'),
-                'res_model':'transcash.embarque.liquidacion.wizard', 'view_mode':'form',
-                'target':'new', 'context':{'default_embarque_id':self.id,
-                    'default_valor_acordado':self.valor_acordado,
-                    'default_cuenta_gasto_id':self.cuenta_gasto_id.id or False}}
+        self._check_logistics_finance()
+        if self.estado_aprobacion != 'pendiente' or self.liquidacion_linea_id:
+            raise UserError(_('La tarifa de un embarque aprobado o liquidado no se puede modificar.'))
+        return {'type':'ir.actions.act_window', 'res_model':'transcash.tarifa.embarque.wizard',
+                'view_mode':'form', 'target':'new', 'name':_('Negociar flete del viaje'),
+                'context': {'default_embarque_id':self.id,'default_valor_acordado':self.valor_acordado}}
 
-    def action_ready_payment(self):
-        self._check_accounting()
+    def action_approve_transport(self):
+        self._check_logistics_finance()
         self._ensure_finance_ready()
         for rec in self:
-            if rec.pago_estado != 'pendiente' or not rec.proveedor_id or not rec.cuenta_gasto_id or rec.valor_acordado <= 0:
-                raise UserError(_('Configure proveedor, costo positivo y cuenta antes de autorizar.'))
-            rec.sudo().write({'pago_estado':'autorizado'})
-        return True
-
-    def action_create_vendor_bill(self):
-        self.ensure_one()
-        self._check_accounting()
-        self._ensure_finance_ready()
-        if self.pago_estado != 'autorizado' or self.factura_id:
-            raise UserError(_('El embarque no está listo para crear una factura.'))
-        if self.cuenta_gasto_id.account_type not in ('expense','expense_direct_cost'):
-            raise UserError(_('Configure una cuenta contable de gasto.'))
-        bill = self.env['account.move'].with_company(self.company_id).create({
-            'move_type':'in_invoice', 'partner_id':self.proveedor_id.id,
-            'company_id':self.company_id.id, 'invoice_origin': self.name,
-            'ref': 'TRANSPORTE/%s' % self.name,
-            'invoice_line_ids': [(0,0,{'name':'Flete embarque %s (%s guías)' %
-                (self.name,len(self.guia_ids)), 'quantity':1.0,
-                'price_unit':self.valor_acordado,'account_id':self.cuenta_gasto_id.id})],
-        })
-        self.sudo().write({'factura_id':bill.id,'pago_estado':'facturado'})
-        return {'type':'ir.actions.act_window','res_model':'account.move',
-                'res_id':bill.id,'view_mode':'form','target':'current'}
-
-    def action_verify_payment(self):
-        self._check_accounting()
-        for rec in self:
-            if rec.pago_estado != 'facturado' or not rec.factura_id or rec.factura_id.state != 'posted' or rec.factura_id.payment_state != 'paid':
-                raise UserError(_('Primero contabilice y pague completamente la factura del embarque.'))
-            rec.sudo().write({'pago_estado':'pagado'})
+            if rec.estado_aprobacion != 'pendiente' or rec.liquidacion_linea_id:
+                raise UserError(_('Este viaje ya fue aprobado o incluido en una liquidación.'))
+            if rec.legado_liquidacion_bloqueada:
+                raise UserError(_('El embarque presenta liquidación histórica; no se puede duplicar.'))
+            if rec.valor_acordado <= 0 or not rec.proveedor_id:
+                raise UserError(_('Defina proveedor y tarifa negociada positiva antes de aprobar.'))
+            rec.sudo().write({'estado_aprobacion':'aprobado', 'aprobado_por_id':self.env.uid,
+                              'aprobado_fecha':fields.Datetime.now()})
+            rec.message_post(body=_('Flete autorizado por Logística: %s %s') %
+                (rec.valor_acordado, rec.moneda_id.name))
         return True
 
 
-class EmbarqueLiquidacionWizard(models.TransientModel):
-    _name = 'transcash.embarque.liquidacion.wizard'
-    _description = 'Asignar costo y cuenta al embarque'
+class TarifaEmbarqueWizard(models.TransientModel):
+    _name = 'transcash.tarifa.embarque.wizard'
+    _description = 'Valor negociado por jefe de Logística'
 
     embarque_id = fields.Many2one('transcash.embarque', required=True, readonly=True)
-    cuenta_gasto_id = fields.Many2one('account.account', required=True,
-            domain="[('account_type','in',['expense','expense_direct_cost'])]")
-    valor_acordado = fields.Float('Costo del viaje', required=True, digits=(16,2))
+    valor_acordado = fields.Monetary('Tarifa negociada del embarque', required=True, currency_field='moneda_id')
+    moneda_id = fields.Many2one('res.currency', related='embarque_id.moneda_id')
 
     def action_confirm(self):
         self.ensure_one()
         rec = self.embarque_id
-        rec._check_accounting()
-        if rec.pago_estado != 'pendiente' or self.valor_acordado <= 0:
-            raise UserError(_('Costo positivo obligatorio y sin liquidación previa.'))
-        if self.cuenta_gasto_id.account_type not in ('expense','expense_direct_cost'):
-            raise UserError(_('Seleccione una cuenta de gasto.'))
-        if ('company_ids' in self.cuenta_gasto_id._fields and
-                rec.company_id not in self.cuenta_gasto_id.company_ids):
-            raise UserError(_('La cuenta no pertenece a la compañía del embarque.'))
-        rec.sudo().write({'valor_acordado':self.valor_acordado,'cuenta_gasto_id':self.cuenta_gasto_id.id})
+        rec._check_logistics_finance()
+        if rec.estado_aprobacion != 'pendiente' or rec.liquidacion_linea_id or self.valor_acordado <= 0:
+            raise UserError(_('Solo se puede definir una tarifa positiva antes de la aprobación.'))
+        rec.write({'valor_acordado':self.valor_acordado})
         return {'type':'ir.actions.act_window_close'}
+
+
+class AprobacionExcepcionWizard(models.TransientModel):
+    _name = 'transcash.aprobacion.excepcion.wizard'
+    _description = 'Justificación de pago excepcional por jefe de Logística'
+
+    embarque_id = fields.Many2one('transcash.embarque', required=True, readonly=True)
+    motivo = fields.Text('Motivo de la aprobación excepcional', required=True)
+
+    def action_confirm(self):
+        self.ensure_one()
+        self.embarque_id._approve_exception(self.motivo)
+        return {'type': 'ir.actions.act_window_close'}

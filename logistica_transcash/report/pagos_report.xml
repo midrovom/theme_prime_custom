@@ -1,0 +1,31 @@
+<odoo>
+  <template id="report_pago_liquidacion_documento">
+    <t t-call="web.html_container"><t t-foreach="docs" t-as="doc">
+      <t t-call="web.external_layout"><div class="page">
+        <h2>Liquidación de transporte <span t-esc="doc.name"/></h2>
+        <p><strong>Proveedor:</strong> <span t-esc="doc.proveedor_id.name"/>
+           <strong>Estado:</strong> <span t-esc="dict(doc._fields['estado'].selection).get(doc.estado)"/></p>
+        <table class="table table-sm table-bordered"><thead><tr><th>Embarque</th><th>Chofer</th><th>Placa</th><th class="text-end">Flete aprobado</th></tr></thead>
+          <tbody><t t-foreach="doc.linea_ids" t-as="line"><tr>
+            <td t-esc="line.embarque_id.name"/><td t-esc="line.embarque_id.chofer_usuario_id.name"/>
+            <td t-esc="line.embarque_id.placa or ''"/><td class="text-end" t-esc="line.monto"/>
+          </tr></t></tbody></table>
+        <h4>Total negociado: <span t-esc="doc.moneda_id.name"/> <span t-esc="doc.total_acordado"/></h4>
+        <p><strong>Factura externa:</strong> <span t-esc="doc.factura_numero or 'Pendiente'"/>
+          <strong>Subtotal factura:</strong> <span t-esc="doc.factura_subtotal"/>
+          <strong>Impuestos:</strong> <span t-esc="doc.factura_impuestos"/></p>
+        <p><strong>Total pagado:</strong> <span t-esc="doc.total_pagado"/>
+          <strong>Saldo de fletes:</strong> <span t-esc="doc.saldo_pendiente"/></p>
+        <p>Documento de control logístico y pago; no representa una factura ni un asiento contable.</p>
+      </div></t></t></t>
+  </template>
+  <record id="action_report_pago_liquidacion" model="ir.actions.report">
+    <field name="name">Liquidación de viajes</field>
+    <field name="model">transcash.pago.liquidacion</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">logistica_transcash.report_pago_liquidacion_documento</field>
+    <field name="report_file">logistica_transcash.report_pago_liquidacion_documento</field>
+    <field name="binding_model_id" ref="model_transcash_pago_liquidacion"/>
+    <field name="binding_type">report</field>
+  </record>
+</odoo>

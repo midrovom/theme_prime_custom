@@ -8,8 +8,9 @@
           <div class="tc-avatar">T</div></header>
         <main class="tc-main tc-home">
           <div class="tc-eyebrow">🚚 OPERACIÓN DE TRANSPORTE</div>
+          <a t-if="request.env.user.has_group('logistica_transcash.group_transcash_transportista')" href="/transcash/proveedor" class="tc-button tc-button-primary">💼 Ver valores y liquidaciones del proveedor →</a>
           <h1 class="tc-heading">Mis embarques<span class="tc-title-dot">.</span></h1>
-          <p class="tc-muted">Agrupa varias guías en un viaje. La recepción y las roturas se documentan por guía.</p>
+          <p class="tc-muted">Agrupa varias guías en un viaje. La recepción y las roturas se documentan por guía. La negociación y el pago se controlan de forma separada por el jefe de Logística y Contabilidad.</p>
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>Revisa tu selección</strong><span t-esc="error"/></div>
           <div t-if="es_chofer and embarque_activo" class="tc-next-card" role="status">
             <div class="tc-next-icon">🚚</div>

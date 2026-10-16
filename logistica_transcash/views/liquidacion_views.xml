@@ -1,19 +1,16 @@
 <odoo>
   <record id="view_transcash_liquidacion_wizard_form" model="ir.ui.view">
-    <field name="name">transcash.liquidacion.wizard.form</field>
+    <field name="name">transcash.liquidacion.wizard.legacy.disabled</field>
     <field name="model">transcash.liquidacion.wizard</field>
-    <field name="arch" type="xml">
-      <form string="Configurar liquidación">
-        <group>
-          <field name="guia_id" readonly="1"/>
-          <field name="cuenta_gasto_id"/>
-          <field name="valor_acordado"/>
-        </group>
-        <footer>
-          <button name="action_confirm" type="object" string="Guardar condiciones" class="btn-primary"/>
-          <button special="cancel" string="Cancelar"/>
-        </footer>
-      </form>
-    </field>
+    <field name="arch" type="xml"><form string="Asistente legado deshabilitado"><group>
+      <field name="guia_id"/><div class="alert alert-info">La liquidación se realiza en Liquidaciones y pagos por embarque.</div>
+    </group><footer><button special="cancel" string="Cerrar"/></footer></form></field>
+  </record>
+  <record id="view_transcash_embarque_wizard_form" model="ir.ui.view">
+    <field name="name">transcash.embarque.liquidacion.wizard.legacy.disabled</field>
+    <field name="model">transcash.embarque.liquidacion.wizard</field>
+    <field name="arch" type="xml"><form string="Asistente antiguo deshabilitado"><group>
+      <field name="embarque_id"/><div class="alert alert-info">Utilice Negociar valor del viaje con el rol jefe de Logística.</div>
+    </group><footer><button special="cancel" string="Cerrar"/></footer></form></field>
   </record>
 </odoo>
