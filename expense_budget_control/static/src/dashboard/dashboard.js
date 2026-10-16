@@ -192,8 +192,17 @@ export class ExpenseBudgetDashboard extends Component {
         const accounts = this.pieAccounts;
         const total = accounts.reduce((sum, account) => sum + account.amount, 0);
         if (!total) { return []; }
+        // Color fijo por identidad de cuenta: al filtrar o pulsar una porción,
+        // no se vuelve al primer color de la paleta para la única cuenta visible.
+        // El servidor entrega las cuentas ordenadas por nombre e ID; así el
+        // color también se conserva al cambiar de mes o de rubro.
+        const accountColors = new Map(
+            this.state.data.accounts.map((account, index) => [
+                String(account.id), COLORS[index % COLORS.length],
+            ])
+        );
         let angle = -Math.PI / 2;
-        return accounts.map((account, index) => {
+        return accounts.map((account) => {
             const share = account.amount / total;
             const start = angle;
             const end = angle + share * Math.PI * 2;
@@ -207,7 +216,7 @@ export class ExpenseBudgetDashboard extends Component {
                 name: account.name,
                 amount: account.amount,
                 percentage: Math.round(share * 1000) / 10,
-                color: COLORS[index % COLORS.length],
+                color: accountColors.get(String(account.id)) || COLORS[0],
                 path: `M 50 50 L ${sx} ${sy} A 45 45 0 ${largeArc} 1 ${ex} ${ey} Z`,
                 full: accounts.length === 1,
                 active: this.state.accountId === String(account.id),
