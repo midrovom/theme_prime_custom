@@ -20,7 +20,10 @@
     .o_ebd_kpi span { color: #698093; font-size: 12px; }
     .o_ebd_kpi strong { font-size: clamp(16px, 1.8vw, 23px); overflow-wrap: anywhere; }
     .o_ebd_kpi small { color: #728596; }
-    .o_ebd_charts { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 16px; }
+    .o_ebd_charts { display: block; }
+    .o_ebd_chart_heading { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .o_ebd_chart_mode { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
+    .o_ebd_chart_mode select { min-width: 115px; }
     .o_ebd_panel { padding: 18px; min-width: 0; }
     .o_ebd_panel_heading { margin-bottom: 20px; }
     .o_ebd_bar_chart { display: flex; align-items: stretch; gap: clamp(2px, 0.7vw, 10px); min-height: 240px; border-bottom: 1px solid #e0e9ef; }
@@ -32,6 +35,19 @@
     .o_ebd_bar_item.is-dimmed .o_ebd_bar { opacity: .45; }
     .o_ebd_bar_item.is-dimmed:hover .o_ebd_bar { opacity: 1; }
     .o_ebd_bar_month { font-size: 11px; text-align: center; padding-bottom: 8px; }
+    .o_ebd_account_chart { display: flex; flex-direction: column; gap: 12px; padding: 6px 0 0; }
+    .o_ebd_account_chart_head, .o_ebd_account_bar_row { display: grid; grid-template-columns: minmax(115px, 180px) minmax(0, 1fr) minmax(105px, 160px); gap: 12px; align-items: center; }
+    .o_ebd_account_chart_head { color: #66798a; font-size: 12px; font-weight: 600; }
+    .o_ebd_account_chart_head span:last-child { grid-column: 2 / 4; }
+    button.o_ebd_account_bar_row { width: 100%; padding: 4px; border: 0; border-radius: 5px; color: inherit; background: transparent; text-align: left; cursor: pointer; }
+    button.o_ebd_account_bar_row:hover { background: #f0f6f9; }
+    button.o_ebd_account_bar_row:focus-visible { outline: 2px solid #167a92; }
+    .o_ebd_account_bar_name { font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+    .o_ebd_account_bar_track { position: relative; height: 24px; border-radius: 4px; background: #e9f0f4; overflow: hidden; }
+    .o_ebd_account_bar_fill { display: block; height: 100%; background: #3894af; border-radius: 4px; transition: width .2s ease; }
+    .o_ebd_account_bar_fill.is-negative { background: #d38e6e; }
+    .o_ebd_account_bar_amount { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+    .o_ebd_axis_label { margin-top: 8px; text-align: center; font-size: 12px; color: #66798a; }
     .o_ebd_pie_layout { display: grid; grid-template-columns: minmax(130px, 1fr) minmax(145px, 1.1fr); align-items: center; gap: 16px; }
     .o_ebd_pie { width: 100%; max-width: 280px; overflow: visible; }
     .o_ebd_pie path, .o_ebd_pie circle { cursor: pointer; stroke: white; stroke-width: .5; transition: opacity .15s; }
@@ -46,12 +62,15 @@
     .o_ebd_empty { color: #788c9c; padding: 14px 0; font-size: 13px; }
     .o_ebd_loading { padding: 30px; text-align: center; color: #728596; }
     @media (max-width: 1200px) { .o_ebd_filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 950px) { .o_ebd_charts { grid-template-columns: minmax(0, 1fr); } }
+
     @media (max-width: 600px) {
         .o_ebd_filters, .o_ebd_kpis { grid-template-columns: minmax(0, 1fr); }
         .o_ebd_pie_layout { grid-template-columns: minmax(0, 1fr); }
         .o_ebd_pie { max-width: 220px; margin: 0 auto; }
         .o_ebd_panel { padding: 12px; }
+        .o_ebd_account_chart_head { display: none; }
+        .o_ebd_account_bar_row { grid-template-columns: minmax(85px, 1.2fr) minmax(65px, 2fr); gap: 7px; }
+        .o_ebd_account_bar_amount { grid-column: 2; font-size: 11px; }
         .o_ebd_bar_chart { gap: 2px; }
         .o_ebd_bar_month { font-size: 10px; }
     }

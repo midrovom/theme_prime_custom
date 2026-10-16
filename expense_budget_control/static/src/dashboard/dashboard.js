@@ -23,6 +23,7 @@ export class ExpenseBudgetDashboard extends Component {
             categoryId: "",
             accountId: "",
             selectedMonth: -1,
+            chartType: "bar",
         });
         onWillStart(() => this.load());
     }
@@ -69,6 +70,10 @@ export class ExpenseBudgetDashboard extends Component {
         this.state.selectedMonth = Number.isInteger(month) && month >= 0 && month < 12 ? month : -1;
     }
 
+    onChartTypeChange(event) {
+        this.state.chartType = event.target.value === "pie" ? "pie" : "bar";
+    }
+
     toggleAccount(accountId) {
         const next = String(accountId);
         this.state.accountId = this.state.accountId === next ? "" : next;
@@ -112,6 +117,47 @@ export class ExpenseBudgetDashboard extends Component {
         }));
     }
 
+    get accountBars() {
+        // Con un mes elegido la barra representa una cuenta, nunca los otros 11 meses.
+        if (this.state.selectedMonth < 0) { return []; }
+        const monthIndex = this.state.selectedMonth;
+        const accounts = this.selectedAccounts.map((account) => ({
+            id: account.id,
+            name: account.name,
+            amount: Number(account.months[monthIndex] || 0),
+        })).sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
+        const maximum = Math.max(1, ...accounts.map((account) => Math.abs(account.amount)));
+        return accounts.map((account) => ({
+            ...account,
+            width: `${Math.abs(account.amount) / maximum * 100}%`,
+            isNegative: account.amount < 0,
+        }));
+    }
+
+    get accountDetail() {
+        // Fuente única de valores para gráfico mensual y tabla: mes/rubro/cuenta.
+        const monthIndex = this.state.selectedMonth;
+        return this.selectedAccounts.map((account) => ({
+            id: account.id,
+            name: account.name,
+            amount: monthIndex < 0
+                ? account.months.reduce((sum, value) => sum + value, 0)
+                : account.months[monthIndex],
+        })).sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
+    }
+
+    get chartTitle() {
+        return this.state.selectedMonth < 0
+            ? "Gastos por mes"
+            : `Gastos por cuenta controlada · ${this.periodName}`;
+    }
+
+    get chartHint() {
+        return this.state.selectedMonth < 0
+            ? "Selecciona una barra para consultar las cuentas de ese mes."
+            : `Solo consumos de ${this.periodName.toLowerCase()} · ${this.state.year}`;
+    }
+
     get totalSpent() {
         const monthly = this.monthlyAmounts;
         return this.state.selectedMonth < 0
@@ -134,7 +180,7 @@ export class ExpenseBudgetDashboard extends Component {
         // En "Todos los meses" muestran el acumulado anual. Pulsar una porción
         // selecciona esa cuenta sin cambiar los valores de las otras porciones.
         const selectedMonth = this.state.selectedMonth;
-        return this.categoryAccounts.map((account) => ({
+        return this.selectedAccounts.map((account) => ({
             ...account,
             amount: selectedMonth < 0
                 ? account.months.reduce((sum, value) => sum + value, 0)
@@ -167,16 +213,6 @@ export class ExpenseBudgetDashboard extends Component {
                 active: this.state.accountId === String(account.id),
             };
         });
-    }
-
-    get monthlyDetail() {
-        const monthIndex = this.state.selectedMonth;
-        if (monthIndex < 0) { return []; }
-        return this.selectedAccounts.map((account) => ({
-            id: account.id,
-            name: account.name,
-            amount: account.months[monthIndex],
-        })).filter((item) => item.amount !== 0).sort((a, b) => b.amount - a.amount);
     }
 
     get periodName() {

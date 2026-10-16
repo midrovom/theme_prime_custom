@@ -65,84 +65,118 @@
 
                 <section class="o_ebd_charts">
                     <div class="o_ebd_panel">
-                        <div class="o_ebd_panel_heading">
-                            <div><h2>Gastos por mes</h2><p>Comparación anual · pulsa una barra para filtrar el mes</p></div>
+                        <div class="o_ebd_panel_heading o_ebd_chart_heading">
+                            <div>
+                                <h2 t-esc="this.chartTitle"/>
+                                <p t-esc="this.chartHint"/>
+                            </div>
+                            <label class="o_ebd_chart_mode">Ver como
+                                <select class="form-select" t-att-value="state.chartType" t-on-change="onChartTypeChange">
+                                    <option value="bar">Barras</option>
+                                    <option value="pie">Pastel</option>
+                                </select>
+                            </label>
                         </div>
-                        <div class="o_ebd_bar_chart" role="group" aria-label="Consumo por mes">
-                            <t t-foreach="this.bars" t-as="bar" t-key="bar.index">
-                                <button type="button"
-                                        t-att-class="bar.active ? 'o_ebd_bar_item is-selected' : (bar.muted ? 'o_ebd_bar_item is-dimmed' : 'o_ebd_bar_item')"
-                                        t-att-title="bar.label + ': ' + this.formatMoney(bar.amount)"
-                                        t-att-aria-label="bar.label + ': ' + this.formatMoney(bar.amount)"
-                                        t-on-click="() => this.selectMonth(bar.index)">
-                                    <span class="o_ebd_bar_space"><span class="o_ebd_bar" t-att-style="'height:' + bar.height"/></span>
-                                    <span class="o_ebd_bar_month" t-esc="bar.short"/>
-                                </button>
-                            </t>
-                        </div>
-                        <p t-if="!this.totalSpent" class="o_ebd_empty">No hay consumo registrado para el período y los filtros elegidos.</p>
-                    </div>
-                    <div class="o_ebd_panel">
-                        <div class="o_ebd_panel_heading">
-                            <div><h2>Distribución por cuenta</h2><p>Período: <t t-esc="this.periodName"/> · selecciona una cuenta para analizarla</p></div>
-                        </div>
-                        <t t-if="this.pieSlices.length">
-                            <div class="o_ebd_pie_layout">
-                                <svg viewBox="0 0 100 100" class="o_ebd_pie" role="img" aria-label="Distribución de gastos por cuenta controlada">
-                                    <t t-foreach="this.pieSlices" t-as="slice" t-key="slice.id">
-                                        <t t-if="slice.full">
-                                            <circle cx="50" cy="50" r="45" t-att-fill="slice.color"
-                                                    t-on-click="() => this.toggleAccount(slice.id)">
-                                                <title t-esc="slice.name + ': ' + this.formatMoney(slice.amount)"/>
-                                            </circle>
-                                        </t>
-                                        <t t-else="">
-                                            <path t-att-d="slice.path" t-att-fill="slice.color"
-                                                  t-att-opacity="slice.active || !state.accountId ? 1 : 0.65"
-                                                  t-on-click="() => this.toggleAccount(slice.id)">
-                                                <title t-esc="slice.name + ': ' + this.formatMoney(slice.amount)"/>
-                                            </path>
-                                        </t>
-                                    </t>
-                                </svg>
-                                <div class="o_ebd_pie_legend">
-                                    <t t-foreach="this.pieSlices" t-as="slice" t-key="slice.id">
+                        <t t-if="state.chartType === 'bar'">
+                            <t t-if="state.selectedMonth &lt; 0">
+                                <div class="o_ebd_bar_chart" role="group" aria-label="Gastos por mes del año elegido">
+                                    <t t-foreach="this.bars" t-as="bar" t-key="bar.index">
                                         <button type="button"
-                                                t-att-class="slice.active ? 'o_ebd_legend_item is-selected' : 'o_ebd_legend_item'"
-                                                t-on-click="() => this.toggleAccount(slice.id)">
-                                            <span class="o_ebd_dot" t-att-style="'background-color:' + slice.color"/>
-                                            <span t-esc="slice.name"/>
-                                            <strong t-esc="slice.percentage + '%'"/>
+                                                t-att-class="bar.active ? 'o_ebd_bar_item is-selected' : 'o_ebd_bar_item'"
+                                                t-att-title="bar.label + ': ' + this.formatMoney(bar.amount)"
+                                                t-att-aria-label="bar.label + ': ' + this.formatMoney(bar.amount)"
+                                                t-on-click="() => this.selectMonth(bar.index)">
+                                            <span class="o_ebd_bar_space"><span class="o_ebd_bar" t-att-style="'height:' + bar.height"/></span>
+                                            <span class="o_ebd_bar_month" t-esc="bar.short"/>
                                         </button>
                                     </t>
                                 </div>
-                            </div>
+                            </t>
+                            <t t-else="">
+                                <div t-if="this.accountBars.length" class="o_ebd_account_chart" role="group"
+                                     t-att-aria-label="'Gasto por cuenta controlada en ' + this.periodName">
+                                    <div class="o_ebd_account_chart_head">
+                                        <span>Cuenta controlada</span>
+                                        <span t-esc="'Consumo en ' + this.periodName"/>
+                                    </div>
+                                    <t t-foreach="this.accountBars" t-as="bar" t-key="bar.id">
+                                        <button type="button" class="o_ebd_account_bar_row"
+                                                t-att-title="bar.name + ': ' + this.formatMoney(bar.amount)"
+                                                t-att-aria-label="bar.name + ': ' + this.formatMoney(bar.amount)"
+                                                t-on-click="() => this.toggleAccount(bar.id)">
+                                            <span class="o_ebd_account_bar_name" t-esc="bar.name"/>
+                                            <div class="o_ebd_account_bar_track">
+                                                <span t-att-class="bar.isNegative ? 'o_ebd_account_bar_fill is-negative' : 'o_ebd_account_bar_fill'"
+                                                      t-att-style="'width:' + bar.width"/>
+                                            </div>
+                                            <strong class="o_ebd_account_bar_amount" t-esc="this.formatMoney(bar.amount)"/>
+                                        </button>
+                                    </t>
+                                    <p class="o_ebd_axis_label" t-esc="'Gasto del mes de ' + this.periodName + ' (' + (state.data.currency || 'moneda') + ')'"/>
+                                </div>
+                                <p t-else="" class="o_ebd_empty">No existen cuentas presupuestadas para los filtros elegidos.</p>
+                            </t>
+                            <p t-if="!this.totalSpent" class="o_ebd_empty">No hay consumo registrado para el período y los filtros elegidos.</p>
                         </t>
-                        <p t-else="" class="o_ebd_empty">No hay gastos para distribuir en este período.</p>
+                        <t t-else="">
+                            <t t-if="this.pieSlices.length">
+                                <div class="o_ebd_pie_layout">
+                                    <svg viewBox="0 0 100 100" class="o_ebd_pie" role="img"
+                                         t-att-aria-label="'Distribución del gasto en ' + this.periodName">
+                                        <t t-foreach="this.pieSlices" t-as="slice" t-key="slice.id">
+                                            <t t-if="slice.full">
+                                                <circle cx="50" cy="50" r="45" t-att-fill="slice.color"
+                                                        t-on-click="() => this.toggleAccount(slice.id)">
+                                                    <title t-esc="slice.name + ': ' + this.formatMoney(slice.amount)"/>
+                                                </circle>
+                                            </t>
+                                            <t t-else="">
+                                                <path t-att-d="slice.path" t-att-fill="slice.color"
+                                                      t-on-click="() => this.toggleAccount(slice.id)">
+                                                    <title t-esc="slice.name + ': ' + this.formatMoney(slice.amount)"/>
+                                                </path>
+                                            </t>
+                                        </t>
+                                    </svg>
+                                    <div class="o_ebd_pie_legend">
+                                        <t t-foreach="this.pieSlices" t-as="slice" t-key="slice.id">
+                                            <button type="button"
+                                                    t-att-class="slice.active ? 'o_ebd_legend_item is-selected' : 'o_ebd_legend_item'"
+                                                    t-on-click="() => this.toggleAccount(slice.id)">
+                                                <span class="o_ebd_dot" t-att-style="'background-color:' + slice.color"/>
+                                                <span t-esc="slice.name"/>
+                                                <strong t-esc="slice.percentage + '%'"/>
+                                            </button>
+                                        </t>
+                                    </div>
+                                </div>
+                            </t>
+                            <p t-else="" class="o_ebd_empty">No hay gastos para distribuir en el mes, rubro y cuenta elegidos.</p>
+                        </t>
                     </div>
                 </section>
 
                 <section class="o_ebd_panel o_ebd_detail">
                     <div class="o_ebd_panel_heading">
-                        <div><h2>Detalle: <t t-esc="this.periodName"/></h2>
-                            <p>Consumo por cuenta controlada de los filtros actuales</p></div>
-                    </div>
-                    <t t-if="state.selectedMonth &lt; 0">
-                        <p class="o_ebd_empty">Selecciona una barra para consultar los gastos de ese mes.</p>
-                    </t>
-                    <t t-else="">
-                        <div class="o_ebd_detail_table">
-                            <table class="table table-sm">
-                                <thead><tr><th>Cuenta controlada</th><th class="text-end">Consumido</th></tr></thead>
-                                <tbody>
-                                    <t t-foreach="this.monthlyDetail" t-as="line" t-key="line.id">
-                                        <tr><td t-esc="line.name"/><td class="text-end" t-esc="this.formatMoney(line.amount)"/></tr>
-                                    </t>
-                                    <tr t-if="!this.monthlyDetail.length"><td colspan="2">Sin consumos en este mes.</td></tr>
-                                </tbody>
-                            </table>
+                        <div>
+                            <h2>Detalle por cuenta controlada · <t t-esc="this.periodName"/></h2>
+                            <p>Importes correspondientes únicamente a los filtros seleccionados</p>
                         </div>
-                    </t>
+                    </div>
+                    <div class="o_ebd_detail_table">
+                        <table class="table table-sm">
+                            <thead><tr><th>Cuenta controlada</th><th class="text-end">Consumido</th></tr></thead>
+                            <tbody>
+                                <t t-foreach="this.accountDetail" t-as="line" t-key="line.id">
+                                    <tr><td t-esc="line.name"/><td class="text-end" t-esc="this.formatMoney(line.amount)"/></tr>
+                                </t>
+                                <tr t-if="!this.accountDetail.length"><td colspan="2">Sin cuentas para este filtro.</td></tr>
+                            </tbody>
+                            <tfoot>
+                                <tr><th>TOTAL</th><th class="text-end" t-esc="this.formatMoney(this.totalSpent)"/></tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </section>
             </t>
         </div>
