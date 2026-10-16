@@ -24,7 +24,7 @@
                 <p t-if="!state.entries.length" class="o_ebc_mobile_status">No hay opciones para los permisos actuales.</p>
             </nav>
             <p class="o_ebc_mobile_install_note">
-                Puedes añadir Odoo a la pantalla de inicio desde el menú de tu navegador, usando una conexión HTTPS.
+                
             </p>
         </main>
     </t>

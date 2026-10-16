@@ -15,7 +15,7 @@
     overflow-y: auto;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    touch-action: pan-x pan-y pinch-zoom;
     color: #243749;
 }
 .o_ebc_mobile_home .o_ebc_mobile_header { margin-bottom: 22px; }
@@ -75,12 +75,37 @@
     .o_ebc_mobile_home .o_ebc_mobile_icon { width: 39px; height: 39px; font-size: 19px; }
 }
 
+/* Teléfonos en vertical y horizontal: el área de accesos debe tener una
+   altura real y scroll táctil propios. Algunos temas limitan la acción a la
+   altura de la ventana, por lo que height: 100% solo no siempre funciona. */
+@media screen and (max-width: 991.98px) {
+    .o_ebc_mobile_home {
+        height: calc(100vh - 64px); /* alternativa para navegadores antiguos */
+        height: calc(100dvh - 64px);
+        max-height: 100%;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        touch-action: pan-x pan-y pinch-zoom;
+        padding-bottom: max(32px, env(safe-area-inset-bottom));
+    }
+}
+@media screen and (orientation: portrait) and (max-width: 991.98px) {
+    .o_ebc_mobile_home {
+        /* Mantener visibles el último botón y la nota inferior al deslizar. */
+        padding-bottom: max(40px, env(safe-area-inset-bottom));
+    }
+}
+
 /* Al girar un teléfono a horizontal, Odoo reduce la altura del área de acciones.
    La página de accesos debe conservar su propio scroll vertical para que todas
    las tarjetas y el último enlace sigan siendo accesibles con el dedo. */
 @media screen and (orientation: landscape) and (max-height: 560px) {
     .o_ebc_mobile_home {
-        height: 100%;
+        height: calc(100vh - 64px);
+        height: calc(100dvh - 64px);
         max-height: 100%;
         min-height: 0;
         overflow-y: auto;
