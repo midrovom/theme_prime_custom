@@ -18,3 +18,5 @@ from . import api_wizard
 from . import analitica
 from . import rutas
 from . import destinos
+
+from . import seleccion_rutas

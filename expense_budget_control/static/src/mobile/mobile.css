@@ -1,0 +1,96 @@
+/* Control de Gastos: estilos compatibles con el cargador CSS de Odoo 18.
+   CSS sin anidamiento ni funciones Sass para evitar errores de compilación. */
+.o_ebc_mobile_home {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1160px;
+    padding: clamp(14px, 3vw, 30px);
+    margin: 0 auto;
+    overflow-x: hidden;
+    color: #243749;
+}
+.o_ebc_mobile_home .o_ebc_mobile_header { margin-bottom: 22px; }
+.o_ebc_mobile_home h1 { font-size: clamp(21px, 3vw, 30px); line-height: 1.2; margin-bottom: 8px; }
+.o_ebc_mobile_home p { margin: 0; color: #667c90; }
+.o_ebc_mobile_home .o_ebc_mobile_grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+.o_ebc_mobile_home .o_ebc_mobile_card {
+    background: var(--o-view-background-color, white);
+    border: 1px solid #d9e2ed;
+    color: inherit;
+    border-radius: 13px;
+    text-align: left;
+    min-width: 0;
+    min-height: 98px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 9px rgba(28, 57, 80, 0.05);
+    transition: background-color 120ms ease, border-color 120ms ease;
+}
+.o_ebc_mobile_home .o_ebc_mobile_card:hover,
+.o_ebc_mobile_home .o_ebc_mobile_card:focus-visible {
+    background: #eff6fa;
+    border-color: #7aafcb;
+}
+.o_ebc_mobile_home .o_ebc_mobile_card:focus-visible { outline: 3px solid #127b9a; outline-offset: 2px; }
+.o_ebc_mobile_home .o_ebc_mobile_icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    background: #e4f0f6;
+    color: #266987;
+    border-radius: 11px;
+    font-size: 21px;
+}
+.o_ebc_mobile_home .o_ebc_mobile_label { display: flex; flex: 1; flex-direction: column; min-width: 0; gap: 4px; }
+.o_ebc_mobile_home .o_ebc_mobile_label strong { font-size: 15px; overflow-wrap: anywhere; line-height: 1.25; }
+.o_ebc_mobile_home .o_ebc_mobile_label small { font-size: 12px; color: #667c90; line-height: 1.35; }
+.o_ebc_mobile_home .o_ebc_mobile_chevron { color: #7891a6; font-size: 13px; }
+.o_ebc_mobile_home .o_ebc_mobile_status { padding: 20px 0; }
+.o_ebc_mobile_home .o_ebc_mobile_install_note { font-size: 12px; padding-top: 22px; }
+@media (max-width: 991.98px) {
+    .o_ebc_mobile_home .o_ebc_mobile_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 575.98px) {
+    .o_ebc_mobile_home { padding: 12px; }
+    .o_ebc_mobile_home .o_ebc_mobile_grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .o_ebc_mobile_home .o_ebc_mobile_card { min-height: 78px; padding: 12px; }
+    .o_ebc_mobile_home .o_ebc_mobile_icon { width: 39px; height: 39px; font-size: 19px; }
+}
+/* Desplazamiento horizontal en líneas del presupuesto sin ocultar campos. */
+@media (max-width: 991.98px) {
+    .o_ebc_lines { max-width: 100%; min-width: 0; }
+    .o_ebc_lines .o_list_renderer,
+    .o_ebc_lines .o_list_view { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+    .o_ebc_lines .o_list_table { min-width: 960px; }
+    .o_ebc_budget_form .o_form_sheet { max-width: 100%; }
+    .o_ebc_budget_form .o_form_statusbar { min-width: 0; }
+    .o_ebc_budget_form .o_form_statusbar .o_statusbar_buttons {
+        display: flex;
+        flex-wrap: nowrap;
+        max-width: 100%;
+        overflow-x: auto;
+        gap: 5px;
+        -webkit-overflow-scrolling: touch;
+    }
+    .o_ebc_budget_form .o_form_statusbar .o_statusbar_buttons button { flex: 0 0 auto; min-height: 38px; }
+    .o_ebc_budget_form .o_notebook .nav-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    .o_ebc_budget_form .o_notebook .nav-tabs .nav-link { white-space: nowrap; }
+    .o_ebc_wizard .o_group { max-width: 100%; }
+}
+@media (max-width: 575.98px) {
+    .o_ebc_budget_form .o_form_sheet { padding-inline: 8px; }
+    .o_ebc_budget_form .o_group .o_group { max-width: 100%; }
+}
