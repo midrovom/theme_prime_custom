@@ -397,8 +397,43 @@ class ExpenseBudgetLine(models.Model):
     currency_id = fields.Many2one('res.currency', related='budget_id.currency_id', store=True)
     account_id = fields.Many2one('expense.budget.account', string='Cuenta controlada',
                                  required=True, ondelete='restrict', check_company=True)
-    category_id = fields.Many2one('expense.budget.category', related='account_id.category_id',
-                                  store=True, string='Rubro', index=True)
+    # El rubro se elige primero en la línea, para filtrar las cuentas controladas.
+    # El dato persistente sigue reflejando el rubro real de la cuenta. No hacer
+    # writable el antiguo related: eso cambiaría el rubro de la cuenta completa.
+    category_id = fields.Many2one(
+        'expense.budget.category', string='Rubro',
+        compute='_compute_category_id', inverse='_inverse_category_id',
+        store=True, readonly=False, index=True, check_company=True,
+    )
+
+    @api.depends('account_id', 'account_id.category_id')
+    def _compute_category_id(self):
+        for line in self:
+            line.category_id = line.account_id.category_id if line.account_id else False
+
+    def _inverse_category_id(self):
+        # Elegir un rubro en una línea NO reasigna la cuenta a otro rubro.
+        # Si se eligió una cuenta, ambas selecciones deben corresponder.
+        for line in self:
+            if line.account_id and line.category_id != line.account_id.category_id:
+                raise ValidationError(_(
+                    'La cuenta controlada no pertenece al rubro seleccionado. '
+                    'Seleccione una cuenta de ese rubro.'
+                ))
+
+    @api.onchange('category_id')
+    def _onchange_category_id(self):
+        for line in self:
+            if line.account_id and line.account_id.category_id != line.category_id:
+                selected_category = line.category_id
+                line.account_id = False
+                line.category_id = selected_category
+
+    @api.onchange('account_id')
+    def _onchange_account_id(self):
+        for line in self:
+            if line.account_id:
+                line.category_id = line.account_id.category_id
     year = fields.Integer(string='Año', related='budget_id.year', store=True, index=True,
                           aggregator='max')
     month = fields.Selection(MONTHS, string='Mes', required=True, index=True)

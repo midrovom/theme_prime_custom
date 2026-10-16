@@ -91,6 +91,38 @@ class TestExpenseBudget(TransactionCase):
             })
         self.assertEqual(self.account.category_id, self.category)
 
+    def test_monthly_line_rubro_before_account_with_create_edit(self):
+        """El rubro se escoge primero, se puede crear y filtra las cuentas de la línea."""
+        from lxml import etree
+
+        view = self.env.ref('expense_budget_control.view_expense_budget_form')
+        arch = etree.fromstring(view.arch_db.encode())
+        fields_in_line = arch.xpath("//field[@name='line_ids']/list/field")
+        names = [field.get('name') for field in fields_in_line]
+        self.assertLess(names.index('category_id'), names.index('account_id'))
+        category_field = fields_in_line[names.index('category_id')]
+        account_field = fields_in_line[names.index('account_id')]
+        self.assertIn('default_company_id', category_field.get('context'))
+        self.assertNotIn('no_create', category_field.get('options').replace('no_quick_create', ''))
+        self.assertIn("('category_id', '=', category_id)", account_field.get('domain'))
+
+        # La creación de rubro vincula cuentas de la misma empresa sin
+        # escribir el rubro desde las propias líneas mensuales.
+        available = self.env['expense.budget.account'].create({
+            'code': 'CT-SELECTOR-1451', 'name': 'Electricidad',
+            'company_id': self.company.id,
+        })
+        category = self.env['expense.budget.category'].create({
+            'name': 'Servicios de prueba', 'company_id': self.company.id,
+            'account_selection_ids': [(6, 0, [available.id])],
+        })
+        self.assertEqual(available.category_id, category)
+        line = self.env['expense.budget.line'].create({
+            'budget_id': self.budget.id, 'account_id': available.id,
+            'month': '12', 'planned_amount': 120,
+        })
+        self.assertEqual(line.category_id, category)
+
     def test_budget_lines_show_rubro_per_account_without_header_selector(self):
         """El rubro se muestra en cada línea, sin restringirse a la cabecera histórica."""
         from lxml import etree
