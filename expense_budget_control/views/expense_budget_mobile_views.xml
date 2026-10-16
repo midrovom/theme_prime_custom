@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_expense_budget_mobile_home" model="ir.actions.client">
+        <field name="name">Accesos de Control de Gastos</field>
+        <field name="tag">expense_budget_control.mobile_home</field>
+    </record>
+</odoo>

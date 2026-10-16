@@ -4,7 +4,7 @@
         <field name="name">expense.budget.comparison.report.wizard.form</field>
         <field name="model">expense.budget.comparison.report.wizard</field>
         <field name="arch" type="xml">
-            <form string="Reporte PDF">
+            <form class="o_ebc_wizard" string="Reporte PDF">
                 <group>
                     <field name="company_id" options="{'no_create': True}"/>
                     <field name="year"/>

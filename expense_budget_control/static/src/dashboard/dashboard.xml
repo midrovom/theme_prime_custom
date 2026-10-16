@@ -7,9 +7,14 @@
                     <h1>Dashboard de gastos</h1>
                     <p>Compara el consumo mensual global y por cuenta controlada.</p>
                 </div>
-                <button type="button" class="btn btn-outline-primary" t-on-click="() => this.load()">
+                <div class="o_ebd_header_actions">
+                    <button type="button" class="btn btn-outline-secondary d-lg-none" t-on-click="() => this.openMobileHome()">
+                        <i class="fa fa-th-large me-1"/> Opciones
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" t-on-click="() => this.load()">
                     <i class="fa fa-refresh me-1"/> Actualizar
-                </button>
+                    </button>
+                </div>
             </header>
 
             <div t-if="state.error" class="alert alert-danger" role="alert" t-esc="state.error"/>

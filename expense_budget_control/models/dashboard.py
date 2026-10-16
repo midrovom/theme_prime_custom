@@ -16,6 +16,67 @@ class ExpenseBudgetDashboard(models.AbstractModel):
     _description = 'Datos del dashboard de gastos'
 
     @api.model
+    def get_mobile_navigation(self):
+        """Mobile home entries filtered by exactly the existing module roles.
+
+        It intentionally returns actions, not model records, and it never sudoes
+        or grants additional menu/model access to the current user.
+        """
+        user = self.env.user
+        has = lambda group: user.has_group('expense_budget_control.' + group)
+        read = has('group_expense_budget_user')
+        register = has('group_expense_budget_registrar')
+        approve = has('group_expense_budget_approver')
+        manage = has('group_expense_budget_manager')
+        if not (read or register or approve or manage):
+            raise AccessError(_('No tiene permiso para consultar Control de Gastos.'))
+
+        options = [
+            ('Presupuestos', 'Crear y consultar presupuestos',
+             'fa-file-text-o', 'action_expense_budget', read or register or manage,
+             'expense.budget'),
+            ('Aprobación de presupuestos', 'Pendientes, aprobados y rechazados',
+             'fa-check-square-o', 'action_expense_budget_approval', approve or manage,
+             'expense.budget'),
+            ('Dashboard de gastos', 'Gráficos por mes, rubro y cuenta',
+             'fa-pie-chart', 'action_expense_budget_dashboard', read or approve or manage,
+             None),
+            ('Proyectado vs. real', 'Comparación e impresión PDF',
+             'fa-bar-chart', 'action_expense_budget_comparison', read or approve or manage,
+             'expense.budget.line'),
+            ('Gastos reales', 'Movimientos consumidos',
+             'fa-money', 'action_expense_budget_expense', read or approve or manage,
+             'expense.budget.expense'),
+            ('Importar Excel / CSV', 'Cargar líneas desde archivo',
+             'fa-upload', 'action_expense_budget_import', register or manage,
+             'expense.budget.import.wizard'),
+            ('Rubros', 'Catálogo de rubros',
+             'fa-folder-open-o', 'action_expense_budget_category', manage,
+             'expense.budget.category'),
+            ('Cuentas controladas', 'Administrar cuentas',
+             'fa-list-alt', 'action_expense_budget_account', manage,
+             'expense.budget.account'),
+            ('Configuración API de gastos', 'Seleccionar API existente',
+             'fa-cogs', 'action_expense_budget_api_administrator', manage,
+             'expense.budget.api.config'),
+            ('Historial API', 'Resultados de sincronización',
+             'fa-history', 'action_expense_budget_sync_log', manage,
+             'expense.budget.sync.log'),
+        ]
+        sections = []
+        for title, subtitle, icon, external_id, visible, model in options:
+            if not visible:
+                continue
+            if model and not self.env[model].check_access_rights('read', raise_exception=False):
+                continue
+            action = self.env.ref('expense_budget_control.' + external_id, raise_if_not_found=False)
+            if action:
+                sections.append({
+                    'id': action.id, 'title': title, 'subtitle': subtitle, 'icon': icon,
+                })
+        return sections
+
+    @api.model
     def get_dashboard_data(self, company_id=False, year=False):
         """Los gastos provienen del consumo calculado de las proyecciones mensuales.
 

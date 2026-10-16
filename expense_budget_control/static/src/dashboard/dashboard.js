@@ -14,6 +14,7 @@ export class ExpenseBudgetDashboard extends Component {
 
     setup() {
         this.orm = useService("orm");
+        this.action = useService("action");
         this.state = useState({
             loading: true,
             error: "",
@@ -46,6 +47,10 @@ export class ExpenseBudgetDashboard extends Component {
         } finally {
             this.state.loading = false;
         }
+    }
+
+    openMobileHome() {
+        return this.action.doAction("expense_budget_control.action_expense_budget_mobile_home");
     }
 
     onCompanyChange(event) {

@@ -95,7 +95,7 @@
     <record id="view_expense_budget_form" model="ir.ui.view">
         <field name="name">expense.budget.form</field><field name="model">expense.budget</field>
         <field name="arch" type="xml">
-            <form string="Presupuesto anual">
+            <form string="Presupuesto anual" class="o_ebc_budget_form">
                 <header>
                     <button name="action_submit" string="Enviar a aprobar" type="object" class="btn-primary" invisible="state != 'draft'" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
@@ -122,7 +122,7 @@
                     </group>
                     <notebook>
                         <page string="Proyecciones mensuales">
-                            <field name="line_ids">
+                            <field name="line_ids" class="o_ebc_lines">
                                 <list editable="bottom">
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="currency_id" column_invisible="True"/>

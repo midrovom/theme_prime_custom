@@ -1,6 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <odoo>
-    <menuitem id="menu_expense_budget_root" name="Control de Gastos" sequence="45"/>
+    <menuitem id="menu_expense_budget_root" name="Control de Gastos" action="action_expense_budget_mobile_home" sequence="45"/>
+    <!-- Entrada accesible desde la navegación móvil de Odoo para todos los roles.
+         Los accesos que muestra la pantalla se filtran de nuevo en el servidor. -->
+    <menuitem id="menu_expense_budget_mobile_home" name="Accesos rápidos"
+              parent="menu_expense_budget_root" action="action_expense_budget_mobile_home"
+              sequence="1" groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
     <menuitem id="menu_expense_budget_budget" name="Presupuestos" parent="menu_expense_budget_root" action="action_expense_budget" sequence="10"/>
     <menuitem id="menu_expense_budget_approval" name="Aprobación de presupuestos" parent="menu_expense_budget_root" action="action_expense_budget_approval" sequence="15"/>
     <menuitem id="menu_expense_budget_comparison" name="Proyectado vs. real" parent="menu_expense_budget_root" action="action_expense_budget_comparison" sequence="20"/>

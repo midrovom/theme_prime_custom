@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-name="expense_budget_control.MobileHome">
+        <main class="o_ebc_mobile_home">
+            <header class="o_ebc_mobile_header">
+                <div>
+                    <h1>Control de Gastos</h1>
+                    <p>Accede a las opciones disponibles según tu usuario.</p>
+                </div>
+            </header>
+            <div t-if="state.loading" role="status" class="o_ebc_mobile_status">Cargando opciones…</div>
+            <div t-if="state.error" class="alert alert-danger" role="alert" t-esc="state.error"/>
+            <nav t-if="!state.loading &amp;&amp; !state.error" class="o_ebc_mobile_grid" aria-label="Opciones de Control de Gastos">
+                <t t-foreach="state.entries" t-as="section" t-key="section.id">
+                    <button type="button" class="o_ebc_mobile_card" t-on-click="() => this.openSection(section.id)">
+                        <span class="o_ebc_mobile_icon" aria-hidden="true"><i t-att-class="'fa ' + section.icon"/></span>
+                        <span class="o_ebc_mobile_label">
+                            <strong t-esc="section.title"/>
+                            <small t-esc="section.subtitle"/>
+                        </span>
+                        <i class="fa fa-chevron-right o_ebc_mobile_chevron" aria-hidden="true"/>
+                    </button>
+                </t>
+                <p t-if="!state.entries.length" class="o_ebc_mobile_status">No hay opciones para los permisos actuales.</p>
+            </nav>
+            <p class="o_ebc_mobile_install_note">
+                Puedes añadir Odoo a la pantalla de inicio desde el menú de tu navegador, usando una conexión HTTPS.
+            </p>
+        </main>
+    </t>
+</templates>
