@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="transcash_evidence_hub" name="Transcash: galería por etapas del viaje">
+    <section class="tc-evidence-hub" id="tc-galeria-viaje" aria-label="Galería de evidencias">
+      <div class="tc-evidence-hub-heading">
+        <div><span class="tc-hub-eyebrow">EXPEDIENTE DIGITAL · SOLO LECTURA</span>
+          <h2>📷 Evidencias del <t t-esc="'guía' if gallery_is_guide else 'viaje'"/></h2>
+          <p>Abre una fotografía, reproduce un video o consulta la firma con un toque.</p>
+        </div><span class="tc-hub-count"><t t-esc="gallery_count"/> archivos</span>
+      </div>
+      <div class="tc-hub-jump" aria-label="Secciones de evidencias">
+        <a href="#tc-hub-carga">📦 Carga <b t-esc="len(gallery_carga)"/></a>
+        <a href="#tc-hub-descarga">🚚 Descarga <b t-esc="len(gallery_descarga)"/></a>
+        <a href="#tc-hub-firmas">✍️ Firmas <b t-esc="len(gallery_firmas)"/></a>
+      </div>
+      <div class="tc-hub-category" id="tc-hub-carga">
+          <div class="tc-section-heading"><h3>📦 1. Carga</h3><span class="tc-count" t-esc="len(gallery_carga)"/></div>
+          <p>Lo que Logística registró antes de liberar el embarque.</p>
+          <div t-if="gallery_carga" class="tc-hub-grid">
+            <t t-foreach="gallery_carga" t-as="media">
+              <t t-call="logistica_transcash.transcash_evidence_hub_item"/>
+            </t>
+          </div>
+          <p t-else="" class="tc-hub-empty">No hay evidencias de carga visibles para esta guía o viaje.</p>
+        </div>
+      <div class="tc-hub-category" id="tc-hub-descarga">
+        <div class="tc-section-heading"><h3>🚚 2. Descarga y recepción</h3><span class="tc-count" t-esc="len(gallery_descarga)"/></div>
+        <p>Fotos y videos asociados a las guías y a la recepción.</p>
+        <div t-if="gallery_descarga" class="tc-hub-grid">
+          <t t-foreach="gallery_descarga" t-as="media">
+            <t t-call="logistica_transcash.transcash_evidence_hub_item"/>
+          </t>
+        </div>
+        <p t-else="" class="tc-hub-empty">La descarga todavía no tiene fotografías ni videos disponibles.</p>
+      </div>
+      <div class="tc-hub-category" id="tc-hub-firmas">
+        <div class="tc-section-heading"><h3>✍️ 3. Firma de recepción</h3><span class="tc-count" t-esc="len(gallery_firmas)"/></div>
+        <p>Firma de quien recibió, identificada por guía y fecha.</p>
+        <div t-if="gallery_firmas" class="tc-hub-grid">
+          <t t-foreach="gallery_firmas" t-as="media">
+            <t t-call="logistica_transcash.transcash_evidence_hub_item"/>
+          </t>
+        </div>
+        <p t-else="" class="tc-hub-empty">Todavía no hay firmas de recepción registradas.</p>
+      </div>
+      <p class="tc-hub-private">🔒 Esta vista respeta el acceso de tu usuario. Los destinatarios no acceden al expediente completo del vehículo ni a datos económicos.</p>
+    </section>
+  </template>
+  <template id="transcash_evidence_hub_item" name="Transcash: tarjeta de evidencia">
+    <article class="tc-hub-card">
+      <a t-att-href="media['url']" target="_blank" rel="noopener noreferrer"
+        class="tc-hub-open" data-tc-hub-open="1" t-att-data-hub-kind="media['kind']"
+        t-att-aria-label="'Abrir %s: %s' % (media['kind'], media['title'])">
+        <img t-if="media['kind'] != 'video'" loading="lazy" t-att-src="media['url']" alt="Vista previa de evidencia"/>
+        <div t-else="" class="tc-hub-video-thumb"><span>▶</span><small>TOCAR PARA REPRODUCIR VIDEO</small></div>
+        <span class="tc-hub-open-label">⛶ Abrir</span>
+      </a>
+      <div class="tc-hub-card-detail"><strong t-esc="media['title']"/>
+        <small t-esc="media['subtitle']"/>
+        <span>👤 <t t-esc="media['author']"/> · <t t-esc="media['date']"/></span>
+      </div>
+    </article>
+  </template>
+  <template id="transcash_evidence_hub_page" name="Transcash: galería privada de un embarque">
+    <html lang="es"><head><title>Evidencias · <t t-esc="gallery_page_title"/></title>
+      <t t-call="logistica_transcash.mobile_head"/>
+    </head><body class="tc-app tc-hub-standalone" t-att-data-tc-user-id="request.env.user.id">
+      <main class="tc-hub-page-main">
+        <div class="tc-hub-page-top"><strong>TRANSCASH · <t t-esc="gallery_page_title"/></strong>
+          <a t-if="not embedded" t-att-href="gallery_back_url">← Volver al viaje</a></div>
+        <t t-call="logistica_transcash.transcash_evidence_hub"/>
+      </main>
+    </body></html>
+  </template>
+</odoo>

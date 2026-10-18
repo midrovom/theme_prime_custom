@@ -218,6 +218,7 @@
               <span><b>Transportista</b><t t-esc="embarque.proveedor_id.name"/></span>
               <span><b>Placa</b><t t-esc="embarque.placa"/></span>
               <span><b>Valor referencial del viaje</b><t t-esc="embarque.tarifa_referencial_total"/></span></div>
+            <a href="#tc-galeria-viaje" class="tc-button tc-button-outline tc-hub-quick-link">📷 Ver expediente de fotos, videos y firmas ↓</a>
             <div class="tc-section-heading"><h2>Paso 3 · Documenta la carga por ruta</h2></div>
             <p class="tc-muted">Cada ruta requiere al menos una foto o video. Se guarda el nombre del operador y la hora. En celular usa los botones de cámara; en computadora, selecciona un archivo.</p>
             <div class="tc-ops-trip-progress"><b t-esc="len(embarque.ruta_ids.filtered(lambda r: r.state in ('cargada','aceptada') and r._has_carga_evidence()))"/> / <b t-esc="len(embarque.ruta_ids)"/> rutas con evidencia</div>
@@ -282,7 +283,7 @@
               <button class="tc-button tc-button-outline" type="submit">↶ Devolver a preparación</button>
             </form>
             <div t-if="embarque.state == 'embarcado' and not (embarque.objecion_pendiente or embarque.observacion_rechazo)" class="tc-next-card">El chofer deberá aceptar el embarque desde su propia PWA para iniciar el traslado.</div>
-            <a class="tc-button tc-button-outline" t-att-href="'/transcash/embarques/%d' % embarque.id">Consultar detalle y evidencias →</a>
+            <t t-call="logistica_transcash.transcash_evidence_hub"/>
           </t>
         </main>
         <nav class="tc-bottom" aria-label="Accesos de Logística">

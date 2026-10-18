@@ -1,0 +1,8 @@
+/* Formulario Odoo, solo presentación; el iframe consulta un endpoint protegido. */
+.tc-trip-gallery-backend { width:100%; min-width:0; }
+.tc-trip-gallery-frame { border:0; width:100%; min-height:740px; background:#f3f6fa; border-radius:14px; }
+.o_form_view .tc-trip-gallery-backend { min-width:0; }
+@media(max-width:700px){.tc-trip-gallery-frame{min-height:720px;}}
+
+.tc-backoffice-gallery-wrap{width:100%;min-width:0;margin:22px 0;}
+.tc-backoffice-gallery-wrap h3{font-weight:700;margin:12px 0;}

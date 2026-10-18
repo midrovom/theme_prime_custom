@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from odoo import http, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
+from .evidence_hub import gallery_for_guide
 
 MB = 1024 * 1024
 MAX_IMAGE = 12 * MB
@@ -70,6 +71,15 @@ class TranscashPortal(http.Controller):
                 for role in ('group_transcash_operador_rutas', 'group_logistica_manager',
                              'group_logistica_bodega', 'group_transcash_consulta')):
             return False
+        # Un Portal jamás adquiere lectura interna por tener accidentalmente grupos adicionales.
+        if user.share:
+            if user.has_group('logistica_transcash.group_transcash_chofer'):
+                return guia if guia.chofer_usuario_id.id == user.id else False
+            if user.has_group('logistica_transcash.group_transcash_cliente'):
+                return guia if guia._is_recipient(user) else False
+            if user.has_group('logistica_transcash.group_transcash_transportista'):
+                return guia if guia.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id else False
+            return False
         if not (guia.chofer_usuario_id.id == user.id and user.has_group('logistica_transcash.group_transcash_chofer')) and not guia._is_recipient(user) and not (
                 user.has_group('logistica_transcash.group_transcash_consulta') or
                 user.has_group('logistica_transcash.group_logistica_bodega') or
@@ -110,6 +120,8 @@ class TranscashPortal(http.Controller):
             'roturas': guia.rotura_ids.sorted('create_date', reverse=True),
             'historial': historial.sorted('create_date', reverse=True)[:300],
             'csrf_token': request.csrf_token(), 'error': error,
+            **gallery_for_guide(guia, is_recipient_only=bool(
+                request.env.user.share and guia._is_recipient(request.env.user))),
         })
 
     @http.route('/transcash/guias', type='http', auth='user', website=True, methods=['GET'])
@@ -145,6 +157,22 @@ class TranscashPortal(http.Controller):
     def guide_detail(self, guide_id, **kwargs):
         guia = self._guide(guide_id)
         return self._render_guide(guia) if guia else request.not_found()
+
+    @http.route('/transcash/guias/<int:guide_id>/galeria-viaje', type='http',
+                auth='user', website=True, methods=['GET'])
+    def guide_evidence_hub(self, guide_id, **kw):
+        guide = self._guide(guide_id)
+        if not guide:
+            return request.not_found()
+        only_own = bool(request.env.user.share and guide._is_recipient(request.env.user))
+        response = request.render('logistica_transcash.transcash_evidence_hub_page', {
+            'gallery_page_title':guide.name,
+            'gallery_back_url':'/transcash/guias/%d' % guide.id,
+            'embedded':kw.get('embedded') == '1',
+            **gallery_for_guide(guide, is_recipient_only=only_own),
+        })
+        response.headers['Cache-Control'] = 'private, no-store'
+        return response
 
     def _uploaded_files(self):
         uploads = request.httprequest.files.getlist('archivos')

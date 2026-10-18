@@ -6,10 +6,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=519"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=520"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
-    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=550"/>
-  <script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
+    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=520"/>
+  <script defer="defer" src="/logistica_transcash/static/src/js/evidence_hub.js?v=520"/><script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
 
   <template id="mobile_brand" name="Transcash Mobile Brand">
     <div class="tc-brand"><div class="tc-logo">T<span>↗</span></div>
@@ -156,6 +156,7 @@
         <main class="tc-main tc-detail">
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>Revisa los datos</strong><span t-esc="error"/></div>
           <div t-if="request.params.get('ok')" class="tc-alert tc-alert-ok" role="status">✓ Información registrada correctamente</div>
+          <a href="#tc-galeria-viaje" class="tc-button tc-button-outline tc-hub-quick-link">📷 Ver evidencias y firma ↓</a>
           <!-- Ruta guiada: acciones siempre visibles, sin navegar por múltiples pestañas. -->
           <section t-if="es_chofer" class="tc-guided-flow" aria-label="Mi siguiente acción">
             <div class="tc-guided-heading"><span>⚡ MODO CHOFER</span><h2>¿Qué hacemos ahora?</h2>
@@ -413,7 +414,8 @@
             </div>
           </section>
           <div t-if="guia.fecha_cierre_chofer" class="tc-delivered">✓ Entrega finalizada por chofer el <t t-esc="guia.fecha_cierre_chofer"/>. Recepción del cliente: <b t-esc="('Confirmada (histórico)' if guia.resultado_recepcion == 'pendiente' else dict(guia._fields['resultado_recepcion'].selection).get(guia.resultado_recepcion)) if guia.fecha_entrega else 'Pendiente'"/>.</div>
-          <div t-if="guia.firma_receptor and (es_receptor or es_chofer or es_vendedor)" class="tc-sign-saved"><strong>Firma registrada por el chofer en la recepción</strong><img t-att-src="'/transcash/guias/%d/firma' % guia.id" alt="Firma de quien recibe"/></div><div t-if="guia.fecha_entrega" class="tc-delivered">✓ Cliente confirmó recepción a nombre de <b t-esc="guia.recibido_por"/> · <t t-esc="dict(guia._fields['resultado_recepcion'].selection).get(guia.resultado_recepcion)"/></div>
+          <div t-if="guia.fecha_entrega" class="tc-delivered">✓ Cliente confirmó recepción a nombre de <b t-esc="guia.recibido_por"/> · <t t-esc="dict(guia._fields['resultado_recepcion'].selection).get(guia.resultado_recepcion)"/></div>
+          <t t-call="logistica_transcash.transcash_evidence_hub"/>
         </main>
 
         <div t-if="(es_chofer and guia.state in ('embarque','embarcada','ruta','destino','revision') and not guia.fecha_cierre_chofer) or (es_receptor and guia.state in ('revision','entregada') and guia.aprobacion_global != 'aprobada') or (es_vendedor and guia.state in ('embarque','embarcada','ruta','destino','revision') and guia.aprobacion_global != 'aprobada')" class="tc-floating">

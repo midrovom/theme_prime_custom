@@ -4,6 +4,7 @@ from urllib.parse import quote
 from odoo.exceptions import UserError, AccessError, ValidationError
 from odoo.http import request
 from .portal import TranscashPortal
+from .evidence_hub import gallery_for_trip
 
 
 class EmbarquePortal(TranscashPortal):
@@ -48,6 +49,7 @@ class EmbarquePortal(TranscashPortal):
             'embarque':rec, 'es_chofer':driver, 'error':error,
             'guias_adicionales': self._late_guides(rec) if driver else request.env['transcash.guia'].sudo().browse(),
             'csrf_token':request.csrf_token(),
+            **gallery_for_trip(rec),
         })
 
     @http.route('/transcash/embarques', type='http', auth='user', website=True, methods=['GET'])
@@ -108,6 +110,24 @@ class EmbarquePortal(TranscashPortal):
         except (UserError, AccessError, ValidationError, ValueError) as err:
             return self._render(embarque, str(err))
         return request.redirect('/transcash/embarques/%s?ok=1#tc-add-guides' % embark_id)
+
+    @http.route('/transcash/embarques/<int:embark_id>/galeria', type='http',
+                auth='user', website=True, methods=['GET'])
+    def trip_gallery(self, embark_id, **kw):
+        trip = self._get(embark_id)
+        if not trip:
+            return request.not_found()
+        # Nunca para destinatarios Portal: sus evidencias se muestran solamente por guía.
+        if request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_cliente'):
+            return request.not_found()
+        response = request.render('logistica_transcash.transcash_evidence_hub_page', {
+            'embarque':trip, 'embedded':kw.get('embedded') == '1',
+            'gallery_page_title':trip.name,
+            'gallery_back_url':'/transcash/embarques/%d' % trip.id,
+            **gallery_for_trip(trip),
+        })
+        response.headers['Cache-Control'] = 'private, no-store'
+        return response
 
     @http.route('/transcash/embarques/<int:embark_id>',type='http',auth='user',website=True,methods=['GET'])
     def embark_detail(self, embark_id, **kw):

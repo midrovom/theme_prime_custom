@@ -14,7 +14,7 @@
             <a class="tc-button tc-button-primary" href="/transcash/operacion/rutas/nueva">＋ Crear hoja de ruta</a>
             <a class="tc-button tc-button-outline" href="/transcash/operacion/embarques/nuevo">🚚 Armar embarque</a>
           </div>
-          <p t-if="es_chofer" class="tc-muted">Revisa los videos de cada ruta, acepta la carga y realiza tus entregas desde el celular.</p>
+          <p t-if="es_chofer" class="tc-muted">Revisa las fotos y videos de cada ruta, acepta la carga y realiza tus entregas desde el celular.</p>
           <p t-elif="es_operador" class="tc-muted">Crea hojas de ruta, agrega guías, agrupa rutas en un viaje, valida los videos y libera el embarque al chofer.</p>
           <p t-else="" class="tc-muted">Consulta el estado de los viajes. Las acciones de planificación corresponden únicamente a Logística.</p>
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>Revisa tu selección</strong><span t-esc="error"/></div>
@@ -68,24 +68,7 @@
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>No se pudo completar</strong><span t-esc="error"/></div>
           <div t-if="request.params.get('ok')" class="tc-alert tc-alert-ok" role="status">✓ Información actualizada</div>
           <div t-if="es_chofer and (embarque.objecion_pendiente or embarque.observacion_rechazo) and embarque.state in ('embarcado','preparacion')" class="tc-embarque-critical" role="alert">⛔ VIAJE OBJETADO. Tu salida está bloqueada hasta que Logística corrija la carga y la libere nuevamente.</div>
-        <section t-if="embarque.ruta_ids" class="tc-embark-section" id="tc-videos-rutas">
- <div class="tc-section-heading"><h2>📷 Ver evidencias del embarque</h2><span class="tc-count" t-esc="len(embarque.ruta_ids)"/></div>
- <div class="tc-embark-list"><t t-foreach="embarque.ruta_ids" t-as="ruta">
-  <article class="tc-guide-card" style="display:block;padding:18px">
-   <strong t-esc="ruta.name"/><p>📍 <t t-esc="ruta.destino_nombre"/> · <t t-esc="len(ruta.guia_ids)"/> guías</p>
-   <div t-if="ruta.evidencia_carga_ids" class="tc-ops-evidence-grid">
-     <t t-foreach="ruta.evidencia_carga_ids" t-as="ev"><div class="tc-ops-evidence-card">
-       <img t-if="ev.tipo == 'foto'" loading="lazy" alt="Fotografía de carga" t-att-src="'/transcash/rutas/evidencia/%d' % ev.id"/>
-       <video t-if="ev.tipo == 'video'" controls="controls" playsinline="playsinline" preload="metadata" t-att-src="'/transcash/rutas/evidencia/%d' % ev.id"/>
-       <small>Logística: <t t-esc="ev.usuario_id.name"/> · <t t-esc="ev.fecha"/></small>
-     </div></t>
-   </div>
-   <video t-if="ruta.video_carga and ruta.state in ('cargada','aceptada')" controls="controls" playsinline="playsinline" preload="metadata" style="max-width:100%;width:100%;border-radius:12px;background:#111" t-att-src="'/transcash/rutas/%s/video' % ruta.id"/>
-   <p t-if="not ruta._has_carga_evidence()" class="tc-panel-hint">Logística todavía no ha registrado evidencia de carga.</p>
-   <p t-if="ruta.observaciones" class="tc-panel-hint" t-esc="ruta.observaciones"/>
-  </article>
- </t></div>
-</section>
+          <a href="#tc-galeria-viaje" class="tc-button tc-button-outline tc-hub-quick-link">📷 Ver fotos, videos y firmas del viaje ↓</a>
           <section t-if="es_chofer" class="tc-guided-flow tc-embark-flow">
  <div class="tc-guided-heading"><span>🚚 MI TRASLADO</span><h2>Revisar, aceptar y entregar</h2>
   <small>1. Ver fotos y videos aquí mismo → 2. Aceptar u objetar → 3. Entregar con foto y firma</small></div>
@@ -138,25 +121,8 @@
               </article>
             </t>
           </div>
-          <div t-if="not es_chofer">        <section t-if="embarque.ruta_ids" class="tc-embark-section" id="tc-videos-rutas">
- <div class="tc-section-heading"><h2>📹 Hojas de ruta y evidencias de carga</h2><span class="tc-count" t-esc="len(embarque.ruta_ids)"/></div>
- <div class="tc-embark-list"><t t-foreach="embarque.ruta_ids" t-as="ruta">
-  <article class="tc-guide-card" style="display:block;padding:18px">
-   <strong t-esc="ruta.name"/><p>📍 <t t-esc="ruta.destino_nombre"/> · <t t-esc="len(ruta.guia_ids)"/> guías</p>
-   <div t-if="ruta.evidencia_carga_ids" class="tc-ops-evidence-grid">
-     <t t-foreach="ruta.evidencia_carga_ids" t-as="ev"><div class="tc-ops-evidence-card">
-       <img t-if="ev.tipo == 'foto'" loading="lazy" alt="Fotografía de carga" t-att-src="'/transcash/rutas/evidencia/%d' % ev.id"/>
-       <video t-if="ev.tipo == 'video'" controls="controls" playsinline="playsinline" preload="metadata" t-att-src="'/transcash/rutas/evidencia/%d' % ev.id"/>
-       <small>Logística: <t t-esc="ev.usuario_id.name"/> · <t t-esc="ev.fecha"/></small>
-     </div></t>
-   </div>
-   <video t-if="ruta.video_carga and ruta.state in ('cargada','aceptada')" controls="controls" playsinline="playsinline" preload="metadata" style="max-width:100%;width:100%;border-radius:12px;background:#111" t-att-src="'/transcash/rutas/%s/video' % ruta.id"/>
-   <p t-if="not ruta._has_carga_evidence()" class="tc-panel-hint">Logística todavía no ha registrado evidencia de carga.</p>
-   <p t-if="ruta.observaciones" class="tc-panel-hint" t-esc="ruta.observaciones"/>
-  </article>
- </t></div>
-</section></div>
           <div t-if="embarque.state == 'entregado'" class="tc-delivered">✓ El chofer finalizó todas sus entregas. Puede iniciar otro embarque. Contabilidad procesa el pago según la aprobación de Logística; las novedades se revisan por separado.</div>
+          <t t-call="logistica_transcash.transcash_evidence_hub"/>
 </main>
         <nav class="tc-bottom"><a class="tc-bottom-item active" href="/transcash/embarques">🚚 Embarques</a>
           <a class="tc-bottom-item" t-att-href="'/transcash/guias?vista=consulta' if not request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') else '/transcash/guias'">▤ Guías</a>

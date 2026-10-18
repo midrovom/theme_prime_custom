@@ -40,6 +40,7 @@
                 <p><t t-esc="e.placa or 'Sin placa'"/> · <t t-esc="e.cantidad_guias"/> guías</p>
                 <p><b>Valor:</b> <t t-esc="e.moneda_id.symbol"/><t t-esc="'%.2f' % e.valor_acordado"/> ·
                   <t t-esc="dict(e._fields['estado_financiero'].selection).get(e.estado_financiero)"/></p>
+                <p><a class="tc-inline-action" t-att-href="'/transcash/embarques/%d#tc-galeria-viaje' % e.id">📷 Abrir carga, descarga y firmas del viaje →</a></p>
               </div>
             </t></div></section>
         </main><nav class="tc-bottom"><a class="tc-bottom-item active" href="/transcash/proveedor">💼 Liquidaciones</a>

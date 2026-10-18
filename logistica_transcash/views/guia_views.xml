@@ -188,6 +188,11 @@
               </group>
             </page>
           </notebook>
+          <div class="tc-backoffice-gallery-wrap"
+               groups="logistica_transcash.group_transcash_consulta,logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager">
+            <h3>Evidencias de la guía · Carga / Descarga / Firmas</h3>
+            <field name="name" widget="transcash_guide_gallery" readonly="1" nolabel="1"/>
+          </div>
         </sheet>
         <chatter/>
       </form>

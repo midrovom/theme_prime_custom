@@ -10,6 +10,7 @@ from odoo.http import request
 from odoo.osv import expression
 from werkzeug.utils import secure_filename
 from .portal import sniff_mime
+from .evidence_hub import gallery_for_trip
 
 
 class TranscashOperaciones(http.Controller):
@@ -310,7 +311,7 @@ class TranscashOperaciones(http.Controller):
         if not trip:
             return request.not_found()
         return self._page('Embarque ' + trip.name,section='embarque_detalle', embarque=trip,
-                          error=kw.get('error'),ok=kw.get('ok'))
+                          error=kw.get('error'),ok=kw.get('ok'), **gallery_for_trip(trip))
 
     @http.route('/transcash/operacion/embarques/<int:trip_id>/liberar', type='http', auth='user', website=True, methods=['POST'], csrf=True)
     def trip_release(self, trip_id, **post):
