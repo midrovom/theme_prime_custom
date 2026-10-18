@@ -78,17 +78,18 @@
           <field name="excepcion_por_id" invisible="not aprobacion_excepcional"/>
           <field name="excepcion_fecha" invisible="not aprobacion_excepcional"/>
         </group>
-        <notebook><page string="Hojas de ruta"><group><field name="aceptado_chofer"/>
+        <notebook><page string="Hojas de ruta y guías"><group><field name="aceptado_chofer"/>
           <field name="fecha_aceptacion_chofer"/><field name="observacion_rechazo"/></group>
           <field name="objecion_ids" readonly="1" groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta"><list create="0" edit="0" delete="0">
             <field name="fecha"/><field name="chofer_id"/><field name="motivo"/>
             <field name="estado" widget="badge"/><field name="responsable_id"/>
             <field name="fecha_resolucion"/><field name="explicacion_resolucion"/>
           </list></field>
-          <field name="ruta_ids" readonly="1"><list create="0" delete="0">
+          <p>Abre una hoja de ruta para consultar las guías que la componen.</p>
+          <field name="ruta_ids" readonly="1"><list create="0" delete="0" open_form_view="1">
             <field name="name"/><field name="destino_nombre"/><field name="tipo_vehiculo"/>
             <field name="state"/></list></field></page>
-          <page string="Guías transportadas"><field name="guia_ids" readonly="1">
+          <page string="Guías históricas (sin hojas de ruta)" invisible="ruta_ids"><field name="guia_ids" readonly="1">
           <list create="0" delete="0"><field name="name"/><field name="tipo_documento"/><field name="numero_documento"/>
             <field name="destinatario_id"/><field name="destino"/><field name="state" widget="badge"/>
             <field name="fecha_cierre_chofer"/><field name="fecha_entrega"/><field name="roturas_pendientes"/>

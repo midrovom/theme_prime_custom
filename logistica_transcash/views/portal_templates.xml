@@ -6,9 +6,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=520"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=521"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
-    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=520"/>
+    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=521"/>
   <script defer="defer" src="/logistica_transcash/static/src/js/evidence_hub.js?v=520"/><script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
 
   <template id="mobile_brand" name="Transcash Mobile Brand">
@@ -36,9 +36,7 @@
       </t>
       <t t-elif="driver">
         <div class="tc-sidebar-caption">MIS ENTREGAS</div>
-        <a href="/transcash/embarques" class="tc-sidebar-link"><span>🚚</span> Mis embarques</a>
-        <a href="/transcash/guias" class="tc-sidebar-link"><span>▤</span> Mis guías</a>
-        <a href="/transcash/guias?estado=ruta" class="tc-sidebar-link"><span>↗</span> Entregas en ruta</a>
+        <a href="/transcash/embarques" class="tc-sidebar-link"><span>🚚</span> Mis viajes · rutas y guías</a>
         <a href="/transcash/offline" class="tc-sidebar-link" data-tc-pending-link="1"><span>⇅</span> Evidencias pendientes</a>
       </t>
       <t t-elif="supplier">
@@ -149,13 +147,19 @@
     </head><body class="tc-app" t-att-data-tc-user-id="request.env.user.id" t-att-data-tc-guide-id="guia.id" t-att-data-tc-guide-name="guia.name" t-att-data-tc-guide-origin="guia.origen or ''" t-att-data-tc-guide-destination="guia.destino or ''" t-att-data-tc-guide-state="guia.state">
       <div class="tc-shell">
         <t t-call="logistica_transcash.portal_desktop_sidebar"/>
-        <header class="tc-top tc-top-detail"><a class="tc-back" t-att-href="'/transcash/guias?vista=consulta' if not request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') else '/transcash/guias'" aria-label="Volver">←</a>
+        <header class="tc-top tc-top-detail"><a class="tc-back" t-att-href="('/transcash/embarques/%d#tc-ruta-%d' % (guia.embarque_id.id, guia.hoja_ruta_id.id) if guia.embarque_id and guia.hoja_ruta_id else '/transcash/embarques') if request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_chofer') else '/transcash/guias?vista=consulta' if not request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') else '/transcash/guias'" aria-label="Volver">←</a>
           <div class="tc-top-center"><small>DETALLE DE GUÍA</small><strong t-esc="guia.name"/></div>
           <div class="tc-avatar">T</div>
         </header>
         <main class="tc-main tc-detail">
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>Revisa los datos</strong><span t-esc="error"/></div>
           <div t-if="request.params.get('ok')" class="tc-alert tc-alert-ok" role="status">✓ Información registrada correctamente</div>
+          <nav t-if="es_chofer and guia.embarque_id" class="tc-trip-breadcrumb" aria-label="Ubicación de la guía">
+            <a href="/transcash/embarques">Mis viajes</a><span>›</span>
+            <a t-att-href="'/transcash/embarques/%d' % guia.embarque_id.id" t-esc="guia.embarque_id.name"/><span>›</span>
+            <a t-if="guia.hoja_ruta_id" t-att-href="'/transcash/embarques/%d#tc-ruta-%d' % (guia.embarque_id.id, guia.hoja_ruta_id.id)" t-esc="guia.hoja_ruta_id.name"/><span t-if="guia.hoja_ruta_id">›</span>
+            <strong t-esc="guia.name"/>
+          </nav>
           <a href="#tc-galeria-viaje" class="tc-button tc-button-outline tc-hub-quick-link">📷 Ver evidencias y firma ↓</a>
           <!-- Ruta guiada: acciones siempre visibles, sin navegar por múltiples pestañas. -->
           <section t-if="es_chofer" class="tc-guided-flow" aria-label="Mi siguiente acción">
@@ -192,7 +196,7 @@
               <div t-if="guia.fecha_cierre_chofer" class="tc-guided-done">✓ Tu entrega está finalizada. El cliente podrá comentar y confirmar después. Ya puedes continuar tu viaje.</div>
               <div t-if="guia.state in ('entregada','lista_pago','facturada','pagada')" class="tc-guided-done">✓ Guía entregada. Puedes consultar todas las evidencias.</div>
             </div>
-            <a t-if="guia.embarque_id" t-att-href="'/transcash/embarques/%d' % guia.embarque_id.id" class="tc-guided-return">↗ Ver todas las guías de mi embarque</a>
+            <a t-if="guia.embarque_id" t-att-href="'/transcash/embarques/%d#tc-ruta-%d' % (guia.embarque_id.id, guia.hoja_ruta_id.id) if guia.hoja_ruta_id else '/transcash/embarques/%d' % guia.embarque_id.id" class="tc-guided-return">↗ Volver a las rutas de mi embarque</a>
           </section>
           <!-- Cliente consulta solo sus guías; nunca ve el resto del embarque. -->
           <section t-if="es_receptor and not es_chofer" class="tc-guided-flow tc-customer-flow" aria-label="Revisar recepción de mi guía">
@@ -422,7 +426,7 @@
           <button class="tc-fab" type="button" data-modal-open="action"><span>＋</span> Registrar evidencia / rotura</button>
         </div>
         <nav class="tc-bottom" aria-label="Navegación inferior">
-          <a class="tc-bottom-item" t-att-href="'/transcash/guias?vista=consulta' if not request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') else '/transcash/guias'"><span class="tc-nav-icon">▤</span>Guías</a>
+          <a class="tc-bottom-item" t-att-href="'/transcash/embarques/%d#tc-ruta-%d' % (guia.embarque_id.id, guia.hoja_ruta_id.id) if guia.embarque_id and guia.hoja_ruta_id and es_chofer else '/transcash/embarques' if es_chofer else '/transcash/guias?vista=consulta' if not request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') else '/transcash/guias'"><span class="tc-nav-icon">▤</span><t t-esc="'Mi ruta' if es_chofer else 'Guías'"/></a>
           <button class="tc-bottom-item active" type="button" data-go-tab="resumen"><span class="tc-nav-icon">◉</span>Resumen</button>
           <button class="tc-bottom-item" type="button" data-go-tab="productos"><span class="tc-nav-icon">▦</span>Productos</button>
           <button class="tc-bottom-item" type="button" data-go-tab="roturas"><span class="tc-nav-icon">⚠</span>Roturas</button>

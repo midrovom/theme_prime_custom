@@ -48,6 +48,7 @@ class EmbarquePortal(TranscashPortal):
         return request.render('logistica_transcash.portal_embarque_detalle', {
             'embarque':rec, 'es_chofer':driver, 'error':error,
             'guias_adicionales': self._late_guides(rec) if driver else request.env['transcash.guia'].sudo().browse(),
+            'guias_legacy': rec.guia_ids.filtered(lambda g: not g.hoja_ruta_id or g.hoja_ruta_id not in rec.ruta_ids),
             'csrf_token':request.csrf_token(),
             **gallery_for_trip(rec),
         })

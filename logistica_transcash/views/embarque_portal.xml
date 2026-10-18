@@ -14,7 +14,7 @@
             <a class="tc-button tc-button-primary" href="/transcash/operacion/rutas/nueva">＋ Crear hoja de ruta</a>
             <a class="tc-button tc-button-outline" href="/transcash/operacion/embarques/nuevo">🚚 Armar embarque</a>
           </div>
-          <p t-if="es_chofer" class="tc-muted">Revisa las fotos y videos de cada ruta, acepta la carga y realiza tus entregas desde el celular.</p>
+          <p t-if="es_chofer" class="tc-muted">Elige tu embarque, abre la hoja de ruta y entra a cada guía para entregar. No necesitas buscar guías sueltas.</p>
           <p t-elif="es_operador" class="tc-muted">Crea hojas de ruta, agrega guías, agrupa rutas en un viaje, valida los videos y libera el embarque al chofer.</p>
           <p t-else="" class="tc-muted">Consulta el estado de los viajes. Las acciones de planificación corresponden únicamente a Logística.</p>
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>Revisa tu selección</strong><span t-esc="error"/></div>
@@ -38,7 +38,7 @@
                     <div t-if="es_operador and (e.objecion_pendiente or e.observacion_rechazo)" class="tc-trip-alert-label">⛔ EMBARQUE OBJETADO · REQUIERE CORRECCIÓN</div>
                     <div class="tc-embark-meta">
                       <span>🚚 <t t-esc="e.placa or 'Sin placa'"/></span>
-                      <span>📦 <t t-esc="e.cantidad_guias"/> guías</span>
+                      <span>🗺 <t t-esc="len(e.ruta_ids)"/> rutas · 📦 <t t-esc="e.cantidad_guias"/> guías</span>
                       <span>✓ <t t-esc="e.guias_cerradas_chofer"/> cerradas · <t t-esc="e.guias_entregadas"/> confirmadas</span></div>
                     <div class="tc-guide-bottom"><span t-esc="e.origen or 'Origen sin indicar'"/><span class="tc-guide-go">→</span></div>
                   </a>
@@ -52,7 +52,7 @@
           <a t-if="es_operador" class="tc-bottom-item" href="/transcash/operacion">▦ Operación</a>
           <a t-if="es_operador" class="tc-bottom-item" href="/transcash/operacion/rutas">▤ Rutas</a>
           <a class="tc-bottom-item active" href="/transcash/embarques">🚚 Viajes</a>
-          <a class="tc-bottom-item" t-att-href="'/transcash/guias?vista=consulta' if es_operador else '/transcash/guias'">▤ Guías</a>
+          <a t-if="es_operador" class="tc-bottom-item" href="/transcash/guias?vista=consulta">▤ Guías por planificar</a>
           <a t-if="es_chofer" class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1">⇅ Pendientes</a></nav>
       </div>
     </body></html>
@@ -106,28 +106,56 @@
             <span><b>Origen</b><t t-esc="embarque.origen or 'Pendiente'"/></span></div>
           <div t-if="not request.env.user.share and embarque.observacion_general" class="tc-next-card"><div class="tc-next-icon">✎</div>
             <div><strong>Observación del embarque</strong><p t-esc="embarque.observacion_general"/></div></div>
-          <div class="tc-section-heading"><h2>Guías del embarque</h2><span class="tc-count" t-esc="embarque.cantidad_guias"/></div>
-          <div class="tc-embark-guides">
-            <t t-foreach="embarque.guia_ids.sorted('id')" t-as="g">
-              <article class="tc-embark-guide">
-                <div t-if="g.fecha_cierre_chofer" class="tc-guided-done">✓ Chofer finalizó esta entrega · <t t-esc="'Cliente confirmó recepción' if g.fecha_entrega else 'Cliente por confirmar'"/></div>
-                <div class="tc-guide-top"><a t-att-href="'/transcash/guias/%s' % g.id" class="tc-embark-guide-link">GUÍA <t t-esc="g.name"/> ↗</a>
-                  <span t-att-class="'tc-status tc-s-' + g.state" t-esc="dict(g._fields['state'].selection).get(g.state)"/></div>
-                <p><strong t-esc="g.destinatario_id.name or 'Por asignar'"/><span> · </span><t t-esc="g.destino or 'Destino por confirmar'"/></p>
-                <p class="tc-muted">Documento: <t t-esc="g.tipo_documento or '—'"/> <t t-esc="g.numero_documento or ''"/></p>
-                <p t-if="g.observacion_inicio_carga" class="tc-panel-hint">Inicio de carga: <t t-esc="g.observacion_inicio_carga"/></p>
-                <p t-if="g.observacion_fin_carga" class="tc-panel-hint">Fin de carga: <t t-esc="g.observacion_fin_carga"/></p>
-                <a class="tc-inline-action" t-att-href="'/transcash/guias/%s' % g.id">Ver productos, evidencia, roturas y recepción →</a>
-              </article>
+          <section class="tc-trip-routes" id="tc-hojas-ruta" aria-label="Hojas de ruta y sus guías">
+            <div class="tc-section-heading"><h2>🗺 Hojas de ruta del embarque</h2><span class="tc-count" t-esc="len(embarque.ruta_ids)"/></div>
+            <p class="tc-muted">Abre una ruta para ver sus guías, destinatarios y el estado de las entregas. Las evidencias del viaje están al final de esta ficha.</p>
+            <t t-foreach="embarque.ruta_ids.sorted('id')" t-as="ruta">
+              <details class="tc-trip-route" t-att-id="'tc-ruta-%d' % ruta.id" t-att-open="'open' if es_chofer and embarque.state == 'ruta' and ruta.guia_ids.filtered(lambda g: g.state in ('ruta','destino') and not g.fecha_cierre_chofer) else None">
+                <summary class="tc-trip-route-header">
+                  <span class="tc-trip-route-icon">🗺</span>
+                  <span class="tc-trip-route-main"><strong t-esc="ruta.name"/><small t-esc="ruta.destino_nombre or 'Destino pendiente'"/>
+                    <small>📦 <t t-esc="len(ruta.guia_ids)"/> guías · ✓ <t t-esc="len(ruta.guia_ids.filtered(lambda g: g.fecha_cierre_chofer))"/> entregadas por chofer</small></span>
+                  <span class="tc-trip-route-arrow">⌄</span>
+                </summary>
+                <t t-call="logistica_transcash.portal_embarque_ruta_guias"/>
+              </details>
             </t>
-          </div>
+            <div t-if="not embarque.ruta_ids" class="tc-empty-inline">Este embarque es anterior al proceso de hojas de ruta.</div>
+            <details t-if="guias_legacy" class="tc-trip-route tc-legacy-route" open="open">
+              <summary class="tc-trip-route-header"><span class="tc-trip-route-icon">📁</span><span class="tc-trip-route-main"><strong>Guías históricas sin hoja de ruta</strong><small>Se conservan para completar entregas registradas en versiones anteriores.</small></span><span class="tc-trip-route-arrow">⌄</span></summary>
+              <div class="tc-trip-route-guides">
+                <t t-foreach="guias_legacy.sorted('id')" t-as="g">
+                  <a class="tc-trip-guide-link" t-att-href="'/transcash/guias/%d' % g.id"><strong>📄 <t t-esc="g.name"/></strong><span t-esc="g.destinatario_id.name or 'Destinatario pendiente'"/><small t-esc="dict(g._fields['state'].selection).get(g.state)"/></a>
+                </t>
+              </div>
+            </details>
+          </section>
           <div t-if="embarque.state == 'entregado'" class="tc-delivered">✓ El chofer finalizó todas sus entregas. Puede iniciar otro embarque. Contabilidad procesa el pago según la aprobación de Logística; las novedades se revisan por separado.</div>
           <t t-call="logistica_transcash.transcash_evidence_hub"/>
 </main>
         <nav class="tc-bottom"><a class="tc-bottom-item active" href="/transcash/embarques">🚚 Embarques</a>
-          <a class="tc-bottom-item" t-att-href="'/transcash/guias?vista=consulta' if not request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') else '/transcash/guias'">▤ Guías</a>
+          <a t-if="not request.env.user.share and (request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') or request.env.user.has_group('logistica_transcash.group_logistica_manager'))" class="tc-bottom-item" href="/transcash/guias?vista=consulta">▤ Guías por planificar</a>
           <a class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1">⇅ Pendientes</a></nav>
       </div>
     </body></html>
+  </template>
+  <template id="portal_embarque_ruta_guias" name="Transcash: guías agrupadas dentro de hoja de ruta">
+    <div class="tc-trip-route-guides">
+      <t t-if="ruta.guia_ids">
+        <t t-foreach="ruta.guia_ids.sorted('id')" t-as="g">
+          <a class="tc-trip-guide-link" t-att-href="'/transcash/guias/%d' % g.id">
+            <span class="tc-trip-guide-icon">📄</span>
+            <span class="tc-trip-guide-body"><strong>Guía <t t-esc="g.name"/></strong>
+              <small t-esc="g.destinatario_id.name or 'Destinatario pendiente'"/>
+              <small t-esc="g.destino or ruta.destino_nombre or ''"/></span>
+            <span class="tc-trip-guide-status"><span t-att-class="'tc-status tc-s-' + g.state" t-esc="dict(g._fields['state'].selection).get(g.state)"/>
+              <small t-if="g.fecha_cierre_chofer">✓ Entregada por chofer</small>
+              <small t-elif="g.state in ('ruta','destino')">Continuar entrega →</small>
+              <small t-else="">Ver detalle →</small></span>
+          </a>
+        </t>
+      </t>
+      <div t-else="" class="tc-empty-inline">Esta hoja de ruta todavía no tiene guías confirmadas.</div>
+    </div>
   </template>
 </odoo>

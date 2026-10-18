@@ -134,6 +134,10 @@ class TranscashPortal(http.Controller):
                 for role in ('group_transcash_operador_rutas', 'group_logistica_manager',
                              'group_logistica_bodega', 'group_transcash_consulta')):
             return request.not_found()
+        # El chofer navega Embarque -> Ruta -> Guía, también con enlaces PWA antiguos.
+        # Las URLs individuales de guía permanecen vigentes para entregas y sincronización offline.
+        if user.share and user.has_group('logistica_transcash.group_transcash_chofer'):
+            return request.redirect('/transcash/embarques')
         # Instalaciones PWA anteriores abrían /transcash/guias directamente.
         # Redirigir el inicio antiguo del operador a su centro funcional,
         # conservando el enlace explícito ?vista=consulta para consultar guías.
