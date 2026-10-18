@@ -143,6 +143,12 @@
       <field name="groups" eval="[(4,ref('group_logistica_manager')),(4,ref('group_transcash_contabilidad'))]"/>
       <field name="domain_force">[('company_id','in',company_ids)]</field>
     </record>
+    <record id="rule_transcash_carga_ruta_company" model="ir.rule">
+      <field name="name">Bitácora carga: compañía del operador</field>
+      <field name="model_id" ref="model_transcash_carga_evidencia_ruta"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
     <!-- En el backoffice se aíslan las guías y sus hijos por compañías autorizadas. -->
     <record id="rule_transcash_guia_company" model="ir.rule">
       <field name="name">Transcash guías por compañía</field>

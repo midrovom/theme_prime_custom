@@ -98,7 +98,9 @@ class HojaRuta(models.Model):
                               ('cargada','Carga documentada'),('aceptada','Aceptada por chofer')],
                              default='borrador', tracking=True, required=True, readonly=True)
     observaciones = fields.Text('Observaciones de Logística')
-    video_carga = fields.Binary('Video de carga por ruta', attachment=True, copy=False)
+    evidencia_carga_ids = fields.One2many('transcash.carga.evidencia.ruta', 'ruta_id', string='Bitácora de evidencias de carga', readonly=True)
+    cantidad_evidencias_carga = fields.Integer(compute='_compute_cantidad_evidencias_carga', string='Evidencias de carga')
+    video_carga = fields.Binary('Video histórico de carga', attachment=True, copy=False)
     video_nombre = fields.Char('Nombre del video', copy=False)
     video_mime = fields.Selection([('video/mp4','MP4'), ('video/webm','WebM'),
                                     ('video/quicktime','MOV')], string='Formato de video', copy=False)
@@ -113,6 +115,15 @@ class HojaRuta(models.Model):
                                              copy=False, readonly=True, default=False)
     reasignacion_autorizada_por_id = fields.Many2one('res.users',
         string='Reasignación revisada por', readonly=True, copy=False)
+
+    @api.depends('evidencia_carga_ids', 'video_carga')
+    def _compute_cantidad_evidencias_carga(self):
+        for route in self:
+            route.cantidad_evidencias_carga = len(route.evidencia_carga_ids) + (1 if route.video_carga else 0)
+
+    def _has_carga_evidence(self):
+        self.ensure_one()
+        return bool(self.evidencia_carga_ids or (self.video_carga and self.video_mime and self.fecha_video))
 
     @api.model
     def _check_operator(self):
@@ -299,6 +310,8 @@ class HojaRuta(models.Model):
             if any(r.state != 'borrador' for r in self) and {'seleccion_guia_ids','chofer_usuario_id',
                     'proveedor_id','placa','tipo_vehiculo','destino_id','destino_codigo','company_id'} & set(vals):
                 raise UserError(_('La ruta ya está confirmada; no altere su composición.'))
+            if {'video_carga','video_nombre','video_mime'} & set(vals):
+                raise AccessError(_('Registre fotografías o videos desde la bitácora de carga. No se permite reemplazar videos históricos.'))
             if {'video_carga','video_nombre','video_mime'} & set(vals) and any(r.state != 'planificada' or
                     (r.embarque_id and r.embarque_id.state != 'preparacion') for r in self):
                 raise UserError(_('El video solo puede incorporarse antes de liberar el embarque al chofer.'))
@@ -372,6 +385,15 @@ class HojaRuta(models.Model):
                 guia._track_event('Asignada a hoja de ruta %s' % ruta.name)
         return True
 
+    def action_open_carga_pwa(self):
+        self.ensure_one()
+        self._check_operator()
+        if not self.embarque_id or self.embarque_id.state != 'preparacion':
+            raise UserError(_('Primero incluya la ruta en un embarque en preparación.'))
+        return {'type':'ir.actions.act_url',
+                'url':'/transcash/operacion/embarques/%d#ruta-%d' % (self.embarque_id.id, self.id),
+                'target':'self'}
+
     def action_open_video(self):
         self.ensure_one()
         self._check_operator()
@@ -434,8 +456,8 @@ class EmbarqueRuta(models.Model):
             emb.invalidate_recordset(['state','ruta_ids'])
             if emb.state != 'preparacion' or not emb.ruta_ids:
                 raise UserError(_('Agregue hojas de ruta antes de liberar el embarque.'))
-            if any(r.state != 'cargada' or not r.video_carga for r in emb.ruta_ids):
-                raise UserError(_('Cada hoja de ruta debe tener su video de carga validado.'))
+            if any(r.state != 'cargada' or not r._has_carga_evidence() for r in emb.ruta_ids):
+                raise UserError(_('Antes de liberar el viaje, registre al menos una foto o video de CADA hoja de ruta.'))
             guides = emb.ruta_ids.mapped('guia_ids')
             if not guides or set(guides.ids) != set(emb.guia_ids.ids):
                 raise UserError(_('Las guías del embarque y de sus rutas no coinciden.'))
@@ -459,8 +481,8 @@ class EmbarqueRuta(models.Model):
                 raise UserError(_('El embarque aún no está listo para su aceptación.'))
             if emb.observacion_rechazo:
                 raise UserError(_('Logística debe corregir y volver a liberar el embarque observado.'))
-            if any(r.state != 'cargada' or not r.video_carga for r in emb.ruta_ids):
-                raise UserError(_('Falta un video válido de alguna ruta.'))
+            if any(r.state != 'cargada' or not r._has_carga_evidence() for r in emb.ruta_ids):
+                raise UserError(_('Falta evidencia de carga en alguna hoja de ruta.'))
             if any(g.state != 'embarcada' for g in emb.guia_ids):
                 raise UserError(_('Existen guías que no están listas para salir.'))
             now = fields.Datetime.now()
@@ -521,7 +543,46 @@ class ArmarEmbarqueWizard(models.TransientModel):
     _description = 'Agrupar hojas de ruta en un embarque'
 
     embarque_id = fields.Many2one('transcash.embarque', readonly=True)
-    ruta_ids = fields.Many2many('transcash.hoja.ruta', string='Hojas de ruta', required=True)
+    company_id = fields.Many2one('res.company', default=lambda self: self.env.company, required=True)
+    proveedor_id = fields.Many2one('res.partner', string='Empresa transportista')
+    chofer_usuario_id = fields.Many2one('res.users', string='Chofer')
+    tipo_vehiculo = fields.Selection(TIPO_VEHICULO, string='Tipo de vehículo')
+    placa = fields.Char('Placa')
+    ruta_disponible_ids = fields.Many2many('transcash.hoja.ruta', compute='_compute_rutas_disponibles')
+    ruta_ids = fields.Many2many('transcash.hoja.ruta', string='Hojas de ruta compatibles', required=True)
+
+    @api.depends('company_id', 'proveedor_id', 'chofer_usuario_id', 'tipo_vehiculo', 'placa', 'embarque_id')
+    def _compute_rutas_disponibles(self):
+        for wizard in self:
+            if not wizard.proveedor_id or not wizard.chofer_usuario_id or not wizard.tipo_vehiculo or not wizard.placa:
+                wizard.ruta_disponible_ids = False
+                continue
+            wizard.ruta_disponible_ids = self.env['transcash.hoja.ruta'].search([
+                ('company_id', '=', wizard.company_id.id),
+                ('proveedor_id', '=', wizard.proveedor_id.id),
+                ('chofer_usuario_id', '=', wizard.chofer_usuario_id.id),
+                ('tipo_vehiculo', '=', wizard.tipo_vehiculo),
+                ('placa', '=ilike', wizard.placa.strip()),
+                ('embarque_id', '=', False),
+                ('state', 'in', ('planificada', 'cargada')),
+            ])
+
+    @api.onchange('embarque_id')
+    def _onchange_trip_selection(self):
+        if self.embarque_id:
+            self.company_id = self.embarque_id.company_id
+            self.proveedor_id = self.embarque_id.proveedor_id
+            self.chofer_usuario_id = self.embarque_id.chofer_usuario_id
+            self.tipo_vehiculo = self.embarque_id.tipo_vehiculo
+            self.placa = self.embarque_id.placa
+
+    @api.onchange('company_id', 'proveedor_id', 'chofer_usuario_id', 'tipo_vehiculo', 'placa')
+    def _onchange_route_filters(self):
+        self.ruta_ids = self.ruta_ids.filtered(lambda r:
+            r.company_id == self.company_id and r.proveedor_id == self.proveedor_id and
+            r.chofer_usuario_id == self.chofer_usuario_id and r.tipo_vehiculo == self.tipo_vehiculo and
+            (r.placa or '').strip().upper() == (self.placa or '').strip().upper())
+
     destino_cobro_id = fields.Many2one('transcash.destino',
         string='Destino para tarifa del viaje',
         help='Seleccione UNO de los destinos de las rutas. Se cobra una vez por embarque, no por ruta.')
@@ -530,6 +591,42 @@ class ArmarEmbarqueWizard(models.TransientModel):
     moneda_id = fields.Many2one('res.currency', compute='_compute_resumen_tarifa', readonly=True)
     importe_total_estimado = fields.Monetary('VALOR POR EMBARQUE COMPLETO',
         currency_field='moneda_id', compute='_compute_resumen_tarifa', readonly=True)
+
+    @api.model
+    def default_get(self, fields_list):
+        values = super().default_get(fields_list)
+        emb_id = values.get('embarque_id') or self.env.context.get('default_embarque_id')
+        if emb_id:
+            trip = self.env['transcash.embarque'].browse(emb_id)
+            for name, value in [('company_id',trip.company_id.id), ('proveedor_id',trip.proveedor_id.id),
+                                ('chofer_usuario_id',trip.chofer_usuario_id.id), ('tipo_vehiculo',trip.tipo_vehiculo),
+                                ('placa',trip.placa)]:
+                values[name] = value
+        return values
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        # Compatibilidad con invocaciones históricas del asistente: inferir filtros
+        # si el código existente ya proporcionó rutas; validar SIEMPRE al confirmar.
+        for vals in vals_list:
+            ids = []
+            for command in vals.get('ruta_ids') or []:
+                if command[0] == 6:
+                    ids += command[2]
+                elif command[0] == 4:
+                    ids.append(command[1])
+            if vals.get('embarque_id'):
+                trip = self.env['transcash.embarque'].browse(vals['embarque_id'])
+                first = trip
+            elif ids:
+                first = self.env['transcash.hoja.ruta'].browse(ids[0])
+            else:
+                first = False
+            if first:
+                for key in ('company_id','proveedor_id','chofer_usuario_id','tipo_vehiculo','placa'):
+                    value = getattr(first, key)
+                    vals.setdefault(key, value.id if key.endswith('_id') else value)
+        return super().create(vals_list)
 
     @api.depends('ruta_ids', 'ruta_ids.destino_id')
     def _compute_destinos_posibles(self):
@@ -577,6 +674,18 @@ class ArmarEmbarqueWizard(models.TransientModel):
             raise UserError(_('Seleccione al menos una hoja de ruta.'))
         routes = self.ruta_ids.sorted('id')
         first = routes[0]
+        if not self.proveedor_id or not self.chofer_usuario_id or not self.tipo_vehiculo or not self.placa:
+            raise UserError(_('Seleccione primero transportista, chofer, tipo de vehículo y placa.'))
+        if (first.company_id != self.company_id or first.proveedor_id != self.proveedor_id or
+                first.chofer_usuario_id != self.chofer_usuario_id or first.tipo_vehiculo != self.tipo_vehiculo or
+                (first.placa or '').strip().upper() != self.placa.strip().upper()):
+            raise UserError(_('La ruta seleccionada no coincide con los datos planificados para el viaje.'))
+        if self.embarque_id and (self.embarque_id.company_id != self.company_id or
+                self.embarque_id.proveedor_id != self.proveedor_id or
+                self.embarque_id.chofer_usuario_id != self.chofer_usuario_id or
+                self.embarque_id.tipo_vehiculo != self.tipo_vehiculo or
+                (self.embarque_id.placa or '').strip().upper() != self.placa.strip().upper()):
+            raise UserError(_('El embarque existente tiene otro transporte, chofer o tipo de vehículo.'))
         if first.company_id not in self.env.user.company_ids:
             raise AccessError(_('Compañía no autorizada.'))
         driver = first.chofer_usuario_id.id

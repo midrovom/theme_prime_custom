@@ -122,8 +122,15 @@
  <div class="tc-embark-list"><t t-foreach="embarque.ruta_ids" t-as="ruta">
   <article class="tc-guide-card" style="display:block;padding:18px">
    <strong t-esc="ruta.name"/><p>📍 <t t-esc="ruta.destino_nombre"/> · <t t-esc="len(ruta.guia_ids)"/> guías</p>
-   <video t-if="ruta.state in ('cargada','aceptada')" controls="controls" playsinline="playsinline" preload="metadata" style="max-width:100%;width:100%;border-radius:12px;background:#111" t-att-src="'/transcash/rutas/%s/video' % ruta.id"/>
-   <p t-else="" class="tc-panel-hint">Logística todavía no ha validado el video de carga.</p>
+   <div t-if="ruta.evidencia_carga_ids" class="tc-ops-evidence-grid">
+     <t t-foreach="ruta.evidencia_carga_ids" t-as="ev"><div class="tc-ops-evidence-card">
+       <img t-if="ev.tipo == 'foto'" loading="lazy" alt="Fotografía de carga" t-att-src="'/transcash/rutas/evidencia/%d' % ev.id"/>
+       <video t-if="ev.tipo == 'video'" controls="controls" playsinline="playsinline" preload="metadata" t-att-src="'/transcash/rutas/evidencia/%d' % ev.id"/>
+       <small>Logística: <t t-esc="ev.usuario_id.name"/> · <t t-esc="ev.fecha"/></small>
+     </div></t>
+   </div>
+   <video t-if="ruta.video_carga and ruta.state in ('cargada','aceptada')" controls="controls" playsinline="playsinline" preload="metadata" style="max-width:100%;width:100%;border-radius:12px;background:#111" t-att-src="'/transcash/rutas/%s/video' % ruta.id"/>
+   <p t-if="not ruta._has_carga_evidence()" class="tc-panel-hint">Logística todavía no ha registrado evidencia de carga.</p>
    <p t-if="ruta.observaciones" class="tc-panel-hint" t-esc="ruta.observaciones"/>
   </article>
  </t></div>

@@ -191,29 +191,40 @@ class TranscashOperaciones(http.Controller):
         except self.ERROR_TYPES as ex:
             return request.redirect('/transcash/operacion/rutas/%d?error=%s' % (route.id,quote(str(ex)[:320])))
 
-    @http.route('/transcash/operacion/rutas/<int:route_id>/video', type='http', auth='user', website=True, methods=['POST'], csrf=True)
-    def route_video(self, route_id, **post):
+    @http.route('/transcash/operacion/rutas/<int:route_id>/evidencia',
+                type='http', auth='user', website=True, methods=['POST'], csrf=True)
+    def route_media(self, route_id, **post):
         if not self._guard():
             return request.not_found()
         route = self._route(route_id)
         if not route:
             return request.not_found()
         try:
-            if route.state != 'planificada' or not route.embarque_id or route.embarque_id.state != 'preparacion':
-                raise UserError(_('Primero incluya esta hoja de ruta en un embarque en preparación.'))
-            uploaded = request.httprequest.files.get('video')
+            if (route.state not in ('planificada', 'cargada') or not route.embarque_id or
+                    route.embarque_id.state != 'preparacion'):
+                raise UserError(_('Solo puede documentar la carga antes de liberar el viaje al chofer.'))
+            uploaded = request.httprequest.files.get('archivo')
             if not uploaded or not uploaded.filename:
-                raise UserError(_('Seleccione el video de carga.'))
-            data = uploaded.read(75*1024*1024+1)
-            mime = sniff_mime(data)
-            if len(data)<12 or len(data)>75*1024*1024 or mime not in ('video/mp4','video/webm','video/quicktime'):
-                raise UserError(_('Video inválido. Use MP4, MOV o WebM (máximo 75 MB).'))
-            route.write({'video_carga':base64.b64encode(data).decode(),
-                         'video_nombre':secure_filename(uploaded.filename)[:160] or 'carga.mp4'})
-            route.action_validate_video()
-            return request.redirect('/transcash/operacion/rutas/%d?ok=video' % route.id)
+                raise UserError(_('Tome una foto, grabe un video o seleccione un archivo.'))
+            # Límites reales validados en servidor. Nunca confiar en extensión ni Content-Type del navegador.
+            content = uploaded.read(75 * 1024 * 1024 + 1)
+            mime = sniff_mime(content)
+            if mime not in ('image/jpeg','image/png','image/webp','image/heic','image/heif','video/mp4','video/webm','video/quicktime'):
+                raise UserError(_('Archivo no compatible. Use foto JPG/PNG/WebP/HEIC o video MP4/WebM/MOV.'))
+            if len(content) < 12 or len(content) > (20 if mime.startswith('image/') else 75) * 1024 * 1024:
+                raise UserError(_('El tamaño máximo es 20 MB por foto o 75 MB por video.'))
+            request.env['transcash.carga.evidencia.ruta'].create({
+                'ruta_id':route.id,
+                'tipo':'foto' if mime.startswith('image/') else 'video',
+                'mime':mime,
+                'nombre':secure_filename(uploaded.filename)[:160] or 'evidencia',
+                'archivo':base64.b64encode(content).decode('ascii'),
+                'observacion':(post.get('observacion') or '').strip()[:500],
+            })
+            return request.redirect('/transcash/operacion/embarques/%d?ok=evidencia#ruta-%d' % (route.embarque_id.id, route.id))
         except self.ERROR_TYPES as ex:
-            return request.redirect('/transcash/operacion/rutas/%d?error=%s' % (route.id,quote(str(ex)[:320])))
+            return request.redirect('/transcash/operacion/embarques/%d?error=%s#ruta-%d' % (
+                route.embarque_id.id if route.embarque_id else 0, quote(str(ex)[:320]), route.id))
 
     @http.route('/transcash/operacion/embarques/nuevo', type='http', auth='user', website=True, methods=['GET','POST'], csrf=True)
     def trip_new(self, **post):
@@ -226,6 +237,32 @@ class TranscashOperaciones(http.Controller):
         trips = request.env['transcash.embarque'].search([
             ('company_id','in',request.env.user.company_ids.ids),('state','=','preparacion')],
             order='id desc', limit=60)
+        # Paso 1: fijar una planificación real. No mostrar ni habilitar rutas
+        # de otros choferes/transportistas/tipos/placas en el selector.
+        grupos = []
+        vistos = set()
+        for r in ready:
+            clave = (r.company_id.id, r.proveedor_id.id, r.chofer_usuario_id.id,
+                     r.tipo_vehiculo, (r.placa or '').strip().upper())
+            if clave not in vistos:
+                vistos.add(clave)
+                grupos.append(r)
+        try:
+            grupo_id = int(post.get('grupo_ruta_id') or 0)
+        except (TypeError, ValueError):
+            grupo_id = 0
+        grupo = ready.filtered(lambda r: r.id == grupo_id)[:1]
+        def compatibles(r):
+            return bool(grupo and r.company_id == grupo.company_id and
+                r.proveedor_id == grupo.proveedor_id and
+                r.chofer_usuario_id == grupo.chofer_usuario_id and
+                r.tipo_vehiculo == grupo.tipo_vehiculo and
+                (r.placa or '').strip().upper() == (grupo.placa or '').strip().upper())
+        rutas_visibles = ready.filtered(compatibles) if grupo else ready.browse()
+        viajes_visibles = trips.filtered(lambda e: grupo and
+            e.company_id == grupo.company_id and e.proveedor_id == grupo.proveedor_id and
+            e.chofer_usuario_id == grupo.chofer_usuario_id and e.tipo_vehiculo == grupo.tipo_vehiculo and
+            (e.placa or '').strip().upper() == (grupo.placa or '').strip().upper())
         if request.httprequest.method == 'POST':
             try:
                 ids = list(dict.fromkeys(int(i) for i in request.httprequest.form.getlist('rutas')))
@@ -234,14 +271,16 @@ class TranscashOperaciones(http.Controller):
                 if not ids or len(ids)>30:
                     raise UserError(_('Seleccione entre 1 y 30 rutas.'))
                 routes = Route.browse(ids).exists()
-                if len(routes)!=len(ids) or any(r not in ready for r in routes):
+                if not grupo or len(routes)!=len(ids) or any(r not in rutas_visibles for r in routes):
                     raise UserError(_('Alguna ruta ya está asignada o no está lista. Recargue el formulario.'))
-                existing = trips.filtered(lambda t:t.id == existing_id)[:1] if existing_id else False
+                existing = viajes_visibles.filtered(lambda t:t.id == existing_id)[:1] if existing_id else False
                 if existing_id and not existing:
                     raise UserError(_('El embarque seleccionado no está disponible.'))
                 wizard = request.env['transcash.armar.embarque.wizard'].create({
                     'ruta_ids':[(6,0,ids)], 'embarque_id':existing.id if existing else False,
-                    'destino_cobro_id':dest_id or False})
+                    'company_id':grupo.company_id.id, 'proveedor_id':grupo.proveedor_id.id,
+                    'chofer_usuario_id':grupo.chofer_usuario_id.id, 'tipo_vehiculo':grupo.tipo_vehiculo,
+                    'placa':grupo.placa, 'destino_cobro_id':dest_id or False})
                 result = wizard.action_confirm()  # Permisos, concurrencia y tarifa única del modelo.
                 trip_id = result.get('res_id')
                 if not trip_id:
@@ -249,9 +288,9 @@ class TranscashOperaciones(http.Controller):
                 return request.redirect('/transcash/operacion/embarques/%d?ok=registrado' % trip_id)
             except self.ERROR_TYPES as ex:
                 return self._page('Armar embarque',section='nuevo_embarque', error=str(ex),
-                                  form_values=post, rutas_disponibles=ready, embarques_en_preparacion=trips)
-        return self._page('Armar embarque',section='nuevo_embarque',form_values={},
-                          rutas_disponibles=ready, embarques_en_preparacion=trips)
+                                  form_values=post, grupos_planificacion=grupos, grupo_actual=grupo, rutas_disponibles=rutas_visibles, embarques_en_preparacion=viajes_visibles)
+        return self._page('Armar embarque',section='nuevo_embarque',form_values=post, grupos_planificacion=grupos, grupo_actual=grupo,
+                          rutas_disponibles=rutas_visibles, embarques_en_preparacion=viajes_visibles)
 
     @http.route('/transcash/operacion/embarques/<int:trip_id>', type='http', auth='user', website=True, methods=['GET'])
     def trip_detail(self, trip_id, **kw):

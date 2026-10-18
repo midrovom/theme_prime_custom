@@ -178,6 +178,49 @@ class AceptacionCargaController(http.Controller):
             return self._render(emb, str(err))
         return request.redirect('/transcash/embarques/%d?ok=1' % emb.id)
 
+    @http.route('/transcash/rutas/evidencia/<int:evidencia_id>',
+                type='http', auth='user', website=True, methods=['GET'])
+    def ruta_evidencia(self, evidencia_id, **kw):
+        import base64
+        import re
+        from werkzeug.utils import secure_filename
+        evidence = request.env['transcash.carga.evidencia.ruta'].sudo().browse(evidencia_id).exists()
+        if not evidence or not evidence.archivo:
+            return request.not_found()
+        route = evidence.ruta_id
+        user = request.env.user
+        allowed = ((user.has_group('logistica_transcash.group_transcash_chofer') and
+                    route.chofer_usuario_id == user) or
+                   (user.has_group('logistica_transcash.group_transcash_transportista') and
+                    route.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id) or
+                   (not user.share and route.company_id in user.company_ids and
+                    (user.has_group('logistica_transcash.group_transcash_consulta') or
+                     user.has_group('logistica_transcash.group_logistica_bodega') or
+                     user.has_group('logistica_transcash.group_transcash_operador_rutas') or
+                     user.has_group('logistica_transcash.group_logistica_manager'))))
+        if not allowed or evidence.mime not in ('image/jpeg','image/png','image/webp','image/heic','image/heif',
+                                               'video/mp4','video/webm','video/quicktime'):
+            return request.not_found()
+        data = base64.b64decode(evidence.archivo)
+        headers = [('Content-Type',evidence.mime),('X-Content-Type-Options','nosniff'),
+                   ('Cache-Control','private, no-store'),
+                   ('Content-Disposition','inline; filename="%s"' % secure_filename(evidence.nombre or 'evidencia')),
+                   ('Accept-Ranges','bytes')]
+        range_header = request.httprequest.headers.get('Range','')
+        if range_header and evidence.tipo == 'video':
+            match = re.fullmatch(r'bytes=(\d*)-(\d*)', range_header.strip())
+            if not match or not any(match.groups()):
+                return request.make_response(b'',headers=[('Content-Range','bytes */%d'%len(data))],status=416)
+            start = int(match.group(1)) if match.group(1) else max(0,len(data)-int(match.group(2)))
+            end = min(int(match.group(2)),len(data)-1) if match.group(2) else len(data)-1
+            if start > end or start >= len(data):
+                return request.make_response(b'',headers=[('Content-Range','bytes */%d'%len(data))],status=416)
+            headers += [('Content-Range','bytes %d-%d/%d'%(start,end,len(data))),
+                        ('Content-Length',str(end-start+1))]
+            return request.make_response(data[start:end+1],headers=headers,status=206)
+        headers.append(('Content-Length',str(len(data))))
+        return request.make_response(data,headers=headers)
+
     @http.route('/transcash/rutas/<int:ruta_id>/video',
                 type='http', auth='user', website=True, methods=['GET'])
     def video_route(self, ruta_id, **kw):

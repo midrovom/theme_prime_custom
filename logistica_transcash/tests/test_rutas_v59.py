@@ -37,7 +37,7 @@ class TestHojasRuta(TransactionCase):
             self.env['transcash.evidencia'].with_user(self.driver).register_evidence(
                 self.guide, 'carga', 'Cargando', False, False, False)
 
-    def test_logistics_plan_requires_video_and_driver_accepts(self):
+    def test_logistics_plan_requires_media_and_driver_accepts(self):
         route = self.env['transcash.hoja.ruta'].with_user(self.manager).create({
             'company_id':self.env.company.id, 'chofer_usuario_id':self.driver.id,
             'proveedor_id':self.vendor.id, 'placa':'ABC-999',
@@ -61,12 +61,13 @@ class TestHojasRuta(TransactionCase):
             emb.with_user(self.manager).action_ready_for_driver()
         with self.assertRaises(UserError):
             emb.with_user(self.driver).action_accept_and_depart()
-        # Entrada declarada imitando un video MP4 válido mínimo (no medio audiovisual real)
+        # Evidencia nueva con foto; los videos anteriores siguen leyéndose en histórico.
         import base64
-        fake_mp4 = b'\x00\x00\x00\x18ftypisom'+b'\x00'*20
-        route.with_user(self.manager).write({
-            'video_carga':base64.b64encode(fake_mp4), 'video_nombre':'prueba.mp4'})
-        route.with_user(self.manager).action_validate_video()
+        fake_photo = b'\xff\xd8\xff\xe0'+b'\x00'*40
+        self.env['transcash.carga.evidencia.ruta'].with_user(self.manager).create({
+            'ruta_id':route.id, 'archivo':base64.b64encode(fake_photo),
+            'nombre':'prueba.jpg', 'tipo':'foto', 'mime':'image/jpeg',
+        })
         emb.with_user(self.manager).action_ready_for_driver()
         self.assertEqual(emb.state,'embarcado')
         emb.with_user(self.driver).action_accept_and_depart()
@@ -227,3 +228,74 @@ class TestHojasRuta(TransactionCase):
         })
         new_wiz.action_confirm()
         self.assertEqual(trip.valor_acordado, 125.0)
+
+    def test_v518_foto_carga_bitacora_y_liberacion(self):
+        """Foto subida por Logística habilita la aceptación sin video obligatorio."""
+        import base64
+        ruta = self.env['transcash.hoja.ruta'].with_user(self.manager).create({
+            'company_id':self.env.company.id, 'chofer_usuario_id':self.driver.id,
+            'proveedor_id':self.vendor.id, 'placa':'ABC-999',
+            'tipo_vehiculo':'camion', 'destino_id':self.destino.id,
+            'seleccion_guia_ids':[(6,0,[self.guide.id])],
+        })
+        ruta.with_user(self.manager).action_confirm_route()
+        wizard = self.env['transcash.armar.embarque.wizard'].with_user(self.manager).create({
+            'ruta_ids':[(6,0,[ruta.id])]})
+        wizard.action_confirm()
+        embarque = ruta.embarque_id
+        with self.assertRaises(UserError):
+            embarque.with_user(self.manager).action_ready_for_driver()
+        foto = base64.b64encode(b'\xff\xd8\xff\xe0'+ b'\x00'*40)
+        evidencia = self.env['transcash.carga.evidencia.ruta'].with_user(self.manager).create({
+            'ruta_id':ruta.id, 'archivo':foto, 'nombre':'carga.jpg',
+            'tipo':'foto', 'mime':'image/jpeg',
+        })
+        self.assertEqual(evidencia.usuario_id, self.manager)
+        self.assertEqual(ruta.state, 'cargada')
+        self.assertTrue(ruta._has_carga_evidence())
+        with self.assertRaises(AccessError):
+            evidencia.with_user(self.manager).unlink()
+        embarque.with_user(self.manager).action_ready_for_driver()
+        self.assertEqual(embarque.state, 'embarcado')
+        with self.assertRaises(UserError):
+            self.env['transcash.carga.evidencia.ruta'].with_user(self.manager).create({
+                'ruta_id':ruta.id, 'archivo':foto, 'nombre':'tarde.jpg',
+                'tipo':'foto', 'mime':'image/jpeg',
+            })
+        embarque.with_user(self.driver).action_accept_and_depart()
+        self.assertEqual(embarque.state,'ruta')
+
+    def test_v518_no_mezcla_tipos_ni_transportistas_en_un_viaje(self):
+        """El asistente rechaza hasta selecciones forzadas por RPC."""
+        def nueva_ruta(numero, vendor, vehicle):
+            guia = self.env['transcash.guia'].sudo().create({
+                'name': numero, 'company_id':self.env.company.id,
+                'chofer_usuario_id':self.driver.id, 'proveedor_id':vendor.id,
+                'destinatario_id':self.customer.id, 'placa':'ABC-999',
+                'destino_codigo':self.destino.codigo, 'destino':self.destino.name,
+            })
+            ruta = self.env['transcash.hoja.ruta'].with_user(self.manager).create({
+                'company_id':self.env.company.id, 'chofer_usuario_id':self.driver.id,
+                'proveedor_id':vendor.id, 'placa':'ABC-999',
+                'tipo_vehiculo':vehicle, 'destino_id':self.destino.id,
+                'seleccion_guia_ids':[(6,0,[guia.id])],
+            })
+            ruta.with_user(self.manager).action_confirm_route()
+            return ruta
+        a = nueva_ruta('V518-A',self.vendor,'camion')
+        b = nueva_ruta('V518-B',self.vendor,'mula')
+        another = self.env['res.partner'].create({'name':'Otro transportista V518'})
+        c = nueva_ruta('V518-C', another, 'camion')
+        wizard = self.env['transcash.armar.embarque.wizard'].with_user(self.manager).create({
+            'ruta_ids':[(6,0,[a.id])],
+        })
+        self.assertIn(a, wizard.ruta_disponible_ids)
+        self.assertNotIn(b, wizard.ruta_disponible_ids)
+        self.assertNotIn(c, wizard.ruta_disponible_ids)
+        invalid = self.env['transcash.armar.embarque.wizard'].with_user(self.manager).create({
+            'ruta_ids':[(6,0,[a.id,b.id])],
+        })
+        with self.assertRaises(UserError):
+            invalid.action_confirm()
+        self.assertFalse(a.embarque_id)
+        self.assertFalse(b.embarque_id)

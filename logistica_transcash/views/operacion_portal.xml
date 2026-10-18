@@ -29,7 +29,7 @@
             <div class="tc-section-heading"><h2>¿Qué necesitas hacer?</h2></div>
             <div class="tc-ops-grid">
               <a class="tc-ops-tile" href="/transcash/operacion/rutas/nueva"><b>01 · PLANIFICAR</b><strong>＋ Crear hoja de ruta</strong><small>Elegir transporte, chofer, destino y guías</small></a>
-              <a class="tc-ops-tile" href="/transcash/operacion/rutas"><b>02 · ORGANIZAR</b><strong>▤ Seleccionar guías / videos</strong><small>Agregar guías y documentar carga por ruta</small></a>
+              <a class="tc-ops-tile" href="/transcash/operacion/rutas"><b>02 · ORGANIZAR</b><strong>▤ Seleccionar guías / evidencias</strong><small>Agregar guías y documentar carga por ruta</small></a>
               <a class="tc-ops-tile" href="/transcash/operacion/embarques/nuevo"><b>03 · AGRUPAR</b><strong>🚚 Armar embarque</strong><small>Reunir rutas y aplicar un único precio por viaje</small></a>
               <a class="tc-ops-tile" href="/transcash/embarques"><b>04 · SUPERVISAR</b><strong>✓ Revisar embarques</strong><small>Liberar la carga para aceptación del chofer</small></a>
               <a class="tc-ops-tile" href="/transcash/guias?vista=consulta"><b>CONSULTAR</b><strong>▤ Ver guías</strong><small>Documentos, productos y estados</small></a>
@@ -130,42 +130,53 @@
                 <a class="tc-guide-card" t-att-href="'/transcash/guias/%d' % g.id"><strong t-esc="g.name"/><small t-esc="g.destinatario_id.name"/></a>
               </t></div>
               <a t-if="not ruta.embarque_id" class="tc-button tc-button-primary" href="/transcash/operacion/embarques/nuevo">Paso 3 · Armar embarque con esta ruta →</a>
-              <t t-if="ruta.embarque_id and ruta.state == 'planificada' and ruta.embarque_id.state == 'preparacion'">
-                <div class="tc-section-heading"><h2>Paso 4 · Video de carga</h2></div>
-                <p>Graba o selecciona un video de la carga de esta ruta. La validación se realiza automáticamente tras cargarlo.</p>
-                <form method="post" enctype="multipart/form-data" class="tc-ops-form" t-att-action="'/transcash/operacion/rutas/%d/video' % ruta.id">
-                  <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-                  <label for="tc-ops-video">Video de carga (MP4, MOV o WebM; máximo 75 MB)</label>
-                  <input id="tc-ops-video" type="file" accept="video/mp4,video/quicktime,video/webm" name="video" required="required"/>
-                  <button class="tc-button tc-button-primary" type="submit">Subir y validar video →</button>
-                </form>
-              </t>
-              <t t-if="ruta.video_carga and ruta.state in ('cargada','aceptada')">
-                <div class="tc-section-heading"><h2>Video validado</h2></div>
-                <video controls="controls" playsinline="playsinline" preload="metadata" class="tc-ops-video" t-att-src="'/transcash/rutas/%d/video' % ruta.id"/>
+              <t t-if="ruta.evidencia_carga_ids or ruta.video_carga">
+                <div class="tc-section-heading"><h2>Bitácora de carga</h2><span class="tc-count" t-esc="ruta.cantidad_evidencias_carga"/></div>
+                <div class="tc-ops-evidence-grid">
+                  <t t-foreach="ruta.evidencia_carga_ids" t-as="ev">
+                    <div class="tc-ops-evidence-card">
+                      <img t-if="ev.tipo == 'foto'" loading="lazy" t-att-src="'/transcash/rutas/evidencia/%d' % ev.id" alt="Foto de carga"/>
+                      <video t-if="ev.tipo == 'video'" controls="controls" preload="metadata" playsinline="playsinline" t-att-src="'/transcash/rutas/evidencia/%d' % ev.id"/>
+                      <strong t-esc="ev.usuario_id.name"/><small t-esc="ev.fecha"/><small t-esc="ev.observacion"/>
+                    </div>
+                  </t>
+                  <div t-if="ruta.video_carga" class="tc-ops-evidence-card"><video controls="controls" preload="metadata" playsinline="playsinline" t-att-src="'/transcash/rutas/%d/video' % ruta.id"/><strong t-esc="ruta.video_por_id.name"/><small t-esc="ruta.fecha_video"/></div>
+                </div>
               </t>
             </t>
           </t>
 
           <t t-if="section == 'nuevo_embarque'">
-            <div class="tc-next-card"><div class="tc-next-icon">🚚</div><div><strong>Un precio por embarque completo</strong><p>Selecciona varias rutas del mismo transporte, chofer y placa. El flete se cobrará UNA sola vez, según el destino de cobro elegido.</p></div></div>
-            <form class="tc-ops-form" action="/transcash/operacion/embarques/nuevo" method="post">
-              <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-              <label for="tc-ops-existing">Embarque existente (opcional)</label>
-              <select name="embarque_id" id="tc-ops-existing"><option value="">Crear nuevo viaje</option>
-                <t t-foreach="embarques_en_preparacion" t-as="t"><option t-att-value="t.id" t-esc="t.name" t-att-selected="'selected' if str(t.id) == str(form_values.get('embarque_id','')) else None"/></t></select>
-              <label>Hojas de ruta disponibles</label>
-              <div class="tc-ops-checklist"><t t-foreach="rutas_disponibles" t-as="ruta">
-                <label class="tc-ops-guide-check"><input type="checkbox" name="rutas" t-att-value="ruta.id" t-att-checked="'checked' if str(ruta.id) in request.httprequest.form.getlist('rutas') else None"/>
-                  <span><strong><t t-esc="ruta.name"/> · <t t-esc="ruta.destino_nombre"/></strong><small><t t-esc="ruta.chofer_usuario_id.name"/> · <t t-esc="ruta.placa"/> · <t t-esc="ruta.proveedor_id.name"/></small></span></label>
-              </t><p t-if="not rutas_disponibles" class="tc-empty-inline">No hay rutas planificadas pendientes. Confirma primero una hoja de ruta.</p></div>
-              <label for="tc-ops-charge">Destino de cobro del viaje (obligatorio para un viaje nuevo)</label>
-              <select name="destino_cobro_id" id="tc-ops-charge"><option value="">Selecciona el destino de referencia</option>
-                <t t-foreach="rutas_disponibles.mapped('destino_id')" t-as="d"><option t-att-value="d.id" t-esc="d.name" t-att-selected="'selected' if str(d.id) == str(form_values.get('destino_cobro_id','')) else None"/></t>
+            <div class="tc-next-card"><div class="tc-next-icon">🚚</div><div><strong>Paso 1 · Selecciona el transporte planificado</strong><p>Solo se mostrarán rutas del mismo transportista, chofer, tipo de vehículo y placa. Una tarifa por viaje completo.</p></div></div>
+            <form method="get" action="/transcash/operacion/embarques/nuevo" class="tc-ops-form">
+              <label for="tc-ops-group">Transporte · Chofer · Tipo · Placa</label>
+              <select id="tc-ops-group" name="grupo_ruta_id" required="required" onchange="this.form.submit()">
+                <option value="">Selecciona para mostrar rutas compatibles</option>
+                <t t-foreach="grupos_planificacion" t-as="r"><option t-att-value="r.id" t-att-selected="'selected' if grupo_actual and grupo_actual.id == r.id else None"><t t-esc="r.proveedor_id.name"/> · <t t-esc="r.chofer_usuario_id.name"/> · <t t-esc="dict(r._fields['tipo_vehiculo'].selection).get(r.tipo_vehiculo)"/> · <t t-esc="r.placa"/></option></t>
               </select>
-              <p class="tc-muted">Al registrar se valida la tarifa del viaje según vehículo y destino. No se suman tarifas de las rutas.</p>
-              <button class="tc-button tc-button-primary" type="submit">Registrar embarque →</button>
+              <button class="tc-button tc-button-outline" type="submit">Mostrar rutas de este viaje</button>
             </form>
+            <t t-if="grupo_actual">
+              <div class="tc-next-card"><div class="tc-next-icon">✓</div><div><strong>Paso 2 · Selecciona las hojas de ruta compatibles</strong><p>Las rutas de otras empresas, choferes, placas y tipos de vehículo no aparecen en esta lista.</p></div></div>
+              <form class="tc-ops-form" action="/transcash/operacion/embarques/nuevo" method="post">
+                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                <input type="hidden" name="grupo_ruta_id" t-att-value="grupo_actual.id"/>
+                <label for="tc-ops-existing">Embarque en preparación (opcional)</label>
+                <select name="embarque_id" id="tc-ops-existing"><option value="">Crear nuevo viaje</option>
+                  <t t-foreach="embarques_en_preparacion" t-as="t"><option t-att-value="t.id" t-esc="t.name" t-att-selected="'selected' if str(t.id) == str(form_values.get('embarque_id','')) else None"/></t>
+                </select>
+                <label>Hojas de ruta disponibles · <t t-esc="len(rutas_disponibles)"/></label>
+                <div class="tc-ops-checklist"><t t-foreach="rutas_disponibles" t-as="ruta">
+                  <label class="tc-ops-guide-check"><input type="checkbox" name="rutas" t-att-value="ruta.id" t-att-checked="'checked' if str(ruta.id) in request.httprequest.form.getlist('rutas') else None"/>
+                    <span><strong><t t-esc="ruta.name"/> · <t t-esc="ruta.destino_nombre"/></strong><small><t t-esc="len(ruta.guia_ids)"/> guías · <t t-esc="ruta.placa"/></small></span></label>
+                </t><p t-if="not rutas_disponibles" class="tc-empty-inline">No hay hojas de ruta pendientes para este transporte. Revise o confirme las hojas de ruta.</p></div>
+                <label for="tc-ops-charge">Destino de tarifa del viaje</label>
+                <select name="destino_cobro_id" id="tc-ops-charge"><option value="">Selecciona destino del viaje nuevo</option>
+                  <t t-foreach="rutas_disponibles.mapped('destino_id')" t-as="d"><option t-att-value="d.id" t-esc="d.name" t-att-selected="'selected' if str(d.id) == str(form_values.get('destino_cobro_id','')) else None"/></t>
+                </select>
+                <button class="tc-button tc-button-primary" type="submit" t-att-disabled="'disabled' if not rutas_disponibles else None">Crear embarque y registrar evidencias →</button>
+              </form>
+            </t>
           </t>
 
           <t t-if="section == 'embarque_detalle'">
@@ -174,17 +185,53 @@
               <span><b>Transportista</b><t t-esc="embarque.proveedor_id.name"/></span>
               <span><b>Placa</b><t t-esc="embarque.placa"/></span>
               <span><b>Valor referencial del viaje</b><t t-esc="embarque.tarifa_referencial_total"/></span></div>
-            <div class="tc-section-heading"><h2>Hojas de ruta del viaje</h2></div>
+            <div class="tc-section-heading"><h2>Paso 3 · Documenta la carga por ruta</h2></div>
+            <p class="tc-muted">Cada ruta requiere al menos una foto o video. Se guarda el nombre del operador y la hora. En celular usa los botones de cámara; en computadora, selecciona un archivo.</p>
+            <div class="tc-ops-trip-progress"><b t-esc="len(embarque.ruta_ids.filtered(lambda r: r.state in ('cargada','aceptada') and r._has_carga_evidence()))"/> / <b t-esc="len(embarque.ruta_ids)"/> rutas con evidencia</div>
             <div class="tc-embark-list"><t t-foreach="embarque.ruta_ids" t-as="ruta">
-              <a class="tc-guide-card" t-att-href="'/transcash/operacion/rutas/%d' % ruta.id"><strong t-esc="ruta.name"/> — <t t-esc="ruta.destino_nombre"/>
-                <small><t t-esc="len(ruta.guia_ids)"/> guías · <t t-esc="dict(ruta._fields['state'].selection).get(ruta.state)"/></small></a>
+              <article class="tc-guide-card tc-ops-loading-card" t-att-id="'ruta-%d' % ruta.id">
+                <div class="tc-guide-top"><strong><t t-esc="ruta.name"/> · <t t-esc="ruta.destino_nombre"/></strong><span t-att-class="'tc-status ' + ('tc-ops-done' if ruta._has_carga_evidence() else 'tc-ops-missing')" t-esc="'✓ Evidencia registrada' if ruta._has_carga_evidence() else '● Falta evidencia'"/></div>
+                <p class="tc-panel-hint"><t t-esc="len(ruta.guia_ids)"/> guías · <t t-esc="ruta.cantidad_evidencias_carga"/> evidencias · <t t-esc="ruta.chofer_usuario_id.name"/></p>
+                <t t-if="embarque.state == 'preparacion' and ruta.state in ('planificada','cargada')">
+                  <div class="tc-ops-capture-actions">
+                    <form method="post" enctype="multipart/form-data" t-att-action="'/transcash/operacion/rutas/%d/evidencia' % ruta.id">
+                      <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                      <label class="tc-button tc-button-primary tc-ops-capture">📸 Tomar foto
+                        <input type="file" name="archivo" accept="image/*" capture="environment" required="required" onchange="this.form.requestSubmit()"/>
+                      </label><button type="submit" class="tc-ops-fallback-btn">Subir foto</button>
+                    </form>
+                    <form method="post" enctype="multipart/form-data" t-att-action="'/transcash/operacion/rutas/%d/evidencia' % ruta.id">
+                      <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                      <label class="tc-button tc-button-primary tc-ops-capture">🎥 Grabar video
+                        <input type="file" name="archivo" accept="video/*" capture="environment" required="required" onchange="this.form.requestSubmit()"/>
+                      </label><button type="submit" class="tc-ops-fallback-btn">Subir video</button>
+                    </form>
+                    <form method="post" enctype="multipart/form-data" t-att-action="'/transcash/operacion/rutas/%d/evidencia' % ruta.id">
+                      <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                      <label class="tc-button tc-button-outline tc-ops-capture">📁 Seleccionar archivo
+                        <input type="file" name="archivo" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/webm,video/quicktime" required="required" onchange="this.form.requestSubmit()"/>
+                      </label><button type="submit" class="tc-ops-fallback-btn">Adjuntar</button>
+                    </form>
+                  </div>
+                </t>
+                <div t-if="ruta.evidencia_carga_ids or ruta.video_carga" class="tc-ops-evidence-grid">
+                  <t t-foreach="ruta.evidencia_carga_ids" t-as="ev">
+                    <div class="tc-ops-evidence-card">
+                      <img t-if="ev.tipo == 'foto'" loading="lazy" alt="Evidencia de carga" t-att-src="'/transcash/rutas/evidencia/%d' % ev.id"/>
+                      <video t-if="ev.tipo == 'video'" controls="controls" playsinline="playsinline" preload="metadata" t-att-src="'/transcash/rutas/evidencia/%d' % ev.id"/>
+                      <strong t-esc="ev.usuario_id.name"/><small t-esc="ev.fecha"/><small t-esc="ev.nombre"/>
+                    </div>
+                  </t>
+                  <div t-if="ruta.video_carga" class="tc-ops-evidence-card"><video controls="controls" playsinline="playsinline" preload="metadata" t-att-src="'/transcash/rutas/%d/video' % ruta.id"/><strong t-esc="ruta.video_por_id.name"/><small t-esc="ruta.fecha_video"/></div>
+                </div>
+              </article>
             </t></div>
             <a t-if="embarque.state == 'preparacion'" class="tc-button tc-button-outline" href="/transcash/operacion/embarques/nuevo">＋ Agregar otras rutas a un embarque en preparación</a>
             <t t-if="embarque.state == 'preparacion'">
-              <div class="tc-next-card"><div class="tc-next-icon">▶</div><div><strong>Paso 5 · Liberar al chofer</strong><p>Cada ruta debe tener video validado. El chofer podrá verlo antes de aceptar y salir.</p></div></div>
+              <div class="tc-next-card"><div class="tc-next-icon">✓</div><div><strong>Paso 4 · Enviar al chofer</strong><p>Solo se habilita cuando TODAS las rutas tengan foto o video. El conductor revisará las evidencias y aceptará antes de salir.</p></div></div>
               <form method="post" t-att-action="'/transcash/operacion/embarques/%d/liberar' % embarque.id">
                 <input name="csrf_token" type="hidden" t-att-value="csrf_token"/>
-                <button class="tc-button tc-button-primary" type="submit">Liberar carga para aceptación del chofer</button>
+                <button class="tc-button tc-button-primary" type="submit" t-att-disabled="'disabled' if not embarque.ruta_ids or any(not r._has_carga_evidence() for r in embarque.ruta_ids) else None">✓ Enviar embarque al chofer para aceptación</button>
               </form>
             </t>
             <form t-if="embarque.state == 'embarcado' and not embarque.aceptado_chofer" method="post" t-att-action="'/transcash/operacion/embarques/%d/reabrir' % embarque.id">

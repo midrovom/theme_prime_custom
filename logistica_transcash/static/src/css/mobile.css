@@ -293,3 +293,19 @@ body.tc-modal-open{overflow:hidden}
 .tc-ops-authorize input{width:19px;height:19px;flex-shrink:0}.tc-ops-step{background:#f1f9f8;padding:16px;border-radius:13px;margin:16px 0;display:grid;gap:8px}
 .tc-ops-video{width:100%;max-height:420px;border-radius:12px;background:#101827}
 @media(max-width:650px){.tc-ops-grid{grid-template-columns:1fr}.tc-ops-tile{min-height:110px;padding:16px}.tc-ops-summary{grid-template-columns:1fr}.tc-ops-form{padding:15px}}
+
+/* V5.18 carga guiada por ruta: captura con una sola acción desde móvil. */
+.tc-ops-loading-card {display:block;padding:18px;scroll-margin-top:84px}
+.tc-ops-capture-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
+.tc-ops-capture-actions form{margin:0;position:relative;min-width:0}
+.tc-ops-capture{position:relative;display:flex;align-items:center;justify-content:center;min-height:55px;padding:12px!important;cursor:pointer;text-align:center;width:100%}
+.tc-ops-capture input[type="file"]{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.tc-ops-capture:focus-within{outline:3px solid #079c91;outline-offset:3px}
+.tc-ops-fallback-btn{margin-top:3px;background:transparent;border:0;color:#52677c;font-size:11px;text-decoration:underline;cursor:pointer}
+.tc-ops-evidence-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:11px;margin:12px 0}
+.tc-ops-evidence-card{background:#f5f8fb;border:1px solid #e2e8ef;border-radius:12px;padding:9px;min-width:0;display:grid;gap:5px}
+.tc-ops-evidence-card img,.tc-ops-evidence-card video{height:145px;width:100%;object-fit:contain;background:#112131;border-radius:8px}
+.tc-ops-evidence-card strong{font-size:12px}.tc-ops-evidence-card small{font-size:11px;color:#6a7b8b}
+.tc-ops-done{color:#047857!important}.tc-ops-missing{color:#a75e17!important}
+.tc-ops-trip-progress{background:#e7f7f1;color:#087b60;padding:13px 15px;border-radius:10px;margin-bottom:14px;font-size:13px}
+@media(max-width:600px){.tc-ops-capture-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.tc-ops-capture-actions form:last-child{grid-column:1/-1}.tc-ops-evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

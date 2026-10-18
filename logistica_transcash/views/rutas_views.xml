@@ -13,8 +13,8 @@
       <header>
         <button name="action_confirm_route" string="1. Confirmar ruta" type="object" class="btn-primary"
                 invisible="state != 'borrador'" groups="logistica_transcash.group_transcash_operador_rutas"/>
-        <button name="action_validate_video" string="2. Validar video de carga" type="object" class="btn-primary"
-                invisible="state not in ('planificada','cargada') or not embarque_id"
+        <button name="action_open_carga_pwa" string="📷 Registrar foto / video de carga" type="object" class="btn-primary"
+                invisible="not embarque_id or state not in ('planificada','cargada')"
                 groups="logistica_transcash.group_transcash_operador_rutas"/>
         <field name="state" widget="statusbar" statusbar_visible="borrador,planificada,cargada,aceptada"/>
       </header>
@@ -63,15 +63,22 @@
               <field name="name"/><field name="destinatario_id"/><field name="destino"/><field name="chofer_usuario_id"/><field name="proveedor_id"/><field name="state"/>
             </list></field>
           </page>
-          <page string="Evidencia de carga (Logística)">
+          <page string="Bitácora de evidencias (Logística)">
+            <div class="alert alert-info" role="note">Después de formar el embarque, registre una fotografía o video por cada ruta desde el Centro de operaciones móvil. Se conserva quién, cuándo y qué se registró. No podrá liberar el embarque sin evidencia en todas sus rutas.</div>
+            <field name="cantidad_evidencias_carga" readonly="1"/>
+            <field name="evidencia_carga_ids" readonly="1">
+              <list create="0" edit="0" delete="0">
+                <field name="fecha"/><field name="usuario_id"/><field name="tipo"/><field name="nombre"/><field name="observacion"/>
+              </list>
+            </field>
             <group><field name="observaciones" readonly="state == 'aceptada'"/>
               <field name="video_nombre" invisible="1"/>
-              <field name="video_carga" filename="video_nombre" widget="binary" readonly="state == 'aceptada'"/>
+              <field name="video_carga" filename="video_nombre" widget="binary" readonly="1"/>
               <button name="action_open_video" type="object" string="▶ Ver video en navegador" invisible="state not in ('cargada','aceptada')"/>
               <field name="video_mime" readonly="1"/><field name="fecha_video" readonly="1"/>
               <field name="video_por_id" readonly="1"/>
             </group>
-            <div class="alert alert-info">Después de guardar el video, pulsa «Validar video». El chofer podrá reproducirlo desde su WebApp.</div>
+            <div class="alert alert-info">Los videos históricos se conservan. Las NUEVAS fotos y videos deben capturarse en el Centro de operaciones: allí se genera la bitácora inmutable.</div>
           </page>
         </notebook>
       </sheet><chatter/></form></field>
@@ -161,8 +168,15 @@
     <field name="arch" type="xml"><form string="Armar embarque">
       <group>
         <field name="embarque_id" readonly="1"/>
+        <field name="company_id" invisible="1"/>
+        <field name="proveedor_id" required="1" readonly="embarque_id"/>
+        <field name="chofer_usuario_id" required="1" readonly="embarque_id"/>
+        <field name="tipo_vehiculo" required="1" readonly="embarque_id"/>
+        <field name="placa" required="1" readonly="embarque_id"/>
+        <field name="ruta_disponible_ids" invisible="1"/>
         <field name="ruta_ids" widget="many2many_tags"
-          domain="[('state','in',['planificada','cargada']),('embarque_id','=',False)]"/>
+          domain="[('id', 'in', ruta_disponible_ids)]" options="{'no_create': True, 'no_create_edit': True}"/>
+        <div class="alert alert-info" role="note">Primero indique el transporte, chofer, tipo y placa. Solo aparecerán rutas planificadas compatibles. La carga se evidenciará después de formar el embarque.</div>
       </group>
       <group string="Precio ÚNICO del embarque" class="tc-valor-embarque">
         <field name="destinos_posibles_ids" invisible="1"/>

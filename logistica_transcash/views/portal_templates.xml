@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=517"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=518"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=550"/>
   <script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>

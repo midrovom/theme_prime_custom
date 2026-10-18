@@ -60,3 +60,4 @@ access_corregir_tarifa_embarque,Revisar tarifa embarque,model_transcash_corregir
 access_evidencia_operator,Operador lectura evidencias,model_transcash_evidencia,logistica_transcash.group_transcash_operador_rutas,1,0,0,0
 access_evento_operator,Operador lectura historial,model_transcash_evento,logistica_transcash.group_transcash_operador_rutas,1,0,0,0
 access_rotura_operator,Operador lectura daños,model_transcash_rotura,logistica_transcash.group_transcash_operador_rutas,1,0,0,0
+access_carga_ruta_operador,Evidencia de carga por ruta: operador,model_transcash_carga_evidencia_ruta,logistica_transcash.group_transcash_operador_rutas,1,0,1,0
