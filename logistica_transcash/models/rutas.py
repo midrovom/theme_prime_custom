@@ -94,6 +94,26 @@ class HojaRuta(models.Model):
     seleccion_guia_ids = fields.Many2many('transcash.guia', 'transcash_hoja_ruta_seleccion_rel',
         'ruta_id', 'guia_id', string='Guías seleccionadas', copy=False)
     guia_ids = fields.One2many('transcash.guia', 'hoja_ruta_id', string='Guías confirmadas', readonly=True)
+    # Estado OPERATIVO de entrega, independiente de la aceptación del cliente.
+    # No sustituye el estado de planificación/carga de la ruta.
+    guias_cerradas_chofer = fields.Integer('Guías cerradas por chofer', compute='_compute_entrega_ruta')
+    estado_entrega = fields.Selection([
+        ('sin_guias', 'Sin guías'), ('pendiente', 'Pendiente de entrega'),
+        ('parcial', 'Entregas en curso'), ('completa', 'Ruta entregada'),
+    ], string='Estado de entregas', compute='_compute_entrega_ruta')
+    fecha_cierre_operativo = fields.Datetime('Última entrega de esta ruta', readonly=True, copy=False)
+
+    @api.depends('guia_ids', 'guia_ids.fecha_cierre_chofer', 'guia_ids.state', 'guia_ids.embarque_id')
+    def _compute_entrega_ruta(self):
+        for route in self:
+            guides = route.guia_ids.filtered(lambda g: not route.embarque_id or g.embarque_id == route.embarque_id)
+            closed = len(guides.filtered(lambda g: g.fecha_cierre_chofer or
+                g.state in ('entregada', 'lista_pago', 'facturada', 'pagada')))
+            route.guias_cerradas_chofer = closed
+            route.estado_entrega = ('sin_guias' if not guides else
+                                    'completa' if closed == len(guides) else
+                                    'parcial' if closed else 'pendiente')
+
     state = fields.Selection([('borrador','Borrador'),('planificada','Planificada'),
                               ('cargada','Carga documentada'),('aceptada','Aceptada por chofer')],
                              default='borrador', tracking=True, required=True, readonly=True)

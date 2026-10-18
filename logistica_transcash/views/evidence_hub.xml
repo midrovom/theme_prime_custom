@@ -1,49 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <template id="transcash_evidence_hub" name="Transcash: galería por etapas del viaje">
-    <section class="tc-evidence-hub" id="tc-galeria-viaje" aria-label="Galería de evidencias">
+  <template id="transcash_evidence_hub" name="Transcash: expediente de evidencias por hoja de ruta">
+    <section class="tc-evidence-hub" id="tc-galeria-viaje" aria-label="Galería de evidencias por hoja de ruta">
       <div class="tc-evidence-hub-heading">
         <div><span class="tc-hub-eyebrow">EXPEDIENTE DIGITAL · SOLO LECTURA</span>
-          <h2>📷 Evidencias del <t t-esc="'guía' if gallery_is_guide else 'viaje'"/></h2>
-          <p>Abre una fotografía, reproduce un video o consulta la firma con un toque.</p>
+          <h2><t t-esc="'Evidencias de mi guía' if gallery_is_guide else 'Evidencias por hoja de ruta'"/></h2>
+          <p>Consulta fotos, videos y firmas por ruta, manteniendo identificada cada guía y receptor.</p>
         </div><span class="tc-hub-count"><t t-esc="gallery_count"/> archivos</span>
       </div>
-      <div class="tc-hub-jump" aria-label="Secciones de evidencias">
-        <a href="#tc-hub-carga">📦 Carga <b t-esc="len(gallery_carga)"/></a>
-        <a href="#tc-hub-descarga">🚚 Descarga <b t-esc="len(gallery_descarga)"/></a>
-        <a href="#tc-hub-firmas">✍️ Firmas <b t-esc="len(gallery_firmas)"/></a>
+      <div class="tc-hub-jump" aria-label="Ir a hoja de ruta">
+        <a t-foreach="gallery_routes" t-as="grupo" t-att-href="'#tc-hub-%s' % grupo['id']">
+          🗺 <t t-esc="grupo['name']"/> <b t-esc="grupo['count']"/>
+        </a>
       </div>
-      <div class="tc-hub-category" id="tc-hub-carga">
-          <div class="tc-section-heading"><h3>📦 1. Carga</h3><span class="tc-count" t-esc="len(gallery_carga)"/></div>
-          <p>Lo que Logística registró antes de liberar el embarque.</p>
-          <div t-if="gallery_carga" class="tc-hub-grid">
-            <t t-foreach="gallery_carga" t-as="media">
-              <t t-call="logistica_transcash.transcash_evidence_hub_item"/>
-            </t>
+      <t t-foreach="gallery_routes" t-as="grupo">
+        <section class="tc-hub-route" t-att-id="'tc-hub-%s' % grupo['id']">
+          <div class="tc-hub-route-header">
+            <div><h3>🗺 <t t-esc="grupo['name']"/></h3>
+              <p t-if="grupo['destination']" t-esc="grupo['destination']"/>
+              <small><t t-esc="grupo['closed_count']"/> / <t t-esc="grupo['guide_count']"/> guías entregadas por chofer</small>
+            </div>
+            <span t-att-class="'tc-hub-route-state tc-hub-route-' + grupo['state']" t-esc="grupo['state_label']"/>
           </div>
-          <p t-else="" class="tc-hub-empty">No hay evidencias de carga visibles para esta guía o viaje.</p>
-        </div>
-      <div class="tc-hub-category" id="tc-hub-descarga">
-        <div class="tc-section-heading"><h3>🚚 2. Descarga y recepción</h3><span class="tc-count" t-esc="len(gallery_descarga)"/></div>
-        <p>Fotos y videos asociados a las guías y a la recepción.</p>
-        <div t-if="gallery_descarga" class="tc-hub-grid">
-          <t t-foreach="gallery_descarga" t-as="media">
-            <t t-call="logistica_transcash.transcash_evidence_hub_item"/>
-          </t>
-        </div>
-        <p t-else="" class="tc-hub-empty">La descarga todavía no tiene fotografías ni videos disponibles.</p>
-      </div>
-      <div class="tc-hub-category" id="tc-hub-firmas">
-        <div class="tc-section-heading"><h3>✍️ 3. Firma de recepción</h3><span class="tc-count" t-esc="len(gallery_firmas)"/></div>
-        <p>Firma de quien recibió, identificada por guía y fecha.</p>
-        <div t-if="gallery_firmas" class="tc-hub-grid">
-          <t t-foreach="gallery_firmas" t-as="media">
-            <t t-call="logistica_transcash.transcash_evidence_hub_item"/>
-          </t>
-        </div>
-        <p t-else="" class="tc-hub-empty">Todavía no hay firmas de recepción registradas.</p>
-      </div>
-      <p class="tc-hub-private">🔒 Esta vista respeta el acceso de tu usuario. Los destinatarios no acceden al expediente completo del vehículo ni a datos económicos.</p>
+          <div class="tc-hub-route-stage">
+            <div class="tc-section-heading"><h4>📦 Carga</h4><span class="tc-count" t-esc="len(grupo['carga'])"/></div>
+            <div t-if="grupo['carga']" class="tc-hub-grid"><t t-foreach="grupo['carga']" t-as="media"><t t-call="logistica_transcash.transcash_evidence_hub_item"/></t></div>
+            <p t-else="" class="tc-hub-empty">Sin evidencias de carga visibles.</p>
+          </div>
+          <div class="tc-hub-route-stage">
+            <div class="tc-section-heading"><h4>🚚 Descarga / entrega</h4><span class="tc-count" t-esc="len(grupo['descarga'])"/></div>
+            <div t-if="grupo['descarga']" class="tc-hub-grid"><t t-foreach="grupo['descarga']" t-as="media"><t t-call="logistica_transcash.transcash_evidence_hub_item"/></t></div>
+            <p t-else="" class="tc-hub-empty">Aún no hay fotos o videos de descarga.</p>
+          </div>
+          <div class="tc-hub-route-stage">
+            <div class="tc-section-heading"><h4>✍️ Firma de recepción</h4><span class="tc-count" t-esc="len(grupo['firmas'])"/></div>
+            <div t-if="grupo['firmas']" class="tc-hub-grid"><t t-foreach="grupo['firmas']" t-as="media"><t t-call="logistica_transcash.transcash_evidence_hub_item"/></t></div>
+            <p t-else="" class="tc-hub-empty">La ruta todavía no tiene firmas registradas.</p>
+          </div>
+        </section>
+      </t>
+      <p t-if="not gallery_routes" class="tc-hub-empty">No existen guías o rutas con evidencias para este registro.</p>
+      <p class="tc-hub-private">🔒 El chofer y las áreas internas ven sus rutas autorizadas. Cada destinatario ve solamente su guía, sin datos de otros clientes ni precios del transporte.</p>
     </section>
   </template>
   <template id="transcash_evidence_hub_item" name="Transcash: tarjeta de evidencia">

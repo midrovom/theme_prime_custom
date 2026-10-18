@@ -68,7 +68,7 @@
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>No se pudo completar</strong><span t-esc="error"/></div>
           <div t-if="request.params.get('ok')" class="tc-alert tc-alert-ok" role="status">✓ Información actualizada</div>
           <div t-if="es_chofer and (embarque.objecion_pendiente or embarque.observacion_rechazo) and embarque.state in ('embarcado','preparacion')" class="tc-embarque-critical" role="alert">⛔ VIAJE OBJETADO. Tu salida está bloqueada hasta que Logística corrija la carga y la libere nuevamente.</div>
-          <a href="#tc-galeria-viaje" class="tc-button tc-button-outline tc-hub-quick-link">📷 Ver fotos, videos y firmas del viaje ↓</a>
+          <a href="#tc-galeria-viaje" class="tc-button tc-button-outline tc-hub-quick-link">📷 Ver evidencias por hoja de ruta ↓</a>
           <section t-if="es_chofer" class="tc-guided-flow tc-embark-flow">
  <div class="tc-guided-heading"><span>🚚 MI TRASLADO</span><h2>Revisar, aceptar y entregar</h2>
   <small>1. Ver fotos y videos aquí mismo → 2. Aceptar u objetar → 3. Entregar con foto y firma</small></div>
@@ -108,16 +108,18 @@
             <div><strong>Observación del embarque</strong><p t-esc="embarque.observacion_general"/></div></div>
           <section class="tc-trip-routes" id="tc-hojas-ruta" aria-label="Hojas de ruta y sus guías">
             <div class="tc-section-heading"><h2>🗺 Hojas de ruta del embarque</h2><span class="tc-count" t-esc="len(embarque.ruta_ids)"/></div>
-            <p class="tc-muted">Abre una ruta para ver sus guías, destinatarios y el estado de las entregas. Las evidencias del viaje están al final de esta ficha.</p>
+            <p class="tc-muted">Abre una ruta para ver sus guías, destinatarios y el estado de las entregas. Al final de esta ficha verás las evidencias agrupadas por hoja de ruta: carga, descarga y firma.</p>
             <t t-foreach="embarque.ruta_ids.sorted('id')" t-as="ruta">
-              <details class="tc-trip-route" t-att-id="'tc-ruta-%d' % ruta.id" t-att-open="'open' if es_chofer and embarque.state == 'ruta' and ruta.guia_ids.filtered(lambda g: g.state in ('ruta','destino') and not g.fecha_cierre_chofer) else None">
+              <details t-att-class="'tc-trip-route tc-trip-route-complete' if ruta.estado_entrega == 'completa' else 'tc-trip-route'" t-att-id="'tc-ruta-%d' % ruta.id" t-att-open="'open' if es_chofer and embarque.state == 'ruta' and ruta.estado_entrega != 'completa' else None">
                 <summary class="tc-trip-route-header">
                   <span class="tc-trip-route-icon">🗺</span>
                   <span class="tc-trip-route-main"><strong t-esc="ruta.name"/><small t-esc="ruta.destino_nombre or 'Destino pendiente'"/>
-                    <small>📦 <t t-esc="len(ruta.guia_ids)"/> guías · ✓ <t t-esc="len(ruta.guia_ids.filtered(lambda g: g.fecha_cierre_chofer))"/> entregadas por chofer</small></span>
+                    <small>📦 <t t-esc="len(ruta.guia_ids)"/> guías · ✓ <t t-esc="ruta.guias_cerradas_chofer"/> entregadas por chofer</small>
+                    <span class="tc-trip-route-state" t-esc="dict(ruta._fields['estado_entrega'].selection).get(ruta.estado_entrega)"/></span>
                   <span class="tc-trip-route-arrow">⌄</span>
                 </summary>
                 <t t-call="logistica_transcash.portal_embarque_ruta_guias"/>
+                <a class="tc-route-evidence-shortcut" t-att-href="'#tc-hub-ruta-%d' % ruta.id">📷 Abrir carga, descargas y firmas de esta ruta ↓</a>
               </details>
             </t>
             <div t-if="not embarque.ruta_ids" class="tc-empty-inline">Este embarque es anterior al proceso de hojas de ruta.</div>

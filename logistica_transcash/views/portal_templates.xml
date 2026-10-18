@@ -6,10 +6,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=521"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=522"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=521"/>
-  <script defer="defer" src="/logistica_transcash/static/src/js/evidence_hub.js?v=520"/><script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
+  <script defer="defer" src="/logistica_transcash/static/src/js/evidence_hub.js?v=522"/><script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
 
   <template id="mobile_brand" name="Transcash Mobile Brand">
     <div class="tc-brand"><div class="tc-logo">T<span>↗</span></div>

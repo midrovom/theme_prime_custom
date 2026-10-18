@@ -389,3 +389,25 @@ body.tc-modal-open{overflow:hidden}
 .tc-ops-route-guides {border:1px solid #dde9ee;border-radius:10px;margin:12px 0;overflow:hidden}
 .tc-ops-route-guides>summary {cursor:pointer;padding:12px 14px;background:#edf7f6;font-size:13px;font-weight:650;color:#196961}
 @media(max-width:600px) {.tc-trip-route-header {padding:13px;gap:10px}.tc-trip-route-guides{padding:8px}.tc-trip-guide-link{padding:11px 9px;gap:8px}.tc-trip-guide-status {max-width:45%}}
+
+/* V5.22 · expediente por hoja de ruta con estado operativo */
+.tc-hub-route{border:1px solid #dbe8ef;border-radius:15px;background:#fbfdfe;margin:14px 0 20px;padding:clamp(12px,2vw,18px);scroll-margin-top:85px;min-width:0}
+.tc-hub-route-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #dfe9ee;padding-bottom:13px;margin-bottom:12px}
+.tc-hub-route-header h3{margin:0 0 4px;font-size:17px;color:#1a344d}
+.tc-hub-route-header p{margin:0 0 5px;color:#6c7c8e;font-size:12px}
+.tc-hub-route-header small{color:#667b89;font-size:11px}
+.tc-hub-route-state{display:inline-block;padding:8px 11px;border-radius:20px;font-size:11px;font-weight:800;background:#eef3f8;color:#405b72}
+.tc-hub-route-completa{background:#def6ed;color:#076f58}
+.tc-hub-route-parcial{background:#fff3da;color:#936317}
+.tc-hub-route-stage{margin:14px 0 19px;min-width:0}
+.tc-hub-route-stage .tc-section-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.tc-hub-route-stage h4{margin:0;color:#26445c;font-size:14px}
+.tc-hub-route-stage .tc-hub-empty{font-size:12px;margin:0;padding:12px}
+.tc-trip-route-complete{border-color:#80c7a4;background:#f0faf5}
+.tc-trip-route-complete .tc-trip-route-header{background:#f0faf5}
+.tc-trip-route-state{display:inline-block;font-size:11px;font-weight:800;color:#56718a;margin-top:3px}
+.tc-trip-route-complete .tc-trip-route-state{color:#0a8262}
+@media(max-width:600px){.tc-hub-route{padding:10px;margin:12px 0}.tc-hub-route-header h3{font-size:15px}.tc-hub-route-stage{margin:12px 0}}
+
+.tc-route-evidence-shortcut{display:block;padding:12px 16px;background:#eff8f6;color:#067f74;font-weight:800;font-size:12px;border-top:1px solid #d6e9e4;text-decoration:none;scroll-margin-top:90px}
+.tc-route-evidence-shortcut:hover,.tc-route-evidence-shortcut:focus-visible{background:#dbf3ec;color:#086c60}

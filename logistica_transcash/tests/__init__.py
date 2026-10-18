@@ -22,3 +22,5 @@ from . import test_roles_v517
 from . import test_evidence_hub_v520
 
 from . import test_navegacion_v521
+
+from . import test_route_evidence_v522

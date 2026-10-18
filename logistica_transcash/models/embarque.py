@@ -338,16 +338,35 @@ class Embarque(models.Model):
         return True
 
     def _refresh_delivered_state(self):
-        """Libera al chofer tras su última entrega, sin esperar al cliente.
+        """Cierra cada hoja de ruta con su última guía y luego el viaje con su última ruta.
 
-        Las guías históricas ya confirmadas cuentan igualmente como cerradas.
-        'Entregado' en embarque indica cierre OPERATIVO, no autorización de pago.
+        El cliente puede revisar / objetar después: sólo cuenta el cierre operativo
+        del chofer. Las guías históricas sin ruta también deben estar cerradas.
+        El cierre se invoca bajo el bloqueo transaccional del chofer al entregar.
         """
+        completed_states = ('entregada', 'lista_pago', 'facturada', 'pagada')
         for rec in self.sudo():
-            if rec.state == 'ruta' and rec.guia_ids and all(
-                    g.fecha_cierre_chofer or g.state in ('entregada','lista_pago','facturada','pagada')
-                    for g in rec.guia_ids):
-                rec.write({'state':'entregado','fecha_entrega':fields.Datetime.now()})
+            if rec.state != 'ruta' or not rec.guia_ids:
+                continue
+            now = fields.Datetime.now()
+            routes_complete = True
+            for route in rec.ruta_ids:
+                # No marcar una ruta vacía ni con guías ajenas como terminada.
+                guides = route.guia_ids.filtered(lambda g: g.embarque_id == rec)
+                route_complete = bool(guides) and all(
+                    g.fecha_cierre_chofer or g.state in completed_states for g in guides)
+                if not route_complete:
+                    routes_complete = False
+                elif not route.fecha_cierre_operativo:
+                    route.sudo().write({'fecha_cierre_operativo': now})
+                    route.message_post(body=_('Hoja de ruta completada: todas sus guías tienen cierre operativo del chofer.'))
+            all_guides_closed = all(
+                g.fecha_cierre_chofer or g.state in completed_states for g in rec.guia_ids)
+            # Los viajes anteriores a la introducción de hojas de ruta conservan
+            # su cierre por guías; los nuevos exigen todas sus rutas completas.
+            if all_guides_closed and routes_complete:
+                rec.write({'state': 'entregado', 'fecha_entrega': now})
+                rec.message_post(body=_('Viaje cerrado automáticamente: todas las hojas de ruta y guías completadas por el chofer.'))
 
     def _check_logistics_finance(self):
         if not self.env.user.has_group('logistica_transcash.group_logistica_manager'):

@@ -32,7 +32,9 @@
                  options="{'no_create': True, 'no_create_edit': True}"/>
           <field name="destino_codigo" readonly="1"/>
           <field name="destino_nombre" readonly="1"/>
-          <field name="embarque_id" readonly="1"/>
+          <field name="embarque_id" readonly="1"/><field name="estado_entrega" readonly="1"/>
+          <field name="guias_cerradas_chofer" readonly="1"/>
+          <field name="fecha_cierre_operativo" readonly="1"/>
           <!-- Precio y cobro corresponden al embarque completo. -->
         </group></group>
         <notebook>
