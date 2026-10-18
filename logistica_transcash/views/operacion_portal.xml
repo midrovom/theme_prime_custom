@@ -37,7 +37,7 @@
               <a class="tc-ops-tile" href="/transcash/operacion/embarques/nuevo"><b>03 · AGRUPAR</b><strong>🚚 Armar embarque</strong><small>Reunir rutas y aplicar un único precio por viaje</small></a>
               <a class="tc-ops-tile" href="/transcash/embarques"><b>04 · SUPERVISAR</b><strong>✓ Revisar embarques</strong><small>Liberar la carga para aceptación del chofer</small></a>
               <a class="tc-ops-tile" href="/transcash/guias?vista=consulta"><b>CONSULTAR</b><strong>▤ Ver guías</strong><small>Documentos, productos y estados</small></a>
-              <a t-if="request.env.user.has_group('logistica_transcash.group_logistica_manager')" class="tc-ops-tile" href="/web"><b>ADMINISTRAR</b><strong>⚙ Tarifas y autorizaciones</strong><small>Configuración avanzada en Odoo</small></a>
+              <a t-if="request.env.user.has_group('logistica_transcash.group_logistica_manager')" class="tc-ops-tile" href="/transcash/finanzas"><b>APROBAR</b><strong>💰 Negociación, fletes y facturas</strong><small>Configuración avanzada en Odoo</small></a>
             </div>
           </t>
 

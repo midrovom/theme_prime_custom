@@ -4,7 +4,7 @@
     <field name="arch" type="xml"><list string="Liquidaciones de transporte" create="0" edit="0" delete="0"
       decoration-success="estado == 'pagada'" decoration-warning="estado in ('revision','observada')">
       <field name="name"/><field name="proveedor_id"/><field name="company_id" groups="base.group_multi_company"/>
-      <field name="estado" widget="badge"/><field name="total_acordado" sum="Total aprobado"/>
+      <field name="estado" widget="badge"/><field name="confirmacion_pagos" widget="badge"/><field name="total_acordado" sum="Total aprobado"/>
       <field name="factura_numero"/><field name="factura_total"/><field name="total_pagado" sum="Total pagado"/>
       <field name="saldo_pendiente" sum="Saldo"/><field name="create_date"/>
     </list></field>
@@ -19,6 +19,8 @@
           groups="logistica_transcash.group_transcash_contabilidad"/>
         <button name="action_open_payment_wizard" type="object" string="Registrar pago" class="btn-primary"
           invisible="estado not in ('proceso_pago','parcial')" groups="logistica_transcash.group_transcash_contabilidad"/>
+        <button name="action_preview_invoice" type="object" string="👁 Ver factura" icon="fa-eye"
+          invisible="not factura_archivo" groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
         <button name="action_open_guides" type="object" string="Ver guías y evidencias" icon="fa-folder-open"
           groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
         <button name="action_print" type="object" string="Imprimir liquidación"/>
@@ -31,16 +33,26 @@
           <field name="observacion_proveedor"/></group>
           <group string="Comparación y pagos"><field name="moneda_id" invisible="1"/>
             <field name="total_acordado"/><field name="factura_subtotal"/><field name="factura_impuestos"/>
-            <field name="factura_total"/><field name="total_pagado"/><field name="saldo_pendiente"/>
+            <field name="factura_total"/><field name="total_pagado"/><field name="saldo_pendiente"/><field name="confirmacion_pagos"/>
             <field name="revisado_por_id"/><field name="fecha_revision"/><field name="observacion_contabilidad"/>
           </group></group>
-        <notebook><page string="Embarques incluidos"><field name="linea_ids"><list create="0" edit="0" delete="0">
+        <notebook><page string="1 · Viajes incluidos"><field name="linea_ids"><list create="0" edit="0" delete="0">
           <field name="embarque_id"/><field name="monto"/></list></field></page>
-          <page string="Pagos registrados"><field name="pago_ids"><list create="0" edit="0" delete="0">
+          <page string="2 · Transferencias y confirmaciones"><field name="pago_ids"><list create="0" edit="0" delete="0">
             <field name="fecha_pago"/><field name="monto"/><field name="referencia"/><field name="medio"/>
-            <field name="comprobante" filename="comprobante_nombre"/><field name="anulado"/>
+            <field name="comprobante" filename="comprobante_nombre"/><field name="recepcion_estado" widget="badge"/><field name="recepcion_por_id" optional="hide"/><field name="recepcion_fecha" optional="hide"/><field name="anulado"/>
           </list></field></page></notebook>
+      <div class="alert alert-info">La factura y los comprobantes se pueden abrir directamente en el navegador. Para ver el comprobante de cada transferencia, ábrala desde la pestaña Transferencias y confirmaciones.</div>
       </sheet><chatter/></form></field>
+  </record>
+  <record id="view_transcash_pago_registro_form" model="ir.ui.view">
+    <field name="name">transcash.pago.registro.form</field><field name="model">transcash.pago.registro</field>
+    <field name="arch" type="xml"><form string="Transferencia documentada" create="0" edit="0" delete="0">
+      <header><button name="action_preview_receipt" type="object" string="👁 Ver comprobante" class="btn-primary"/></header>
+      <sheet><group><field name="liquidacion_id"/><field name="fecha_pago"/><field name="monto"/><field name="moneda_id" invisible="1"/>
+      <field name="referencia"/><field name="medio"/><field name="anulado"/>
+      <field name="recepcion_estado" widget="badge"/><field name="recepcion_por_id"/><field name="recepcion_fecha"/><field name="recepcion_nota"/></group></sheet>
+    </form></field>
   </record>
   <record id="view_transcash_pago_wizard_form" model="ir.ui.view">
     <field name="name">transcash.registrar.pago.wizard.form</field><field name="model">transcash.registrar.pago.wizard</field>
@@ -62,6 +74,22 @@
     <field name="name">Liquidaciones de transporte</field><field name="res_model">transcash.pago.liquidacion</field>
     <field name="view_mode">list,form</field>
   </record>
+  <record id="action_transcash_fletes_pendientes" model="ir.actions.act_window">
+    <field name="name">Viajes pendientes de liquidar</field>
+    <field name="res_model">transcash.embarque</field>
+    <field name="view_mode">list,form</field>
+    <field name="domain">[('estado_aprobacion','=','aprobado'),('liquidacion_linea_id','=',False),('legado_liquidacion_bloqueada','=',False)]</field>
+  </record>
+  <record id="action_transcash_facturas_recibidas" model="ir.actions.act_window">
+    <field name="name">Liquidaciones facturadas</field>
+    <field name="res_model">transcash.pago.liquidacion</field>
+    <field name="view_mode">list,form</field>
+    <field name="domain">[('estado','in',['revision','observada','proceso_pago','parcial','pagada'])]</field>
+  </record>
+  <menuitem id="menu_transcash_fletes_pendientes" name="Viajes por liquidar" parent="menu_transcash_root"
+    action="action_transcash_fletes_pendientes" sequence="41" groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
+  <menuitem id="menu_transcash_facturas_recibidas" name="Facturas recibidas" parent="menu_transcash_root"
+    action="action_transcash_facturas_recibidas" sequence="42" groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
   <menuitem id="menu_transcash_pago_liquidaciones" name="Liquidaciones y pagos" parent="menu_transcash_root"
     action="action_transcash_pago_liquidaciones" sequence="43"
     groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>

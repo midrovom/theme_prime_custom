@@ -8,6 +8,7 @@ import math
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools import float_compare
+from markupsafe import Markup, escape
 
 
 def _is_pdf_or_image(blob):
@@ -48,6 +49,41 @@ class TranscashLiquidacion(models.Model):
     observacion_contabilidad = fields.Text('Observaciones de Contabilidad', readonly=True)
     revisado_por_id = fields.Many2one('res.users', readonly=True, string='Revisado por')
     fecha_revision = fields.Datetime('Fecha de revisión', readonly=True)
+    confirmacion_pagos = fields.Selection([
+        ('sin_pagos', 'Sin transferencias'),
+        ('pendiente', 'Por confirmar por proveedor'),
+        ('parcial', 'Algunas transferencias confirmadas'),
+        ('confirmada', 'Todas las transferencias confirmadas'),
+        ('disputa', 'Discrepancia reportada por proveedor'),
+    ], string='Confirmación bancaria del proveedor', compute='_compute_confirmacion_pagos')
+
+    @api.depends('pago_ids.anulado', 'pago_ids.recepcion_estado')
+    def _compute_confirmacion_pagos(self):
+        for rec in self:
+            payments = rec.pago_ids.filtered(lambda p: not p.anulado)
+            states = payments.mapped('recepcion_estado')
+            if not states:
+                rec.confirmacion_pagos = 'sin_pagos'
+            elif 'disputa' in states:
+                rec.confirmacion_pagos = 'disputa'
+            elif all(s == 'confirmada' for s in states):
+                rec.confirmacion_pagos = 'confirmada'
+            elif 'confirmada' in states:
+                rec.confirmacion_pagos = 'parcial'
+            else:
+                rec.confirmacion_pagos = 'pendiente'
+
+    def action_preview_invoice(self):
+        self.ensure_one()
+        if not (self.env.user.has_group('logistica_transcash.group_transcash_contabilidad') or
+                self.env.user.has_group('logistica_transcash.group_logistica_manager')) or self.company_id not in self.env.user.company_ids:
+            raise AccessError(_('No puede consultar facturas de esta compañía.'))
+        if not self.factura_archivo:
+            raise UserError(_('No hay factura adjunta.'))
+        return {'type': 'ir.actions.act_url',
+                'url': '/transcash/finanzas/liquidaciones/%d/factura' % self.id,
+                'target': 'new'}
+
 
     _sql_constraints = [
         ('transcash_liq_nombre_company_unique','unique(name, company_id)', 'El número de liquidación ya existe.'),
@@ -131,16 +167,18 @@ class TranscashLiquidacion(models.Model):
 
     def _check_supplier(self):
         user = self.env.user
-        if not user.has_group('logistica_transcash.group_transcash_transportista'):
-            raise AccessError(_('Solo el proveedor de transporte puede ejecutar esta acción.'))
+        if (not user.share or not user.has_group('logistica_transcash.group_transcash_transportista') or
+                user.has_group('logistica_transcash.group_transcash_chofer') or
+                user.has_group('logistica_transcash.group_transcash_cliente')):
+            raise AccessError(_('Solo el proveedor Portal de transporte puede ejecutar esta acción.'))
         for rec in self:
             if rec.proveedor_id.commercial_partner_id != user.partner_id.commercial_partner_id:
                 raise AccessError(_('Liquidación de otro proveedor.'))
 
     def _check_accountant(self):
         user = self.env.user
-        if not user.has_group('logistica_transcash.group_transcash_contabilidad'):
-            raise AccessError(_('Solo Contabilidad puede revisar o registrar pagos.'))
+        if user.share or not user.has_group('logistica_transcash.group_transcash_contabilidad'):
+            raise AccessError(_('Solo Contabilidad interna puede revisar o registrar pagos.'))
         for rec in self:
             if rec.company_id not in user.company_ids:
                 raise AccessError(_('La compañía no está autorizada para este usuario.'))
@@ -183,6 +221,9 @@ class TranscashLiquidacion(models.Model):
             'observacion_contabilidad': False, 'revisado_por_id': False,
             'fecha_revision': False,
         })
+        self.sudo().message_post(body=Markup('Factura <b>%s</b> presentada por %s. Subtotal de fletes: %s %s; impuestos: %s; total declarado: %s.') % (
+            escape(numero), escape(self.env.user.display_name), escape('%.2f' % subtotal),
+            escape(self.moneda_id.name or ''), escape('%.2f' % impuestos), escape('%.2f' % (subtotal + impuestos))))
         return True
 
     def action_accounting_approve(self):
@@ -196,6 +237,7 @@ class TranscashLiquidacion(models.Model):
                 raise UserError(_('Uno de los embarques dejó de estar aprobado.'))
             rec.sudo().write({'estado': 'proceso_pago', 'revisado_por_id': self.env.uid,
                               'fecha_revision': fields.Datetime.now(), 'observacion_contabilidad': False})
+            rec.sudo().message_post(body=Markup('Factura aprobada por Contabilidad: <b>%s</b>. Pasa a proceso de pago.') % escape(self.env.user.display_name))
         return True
 
     def action_open_observe_wizard(self):
@@ -212,6 +254,8 @@ class TranscashLiquidacion(models.Model):
             raise UserError(_('Ingrese el motivo de observación de una factura en revisión.'))
         self.sudo().write({'estado':'observada', 'observacion_contabilidad':note.strip()[:3000],
                            'revisado_por_id':self.env.uid, 'fecha_revision':fields.Datetime.now()})
+        self.sudo().message_post(body=Markup('Factura observada por Contabilidad (%s): %s') % (
+            escape(self.env.user.display_name), escape(note.strip()[:3000])))
         return True
 
     def action_register_payment(self, amount, date, reference, method, receipt=False, filename=False):
@@ -248,6 +292,10 @@ class TranscashLiquidacion(models.Model):
         new_paid = current_paid + amount
         state = 'pagada' if float_compare(new_paid, self.factura_total, precision_rounding=self.moneda_id.rounding) == 0 else 'parcial'
         self.sudo().write({'estado':state})
+        self.sudo().message_post(body=Markup('Transferencia documentada por <b>%s</b>: %s %s, referencia %s, fecha %s. Estado contable: %s. Pendiente de confirmación del proveedor.') % (
+            escape(self.env.user.display_name), escape('%.2f' % amount),
+            escape(self.moneda_id.name or ''), escape(reference.strip()[:130]),
+            escape(str(date)), escape(state)))
         return True
 
     def action_open_payment_wizard(self):
@@ -317,6 +365,54 @@ class TranscashPagoRegistro(models.Model):
     comprobante_nombre = fields.Char('Archivo de pago', readonly=True)
     anulado = fields.Boolean('Anulado', default=False, readonly=True)
     motivo_anulacion = fields.Text('Motivo de anulación', readonly=True)
+    recepcion_estado = fields.Selection([
+        ('pendiente', 'Pendiente de confirmar por proveedor'),
+        ('confirmada', 'Recepción confirmada'),
+        ('disputa', 'Diferencia reportada'),
+    ], default='pendiente', readonly=True, required=True, copy=False, string='Recepción por proveedor')
+    recepcion_por_id = fields.Many2one('res.users', string='Confirmado / objetado por', readonly=True, copy=False)
+    recepcion_fecha = fields.Datetime('Fecha de confirmación', readonly=True, copy=False)
+    recepcion_nota = fields.Text('Detalle de confirmación o diferencia', readonly=True, copy=False)
+
+    def action_supplier_receipt(self, decision, note=''):
+        '''Acuse de recibo exclusivamente del proveedor; NUNCA cambia el pago contable.
+
+        Contabilidad conserva autoridad sobre estado pagada y anulaciones. Una
+        discrepancia sólo dispara alerta; no elimina la transferencia.
+        '''
+        self.ensure_one()
+        user = self.env.user
+        if (not user.share or not user.has_group('logistica_transcash.group_transcash_transportista') or
+                user.has_group('logistica_transcash.group_transcash_chofer') or
+                user.has_group('logistica_transcash.group_transcash_cliente') or
+                self.liquidacion_id.proveedor_id.commercial_partner_id != user.partner_id.commercial_partner_id):
+            raise AccessError(_('Solo el proveedor titular puede confirmar u objetar sus transferencias.'))
+        if decision not in ('confirmada', 'disputa'):
+            raise UserError(_('Acción de confirmación incorrecta.'))
+        note = (note or '').strip()[:2000]
+        if decision == 'disputa' and len(note) < 10:
+            raise UserError(_('Explique la diferencia encontrada (mínimo 10 caracteres).'))
+        self.env.cr.execute('SELECT id FROM transcash_pago_registro WHERE id = %s FOR UPDATE', (self.id,))
+        self.invalidate_recordset(['recepcion_estado', 'anulado'])
+        if self.anulado or self.recepcion_estado != 'pendiente':
+            raise UserError(_('Esta transferencia ya fue confirmada, objetada o anulada.'))
+        self.sudo().write({'recepcion_estado':decision, 'recepcion_por_id':user.id,
+                           'recepcion_fecha':fields.Datetime.now(), 'recepcion_nota':note})
+        self.liquidacion_id.sudo().message_post(body=Markup('<b>%s</b> por el proveedor %s. Referencia: %s, importe %s %s. %s') % (
+            escape('RECEPCIÓN CONFIRMADA' if decision == 'confirmada' else 'DISCREPANCIA DE PAGO'),
+            escape(user.display_name), escape(self.referencia), escape('%.2f' % self.monto),
+            escape(self.moneda_id.name or ''), escape(note)))
+        return True
+
+    def action_preview_receipt(self):
+        self.ensure_one()
+        if not (self.env.user.has_group('logistica_transcash.group_transcash_contabilidad') or
+                self.env.user.has_group('logistica_transcash.group_logistica_manager')) or self.company_id not in self.env.user.company_ids:
+            raise AccessError(_('No puede consultar estos comprobantes.'))
+        if not self.comprobante:
+            raise UserError(_('No existe comprobante.'))
+        return {'type': 'ir.actions.act_url',
+                'url': '/transcash/finanzas/pagos/%d/comprobante' % self.id, 'target': 'new'}
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -341,6 +437,8 @@ class TranscashPagoRegistro(models.Model):
         self.sudo().write({'anulado':True, 'motivo_anulacion':reason.strip()[:1000]})
         paid = sum(rec.pago_ids.filtered(lambda p: not p.anulado).mapped('monto'))
         rec.sudo().write({'estado': 'proceso_pago' if not paid else 'parcial'})
+        rec.sudo().message_post(body=Markup('Transferencia %s ANULADA por Contabilidad (%s). Motivo: %s.') % (
+            escape(self.referencia), escape(self.env.user.display_name), escape(reason.strip()[:1000])))
         return True
 
 

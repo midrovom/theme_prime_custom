@@ -11,17 +11,23 @@
           <div t-if="ok" class="tc-alert tc-alert-ok">Operación registrada.</div>
           <section class="tc-embark-section"><div class="tc-section-heading"><h2>Viajes disponibles para liquidar</h2>
             <span class="tc-count" t-esc="len(available)"/></div>
-            <form action="/transcash/proveedor/liquidaciones/crear" method="post">
+            <t t-foreach="available_groups" t-as="grupo">
+            <form action="/transcash/proveedor/liquidaciones/crear" method="post" class="tc-supplier-select-form">
               <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+              <p><b>Compañía: <t t-esc="grupo['company'].name"/></b> · <t t-esc="grupo['provider'].name"/></p>
+              <button type="button" class="tc-button tc-button-outline tc-select-all-trips">✓ Seleccionar viajes disponibles (máximo 100)</button>
               <div class="tc-embark-options">
-                <t t-foreach="available" t-as="e"><label class="tc-embark-select">
-                  <input type="checkbox" name="embarques" t-att-value="e.id"/>
+                <t t-foreach="grupo['trips']" t-as="e"><label class="tc-embark-select">
+                  <input type="checkbox" name="embarques" t-att-value="e.id" t-att-data-amount="'%.2f' % e.valor_acordado"/>
                   <span><strong t-esc="e.name"/><small><t t-esc="e.placa or ''"/> · <t t-esc="e.cantidad_guias"/> guías · Aprobado</small>
                     <small>Flete: <t t-esc="e.moneda_id.symbol"/><t t-esc="'%.2f' % e.valor_acordado"/></small></span>
                 </label></t>
-                <p t-if="not available" class="tc-empty-inline">No hay viajes aprobados pendientes de liquidación.</p>
-              </div><button t-if="available" type="submit" class="tc-button tc-button-primary">＋ Crear liquidación con los viajes seleccionados</button>
-            </form>
+              </div><div class="tc-next-card" aria-live="polite">
+                  <strong>Total de la liquidación por crear:</strong> <b><t t-esc="grupo['company'].currency_id.symbol"/><span class="tc-supplier-total">0.00</span></b>
+                  <small class="tc-supplier-count">0 viajes seleccionados</small>
+                </div><button type="submit" class="tc-button tc-button-primary">＋ Crear liquidación con los viajes seleccionados</button>
+            </form></t>
+            <p t-if="not available_groups" class="tc-empty-inline">No hay viajes aprobados pendientes de liquidación.</p>
           </section>
           <section class="tc-embark-section"><div class="tc-section-heading"><h2>Mis liquidaciones</h2></div>
             <div class="tc-embark-list"><t t-foreach="documents" t-as="doc">
@@ -38,14 +44,14 @@
               <div class="tc-guide-card"><div class="tc-guide-top"><b t-esc="e.name"/>
                 <span class="tc-status" t-esc="dict(e._fields['estado_aprobacion'].selection).get(e.estado_aprobacion)"/></div>
                 <p><t t-esc="e.placa or 'Sin placa'"/> · <t t-esc="e.cantidad_guias"/> guías</p>
-                <p><b>Valor:</b> <t t-esc="e.moneda_id.symbol"/><t t-esc="'%.2f' % e.valor_acordado"/> ·
+                <p><b>Valor:</b> <t t-if="e.estado_aprobacion == 'aprobado'"><t t-esc="e.moneda_id.symbol"/><t t-esc="'%.2f' % e.valor_acordado"/></t><t t-else="">Pendiente de aprobación de Logística</t> ·
                   <t t-esc="dict(e._fields['estado_financiero'].selection).get(e.estado_financiero)"/></p>
                 <p><a class="tc-inline-action" t-att-href="'/transcash/embarques/%d#tc-galeria-viaje' % e.id">📷 Abrir carga, descarga y firmas del viaje →</a></p>
               </div>
             </t></div></section>
         </main><nav class="tc-bottom"><a class="tc-bottom-item active" href="/transcash/proveedor">💼 Liquidaciones</a>
           <a class="tc-bottom-item" href="/transcash/embarques">🚚 Viajes</a></nav>
-      </div></body></html>
+      </div><script src="/logistica_transcash/static/src/js/supplier_totals.js" defer="defer"></script></body></html>
   </template>
   <template id="portal_proveedor_liquidacion" name="Transcash proveedor - Detalle liquidación">
     <html lang="es"><head><title><t t-esc="doc.name"/> · Transcash</title><t t-call="logistica_transcash.mobile_head"/></head>
@@ -58,6 +64,8 @@
           <div t-if="ok" class="tc-alert tc-alert-ok">Factura recibida. Contabilidad la revisará.</div>
           <section class="tc-embark-section"><div class="tc-section-heading"><h2>Estado de pago</h2></div>
             <div class="tc-hero-pills"><span t-esc="dict(doc._fields['estado'].selection).get(doc.estado)"/></div>
+            <p><b>Confirmación del proveedor:</b> <span t-esc="dict(doc._fields['confirmacion_pagos'].selection).get(doc.confirmacion_pagos)"/></p>
+            <p class="tc-muted">El estado contable «Pagada» lo registra únicamente Contabilidad. Confirma cada transferencia al comprobarla en tu banco; si no coincide, reporta una diferencia.</p>
             <p>Total acordado: <b><t t-esc="doc.moneda_id.symbol"/><t t-esc="'%.2f' % doc.total_acordado"/></b></p>
             <p>Transferido: <b t-esc="'%.2f' % doc.total_pagado"/> · Saldo pendiente: <b t-esc="'%.2f' % doc.saldo_pendiente"/></p>
             <a class="tc-button tc-button-outline" t-att-href="'/transcash/proveedor/liquidaciones/%s/imprimir' % doc.id">↓ Descargar detalle de liquidación (PDF)</a>
@@ -98,6 +106,19 @@
               <div class="tc-guide-card"><strong t-esc="pago.fecha_pago"/>
                 <p>Valor: <t t-esc="doc.moneda_id.symbol"/><t t-esc="'%.2f' % pago.monto"/></p>
                 <p>Referencia: <t t-esc="pago.referencia"/></p>
+                <p>Recepción: <b t-esc="dict(pago._fields['recepcion_estado'].selection).get(pago.recepcion_estado)"/></p>
+                <a class="tc-inline-action" t-att-href="'/transcash/proveedor/liquidaciones/%d/pagos/%d/comprobante' % (doc.id,pago.id)" target="_blank" rel="noopener">👁 Ver comprobante sin descargar →</a>
+                <form t-if="pago.recepcion_estado == 'pendiente'" method="post" t-att-action="'/transcash/proveedor/liquidaciones/%d/pagos/%d/recepcion' % (doc.id,pago.id)" class="tc-embark-form">
+                  <input name="csrf_token" type="hidden" t-att-value="csrf_token"/>
+                  <label class="tc-label">Observación o diferencia (obligatoria si no recibiste el importe)</label>
+                  <textarea class="tc-textarea" name="observacion" rows="2" maxlength="2000" placeholder="¿Coincide con tu movimiento bancario?"/>
+                  <div class="tc-hero-actions">
+                    <button type="submit" name="decision" value="confirmada" class="tc-button tc-button-primary">✓ Confirmar que recibí este pago</button>
+                    <button type="submit" name="decision" value="disputa" class="tc-button tc-button-outline">⚠ Reportar diferencia</button>
+                  </div>
+                </form>
+                <p t-if="pago.recepcion_estado == 'disputa'" class="tc-alert tc-alert-error" t-esc="pago.recepcion_nota"/>
+                <small t-if="pago.recepcion_fecha" t-esc="pago.recepcion_fecha"/>
               </div></t><p t-if="not doc.pago_ids" class="tc-empty-inline">Todavía no se han registrado pagos.</p></div>
           </section>
         </main><nav class="tc-bottom"><a class="tc-bottom-item" href="/transcash/proveedor">← Mis liquidaciones</a></nav>

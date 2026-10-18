@@ -39,11 +39,11 @@
           invisible="state != 'preparacion' or not (objecion_pendiente or observacion_rechazo)" groups="logistica_transcash.group_transcash_operador_rutas"/>
         <button name="action_depart" type="object" string="Autorizar salida" class="btn-primary"
           invisible="state != 'embarcado' or ruta_ids" groups="logistica_transcash.group_logistica_bodega"/>
-        <button name="action_configure_liquidation" type="object" string="Negociar valor del viaje"
+        <button name="action_configure_liquidation" type="object" string="💰 Registrar precio negociado"
           invisible="estado_aprobacion != 'pendiente'" groups="logistica_transcash.group_logistica_manager"/>
         <button name="action_open_reprice_trip" type="object" string="Revisar tarifa ÚNICA del embarque"
           invisible="estado_aprobacion != 'pendiente'" groups="logistica_transcash.group_logistica_manager"/>
-        <button name="action_approve_transport" type="object" string="Aprobar flete para pago" class="btn-primary"
+        <button name="action_approve_transport" type="object" string="✓ Aprobar y enviar al proveedor" class="btn-primary"
           invisible="state != 'entregado' or estado_aprobacion != 'pendiente'"
           groups="logistica_transcash.group_logistica_manager"/>
         <button name="action_open_exception_wizard" type="object" string="Aprobar con novedades" class="btn-secondary"
@@ -76,7 +76,7 @@
           <field name="objecion_pendiente" readonly="1"/><field name="observacion_rechazo" readonly="1"/>
           <field name="objeciones_count" readonly="1"/>
         </group>
-        <group string="Aprobación del transporte y negociación" groups="logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad">
+        <group string="2 · Negociación y aprobación (un flete por viaje)" groups="logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad">
           <field name="estado_aprobacion"/><field name="estado_financiero"/><field name="legado_liquidacion_bloqueada"/><field name="aprobado_por_id"/>
           <field name="aprobado_fecha"/><field name="notas_revision_logistica"/>
           <field name="incidencias_pendientes"/>
@@ -85,7 +85,7 @@
           <field name="excepcion_por_id" invisible="not aprobacion_excepcional"/>
           <field name="excepcion_fecha" invisible="not aprobacion_excepcional"/>
         </group>
-        <notebook><page string="Hojas de ruta y guías"><group><field name="aceptado_chofer"/>
+        <notebook><page string="1 · Revisar rutas y guías"><group><field name="aceptado_chofer"/>
           <field name="fecha_aceptacion_chofer"/><field name="observacion_rechazo"/></group>
           <field name="objecion_ids" readonly="1" groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta"><list create="0" edit="0" delete="0">
             <field name="fecha"/><field name="chofer_id"/><field name="motivo"/>
@@ -93,6 +93,7 @@
             <field name="fecha_resolucion"/><field name="explicacion_resolucion"/>
           </list></field>
           <p>El estado operativo de cada ruta se actualiza con los cierres de sus guías. El estado de aceptación de carga se conserva por separado como historial.</p>
+          <div class="alert alert-info" role="note">Abra una hoja de ruta para consultar sus guías, destinatarios y documentación. La galería de carga, descargas y firmas del viaje está disponible al final de esta ficha sin descargar archivos.</div>
           <field name="ruta_ids" readonly="1"><list create="0" delete="0" open_form_view="1">
             <field name="name"/><field name="destino_nombre"/><field name="tipo_vehiculo"/>
             <field name="estado_operativo" widget="badge"/>
@@ -104,7 +105,7 @@
             <field name="destinatario_id"/><field name="destino"/><field name="state" widget="badge"/>
             <field name="fecha_cierre_chofer"/><field name="fecha_entrega"/><field name="roturas_pendientes"/>
             <field name="incidencia_estado"/></list></field></page>
-          <page string="Liquidación documental" groups="logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad">
+          <page string="3 · Facturación y pagos" groups="logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad">
             <field name="liquidacion_linea_id" readonly="1"><list create="0" delete="0">
               <field name="liquidacion_id"/><field name="monto"/></list></field>
           </page>
@@ -119,7 +120,7 @@
   <record id="view_transcash_tarifa_wizard_form" model="ir.ui.view">
     <field name="name">transcash.tarifa.embarque.wizard.form</field><field name="model">transcash.tarifa.embarque.wizard</field>
     <field name="arch" type="xml"><form string="Negociar tarifa"><group><field name="embarque_id"/>
-      <field name="moneda_id" invisible="1"/><field name="valor_acordado"/></group>
+      <field name="moneda_id" invisible="1"/><field name="valor_acordado"/><field name="motivo" placeholder="Ej.: valor acordado telefónicamente con el transportista"/></group>
       <footer><button name="action_confirm" type="object" string="Guardar valor negociado" class="btn-primary"/>
         <button special="cancel" string="Cancelar"/></footer></form></field>
   </record>

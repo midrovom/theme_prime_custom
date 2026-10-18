@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="portal_finanzas_transcash" name="Transcash · Finanzas y aprobaciones PWA">
+    <html lang="es"><head><title>Finanzas · Transcash</title><t t-call="logistica_transcash.mobile_head"/></head>
+    <body class="tc-app" t-att-data-tc-user-id="request.env.user.id">
+    <div class="tc-shell">
+      <t t-call="logistica_transcash.portal_desktop_sidebar"/>
+      <header class="tc-top tc-top-list"><t t-call="logistica_transcash.mobile_brand"/></header>
+      <main class="tc-main tc-home tc-ops">
+        <p class="tc-eyebrow">CIRCUITO FINANCIERO · PERSONAL AUTORIZADO</p>
+        <h1 class="tc-heading">Fletes y liquidaciones<span class="tc-title-dot">.</span></h1>
+        <p class="tc-muted">Revisa el expediente del viaje antes de autorizar el flete. El proveedor factura los viajes aprobados y Contabilidad valida y registra los pagos.</p>
+        <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>No se pudo completar</strong><p t-esc="error"/></div>
+        <div t-if="ok" class="tc-alert tc-alert-ok">✓ Acción registrada. El historial y los importes están actualizados.</div>
+        <div class="tc-ops-shortcuts">
+          <a class="tc-ops-shortcut" href="/transcash/finanzas">▦ Resumen financiero</a>
+          <a class="tc-ops-shortcut" href="/transcash/embarques">🚚 Viajes y rutas</a>
+          <a t-if="can_manage" class="tc-ops-shortcut" href="/transcash/operacion">▤ Logística</a>
+          <a class="tc-ops-shortcut" href="/web">⚙ Backoffice</a>
+        </div>
+        <t t-if="section == 'inicio'">
+          <t t-if="can_manage">
+            <section class="tc-embark-section"><div class="tc-section-heading"><h2>1 · Viajes entregados por aprobar</h2><span class="tc-count" t-esc="len(to_approve)"/></div>
+              <p class="tc-muted">Abre un viaje, revisa las hojas de ruta, sus guías y las evidencias de carga, descarga y firma. Después negocia y aprueba el flete.</p>
+              <div class="tc-embark-list"><t t-foreach="to_approve" t-as="e"><a class="tc-guide-card" t-att-href="'/transcash/finanzas/embarques/%d' % e.id">
+                <div class="tc-guide-top"><strong t-esc="e.name"/><span class="tc-status">Pendiente de aprobación</span></div>
+                <p><t t-esc="e.proveedor_id.name"/> · <t t-esc="e.rutas_entregadas"/>/<t t-esc="e.rutas_total"/> rutas · <t t-esc="e.cantidad_guias"/> guías</p>
+                <p>Precio actual: <b><t t-esc="e.moneda_id.symbol"/><t t-esc="'%.2f' % e.valor_acordado"/></b> · Revisar y decidir →</p>
+              </a></t><p t-if="not to_approve" class="tc-empty-inline">No hay viajes entregados pendientes de aprobación.</p></div>
+            </section>
+          </t>
+          <section class="tc-embark-section"><div class="tc-section-heading"><h2>2 · Viajes aprobados pendientes de liquidar</h2><span class="tc-count" t-esc="len(pending)"/></div>
+            <p class="tc-muted">Estos viajes ya están autorizados y todavía no figuran en ninguna liquidación. Solo el proveedor puede incluirlos en su próxima factura.</p>
+            <div class="tc-embark-list"><t t-foreach="pending" t-as="e"><a class="tc-guide-card" t-att-href="'/transcash/finanzas/embarques/%d' % e.id">
+              <div class="tc-guide-top"><strong t-esc="e.name"/><span class="tc-status">Pendiente de facturar</span></div>
+              <p><t t-esc="e.proveedor_id.name"/> · <t t-esc="e.cantidad_guias"/> guías · <t t-esc="e.rutas_total"/> rutas</p>
+              <p>Flete aprobado: <b><t t-esc="e.moneda_id.symbol"/><t t-esc="'%.2f' % e.valor_acordado"/></b></p>
+            </a></t><p t-if="not pending" class="tc-empty-inline">No existen viajes aprobados pendientes de liquidación.</p></div>
+          </section>
+          <section class="tc-embark-section"><div class="tc-section-heading"><h2>3 · Liquidaciones y facturas del proveedor</h2><span class="tc-count" t-esc="len(documents)"/></div>
+            <div class="tc-embark-list"><t t-foreach="documents" t-as="doc"><a class="tc-guide-card" t-att-href="'/transcash/finanzas/liquidaciones/%d' % doc.id">
+              <div class="tc-guide-top"><strong t-esc="doc.name"/><span class="tc-status" t-esc="dict(doc._fields['estado'].selection).get(doc.estado)"/></div>
+              <p><t t-esc="doc.proveedor_id.name"/> · <t t-esc="len(doc.linea_ids)"/> viajes · Factura: <t t-esc="doc.factura_numero or 'Por presentar'"/></p>
+              <p>Fletes <t t-esc="doc.moneda_id.symbol"/><t t-esc="'%.2f' % doc.total_acordado"/> · Factura <t t-esc="'%.2f' % doc.factura_total"/> · Pagado <t t-esc="'%.2f' % doc.total_pagado"/></p>
+              <small t-if="doc.confirmacion_pagos == 'disputa'" class="tc-trip-alert-label">⚠ Diferencia de pago reportada por el proveedor</small>
+              <small t-else="" t-esc="dict(doc._fields['confirmacion_pagos'].selection).get(doc.confirmacion_pagos)"/>
+            </a></t><p t-if="not documents" class="tc-empty-inline">Todavía no hay liquidaciones.</p></div>
+          </section>
+        </t>
+        <t t-if="section == 'trip'">
+          <a class="tc-button tc-button-outline" href="/transcash/finanzas">← Volver a resumen financiero</a>
+          <h2><t t-esc="trip.name"/> · <t t-esc="trip.proveedor_id.name"/></h2>
+          <div class="tc-ops-summary"><span><b>Viaje</b><t t-esc="dict(trip._fields['state'].selection).get(trip.state)"/></span>
+            <span><b>Aprobación</b><t t-esc="dict(trip._fields['estado_aprobacion'].selection).get(trip.estado_aprobacion)"/></span>
+            <span><b>Placa / chofer</b><t t-esc="trip.placa or '—'"/> · <t t-esc="trip.chofer_usuario_id.name"/></span>
+            <span><b>Flete único</b><t t-esc="trip.moneda_id.symbol"/><t t-esc="'%.2f' % trip.valor_acordado"/></span></div>
+          <section class="tc-embark-section"><div class="tc-section-heading"><h2>1 · Hojas de ruta y guías</h2></div>
+            <p class="tc-muted">Abre cada ruta y comprueba sus destinatarios. Todas las evidencias están reunidas más abajo por ruta.</p>
+            <t t-foreach="trip.ruta_ids" t-as="ruta"><details class="tc-guide-card" open="open">
+              <summary><b t-esc="ruta.name"/> · <t t-esc="ruta.destino_nombre"/> · <t t-esc="ruta.guias_cerradas_chofer"/>/<t t-esc="ruta.guias_total"/> guías</summary>
+              <div class="tc-embark-list"><t t-foreach="ruta.guia_ids.filtered(lambda g: g.embarque_id == trip)" t-as="g">
+                <a class="tc-guide-card" t-att-href="'/transcash/guias/%d' % g.id"><b t-esc="g.name"/> · <t t-esc="g.destinatario_id.name or ''"/> · <t t-esc="dict(g._fields['state'].selection).get(g.state)"/> →</a>
+              </t></div>
+            </details></t>
+            <p t-if="not trip.ruta_ids" class="tc-muted">Viaje histórico sin hojas de ruta. Consulta sus guías en la pantalla del embarque.</p>
+          </section>
+          <t t-if="can_manage">
+            <section class="tc-embark-section"><div class="tc-section-heading"><h2>2 · Registrar precio negociado</h2></div>
+              <p>Referencial: <t t-esc="trip.moneda_id.symbol"/><t t-esc="'%.2f' % trip.tarifa_referencial_total"/>. Un solo flete por embarque.</p>
+              <form t-if="trip.estado_aprobacion == 'pendiente' and not trip.liquidacion_linea_id" method="post" t-att-action="'/transcash/finanzas/embarques/%d/negociar' % trip.id" class="tc-embark-form">
+                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                <label class="tc-label">Precio final del viaje</label><input class="form-control" type="number" min="0.01" step="0.01" name="precio" required="required" t-att-value="'%.2f' % trip.valor_acordado"/>
+                <label class="tc-label">Motivo / acuerdo con transportista</label><textarea class="tc-textarea" name="motivo" rows="2" minlength="5" maxlength="1000" required="required"/>
+                <button type="submit" class="tc-button tc-button-primary">💰 Guardar precio y registrar en bitácora</button>
+              </form>
+              <p t-else="" class="tc-muted">Precio aprobado e inmutable.</p>
+            </section>
+            <section class="tc-embark-section"><div class="tc-section-heading"><h2>3 · Aprobar flete al proveedor</h2></div>
+              <p class="tc-muted">Para aprobar deben haberse cerrado todas las entregas y cumplido las revisiones de cliente e incidencias, salvo autorización excepcional desde Odoo.</p>
+              <form t-if="trip.state == 'entregado' and trip.estado_aprobacion == 'pendiente'" method="post" t-att-action="'/transcash/finanzas/embarques/%d/aprobar' % trip.id">
+                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                <button type="submit" class="tc-button tc-button-primary">✓ Aprobar flete y publicar al proveedor</button>
+              </form>
+              <p t-else="" class="tc-muted">El viaje no está listo para aprobar o ya fue aprobado.</p>
+            </section>
+          </t>
+          <section class="tc-embark-section"><div class="tc-section-heading"><h2>Bitácora del flete</h2></div>
+            <details><summary><b>Ver decisiones y cambios registrados</b></summary>
+              <t t-foreach="history" t-as="h"><div class="tc-guide-card"><small><t t-esc="h['author']"/> · <t t-esc="h['date']"/></small><p t-esc="h['text']"/></div></t>
+              <p t-if="not history" class="tc-muted">No hay mensajes registrados.</p>
+            </details>
+          </section>
+          <section class="tc-embark-section"><div class="tc-section-heading"><h2>4 · Evidencias y firmas por hoja de ruta</h2></div>
+            <p class="tc-muted">Abre las fotos, reproduce videos y consulta firmas. No necesitas descargarlos.</p>
+            <t t-call="logistica_transcash.transcash_evidence_hub"/>
+          </section>
+        </t>
+        <t t-if="section == 'doc'">
+          <a class="tc-button tc-button-outline" href="/transcash/finanzas">← Resumen financiero</a>
+          <h2><t t-esc="doc.name"/> · <t t-esc="doc.proveedor_id.name"/></h2>
+          <div class="tc-ops-summary"><span><b>Estado Contabilidad</b><t t-esc="dict(doc._fields['estado'].selection).get(doc.estado)"/></span>
+            <span><b>Recepción proveedor</b><t t-esc="dict(doc._fields['confirmacion_pagos'].selection).get(doc.confirmacion_pagos)"/></span>
+            <span><b>Fletes acordados</b><t t-esc="doc.moneda_id.symbol"/><t t-esc="'%.2f' % doc.total_acordado"/></span>
+            <span><b>Factura total</b><t t-esc="doc.moneda_id.symbol"/><t t-esc="'%.2f' % doc.factura_total"/></span>
+            <span><b>Pagado</b><t t-esc="'%.2f' % doc.total_pagado"/></span>
+            <span><b>Saldo</b><t t-esc="'%.2f' % doc.saldo_pendiente"/></span></div>
+          <div t-if="doc.confirmacion_pagos == 'disputa'" class="tc-ops-red-banner" role="alert">⚠ <strong>Discrepancia del proveedor: requiere conciliación.</strong>
+            <p>El estado de pago bancario no se cambia automáticamente.</p></div>
+          <section class="tc-embark-section"><div class="tc-section-heading"><h2>1 · Viajes incluidos</h2></div>
+            <div class="tc-embark-list"><t t-foreach="doc.linea_ids" t-as="line"><a class="tc-guide-card" t-att-href="'/transcash/finanzas/embarques/%d' % line.embarque_id.id">
+              <strong t-esc="line.embarque_id.name"/><p><t t-esc="line.embarque_id.rutas_total"/> rutas · <t t-esc="line.embarque_id.cantidad_guias"/> guías · <t t-esc="doc.moneda_id.symbol"/><t t-esc="'%.2f' % line.monto"/></p>
+              <small>Abrir hojas de ruta, guías y evidencias →</small>
+            </a></t></div>
+          </section>
+          <section class="tc-embark-section"><div class="tc-section-heading"><h2>2 · Factura</h2></div>
+            <p>Factura <b t-esc="doc.factura_numero or 'Pendiente'"/> · Subtotal <t t-esc="'%.2f' % doc.factura_subtotal"/> · Impuestos <t t-esc="'%.2f' % doc.factura_impuestos"/></p>
+            <a t-if="doc.factura_archivo" target="_blank" rel="noopener" class="tc-button tc-button-outline" t-att-href="'/transcash/finanzas/liquidaciones/%d/factura' % doc.id">👁 Ver factura sin descargar</a>
+            <p t-if="doc.observacion_contabilidad" class="tc-alert tc-alert-error" t-esc="doc.observacion_contabilidad"/>
+            <t t-if="can_account and doc.estado == 'revision'">
+              <form method="post" t-att-action="'/transcash/finanzas/liquidaciones/%d/aprobar' % doc.id">
+                <input name="csrf_token" type="hidden" t-att-value="csrf_token"/>
+                <button class="tc-button tc-button-primary" type="submit">✓ Validar factura / iniciar proceso de pago</button>
+              </form>
+              <form method="post" t-att-action="'/transcash/finanzas/liquidaciones/%d/observar' % doc.id" class="tc-embark-form">
+                <input name="csrf_token" type="hidden" t-att-value="csrf_token"/>
+                <label class="tc-label">Motivo de observación</label><textarea class="tc-textarea" name="motivo" rows="2" required="required"/>
+                <button class="tc-button tc-button-outline" type="submit">⚠ Devolver factura observada al proveedor</button>
+              </form>
+            </t>
+          </section>
+          <section class="tc-embark-section"><div class="tc-section-heading"><h2>3 · Transferencias y confirmación del proveedor</h2></div>
+            <t t-foreach="doc.pago_ids.filtered(lambda p: not p.anulado)" t-as="pago"><div class="tc-guide-card">
+              <b><t t-esc="pago.fecha_pago"/> · <t t-esc="pago.moneda_id.symbol"/><t t-esc="'%.2f' % pago.monto"/></b>
+              <p>Referencia: <t t-esc="pago.referencia"/> · <t t-esc="dict(pago._fields['recepcion_estado'].selection).get(pago.recepcion_estado)"/></p>
+              <a target="_blank" rel="noopener" class="tc-inline-action" t-att-href="'/transcash/finanzas/pagos/%d/comprobante' % pago.id">👁 Ver comprobante bancario →</a>
+              <p t-if="pago.recepcion_estado == 'disputa'" class="tc-alert tc-alert-error" t-esc="pago.recepcion_nota"/>
+            </div></t>
+            <p t-if="not doc.pago_ids" class="tc-muted">Sin pagos registrados.</p>
+            <form t-if="can_account and doc.estado in ('proceso_pago','parcial')" method="post" enctype="multipart/form-data" t-att-action="'/transcash/finanzas/liquidaciones/%d/pagar' % doc.id" class="tc-embark-form">
+              <label class="tc-label">Registrar transferencia REAL (no prevista)</label>
+              <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+              <label class="tc-label">Monto pagado</label><input class="form-control" type="number" step="0.01" min="0.01" required="required" name="monto"/>
+              <label class="tc-label">Fecha bancaria</label><input class="form-control" type="date" required="required" name="fecha_pago"/>
+              <label class="tc-label">Referencia de operación</label><input class="form-control" required="required" name="referencia" maxlength="130"/>
+              <label class="tc-label">Medio de pago</label><select name="medio"><option value="transferencia">Transferencia</option><option value="cheque">Cheque</option><option value="otro">Otro</option></select>
+              <label class="tc-label">Comprobante PDF o imagen</label><input class="form-control" type="file" name="comprobante" accept=".pdf,.jpg,.jpeg,.png" required="required"/>
+              <button class="tc-button tc-button-primary" type="submit">✓ Registrar pago realizado</button>
+            </form>
+          </section>
+          <section class="tc-embark-section"><div class="tc-section-heading"><h2>4 · Bitácora de facturas y pagos</h2></div>
+            <details><summary><b>Consultar historial de Contabilidad y proveedor</b></summary>
+              <t t-foreach="history" t-as="h"><div class="tc-guide-card"><small><t t-esc="h['author']"/> · <t t-esc="h['date']"/></small><p t-esc="h['text']"/></div></t>
+              <p t-if="not history" class="tc-muted">Sin eventos documentados.</p>
+            </details>
+          </section>
+        </t>
+      </main>
+      <nav class="tc-bottom"><a href="/transcash/finanzas" class="tc-bottom-item">▦ Finanzas</a>
+        <a href="/transcash/embarques" class="tc-bottom-item">🚚 Viajes</a>
+        <a href="/web" class="tc-bottom-item">⚙ Escritorio</a></nav>
+    </div></body></html>
+  </template>
+</odoo>

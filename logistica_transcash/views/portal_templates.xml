@@ -32,6 +32,7 @@
         <a href="/transcash/operacion/embarques/nuevo" class="tc-sidebar-link"><span>🚚</span> Armar embarque</a>
         <a href="/transcash/embarques" class="tc-sidebar-link"><span>◎</span> Embarques y viajes</a>
         <a href="/transcash/guias?vista=consulta" class="tc-sidebar-link"><span>▤</span> Consultar guías</a>
+        <a t-if="request.env.user.has_group('logistica_transcash.group_logistica_manager')" href="/transcash/finanzas" class="tc-sidebar-link"><span>💰</span> Negociación y aprobación de fletes</a>
         <a t-if="request.env.user.has_group('logistica_transcash.group_logistica_manager')" href="/web" class="tc-sidebar-link"><span>⚙</span> Tarifas · aprobaciones · ERP</a>
       </t>
       <t t-elif="driver">
@@ -53,6 +54,7 @@
       </t>
       <t t-elif="staff">
         <div class="tc-sidebar-caption">CONSULTA DE OPERACIONES</div>
+        <a t-if="request.env.user.has_group('logistica_transcash.group_transcash_contabilidad')" href="/transcash/finanzas" class="tc-sidebar-link"><span>💼</span> Finanzas · facturas y pagos</a>
         <a href="/transcash/guias" class="tc-sidebar-link"><span>▤</span> Guías y evidencias</a>
         <a href="/transcash/embarques" class="tc-sidebar-link"><span>🚚</span> Viajes (consulta)</a>
         <a href="/transcash/guias?estado=revision" class="tc-sidebar-link"><span>⚑</span> Consultar entregas y novedades</a>

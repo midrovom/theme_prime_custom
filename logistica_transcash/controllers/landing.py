@@ -11,7 +11,9 @@ class TranscashLanding(http.Controller):
         if not user.share:
             if group('group_logistica_manager') or group('group_transcash_operador_rutas'):
                 target = '/transcash/operacion'
-            elif group('group_transcash_consulta') or group('group_logistica_bodega') or group('group_transcash_contabilidad'):
+            elif group('group_transcash_contabilidad'):
+                target = '/transcash/finanzas'
+            elif group('group_transcash_consulta') or group('group_logistica_bodega'):
                 target = '/transcash/guias'
             elif group('group_transcash_dashboard'):
                 return request.redirect('/web')

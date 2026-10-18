@@ -1,6 +1,7 @@
 """Embarque: operación y negociación; factura y pago en documentos independientes."""
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError, AccessError
+from markupsafe import Markup, escape
 
 
 class Embarque(models.Model):
@@ -191,7 +192,19 @@ class Embarque(models.Model):
                 other = self._active_driver_trip(driver_id, exclude_id=trip_id)
                 if other:
                     raise UserError(_('El chofer ya tiene el embarque %s en curso.') % other.name)
-        return super().write(vals)
+        old_values = {rec.id: rec.valor_acordado for rec in self} if 'valor_acordado' in vals else {}
+        result = super().write(vals)
+        if old_values:
+            reason = (self.env.context.get('transcash_motivo_negociacion') or '').strip()[:1000]
+            for rec in self:
+                before = old_values[rec.id]
+                if abs(before - rec.valor_acordado) > 0.000001:
+                    rec.message_post(body=Markup('<b>Negociación de flete por embarque</b><br/>Anterior: %s %s · Nuevo: %s %s<br/>Responsable: %s%s') % (
+                        escape('%.2f' % before), escape(rec.moneda_id.name or ''),
+                        escape('%.2f' % rec.valor_acordado), escape(rec.moneda_id.name or ''),
+                        escape(self.env.user.display_name),
+                        Markup('<br/>Motivo: %s') % escape(reason) if reason else Markup('')))
+        return result
 
     def unlink(self):
         raise UserError(_('Los embarques se conservan para mantener la trazabilidad.'))
@@ -485,14 +498,19 @@ class TarifaEmbarqueWizard(models.TransientModel):
     embarque_id = fields.Many2one('transcash.embarque', required=True, readonly=True)
     valor_acordado = fields.Monetary('Tarifa negociada del embarque', required=True, currency_field='moneda_id')
     moneda_id = fields.Many2one('res.currency', related='embarque_id.moneda_id')
+    motivo = fields.Text('Motivo / acuerdo de negociación', required=True)
 
     def action_confirm(self):
         self.ensure_one()
         rec = self.embarque_id
         rec._check_logistics_finance()
+        self.env.cr.execute('SELECT id FROM transcash_embarque WHERE id = %s FOR UPDATE', (rec.id,))
+        rec.invalidate_recordset(['estado_aprobacion', 'liquidacion_linea_id', 'valor_acordado'])
         if rec.estado_aprobacion != 'pendiente' or rec.liquidacion_linea_id or self.valor_acordado <= 0:
             raise UserError(_('Solo se puede definir una tarifa positiva antes de la aprobación.'))
-        rec.write({'valor_acordado':self.valor_acordado})
+        if len((self.motivo or '').strip()) < 5:
+            raise UserError(_('Explique brevemente el motivo de la negociación (mínimo 5 caracteres).'))
+        rec.with_context(transcash_motivo_negociacion=self.motivo.strip()).write({'valor_acordado':self.valor_acordado})
         return {'type':'ir.actions.act_window_close'}
 
 

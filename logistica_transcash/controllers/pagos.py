@@ -40,8 +40,21 @@ class TranscashSupplier(http.Controller):
             ('proveedor_id.commercial_partner_id', '=', supplier.id)], order='id desc', limit=100)
         available = trips.filtered(lambda t: t.estado_aprobacion == 'aprobado' and
                                    not t.liquidacion_linea_id and t.valor_acordado > 0)
+        # Cada factura/liquidación pertenece a una única compañía y moneda;
+        # no mezclar embarques de diferentes compañías en un solo formulario.
+        available_groups = []
+        keys = set()
+        for trip in available:
+            key = (trip.company_id.id, trip.proveedor_id.id)
+            if key not in keys:
+                keys.add(key)
+                own_trips = available.filtered(lambda row: row.company_id == trip.company_id and
+                                               row.proveedor_id == trip.proveedor_id)
+                available_groups.append({'company': trip.company_id, 'provider': trip.proveedor_id,
+                                         'trips': own_trips})
         return self._page('logistica_transcash.portal_proveedor_inicio', trips=trips,
                           documents=documents, available=available,
+                          available_groups=available_groups,
                           error=kw.get('error'), ok=kw.get('ok'))
 
     @http.route('/transcash/proveedor/liquidaciones/crear', type='http', auth='user', website=True,
@@ -81,6 +94,36 @@ class TranscashSupplier(http.Controller):
             return request.redirect('/transcash/proveedor/liquidaciones/%d?ok=1' % doc.id)
         except (UserError, AccessError, ValidationError, ValueError) as exc:
             return request.redirect('/transcash/proveedor/liquidaciones/%d?error=%s' % (doc.id,quote(str(exc)[:220])))
+
+    @http.route('/transcash/proveedor/liquidaciones/<int:doc_id>/pagos/<int:pago_id>/recepcion',
+                type='http', auth='user', website=True, methods=['POST'], csrf=True)
+    def supplier_payment_receipt(self, doc_id, pago_id, **post):
+        doc = self._doc(doc_id)
+        if not doc:
+            return request.not_found()
+        pago = doc.pago_ids.filtered(lambda p: p.id == pago_id)[:1]
+        if not pago:
+            return request.not_found()
+        try:
+            pago.action_supplier_receipt(post.get('decision'), post.get('observacion') or '')
+            return request.redirect('/transcash/proveedor/liquidaciones/%d?ok=recepcion' % doc.id)
+        except (UserError, AccessError, ValidationError, ValueError) as exc:
+            return request.redirect('/transcash/proveedor/liquidaciones/%d?error=%s' % (
+                doc.id, quote(str(exc)[:220])))
+
+    @http.route('/transcash/proveedor/liquidaciones/<int:doc_id>/pagos/<int:pago_id>/comprobante',
+                type='http', auth='user', website=True, methods=['GET'])
+    def supplier_payment_proof(self, doc_id, pago_id, **kw):
+        doc = self._doc(doc_id)
+        pago = doc.pago_ids.filtered(lambda p: p.id == pago_id and not p.anulado)[:1] if doc else False
+        if not pago or not pago.comprobante:
+            return request.not_found()
+        blob = base64.b64decode(pago.comprobante)
+        mime = ('application/pdf' if blob.startswith(b'%PDF-') else
+                'image/png' if blob.startswith(b'\x89PNG') else 'image/jpeg')
+        return request.make_response(blob, headers=[('Content-Type', mime),
+            ('Content-Disposition', 'inline; filename="%s"' % (secure_filename(pago.comprobante_nombre or 'comprobante') or 'comprobante')),
+            ('X-Content-Type-Options', 'nosniff'), ('Cache-Control', 'private, no-store')])
 
     @http.route('/transcash/proveedor/liquidaciones/<int:doc_id>/factura/archivo',
                 type='http', auth='user', website=True, methods=['GET'])
