@@ -50,10 +50,12 @@ class TranscashPortal(http.Controller):
                                user.has_group('logistica_transcash.group_logistica_manager')):
             return [('company_id','in', user.company_ids.ids)]
         recipient = ('destinatario_id', 'child_of', partner.id if partner else 0)
-        if user.has_group('logistica_transcash.group_transcash_transportista'):
-            return [('proveedor_id.commercial_partner_id','=',partner.id if partner else 0)]
         if user.has_group('logistica_transcash.group_transcash_chofer'):
             return ['|', ('chofer_usuario_id', '=', user.id), recipient]
+        if user.has_group('logistica_transcash.group_transcash_cliente'):
+            return [recipient]
+        if user.has_group('logistica_transcash.group_transcash_transportista'):
+            return [('proveedor_id.commercial_partner_id','=',partner.id if partner else 0)]
         return [recipient]
 
     def _guide(self, guide_id):
@@ -73,6 +75,8 @@ class TranscashPortal(http.Controller):
                 user.has_group('logistica_transcash.group_logistica_bodega') or
                 (not user.share and user.has_group('logistica_transcash.group_transcash_operador_rutas')) or
                 (user.has_group('logistica_transcash.group_transcash_transportista') and
+                 not user.has_group('logistica_transcash.group_transcash_chofer') and
+                 not user.has_group('logistica_transcash.group_transcash_cliente') and
                  guia.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id)):
             return False
         if guia.company_id not in user.company_ids and not user.share:
@@ -85,6 +89,15 @@ class TranscashPortal(http.Controller):
             request.env.user.has_group('logistica_transcash.group_logistica_bodega') or
             request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas'))
         historial = guia.evento_ids if interno else guia.evento_ids.filtered('publico_cliente')
+        # No divulgar eventos operativos internos de versiones anteriores que
+        # quedaron marcados por error como públicos antes de V5.19.
+        if request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_cliente'):
+            private_starts = ('Asignada a hoja de ruta', 'Carga evidenciada por Logística',
+                              'Chofer aceptó carga de hoja de ruta', 'Flete autorizado',
+                              'Reasignación autorizada al confirmar hoja de ruta',
+                              'Inicio de carga de la guía', 'Observación final de carga')
+            historial = historial.filtered(lambda event: not any(
+                (event.accion or '').startswith(prefix) for prefix in private_starts))
         return request.render('logistica_transcash.portal_guia_detalle', {
             'guia': guia,
             'es_chofer': bool(guia.chofer_usuario_id.id == request.env.user.id and request.env.user.has_group('logistica_transcash.group_transcash_chofer')),

@@ -382,7 +382,7 @@ class HojaRuta(models.Model):
                                        'destino_codigo': ruta.destino_id.codigo})
             ruta.sudo().write({'state':'planificada'})
             for guia in guides:
-                guia._track_event('Asignada a hoja de ruta %s' % ruta.name)
+                guia._track_event('Asignada a hoja de ruta %s' % ruta.name, publico_cliente=False)
         return True
 
     def action_open_carga_pwa(self):
@@ -443,7 +443,62 @@ class EmbarqueRuta(models.Model):
 
     aceptado_chofer = fields.Boolean('Carga aceptada por chofer', readonly=True, copy=False)
     fecha_aceptacion_chofer = fields.Datetime(readonly=True, copy=False)
-    observacion_rechazo = fields.Text('Discrepancia reportada por chofer', readonly=True)
+    observacion_rechazo = fields.Text('Última objeción de carga', readonly=True)
+    objecion_pendiente = fields.Boolean('Objeción del chofer pendiente', default=False, readonly=True,
+                                       copy=False, index=True)
+    objecion_ids = fields.One2many('transcash.embarque.objecion', 'embarque_id',
+                                   string='Bitácora interna de objeciones', readonly=True)
+    objeciones_count = fields.Integer('Veces objetado', compute='_compute_objeciones_count')
+
+    @api.depends('objecion_ids')
+    def _compute_objeciones_count(self):
+        for emb in self:
+            emb.objeciones_count = len(emb.objecion_ids)
+
+    def _exigir_evidencia_correccion(self):
+        """No reutilizar imágenes antiguas después de que el chofer objetó la carga."""
+        self.ensure_one()
+        abierta = self.objecion_ids.filtered(lambda o: o.estado == 'abierta')[:1]
+        if not abierta:
+            return True  # compatibilidad con observaciones de versiones previas
+        for ruta in self.ruta_ids:
+            nuevas = ruta.evidencia_carga_ids.filtered(lambda e: e.fecha >= abierta.fecha)
+            video_nuevo = ruta.video_carga and ruta.fecha_video and ruta.fecha_video >= abierta.fecha
+            if not (nuevas or video_nuevo):
+                raise UserError(_('Registre una NUEVA foto o video de corrección para la ruta %s.') % ruta.name)
+        return True
+
+    def action_resolve_discrepancy(self, explanation):
+        """Solo Operador/Jefe logístico, con corrección escrita y nuevas evidencias."""
+        self.ensure_one()
+        self.env['transcash.hoja.ruta']._check_operator()
+        if self.company_id not in self.env.user.company_ids:
+            raise AccessError(_('Compañía no autorizada.'))
+        explanation = (explanation or '').strip()
+        if len(explanation) < 12 or len(explanation) > 2000:
+            raise ValidationError(_('Describa la solución aplicada (12 a 2000 caracteres).'))
+        self._lock_driver_operation(self.chofer_usuario_id.id)
+        self.env.cr.execute('SELECT id FROM transcash_embarque WHERE id=%s FOR UPDATE', (self.id,))
+        self.invalidate_recordset(['state','objecion_pendiente','observacion_rechazo','ruta_ids'])
+        if self.state != 'preparacion' or not (self.objecion_pendiente or self.observacion_rechazo):
+            raise UserError(_('Solo puede resolver una objeción durante la preparación del embarque.'))
+        if any(r.state != 'cargada' or not r._has_carga_evidence() for r in self.ruta_ids):
+            raise UserError(_('Complete las evidencias de todas las hojas de ruta antes de resolver.'))
+        self._exigir_evidencia_correccion()
+        abiertas = self.objecion_ids.filtered(lambda o: o.estado == 'abierta')
+        if abiertas:
+            abiertas.sudo().write({'estado':'resuelta','responsable_id':self.env.user.id,
+                                  'fecha_resolucion':fields.Datetime.now(),
+                                  'explicacion_resolucion':explanation})
+        else:
+            # Legado V5.18: conservar también la objeción escrita antes de este modelo.
+            self.env['transcash.embarque.objecion'].sudo().create({
+                'embarque_id':self.id,'chofer_id':self.chofer_usuario_id.id,
+                'fecha':fields.Datetime.now(), 'motivo':self.observacion_rechazo or 'Objeción histórica',
+                'estado':'resuelta','responsable_id':self.env.user.id,
+                'fecha_resolucion':fields.Datetime.now(), 'explicacion_resolucion':explanation})
+        self.sudo().write({'objecion_pendiente':False,'observacion_rechazo':False})
+        return True
 
     def action_ready_for_driver(self):
         """Operador cierra la preparación; el chofer debe aceptar y salir."""
@@ -458,14 +513,16 @@ class EmbarqueRuta(models.Model):
                 raise UserError(_('Agregue hojas de ruta antes de liberar el embarque.'))
             if any(r.state != 'cargada' or not r._has_carga_evidence() for r in emb.ruta_ids):
                 raise UserError(_('Antes de liberar el viaje, registre al menos una foto o video de CADA hoja de ruta.'))
+            if emb.objecion_pendiente or emb.observacion_rechazo:
+                raise UserError(_('El chofer objetó la carga. Primero corrija la evidencia y registre la solución.'))
             guides = emb.ruta_ids.mapped('guia_ids')
             if not guides or set(guides.ids) != set(emb.guia_ids.ids):
                 raise UserError(_('Las guías del embarque y de sus rutas no coinciden.'))
             guides.sudo().write({'state':'embarcada'})
             emb.sudo().write({'state':'embarcado','fecha_embarcado':fields.Datetime.now(),
-                              'observacion_rechazo':False})
+                              'observacion_rechazo':False,'objecion_pendiente':False})
             for guide in guides:
-                guide._track_event('Carga evidenciada por Logística y puesta a disposición del chofer')
+                guide._track_event('Carga evidenciada por Logística y puesta a disposición del chofer', publico_cliente=False)
         return True
 
     def action_accept_and_depart(self):
@@ -479,7 +536,7 @@ class EmbarqueRuta(models.Model):
                 continue  # reintento seguro en caso de interrupción HTTP
             if emb.state != 'embarcado' or not emb.ruta_ids:
                 raise UserError(_('El embarque aún no está listo para su aceptación.'))
-            if emb.observacion_rechazo:
+            if emb.objecion_pendiente or emb.observacion_rechazo:
                 raise UserError(_('Logística debe corregir y volver a liberar el embarque observado.'))
             if any(r.state != 'cargada' or not r._has_carga_evidence() for r in emb.ruta_ids):
                 raise UserError(_('Falta evidencia de carga en alguna hoja de ruta.'))
@@ -491,18 +548,39 @@ class EmbarqueRuta(models.Model):
             emb.sudo().write({'state':'ruta','aceptado_chofer':True,
                               'fecha_aceptacion_chofer':now,'fecha_salida':now})
             for guia in emb.guia_ids:
-                guia._track_event('Chofer aceptó carga de hoja de ruta e inició traslado')
+                guia._track_event('Chofer aceptó carga de hoja de ruta e inició traslado', publico_cliente=False)
         return True
 
     def action_report_discrepancy(self, reason):
+        """Objeción privada PRE-SALIDA, con bloqueo transaccional e historial."""
+        self.ensure_one()
         self._check_driver()
-        if self.state != 'embarcado' or not self.ruta_ids:
-            raise UserError(_('Solo puede observar un embarque pendiente de aceptación.'))
-        if len((reason or '').strip()) < 8:
-            raise ValidationError(_('Describa brevemente la diferencia encontrada.'))
-        self.sudo().write({'observacion_rechazo': reason[:2000]})
-        self.message_post(body=_('Chofer reportó diferencia antes de salir: %s') % reason[:500])
+        reason = (reason or '').strip()
+        if len(reason) < 12 or len(reason) > 2000:
+            raise ValidationError(_('Explique el motivo de la objeción (12 a 2000 caracteres).'))
+        self._lock_driver_operation(self.chofer_usuario_id.id)
+        self.env.cr.execute('SELECT id FROM transcash_embarque WHERE id=%s FOR UPDATE', (self.id,))
+        self.invalidate_recordset(['state','objecion_pendiente','observacion_rechazo','ruta_ids'])
+        if self.state != 'embarcado' or not self.ruta_ids or self.aceptado_chofer:
+            raise UserError(_('Solo puede objetar un embarque pendiente de aceptación y antes de la salida.'))
+        if self.objecion_pendiente or self.observacion_rechazo:
+            raise UserError(_('Ya existe una objeción pendiente. Logística debe revisarla.'))
+        self.env['transcash.embarque.objecion'].sudo().create({
+            'embarque_id':self.id,'chofer_id':self.env.user.id,
+            'fecha':fields.Datetime.now(),'motivo':reason})
+        self.sudo().write({'observacion_rechazo':reason,'objecion_pendiente':True})
         return True
+
+    def action_open_resolver_objecion(self):
+        self.ensure_one()
+        self.env['transcash.hoja.ruta']._check_operator()
+        if self.company_id not in self.env.user.company_ids:
+            raise AccessError(_('Compañía no autorizada.'))
+        if self.state != 'preparacion' or not (self.objecion_pendiente or self.observacion_rechazo):
+            raise UserError(_('No hay ninguna objeción en preparación para resolver.'))
+        return {'type':'ir.actions.act_window','res_model':'transcash.resolver.objecion.wizard',
+                'view_mode':'form','target':'new','name':_('Resolver objeción de carga'),
+                'context':{'default_embarque_id':self.id}}
 
     def action_reopen_packing(self):
         self.env['transcash.hoja.ruta']._check_operator()
@@ -511,7 +589,8 @@ class EmbarqueRuta(models.Model):
                 raise UserError(_('Solo puede devolver a preparación antes de que el chofer acepte.'))
             emb.guia_ids.sudo().write({'state':'registrada'})
             emb.ruta_ids.sudo().write({'state':'planificada'})
-            emb.sudo().write({'state':'preparacion','observacion_rechazo':False})
+            emb.sudo().write({'state':'preparacion',
+                              'objecion_pendiente':bool(emb.objecion_pendiente or emb.observacion_rechazo)})
         return True
 
     def action_depart(self):

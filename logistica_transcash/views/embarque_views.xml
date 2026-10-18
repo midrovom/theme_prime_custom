@@ -1,8 +1,8 @@
 <odoo>
   <record id="view_transcash_embarque_list" model="ir.ui.view">
     <field name="name">transcash.embarque.list</field><field name="model">transcash.embarque</field>
-    <field name="arch" type="xml"><list string="Embarques" create="0" delete="0" decoration-success="estado_aprobacion == 'aprobado'">
-      <field name="name"/><field name="state" widget="badge"/>
+    <field name="arch" type="xml"><list string="Embarques" create="0" delete="0" decoration-success="estado_aprobacion == 'aprobado'" decoration-danger="objecion_pendiente or observacion_rechazo">
+      <field name="name"/><field name="state" widget="badge"/><field name="objecion_pendiente" widget="boolean_toggle" readonly="1"/>
       <field name="chofer_usuario_id"/><field name="proveedor_id"/><field name="placa"/>
       <field name="cantidad_guias"/><field name="guias_cerradas_chofer"/><field name="guias_entregadas"/>
       <field name="estado_aprobacion" widget="badge"/>
@@ -18,6 +18,7 @@
       <field name="placa"/><filter name="activas" string="Operación abierta" domain="[('state','in',['preparacion','embarcado','ruta'])]"/>
       <filter name="entregadas" string="Entregas finalizadas" domain="[('state','=','entregado')]"/>
       <filter name="aprobadas" string="Fletes aprobados" domain="[('estado_aprobacion','=','aprobado')]"/>
+      <filter name="objetados" string="Objetados por chofer" domain="['|',('objecion_pendiente','=',True),('observacion_rechazo','!=',False)]"/>
       <filter name="por_aprobar" string="Por aprobar Logística" domain="[('state','=','entregado'),('estado_aprobacion','=','pendiente')]"/>
       <group expand="0" string="Agrupar por"><filter name="chofer" string="Chofer" context="{'group_by':'chofer_usuario_id'}"/>
         <filter name="proveedor" string="Proveedor" context="{'group_by':'proveedor_id'}"/>
@@ -34,6 +35,8 @@
           invisible="state != 'preparacion'" groups="logistica_transcash.group_transcash_operador_rutas"/>
         <button name="action_reopen_packing" type="object" string="Corregir carga observada"
           invisible="state != 'embarcado' or aceptado_chofer" groups="logistica_transcash.group_transcash_operador_rutas"/>
+        <button name="action_open_resolver_objecion" type="object" string="Resolver objeción de carga"
+          invisible="state != 'preparacion' or not (objecion_pendiente or observacion_rechazo)" groups="logistica_transcash.group_transcash_operador_rutas"/>
         <button name="action_depart" type="object" string="Autorizar salida" class="btn-primary"
           invisible="state != 'embarcado' or ruta_ids" groups="logistica_transcash.group_logistica_bodega"/>
         <button name="action_configure_liquidation" type="object" string="Negociar valor del viaje"
@@ -62,6 +65,10 @@
           <field name="fecha_creacion"/><field name="fecha_embarcado"/><field name="fecha_salida"/><field name="fecha_entrega"/>
         </group><group string="Control de entregas"><field name="cantidad_guias"/><field name="guias_cerradas_chofer"/>
           <field name="guias_entregadas"/><field name="observacion_general" readonly="1"/></group></group>
+        <group string="Objeción PRE-SALIDA (uso interno)" groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta">
+          <field name="objecion_pendiente" readonly="1"/><field name="observacion_rechazo" readonly="1"/>
+          <field name="objeciones_count" readonly="1"/>
+        </group>
         <group string="Aprobación del transporte y negociación" groups="logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad">
           <field name="estado_aprobacion"/><field name="estado_financiero"/><field name="legado_liquidacion_bloqueada"/><field name="aprobado_por_id"/>
           <field name="aprobado_fecha"/><field name="notas_revision_logistica"/>
@@ -73,6 +80,11 @@
         </group>
         <notebook><page string="Hojas de ruta"><group><field name="aceptado_chofer"/>
           <field name="fecha_aceptacion_chofer"/><field name="observacion_rechazo"/></group>
+          <field name="objecion_ids" readonly="1" groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta"><list create="0" edit="0" delete="0">
+            <field name="fecha"/><field name="chofer_id"/><field name="motivo"/>
+            <field name="estado" widget="badge"/><field name="responsable_id"/>
+            <field name="fecha_resolucion"/><field name="explicacion_resolucion"/>
+          </list></field>
           <field name="ruta_ids" readonly="1"><list create="0" delete="0">
             <field name="name"/><field name="destino_nombre"/><field name="tipo_vehiculo"/>
             <field name="state"/></list></field></page>

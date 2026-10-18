@@ -13,6 +13,8 @@ class TranscashSupplier(http.Controller):
     def _supplier(self):
         u = request.env.user
         if (not u.share or not u.has_group('logistica_transcash.group_transcash_transportista') or
+                u.has_group('logistica_transcash.group_transcash_chofer') or
+                u.has_group('logistica_transcash.group_transcash_cliente') or
                 not u.partner_id or not u.partner_id.commercial_partner_id):
             return False
         return u.partner_id.commercial_partner_id

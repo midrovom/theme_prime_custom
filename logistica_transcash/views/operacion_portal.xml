@@ -21,6 +21,10 @@
           </div>
 
           <t t-if="section == 'inicio'">
+            <a t-if="objeciones_pendientes" class="tc-ops-red-banner" href="/transcash/operacion/embarques/objetados" role="alert">
+              ⛔ <strong><t t-esc="objeciones_pendientes"/> EMBARQUE(S) CON OBJECIÓN DEL CHOFER</strong>
+              <small>Requieren revisión de carga por Logística. Abrir pendientes →</small>
+            </a>
             <div class="tc-stat-row">
               <div class="tc-stat"><strong t-esc="contador_rutas"/><small>Hojas de ruta</small></div>
               <div class="tc-stat"><strong t-esc="pendientes"/><small>Rutas por confirmar</small></div>
@@ -37,6 +41,20 @@
             </div>
           </t>
 
+          <t t-if="section == 'objeciones'">
+            <div class="tc-ops-red-banner">⛔ <strong>Objeciones internas de carga · solo Logística</strong><small>El cliente no ve estos reportes ni interviene en su resolución.</small></div>
+            <div class="tc-embark-list">
+              <t t-foreach="viajes_objetados" t-as="v">
+                <a class="tc-guide-card tc-trip-objected" t-att-href="'/transcash/operacion/embarques/%d' % v.id">
+                  <strong><t t-esc="v.name"/> · <t t-esc="v.placa"/></strong>
+                  <div class="tc-trip-alert-label">⛔ Objeción del chofer pendiente</div>
+                  <p><t t-esc="v.chofer_usuario_id.name"/> · <t t-esc="v.proveedor_id.name"/></p>
+                  <small t-esc="v.observacion_rechazo or 'Consulta la bitácora del embarque'"/>
+                </a>
+              </t>
+              <p t-if="not viajes_objetados" class="tc-empty-inline">No hay objeciones pendientes.</p>
+            </div>
+          </t>
           <t t-if="section == 'rutas'">
             <a class="tc-button tc-button-primary" href="/transcash/operacion/rutas/nueva">＋ Nueva hoja de ruta</a>
             <div class="tc-section-heading"><h2>Rutas planificadas</h2><span class="tc-count" t-esc="len(rutas)"/></div>
@@ -180,6 +198,21 @@
           </t>
 
           <t t-if="section == 'embarque_detalle'">
+            <div t-if="embarque.objecion_pendiente or embarque.observacion_rechazo" class="tc-ops-red-banner" role="alert">
+              ⛔ <strong>VIAJE OBJETADO POR EL CHOFER · ACCIÓN REQUERIDA</strong>
+              <p t-esc="embarque.observacion_rechazo"/>
+              <small>Exclusivo de Logística. No publicar al destinatario.</small>
+            </div>
+            <div t-if="embarque.objecion_ids" class="tc-ops-audit-list">
+              <h3>Bitácora de objeciones del viaje</h3>
+              <t t-foreach="embarque.objecion_ids" t-as="obj">
+                <article class="tc-ops-audit-entry"><strong t-esc="obj.chofer_id.name"/> · <small t-esc="obj.fecha"/>
+                  <p t-esc="obj.motivo"/>
+                  <div t-if="obj.estado == 'resuelta'" class="tc-guided-done">✓ Corregido por <t t-esc="obj.responsable_id.name"/> · <t t-esc="obj.fecha_resolucion"/>: <t t-esc="obj.explicacion_resolucion"/></div>
+                  <div t-else="" class="tc-trip-alert-label">● Aún pendiente de corrección</div>
+                </article>
+              </t>
+            </div>
             <div class="tc-ops-summary"><span><b>Estado</b><t t-esc="dict(embarque._fields['state'].selection).get(embarque.state)"/></span>
               <span><b>Chofer</b><t t-esc="embarque.chofer_usuario_id.name"/></span>
               <span><b>Transportista</b><t t-esc="embarque.proveedor_id.name"/></span>
@@ -226,19 +259,29 @@
                 </div>
               </article>
             </t></div>
+            <div t-if="embarque.state == 'preparacion' and (embarque.objecion_pendiente or embarque.observacion_rechazo)" class="tc-ops-resolution">
+              <h3>Resolver la objeción y documentar la corrección</h3>
+              <p>Registra una foto o video NUEVO por cada ruta, explica qué se corrigió y guarda la resolución. Solo entonces podrás liberar nuevamente el viaje.</p>
+              <form method="post" t-att-action="'/transcash/operacion/embarques/%d/resolver' % embarque.id">
+                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                <label for="tc-fix-description">Acción correctiva realizada *</label>
+                <textarea id="tc-fix-description" class="tc-textarea" name="solucion" required="required" minlength="12" maxlength="2000" rows="3" placeholder="Ej.: se corrigió la asignación y se fotografió nuevamente la carga…"/>
+                <button class="tc-button tc-button-primary" type="submit">✓ Registrar corrección con responsable y fecha</button>
+              </form>
+            </div>
             <a t-if="embarque.state == 'preparacion'" class="tc-button tc-button-outline" href="/transcash/operacion/embarques/nuevo">＋ Agregar otras rutas a un embarque en preparación</a>
             <t t-if="embarque.state == 'preparacion'">
               <div class="tc-next-card"><div class="tc-next-icon">✓</div><div><strong>Paso 4 · Enviar al chofer</strong><p>Solo se habilita cuando TODAS las rutas tengan foto o video. El conductor revisará las evidencias y aceptará antes de salir.</p></div></div>
               <form method="post" t-att-action="'/transcash/operacion/embarques/%d/liberar' % embarque.id">
                 <input name="csrf_token" type="hidden" t-att-value="csrf_token"/>
-                <button class="tc-button tc-button-primary" type="submit" t-att-disabled="'disabled' if not embarque.ruta_ids or any(not r._has_carga_evidence() for r in embarque.ruta_ids) else None">✓ Enviar embarque al chofer para aceptación</button>
+                <button class="tc-button tc-button-primary" type="submit" t-att-disabled="'disabled' if embarque.objecion_pendiente or embarque.observacion_rechazo or not embarque.ruta_ids or any(not r._has_carga_evidence() for r in embarque.ruta_ids) else None">✓ Enviar embarque al chofer para aceptación</button>
               </form>
             </t>
             <form t-if="embarque.state == 'embarcado' and not embarque.aceptado_chofer" method="post" t-att-action="'/transcash/operacion/embarques/%d/reabrir' % embarque.id">
               <input name="csrf_token" type="hidden" t-att-value="csrf_token"/>
               <button class="tc-button tc-button-outline" type="submit">↶ Devolver a preparación</button>
             </form>
-            <div t-if="embarque.state == 'embarcado'" class="tc-next-card">El chofer deberá aceptar el embarque desde su propia PWA para iniciar el traslado.</div>
+            <div t-if="embarque.state == 'embarcado' and not (embarque.objecion_pendiente or embarque.observacion_rechazo)" class="tc-next-card">El chofer deberá aceptar el embarque desde su propia PWA para iniciar el traslado.</div>
             <a class="tc-button tc-button-outline" t-att-href="'/transcash/embarques/%d' % embarque.id">Consultar detalle y evidencias →</a>
           </t>
         </main>

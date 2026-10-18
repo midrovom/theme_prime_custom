@@ -149,6 +149,12 @@
       <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
       <field name="domain_force">[('company_id','in',company_ids)]</field>
     </record>
+    <record id="rule_transcash_objecion_company" model="ir.rule">
+      <field name="name">Objeciones de embarque: por compañía</field>
+      <field name="model_id" ref="model_transcash_embarque_objecion"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas')),(4,ref('group_logistica_bodega')),(4,ref('group_transcash_consulta'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
     <!-- En el backoffice se aíslan las guías y sus hijos por compañías autorizadas. -->
     <record id="rule_transcash_guia_company" model="ir.rule">
       <field name="name">Transcash guías por compañía</field>

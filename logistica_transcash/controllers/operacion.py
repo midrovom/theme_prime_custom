@@ -55,7 +55,17 @@ class TranscashOperaciones(http.Controller):
                           pendientes=env['transcash.hoja.ruta'].search_count(dom + [('state','=','borrador')]),
                           contador_embarques=env['transcash.embarque'].search_count(dom),
                           pendientes_carga=env['transcash.embarque'].search_count(dom + [('state','=','preparacion')]),
+                          objeciones_pendientes=env['transcash.embarque'].search_count(dom + ['|',('objecion_pendiente','=',True),('observacion_rechazo','!=',False)]),
                           company=company)
+
+    @http.route('/transcash/operacion/embarques/objetados', type='http', auth='user', website=True, methods=['GET'])
+    def trip_alerts(self, **kw):
+        if not self._guard():
+            return request.not_found()
+        trips = request.env['transcash.embarque'].search([
+            ('company_id','in',request.env.user.company_ids.ids),
+            '|',('objecion_pendiente','=',True),('observacion_rechazo','!=',False)], order='id desc', limit=200)
+        return self._page('Embarques objetados',section='objeciones',viajes_objetados=trips)
 
     @http.route('/transcash/operacion/rutas', type='http', auth='user', website=True, methods=['GET'])
     def route_list(self, **kw):
@@ -312,6 +322,20 @@ class TranscashOperaciones(http.Controller):
         try:
             trip.action_ready_for_driver()
             return request.redirect('/transcash/operacion/embarques/%d?ok=liberado' % trip.id)
+        except self.ERROR_TYPES as ex:
+            return request.redirect('/transcash/operacion/embarques/%d?error=%s' % (trip.id,quote(str(ex)[:320])))
+
+    @http.route('/transcash/operacion/embarques/<int:trip_id>/resolver',
+                type='http', auth='user', website=True, methods=['POST'], csrf=True)
+    def trip_resolve(self, trip_id, **post):
+        if not self._guard():
+            return request.not_found()
+        trip = self._trip(trip_id)
+        if not trip:
+            return request.not_found()
+        try:
+            trip.action_resolve_discrepancy(post.get('solucion') or '')
+            return request.redirect('/transcash/operacion/embarques/%d?ok=corregido' % trip.id)
         except self.ERROR_TYPES as ex:
             return request.redirect('/transcash/operacion/embarques/%d?error=%s' % (trip.id,quote(str(ex)[:320])))
 

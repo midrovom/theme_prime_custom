@@ -309,3 +309,14 @@ body.tc-modal-open{overflow:hidden}
 .tc-ops-done{color:#047857!important}.tc-ops-missing{color:#a75e17!important}
 .tc-ops-trip-progress{background:#e7f7f1;color:#087b60;padding:13px 15px;border-radius:10px;margin-bottom:14px;font-size:13px}
 @media(max-width:600px){.tc-ops-capture-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.tc-ops-capture-actions form:last-child{grid-column:1/-1}.tc-ops-evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* V5.19 · Alertas privadas de objeción, legibles en el móvil */
+.tc-embarque-critical,.tc-ops-red-banner{display:block;background:#fff0f0;border:2px solid #df314b;border-radius:14px;color:#931b31;padding:16px;margin:12px 0;font-weight:750;text-decoration:none!important;line-height:1.5;box-shadow:0 3px 10px #ce17301a}
+.tc-ops-red-banner small{display:block;margin-top:5px;color:#9c3547;font-size:12px}.tc-ops-red-banner strong{display:block;font-size:15px}
+.tc-trip-objected{border:2px solid #db3048!important;background:#fff7f8!important}.tc-trip-alert-label{background:#ffe1e6;color:#aa1533;padding:8px 11px;border-radius:9px;font-weight:850;margin:8px 0;font-size:12px}
+.tc-action-tile-danger{background:#fff0f2;border:2px solid #cf2542;color:#a01d35}.tc-action-tile-danger b,.tc-action-tile-danger small{color:#ac2c48}.tc-action-tile-danger:hover{background:#ffe4e9}
+.tc-driver-dispute{grid-column:1/-1}.tc-driver-dispute summary{list-style:none}.tc-driver-dispute summary::-webkit-details-marker{display:none}.tc-driver-dispute-form{margin-top:9px;border:1px solid #ffd0d9;padding:14px;border-radius:12px;background:#fff9fa;display:grid;gap:10px}.tc-button-danger{background:#b72340;color:white!important;border:1px solid #b72340}
+.tc-ops-resolution,.tc-ops-audit-list{background:white;border:1px solid #eedde1;border-radius:14px;padding:16px;margin:14px 0}.tc-ops-resolution p{font-size:13px;color:#586575}.tc-ops-resolution form{display:grid;gap:10px}
+.tc-ops-audit-entry{padding:13px 0;border-top:1px solid #eee1e3}.tc-ops-audit-entry p{white-space:pre-wrap;font-size:13px;color:#364456}
+.tc-embark-section#tc-videos-rutas{margin:10px 0 20px}.tc-embark-section#tc-videos-rutas .tc-ops-evidence-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}.tc-embark-section#tc-videos-rutas video,.tc-embark-section#tc-videos-rutas img{max-height:320px;object-fit:contain}
+@media(max-width:600px){.tc-driver-dispute,.tc-embarque-critical{grid-column:1/-1}.tc-ops-red-banner{padding:12px}.tc-embark-section#tc-videos-rutas .tc-ops-evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

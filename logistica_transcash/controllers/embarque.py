@@ -11,10 +11,12 @@ class EmbarquePortal(TranscashPortal):
         user = request.env.user
         if not rec:
             return False
-        if user.has_group('logistica_transcash.group_transcash_chofer') and rec.chofer_usuario_id.id == user.id:
-            return True
-        if user.has_group('logistica_transcash.group_transcash_transportista') and rec.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id:
-            return True
+        if user.share and user.has_group('logistica_transcash.group_transcash_chofer'):
+            return rec.chofer_usuario_id.id == user.id
+        if user.share and user.has_group('logistica_transcash.group_transcash_cliente'):
+            return False
+        if user.share and user.has_group('logistica_transcash.group_transcash_transportista'):
+            return rec.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id
         return bool(not user.share and rec.company_id in user.company_ids and (
             user.has_group('logistica_transcash.group_transcash_consulta') or
             user.has_group('logistica_transcash.group_logistica_bodega') or
