@@ -56,6 +56,9 @@ class TranscashOperaciones(http.Controller):
                           pendientes=env['transcash.hoja.ruta'].search_count(dom + [('state','=','borrador')]),
                           contador_embarques=env['transcash.embarque'].search_count(dom),
                           pendientes_carga=env['transcash.embarque'].search_count(dom + [('state','=','preparacion')]),
+                          fletes_por_aprobar=(env['transcash.embarque'].search_count(dom + [
+                              ('state','=','entregado'),('estado_aprobacion','=','pendiente')])
+                              if self._manager() else 0),
                           objeciones_pendientes=env['transcash.embarque'].search_count(dom + ['|',('objecion_pendiente','=',True),('observacion_rechazo','!=',False)]),
                           company=company)
 
@@ -311,6 +314,7 @@ class TranscashOperaciones(http.Controller):
         if not trip:
             return request.not_found()
         return self._page('Embarque ' + trip.name,section='embarque_detalle', embarque=trip,
+                          can_approve_freight=self._manager(),
                           error=kw.get('error'),ok=kw.get('ok'), **gallery_for_trip(trip))
 
     @http.route('/transcash/operacion/embarques/<int:trip_id>/liberar', type='http', auth='user', website=True, methods=['POST'], csrf=True)

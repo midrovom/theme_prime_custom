@@ -39,16 +39,15 @@ class TestAnaliticaV57(TransactionCase):
             'destino':'Quito','destino_codigo':'UIO',
         })
 
-    def test_exception_permission_and_audit(self):
-        with self.assertRaises((UserError,AccessError)):
+    def test_normal_approval_with_open_incidence(self):
+        self.emb.with_user(self.manager).action_approve_transport()
+        self.assertEqual(self.emb.estado_aprobacion, 'aprobado')
+        self.assertFalse(self.emb.aprobacion_excepcional)
+        self.assertEqual(self.guia.incidencia_estado, 'abierta')
+        self.assertEqual(self.guia.resultado_recepcion, 'pendiente')
+        self.assertIn('publicado al proveedor', ' '.join(self.emb.message_ids.mapped('body')))
+        with self.assertRaises(UserError):
             self.emb.with_user(self.manager).action_approve_transport()
-        with self.assertRaises(AccessError):
-            self.emb.with_user(self.manager)._approve_exception('Entrega cerrada y reclamo se tramita por separado')
-        self.emb.with_user(self.approved_manager)._approve_exception('Entrega cerrada y reclamo se tramita por separado')
-        self.assertEqual(self.emb.estado_aprobacion,'aprobado')
-        self.assertTrue(self.emb.aprobacion_excepcional)
-        self.assertEqual(self.guia.incidencia_estado,'abierta')
-        self.assertEqual(self.guia.resultado_recepcion,'pendiente')
 
     def test_cannot_override_not_delivered(self):
         self.emb.sudo().write({'state':'ruta'})

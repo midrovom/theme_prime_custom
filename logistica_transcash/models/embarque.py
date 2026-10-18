@@ -398,27 +398,34 @@ class Embarque(models.Model):
                 rec.message_post(body=_('Viaje cerrado automáticamente: todas las hojas de ruta y guías completadas por el chofer.'))
 
     def _check_logistics_finance(self):
-        if not self.env.user.has_group('logistica_transcash.group_logistica_manager'):
-            raise AccessError(_('Solo el jefe de Logística aprueba los fletes.'))
+        if self.env.user.share or not self.env.user.has_group('logistica_transcash.group_logistica_manager'):
+            raise AccessError(_('Solo el jefe de Logística interno aprueba los fletes.'))
         for rec in self:
             if rec.company_id not in self.env.user.company_ids:
                 raise AccessError(_('No está autorizado para esta compañía.'))
 
     def _ensure_finance_ready(self):
+        """Habilitación económica basada en entrega OPERATIVA, no conformidad.
+
+        La validación del cliente, la investigación de daños y las notas de
+        crédito pertenecen a circuitos internos independientes del flete.
+        Sólo se publica un viaje realmente cerrado por el conductor, incluidas
+        sus hojas de ruta. Los viajes históricos sin ruta mantienen compatibilidad.
+        """
+        completed_states = ('entregada', 'lista_pago', 'facturada', 'pagada')
         for rec in self:
             if rec.legado_liquidacion_bloqueada:
-                raise UserError(_('Este viaje tenía una liquidación en la versión antigua. Concíliela antes de volver a liquidar.'))
+                raise UserError(_('Este viaje tiene una liquidación histórica por conciliar.'))
             if rec.state != 'entregado' or not rec.guia_ids:
-                raise UserError(_('Todas las guías del embarque deben estar entregadas.'))
+                raise UserError(_('El viaje debe estar cerrado por el chofer antes de aprobar el flete.'))
             for guia in rec.guia_ids:
-                if guia.state not in ('entregada','lista_pago','facturada','pagada'):
-                    raise UserError(_('El cliente aún no ha confirmado la recepción de la guía %s.') % guia.name)
-                if guia.aprobacion_global != 'aprobada' or guia.roturas_pendientes or guia.incidencia_estado == 'abierta':
-                    raise UserError(_('La guía %s aún tiene revisiones, daños o incidencias abiertas.') % guia.name)
-                if guia.roturas_aprobadas:
-                    notes = guia.nota_credito_id.filtered(lambda n: n.estado == 'emitida' and n.documento_validado_por_id)
-                    if not notes:
-                        raise UserError(_('Falta confirmar la nota de crédito de la guía %s.') % guia.name)
+                if not guia.fecha_cierre_chofer and guia.state not in completed_states:
+                    raise UserError(_('La guía %s sigue pendiente de cierre operativo del chofer.') % guia.name)
+            for ruta in rec.ruta_ids:
+                if ruta.estado_entrega != 'completa' or not ruta.guias_total:
+                    raise UserError(_('La hoja de ruta %s aún tiene entregas pendientes o no tiene guías.') % ruta.name)
+            # No se exige resultado_recepcion, aprobacion_global, roturas,
+            # incidencia_estado ni nota_credito: se atienden por separado.
 
     def action_open_exception_wizard(self):
         self.ensure_one()
@@ -475,19 +482,35 @@ class Embarque(models.Model):
                 'context': {'default_embarque_id':self.id,'default_valor_acordado':self.valor_acordado}}
 
     def action_approve_transport(self):
+        """Publica el viaje al proveedor SIN esperar validaciones del cliente.
+
+        La fila de embarque se bloquea antes de validar; dos aprobaciones
+        simultáneas no generan publicaciones duplicadas. El proveedor podrá
+        liquidarlo desde su PWA solo después de esta acción.
+        """
         self._check_logistics_finance()
-        self._ensure_finance_ready()
-        for rec in self:
+        for rec in self.sorted('id'):
+            self.env.cr.execute('SELECT id FROM transcash_embarque WHERE id = %s FOR UPDATE', (rec.id,))
+            rec.invalidate_recordset(['state', 'estado_aprobacion', 'liquidacion_linea_id',
+                                      'legado_liquidacion_bloqueada', 'guia_ids', 'ruta_ids'])
+            self.env.cr.execute('SELECT id FROM transcash_guia WHERE embarque_id = %s ORDER BY id FOR UPDATE', (rec.id,))
+            rec.guia_ids.invalidate_recordset(['state', 'fecha_cierre_chofer'])
             if rec.estado_aprobacion != 'pendiente' or rec.liquidacion_linea_id:
                 raise UserError(_('Este viaje ya fue aprobado o incluido en una liquidación.'))
-            if rec.legado_liquidacion_bloqueada:
-                raise UserError(_('El embarque presenta liquidación histórica; no se puede duplicar.'))
+            rec._ensure_finance_ready()
             if rec.valor_acordado <= 0 or not rec.proveedor_id:
-                raise UserError(_('Defina proveedor y tarifa negociada positiva antes de aprobar.'))
+                raise UserError(_('Registre el precio negociado y la empresa transportista antes de aprobar.'))
+            novedades = rec.incidencias_pendientes
             rec.sudo().write({'estado_aprobacion':'aprobado', 'aprobado_por_id':self.env.uid,
                               'aprobado_fecha':fields.Datetime.now()})
-            rec.message_post(body=_('Flete autorizado por Logística: %s %s') %
-                (rec.valor_acordado, rec.moneda_id.name))
+            rec.message_post(body=Markup(
+                '<p><strong>%s</strong></p><p>%s: %s %s</p><p>%s: %s</p>') % (
+                escape(_('Flete aprobado y publicado al proveedor')),
+                escape(_('Importe único del viaje')), escape('%.2f' % rec.valor_acordado),
+                escape(rec.moneda_id.name or ''),
+                escape(_('Autorizado por')), escape(self.env.user.name)))
+            if novedades:
+                rec.message_post(body=_('%s guía(s) con novedades internas: seguimiento independiente del pago del transportista.') % novedades)
         return True
 
 

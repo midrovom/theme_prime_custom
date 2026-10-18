@@ -42,6 +42,8 @@ class TestRecepcionSimpleV55(TestCierreChofer):
         self.assertEqual(guia.incidencia_estado, 'abierta')
         self.assertEqual(guia.state, 'entregada')
         self.assertEqual(evidence.estado, 'aprobada')
+        # El embarque todavía tiene otra guía sin cerrar: ese motivo operativo
+        # (no la incidencia del cliente) es lo que impide aprobarlo.
         with self.assertRaises(UserError):
             self.trip._ensure_finance_ready()
 

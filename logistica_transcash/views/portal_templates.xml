@@ -6,10 +6,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=525"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=526"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
-    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=525"/>
-  <script defer="defer" src="/logistica_transcash/static/src/js/evidence_hub.js?v=525"/><script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
+    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=526"/>
+  <script defer="defer" src="/logistica_transcash/static/src/js/evidence_hub.js?v=526"/><script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
 
   <template id="mobile_brand" name="Transcash Mobile Brand">
     <div class="tc-brand"><div class="tc-logo">T<span>↗</span></div>
@@ -20,9 +20,9 @@
     <aside class="tc-desktop-sidebar" aria-label="Navegación de Transcash según permisos">
       <div class="tc-sidebar-brand"><t t-call="logistica_transcash.mobile_brand"/><small>MI ESPACIO DE TRABAJO</small></div>
       <t t-set="ops" t-value="not request.env.user.share and (request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') or request.env.user.has_group('logistica_transcash.group_logistica_manager'))"/>
-      <t t-set="driver" t-value="request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_chofer')"/>
-      <t t-set="supplier" t-value="request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_transportista') and not driver"/>
-      <t t-set="client" t-value="request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_cliente') and not driver and not supplier"/>
+      <t t-set="client" t-value="request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_cliente')"/>
+      <t t-set="driver" t-value="request.env.user.share and not client and request.env.user.has_group('logistica_transcash.group_transcash_chofer')"/>
+      <t t-set="supplier" t-value="request.env.user.share and not client and not driver and request.env.user.has_group('logistica_transcash.group_transcash_transportista')"/>
       <t t-set="staff" t-value="not request.env.user.share and not ops"/>
       <t t-if="ops">
         <div class="tc-sidebar-caption">PLANIFICACIÓN LOGÍSTICA</div>
@@ -73,6 +73,26 @@
           <small t-else="">Consulta · Usuario interno</small>
         </div></div><p>Transcash · Acceso por función</p></div>
     </aside>
+  </template>
+
+  <template id="portal_falta_perfil" name="Transcash: Perfil pendiente de configuración">
+    <html lang="es"><head>
+      <title>Perfil de acceso pendiente · Transcash</title>
+      <t t-call="logistica_transcash.mobile_head"/>
+    </head><body class="tc-app">
+      <div class="tc-shell">
+        <header class="tc-top"><t t-call="logistica_transcash.mobile_brand"/></header>
+        <main class="tc-main tc-home">
+          <section class="tc-card" style="padding:24px;max-width:660px;margin:40px auto;">
+            <h1>Tu usuario todavía no tiene un perfil de Transcash</h1>
+            <p>Ya ingresaste a Odoo, pero el administrador debe asignar el permiso correspondiente.</p>
+            <p><strong>Si eres cliente o destinatario:</strong> solicita el grupo <strong>Cliente / Destinatario - WebApp (Portal)</strong>, manteniendo el tipo de usuario <strong>Portal</strong>.</p>
+            <p>El usuario debe estar vinculado al contacto destinatario de la guía. No necesitas permisos de chofer, transportista ni de usuario interno.</p>
+            <a class="tc-button tc-button-primary" href="/transcash">Volver a comprobar mi acceso</a>
+          </section>
+        </main>
+      </div>
+    </body></html>
   </template>
 
   <template id="portal_guias" name="Transcash Mobile: Mis Guías">
@@ -138,7 +158,7 @@
           <a t-elif="request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas')" class="tc-bottom-item" href="/transcash/operacion"><span class="tc-nav-icon">▦</span>Operación</a>
           <a t-else="" class="tc-bottom-item" href="/transcash/embarques"><span class="tc-nav-icon">🚚</span>Viajes</a>
           <span class="tc-bottom-divider"/>
-          <a t-if="es_chofer" class="tc-bottom-item" href="/transcash/embarques?estado=pendientes"><span class="tc-nav-icon">🚚</span>Embarques pendientes</a>
+          <a t-if="request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_chofer') and not request.env.user.has_group('logistica_transcash.group_transcash_cliente')" class="tc-bottom-item" href="/transcash/embarques?estado=pendientes"><span class="tc-nav-icon">🚚</span>Embarques pendientes</a>
           <a t-else="" class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1"><span class="tc-nav-icon">⇅</span>Por sincronizar</a>
         </nav>
       </div>

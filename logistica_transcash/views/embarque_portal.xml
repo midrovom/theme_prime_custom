@@ -107,6 +107,17 @@
             <div class="tc-hero-pills"><span>🗺 <t t-esc="embarque.rutas_entregadas"/> / <t t-esc="embarque.rutas_total"/> rutas entregadas</span><span>📦 <t t-esc="embarque.cantidad_guias"/> guías</span>
               <span>✓ <t t-esc="embarque.guias_cerradas_chofer"/> cerradas por chofer · <t t-esc="embarque.guias_entregadas"/> confirmadas por cliente</span></div>
           </section>
+          <section t-if="puede_aprobar_flete and embarque.state == 'entregado' and embarque.estado_aprobacion == 'pendiente'" class="tc-embark-section" aria-label="Aprobación del transporte">
+            <h2>✓ Autorizar flete y enviar al proveedor</h2>
+            <p>Entrega operativa completada por el chofer. Los reclamos de destinatarios se tramitan por separado.</p>
+            <p><strong>Importe negociado:</strong> <t t-esc="embarque.moneda_id.symbol"/><t t-esc="'%.2f' % embarque.valor_acordado"/></p>
+            <a class="tc-button tc-button-outline" t-att-href="'/transcash/finanzas/embarques/%d' % embarque.id">💰 Revisar o registrar precio negociado</a>
+            <form method="post" t-att-action="'/transcash/finanzas/embarques/%d/aprobar' % embarque.id">
+              <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+              <button type="submit" class="tc-button tc-button-primary" t-att-disabled="'disabled' if embarque.valor_acordado &lt;= 0 or embarque.estado_rutas_inconsistente else None">Aprobar y publicar al proveedor</button>
+            </form>
+          </section>
+          <div t-if="puede_aprobar_flete and embarque.estado_aprobacion == 'aprobado'" class="tc-guided-done">✓ Flete aprobado: disponible para la liquidación del proveedor.</div>
           <div class="tc-info-strip"><span><b>Chofer</b><t t-esc="embarque.chofer_usuario_id.name"/></span>
             <span><b>Origen</b><t t-esc="embarque.origen or 'Pendiente'"/></span></div>
           <div t-if="not request.env.user.share and embarque.observacion_general" class="tc-next-card"><div class="tc-next-icon">✎</div>

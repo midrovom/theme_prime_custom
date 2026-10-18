@@ -72,8 +72,9 @@ class TestCierreChofer(TransactionCase):
         self.assertEqual(self.trip.state, 'entregado')
         self.assertEqual(self.trip.guias_cerradas_chofer, 2)
         self.assertEqual(self.trip.guias_entregadas, 0)
-        with self.assertRaises(UserError):
-            self.trip._ensure_finance_ready()
+        # La liquidación del transporte ya puede aprobarse; la revisión del
+        # cliente queda separada (no se pierde su derecho a reclamar).
+        self.trip._ensure_finance_ready()
         # El cliente sigue pudiendo comentar y adjuntar evidencia después.
         client_evidence = self.env['transcash.evidencia'].with_user(self.client).register_evidence(
             first, 'cliente', 'Llegó una caja golpeada', 'YQ==', 'reclamo.jpg', 'image/jpeg')

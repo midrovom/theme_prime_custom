@@ -72,8 +72,8 @@ class TranscashPWA(http.Controller):
         return _json_reply({
             'ok': True,
             'user_id': request.env.user.id,
-            'role': ('chofer' if request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_chofer') else
-                     'cliente' if request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_cliente') else
+            'role': ('cliente' if request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_cliente') else
+                     'chofer' if request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_chofer') else
                      'proveedor' if request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_transportista') else 'interno'),
             'csrf_token': request.csrf_token(time_limit=None),
         })

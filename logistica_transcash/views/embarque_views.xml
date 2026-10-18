@@ -46,9 +46,6 @@
         <button name="action_approve_transport" type="object" string="✓ Aprobar y enviar al proveedor" class="btn-primary"
           invisible="state != 'entregado' or estado_aprobacion != 'pendiente'"
           groups="logistica_transcash.group_logistica_manager"/>
-        <button name="action_open_exception_wizard" type="object" string="Aprobar con novedades" class="btn-secondary"
-          invisible="state != 'entregado' or estado_aprobacion != 'pendiente'"
-          groups="logistica_transcash.group_transcash_aprobacion_excepcional"/>
         <field name="state" widget="statusbar" statusbar_visible="preparacion,embarcado,ruta,entregado"/>
       </header>
       <sheet><div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
@@ -80,6 +77,10 @@
           <field name="estado_aprobacion"/><field name="estado_financiero"/><field name="legado_liquidacion_bloqueada"/><field name="aprobado_por_id"/>
           <field name="aprobado_fecha"/><field name="notas_revision_logistica"/>
           <field name="incidencias_pendientes"/>
+          <div class="alert alert-info" role="note">
+            La aprobación del flete depende únicamente del cierre operativo del chofer y del precio negociado.
+            Los reclamos del cliente, roturas y notas de crédito se gestionan por separado y no bloquean al proveedor.
+          </div>
           <field name="aprobacion_excepcional"/>
           <field name="motivo_excepcion_pago" invisible="not aprobacion_excepcional"/>
           <field name="excepcion_por_id" invisible="not aprobacion_excepcional"/>

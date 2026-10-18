@@ -30,3 +30,7 @@ from . import test_estados_operativos_v523
 from . import test_finanzas_v524
 
 from . import test_v525_visor_rutas
+
+from . import test_cliente_portal_v526
+
+from . import test_aprobacion_independiente_v527

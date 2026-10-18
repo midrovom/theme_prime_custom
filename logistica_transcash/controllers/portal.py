@@ -51,10 +51,12 @@ class TranscashPortal(http.Controller):
                                user.has_group('logistica_transcash.group_logistica_manager')):
             return [('company_id','in', user.company_ids.ids)]
         recipient = ('destinatario_id', 'child_of', partner.id if partner else 0)
-        if user.has_group('logistica_transcash.group_transcash_chofer'):
-            return ['|', ('chofer_usuario_id', '=', user.id), recipient]
+        # Portal cliente tiene prioridad incluso si hay grupos superpuestos:
+        # nunca incluir guías ajenas a su destinatario.
         if user.has_group('logistica_transcash.group_transcash_cliente'):
             return [recipient]
+        if user.has_group('logistica_transcash.group_transcash_chofer'):
+            return ['|', ('chofer_usuario_id', '=', user.id), recipient]
         if user.has_group('logistica_transcash.group_transcash_transportista'):
             return [('proveedor_id.commercial_partner_id','=',partner.id if partner else 0)]
         return [recipient]
@@ -73,10 +75,10 @@ class TranscashPortal(http.Controller):
             return False
         # Un Portal jamás adquiere lectura interna por tener accidentalmente grupos adicionales.
         if user.share:
-            if user.has_group('logistica_transcash.group_transcash_chofer'):
-                return guia if guia.chofer_usuario_id.id == user.id else False
             if user.has_group('logistica_transcash.group_transcash_cliente'):
                 return guia if guia._is_recipient(user) else False
+            if user.has_group('logistica_transcash.group_transcash_chofer'):
+                return guia if guia.chofer_usuario_id.id == user.id else False
             if user.has_group('logistica_transcash.group_transcash_transportista'):
                 return guia if guia.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id else False
             return False
@@ -110,10 +112,13 @@ class TranscashPortal(http.Controller):
                 (event.accion or '').startswith(prefix) for prefix in private_starts))
         return request.render('logistica_transcash.portal_guia_detalle', {
             'guia': guia,
-            'es_chofer': bool(guia.chofer_usuario_id.id == request.env.user.id and request.env.user.has_group('logistica_transcash.group_transcash_chofer')),
+            'es_chofer': bool(guia.chofer_usuario_id.id == request.env.user.id and
+                              request.env.user.has_group('logistica_transcash.group_transcash_chofer') and
+                              not (request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_cliente'))),
             'carga_autonoma_habilitada': bool(request.env['transcash.chofer'].sudo().search([
                 ('usuario_id','=',request.env.user.id), ('activo','=',True), ('carga_autonoma','=',True)],
-                limit=1)) and request.env.user.has_group('logistica_transcash.group_transcash_chofer'),
+                limit=1)) and request.env.user.has_group('logistica_transcash.group_transcash_chofer') and
+                not (request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_cliente')),
             'es_receptor': guia._is_recipient(request.env.user),
             'es_vendedor': guia._is_seller(request.env.user),
             'evidencias': guia.evidencia_ids.sorted('create_date', reverse=True),
@@ -129,14 +134,14 @@ class TranscashPortal(http.Controller):
         user = request.env.user
         if user.share and not any(user.has_group('logistica_transcash.%s' % role)
                 for role in ('group_transcash_chofer','group_transcash_cliente','group_transcash_transportista')):
-            return request.not_found()
+            return request.render('logistica_transcash.portal_falta_perfil', {})
         if not user.share and not any(user.has_group('logistica_transcash.%s' % role)
                 for role in ('group_transcash_operador_rutas', 'group_logistica_manager',
                              'group_logistica_bodega', 'group_transcash_consulta')):
-            return request.not_found()
-        # El chofer navega Embarque -> Ruta -> Guía, también con enlaces PWA antiguos.
+            return request.render('logistica_transcash.portal_falta_perfil', {})
+        # Cliente ve únicamente sus guías; chofer navega Embarque -> Ruta -> Guía.
         # Las URLs individuales de guía permanecen vigentes para entregas y sincronización offline.
-        if user.share and user.has_group('logistica_transcash.group_transcash_chofer'):
+        if user.share and user.has_group('logistica_transcash.group_transcash_chofer') and not user.has_group('logistica_transcash.group_transcash_cliente'):
             return request.redirect('/transcash/embarques')
         # Instalaciones PWA anteriores abrían /transcash/guias directamente.
         # Redirigir el inicio antiguo del operador a su centro funcional,

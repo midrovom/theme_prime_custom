@@ -37,7 +37,7 @@
               <a class="tc-ops-tile" href="/transcash/operacion/embarques/nuevo"><b>03 · AGRUPAR</b><strong>🚚 Armar embarque</strong><small>Reunir rutas y aplicar un único precio por viaje</small></a>
               <a class="tc-ops-tile" href="/transcash/embarques"><b>04 · SUPERVISAR</b><strong>✓ Revisar embarques</strong><small>Liberar la carga para aceptación del chofer</small></a>
               <a class="tc-ops-tile" href="/transcash/guias?vista=consulta"><b>CONSULTAR</b><strong>▤ Ver guías</strong><small>Documentos, productos y estados</small></a>
-              <a t-if="request.env.user.has_group('logistica_transcash.group_logistica_manager')" class="tc-ops-tile" href="/transcash/finanzas"><b>APROBAR</b><strong>💰 Negociación, fletes y facturas</strong><small>Configuración avanzada en Odoo</small></a>
+              <a t-if="request.env.user.has_group('logistica_transcash.group_logistica_manager')" class="tc-ops-tile" href="/transcash/finanzas"><b>05 · APROBAR FLETES</b><strong>💰 Aprobar y enviar al proveedor <t t-if="fletes_por_aprobar">(<t t-esc="fletes_por_aprobar"/>)</t></strong><small>Revisar viajes entregados, negociar precio y publicarlos desde la PWA</small></a>
             </div>
           </t>
 
@@ -218,6 +218,25 @@
               <span><b>Transportista</b><t t-esc="embarque.proveedor_id.name"/></span>
               <span><b>Placa</b><t t-esc="embarque.placa"/></span>
               <span><b>Valor referencial del viaje</b><t t-esc="embarque.tarifa_referencial_total"/></span></div>
+            <t t-if="can_approve_freight and embarque.state == 'entregado' and embarque.estado_aprobacion == 'pendiente'">
+              <section class="tc-embark-section" aria-label="Aprobación de flete">
+                <div class="tc-section-heading"><h2>Último paso · Aprobar y enviar al proveedor</h2></div>
+                <p>El conductor terminó el viaje. Revisa las hojas de ruta, sus guías y evidencias antes de aprobar.</p>
+                <p><b>Flete único negociado:</b> <t t-esc="embarque.moneda_id.symbol"/><t t-esc="'%.2f' % embarque.valor_acordado"/></p>
+                <a class="tc-button tc-button-outline" t-att-href="'/transcash/finanzas/embarques/%d' % embarque.id">💰 Registrar o corregir precio negociado</a>
+                <p t-if="embarque.incidencias_pendientes" class="tc-alert tc-alert-warning">
+                  ⚠ <t t-esc="embarque.incidencias_pendientes"/> novedad(es) de cliente pendientes de revisión interna.
+                  No impiden pagar el transporte; continúan su trámite por separado.
+                </p>
+                <form method="post" t-att-action="'/transcash/finanzas/embarques/%d/aprobar' % embarque.id">
+                  <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                  <button type="submit" class="tc-button tc-button-primary" t-att-disabled="'disabled' if embarque.valor_acordado &lt;= 0 or embarque.estado_rutas_inconsistente else None">✓ Aprobar flete y enviar al proveedor</button>
+                </form>
+                <p class="tc-muted">No requiere aprobación del cliente ni cierre de reclamos. Solo el jefe de Logística puede autorizar.</p>
+              </section>
+            </t>
+            <div t-if="embarque.estado_aprobacion == 'aprobado' and can_approve_freight" class="tc-guided-done">✓ Flete aprobado y visible para liquidación del proveedor.</div>
+            <div t-if="not can_approve_freight and embarque.state == 'entregado' and embarque.estado_aprobacion == 'pendiente'" class="tc-next-card">Este viaje ya fue entregado. La aprobación del flete corresponde al jefe de Logística.</div>
             <a href="#tc-galeria-viaje" class="tc-button tc-button-outline tc-hub-quick-link">📷 Ver expediente por hoja de ruta ↓</a>
             <div class="tc-section-heading"><h2>Paso 3 · Documenta la carga por ruta</h2></div>
             <p class="tc-muted">Cada ruta requiere al menos una foto o video. Se guarda el nombre del operador y la hora. En celular usa los botones de cámara; en computadora, selecciona un archivo.</p>

@@ -21,7 +21,7 @@
         <t t-if="section == 'inicio'">
           <t t-if="can_manage">
             <section class="tc-embark-section"><div class="tc-section-heading"><h2>1 · Viajes entregados por aprobar</h2><span class="tc-count" t-esc="len(to_approve)"/></div>
-              <p class="tc-muted">Abre un viaje, revisa las hojas de ruta, sus guías y las evidencias de carga, descarga y firma. Después negocia y aprueba el flete.</p>
+              <p class="tc-muted">Solo exige que el chofer cierre todas las entregas y que el flete sea válido. La aceptación del cliente, reclamos y notas de crédito se revisan por separado; no bloquean el transporte.</p>
               <div class="tc-embark-list"><t t-foreach="to_approve" t-as="e"><a class="tc-guide-card" t-att-href="'/transcash/finanzas/embarques/%d' % e.id">
                 <div class="tc-guide-top"><strong t-esc="e.name"/><span class="tc-status">Pendiente de aprobación</span></div>
                 <p><t t-esc="e.proveedor_id.name"/> · <t t-esc="e.rutas_entregadas"/>/<t t-esc="e.rutas_total"/> rutas · <t t-esc="e.cantidad_guias"/> guías</p>
@@ -76,12 +76,14 @@
               <p t-else="" class="tc-muted">Precio aprobado e inmutable.</p>
             </section>
             <section class="tc-embark-section"><div class="tc-section-heading"><h2>3 · Aprobar flete al proveedor</h2></div>
-              <p class="tc-muted">Para aprobar deben haberse cerrado todas las entregas y cumplido las revisiones de cliente e incidencias, salvo autorización excepcional desde Odoo.</p>
-              <form t-if="trip.state == 'entregado' and trip.estado_aprobacion == 'pendiente'" method="post" t-att-action="'/transcash/finanzas/embarques/%d/aprobar' % trip.id">
+              <p class="tc-muted">Para aprobar: embarque cerrado por el chofer, todas sus hojas de ruta completas y precio negociado positivo. Las revisiones del cliente y las incidencias NO bloquean este pago.</p>
+              <p t-if="trip.incidencias_pendientes" class="tc-alert tc-alert-warning">⚠ <t t-esc="trip.incidencias_pendientes"/> guía(s) con novedades internas abiertas. Continúan en seguimiento y no afectan la aprobación del flete.</p>
+              <form t-if="trip.state == 'entregado' and trip.estado_aprobacion == 'pendiente' and not trip.liquidacion_linea_id" method="post" t-att-action="'/transcash/finanzas/embarques/%d/aprobar' % trip.id">
                 <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-                <button type="submit" class="tc-button tc-button-primary">✓ Aprobar flete y publicar al proveedor</button>
+                <button type="submit" class="tc-button tc-button-primary" t-att-disabled="'disabled' if trip.valor_acordado &lt;= 0 or trip.estado_rutas_inconsistente else None">✓ Aprobar flete y enviar al proveedor</button>
               </form>
-              <p t-else="" class="tc-muted">El viaje no está listo para aprobar o ya fue aprobado.</p>
+              <p t-else="" class="tc-muted">Disponible al cerrar el viaje con todas las rutas; si ya fue aprobado, aparecerá en la PWA del proveedor para liquidar.</p>
+              <div t-if="trip.estado_aprobacion == 'aprobado'" class="tc-guided-done">✓ Aprobado por <t t-esc="trip.aprobado_por_id.name"/> y publicado al proveedor para su liquidación.</div>
             </section>
           </t>
           <section class="tc-embark-section"><div class="tc-section-heading"><h2>Bitácora del flete</h2></div>

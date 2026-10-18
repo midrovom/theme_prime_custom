@@ -12,10 +12,10 @@ class EmbarquePortal(TranscashPortal):
         user = request.env.user
         if not rec:
             return False
-        if user.share and user.has_group('logistica_transcash.group_transcash_chofer'):
-            return rec.chofer_usuario_id.id == user.id
         if user.share and user.has_group('logistica_transcash.group_transcash_cliente'):
             return False
+        if user.share and user.has_group('logistica_transcash.group_transcash_chofer'):
+            return rec.chofer_usuario_id.id == user.id
         if user.share and user.has_group('logistica_transcash.group_transcash_transportista'):
             return rec.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id
         return bool(not user.share and rec.company_id in user.company_ids and (
@@ -47,6 +47,9 @@ class EmbarquePortal(TranscashPortal):
                   rec.chofer_usuario_id.id == request.env.user.id)
         return request.render('logistica_transcash.portal_embarque_detalle', {
             'embarque':rec, 'es_chofer':driver, 'error':error,
+            'puede_aprobar_flete': bool(not request.env.user.share and
+                request.env.user.has_group('logistica_transcash.group_logistica_manager') and
+                rec.company_id in request.env.user.company_ids),
             'guias_adicionales': self._late_guides(rec) if driver else request.env['transcash.guia'].sudo().browse(),
             'guias_legacy': rec.guia_ids.filtered(lambda g: not g.hoja_ruta_id or g.hoja_ruta_id not in rec.ruta_ids),
             'csrf_token':request.csrf_token(),
@@ -56,6 +59,9 @@ class EmbarquePortal(TranscashPortal):
     @http.route('/transcash/embarques', type='http', auth='user', website=True, methods=['GET'])
     def list_embarks(self, **kw):
         user = request.env.user
+        if user.share and user.has_group('logistica_transcash.group_transcash_cliente'):
+            # La vista de embarques contiene rutas y entregas de otros destinatarios.
+            return request.redirect('/transcash/guias')
         if not user.share and (user.has_group('logistica_transcash.group_transcash_operador_rutas') or
                                user.has_group('logistica_transcash.group_logistica_manager')):
             domain = [('company_id','in',user.company_ids.ids)]
@@ -139,6 +145,10 @@ class EmbarquePortal(TranscashPortal):
 
     @http.route('/transcash/embarques/<int:embark_id>',type='http',auth='user',website=True,methods=['GET'])
     def embark_detail(self, embark_id, **kw):
+        # Un marcador antiguo del móvil puede apuntar a un viaje, pero el
+        # destinatario Portal sólo consulta su propia recepción por guía.
+        if request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_cliente'):
+            return request.redirect('/transcash/guias')
         embarque = self._get(embark_id)
         return self._render(embarque) if embarque else request.not_found()
 
