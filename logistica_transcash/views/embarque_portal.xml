@@ -99,13 +99,17 @@
               <div><small>PLACA</small><h1 t-esc="embarque.placa or 'Sin placa'"/></div>
               <div><small>EMPRESA DE TRANSPORTE</small><h2 t-esc="embarque.proveedor_id.name"/></div>
             </div></div>
-            <div class="tc-hero-pills"><span>📦 <t t-esc="embarque.cantidad_guias"/> guías</span>
+            <div class="tc-hero-pills"><span>🗺 <t t-esc="embarque.rutas_entregadas"/> / <t t-esc="embarque.rutas_total"/> rutas entregadas</span><span>📦 <t t-esc="embarque.cantidad_guias"/> guías</span>
               <span>✓ <t t-esc="embarque.guias_cerradas_chofer"/> cerradas por chofer · <t t-esc="embarque.guias_entregadas"/> confirmadas por cliente</span></div>
           </section>
           <div class="tc-info-strip"><span><b>Chofer</b><t t-esc="embarque.chofer_usuario_id.name"/></span>
             <span><b>Origen</b><t t-esc="embarque.origen or 'Pendiente'"/></span></div>
           <div t-if="not request.env.user.share and embarque.observacion_general" class="tc-next-card"><div class="tc-next-icon">✎</div>
             <div><strong>Observación del embarque</strong><p t-esc="embarque.observacion_general"/></div></div>
+          <div t-if="embarque.estado_rutas_inconsistente and not request.env.user.share"
+               class="tc-alert tc-alert-error" role="alert">
+            Atención: hay diferencias entre el cierre del viaje y las entregas de alguna hoja de ruta. Revise el expediente.
+          </div>
           <section class="tc-trip-routes" id="tc-hojas-ruta" aria-label="Hojas de ruta y sus guías">
             <div class="tc-section-heading"><h2>🗺 Hojas de ruta del embarque</h2><span class="tc-count" t-esc="len(embarque.ruta_ids)"/></div>
             <p class="tc-muted">Abre una ruta para ver sus guías, destinatarios y el estado de las entregas. Al final de esta ficha verás las evidencias agrupadas por hoja de ruta: carga, descarga y firma.</p>
@@ -115,7 +119,8 @@
                   <span class="tc-trip-route-icon">🗺</span>
                   <span class="tc-trip-route-main"><strong t-esc="ruta.name"/><small t-esc="ruta.destino_nombre or 'Destino pendiente'"/>
                     <small>📦 <t t-esc="len(ruta.guia_ids)"/> guías · ✓ <t t-esc="ruta.guias_cerradas_chofer"/> entregadas por chofer</small>
-                    <span class="tc-trip-route-state" t-esc="dict(ruta._fields['estado_entrega'].selection).get(ruta.estado_entrega)"/></span>
+                    <span t-att-class="'tc-trip-route-state tc-route-attention' if ruta.estado_operativo in ('objetada','revisar') else 'tc-trip-route-state'"
+                          t-esc="dict(ruta._fields['estado_operativo'].selection).get(ruta.estado_operativo)"/></span>
                   <span class="tc-trip-route-arrow">⌄</span>
                 </summary>
                 <t t-call="logistica_transcash.portal_embarque_ruta_guias"/>

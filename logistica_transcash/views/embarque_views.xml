@@ -60,11 +60,18 @@
           <field name="valor_acordado" readonly="1"
             groups="logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad"/>
         </group>
+        <div class="alert alert-warning" role="alert" invisible="not estado_rutas_inconsistente">
+          Atención: el viaje figura como entregado, pero alguna hoja de ruta tiene guías sin cerrar.
+          Revise las entregas y el historial antes de procesar el flete.
+        </div>
         <group><group string="Transporte"><field name="company_id" groups="base.group_multi_company"/>
           <field name="chofer_usuario_id"/><field name="proveedor_id"/><field name="placa"/><field name="tipo_vehiculo"/><field name="origen"/>
           <field name="fecha_creacion"/><field name="fecha_embarcado"/><field name="fecha_salida"/><field name="fecha_entrega"/>
         </group><group string="Control de entregas"><field name="cantidad_guias"/><field name="guias_cerradas_chofer"/>
-          <field name="guias_entregadas"/><field name="observacion_general" readonly="1"/></group></group>
+          <field name="guias_entregadas"/><field name="rutas_total" readonly="1"/>
+          <field name="rutas_entregadas" readonly="1"/>
+          <field name="estado_rutas_inconsistente" readonly="1"/>
+          <field name="observacion_general" readonly="1"/></group></group>
         <group string="Objeción PRE-SALIDA (uso interno)" groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta">
           <field name="objecion_pendiente" readonly="1"/><field name="observacion_rechazo" readonly="1"/>
           <field name="objeciones_count" readonly="1"/>
@@ -85,11 +92,13 @@
             <field name="estado" widget="badge"/><field name="responsable_id"/>
             <field name="fecha_resolucion"/><field name="explicacion_resolucion"/>
           </list></field>
-          <p>Abre una hoja de ruta para consultar las guías que la componen.</p>
+          <p>El estado operativo de cada ruta se actualiza con los cierres de sus guías. El estado de aceptación de carga se conserva por separado como historial.</p>
           <field name="ruta_ids" readonly="1"><list create="0" delete="0" open_form_view="1">
             <field name="name"/><field name="destino_nombre"/><field name="tipo_vehiculo"/>
-            <field name="estado_entrega"/><field name="guias_cerradas_chofer"/><field name="fecha_cierre_operativo"/>
-            <field name="state"/></list></field></page>
+            <field name="estado_operativo" widget="badge"/>
+            <field name="guias_cerradas_chofer"/><field name="guias_total"/>
+            <field name="fecha_cierre_operativo"/>
+            <field name="state" string="Carga/aceptación (histórico)" optional="hide"/></list></field></page>
           <page string="Guías históricas (sin hojas de ruta)" invisible="ruta_ids"><field name="guia_ids" readonly="1">
           <list create="0" delete="0"><field name="name"/><field name="tipo_documento"/><field name="numero_documento"/>
             <field name="destinatario_id"/><field name="destino"/><field name="state" widget="badge"/>

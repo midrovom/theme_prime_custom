@@ -411,3 +411,6 @@ body.tc-modal-open{overflow:hidden}
 
 .tc-route-evidence-shortcut{display:block;padding:12px 16px;background:#eff8f6;color:#067f74;font-weight:800;font-size:12px;border-top:1px solid #d6e9e4;text-decoration:none;scroll-margin-top:90px}
 .tc-route-evidence-shortcut:hover,.tc-route-evidence-shortcut:focus-visible{background:#dbf3ec;color:#086c60}
+
+/* V5.23: el estado incoherente u objetado se distingue también en la PWA. */
+.tc-trip-route-state.tc-route-attention { color: #b42331; background: #fff1f2; border: 1px solid #f5b7bf; }

@@ -29,6 +29,22 @@ class Embarque(models.Model):
     cantidad_guias = fields.Integer('Guías', compute='_compute_guia_stats')
     guias_entregadas = fields.Integer('Recepciones confirmadas', compute='_compute_guia_stats')
     guias_cerradas_chofer = fields.Integer('Entregas cerradas por chofer', compute='_compute_guia_stats')
+    rutas_total = fields.Integer('Hojas de ruta', compute='_compute_resumen_rutas')
+    rutas_entregadas = fields.Integer('Rutas entregadas', compute='_compute_resumen_rutas')
+    estado_rutas_inconsistente = fields.Boolean('Diferencia en estados de rutas',
+                                                compute='_compute_resumen_rutas')
+
+    @api.depends('state', 'ruta_ids', 'ruta_ids.estado_entrega', 'ruta_ids.guias_total')
+    def _compute_resumen_rutas(self):
+        for emb in self:
+            routes = emb.ruta_ids
+            emb.rutas_total = len(routes)
+            emb.rutas_entregadas = len(routes.filtered(lambda r: r.estado_entrega == 'completa'))
+            # Protege la consulta histórica: no ocultar un dato anómalo.
+            # Los viajes anteriores sin rutas son válidos y no generan alarma.
+            emb.estado_rutas_inconsistente = bool(
+                emb.state == 'entregado' and routes and
+                any(r.estado_entrega != 'completa' for r in routes))
 
     moneda_id = fields.Many2one('res.currency', related='company_id.currency_id', readonly=True)
     valor_acordado = fields.Monetary('Costo total del embarque', currency_field='moneda_id',

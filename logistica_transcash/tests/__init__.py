@@ -24,3 +24,5 @@ from . import test_evidence_hub_v520
 from . import test_navegacion_v521
 
 from . import test_route_evidence_v522
+
+from . import test_estados_operativos_v523

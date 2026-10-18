@@ -97,18 +97,21 @@ class HojaRuta(models.Model):
     # Estado OPERATIVO de entrega, independiente de la aceptación del cliente.
     # No sustituye el estado de planificación/carga de la ruta.
     guias_cerradas_chofer = fields.Integer('Guías cerradas por chofer', compute='_compute_entrega_ruta')
+    guias_total = fields.Integer('Guías de la ruta', compute='_compute_entrega_ruta')
     estado_entrega = fields.Selection([
         ('sin_guias', 'Sin guías'), ('pendiente', 'Pendiente de entrega'),
         ('parcial', 'Entregas en curso'), ('completa', 'Ruta entregada'),
     ], string='Estado de entregas', compute='_compute_entrega_ruta')
     fecha_cierre_operativo = fields.Datetime('Última entrega de esta ruta', readonly=True, copy=False)
 
-    @api.depends('guia_ids', 'guia_ids.fecha_cierre_chofer', 'guia_ids.state', 'guia_ids.embarque_id')
+    @api.depends('embarque_id', 'guia_ids', 'guia_ids.fecha_cierre_chofer',
+                 'guia_ids.state', 'guia_ids.embarque_id')
     def _compute_entrega_ruta(self):
         for route in self:
             guides = route.guia_ids.filtered(lambda g: not route.embarque_id or g.embarque_id == route.embarque_id)
             closed = len(guides.filtered(lambda g: g.fecha_cierre_chofer or
                 g.state in ('entregada', 'lista_pago', 'facturada', 'pagada')))
+            route.guias_total = len(guides)
             route.guias_cerradas_chofer = closed
             route.estado_entrega = ('sin_guias' if not guides else
                                     'completa' if closed == len(guides) else
@@ -117,6 +120,54 @@ class HojaRuta(models.Model):
     state = fields.Selection([('borrador','Borrador'),('planificada','Planificada'),
                               ('cargada','Carga documentada'),('aceptada','Aceptada por chofer')],
                              default='borrador', tracking=True, required=True, readonly=True)
+    # Estado OPERATIVO único para el backoffice y la PWA. El campo state
+    # histórico sigue registrando planificación/carga/aceptación, no entrega.
+    # Por eso NO se cambia state a 'entregada': se preserva la trazabilidad de
+    # aceptación y los permisos que admiten archivos de carga aceptados.
+    estado_operativo = fields.Selection([
+        ('borrador', 'Borrador'),
+        ('planificada', 'Ruta planificada'),
+        ('cargada', 'Carga documentada'),
+        ('pendiente_aceptacion', 'Pendiente de aceptación'),
+        ('objetada', 'Carga objetada'),
+        ('aceptada', 'Aceptada por chofer'),
+        ('en_ruta', 'En traslado'),
+        ('en_entrega', 'Entregas en curso'),
+        ('entregada', 'Ruta entregada'),
+        ('revisar', 'Revisar inconsistencia'),
+        ('cancelada', 'Viaje cancelado'),
+    ], string='Estado operativo', compute='_compute_estado_operativo', readonly=True)
+
+    @api.depends('state', 'embarque_id', 'embarque_id.state',
+                 'embarque_id.objecion_pendiente', 'embarque_id.observacion_rechazo',
+                 'estado_entrega', 'fecha_cierre_operativo')
+    def _compute_estado_operativo(self):
+        # La misma etiqueta se muestra en Odoo y en el portal.
+        # La aceptación no es el estado final de entrega de la ruta.
+        # El cierre operativo no espera la conformidad del cliente.
+        for route in self:
+            trip = route.embarque_id
+            if trip and trip.state == 'cancelado':
+                status = 'cancelada'
+            elif trip and trip.state in ('ruta', 'entregado'):
+                if route.estado_entrega == 'completa':
+                    status = 'entregada'
+                elif trip.state == 'entregado':
+                    # Nunca indicar «entregada» en una ruta incompleta.
+                    status = 'revisar'
+                elif route.estado_entrega == 'parcial':
+                    status = 'en_entrega'
+                else:
+                    status = 'en_ruta'
+            elif trip and trip.state in ('preparacion', 'embarcado') and (
+                    trip.objecion_pendiente or trip.observacion_rechazo):
+                status = 'objetada'
+            elif trip and trip.state == 'embarcado':
+                status = 'pendiente_aceptacion'
+            else:
+                status = route.state or 'borrador'
+            route.estado_operativo = status
+
     observaciones = fields.Text('Observaciones de Logística')
     evidencia_carga_ids = fields.One2many('transcash.carga.evidencia.ruta', 'ruta_id', string='Bitácora de evidencias de carga', readonly=True)
     cantidad_evidencias_carga = fields.Integer(compute='_compute_cantidad_evidencias_carga', string='Evidencias de carga')

@@ -43,14 +43,23 @@ def gallery_for_trip(trip, guide=None, include_loading=True):
         nonlocal groups
         guides = guides.sorted('id')
         closed = len(guides.filtered(_guide_is_closed))
+        if route:
+            # Misma fuente de verdad que el statusbar de Odoo y el resumen PWA.
+            status = route.estado_operativo
+            status_label = dict(route._fields['estado_operativo'].selection).get(status) or 'Estado pendiente'
+            status_style = ('completa' if status == 'entregada' else
+                            'parcial' if status == 'en_entrega' else 'pendiente')
+        else:
+            status_style = ('completa' if guides and closed == len(guides) else
+                            'parcial' if closed else 'pendiente')
+            status_label = ('Guía entregada' if guides and closed == len(guides) else
+                            'En entrega' if closed else 'Pendiente')
         group = {
             'id': ('ruta-%d' % route.id) if route else 'sin-ruta',
             'name': title, 'destination': destination,
             'guide_count': len(guides), 'closed_count': closed,
-            'state': ('completa' if guides and closed == len(guides) else
-                      'parcial' if closed else 'pendiente'),
-            'state_label': ('Ruta entregada' if guides and closed == len(guides) else
-                            'En entrega' if closed else 'Pendiente'),
+            'state': status_style,
+            'state_label': status_label,
             'carga': [], 'descarga': [], 'firmas': [], 'count': 0,
         }
         if route and include_loading:

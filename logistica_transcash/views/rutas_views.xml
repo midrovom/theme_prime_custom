@@ -1,8 +1,13 @@
 <odoo>
   <record id="view_transcash_ruta_list" model="ir.ui.view">
     <field name="name">transcash.hoja.ruta.list</field><field name="model">transcash.hoja.ruta</field>
-    <field name="arch" type="xml"><list decoration-success="state == 'aceptada'" decoration-warning="state == 'planificada'">
-      <field name="name"/><field name="state" widget="badge"/><field name="embarque_id"/>
+    <field name="arch" type="xml"><list decoration-success="estado_operativo == 'entregada'"
+      decoration-warning="estado_operativo in ('planificada','pendiente_aceptacion','en_entrega')"
+      decoration-danger="estado_operativo in ('objetada','revisar')">
+      <field name="name"/><field name="estado_operativo" widget="badge"/>
+      <field name="state" string="Carga / aceptación (histórico)" widget="badge" optional="hide"/>
+      <field name="guias_cerradas_chofer"/><field name="guias_total"/>
+      <field name="embarque_id"/>
       <field name="destino_id"/><field name="tipo_vehiculo"/><field name="placa"/>
       <field name="chofer_usuario_id"/><field name="proveedor_id"/>
     </list></field>
@@ -16,9 +21,15 @@
         <button name="action_open_carga_pwa" string="📷 Registrar foto / video de carga" type="object" class="btn-primary"
                 invisible="not embarque_id or state not in ('planificada','cargada')"
                 groups="logistica_transcash.group_transcash_operador_rutas"/>
-        <field name="state" widget="statusbar" statusbar_visible="borrador,planificada,cargada,aceptada"/>
+        <field name="estado_operativo" widget="statusbar"
+               statusbar_visible="borrador,planificada,cargada,pendiente_aceptacion,en_ruta,en_entrega,entregada"/>
       </header>
       <sheet><field name="company_id" invisible="1"/><div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+        <div class="alert alert-info" role="note" invisible="not embarque_id">
+          El estado superior es el seguimiento operativo (en traslado, en entrega o ruta entregada).
+          La aceptación inicial del chofer se conserva en la bitácora de carga y NO impide
+          que esta ruta figure como entregada cuando todas sus guías se cierran.
+        </div>
         <group><group string="Transporte">
           <field name="company_id" groups="base.group_multi_company" readonly="state != 'borrador'"/>
           <field name="chofer_usuario_id" readonly="state != 'borrador'"/>
@@ -32,7 +43,9 @@
                  options="{'no_create': True, 'no_create_edit': True}"/>
           <field name="destino_codigo" readonly="1"/>
           <field name="destino_nombre" readonly="1"/>
-          <field name="embarque_id" readonly="1"/><field name="estado_entrega" readonly="1"/>
+          <field name="embarque_id" readonly="1"/>
+          <field name="estado_entrega" readonly="1"/>
+          <field name="guias_total" readonly="1"/>
           <field name="guias_cerradas_chofer" readonly="1"/>
           <field name="fecha_cierre_operativo" readonly="1"/>
           <!-- Precio y cobro corresponden al embarque completo. -->
@@ -73,7 +86,8 @@
                 <field name="fecha"/><field name="usuario_id"/><field name="tipo"/><field name="nombre"/><field name="observacion"/>
               </list>
             </field>
-            <group><field name="observaciones" readonly="state == 'aceptada'"/>
+            <group><field name="state" string="Carga / aceptación (bitácora histórica)" readonly="1"/>
+              <field name="observaciones" readonly="state == 'aceptada'"/>
               <field name="video_nombre" invisible="1"/>
               <field name="video_carga" filename="video_nombre" widget="binary" readonly="1"/>
               <button name="action_open_video" type="object" string="▶ Ver video en navegador" invisible="state not in ('cargada','aceptada')"/>

@@ -225,7 +225,7 @@
             <div class="tc-embark-list"><t t-foreach="embarque.ruta_ids" t-as="ruta">
               <article class="tc-guide-card tc-ops-loading-card" t-att-id="'ruta-%d' % ruta.id">
                 <div class="tc-guide-top"><strong><t t-esc="ruta.name"/> · <t t-esc="ruta.destino_nombre"/></strong><span t-att-class="'tc-status ' + ('tc-ops-done' if ruta._has_carga_evidence() else 'tc-ops-missing')" t-esc="'✓ Evidencia registrada' if ruta._has_carga_evidence() else '● Falta evidencia'"/></div>
-                <p class="tc-panel-hint"><t t-esc="len(ruta.guia_ids)"/> guías · <t t-esc="ruta.cantidad_evidencias_carga"/> evidencias de carga · <t t-esc="ruta.guias_cerradas_chofer"/> entregadas · <t t-esc="dict(ruta._fields['estado_entrega'].selection).get(ruta.estado_entrega)"/> · <t t-esc="ruta.chofer_usuario_id.name"/></p>
+                <p class="tc-panel-hint"><t t-esc="len(ruta.guia_ids)"/> guías · <t t-esc="ruta.cantidad_evidencias_carga"/> evidencias de carga · <t t-esc="ruta.guias_cerradas_chofer"/> entregadas · <t t-esc="dict(ruta._fields['estado_operativo'].selection).get(ruta.estado_operativo)"/> · <t t-esc="ruta.chofer_usuario_id.name"/></p>
                 <details class="tc-ops-route-guides">
                   <summary>📄 Ver las <t t-esc="len(ruta.guia_ids)"/> guías de esta ruta</summary>
                   <t t-call="logistica_transcash.portal_embarque_ruta_guias"/>
