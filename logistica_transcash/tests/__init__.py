@@ -34,3 +34,5 @@ from . import test_v525_visor_rutas
 from . import test_cliente_portal_v526
 
 from . import test_aprobacion_independiente_v527
+
+from . import test_accesos_portal_v528

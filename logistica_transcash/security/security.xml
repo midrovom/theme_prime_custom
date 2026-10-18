@@ -216,6 +216,20 @@
       <field name="groups" eval="[(4,ref('group_transcash_consulta')),(4,ref('group_logistica_bodega'))]"/>
       <field name="domain_force">[('company_id','in',company_ids)]</field>
     </record>
+    <!-- Los directorios de accesos se administran por compañía y NUNCA son legibles
+         por usuarios Portal. La habilitación se comprueba además en Python. -->
+    <record id="rule_transcash_acceso_cliente_compania" model="ir.rule">
+      <field name="name">Accesos cliente: compañías de Logística</field>
+      <field name="model_id" ref="model_transcash_acceso_cliente"/>
+      <field name="groups" eval="[(4,ref('group_logistica_manager'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_transcash_acceso_proveedor_compania" model="ir.rule">
+      <field name="name">Accesos proveedor: compañías de Contabilidad</field>
+      <field name="model_id" ref="model_transcash_acceso_proveedor"/>
+      <field name="groups" eval="[(4,ref('group_transcash_contabilidad'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
     <!-- No se conceden ACL de modelos al portal: todas las vistas móviles
          comprueban expresamente chofer_usuario_id o destinatario_id. -->
     <record id="rule_operator_rutas_company" model="ir.rule">

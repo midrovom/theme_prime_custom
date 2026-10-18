@@ -54,11 +54,14 @@ class TranscashPortal(http.Controller):
         # Portal cliente tiene prioridad incluso si hay grupos superpuestos:
         # nunca incluir guías ajenas a su destinatario.
         if user.has_group('logistica_transcash.group_transcash_cliente'):
-            return [recipient]
+            allowed = request.env['transcash.acceso.cliente']._allowed_companies_for(user)
+            return [recipient] + ([('company_id', 'in', allowed)] if allowed is not None else [])
         if user.has_group('logistica_transcash.group_transcash_chofer'):
             return ['|', ('chofer_usuario_id', '=', user.id), recipient]
         if user.has_group('logistica_transcash.group_transcash_transportista'):
-            return [('proveedor_id.commercial_partner_id','=',partner.id if partner else 0)]
+            allowed = request.env['transcash.acceso.proveedor']._allowed_companies_for(user)
+            return [('proveedor_id.commercial_partner_id','=',partner.id if partner else 0)] + (
+                [('company_id', 'in', allowed)] if allowed is not None else [])
         return [recipient]
 
     def _guide(self, guide_id):
@@ -76,11 +79,15 @@ class TranscashPortal(http.Controller):
         # Un Portal jamás adquiere lectura interna por tener accidentalmente grupos adicionales.
         if user.share:
             if user.has_group('logistica_transcash.group_transcash_cliente'):
-                return guia if guia._is_recipient(user) else False
+                allowed = request.env['transcash.acceso.cliente']._allowed_companies_for(user)
+                return guia if guia._is_recipient(user) and (
+                    allowed is None or guia.company_id.id in allowed) else False
             if user.has_group('logistica_transcash.group_transcash_chofer'):
                 return guia if guia.chofer_usuario_id.id == user.id else False
             if user.has_group('logistica_transcash.group_transcash_transportista'):
-                return guia if guia.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id else False
+                allowed = request.env['transcash.acceso.proveedor']._allowed_companies_for(user)
+                return guia if (guia.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id and
+                               (allowed is None or guia.company_id.id in allowed)) else False
             return False
         if not (guia.chofer_usuario_id.id == user.id and user.has_group('logistica_transcash.group_transcash_chofer')) and not guia._is_recipient(user) and not (
                 user.has_group('logistica_transcash.group_transcash_consulta') or

@@ -1,0 +1,186 @@
+<odoo>
+  <record id="view_transcash_acceso_cliente_list" model="ir.ui.view">
+    <field name="name">transcash.acceso.cliente.list</field>
+    <field name="model">transcash.acceso.cliente</field>
+    <field name="arch" type="xml">
+      <list string="Clientes con acceso a Transcash" create="1" edit="0" delete="0"
+            decoration-success="acceso_habilitado" decoration-muted="not acceso_habilitado">
+        <field name="usuario_id"/>
+        <field name="empresa_contacto_id"/>
+        <field name="correo"/>
+        <field name="company_id" groups="base.group_multi_company"/>
+        <field name="acceso_habilitado" widget="boolean"/>
+        <field name="activo" optional="hide"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_transcash_acceso_cliente_form" model="ir.ui.view">
+    <field name="name">transcash.acceso.cliente.form</field>
+    <field name="model">transcash.acceso.cliente</field>
+    <field name="arch" type="xml">
+      <form string="Cliente · Acceso a mis guías" create="1" delete="0">
+        <header>
+          <button name="action_activar_acceso" type="object" string="Habilitar acceso Cliente"
+                  class="btn-primary" invisible="not id or acceso_habilitado"
+                  groups="logistica_transcash.group_logistica_manager"/>
+          <button name="action_desactivar_acceso" type="object" string="Deshabilitar acceso"
+                  invisible="not acceso_habilitado" groups="logistica_transcash.group_logistica_manager"/>
+          <button name="action_ver_guias" type="object" string="Consultar sus guías" icon="fa-file-text-o"
+                  invisible="not id" groups="logistica_transcash.group_logistica_manager"/>
+          <button name="action_ver_contacto" type="object" string="Abrir contacto" icon="fa-address-card"
+                  invisible="not id" groups="logistica_transcash.group_logistica_manager"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><h1>Cliente · Acceso a la PWA</h1></div>
+          <div class="alert alert-info" role="alert">
+            <strong>¿Cómo habilitarlo?</strong> En Contactos cree o ubique al cliente y utilice
+            <strong>Acción → Otorgar acceso al portal</strong> de Odoo. Después seleccione aquí
+            esa cuenta Portal, guarde y pulse <strong>Habilitar acceso Cliente</strong>.
+            El contacto debe pertenecer a la misma empresa destinataria que figura en las guías del ERP.
+          </div>
+          <group>
+            <group string="Usuario y contacto">
+              <field name="usuario_id" readonly="id != False"
+                     options="{'no_create': True, 'no_create_edit': True}"/>
+              <field name="contacto_id" readonly="1"/>
+              <field name="empresa_contacto_id" readonly="1"/>
+              <field name="correo" readonly="1"/>
+            </group>
+            <group string="Acceso">
+              <field name="company_id" readonly="id != False"/>
+              <field name="acceso_habilitado" readonly="1"/>
+              <field name="activo" readonly="1"/>
+              <field name="observaciones"/>
+            </group>
+          </group>
+          <div class="alert alert-secondary" role="alert">
+            El cliente inicia sesión en <strong>/transcash</strong> y ve solamente sus guías,
+            recepciones y evidencias propias. No ve los embarques completos, los precios ni
+            las incidencias internas del transporte. La cuenta sigue siendo Portal.
+          </div>
+        </sheet>
+        <chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="view_transcash_acceso_cliente_search" model="ir.ui.view">
+    <field name="name">transcash.acceso.cliente.search</field>
+    <field name="model">transcash.acceso.cliente</field>
+    <field name="arch" type="xml">
+      <search string="Buscar clientes autorizados">
+        <field name="usuario_id"/>
+        <field name="empresa_contacto_id"/>
+        <filter name="habilitados" string="Habilitados" domain="[('activo','=',True)]"/>
+        <filter name="revocados" string="Deshabilitados" domain="[('activo','=',False)]"/>
+        <group expand="0" string="Agrupar"><filter name="company" string="Compañía" context="{'group_by':'company_id'}"/></group>
+      </search>
+    </field>
+  </record>
+  <record id="action_transcash_acceso_clientes" model="ir.actions.act_window">
+    <field name="name">Clientes y acceso a sus guías</field>
+    <field name="res_model">transcash.acceso.cliente</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_transcash_acceso_cliente_search"/>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Configure el primer cliente Portal</p>
+      <p>Primero otorgue acceso Portal desde Contactos. Luego agréguelo aquí, guarde y pulse Habilitar acceso Cliente.</p>
+    </field>
+  </record>
+  <menuitem id="menu_transcash_acceso_clientes" name="Clientes y acceso PWA"
+            parent="menu_transcash_root" sequence="9" action="action_transcash_acceso_clientes"
+            groups="logistica_transcash.group_logistica_manager"/>
+
+  <record id="view_transcash_acceso_proveedor_list" model="ir.ui.view">
+    <field name="name">transcash.acceso.proveedor.list</field>
+    <field name="model">transcash.acceso.proveedor</field>
+    <field name="arch" type="xml">
+      <list string="Transportistas con acceso a Transcash" create="1" edit="0" delete="0"
+            decoration-success="acceso_habilitado" decoration-muted="not acceso_habilitado">
+        <field name="usuario_id"/>
+        <field name="empresa_contacto_id"/>
+        <field name="correo"/>
+        <field name="company_id" groups="base.group_multi_company"/>
+        <field name="acceso_habilitado" widget="boolean"/>
+        <field name="activo" optional="hide"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_transcash_acceso_proveedor_form" model="ir.ui.view">
+    <field name="name">transcash.acceso.proveedor.form</field>
+    <field name="model">transcash.acceso.proveedor</field>
+    <field name="arch" type="xml">
+      <form string="Proveedor transportista · Acceso a viajes y liquidaciones" create="1" delete="0">
+        <header>
+          <button name="action_activar_acceso" type="object" string="Habilitar acceso Proveedor"
+                  class="btn-primary" invisible="not id or acceso_habilitado"
+                  groups="logistica_transcash.group_transcash_contabilidad"/>
+          <button name="action_desactivar_acceso" type="object" string="Deshabilitar acceso"
+                  invisible="not acceso_habilitado" groups="logistica_transcash.group_transcash_contabilidad"/>
+          <button name="action_ver_viajes" type="object" string="Ver viajes" icon="fa-truck"
+                  invisible="not id" groups="logistica_transcash.group_transcash_contabilidad"/>
+          <button name="action_ver_liquidaciones" type="object" string="Ver liquidaciones" icon="fa-file-text-o"
+                  invisible="not id" groups="logistica_transcash.group_transcash_contabilidad"/>
+          <button name="action_ver_contacto" type="object" string="Abrir contacto" icon="fa-address-card"
+                  invisible="not id" groups="logistica_transcash.group_transcash_contabilidad"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><h1>Transportista · Acceso al Portal</h1></div>
+          <div class="alert alert-info" role="alert">
+            <strong>Habilitación por Contabilidad:</strong> en Contactos busque la empresa transportista
+            y otorgue acceso al portal al representante que utilizará la PWA.
+            Seleccione aquí su cuenta Portal, guarde y pulse <strong>Habilitar acceso Proveedor</strong>.
+            El sistema identifica la empresa por el contacto empresarial del usuario.
+          </div>
+          <group>
+            <group string="Representante del transportista">
+              <field name="usuario_id" readonly="id != False"
+                     options="{'no_create': True, 'no_create_edit': True}"/>
+              <field name="contacto_id" readonly="1"/>
+              <field name="empresa_contacto_id" readonly="1"/>
+              <field name="correo" readonly="1"/>
+            </group>
+            <group string="Acceso y compañía">
+              <field name="company_id" readonly="id != False"/>
+              <field name="acceso_habilitado" readonly="1"/>
+              <field name="activo" readonly="1"/>
+              <field name="observaciones"/>
+            </group>
+          </group>
+          <div class="alert alert-secondary" role="alert">
+            El proveedor inicia sesión en <strong>/transcash</strong>. Puede consultar sus
+            embarques aprobados, crear liquidaciones, presentar facturas y confirmar recepciones
+            de pagos; <strong>no</strong> puede cambiar importes aprobados ni registrar pagos.
+            Nunca utilice la misma cuenta que un chofer o cliente.
+          </div>
+        </sheet>
+        <chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="view_transcash_acceso_proveedor_search" model="ir.ui.view">
+    <field name="name">transcash.acceso.proveedor.search</field>
+    <field name="model">transcash.acceso.proveedor</field>
+    <field name="arch" type="xml">
+      <search string="Buscar proveedores autorizados">
+        <field name="usuario_id"/>
+        <field name="empresa_contacto_id"/>
+        <filter name="habilitados" string="Habilitados" domain="[('activo','=',True)]"/>
+        <filter name="revocados" string="Deshabilitados" domain="[('activo','=',False)]"/>
+        <group expand="0" string="Agrupar"><filter name="company" string="Compañía" context="{'group_by':'company_id'}"/></group>
+      </search>
+    </field>
+  </record>
+  <record id="action_transcash_acceso_proveedores" model="ir.actions.act_window">
+    <field name="name">Proveedores y acceso a liquidaciones</field>
+    <field name="res_model">transcash.acceso.proveedor</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_transcash_acceso_proveedor_search"/>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Configure el acceso del transportista</p>
+      <p>Otorgue acceso Portal al representante desde Contactos. Después habilite aquí el perfil Proveedor y controle qué compañías puede consultar.</p>
+    </field>
+  </record>
+  <menuitem id="menu_transcash_acceso_proveedores" name="Proveedores y acceso PWA"
+            parent="menu_transcash_root" sequence="10" action="action_transcash_acceso_proveedores"
+            groups="logistica_transcash.group_transcash_contabilidad"/>
+</odoo>

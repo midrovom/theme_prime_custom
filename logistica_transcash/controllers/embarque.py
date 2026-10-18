@@ -17,7 +17,9 @@ class EmbarquePortal(TranscashPortal):
         if user.share and user.has_group('logistica_transcash.group_transcash_chofer'):
             return rec.chofer_usuario_id.id == user.id
         if user.share and user.has_group('logistica_transcash.group_transcash_transportista'):
-            return rec.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id
+            allowed = request.env['transcash.acceso.proveedor']._allowed_companies_for(user)
+            return (rec.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id and
+                    (allowed is None or rec.company_id.id in allowed))
         return bool(not user.share and rec.company_id in user.company_ids and (
             user.has_group('logistica_transcash.group_transcash_consulta') or
             user.has_group('logistica_transcash.group_logistica_bodega') or
@@ -69,6 +71,9 @@ class EmbarquePortal(TranscashPortal):
             domain = [('chofer_usuario_id','=',user.id)]
         elif user.has_group('logistica_transcash.group_transcash_transportista') and user.share:
             domain = [('proveedor_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]
+            allowed = request.env['transcash.acceso.proveedor']._allowed_companies_for(user)
+            if allowed is not None:
+                domain += [('company_id', 'in', allowed)]
         elif not user.share and (user.has_group('logistica_transcash.group_transcash_consulta') or
                                   user.has_group('logistica_transcash.group_logistica_bodega')):
             domain = [('company_id','in',user.company_ids.ids)]
@@ -236,7 +241,9 @@ class AceptacionCargaController(http.Controller):
                     route.chofer_usuario_id == user) or
                    (user.share and not user.has_group('logistica_transcash.group_transcash_chofer') and
                     user.has_group('logistica_transcash.group_transcash_transportista') and
-                    route.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id) or
+                    route.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id and
+                    (request.env['transcash.acceso.proveedor']._allowed_companies_for(user) is None or
+                     route.company_id.id in request.env['transcash.acceso.proveedor']._allowed_companies_for(user))) or
                    (not user.share and route.company_id in user.company_ids and
                     (user.has_group('logistica_transcash.group_transcash_consulta') or
                      user.has_group('logistica_transcash.group_logistica_bodega') or
@@ -279,7 +286,9 @@ class AceptacionCargaController(http.Controller):
                        ruta.chofer_usuario_id == user) or
                       (user.share and not user.has_group('logistica_transcash.group_transcash_chofer') and
                        user.has_group('logistica_transcash.group_transcash_transportista') and
-                       ruta.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id) or
+                       ruta.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id and
+                       (request.env['transcash.acceso.proveedor']._allowed_companies_for(user) is None or
+                        ruta.company_id.id in request.env['transcash.acceso.proveedor']._allowed_companies_for(user))) or
                       (not user.share and ruta.company_id in user.company_ids and
                        (user.has_group('logistica_transcash.group_transcash_consulta') or
                         user.has_group('logistica_transcash.group_transcash_operador_rutas') or

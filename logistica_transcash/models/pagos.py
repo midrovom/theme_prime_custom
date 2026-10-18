@@ -138,6 +138,9 @@ class TranscashLiquidacion(models.Model):
             raise UserError(_('Actualice la lista, uno de los embarques no existe.'))
         trips.invalidate_recordset(['estado_aprobacion', 'liquidacion_linea_id', 'valor_acordado'])
         first = trips[0]
+        allowed = self.env['transcash.acceso.proveedor']._allowed_companies_for(user)
+        if allowed is not None and any(t.company_id.id not in allowed for t in trips):
+            raise AccessError(_('No está habilitado para liquidar viajes de esa compañía.'))
         supplier = user.partner_id.commercial_partner_id
         if first.proveedor_id.commercial_partner_id != supplier:
             raise AccessError(_('No puede liquidar embarques de otra empresa de transporte.'))
@@ -171,9 +174,12 @@ class TranscashLiquidacion(models.Model):
                 user.has_group('logistica_transcash.group_transcash_chofer') or
                 user.has_group('logistica_transcash.group_transcash_cliente')):
             raise AccessError(_('Solo el proveedor Portal de transporte puede ejecutar esta acción.'))
+        allowed = self.env['transcash.acceso.proveedor']._allowed_companies_for(user)
         for rec in self:
             if rec.proveedor_id.commercial_partner_id != user.partner_id.commercial_partner_id:
                 raise AccessError(_('Liquidación de otro proveedor.'))
+            if allowed is not None and rec.company_id.id not in allowed:
+                raise AccessError(_('Liquidación de compañía sin acceso Portal vigente.'))
 
     def _check_accountant(self):
         user = self.env.user
@@ -387,6 +393,9 @@ class TranscashPagoRegistro(models.Model):
                 user.has_group('logistica_transcash.group_transcash_cliente') or
                 self.liquidacion_id.proveedor_id.commercial_partner_id != user.partner_id.commercial_partner_id):
             raise AccessError(_('Solo el proveedor titular puede confirmar u objetar sus transferencias.'))
+        allowed = self.env['transcash.acceso.proveedor']._allowed_companies_for(user)
+        if allowed is not None and self.liquidacion_id.company_id.id not in allowed:
+            raise AccessError(_('No tiene acceso vigente a los pagos de esta compañía.'))
         if decision not in ('confirmada', 'disputa'):
             raise UserError(_('Acción de confirmación incorrecta.'))
         note = (note or '').strip()[:2000]

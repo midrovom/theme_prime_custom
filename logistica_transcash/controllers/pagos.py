@@ -24,7 +24,9 @@ class TranscashSupplier(http.Controller):
         if not supplier:
             return False
         rec = request.env['transcash.pago.liquidacion'].sudo().browse(doc_id).exists()
-        return rec if rec and rec.proveedor_id.commercial_partner_id == supplier else False
+        company_ids = request.env['transcash.acceso.proveedor']._allowed_companies_for(request.env.user)
+        return rec if (rec and rec.proveedor_id.commercial_partner_id == supplier and
+                       (company_ids is None or rec.company_id.id in company_ids)) else False
 
     def _page(self, template, **data):
         return request.render(template, dict(data, csrf_token=request.csrf_token()))
@@ -34,10 +36,12 @@ class TranscashSupplier(http.Controller):
         supplier = self._supplier()
         if not supplier:
             return request.not_found()
-        trips = request.env['transcash.embarque'].sudo().search([
-            ('proveedor_id.commercial_partner_id', '=', supplier.id)], order='create_date desc', limit=250)
-        documents = request.env['transcash.pago.liquidacion'].sudo().search([
-            ('proveedor_id.commercial_partner_id', '=', supplier.id)], order='id desc', limit=100)
+        company_ids = request.env['transcash.acceso.proveedor']._allowed_companies_for(request.env.user)
+        domain = [('proveedor_id.commercial_partner_id', '=', supplier.id)]
+        if company_ids is not None:
+            domain += [('company_id', 'in', company_ids)]
+        trips = request.env['transcash.embarque'].sudo().search(domain, order='create_date desc', limit=250)
+        documents = request.env['transcash.pago.liquidacion'].sudo().search(domain, order='id desc', limit=100)
         available = trips.filtered(lambda t: t.estado_aprobacion == 'aprobado' and
                                    not t.liquidacion_linea_id and t.valor_acordado > 0)
         # Cada factura/liquidación pertenece a una única compañía y moneda;
