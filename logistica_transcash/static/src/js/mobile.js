@@ -152,7 +152,7 @@
       var pending = await tc.queueFor(userId);
       note.textContent = (navigator.onLine ? '● Con señal' : '● Sin señal') + ' · ' + pending.length + ' por sincronizar';
       banner.classList.toggle('no-signal', !navigator.onLine);
-      pendingLink.forEach(function (a) { a.textContent = '⇅ Pendientes' + (pending.length ? ' (' + pending.length + ')' : ''); });
+      pendingLink.forEach(function (a) { a.textContent = '⇅ Por sincronizar' + (pending.length ? ' (' + pending.length + ')' : ''); });
     }
     function fromCard(card) {
       return { userId: String(userId), guideId: Number(card.dataset.tcCardId),
@@ -172,7 +172,8 @@
       var types = typeSelect ? Array.from(typeSelect.options).filter(function (o) { return o.value; }).map(function (o) { return o.value; }) : [];
       await tc.rememberGuide({ userId: String(userId), guideId: Number(guideId), name: body.dataset.tcGuideName,
         origin: body.dataset.tcGuideOrigin, destination: body.dataset.tcGuideDestination,
-        state: body.dataset.tcGuideState, products: products, types: types });
+        state: body.dataset.tcGuideState, embarkId: body.dataset.tcEmbarkId,
+        embarkName: body.dataset.tcEmbarkName, routeName: body.dataset.tcRouteName, products: products, types: types });
     }
     async function requestSync() {
       if (!navigator.onLine) return;

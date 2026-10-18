@@ -465,6 +465,22 @@ class HojaRuta(models.Model):
                 'url':'/transcash/operacion/embarques/%d#ruta-%d' % (self.embarque_id.id, self.id),
                 'target':'self'}
 
+    def action_open_route_gallery(self):
+        """One-click read-only evidence album for authorized internal users."""
+        self.ensure_one()
+        user = self.env.user
+        if user.share or self.company_id not in user.company_ids or not any(
+            user.has_group('logistica_transcash.' + group) for group in (
+                'group_transcash_consulta', 'group_logistica_bodega',
+                'group_transcash_operador_rutas', 'group_logistica_manager')
+        ):
+            raise AccessError(_('No tiene permiso para revisar el expediente de esta ruta.'))
+        return {
+            'type': 'ir.actions.act_url',
+            'url': '/transcash/backoffice/rutas/%d/galeria' % self.id,
+            'target': 'new',
+        }
+
     def action_open_video(self):
         self.ensure_one()
         self._check_operator()

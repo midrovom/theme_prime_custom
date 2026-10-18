@@ -12,3 +12,4 @@ registry.category("fields").add("transcash_trip_gallery", {
 });
 
 registry.category("fields").add("transcash_guide_gallery", {component: TripGalleryField, supportedTypes: ["char"]});
+registry.category("fields").add("transcash_route_gallery", {component: TripGalleryField, supportedTypes: ["char"]});

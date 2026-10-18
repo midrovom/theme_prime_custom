@@ -22,17 +22,17 @@ def _guide_entry(ev, g):
     }
 
 
-def gallery_for_trip(trip, guide=None, include_loading=True):
+def gallery_for_trip(trip, guide=None, include_loading=True, route_only=None):
     """Expediente por hoja de ruta: carga, descargas y firmas de sus guías.
 
     La autorización se ejecuta ANTES de llamar a esta función. Para un receptor
     se envía solo `guide` e `include_loading=False`; jamás se mezclan otras guías
     de la ruta ni videos generales de carga.
     """
-    available_guides = guide if guide else (trip.guia_ids if trip else guide)
+    available_guides = route_only.guia_ids if route_only else (guide if guide else (trip.guia_ids if trip else guide))
     groups = []
     known = set()
-    routes = trip.ruta_ids.sorted('id') if trip else []
+    routes = route_only if route_only else (trip.ruta_ids.sorted('id') if trip else [])
     if guide and guide.hoja_ruta_id and guide.hoja_ruta_id in routes:
         routes = guide.hoja_ruta_id
     if guide and not include_loading:
@@ -138,3 +138,8 @@ def gallery_for_guide(guide, is_recipient_only=False):
     """El cliente ve únicamente su guía, no la carga compartida del vehículo."""
     return gallery_for_trip(guide.embarque_id, guide=guide,
                             include_loading=not is_recipient_only)
+
+
+def gallery_for_route(route):
+    """Vista única: carga de esta ruta, descargas y firmas SOLO de sus guías."""
+    return gallery_for_trip(route.embarque_id, route_only=route)

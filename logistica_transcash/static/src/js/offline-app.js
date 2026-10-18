@@ -8,6 +8,7 @@
     }
     var userId = localStorage.getItem('tcMobileUser');
     var guides = [];
+    var role = 'chofer';
     var selected = null;
     var mode = 'evidencia';
     var form = document.getElementById('tc-offline-form');
@@ -26,14 +27,38 @@
       pill.classList.toggle('is-offline', !navigator.onLine);
       pill.classList.toggle('is-online', navigator.onLine);
     }
+    function applyRoleNavigation() {
+      document.querySelectorAll('[data-tc-driver-home]').forEach(function (a) {
+        if (role === 'cliente') { a.href = '/transcash/guias'; a.textContent = '▤ Mis recepciones'; }
+        else if (role === 'proveedor') { a.href = '/transcash/proveedor'; a.textContent = '💼 Mis liquidaciones'; }
+        else if (role === 'interno') { a.href = '/transcash/operacion'; a.textContent = '▦ Operación'; }
+      });
+      document.querySelectorAll('[data-tc-driver-pending]').forEach(function (a) {
+        if (role !== 'chofer') {
+          a.href = role === 'cliente' ? '/transcash/guias?estado=revision' : '/transcash/embarques';
+          a.textContent = role === 'cliente' ? '✓ Recepciones pendientes' : '🚚 Mis viajes';
+        }
+      });
+      document.querySelectorAll('[data-tc-driver-finished]').forEach(function (a) {
+        if (role !== 'chofer') { a.href = '/transcash/guias'; a.textContent = '✓ Entregas consultables'; }
+      });
+    }
     async function currentUser() {
+      // UI hint only. Authorization is ALWAYS checked again by Odoo for every link.
+      role = localStorage.getItem('tcMobileRole') || 'chofer';
       if (navigator.onLine) {
         try {
           var res = await tc.session();
-          userId = String(res.user_id);
+          var nextId = String(res.user_id);
+          // Do not show the preceding user's cached guide list to a different login.
+          if (userId && String(userId) !== nextId) selected = null;
+          userId = nextId;
+          role = res.role || 'chofer';
+          localStorage.setItem('tcMobileRole', role);
           localStorage.setItem('tcMobileUser', userId);
         } catch (_) { /* Offline shell remains readable without a login request. */ }
       }
+      applyRoleNavigation();
       return userId;
     }
     function opt(select, value, text, selectedValue) {
@@ -108,8 +133,17 @@
       guides = userId ? await tc.guidesFor(userId) : [];
       var list = document.getElementById('tc-offline-guides'); list.replaceChildren();
       document.getElementById('tc-offline-guide-count').textContent = guides.length;
-      guides.forEach(function (g) { list.appendChild(guideCard(g)); });
-      if (!guides.length) list.appendChild(node('p', 'tc-empty-inline', 'No hay guías preparadas. Entra a Mis guías con conexión y abre cada guía antes de trabajar sin señal.'));
+      var lastGroup = '';
+      guides.sort(function (a, b) {
+        return String(a.embarkName || '').localeCompare(String(b.embarkName || '')) ||
+          String(a.routeName || '').localeCompare(String(b.routeName || '')) ||
+          String(a.name || '').localeCompare(String(b.name || ''));
+      }).forEach(function (g) {
+        var group = (g.embarkName || 'Viaje sin referencia guardada') + ' / ' + (g.routeName || 'Ruta no disponible sin conexión');
+        if (group !== lastGroup) { list.appendChild(node('h3', 'tc-offline-route-heading', group)); lastGroup = group; }
+        list.appendChild(guideCard(g));
+      });
+      if (!guides.length) list.appendChild(node('p', 'tc-empty-inline', 'No hay entregas guardadas. Con conexión abre tu embarque y luego la guía de la ruta que entregarás.')); 
       var params = new URLSearchParams(location.search);
       var guideId = params.get('guide') || ((location.pathname.match(/\/transcash\/guias\/(\d+)/) || [])[1]);
       if (guideId && (!selected || String(selected.guideId) !== String(guideId))) {
@@ -195,7 +229,7 @@
     document.getElementById('tc-force-sync').addEventListener('click', send);
     document.getElementById('tc-forget-device').addEventListener('click', async function () {
       if (!userId || !confirm('Se borrarán las guías y todas las fotos y videos PENDIENTES de este dispositivo. ¿Estás seguro?')) return;
-      await tc.clearAll(); localStorage.removeItem('tcMobileUser'); userId = null; selected = null;
+      await tc.clearAll(); localStorage.removeItem('tcMobileUser'); localStorage.removeItem('tcMobileRole'); userId = null; selected = null;
       document.getElementById('tc-offline-compose').hidden = true;
       await paint();
     });

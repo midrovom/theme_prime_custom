@@ -6,7 +6,7 @@
   <title>Transcash · Modo sin conexión</title>
   <link rel="manifest" href="/transcash/manifest.webmanifest"/>
   <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-  <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=420"/>
+  <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=525"/>
   <script defer src="/logistica_transcash/static/src/js/offline-core.js"></script>
   <script defer src="/logistica_transcash/static/src/js/offline-app.js"></script>
 </head>
@@ -15,12 +15,12 @@
     <aside class="tc-desktop-sidebar" aria-label="Navegación de Transcash en computadora">
       <div class="tc-sidebar-brand"><div class="tc-brand"><div class="tc-logo">T<span>↗</span></div><div><strong>TRANSCASH</strong><small>LOGÍSTICA EN MOVIMIENTO</small></div></div><small>ESPACIO DE OPERACIONES</small></div>
       <div class="tc-sidebar-caption">OPERACIÓN</div>
-      <a href="/transcash/guias" class="tc-sidebar-link"><span>▤</span> Todas las guías</a>
-      <a href="/transcash/guias?estado=embarque" class="tc-sidebar-link"><span>▣</span> Embarque</a>
-      <a href="/transcash/guias?estado=ruta" class="tc-sidebar-link"><span>↗</span> En ruta</a>
-      <a href="/transcash/guias?estado=revision" class="tc-sidebar-link"><span>✓</span> Recepción</a>
+      <a href="/transcash/embarques" class="tc-sidebar-link" data-tc-driver-home="1"><span>🚚</span> Mis embarques</a>
+      <a href="/transcash/embarques?estado=pendientes" class="tc-sidebar-link" data-tc-driver-pending="1"><span>◷</span> Embarques pendientes</a>
+      <a href="/transcash/embarques?estado=entregados" class="tc-sidebar-link" data-tc-driver-finished="1"><span>✓</span> Embarques entregados</a>
+      <a href="/transcash/guias" class="tc-sidebar-link" data-tc-client-home="1"><span>▤</span> Mis recepciones</a>
       <div class="tc-sidebar-caption">HERRAMIENTAS</div>
-      <a href="/transcash/offline" class="tc-sidebar-link is-active"><span>⇅</span> Sincronización y pendientes</a>
+      <a href="/transcash/offline" class="tc-sidebar-link is-active"><span>⇅</span> Archivos por sincronizar</a>
       <div class="tc-sidebar-bottom"><p>Transcash · Seguimiento y evidencias</p></div>
     </aside>
     <header class="tc-top"><div class="tc-brand"><div class="tc-logo">T<span>↗</span></div><div><strong>TRANSCASH</strong><small>LOGÍSTICA EN MOVIMIENTO</small></div></div>
@@ -34,8 +34,8 @@
       <div id="tc-offline-error" role="alert" class="tc-alert tc-alert-error" hidden></div>
       <div class="tc-sync-summary"><div><small>EN ESTE DISPOSITIVO</small><strong id="tc-pending-total">0 pendientes</strong></div>
         <button class="tc-button tc-button-primary tc-sync-button" id="tc-force-sync" type="button">↻ Sincronizar</button></div>
-      <div class="tc-section-heading"><h2>Guías disponibles</h2><span class="tc-count" id="tc-offline-guide-count">0</span></div>
-      <div id="tc-offline-guides" class="tc-cards"></div>
+      <div class="tc-section-heading"><h2>Entregas preparadas para trabajar sin señal</h2><span class="tc-count" id="tc-offline-guide-count">0</span></div>
+      <p class="tc-panel-hint">Las evidencias se registran por guía dentro de su hoja de ruta. El viaje y sus pendientes se consultan en Mis embarques.</p><div id="tc-offline-guides" class="tc-cards"></div>
       <section id="tc-offline-compose" class="tc-offline-compose" hidden>
         <div class="tc-section-heading"><h2 id="tc-offline-compose-title">Nuevo reporte</h2></div>
         <p class="tc-panel-hint">Se guardará de forma local. La guía y las cantidades se verificarán en el servidor al sincronizar.</p>
@@ -53,13 +53,13 @@
           <button class="tc-button tc-button-primary tc-submit" type="submit">Guardar en teléfono →</button>
         </form>
       </section>
-      <div class="tc-section-heading"><h2>Bandeja de pendientes</h2></div>
+      <div class="tc-section-heading"><h2>Archivos pendientes de sincronizar</h2></div>
       <div id="tc-offline-outbox" class="tc-outbox"></div>
       <p class="tc-device-warning">🔒 Los archivos pendientes se conservan únicamente en este dispositivo. Protégelo con bloqueo de pantalla y no borres los datos del navegador hasta sincronizar.</p>
       <button type="button" id="tc-forget-device" class="tc-button tc-button-outline-red tc-forget">Olvidar datos de este dispositivo</button>
     </main>
-    <nav class="tc-bottom"><a href="/transcash/guias" class="tc-bottom-item"><span class="tc-nav-icon">▤</span>Mis guías</a>
-      <a href="/transcash/offline" class="tc-bottom-item active"><span class="tc-nav-icon">⇅</span>Pendientes</a></nav>
+    <nav class="tc-bottom"><a href="/transcash/embarques?estado=pendientes" class="tc-bottom-item" data-tc-driver-pending="1"><span class="tc-nav-icon">🚚</span>Embarques pendientes</a>
+      <a href="/transcash/offline" class="tc-bottom-item active"><span class="tc-nav-icon">⇅</span>Por sincronizar</a></nav>
   </div>
 </body>
 </html>

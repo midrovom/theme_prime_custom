@@ -414,3 +414,16 @@ body.tc-modal-open{overflow:hidden}
 
 /* V5.23: el estado incoherente u objetado se distingue también en la PWA. */
 .tc-trip-route-state.tc-route-attention { color: #b42331; background: #fff1f2; border: 1px solid #f5b7bf; }
+
+/* V5.25: overlays are divs; never use dialog top-layer/inert on mobile. */
+.tc-hub-overlay { position:fixed; inset:0; z-index:99999; width:100vw; max-width:none;
+  max-height:none; height:100dvh; border-radius:0; margin:0; padding:0;
+  background:rgba(6,18,32,.97); display:flex; flex-direction:column; box-sizing:border-box; }
+.tc-hub-overlay .tc-hub-modal-head { flex:0 0 auto; padding:calc(10px + env(safe-area-inset-top,0px)) 12px 12px;
+  min-height:54px; background:#162a40; position:relative; z-index:2; }
+.tc-hub-overlay .tc-hub-modal-head strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%; }
+.tc-hub-overlay .tc-hub-modal-close { font-size:15px; font-weight:750; padding:11px 16px; min-height:46px; touch-action:manipulation; }
+.tc-hub-overlay .tc-hub-modal-media { flex:1 1 auto; min-height:0; height:auto; max-height:none;
+  padding:8px 8px calc(9px + env(safe-area-inset-bottom,0px)); box-sizing:border-box; }
+.tc-hub-overlay .tc-hub-modal-media img,.tc-hub-overlay .tc-hub-modal-media video { max-width:100%; max-height:100%; }
+@media(max-width:550px){.tc-hub-overlay .tc-hub-modal-media{height:auto;max-height:none;min-height:0}}

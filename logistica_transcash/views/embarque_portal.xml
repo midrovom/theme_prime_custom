@@ -28,7 +28,12 @@
           </div>
           <div class="tc-embark-layout">
             <section class="tc-embark-section">
-              <div class="tc-section-heading"><h2>Viajes</h2><span class="tc-count" t-esc="len(embarques)"/></div>
+              <nav t-if="es_chofer" class="tc-filters" aria-label="Filtrar embarques">
+                <a t-att-class="'tc-filter' + (' is-current' if estado_filtro == 'pendientes' else '')" href="/transcash/embarques?estado=pendientes">🚚 Embarques pendientes</a>
+                <a t-att-class="'tc-filter' + (' is-current' if estado_filtro == 'todos' else '')" href="/transcash/embarques">Todos mis viajes</a>
+                <a t-att-class="'tc-filter' + (' is-current' if estado_filtro == 'entregados' else '')" href="/transcash/embarques?estado=entregados">Entregados</a>
+              </nav>
+              <div class="tc-section-heading"><h2><t t-esc="'Embarques pendientes' if estado_filtro == 'pendientes' else 'Embarques entregados' if estado_filtro == 'entregados' else 'Viajes'"/></h2><span class="tc-count" t-esc="len(embarques)"/></div>
               <div class="tc-embark-list">
                 <t t-foreach="embarques" t-as="e">
                   <a t-attf-class="tc-guide-card tc-embark-card #{'tc-trip-objected' if (e.objecion_pendiente or e.observacion_rechazo) and es_operador else ''}" t-att-href="('/transcash/operacion/embarques/%s' if es_operador else '/transcash/embarques/%s') % e.id">
@@ -43,7 +48,7 @@
                     <div class="tc-guide-bottom"><span t-esc="e.origen or 'Origen sin indicar'"/><span class="tc-guide-go">→</span></div>
                   </a>
                 </t>
-                <div t-if="not embarques" class="tc-empty-inline">No hay embarques todavía.</div>
+                <div t-if="not embarques" class="tc-empty-inline"><t t-esc="'No hay embarques pendientes.' if estado_filtro == 'pendientes' else 'No hay viajes entregados.' if estado_filtro == 'entregados' else 'No hay embarques todavía.'"/></div>
               </div>
             </section>
             </div>
@@ -53,7 +58,7 @@
           <a t-if="es_operador" class="tc-bottom-item" href="/transcash/operacion/rutas">▤ Rutas</a>
           <a class="tc-bottom-item active" href="/transcash/embarques">🚚 Viajes</a>
           <a t-if="es_operador" class="tc-bottom-item" href="/transcash/guias?vista=consulta">▤ Guías por planificar</a>
-          <a t-if="es_chofer" class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1">⇅ Pendientes</a></nav>
+          <a t-if="es_chofer" class="tc-bottom-item" href="/transcash/embarques?estado=pendientes">🚚 Embarques pendientes</a></nav>
       </div>
     </body></html>
   </template>
@@ -142,7 +147,7 @@
 </main>
         <nav class="tc-bottom"><a class="tc-bottom-item active" href="/transcash/embarques">🚚 Embarques</a>
           <a t-if="not request.env.user.share and (request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') or request.env.user.has_group('logistica_transcash.group_logistica_manager'))" class="tc-bottom-item" href="/transcash/guias?vista=consulta">▤ Guías por planificar</a>
-          <a class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1">⇅ Pendientes</a></nav>
+          <a class="tc-bottom-item" href="/transcash/embarques?estado=pendientes">🚚 Embarques pendientes</a></nav>
       </div>
     </body></html>
   </template>

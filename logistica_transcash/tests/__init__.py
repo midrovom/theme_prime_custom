@@ -28,3 +28,5 @@ from . import test_route_evidence_v522
 from . import test_estados_operativos_v523
 
 from . import test_finanzas_v524
+
+from . import test_v525_visor_rutas

@@ -68,6 +68,13 @@ class EmbarquePortal(TranscashPortal):
             domain = [('company_id','in',user.company_ids.ids)]
         else:
             return request.not_found()
+        filtro = kw.get('estado') or ('pendientes' if user.share and user.has_group('logistica_transcash.group_transcash_chofer') else 'todos')
+        if filtro not in ('todos', 'pendientes', 'entregados'):
+            filtro = 'todos'
+        if filtro == 'pendientes':
+            domain += [('state', 'in', ['preparacion', 'embarcado', 'ruta'])]
+        elif filtro == 'entregados':
+            domain += [('state', '=', 'entregado')]
         recs = request.env['transcash.embarque'].sudo().search(domain, order='create_date desc', limit=100)
         activo = request.env['transcash.embarque'].sudo().browse()
         if user.share and user.has_group('logistica_transcash.group_transcash_chofer'):
@@ -86,7 +93,7 @@ class EmbarquePortal(TranscashPortal):
             'csrf_token':request.csrf_token(),
             'es_chofer': user.share and user.has_group('logistica_transcash.group_transcash_chofer'),
             'es_operador': not user.share and (user.has_group('logistica_transcash.group_transcash_operador_rutas') or user.has_group('logistica_transcash.group_logistica_manager')),
-            'error':kw.get('error'),
+            'error':kw.get('error'), 'estado_filtro': filtro,
         })
 
     @http.route('/transcash/embarques/crear',type='http',auth='user',website=True,methods=['POST'],csrf=True)
@@ -212,9 +219,13 @@ class AceptacionCargaController(http.Controller):
             return request.not_found()
         route = evidence.ruta_id
         user = request.env.user
-        allowed = ((user.has_group('logistica_transcash.group_transcash_chofer') and
+        # A portal customer never sees vehicle-wide loading media, even with
+        # another group accidentally attached to the account.
+        forbidden = user.share and user.has_group('logistica_transcash.group_transcash_cliente')
+        allowed = not forbidden and ((user.share and user.has_group('logistica_transcash.group_transcash_chofer') and
                     route.chofer_usuario_id == user) or
-                   (user.has_group('logistica_transcash.group_transcash_transportista') and
+                   (user.share and not user.has_group('logistica_transcash.group_transcash_chofer') and
+                    user.has_group('logistica_transcash.group_transcash_transportista') and
                     route.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id) or
                    (not user.share and route.company_id in user.company_ids and
                     (user.has_group('logistica_transcash.group_transcash_consulta') or
@@ -253,13 +264,16 @@ class AceptacionCargaController(http.Controller):
         if not ruta or ruta.state not in ('cargada','aceptada') or not ruta.video_carga:
             return request.not_found()
         user = request.env.user
-        authorized = ((user.has_group('logistica_transcash.group_transcash_chofer') and
+        forbidden = user.share and user.has_group('logistica_transcash.group_transcash_cliente')
+        authorized = not forbidden and ((user.share and user.has_group('logistica_transcash.group_transcash_chofer') and
                        ruta.chofer_usuario_id == user) or
-                      (user.has_group('logistica_transcash.group_transcash_transportista') and
+                      (user.share and not user.has_group('logistica_transcash.group_transcash_chofer') and
+                       user.has_group('logistica_transcash.group_transcash_transportista') and
                        ruta.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id) or
                       (not user.share and ruta.company_id in user.company_ids and
                        (user.has_group('logistica_transcash.group_transcash_consulta') or
-                        user.has_group('logistica_transcash.group_transcash_operador_rutas'))))
+                        user.has_group('logistica_transcash.group_transcash_operador_rutas') or
+                        user.has_group('logistica_transcash.group_logistica_manager'))))
         if not authorized:
             return request.not_found()
         data = base64.b64decode(ruta.video_carga)

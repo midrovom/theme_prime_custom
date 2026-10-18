@@ -18,6 +18,8 @@
       <header>
         <button name="action_confirm_route" string="1. Confirmar ruta" type="object" class="btn-primary"
                 invisible="state != 'borrador'" groups="logistica_transcash.group_transcash_operador_rutas"/>
+        <button name="action_open_route_gallery" string="👁 Ver fotos, videos y firmas" type="object"
+                groups="logistica_transcash.group_transcash_consulta,logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
         <button name="action_open_carga_pwa" string="📷 Registrar foto / video de carga" type="object" class="btn-primary"
                 invisible="not embarque_id or state not in ('planificada','cargada')"
                 groups="logistica_transcash.group_transcash_operador_rutas"/>
@@ -97,6 +99,12 @@
             <div class="alert alert-info">Los videos históricos se conservan. Las NUEVAS fotos y videos deben capturarse en el Centro de operaciones: allí se genera la bitácora inmutable.</div>
           </page>
         </notebook>
+        <div class="tc-backoffice-gallery-wrap"
+             groups="logistica_transcash.group_transcash_consulta,logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager">
+          <h3>Expediente de esta hoja de ruta · Carga / Descarga / Firma del receptor</h3>
+          <p>Fotos y videos se abren aquí con un toque. Cada entrega identifica la guía y el receptor; no hace falta descargar documentos.</p>
+          <field name="name" widget="transcash_route_gallery" readonly="1" nolabel="1"/>
+        </div>
       </sheet><chatter/></form></field>
   </record>
   <record id="view_transcash_seleccionar_guias_wizard" model="ir.ui.view">

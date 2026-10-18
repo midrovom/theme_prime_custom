@@ -6,10 +6,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=522"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=525"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
-    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=521"/>
-  <script defer="defer" src="/logistica_transcash/static/src/js/evidence_hub.js?v=522"/><script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
+    <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=525"/>
+  <script defer="defer" src="/logistica_transcash/static/src/js/evidence_hub.js?v=525"/><script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
 
   <template id="mobile_brand" name="Transcash Mobile Brand">
     <div class="tc-brand"><div class="tc-logo">T<span>↗</span></div>
@@ -38,7 +38,8 @@
       <t t-elif="driver">
         <div class="tc-sidebar-caption">MIS ENTREGAS</div>
         <a href="/transcash/embarques" class="tc-sidebar-link"><span>🚚</span> Mis viajes · rutas y guías</a>
-        <a href="/transcash/offline" class="tc-sidebar-link" data-tc-pending-link="1"><span>⇅</span> Evidencias pendientes</a>
+        <a href="/transcash/embarques?estado=pendientes" class="tc-sidebar-link"><span>🚚</span> Embarques pendientes</a>
+        <a href="/transcash/offline" class="tc-sidebar-link" data-tc-pending-link="1"><span>⇅</span> Archivos por sincronizar</a>
       </t>
       <t t-elif="supplier">
         <div class="tc-sidebar-caption">EMPRESA TRANSPORTISTA</div>
@@ -76,7 +77,7 @@
 
   <template id="portal_guias" name="Transcash Mobile: Mis Guías">
     <html lang="es"><head>
-      <title>Mis guías · Transcash</title><t t-call="logistica_transcash.mobile_head"/>
+      <title>Guías y entregas · Transcash</title><t t-call="logistica_transcash.mobile_head"/>
     </head><body class="tc-app" t-att-data-tc-user-id="request.env.user.id">
       <div class="tc-shell">
         <t t-call="logistica_transcash.portal_desktop_sidebar"/>
@@ -85,7 +86,7 @@
         </header>
         <main class="tc-main tc-home">
           <div class="tc-eyebrow"><span class="tc-live-dot"/> PANEL DE OPERACIONES · ACCESO SEGURO</div>
-          <h1 class="tc-heading">Mis guías<span class="tc-title-dot">.</span></h1>
+          <h1 class="tc-heading"><t t-esc="'Mis guías' if request.env.user.share else 'Guías para consulta'"/><span class="tc-title-dot">.</span></h1>
           <p class="tc-muted tc-home-intro">Controla tus entregas desde aquí, con toda la evidencia en un solo lugar.</p>
           <div class="tc-stat-row">
             <div class="tc-stat"><div class="tc-stat-icon">▤</div><strong t-esc="len(guias)"/><small>Guías visibles</small></div>
@@ -130,14 +131,15 @@
           </div>
         </main>
         <nav class="tc-bottom" aria-label="Navegación inferior">
-          <a class="tc-bottom-item active" href="/transcash/guias"><span class="tc-nav-icon">▤</span>Mis guías</a>
+          <a class="tc-bottom-item active" href="/transcash/guias"><span class="tc-nav-icon">▤</span><t t-esc="'Mis guías' if request.env.user.share else 'Guías para planificar'"/></a>
           <span class="tc-bottom-divider"/>
           <a t-if="request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_chofer')" class="tc-bottom-item" href="/transcash/embarques"><span class="tc-nav-icon">🚚</span>Mi viaje</a>
           <a t-elif="request.env.user.share" class="tc-bottom-item" href="/transcash/guias?estado=revision"><span class="tc-nav-icon">✓</span>Recepción</a>
           <a t-elif="request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas')" class="tc-bottom-item" href="/transcash/operacion"><span class="tc-nav-icon">▦</span>Operación</a>
           <a t-else="" class="tc-bottom-item" href="/transcash/embarques"><span class="tc-nav-icon">🚚</span>Viajes</a>
           <span class="tc-bottom-divider"/>
-          <a class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1"><span class="tc-nav-icon">⇅</span>Pendientes</a>
+          <a t-if="es_chofer" class="tc-bottom-item" href="/transcash/embarques?estado=pendientes"><span class="tc-nav-icon">🚚</span>Embarques pendientes</a>
+          <a t-else="" class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1"><span class="tc-nav-icon">⇅</span>Por sincronizar</a>
         </nav>
       </div>
     </body></html>
@@ -146,7 +148,7 @@
   <template id="portal_guia_detalle" name="Transcash Mobile: Detalle de guía">
     <html lang="es"><head>
       <title><t t-esc="guia.name"/> · Transcash</title><t t-call="logistica_transcash.mobile_head"/>
-    </head><body class="tc-app" t-att-data-tc-user-id="request.env.user.id" t-att-data-tc-guide-id="guia.id" t-att-data-tc-guide-name="guia.name" t-att-data-tc-guide-origin="guia.origen or ''" t-att-data-tc-guide-destination="guia.destino or ''" t-att-data-tc-guide-state="guia.state">
+    </head><body class="tc-app" t-att-data-tc-user-id="request.env.user.id" t-att-data-tc-guide-id="guia.id" t-att-data-tc-guide-name="guia.name" t-att-data-tc-guide-origin="guia.origen or ''" t-att-data-tc-guide-destination="guia.destino or ''" t-att-data-tc-guide-state="guia.state" t-att-data-tc-embark-id="guia.embarque_id.id if guia.embarque_id else ''" t-att-data-tc-embark-name="guia.embarque_id.name if guia.embarque_id else ''" t-att-data-tc-route-name="guia.hoja_ruta_id.name if guia.hoja_ruta_id else ''">
       <div class="tc-shell">
         <t t-call="logistica_transcash.portal_desktop_sidebar"/>
         <header class="tc-top tc-top-detail"><a class="tc-back" t-att-href="('/transcash/embarques/%d#tc-ruta-%d' % (guia.embarque_id.id, guia.hoja_ruta_id.id) if guia.embarque_id and guia.hoja_ruta_id else '/transcash/embarques') if request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_chofer') else '/transcash/guias?vista=consulta' if not request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') else '/transcash/guias'" aria-label="Volver">←</a>
@@ -432,7 +434,8 @@
           <button class="tc-bottom-item active" type="button" data-go-tab="resumen"><span class="tc-nav-icon">◉</span>Resumen</button>
           <button class="tc-bottom-item" type="button" data-go-tab="productos"><span class="tc-nav-icon">▦</span>Productos</button>
           <button class="tc-bottom-item" type="button" data-go-tab="roturas"><span class="tc-nav-icon">⚠</span>Roturas</button>
-          <a class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1"><span class="tc-nav-icon">⇅</span>Pendientes</a>
+          <a t-if="es_chofer" class="tc-bottom-item" href="/transcash/embarques?estado=pendientes"><span class="tc-nav-icon">🚚</span>Embarques pendientes</a>
+          <a t-else="" class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1"><span class="tc-nav-icon">⇅</span>Por sincronizar</a>
         </nav>
       </div>
 

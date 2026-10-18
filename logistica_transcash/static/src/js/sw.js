@@ -1,6 +1,6 @@
 /* Versioned app shell ONLY. Authenticated guide HTML and media are never cached. */
 importScripts('/logistica_transcash/static/src/js/offline-core.js');
-var STATIC = 'transcash-pwa-v5.23-shell-1';
+var STATIC = 'transcash-pwa-v5.25-shell-1';
 var APP_ASSETS = [
   '/transcash/offline',
   '/transcash/manifest.webmanifest',

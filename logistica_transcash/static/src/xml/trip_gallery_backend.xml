@@ -4,7 +4,7 @@
   <div class="tc-trip-gallery-backend">
    <t t-if="props.record.resId">
     <iframe class="tc-trip-gallery-frame" title="Fotos, videos y firmas del embarque"
-      t-att-src="props.record.resModel === 'transcash.guia' ? '/transcash/guias/' + props.record.resId + '/galeria-viaje?embedded=1' : '/transcash/embarques/' + props.record.resId + '/galeria?embedded=1'"
+      t-att-src="props.record.resModel === 'transcash.hoja.ruta' ? '/transcash/backoffice/rutas/' + props.record.resId + '/galeria?embedded=1' : props.record.resModel === 'transcash.guia' ? '/transcash/guias/' + props.record.resId + '/galeria-viaje?embedded=1' : '/transcash/embarques/' + props.record.resId + '/galeria?embedded=1'"
       loading="lazy" referrerpolicy="same-origin"/>
    </t>
    <t t-else=""><p>Guarde el embarque para consultar sus evidencias.</p></t>
