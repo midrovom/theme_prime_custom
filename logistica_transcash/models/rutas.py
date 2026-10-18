@@ -8,7 +8,7 @@ TIPO_VEHICULO = [('mula', 'Mula / tractocamión'), ('camion', 'Camión'),
 
 class TarifaTraslado(models.Model):
     _name = 'transcash.tarifa.traslado'
-    _description = 'Tarifa de transporte por vehículo y destino'
+    _description = 'Precio por embarque / viaje según vehículo y destino de cobro'
     _order = 'destino_codigo, tipo_vehiculo'
 
     active = fields.Boolean(default=True)
@@ -18,7 +18,8 @@ class TarifaTraslado(models.Model):
     destino_codigo = fields.Char('Código destino (histórico)', required=True, index=True, readonly=True)
     destino_nombre = fields.Char('Nombre destino (histórico)', required=True, readonly=True)
     moneda_id = fields.Many2one('res.currency', related='company_id.currency_id')
-    precio = fields.Monetary(required=True, currency_field='moneda_id')
+    precio = fields.Monetary('Valor por viaje (embarque completo)', required=True, currency_field='moneda_id',
+        help='Precio de UN embarque, incluso si tiene varias hojas de ruta.')
     _sql_constraints = [
         ('tarifa_tipo_destino_unica', 'unique(company_id,tipo_vehiculo,destino_codigo)',
          'Ya existe una tarifa de ese vehículo para ese destino y compañía.'),
@@ -62,8 +63,9 @@ class TarifaTraslado(models.Model):
 
     def unlink(self):
         self._check_edit_permission()
-        if self.env['transcash.hoja.ruta'].sudo().search_count([('tarifa_id', 'in', self.ids)]):
-            raise UserError(_('Esta tarifa ya fue usada: desactívela en lugar de eliminarla.'))
+        if (self.env['transcash.hoja.ruta'].sudo().search_count([('tarifa_id', 'in', self.ids)]) or
+                self.env['transcash.embarque'].sudo().search_count([('tarifa_id', 'in', self.ids)])):
+            raise UserError(_('Esta tarifa ya fue utilizada en una ruta histórica o embarque: desactívela en lugar de eliminarla.'))
         return super().unlink()
 
     def _check_edit_permission(self):
@@ -102,6 +104,8 @@ class HojaRuta(models.Model):
                                     ('video/quicktime','MOV')], string='Formato de video', copy=False)
     fecha_video = fields.Datetime(readonly=True, copy=False)
     video_por_id = fields.Many2one('res.users', readonly=True, copy=False)
+    # Campos LEGADOS: se conservan para no perder el historial de versiones 5.9–5.15.
+    # NO se calculan ni se utilizan para cobrar rutas nuevas.
     tarifa_id = fields.Many2one('transcash.tarifa.traslado', readonly=True)
     moneda_id = fields.Many2one('res.currency', related='company_id.currency_id')
     tarifa_referencial = fields.Monetary(currency_field='moneda_id', readonly=True)
@@ -342,12 +346,8 @@ class HojaRuta(models.Model):
                                       'Abra «Agregar / quitar guías» y autorice expresamente la reasignación.') % guia.name)
                 # El operador escogió el chofer/empresa de la ruta: si la guía
                 # difiere, queda constancia individual de la decisión.
-            tarifa = self.env['transcash.tarifa.traslado'].sudo().search([
-                ('company_id','=',ruta.company_id.id),('tipo_vehiculo','=',ruta.tipo_vehiculo),
-                ('destino_id','=',ruta.destino_id.id),('active','=',True)], limit=1)
-            if not tarifa:
-                raise UserError(_('Configure una tarifa para vehículo %s, destino %s.') %
-                                (ruta.tipo_vehiculo, ruta.destino_codigo))
+            # Planificar una ruta NO exige ni devenga un flete: el transporte cobra
+            # una sola vez por embarque, aunque se hagan múltiples entregas.
             for guia in guides:
                 changes = {'hoja_ruta_id': ruta.id}
                 diferencia = ruta._motivos_reasignacion(guia)
@@ -367,7 +367,7 @@ class HojaRuta(models.Model):
                 if not guia.destino_id and ruta._coincide_destino(guia):
                     guia.sudo().write({'destino_id': ruta.destino_id.id,
                                        'destino_codigo': ruta.destino_id.codigo})
-            ruta.sudo().write({'state':'planificada','tarifa_id':tarifa.id,'tarifa_referencial':tarifa.precio})
+            ruta.sudo().write({'state':'planificada'})
             for guia in guides:
                 guia._track_event('Asignada a hoja de ruta %s' % ruta.name)
         return True
@@ -407,16 +407,17 @@ class EmbarqueRuta(models.Model):
     _inherit = 'transcash.embarque'
 
     ruta_ids = fields.One2many('transcash.hoja.ruta', 'embarque_id', string='Hojas de ruta')
+    # Mantenemos la misma columna almacenada de V5.15 para preservar importes
+    # históricos. Ahora se registra UN precio por viaje, sin dependencias de rutas.
     tarifa_referencial_total = fields.Monetary(
-        'Valor referencial del embarque', currency_field='moneda_id',
-        compute='_compute_tarifa_referencial_total', store=True, readonly=True,
-        help='Suma de las tarifas capturadas en las hojas de ruta, sin recalcular el precio histórico desde el maestro.')
+        'Valor referencial del VIAJE', currency_field='moneda_id', readonly=True, copy=False,
+        help='Tarifa capturada una sola vez al armar el embarque. No se suman las hojas de ruta.')
+    tarifa_id = fields.Many2one('transcash.tarifa.traslado',
+        string='Tarifario aplicado al viaje', readonly=True, copy=False, ondelete='restrict')
+    destino_tarifa_id = fields.Many2one('transcash.destino',
+        string='Destino de cobro del viaje', readonly=True, copy=False, ondelete='restrict',
+        help='Destino principal elegido para aplicar una sola tarifa al embarque completo.')
     tipo_vehiculo = fields.Selection(TIPO_VEHICULO, string='Tipo de vehículo')
-
-    @api.depends('ruta_ids', 'ruta_ids.tarifa_referencial')
-    def _compute_tarifa_referencial_total(self):
-        for trip in self:
-            trip.tarifa_referencial_total = sum(trip.ruta_ids.mapped('tarifa_referencial'))
 
     aceptado_chofer = fields.Boolean('Carga aceptada por chofer', readonly=True, copy=False)
     fecha_aceptacion_chofer = fields.Datetime(readonly=True, copy=False)
@@ -521,28 +522,53 @@ class ArmarEmbarqueWizard(models.TransientModel):
 
     embarque_id = fields.Many2one('transcash.embarque', readonly=True)
     ruta_ids = fields.Many2many('transcash.hoja.ruta', string='Hojas de ruta', required=True)
-    moneda_id = fields.Many2one('res.currency', compute='_compute_resumen_tarifas', readonly=True)
-    importe_nuevas_rutas = fields.Monetary('Valor de rutas seleccionadas',
-        currency_field='moneda_id', compute='_compute_resumen_tarifas', readonly=True)
-    importe_rutas_existentes = fields.Monetary('Valor de rutas ya incluidas',
-        currency_field='moneda_id', compute='_compute_resumen_tarifas', readonly=True)
-    importe_total_estimado = fields.Monetary('VALOR REFERENCIAL DEL EMBARQUE',
-        currency_field='moneda_id', compute='_compute_resumen_tarifas', readonly=True)
+    destino_cobro_id = fields.Many2one('transcash.destino',
+        string='Destino para tarifa del viaje',
+        help='Seleccione UNO de los destinos de las rutas. Se cobra una vez por embarque, no por ruta.')
+    destinos_posibles_ids = fields.Many2many('transcash.destino',
+        compute='_compute_destinos_posibles', string='Destinos de las rutas')
+    moneda_id = fields.Many2one('res.currency', compute='_compute_resumen_tarifa', readonly=True)
+    importe_total_estimado = fields.Monetary('VALOR POR EMBARQUE COMPLETO',
+        currency_field='moneda_id', compute='_compute_resumen_tarifa', readonly=True)
 
-    @api.depends('ruta_ids', 'ruta_ids.tarifa_referencial',
-                 'embarque_id', 'embarque_id.ruta_ids.tarifa_referencial',
-                 'embarque_id.company_id')
-    def _compute_resumen_tarifas(self):
-        """Vista previa reactiva: no guarda ni negocia montos antes de confirmar."""
+    @api.depends('ruta_ids', 'ruta_ids.destino_id')
+    def _compute_destinos_posibles(self):
         for wizard in self:
-            company = (wizard.embarque_id.company_id or
-                       (wizard.ruta_ids[0].company_id if wizard.ruta_ids else self.env.company))
+            wizard.destinos_posibles_ids = wizard.ruta_ids.mapped('destino_id')
+
+    @api.onchange('ruta_ids', 'embarque_id')
+    def _onchange_rutas_precio(self):
+        """Sugerir destino solo cuando es inequívoco; nunca adivinar en multiruta."""
+        if self.embarque_id:
+            self.destino_cobro_id = self.embarque_id.destino_tarifa_id
+            return
+        destinos = self.ruta_ids.mapped('destino_id')
+        if self.destino_cobro_id not in destinos:
+            self.destino_cobro_id = destinos if len(destinos) == 1 else False
+
+    @api.model
+    def _buscar_tarifa_viaje(self, company, tipo, destino):
+        if not company or not tipo or not destino:
+            return self.env['transcash.tarifa.traslado']
+        return self.env['transcash.tarifa.traslado'].sudo().search([
+            ('company_id', '=', company.id), ('tipo_vehiculo', '=', tipo),
+            ('destino_id', '=', destino.id), ('active', '=', True)], limit=1)
+
+    @api.depends('ruta_ids', 'ruta_ids.tipo_vehiculo', 'ruta_ids.destino_id',
+                 'destino_cobro_id', 'embarque_id', 'embarque_id.tarifa_referencial_total')
+    def _compute_resumen_tarifa(self):
+        """Vista previa de UN SOLO flete por embarque; sin sumar rutas."""
+        for wizard in self:
+            first = wizard.ruta_ids[:1]
+            company = wizard.embarque_id.company_id or (first.company_id if first else self.env.company)
             wizard.moneda_id = company.currency_id
-            wizard.importe_nuevas_rutas = sum(wizard.ruta_ids.mapped('tarifa_referencial'))
-            wizard.importe_rutas_existentes = sum(
-                wizard.embarque_id.ruta_ids.mapped('tarifa_referencial'))
-            wizard.importe_total_estimado = (
-                wizard.importe_nuevas_rutas + wizard.importe_rutas_existentes)
+            if wizard.embarque_id:
+                wizard.importe_total_estimado = wizard.embarque_id.tarifa_referencial_total
+                continue
+            destinos = wizard.ruta_ids.mapped('destino_id')
+            destino = wizard.destino_cobro_id or (destinos if len(destinos) == 1 else False)
+            tarifa = self._buscar_tarifa_viaje(company, first.tipo_vehiculo if first else False, destino)
+            wizard.importe_total_estimado = tarifa.precio if tarifa else 0.0
 
     def action_confirm(self):
         self.ensure_one()
@@ -574,10 +600,24 @@ class ArmarEmbarqueWizard(models.TransientModel):
                 (route.placa or '').strip().upper() != (first.placa or '').strip().upper() or
                 route.tipo_vehiculo != first.tipo_vehiculo):
                 raise UserError(_('Las rutas deben compartir compañía, chofer, transporte, placa y tipo de vehículo.'))
+        tarifa_viaje = False
+        destino_cobro = False
         if not existing:
+            destinos = routes.mapped('destino_id')
+            destino_cobro = self.destino_cobro_id or (destinos if len(destinos) == 1 else False)
+            if not destino_cobro or destino_cobro not in destinos:
+                raise UserError(_('Seleccione el destino de cobro ENTRE LOS DESTINOS de las rutas seleccionadas.'))
+            tarifa_viaje = self._buscar_tarifa_viaje(first.company_id, first.tipo_vehiculo, destino_cobro)
+            if not tarifa_viaje or tarifa_viaje.precio <= 0:
+                raise UserError(_('No hay precio por viaje para %(vehiculo)s hacia %(destino)s. '
+                                  'Configure el maestro de fletes antes de armar el embarque.') %
+                                {'vehiculo': first.tipo_vehiculo, 'destino': destino_cobro.display_name})
             existing = trip_model.sudo().create({'company_id':first.company_id.id,
                 'chofer_usuario_id':driver,'proveedor_id':first.proveedor_id.id,
-                'placa':first.placa,'origen':first.origen,'tipo_vehiculo':first.tipo_vehiculo})
+                'placa':first.placa,'origen':first.origen,'tipo_vehiculo':first.tipo_vehiculo,
+                'destino_tarifa_id':destino_cobro.id, 'tarifa_id':tarifa_viaje.id,
+                'tarifa_referencial_total':tarifa_viaje.precio,
+                'valor_acordado':tarifa_viaje.precio})
         if existing and (existing.company_id != first.company_id or existing.proveedor_id != first.proveedor_id or
                          (existing.placa or '').strip().upper() != (first.placa or '').strip().upper() or
                          existing.tipo_vehiculo != first.tipo_vehiculo):
@@ -587,15 +627,73 @@ class ArmarEmbarqueWizard(models.TransientModel):
         guides = routes.mapped('guia_ids')
         if not guides or any(g.embarque_id for g in guides):
             raise UserError(_('Alguna ruta no tiene guías disponibles.'))
-        old_reference = sum(existing.ruta_ids.mapped('tarifa_referencial'))
-        old_negotiated = existing.valor_acordado
+        # Añadir rutas a un mismo viaje NO genera otro cargo ni modifica el
+        # valor acordado, la tarifa capturada o la liquidación. Esto también
+        # preserva importes históricos de embarques creados antes de V5.16.
         routes.sudo().write({'embarque_id':existing.id})
         guides.sudo().write({'embarque_id':existing.id})
-        # Valor sugerido; Logística conserva la posibilidad de negociar y ajustar el total.
-        if existing.estado_aprobacion == 'pendiente' and (not old_negotiated or abs(old_negotiated - old_reference) < 0.00001):
-            existing.sudo().write({'valor_acordado':sum(existing.ruta_ids.mapped('tarifa_referencial'))})
         return {'type':'ir.actions.act_window', 'res_model':'transcash.embarque',
                 'res_id':existing.id, 'view_mode':'form', 'target':'current'}
+
+
+class CorregirTarifaEmbarqueWizard(models.TransientModel):
+    _name = 'transcash.corregir.tarifa.embarque.wizard'
+    _description = 'Revisar la tarifa única de un embarque existente'
+
+    embarque_id = fields.Many2one('transcash.embarque', required=True, readonly=True)
+    destino_cobro_id = fields.Many2one('transcash.destino', string='Destino para cobrar viaje', required=True)
+    destinos_posibles_ids = fields.Many2many('transcash.destino', compute='_compute_destinos')
+    moneda_id = fields.Many2one('res.currency', related='embarque_id.moneda_id')
+    valor_sugerido = fields.Monetary('Nuevo valor referencial del viaje',
+        currency_field='moneda_id', compute='_compute_valor_sugerido')
+    actualizar_valor_acordado = fields.Boolean('Actualizar también el valor negociado', default=False,
+        help='Solo marque esta opción si Logística desea reemplazar expresamente el importe anterior.')
+
+    @api.depends('embarque_id', 'embarque_id.ruta_ids', 'embarque_id.ruta_ids.destino_id')
+    def _compute_destinos(self):
+        for wizard in self:
+            wizard.destinos_posibles_ids = wizard.embarque_id.ruta_ids.mapped('destino_id')
+
+    @api.depends('embarque_id', 'embarque_id.tipo_vehiculo', 'destino_cobro_id')
+    def _compute_valor_sugerido(self):
+        tarifa_model = self.env['transcash.tarifa.traslado'].sudo()
+        for wizard in self:
+            emb = wizard.embarque_id
+            tarifa = tarifa_model.search([
+                ('company_id', '=', emb.company_id.id),
+                ('tipo_vehiculo', '=', emb.tipo_vehiculo),
+                ('destino_id', '=', wizard.destino_cobro_id.id),
+                ('active', '=', True)], limit=1) if emb and wizard.destino_cobro_id else tarifa_model
+            wizard.valor_sugerido = tarifa.precio if len(tarifa) == 1 else 0.0
+
+    def action_confirm(self):
+        self.ensure_one()
+        trip = self.embarque_id
+        trip._check_logistics_finance()
+        self.env.cr.execute('SELECT id FROM transcash_embarque WHERE id=%s FOR UPDATE', (trip.id,))
+        trip.invalidate_recordset(['estado_aprobacion', 'liquidacion_linea_id', 'ruta_ids', 'tipo_vehiculo'])
+        if trip.estado_aprobacion != 'pendiente' or trip.liquidacion_linea_id:
+            raise UserError(_('Un flete ya aprobado o liquidado no puede repriciarse.'))
+        if not trip.ruta_ids or self.destino_cobro_id not in trip.ruta_ids.mapped('destino_id'):
+            raise UserError(_('El destino de cobro debe pertenecer a las rutas de este embarque.'))
+        tarifa = self.env['transcash.tarifa.traslado'].sudo().search([
+            ('company_id', '=', trip.company_id.id),
+            ('tipo_vehiculo', '=', trip.tipo_vehiculo),
+            ('destino_id', '=', self.destino_cobro_id.id),
+            ('active', '=', True)], limit=1)
+        if not tarifa or tarifa.precio <= 0:
+            raise UserError(_('No existe una tarifa activa para ese vehículo y destino.'))
+        antes_referencia, antes_negociado = trip.tarifa_referencial_total, trip.valor_acordado
+        values = {'destino_tarifa_id': self.destino_cobro_id.id,
+                  'tarifa_id': tarifa.id, 'tarifa_referencial_total': tarifa.precio}
+        if self.actualizar_valor_acordado:
+            values['valor_acordado'] = tarifa.precio
+        trip.sudo().write(values)
+        trip.message_post(body=_('Revisión de tarifa única por %s: referencial %s → %s; '
+                                 'acordado anterior %s; actualizar acordado: %s.') %
+                          (self.env.user.display_name, antes_referencia, tarifa.precio,
+                           antes_negociado, _('Sí') if self.actualizar_valor_acordado else _('No')))
+        return {'type': 'ir.actions.act_window_close'}
 
 
 class GuiaRuta(models.Model):
@@ -631,6 +729,16 @@ class EmbarqueRutasActions(models.Model):
         return {'type':'ir.actions.act_window', 'name':_('Armar embarque con rutas'),
                 'res_model':'transcash.armar.embarque.wizard','view_mode':'form',
                 'target':'new'}
+
+    def action_open_reprice_trip(self):
+        self.ensure_one()
+        self._check_logistics_finance()
+        if self.estado_aprobacion != 'pendiente' or self.liquidacion_linea_id:
+            raise UserError(_('Solo puede revisar tarifas de embarques no aprobados ni liquidados.'))
+        return {'type': 'ir.actions.act_window', 'name': _('Revisar tarifa única del embarque'),
+                'res_model': 'transcash.corregir.tarifa.embarque.wizard', 'view_mode': 'form',
+                'target': 'new', 'context': {'default_embarque_id': self.id,
+                'default_destino_cobro_id': self.destino_tarifa_id.id}}
 
     def action_open_add_routes(self):
         self.ensure_one()

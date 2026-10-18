@@ -9,8 +9,14 @@
         <main class="tc-main tc-home">
           <div class="tc-eyebrow">🚚 OPERACIÓN DE TRANSPORTE</div>
           <a t-if="request.env.user.has_group('logistica_transcash.group_transcash_transportista')" href="/transcash/proveedor" class="tc-button tc-button-primary">💼 Ver valores y liquidaciones del proveedor →</a>
-          <h1 class="tc-heading">Mis embarques<span class="tc-title-dot">.</span></h1>
-          <p class="tc-muted">Tus viajes son planificados por Logística. Revisa los videos de cada hoja de ruta, acepta la carga e inicia el traslado. Entrega cada guía desde tu celular.</p>
+          <h1 class="tc-heading"><t t-esc="'Embarques en operación' if es_operador else 'Mis embarques' if es_chofer else 'Viajes en consulta'"/><span class="tc-title-dot">.</span></h1>
+          <div t-if="es_operador" class="tc-ops-shortcuts">
+            <a class="tc-button tc-button-primary" href="/transcash/operacion/rutas/nueva">＋ Crear hoja de ruta</a>
+            <a class="tc-button tc-button-outline" href="/transcash/operacion/embarques/nuevo">🚚 Armar embarque</a>
+          </div>
+          <p t-if="es_chofer" class="tc-muted">Revisa los videos de cada ruta, acepta la carga y realiza tus entregas desde el celular.</p>
+          <p t-elif="es_operador" class="tc-muted">Crea hojas de ruta, agrega guías, agrupa rutas en un viaje, valida los videos y libera el embarque al chofer.</p>
+          <p t-else="" class="tc-muted">Consulta el estado de los viajes. Las acciones de planificación corresponden únicamente a Logística.</p>
           <div t-if="error" class="tc-alert tc-alert-error" role="alert"><strong>Revisa tu selección</strong><span t-esc="error"/></div>
           <div t-if="es_chofer and embarque_activo" class="tc-next-card" role="status">
             <div class="tc-next-icon">🚚</div>
@@ -25,7 +31,7 @@
               <div class="tc-section-heading"><h2>Viajes</h2><span class="tc-count" t-esc="len(embarques)"/></div>
               <div class="tc-embark-list">
                 <t t-foreach="embarques" t-as="e">
-                  <a t-att-href="'/transcash/embarques/%s' % e.id" class="tc-guide-card tc-embark-card">
+                  <a t-att-href="('/transcash/operacion/embarques/%s' if es_operador else '/transcash/embarques/%s') % e.id" class="tc-guide-card tc-embark-card">
                     <div class="tc-guide-top"><span class="tc-guide-number" t-esc="e.name"/>
                       <span t-att-class="'tc-status tc-s-' + e.state" t-esc="dict(e._fields['state'].selection).get(e.state)"/></div>
                     <strong t-esc="e.proveedor_id.name"/><div class="tc-embark-meta">
@@ -40,9 +46,12 @@
             </section>
             </div>
         </main>
-        <nav class="tc-bottom" aria-label="Navegación"><a class="tc-bottom-item active" href="/transcash/embarques">🚚 Embarques</a>
-          <a class="tc-bottom-item" href="/transcash/guias">▤ Guías</a>
-          <a class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1">⇅ Pendientes</a></nav>
+        <nav class="tc-bottom" aria-label="Navegación">
+          <a t-if="es_operador" class="tc-bottom-item" href="/transcash/operacion">▦ Operación</a>
+          <a t-if="es_operador" class="tc-bottom-item" href="/transcash/operacion/rutas">▤ Rutas</a>
+          <a class="tc-bottom-item active" href="/transcash/embarques">🚚 Viajes</a>
+          <a class="tc-bottom-item" t-att-href="'/transcash/guias?vista=consulta' if es_operador else '/transcash/guias'">▤ Guías</a>
+          <a t-if="es_chofer" class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1">⇅ Pendientes</a></nav>
       </div>
     </body></html>
   </template>
@@ -120,7 +129,7 @@
  </t></div>
 </section></main>
         <nav class="tc-bottom"><a class="tc-bottom-item active" href="/transcash/embarques">🚚 Embarques</a>
-          <a class="tc-bottom-item" href="/transcash/guias">▤ Guías</a>
+          <a class="tc-bottom-item" t-att-href="'/transcash/guias?vista=consulta' if not request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') else '/transcash/guias'">▤ Guías</a>
           <a class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1">⇅ Pendientes</a></nav>
       </div>
     </body></html>

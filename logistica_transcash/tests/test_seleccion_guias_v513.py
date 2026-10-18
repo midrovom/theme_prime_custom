@@ -85,7 +85,7 @@ class TestSeleccionGuiasRuta(TransactionCase):
         ruta = self._route([linked_without_code.id, unassigned.id])
         ruta.action_confirm_route()
         self.assertEqual(ruta.state, 'planificada')
-        self.assertEqual(ruta.tarifa_referencial, 150.0)
+        self.assertEqual(ruta.tarifa_referencial, 0.0)  # No se cobra la hoja de ruta
         self.assertEqual(linked_without_code.hoja_ruta_id, ruta)
         self.assertEqual(unassigned.chofer_usuario_id, self.driver)
         self.assertEqual(unassigned.proveedor_id, self.vendor)

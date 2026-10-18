@@ -161,7 +161,8 @@ class Guia(models.Model):
         self.ensure_one()
         user = self.env.user
         permitted = (user.has_group('logistica_transcash.group_transcash_consulta')
-                     or user.has_group('logistica_transcash.group_logistica_bodega'))
+                     or user.has_group('logistica_transcash.group_logistica_bodega')
+                     or user.has_group('logistica_transcash.group_transcash_operador_rutas'))
         if user.share or not permitted or self.company_id not in user.company_ids:
             from odoo.exceptions import AccessError
             raise AccessError(_('No dispone de acceso a esta galería.'))

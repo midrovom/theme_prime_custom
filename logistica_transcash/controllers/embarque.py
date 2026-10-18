@@ -17,7 +17,8 @@ class EmbarquePortal(TranscashPortal):
             return True
         return bool(not user.share and rec.company_id in user.company_ids and (
             user.has_group('logistica_transcash.group_transcash_consulta') or
-            user.has_group('logistica_transcash.group_logistica_bodega')))
+            user.has_group('logistica_transcash.group_logistica_bodega') or
+            user.has_group('logistica_transcash.group_transcash_operador_rutas')))
 
     def _get(self, embark_id):
         rec = request.env['transcash.embarque'].sudo().browse(embark_id).exists()
@@ -39,7 +40,7 @@ class EmbarquePortal(TranscashPortal):
         return items.filtered(lambda g: (g.placa or '').strip().upper() == placa)[:100]
 
     def _render(self, rec, error=None):
-        driver = (request.env.user.has_group('logistica_transcash.group_transcash_chofer') and
+        driver = (request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_chofer') and
                   rec.chofer_usuario_id.id == request.env.user.id)
         return request.render('logistica_transcash.portal_embarque_detalle', {
             'embarque':rec, 'es_chofer':driver, 'error':error,
@@ -50,9 +51,12 @@ class EmbarquePortal(TranscashPortal):
     @http.route('/transcash/embarques', type='http', auth='user', website=True, methods=['GET'])
     def list_embarks(self, **kw):
         user = request.env.user
-        if user.has_group('logistica_transcash.group_transcash_chofer'):
+        if not user.share and (user.has_group('logistica_transcash.group_transcash_operador_rutas') or
+                               user.has_group('logistica_transcash.group_logistica_manager')):
+            domain = [('company_id','in',user.company_ids.ids)]
+        elif user.has_group('logistica_transcash.group_transcash_chofer') and user.share:
             domain = [('chofer_usuario_id','=',user.id)]
-        elif user.has_group('logistica_transcash.group_transcash_transportista'):
+        elif user.has_group('logistica_transcash.group_transcash_transportista') and user.share:
             domain = [('proveedor_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]
         elif not user.share and (user.has_group('logistica_transcash.group_transcash_consulta') or
                                   user.has_group('logistica_transcash.group_logistica_bodega')):
@@ -61,13 +65,13 @@ class EmbarquePortal(TranscashPortal):
             return request.not_found()
         recs = request.env['transcash.embarque'].sudo().search(domain, order='create_date desc', limit=100)
         activo = request.env['transcash.embarque'].sudo().browse()
-        if user.has_group('logistica_transcash.group_transcash_chofer'):
+        if user.share and user.has_group('logistica_transcash.group_transcash_chofer'):
             activo = request.env['transcash.embarque'].sudo().search([
                 ('chofer_usuario_id', '=', user.id),
                 ('state', 'in', ['preparacion','embarcado','ruta']),
             ], order='create_date desc', limit=1)
         disponibles = request.env['transcash.guia'].sudo()
-        if user.has_group('logistica_transcash.group_transcash_chofer'):
+        if user.share and user.has_group('logistica_transcash.group_transcash_chofer'):
             disponibles = disponibles.search([
                 ('chofer_usuario_id','=',user.id),('state','=','registrada'),
                 ('embarque_id','=',False), ('proveedor_id','!=',False),
@@ -75,7 +79,8 @@ class EmbarquePortal(TranscashPortal):
         return request.render('logistica_transcash.portal_embarques', {
             'embarques':recs,'disponibles':disponibles,'embarque_activo':activo,
             'csrf_token':request.csrf_token(),
-            'es_chofer': user.has_group('logistica_transcash.group_transcash_chofer'),
+            'es_chofer': user.share and user.has_group('logistica_transcash.group_transcash_chofer'),
+            'es_operador': not user.share and (user.has_group('logistica_transcash.group_transcash_operador_rutas') or user.has_group('logistica_transcash.group_logistica_manager')),
             'error':kw.get('error'),
         })
 

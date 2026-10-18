@@ -38,6 +38,8 @@
           invisible="state != 'embarcado' or ruta_ids" groups="logistica_transcash.group_logistica_bodega"/>
         <button name="action_configure_liquidation" type="object" string="Negociar valor del viaje"
           invisible="estado_aprobacion != 'pendiente'" groups="logistica_transcash.group_logistica_manager"/>
+        <button name="action_open_reprice_trip" type="object" string="Revisar tarifa ÚNICA del embarque"
+          invisible="estado_aprobacion != 'pendiente'" groups="logistica_transcash.group_logistica_manager"/>
         <button name="action_approve_transport" type="object" string="Aprobar flete para pago" class="btn-primary"
           invisible="state != 'entregado' or estado_aprobacion != 'pendiente'"
           groups="logistica_transcash.group_logistica_manager"/>
@@ -50,6 +52,7 @@
         <group string="Valor del embarque" class="tc-valor-embarque"
           groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad">
           <field name="moneda_id" invisible="1"/>
+          <field name="destino_tarifa_id" readonly="1"/>
           <field name="tarifa_referencial_total" readonly="1"/>
           <field name="valor_acordado" readonly="1"
             groups="logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad"/>
@@ -72,7 +75,7 @@
           <field name="fecha_aceptacion_chofer"/><field name="observacion_rechazo"/></group>
           <field name="ruta_ids" readonly="1"><list create="0" delete="0">
             <field name="name"/><field name="destino_nombre"/><field name="tipo_vehiculo"/>
-            <field name="state"/><field name="tarifa_referencial"/></list></field></page>
+            <field name="state"/></list></field></page>
           <page string="Guías transportadas"><field name="guia_ids" readonly="1">
           <list create="0" delete="0"><field name="name"/><field name="tipo_documento"/><field name="numero_documento"/>
             <field name="destinatario_id"/><field name="destino"/><field name="state" widget="badge"/>
@@ -111,7 +114,7 @@
     <field name="context">{'search_default_por_aprobar':1}</field>
   </record>
   <menuitem id="menu_transcash_embarques" name="Embarques / viajes" parent="menu_transcash_root"
-    action="action_transcash_embarques" sequence="8" groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta"/>
+    action="action_transcash_embarques" sequence="8" groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta,logistica_transcash.group_transcash_operador_rutas"/>
   <menuitem id="menu_transcash_embarques_pagos" name="Aprobar fletes" parent="menu_transcash_root"
     action="action_transcash_embarques_pagos" sequence="41" groups="logistica_transcash.group_logistica_manager"/>
   <record id="action_transcash_armar_embarque" model="ir.actions.act_window">

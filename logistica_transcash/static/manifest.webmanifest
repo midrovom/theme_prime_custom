@@ -2,7 +2,7 @@
   "name": "Transcash · Logística",
   "short_name": "Transcash",
   "description": "PWA con guías, evidencias y roturas por producto, con bandeja de sincronización offline",
-  "start_url": "/transcash/guias",
+  "start_url": "/transcash",
   "scope": "/transcash/",
   "display": "standalone",
   "background_color": "#f7f9fb",

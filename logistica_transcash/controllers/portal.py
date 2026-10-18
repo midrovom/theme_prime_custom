@@ -44,7 +44,10 @@ class TranscashPortal(http.Controller):
     def _visible_domain(self):
         user = request.env.user
         partner = user.partner_id.commercial_partner_id
-        if user.has_group('logistica_transcash.group_transcash_consulta') or user.has_group('logistica_transcash.group_logistica_bodega'):
+        if not user.share and (user.has_group('logistica_transcash.group_transcash_consulta') or
+                               user.has_group('logistica_transcash.group_logistica_bodega') or
+                               user.has_group('logistica_transcash.group_transcash_operador_rutas') or
+                               user.has_group('logistica_transcash.group_logistica_manager')):
             return [('company_id','in', user.company_ids.ids)]
         recipient = ('destinatario_id', 'child_of', partner.id if partner else 0)
         if user.has_group('logistica_transcash.group_transcash_transportista'):
@@ -58,9 +61,17 @@ class TranscashPortal(http.Controller):
         if not guia:
             return False
         user = request.env.user
+        if user.share and not any(user.has_group('logistica_transcash.%s' % role)
+                for role in ('group_transcash_chofer','group_transcash_cliente','group_transcash_transportista')):
+            return False
+        if not user.share and not any(user.has_group('logistica_transcash.%s' % role)
+                for role in ('group_transcash_operador_rutas', 'group_logistica_manager',
+                             'group_logistica_bodega', 'group_transcash_consulta')):
+            return False
         if not (guia.chofer_usuario_id.id == user.id and user.has_group('logistica_transcash.group_transcash_chofer')) and not guia._is_recipient(user) and not (
                 user.has_group('logistica_transcash.group_transcash_consulta') or
                 user.has_group('logistica_transcash.group_logistica_bodega') or
+                (not user.share and user.has_group('logistica_transcash.group_transcash_operador_rutas')) or
                 (user.has_group('logistica_transcash.group_transcash_transportista') and
                  guia.proveedor_id.commercial_partner_id == user.partner_id.commercial_partner_id)):
             return False
@@ -69,7 +80,10 @@ class TranscashPortal(http.Controller):
         return guia
 
     def _render_guide(self, guia, error=None):
-        interno = request.env.user.has_group('logistica_transcash.group_transcash_consulta') or request.env.user.has_group('logistica_transcash.group_logistica_bodega')
+        interno = not request.env.user.share and (
+            request.env.user.has_group('logistica_transcash.group_transcash_consulta') or
+            request.env.user.has_group('logistica_transcash.group_logistica_bodega') or
+            request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas'))
         historial = guia.evento_ids if interno else guia.evento_ids.filtered('publico_cliente')
         return request.render('logistica_transcash.portal_guia_detalle', {
             'guia': guia,
@@ -87,6 +101,21 @@ class TranscashPortal(http.Controller):
 
     @http.route('/transcash/guias', type='http', auth='user', website=True, methods=['GET'])
     def guides(self, **kwargs):
+        user = request.env.user
+        if user.share and not any(user.has_group('logistica_transcash.%s' % role)
+                for role in ('group_transcash_chofer','group_transcash_cliente','group_transcash_transportista')):
+            return request.not_found()
+        if not user.share and not any(user.has_group('logistica_transcash.%s' % role)
+                for role in ('group_transcash_operador_rutas', 'group_logistica_manager',
+                             'group_logistica_bodega', 'group_transcash_consulta')):
+            return request.not_found()
+        # Instalaciones PWA anteriores abrían /transcash/guias directamente.
+        # Redirigir el inicio antiguo del operador a su centro funcional,
+        # conservando el enlace explícito ?vista=consulta para consultar guías.
+        if not user.share and (user.has_group('logistica_transcash.group_transcash_operador_rutas') or
+                               user.has_group('logistica_transcash.group_logistica_manager')) and not (
+                                   kwargs.get('estado') or kwargs.get('vista')):
+            return request.redirect('/transcash/operacion')
         guides = request.env['transcash.guia'].sudo().search(
             self._visible_domain(), order='create_date desc', limit=150)
         selected = kwargs.get('estado') or 'todas'

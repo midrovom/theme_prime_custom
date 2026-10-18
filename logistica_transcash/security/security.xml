@@ -4,7 +4,7 @@
         <field name="sequence">26</field>
     </record>
     <record id="group_logistica_bodega" model="res.groups">
-        <field name="name">Responsable de bodega</field>
+        <field name="name">Responsable de Bodega (control y consulta)</field>
         <field name="category_id" ref="module_category_transcash"/>
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
     </record>
@@ -14,7 +14,7 @@
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
     </record>
     <record id="group_logistica_manager" model="res.groups">
-        <field name="name">Administrador de logística</field>
+        <field name="name">Jefe / Responsable de Logística (planifica, tarifas y fletes)</field>
         <field name="category_id" ref="module_category_transcash"/>
         <field name="implied_ids" eval="[(4, ref('group_logistica_bodega')),(4, ref('group_transcash_operador_rutas'))]"/>
     </record>
@@ -240,6 +240,62 @@
       <field name="name">Destinos por compañía autorizada</field>
       <field name="model_id" ref="model_transcash_destino"/>
       <field name="groups" eval="[(4,ref('group_logistica_manager')),(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
+
+    <!-- Un operador solo lee registros de las compañías de las que forma parte. -->
+    <record id="rule_transcash_operador_company_guia" model="ir.rule">
+      <field name="name">Operador logística: guia por compañía</field>
+      <field name="model_id" ref="model_transcash_guia"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_transcash_operador_company_linea" model="ir.rule">
+      <field name="name">Operador logística: linea por compañía</field>
+      <field name="model_id" ref="model_transcash_guia_linea"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('guia_id.company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_transcash_operador_company_evidencia" model="ir.rule">
+      <field name="name">Operador logística: evidencia por compañía</field>
+      <field name="model_id" ref="model_transcash_evidencia"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('guia_id.company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_transcash_operador_company_evento" model="ir.rule">
+      <field name="name">Operador logística: evento por compañía</field>
+      <field name="model_id" ref="model_transcash_evento"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('guia_id.company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_transcash_operador_company_rotura" model="ir.rule">
+      <field name="name">Operador logística: rotura por compañía</field>
+      <field name="model_id" ref="model_transcash_rotura"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('guia_id.company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_transcash_operador_company_ruta" model="ir.rule">
+      <field name="name">Operador logística: ruta por compañía</field>
+      <field name="model_id" ref="model_transcash_hoja_ruta"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_transcash_operador_company_embarque" model="ir.rule">
+      <field name="name">Operador logística: embarque por compañía</field>
+      <field name="model_id" ref="model_transcash_embarque"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_transcash_operador_company_destino" model="ir.rule">
+      <field name="name">Operador logística: destino por compañía</field>
+      <field name="model_id" ref="model_transcash_destino"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
+      <field name="domain_force">[('company_id','in',company_ids)]</field>
+    </record>
+    <record id="rule_transcash_operador_company_tarifa" model="ir.rule">
+      <field name="name">Operador logística: tarifa por compañía</field>
+      <field name="model_id" ref="model_transcash_tarifa_traslado"/>
+      <field name="groups" eval="[(4,ref('group_transcash_operador_rutas'))]"/>
       <field name="domain_force">[('company_id','in',company_ids)]</field>
     </record>
 </odoo>

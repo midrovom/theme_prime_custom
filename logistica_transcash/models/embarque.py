@@ -144,7 +144,8 @@ class Embarque(models.Model):
             protected = {'name','company_id','state','chofer_usuario_id','proveedor_id',
                          'placa','origen','fecha_embarcado','fecha_salida','fecha_entrega',
                          'estado_aprobacion','aprobado_por_id','aprobado_fecha','notas_revision_logistica',
-                         'aprobacion_excepcional','motivo_excepcion_pago','excepcion_por_id','excepcion_fecha'}
+                         'aprobacion_excepcional','motivo_excepcion_pago','excepcion_por_id','excepcion_fecha',
+                         'tarifa_id','destino_tarifa_id','tarifa_referencial_total'}
             if set(vals) & protected:
                 raise AccessError(_('Para cambiar el embarque use las acciones autorizadas.'))
             if set(vals) & {'valor_acordado'}:

@@ -4,7 +4,7 @@
     <field name="arch" type="xml"><list decoration-success="state == 'aceptada'" decoration-warning="state == 'planificada'">
       <field name="name"/><field name="state" widget="badge"/><field name="embarque_id"/>
       <field name="destino_id"/><field name="tipo_vehiculo"/><field name="placa"/>
-      <field name="chofer_usuario_id"/><field name="proveedor_id"/><field name="tarifa_referencial"/>
+      <field name="chofer_usuario_id"/><field name="proveedor_id"/>
     </list></field>
   </record>
   <record id="view_transcash_ruta_form" model="ir.ui.view">
@@ -26,16 +26,14 @@
           <field name="placa" readonly="state != 'borrador'"/>
           <field name="tipo_vehiculo" readonly="state != 'borrador'"/>
           <field name="origen" readonly="state != 'borrador'"/>
-        </group><group string="Destino y tarifa">
+        </group><group string="Destino (sin cobro por ruta)">
           <field name="destino_id" required="1" readonly="state != 'borrador'"
                  domain="[('company_id','=',company_id),('active','=',True)]"
                  options="{'no_create': True, 'no_create_edit': True}"/>
           <field name="destino_codigo" readonly="1"/>
           <field name="destino_nombre" readonly="1"/>
           <field name="embarque_id" readonly="1"/>
-          <field name="tarifa_id" readonly="1"/>
-          <field name="moneda_id" invisible="1"/>
-          <field name="tarifa_referencial" readonly="1"/>
+          <!-- Precio y cobro corresponden al embarque completo. -->
         </group></group>
         <notebook>
           <page string="Guías de la ruta">
@@ -155,7 +153,7 @@
         options="{'no_create': True, 'no_create_edit': True}"/>
       <field name="destino_codigo" readonly="1"/>
       <field name="destino_nombre" readonly="1"/>
-      <field name="moneda_id" invisible="1"/><field name="precio"/></group></sheet></form></field>
+      <field name="moneda_id" invisible="1"/><field name="precio" string="Valor por viaje completo"/></group></sheet></form></field>
   </record>
   <record id="view_transcash_armar_wizard" model="ir.ui.view">
     <field name="name">transcash.armar.embarque.wizard.form</field>
@@ -166,24 +164,43 @@
         <field name="ruta_ids" widget="many2many_tags"
           domain="[('state','in',['planificada','cargada']),('embarque_id','=',False)]"/>
       </group>
-      <group string="Valor calculado antes de registrar" class="tc-valor-embarque">
+      <group string="Precio ÚNICO del embarque" class="tc-valor-embarque">
+        <field name="destinos_posibles_ids" invisible="1"/>
+        <field name="destino_cobro_id" invisible="embarque_id"
+          domain="[('id', 'in', destinos_posibles_ids)]"
+          options="{'no_create': True, 'no_create_edit': True}"/>
         <field name="moneda_id" invisible="1"/>
-        <field name="importe_nuevas_rutas" readonly="1"/>
-        <field name="importe_rutas_existentes" readonly="1" invisible="not embarque_id"/>
         <field name="importe_total_estimado" readonly="1"/>
       </group>
-      <div class="alert alert-info" role="status">El total es referencial y se obtiene de las tarifas de cada hoja de ruta. El jefe de Logística puede negociar un valor final distinto antes de aprobar el flete.</div>
-      <footer><button name="action_confirm" string="Registrar embarque con este valor" type="object" class="btn-primary"/>
+      <div class="alert alert-info" role="status">El flete se cobra UNA sola vez por embarque aunque contenga varias rutas. Si las rutas tienen destinos distintos, elija el destino de referencia para el cobro. Si agrega rutas a un viaje existente, no se cambia el precio ya registrado.</div>
+      <footer><button name="action_confirm" string="Registrar embarque / agregar rutas" type="object" class="btn-primary"/>
         <button special="cancel" string="Cancelar"/></footer></form></field>
+  </record>
+  <record id="view_transcash_reprice_trip_form" model="ir.ui.view">
+    <field name="name">transcash.corregir.tarifa.embarque.wizard.form</field>
+    <field name="model">transcash.corregir.tarifa.embarque.wizard</field>
+    <field name="arch" type="xml"><form string="Revisar precio del viaje">
+      <group><field name="embarque_id" readonly="1"/>
+        <field name="destinos_posibles_ids" invisible="1"/>
+        <field name="destino_cobro_id" required="1" domain="[('id', 'in', destinos_posibles_ids)]"
+          options="{'no_create': True, 'no_create_edit': True}"/>
+        <field name="moneda_id" invisible="1"/>
+        <field name="valor_sugerido" readonly="1"/>
+        <field name="actualizar_valor_acordado"/>
+      </group>
+      <div class="alert alert-warning">Solo para embarques sin aprobar ni liquidar. El valor negociado se conserva a menos que marque la casilla para reemplazarlo. No se cobran las rutas por separado.</div>
+      <footer><button name="action_confirm" string="Aplicar tarifa al embarque" type="object" class="btn-primary"/>
+        <button special="cancel" string="Cancelar"/></footer>
+    </form></field>
   </record>
   <record id="action_transcash_rutas" model="ir.actions.act_window">
     <field name="name">Hojas de ruta</field><field name="res_model">transcash.hoja.ruta</field><field name="view_mode">list,form</field>
   </record>
   <record id="action_transcash_tarifas" model="ir.actions.act_window">
-    <field name="name">Tarifario de traslados</field><field name="res_model">transcash.tarifa.traslado</field><field name="view_mode">list,form</field>
+    <field name="name">Tarifario por viaje (embarque)</field><field name="res_model">transcash.tarifa.traslado</field><field name="view_mode">list,form</field>
   </record>
   <menuitem id="menu_transcash_rutas" name="Hojas de ruta" parent="menu_transcash_root"
             sequence="6" action="action_transcash_rutas" groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
-  <menuitem id="menu_transcash_tarifas" name="Tarifario por destino y vehículo" parent="menu_transcash_root"
+  <menuitem id="menu_transcash_tarifas" name="Tarifario por viaje y destino" parent="menu_transcash_root"
             sequence="12" action="action_transcash_tarifas" groups="logistica_transcash.group_logistica_manager"/>
 </odoo>

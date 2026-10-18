@@ -16,3 +16,5 @@ from . import test_seleccion_guias_v513
 from . import test_selector_real_v514
 
 from . import test_selector_v515
+
+from . import test_roles_v517
