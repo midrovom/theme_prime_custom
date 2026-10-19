@@ -187,3 +187,155 @@ class TestBudgetERPIntegration(TransactionCase):
             'month': '7', 'planned_amount': 100,
         })
         self.assertAlmostEqual(other.actual_amount, 0.0)
+
+    def test_existing_catalogs_with_inactive_or_historical_padded_codes(self):
+        """Una API no debe insertar un código si ya existe (inactivo o con espacios)."""
+        account = self.account_model.create({
+            'company_id': self.company.id, 'code': '601010109991',
+            'name': 'Nombre anterior', 'active': False,
+        })
+        center = self.center_model.create({
+            'company_id': self.company.id, 'code': 'MAT-LEG',
+            'name': 'Nombre anterior', 'active': False,
+        })
+        # Representa registros antiguos cuyo código no se normalizaba.
+        self.env.cr.execute(
+            'UPDATE expense_budget_account SET code = %s WHERE id = %s',
+            (' 601010109991  ', account.id),
+        )
+        self.env.cr.execute(
+            'UPDATE expense_budget_cost_center SET code = %s WHERE id = %s',
+            ('MAT-LEG       ', center.id),
+        )
+        self.env.invalidate_all()
+        result_accounts = self.sync._sync_accounts(self.company, [
+            {'Codigo': '601010109991', 'Nombre': 'Sueldos y Salarios'},
+        ])
+        result_centers = self.sync._sync_centers(self.company, [
+            {'Codigo': 'MAT-LEG', 'Nombre': 'Centro actualizado'},
+        ])
+        self.assertEqual(result_accounts['created'], 0)
+        self.assertEqual(result_accounts['updated'], 1)
+        self.assertEqual(result_centers['created'], 0)
+        self.assertEqual(result_centers['updated'], 1)
+        self.assertEqual(account.code, '601010109991')
+        self.assertEqual(center.code, 'MAT-LEG')
+        self.assertTrue(account.active)
+        self.assertTrue(center.active)
+        self.assertEqual(account.name, 'Sueldos y Salarios')
+        self.assertEqual(center.name, 'Centro actualizado')
+        self.assertEqual(self.account_model.with_context(active_test=False).search_count([
+            ('company_id', '=', self.company.id), ('code', '=', '601010109991'),
+        ]), 1)
+        self.assertEqual(self.center_model.with_context(active_test=False).search_count([
+            ('company_id', '=', self.company.id), ('code', '=', 'MAT-LEG'),
+        ]), 1)
+
+    def test_consumptions_reuse_existing_catalogs_not_create_placeholders(self):
+        """Cuando ambos catálogos ya existen, consumos no debe intentar insertarlos."""
+        account = self.account_model.create({
+            'company_id': self.company.id, 'code': '601010109992',
+            'name': 'Décimo tercer sueldo',
+        })
+        center = self.center_model.create({
+            'company_id': self.company.id, 'code': 'ADM-992',
+            'name': 'Administración',
+        })
+        budget = self.env['expense.budget'].create({
+            'company_id': self.company.id, 'name': 'Regresión duplicados 2022',
+            'year': 2022,
+        })
+        line = self.env['expense.budget.line'].create({
+            'budget_id': budget.id, 'account_id': account.id,
+            'cost_center_id': center.id, 'subcenter_code': 'GDE',
+            'month': '7', 'planned_amount': 300,
+        })
+        api_record = self.env['api.administrator'].sudo().search([
+            ('company_id', '=', self.company.id),
+        ], limit=1)
+        if not api_record:
+            self.skipTest('Se necesita una conexión api.administrator de prueba.')
+        rows = [{
+            'Codigo': '601010109992', 'Valor': '161.82',
+            'Fecha': 'jul 25 2022 12:00:00:000',
+            'Centro': 'ADM-992       ', 'Subcentro': 'GDE       ',
+        }]
+        first = self.sync._sync_consumptions(self.company, rows, api_record, 2022)
+        second = self.sync._sync_consumptions(self.company, rows, api_record, 2022)
+        self.assertEqual(first['placeholder_accounts'], 0)
+        self.assertEqual(first['placeholder_centers'], 0)
+        self.assertEqual(first['created'], 1)
+        self.assertEqual(second['created'], 0)
+        self.assertEqual(second['unchanged'], 1)
+        self.assertAlmostEqual(line.actual_amount, 161.82)
+        self.assertEqual(self.account_model.search_count([
+            ('company_id', '=', self.company.id), ('code', '=', '601010109992'),
+        ]), 1)
+        self.assertEqual(self.center_model.search_count([
+            ('company_id', '=', self.company.id), ('code', '=', 'ADM-992'),
+        ]), 1)
+
+    def test_guardar_proyeccion_consulta_codigo_centro_subcentro_mes_anio(self):
+        """El ERP puede devolver muchos años: solo cargar abril 2020/DIC/GDE."""
+        Account = self.account_model.with_context(active_test=False)
+        Center = self.center_model.with_context(active_test=False)
+        account = Account.create({
+            'company_id': self.company.id, 'code': '601010101002-TEST-2020',
+            'name': 'Décimo Tercer Sueldo prueba',
+        })
+        center = Center.create({
+            'company_id': self.company.id, 'code': 'DIC-TEST-2020',
+            'name': 'Centro DIC prueba',
+        })
+        opts = {'skip_expense_budget_consumption_on_save': True}
+        budget = self.env['expense.budget'].with_context(**opts).create({
+            'company_id': self.company.id, 'name': 'Presupuesto ejemplo abril', 'year': 2020,
+        })
+        line = self.env['expense.budget.line'].with_context(**opts).create({
+            'budget_id': budget.id, 'account_id': account.id,
+            'cost_center_id': center.id, 'subcenter_code': 'GDE',
+            'month': '4', 'planned_amount': 100,
+        })
+        rows = [
+            {'Codigo': account.code, 'Centro': 'DIC-TEST-2020   ', 'Subcentro': 'GDE   ',
+             'Fecha': 'abr 25 2020 12:00:00:000', 'Valor': '50.00'},
+            {'Codigo': account.code, 'Centro': 'DIC-TEST-2020', 'Subcentro': 'GDE',
+             'Fecha': 'abr 26 2020 12:00:00:000', 'Valor': '10.00'},
+            {'Codigo': account.code, 'Centro': 'DIC-TEST-2020', 'Subcentro': 'GDE',
+             'Fecha': 'jul 25 2020 12:00:00:000', 'Valor': '999.00'},
+            {'Codigo': account.code, 'Centro': 'DIC-TEST-2020', 'Subcentro': 'GDE',
+             'Fecha': 'abr 25 2026 12:00:00:000', 'Valor': '999.00'},
+            {'Codigo': account.code, 'Centro': 'ADM', 'Subcentro': 'GDE',
+             'Fecha': 'abr 25 2020 12:00:00:000', 'Valor': '999.00'},
+            {'Codigo': account.code, 'Centro': 'DIC-TEST-2020', 'Subcentro': 'OTRO',
+             'Fecha': 'abr 25 2020 12:00:00:000', 'Valor': '999.00'},
+            {'Codigo': 'OTRA-CUENTA', 'Centro': 'DIC-TEST-2020', 'Subcentro': 'GDE',
+             'Fecha': 'abr 25 2020 12:00:00:000', 'Valor': '999.00'},
+        ]
+        selected = self.sync._rows_for_saved_lines(rows, line)
+        self.assertEqual(len(selected), 2)
+        self.assertEqual(sum(float(item['Valor']) for item in selected), 60.0)
+        self.assertEqual(len(self.sync._rows_for_saved_lines(rows, line)), 2)
+
+    def test_sincronizacion_catalogo_registros_existentes_no_repite_codigos(self):
+        """Regresión del error unique(company_id, code) reportado por el ERP."""
+        account = self.account_model.with_context(active_test=False).create({
+            'company_id': self.company.id, 'code': '601010101001-EXIST',
+            'name': 'Nombre original', 'active': False,
+        })
+        center = self.center_model.with_context(active_test=False).create({
+            'company_id': self.company.id, 'code': 'MAT-EXIST',
+            'name': 'Centro original', 'active': False,
+        })
+        result_account = self.sync._sync_accounts(self.company, [
+            {'Codigo': '601010101001-EXIST', 'Nombre': 'Sueldos y Salarios'},
+        ])
+        result_center = self.sync._sync_centers(self.company, [
+            {'Codigo': 'MAT-EXIST      ', 'Nombre': 'MAT- ALB - NEXUS      '},
+        ])
+        self.assertEqual(result_account['created'], 0)
+        self.assertEqual(result_center['created'], 0)
+        self.assertTrue(account.active)
+        self.assertTrue(center.active)
+        self.assertEqual(account.name, 'Sueldos y Salarios')
+        self.assertEqual(center.name, 'MAT- ALB - NEXUS')

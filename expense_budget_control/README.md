@@ -178,3 +178,19 @@ En el PDF de Proyectado vs. real se oculta **Consumo inicial**, pero se
 conserva en el cálculo del **Consumo actual**. Se incorpora la columna
 **Total proyectado = Consumo actual + Saldo disponible**, ubicada antes de
 Consumo actual. **Consumo corte** y los saldos no modifican sus fórmulas.
+
+### v1.4.63 — ERP: catálogos completos y consumo al guardar
+
+- **Sincronizar** importa por separado el catálogo completo de cuentas
+  (`getctagastos/2`), el catálogo completo de centros (`getcentrocostos/2`)
+  y los consumos correspondientes al año seleccionado (`getconsumosgastos/2`).
+- La carga de catálogos reutiliza registros existentes por empresa y código,
+  incluso si están inactivos o tenían espacios en el código. Un bloqueo por
+  empresa impide que cron y sincronización manual inserten duplicados en paralelo.
+- Al **guardar** una proyección se vuelve a consultar `getconsumosgastos/2` y
+  se filtra por código de cuenta, centro, subcentro, mes y año del presupuesto.
+  `Consumido` suma los `Valor` correspondientes; los restantes no se asignan
+  a esa línea. Los errores de consulta se registran en **Historial API** sin
+  descartar el presupuesto que se está guardando.
+- No se crean conexiones ni credenciales adicionales. Se reutilizan las tres
+  APIs GET existentes en `api_administrator` desde una sola configuración ERP.

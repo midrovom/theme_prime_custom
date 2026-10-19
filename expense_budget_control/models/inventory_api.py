@@ -8,6 +8,7 @@ from collections import defaultdict
 from datetime import datetime
 from decimal import Decimal
 from urllib.parse import urlsplit
+from psycopg2 import IntegrityError, errorcodes
 import hashlib
 import logging
 
@@ -138,6 +139,92 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         return rows
 
     @api.model
+    def _find_catalog_record(self, Model, company, code):
+        """Buscar también registros históricos inactivos o con espacios en código.
+
+        La búsqueda normal usa el ORM. Como recuperación para catálogos antiguos,
+        BTRIM localiza códigos guardados sin normalizar (ej.: 'MAT       ').
+        No modifica ni elimina registros históricos durante la búsqueda.
+        """
+        code = as_text(code)
+        record = Model.search([
+            ('company_id', '=', company.id), ('code', '=', code),
+        ], limit=1)
+        if record:
+            return record
+        # Model y tabla pertenecen solo a dos modelos fijos del módulo.
+        table = {
+            'expense.budget.account': 'expense_budget_account',
+            'expense.budget.cost.center': 'expense_budget_cost_center',
+        }.get(Model._name)
+        if not table:
+            raise ValueError('Modelo de catálogo no admitido: %s' % Model._name)
+        self.env.cr.execute(
+            'SELECT id FROM %s WHERE company_id = %%s AND BTRIM(code) = %%s '
+            'ORDER BY CASE WHEN code = %%s THEN 0 ELSE 1 END, id LIMIT 2' % table,
+            (company.id, code, code),
+        )
+        matches = [row[0] for row in self.env.cr.fetchall()]
+        if len(matches) > 1:
+            _logger.warning(
+                '[PRESUPUESTOS ERP] Códigos históricos equivalentes en %s: '
+                'empresa=%s codigo=%s registros=%s. Se utilizará el primero; '
+                'revise posibles duplicados por espacios.',
+                Model._name, company.id, code, matches,
+            )
+        return Model.browse(matches[0]) if matches else Model.browse()
+
+    @api.model
+    def _upsert_catalog_record(self, Model, company, code, name, placeholder=False, existing=None):
+        """Crear o actualizar por (empresa,código) sin fallar por carrera de inserción.
+
+        Un cron y un clic en Sincronizar podrían pasar ambos por un search vacío.
+        El SAVEPOINT permite recuperar el duplicado a nivel SQL y releer el
+        registro después del rollback, en vez de abortar los tres endpoints.
+        """
+        code, name = as_text(code), as_text(name)
+        record = existing or self._find_catalog_record(Model, company, code)
+        created = False
+        collided = False
+        if not record:
+            try:
+                with self.env.cr.savepoint():
+                    record = Model.create({
+                        'company_id': company.id, 'code': code, 'name': name,
+                    })
+                created = True
+            except IntegrityError as exc:
+                if exc.pgcode != errorcodes.UNIQUE_VIOLATION:
+                    raise
+                # Otra ejecución creó el mismo código entre la búsqueda y el
+                # INSERT: PostgreSQL espera al proceso concurrente y la nueva
+                # búsqueda lo encuentra. Nunca se eliminan datos existentes.
+                record = self._find_catalog_record(Model, company, code)
+                if not record:
+                    raise
+                collided = True
+                _logger.warning(
+                    '[PRESUPUESTOS ERP] Duplicado concurrente recuperado: '
+                    'modelo=%s empresa=%s codigo=%s registro=%s',
+                    Model._name, company.id, code, record.id,
+                )
+        if created:
+            return record, 'created', collided
+        updates = {}
+        if record.code != code:
+            updates['code'] = code
+        if not record.active:
+            updates['active'] = True
+        # Un consumo no puede sustituir el nombre real del catálogo por
+        # "pendiente de catálogo". Solo el endpoint del catálogo lo actualiza.
+        if not placeholder and record.name != name:
+            updates['name'] = name
+        if updates:
+            record.write(updates)
+            return record, 'updated', collided
+        return record, 'unchanged', collided
+
+    @api.model
     def _sync_accounts(self, company, rows):
         Account = self.env['expense.budget.account'].sudo().with_company(company).with_context(active_test=False)
         clean = {}
@@ -149,20 +236,16 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             if code in clean and clean[code] != name:
                 raise ValueError('Código de cuenta duplicado con nombres diferentes: %s' % code)
             clean[code] = name
+        counts = {'created': 0, 'updated': 0, 'unchanged': 0, 'reused_conflicts': 0}
         existing = {rec.code: rec for rec in Account.search([
             ('company_id', '=', company.id), ('code', 'in', list(clean)),
         ])}
-        counts = {'created': 0, 'updated': 0, 'unchanged': 0}
         for code, name in clean.items():
-            rec = existing.get(code)
-            if not rec:
-                Account.create({'company_id': company.id, 'code': code, 'name': name})
-                counts['created'] += 1
-            elif rec.name != name or not rec.active:
-                rec.write({'name': name, 'active': True})
-                counts['updated'] += 1
-            else:
-                counts['unchanged'] += 1
+            _record, outcome, collided = self._upsert_catalog_record(
+                Account, company, code, name, existing=existing.get(code),
+            )
+            counts[outcome] += 1
+            counts['reused_conflicts'] += int(collided)
         return counts
 
     @api.model
@@ -177,20 +260,16 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             if code in clean and clean[code] != name:
                 raise ValueError('Código de centro duplicado con nombres diferentes: %s' % code)
             clean[code] = name
+        counts = {'created': 0, 'updated': 0, 'unchanged': 0, 'reused_conflicts': 0}
         existing = {rec.code: rec for rec in Center.search([
             ('company_id', '=', company.id), ('code', 'in', list(clean)),
         ])}
-        counts = {'created': 0, 'updated': 0, 'unchanged': 0}
         for code, name in clean.items():
-            rec = existing.get(code)
-            if not rec:
-                Center.create({'company_id': company.id, 'code': code, 'name': name})
-                counts['created'] += 1
-            elif rec.name != name or not rec.active:
-                rec.write({'name': name, 'active': True})
-                counts['updated'] += 1
-            else:
-                counts['unchanged'] += 1
+            _record, outcome, collided = self._upsert_catalog_record(
+                Center, company, code, name, existing=existing.get(code),
+            )
+            counts[outcome] += 1
+            counts['reused_conflicts'] += int(collided)
         return counts
 
     @api.model
@@ -217,32 +296,38 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         relevant = [row for row in normalized if row[3].year == year]
         counts = {'created': 0, 'updated': 0, 'unchanged': 0,
                   'received': len(rows), 'skipped': len(rows)-len(relevant),
-                  'linked': 0, 'unmatched': 0, 'placeholder_accounts': 0,
+                  'linked': 0, 'unmatched': 0, 'reused_conflicts': 0, 'placeholder_accounts': 0,
                   'placeholder_centers': 0}
         if not relevant:
             return counts
         account_codes = {row[0] for row in relevant}
         center_codes = {row[1] for row in relevant if row[1]}
-        accounts = {rec.code: rec for rec in Account.search([
+        existing_accounts = {rec.code: rec for rec in Account.search([
             ('company_id', '=', company.id), ('code', 'in', list(account_codes)),
         ])}
-        for code in sorted(account_codes - accounts.keys()):
-            # No bloquear consumos reales si el catálogo llegó incompleto.
-            # El catálogo actualizará el nombre en una próxima sincronización.
-            accounts[code] = Account.create({
-                'company_id': company.id, 'code': code,
-                'name': '%s (pendiente de catálogo)' % code,
-            })
-            counts['placeholder_accounts'] += 1
-        centers = {rec.code: rec for rec in Center.search([
+        accounts = {}
+        for code in sorted(account_codes):
+            rec, outcome, collided = self._upsert_catalog_record(
+                Account, company, code, '%s (pendiente de catálogo)' % code,
+                placeholder=True, existing=existing_accounts.get(code),
+            )
+            accounts[code] = rec
+            if outcome == 'created':
+                counts['placeholder_accounts'] += 1
+            counts['reused_conflicts'] += int(collided)
+        existing_centers = {rec.code: rec for rec in Center.search([
             ('company_id', '=', company.id), ('code', 'in', list(center_codes)),
         ])}
-        for code in sorted(center_codes - centers.keys()):
-            centers[code] = Center.create({
-                'company_id': company.id, 'code': code,
-                'name': '%s (pendiente de catálogo)' % code,
-            })
-            counts['placeholder_centers'] += 1
+        centers = {}
+        for code in sorted(center_codes):
+            rec, outcome, collided = self._upsert_catalog_record(
+                Center, company, code, '%s (pendiente de catálogo)' % code,
+                placeholder=True, existing=existing_centers.get(code),
+            )
+            centers[code] = rec
+            if outcome == 'created':
+                counts['placeholder_centers'] += 1
+            counts['reused_conflicts'] += int(collided)
         duplicates = defaultdict(int)
         for code, center_code, subcenter, when, amount, external_id in relevant:
             canonical_amount = str(Decimal(str(amount)).quantize(Decimal('0.01')))
@@ -272,6 +357,100 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         return counts
 
     @api.model
+    def _rows_for_saved_lines(self, rows, lines):
+        """Solo movimientos cuyo Código/Centro/Subcentro/Año/Mes corresponda.
+
+        ``_find_budget_line`` aplica también la prioridad de un subcentro
+        específico sobre el genérico para que un consumo no se cuente dos veces.
+        El endpoint ERP no ofrece filtros de servidor en el contrato recibido.
+        """
+        wanted = defaultdict(set)
+        account_center_ids = {}
+        for line in lines.exists():
+            if not line.account_id or not line.month:
+                continue
+            code = as_text(line.account_id.code)
+            center = as_text(line.cost_center_id.code)
+            key = (code, center, int(line.budget_id.year), int(line.month))
+            wanted[key].add(line.id)
+            account_center_ids[key] = (line.account_id.id, line.cost_center_id.id or False)
+        result = []
+        Expense = self.env['expense.budget.expense'].sudo()
+        for item in rows:
+            code, center, subcenter, when, _amount, _external_id = self._normalize_consumption(item)
+            key = (code, center, when.year, when.month)
+            if key not in wanted:
+                continue
+            account_id, center_id = account_center_ids[key]
+            matching_line = Expense._find_budget_line(
+                lines[0].company_id.id, account_id, when, center_id, subcenter,
+            )
+            if matching_line.id in wanted[key]:
+                result.append(item)
+        return result
+
+    @api.model
+    def _sync_saved_lines(self, lines):
+        """Consulta getconsumosgastos al guardar las proyecciones.
+
+        Nunca borra ni sobreescribe la proyección. Si la API falla se conserva
+        el presupuesto y se registra el problema para que se pueda reintentar
+        con Sincronizar; no se presenta un importe antiguo como dato nuevo.
+        """
+        lines = lines.exists().filtered(lambda line: line.account_id and line.month)
+        if not lines:
+            return
+        grouped = defaultdict(lambda: self.env['expense.budget.line'])
+        for line in lines:
+            grouped[(line.company_id.id, int(line.budget_id.year))] |= line
+        for (company_id, year), group in grouped.items():
+            company = self.env['res.company'].browse(company_id)
+            api_rec = False
+            counts = {}
+            try:
+                config = self.env['expense.budget.api.config'].sudo().search([
+                    ('company_id', '=', company.id),
+                ], limit=1)
+                api_rec = self._choose_api(company, config, 'consumptions')
+                if not api_rec:
+                    _logger.info(
+                        '[PRESUPUESTOS ERP] Al guardar no se consultó consumo: '
+                        'no existe API GET activa getconsumosgastos/2 para empresa=%s', company.id,
+                    )
+                    continue
+                with self.env.cr.savepoint():
+                    # Mismo bloqueo que la sincronización manual y el cron:
+                    # evita escrituras concurrentes e importes duplicados.
+                    self.env.cr.execute('SELECT pg_advisory_xact_lock(%s, %s)', (484700, company.id))
+                    all_rows = self._call(company, api_rec, 'consumptions')
+                    selected_rows = self._rows_for_saved_lines(all_rows, group)
+                    counts = self._sync_consumptions(company, selected_rows, api_rec, year)
+                    counts['received'] = len(all_rows)
+                    counts['skipped'] = len(all_rows) - len(selected_rows)
+                    detail = (
+                        'Guardar proyección: recibidos=%s, coincidentes=%s, '
+                        'nuevos=%s, actualizados=%s, sin_cambios=%s, '
+                        'vinculados=%s, sin_proyección=%s' % (
+                            len(all_rows), len(selected_rows), counts.get('created', 0),
+                            counts.get('updated', 0), counts.get('unchanged', 0),
+                            counts.get('linked', 0), counts.get('unmatched', 0),
+                        )
+                    )
+                    self._save_log(company, api_rec, year, 'consumptions', 'success', detail, counts)
+                    _logger.info('[PRESUPUESTOS ERP] %s | empresa=%s año=%s', detail, company.id, year)
+            except Exception as exc:
+                _logger.exception(
+                    '[PRESUPUESTOS ERP] ERROR al consultar consumo por guardar proyección, '
+                    'empresa=%s año=%s: %s', company.id, year, exc,
+                )
+                # Evitar que una caída HTTP/API impida guardar el presupuesto.
+                # El savepoint de consulta ya revierte importaciones parciales.
+                self._save_log(
+                    company, api_rec, year, 'consumptions', 'error',
+                    'Guardar proyección: no fue posible consultar consumos: %s' % str(exc)[:1500],
+                )
+
+    @api.model
     def _save_log(self, company, api_record, year, kind, status, message, counts=None):
         counts = counts or {}
         self.env['expense.budget.sync.log'].sudo().create({
@@ -297,6 +476,11 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         tras una notificación 'sincronización completada'.
         """
         company.ensure_one()
+        # Un único trabajo ERP por empresa a la vez (incluye botón y cron).
+        # Bloqueo transaccional PostgreSQL: se libera automáticamente al
+        # terminar, incluso si la importación falla. No requiere migración.
+        self.env.cr.execute('SELECT pg_advisory_xact_lock(%s, %s)', (484700, company.id))
+        _logger.info('[PRESUPUESTOS ERP] Bloqueo de sincronización adquirido empresa=%s', company.id)
         year = int(year or fields.Date.context_today(self).year)
         if not 2000 <= year <= 2100:
             raise UserError(_('El año de sincronización debe estar entre 2000 y 2100.'))
@@ -334,12 +518,12 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                     result[name] += counts.get(name, 0)
                 message = ('OK: %s filas; creados=%s actualizados=%s sin_cambios=%s '
                            'omitidos_por_año=%s vinculados=%s sin_proyeccion=%s '
-                           'cuentas_pendientes=%s centros_pendientes=%s' % (
+                           'cuentas_pendientes=%s centros_pendientes=%s duplicados_recuperados=%s' % (
                                counts.get('received', 0), counts.get('created', 0),
                                counts.get('updated', 0), counts.get('unchanged', 0),
                                counts.get('skipped', 0), counts.get('linked', 0),
                                counts.get('unmatched', 0), counts.get('placeholder_accounts', 0),
-                               counts.get('placeholder_centers', 0)))
+                               counts.get('placeholder_centers', 0), counts.get('reused_conflicts', 0)))
                 self._save_log(company, api_rec, year, kind, 'success', message, counts)
                 _logger.info('[PRESUPUESTOS ERP] %s | empresa=%s año=%s | %s',
                              ENDPOINTS[kind], company.id, year, message)
@@ -359,7 +543,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
     def _notification(self, result):
         details = ' | '.join(result.get('details', []))
         message = ('Año %(year)s · APIs consultadas: %(apis)s · Nuevos: %(created)s · '
-                   'Actualizados: %(updated)s · Errores: %(errors)s' % result)
+                   'Actualizados: %(updated)s · Ya existentes: %(unchanged)s · '
+                   'Errores: %(errors)s' % result)
         if details:
             message += '\n' + details
         return {

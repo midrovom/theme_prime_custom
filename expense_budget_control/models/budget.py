@@ -244,7 +244,16 @@ class ExpenseBudget(models.Model):
                     'para esta empresa y año. Apruébelo antes de registrar otro rubro.'
                 ))
             new_periods.add(period)
-        return super().create(vals_list)
+        # Las líneas anidadas no deben llamar a la API una vez por cada fila;
+        # consultar una sola vez tras guardar el presupuesto completo.
+        budgets = super(ExpenseBudget, self.with_context(
+            skip_expense_budget_consumption_on_save=True,
+        )).create(vals_list)
+        if not self.env.context.get('skip_expense_budget_consumption_on_save'):
+            lines = budgets.mapped('line_ids')
+            if lines:
+                self.env['expense.budget.inventory.sync']._sync_saved_lines(lines)
+        return budgets
 
     def write(self, vals):
         if 'category_id' in vals:
@@ -283,7 +292,16 @@ class ExpenseBudget(models.Model):
             rec.state != 'draft' or rec.line_ids for rec in self
         ):
             raise UserError(_('No puede cambiar el año o la empresa de un presupuesto con líneas o aprobado.'))
-        return super().write(vals)
+        result = super(ExpenseBudget, self.with_context(
+            skip_expense_budget_consumption_on_save=True,
+        )).write(vals)
+        # Guardar otras opciones o aprobar no provoca consultas al ERP.
+        if ('line_ids' in vals and self and
+                not self.env.context.get('skip_expense_budget_consumption_on_save')):
+            lines = self.mapped('line_ids')
+            if lines:
+                self.env['expense.budget.inventory.sync']._sync_saved_lines(lines)
+        return result
 
     def action_submit(self):
         """El registrador envía el borrador a revisión, sin poder aprobarlo."""
@@ -602,6 +620,8 @@ class ExpenseBudgetLine(models.Model):
                 raise UserError(_('Solo puede modificar proyecciones en presupuestos borrador.'))
         records = super().create(vals_list)
         records._assign_unmatched_expenses()
+        if not self.env.context.get('skip_expense_budget_consumption_on_save'):
+            self.env['expense.budget.inventory.sync']._sync_saved_lines(records)
         return records
 
     def write(self, vals):
@@ -616,6 +636,9 @@ class ExpenseBudgetLine(models.Model):
         result = super().write(vals)
         if {'account_id', 'cost_center_id', 'subcenter_code', 'budget_id', 'month'}.intersection(vals):
             self._assign_unmatched_expenses()
+        if ({'account_id', 'cost_center_id', 'subcenter_code', 'budget_id', 'month', 'planned_amount'} & set(vals)
+                and not self.env.context.get('skip_expense_budget_consumption_on_save')):
+            self.env['expense.budget.inventory.sync']._sync_saved_lines(self)
         return result
 
     def unlink(self):

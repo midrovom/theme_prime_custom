@@ -41,3 +41,45 @@ Gastos reales y se refleja automáticamente en `Consumido` de la línea cuya
 (Fecha)** sean compatibles. La asociación también se realiza cuando la línea
 se crea **después** de importar el consumo. En una línea sin Subcentro se
 agrupan únicamente movimientos sin proyección más específica.
+
+### Corrección de duplicados (v1.4.63)
+
+Si un código ya existe en `expense.budget.account` o
+`expense.budget.cost.center` para la misma empresa, **se reutiliza/actualiza**
+(en vez de intentar crearlo otra vez). Incluye registros inactivos o
+códigos históricos almacenados con espacios; no borra relaciones, consumos
+ni presupuestos. En caso de una colisión de INSERT concurrente se revierte
+solo el intento, se vuelve a buscar el registro y se continúa. El botón
+**Sincronizar** y el cron ERP quedan serializados por empresa mediante un
+bloqueo transaccional PostgreSQL. No hay nuevas tablas ni dependencias.
+
+Consultar el log del servidor por `[PRESUPUESTOS ERP]` y el menú
+**Historial API**. Si la notificación muestra **Ya existentes > 0** con
+**Errores: 0**, es normal: el catálogo ya había sido importado y se confirmó
+sin necesidad de insertar filas adicionales. El consumo se sigue importando
+solo para el año indicado en la sincronización.
+
+
+## Consulta de consumos al guardar una proyección (v1.4.63)
+
+El catálogo de **todas** las cuentas y **todos** los centros de costo se importa
+con el botón **Sincronizar** de Configuración API ERP o mediante el cron de 5 horas.
+La importación es idempotente por empresa + código, incluso ante registros
+históricos inactivos o con códigos completados con espacios.
+
+Después de seleccionar una cuenta y centro importados, al guardar una línea de
+**Proyecciones mensuales** se llama a `getconsumosgastos/2`. Como el endpoint
+proporcionado no tiene parámetros de filtro, se recibe la respuesta y se filtra
+localmente por `Codigo`, `Centro`, `Subcentro`, mes y año del presupuesto. Se
+suman los `Valor` de **todos** los movimientos coincidentes y se actualiza
+`Consumido` a partir de gastos reales, evitando sumar dos veces una respuesta
+repetida. Un subcentro específico tiene prioridad sobre la línea genérica.
+
+Ejemplo: `601010101002` + `DIC` + `GDE` + abril de 2020 + `Valor=50.00` se
+vincula solo con esa proyección, no con 2026 ni con otro centro.
+
+El botón **Sincronizar API** sigue pudiendo importar catálogos y consumos de
+todo el año presupuestado, y deja un resultado detallado en **Historial API**.
+Si el endpoint falla mientras se guarda una proyección, el presupuesto se
+conserva y el error se registra en el historial; el consumido se actualizará
+cuando la API vuelva a responder y se sincronice de nuevo.
