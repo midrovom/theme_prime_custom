@@ -20,9 +20,9 @@ class ExpenseBudgetAPIConfig(models.Model):
         default=lambda self: self.env.company,
     )
     sync_year = fields.Integer(
-        string='Año de los consumos', required=True,
+        string='Año de los consumos (legado)', required=True,
         default=lambda self: fields.Date.context_today(self).year,
-        help='Para Sincronizar desde esta pantalla se importan solo consumos de este año. '
+        help='Campo anterior conservado por compatibilidad; la sincronización manual usa el año actual. '
              'Desde un presupuesto se utiliza el año del presupuesto. '
              'El cron automático siempre usa el año actual.',
     )
@@ -76,9 +76,9 @@ class ExpenseBudgetAPIConfig(models.Model):
             raise AccessError(_('Requiere el grupo Administrador de presupuestos de gastos.'))
         self.ensure_one()
         result = self.env['expense.budget.inventory.sync']._sync_company(
-            self.company_id, year=self.sync_year,
+            self.company_id, year=fields.Date.context_today(self).year,
         )
-        return self.env['expense.budget.inventory.sync']._notification(result)
+        return self.env['expense.budget.inventory.sync']._notification(result, show_year=False)
 
 
 class ExpenseBudgetSyncLog(models.Model):

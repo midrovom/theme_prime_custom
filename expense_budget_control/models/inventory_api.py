@@ -311,6 +311,59 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         return counts
 
     @api.model
+    def _sync_subcenters(self, company, rows):
+        """Catálogo seleccionable desde TODOS los años devueltos por el ERP.
+
+        No mezcla centros con el mismo subcentro. Al sincronizar un presupuesto
+        antiguo se incluyen sus códigos en el selector, aunque el cron habitual
+        importe los consumos monetarios del año vigente.
+        """
+        combinations = set()
+        for item in rows:
+            _account, center_code, subcenter, _when, _amount, _external_id = (
+                self._normalize_consumption(item)
+            )
+            if center_code and subcenter:
+                combinations.add((center_code, subcenter))
+        if not combinations:
+            return {'created': 0, 'unchanged': 0}
+        Center = self.env['expense.budget.cost.center'].sudo().with_company(company).with_context(active_test=False)
+        Subcenter = self.env['expense.budget.subcenter'].sudo().with_company(company)
+        center_codes = sorted({center for center, _sub in combinations})
+        centers = {rec.code.strip(): rec for rec in Center.search([
+            ('company_id', '=', company.id), ('code', 'in', center_codes),
+        ])}
+        for code in center_codes:
+            if code not in centers:
+                center_rec, _state, _conflict = self._upsert_catalog_record(
+                    Center, company, code, '%s (pendiente de catálogo)' % code,
+                    placeholder=True,
+                )
+                centers[code] = center_rec
+        known = {(rec.center_id.id, rec.code): rec for rec in Subcenter.search([
+            ('company_id', '=', company.id),
+            ('center_id', 'in', [rec.id for rec in centers.values()]),
+        ])}
+        count = {'created': 0, 'unchanged': 0}
+        for center_code, subcenter_code in sorted(combinations):
+            center_rec = centers[center_code]
+            key = (center_rec.id, subcenter_code)
+            if key in known:
+                count['unchanged'] += 1
+                continue
+            with self.env.cr.savepoint():
+                rec = Subcenter.create({
+                    'company_id': company.id,
+                    'center_id': center_rec.id,
+                    'code': subcenter_code,
+                })
+                known[key] = rec
+            count['created'] += 1
+        _logger.info('[PRESUPUESTOS ERP] Subcentros: nuevos=%s existentes=%s empresa=%s',
+                     count['created'], count['unchanged'], company.id)
+        return count
+
+    @api.model
     def _normalize_consumption(self, item):
         code = as_text(get_value(item, 'Codigo', 'codigo_cuenta', required=True))
         center = as_text(get_value(item, 'Centro', 'codigo_centro_costo'))
@@ -509,6 +562,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                     # evita escrituras concurrentes e importes duplicados.
                     self.env.cr.execute('SELECT pg_advisory_xact_lock(%s, %s)', (484700, company.id))
                     all_rows = self._call(company, api_rec, 'consumptions')
+                    self._sync_subcenters(company, all_rows)
                     selected_rows = self._rows_for_saved_lines(all_rows, group)
                     counts = self._sync_consumptions(company, selected_rows, api_rec, year)
                     counts['reconciled'] = self._reconcile_saved_line_periods(group)
@@ -530,6 +584,13 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                     self._save_log(company, api_rec, year, 'consumptions', 'success', detail, counts)
                     _logger.info('[PRESUPUESTOS ERP] %s | empresa=%s año=%s', detail, company.id, year)
             except Exception as exc:
+                if getattr(exc, 'pgcode', None) in (
+                    errorcodes.SERIALIZATION_FAILURE, errorcodes.DEADLOCK_DETECTED,
+                ):
+                    _logger.warning('[PRESUPUESTOS ERP] Transacción concurrente al guardar; '
+                                    'se solicita reintento de Odoo (empresa=%s, año=%s)',
+                                    company.id, year)
+                    raise
                 _logger.exception(
                     '[PRESUPUESTOS ERP] ERROR al consultar consumo por guardar proyección, '
                     'empresa=%s año=%s: %s', company.id, year, exc,
@@ -599,6 +660,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                         counts = self._sync_centers(company, rows)
                     else:
                         counts = self._sync_consumptions(company, rows, api_rec, year)
+                        subcenter_stats = self._sync_subcenters(company, rows)
+                        counts['subcenters_created'] = subcenter_stats['created']
                     counts.setdefault('received', len(rows))
                     # Una lista vacía no equivale a éxito cuando el usuario
                     # está esperando cuentas/centros/consumos desde el ERP.
@@ -609,19 +672,31 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                     result[name] += counts.get(name, 0)
                 message = ('OK: %s filas; creados=%s actualizados=%s sin_cambios=%s '
                            'omitidos_por_año=%s vinculados=%s sin_proyeccion=%s '
-                           'cuentas_pendientes=%s centros_pendientes=%s duplicados_recuperados=%s' % (
+                           'cuentas_pendientes=%s centros_pendientes=%s subcentros_nuevos=%s duplicados_recuperados=%s' % (
                                counts.get('received', 0), counts.get('created', 0),
                                counts.get('updated', 0), counts.get('unchanged', 0),
                                counts.get('skipped', 0), counts.get('linked', 0),
                                counts.get('unmatched', 0), counts.get('placeholder_accounts', 0),
-                               counts.get('placeholder_centers', 0), counts.get('reused_conflicts', 0)))
+                               counts.get('placeholder_centers', 0), counts.get('subcenters_created', 0),
+                               counts.get('reused_conflicts', 0)))
                 self._save_log(company, api_rec, year, kind, 'success', message, counts)
                 _logger.info('[PRESUPUESTOS ERP] %s | empresa=%s año=%s | %s',
                              ENDPOINTS[kind], company.id, year, message)
-                result['details'].append('%s: %s filas (%s nuevas, %s vinculadas, %s omitidas)' % (
+                result['details'].append('%s: %s filas (%s nuevas, %s vinculadas, %s omitidas, %s subcentros nuevos)' % (
                     kind, counts['received'], counts.get('created', 0),
-                    counts.get('linked', 0), counts.get('skipped', 0)))
+                    counts.get('linked', 0), counts.get('skipped', 0),
+                    counts.get('subcenters_created', 0)))
             except Exception as exc:
+                if getattr(exc, 'pgcode', None) in (
+                    errorcodes.SERIALIZATION_FAILURE, errorcodes.DEADLOCK_DETECTED,
+                ):
+                    # No registrar 3 errores ni confirmar un resultado parcial:
+                    # Odoo reintentará automáticamente la petición con una
+                    # nueva transacción/snapshot, igual que en el ORM nativo.
+                    _logger.warning('[PRESUPUESTOS ERP] Conflicto concurrente en %s; '
+                                    'reintentar transacción completa (empresa=%s)',
+                                    ENDPOINTS[kind], company.id)
+                    raise
                 result['errors'] += 1
                 safe_message = str(exc)[:1500]
                 _logger.exception('[PRESUPUESTOS ERP] ERROR endpoint=%s empresa=%s año=%s: %s',
@@ -631,11 +706,13 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         return result
 
     @api.model
-    def _notification(self, result):
+    def _notification(self, result, show_year=True):
         details = ' | '.join(result.get('details', []))
-        message = ('Año %(year)s · APIs consultadas: %(apis)s · Nuevos: %(created)s · '
+        message = ('APIs consultadas: %(apis)s · Nuevos: %(created)s · '
                    'Actualizados: %(updated)s · Ya existentes: %(unchanged)s · '
                    'Errores: %(errors)s' % result)
+        if show_year:
+            message = ('Año %s · ' % result['year']) + message
         if details:
             message += '\n' + details
         return {

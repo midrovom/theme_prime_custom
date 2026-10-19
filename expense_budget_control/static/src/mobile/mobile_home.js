@@ -15,7 +15,7 @@ export class ExpenseBudgetMobileHome extends Component {
         // teléfonos cuya pantalla horizontal supera el ancho de 768px.
         this.isMobile = window.matchMedia("(max-width: 991.98px)").matches ||
             /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-        this.state = useState({ loading: true, entries: [], error: "" });
+        this.state = useState({ loading: true, entries: [], error: "", section: "main" });
         onWillStart(async () => {
             try {
                 this.state.entries = await this.orm.call(
@@ -34,6 +34,23 @@ export class ExpenseBudgetMobileHome extends Component {
                 this.action.doAction(this.state.entries[0].id);
             }
         });
+    }
+
+    get visibleEntries() {
+        const configuration = this.state.section === "configuration";
+        return this.state.entries.filter((entry) => Boolean(entry.configuration) === configuration);
+    }
+
+    get hasConfiguration() {
+        return this.state.entries.some((entry) => entry.configuration);
+    }
+
+    openConfiguration() {
+        this.state.section = "configuration";
+    }
+
+    backToMain() {
+        this.state.section = "main";
     }
 
     async openSection(actionId) {

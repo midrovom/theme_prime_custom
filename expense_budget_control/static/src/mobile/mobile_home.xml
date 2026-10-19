@@ -4,14 +4,18 @@
         <main t-if="this.isMobile" class="o_ebc_mobile_home">
             <header class="o_ebc_mobile_header">
                 <div>
-                    <h1>Control de Gastos</h1>
-                    <p>Accede a las opciones disponibles según tu usuario.</p>
+                    <h1 t-if="state.section === 'main'">Control de Gastos</h1>
+                    <h1 t-else="">Configuración</h1>
+                    <p t-if="state.section === 'main'">Accede a las opciones disponibles según tu usuario.</p>
+                    <button t-else="" type="button" class="btn btn-outline-secondary o_ebc_mobile_back" t-on-click="() => this.backToMain()">
+                        <i class="fa fa-arrow-left" aria-hidden="true"/> Volver a opciones
+                    </button>
                 </div>
             </header>
             <div t-if="state.loading" role="status" class="o_ebc_mobile_status">Cargando opciones…</div>
             <div t-if="state.error" class="alert alert-danger" role="alert" t-esc="state.error"/>
             <nav t-if="!state.loading &amp;&amp; !state.error" class="o_ebc_mobile_grid" aria-label="Opciones de Control de Gastos">
-                <t t-foreach="state.entries" t-as="section" t-key="section.id">
+                <t t-foreach="visibleEntries" t-as="section" t-key="section.id">
                     <button type="button" class="o_ebc_mobile_card" t-on-click="() => this.openSection(section.id)">
                         <span class="o_ebc_mobile_icon" aria-hidden="true"><i t-att-class="'fa ' + section.icon"/></span>
                         <span class="o_ebc_mobile_label">
@@ -21,6 +25,13 @@
                         <i class="fa fa-chevron-right o_ebc_mobile_chevron" aria-hidden="true"/>
                     </button>
                 </t>
+                <button t-if="state.section === 'main' &amp;&amp; hasConfiguration" type="button"
+                        class="o_ebc_mobile_card" t-on-click="() => this.openConfiguration()">
+                    <span class="o_ebc_mobile_icon" aria-hidden="true"><i class="fa fa-cogs"/></span>
+                    <span class="o_ebc_mobile_label"><strong>Configuración</strong>
+                        <small>Gastos reales, catálogos y API según permisos</small></span>
+                    <i class="fa fa-chevron-right o_ebc_mobile_chevron" aria-hidden="true"/>
+                </button>
                 <p t-if="!state.entries.length" class="o_ebc_mobile_status">No hay opciones para los permisos actuales.</p>
             </nav>
             <div class="o_ebc_mobile_install_note">

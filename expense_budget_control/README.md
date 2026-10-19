@@ -194,3 +194,28 @@ Consumo actual. **Consumo corte** y los saldos no modifican sus fórmulas.
   descartar el presupuesto que se está guardando.
 - No se crean conexiones ni credenciales adicionales. Se reutilizan las tres
   APIs GET existentes en `api_administrator` desde una sola configuración ERP.
+
+
+## Ajustes v1.4.66 (API, subcentros y PWA)
+
+- **Configuración API ERP** conserva los tres selectores de `api_administrator`; el campo
+  Año no se presenta en esta pantalla. La sincronización desde esta pantalla
+  y el cron usan el año actual, mientras que al guardar una proyección se consulta
+  el año/mes definidos en el presupuesto y la línea.
+- Cuando el ERP devuelve `Centro` y `Subcentro`, se crea o recupera un subcentro
+  seleccionable *dentro del centro correspondiente*; el catálogo se descubre
+  incluso si los consumos pertenecen a años anteriores.
+- **Proyecciones mensuales → Subcentro** es un selector de los códigos importados
+  por `getconsumosgastos/2`, no un campo de texto libre. Dejarlo vacío mantiene
+  el comportamiento histórico de sumar todos los subcentros del mismo centro;
+  al seleccionarlo el consumo queda restringido a ese subcentro, código de cuenta,
+  centro, año y mes.
+- **Rubro** usa el diálogo nativo Crear y editar y permite abrir uno existente
+  para agregar o quitar cuentas; se elimina el botón de gestión de rubros de
+  Proyecciones.
+- **Gastos reales** está en Configuración. En la PWA móvil se navega con una
+  tarjeta Configuración que abre los accesos de gestión autorizados.
+- Ante SQLSTATE `40001` (actualización concurrente) o `40P01`, no se oculta
+  el error como tres endpoints fallidos: se deja que el manejador de transacciones
+  de Odoo reintente toda la operación. Después de los reintentos fallidos,
+  el administrador debe consultar el registro del servidor.

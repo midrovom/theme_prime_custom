@@ -50,9 +50,6 @@ class ExpenseBudgetDashboard(models.AbstractModel):
             ('Importar Excel / CSV', 'Cargar líneas desde archivo',
              'fa-upload', 'action_expense_budget_import', register or manage,
              'expense.budget.import.wizard'),
-            ('Rubros', 'Catálogo de rubros',
-             'fa-folder-open-o', 'action_expense_budget_category', register or manage,
-             'expense.budget.category'),
             ('Cuentas controladas', 'Administrar cuentas',
              'fa-list-alt', 'action_expense_budget_account', manage,
              'expense.budget.account'),
@@ -66,6 +63,11 @@ class ExpenseBudgetDashboard(models.AbstractModel):
              'fa-history', 'action_expense_budget_sync_log', manage,
              'expense.budget.sync.log'),
         ]
+        configuration_actions = {
+            'action_expense_budget_expense', 'action_expense_budget_category',
+            'action_expense_budget_account', 'action_expense_budget_cost_center',
+            'action_expense_budget_api_administrator', 'action_expense_budget_sync_log',
+        }
         sections = []
         for title, subtitle, icon, external_id, visible, model in options:
             if not visible:
@@ -76,6 +78,7 @@ class ExpenseBudgetDashboard(models.AbstractModel):
             if action:
                 sections.append({
                     'id': action.id, 'title': title, 'subtitle': subtitle, 'icon': icon,
+                    'configuration': external_id in configuration_actions,
                 })
         return sections
 

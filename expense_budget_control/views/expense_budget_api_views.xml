@@ -8,7 +8,6 @@
         <field name="arch" type="xml">
             <list string="Configuración API ERP" delete="false">
                 <field name="company_id"/>
-                <field name="sync_year"/>
                 <field name="account_api_id" optional="show"/>
                 <field name="center_catalog_api_id" optional="show"/>
                 <field name="consumption_api_id" optional="show"/>
@@ -29,12 +28,11 @@
                 <sheet>
                     <group>
                         <field name="company_id"/>
-                        <field name="sync_year"/>
-                        <group string="Endpoints ERP (GET de API Administrator)">
+                                <group string="Endpoints ERP (GET de API Administrator)">
                             <field name="account_api_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                             <field name="center_catalog_api_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                             <field name="consumption_api_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
-                            <div class="text-muted" colspan="2">Una sola configuración. Seleccione las 3 APIs GET existentes o déjelas vacías si sus endpoints ya están registrados en API Administrator. Orden: cuentas, centros y consumos. Desde un presupuesto se utiliza el año de ese presupuesto.</div>
+                            <div class="text-muted" colspan="2">Una sola configuración. Seleccione las 3 APIs GET existentes o déjelas vacías si sus endpoints ya están registrados en API Administrator. Orden: cuentas, centros y consumos. El año de los consumos se toma del presupuesto al crear o guardar sus proyecciones; el botón de esta pantalla y el cron utilizan el año actual.</div>
                         </group>
                     </group>
                 </sheet>

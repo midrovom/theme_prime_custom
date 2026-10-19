@@ -21,7 +21,7 @@ class TestExpenseBudgetMobileNavigation(TransactionCase):
                   self._navigation_as('group_expense_budget_registrar')}
         self.assertIn('Presupuestos', titles)
         self.assertIn('Importar Excel / CSV', titles)
-        self.assertIn('Rubros', titles)
+        self.assertNotIn('Rubros', titles)  # se crea/edita desde el campo Rubro
         self.assertNotIn('Aprobación de presupuestos', titles)
         self.assertNotIn('Configuración API ERP', titles)
         self.assertNotIn('Dashboard de gastos', titles)
@@ -38,6 +38,8 @@ class TestExpenseBudgetMobileNavigation(TransactionCase):
         titles = {section['title'] for section in
                   self._navigation_as('group_expense_budget_manager')}
         self.assertIn('Configuración API ERP', titles)
+        self.assertTrue(next(s['configuration'] for s in self._navigation_as('group_expense_budget_manager')
+                             if s['title'] == 'Gastos reales'))
         self.assertIn('Presupuestos', titles)
         self.assertIn('Dashboard de gastos', titles)
 

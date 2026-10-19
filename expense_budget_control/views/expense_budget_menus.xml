@@ -10,13 +10,10 @@
         <field name="active" eval="False"/>
     </record>
     <menuitem id="menu_expense_budget_budget" name="Presupuestos" parent="menu_expense_budget_root" action="action_expense_budget" sequence="10"/>
-    <menuitem id="menu_expense_budget_rubros_registrar" name="Gestionar rubros"
-              parent="menu_expense_budget_root" action="action_expense_budget_category" sequence="12"
-              groups="expense_budget_control.group_expense_budget_registrar"/>
     <menuitem id="menu_expense_budget_approval" name="Aprobación de presupuestos" parent="menu_expense_budget_root" action="action_expense_budget_approval" sequence="15"/>
     <menuitem id="menu_expense_budget_comparison" name="Proyectado vs. real" parent="menu_expense_budget_root" action="action_expense_budget_comparison" sequence="20"/>
-    <menuitem id="menu_expense_budget_expense" name="Gastos reales" parent="menu_expense_budget_root" action="action_expense_budget_expense" sequence="30"/>
     <menuitem id="menu_expense_budget_config" name="Configuración" parent="menu_expense_budget_root" sequence="40"/>
+    <menuitem id="menu_expense_budget_expense" name="Gastos reales" parent="menu_expense_budget_config" action="action_expense_budget_expense" sequence="35"/>
     <menuitem id="menu_expense_budget_category" name="Rubros" parent="menu_expense_budget_config" action="action_expense_budget_category" sequence="10"/>
     <menuitem id="menu_expense_budget_account" name="Cuentas controladas" parent="menu_expense_budget_config" action="action_expense_budget_account" sequence="20"/>
     <menuitem id="menu_expense_budget_cost_center" name="Centros de costo"

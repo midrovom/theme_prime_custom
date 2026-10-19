@@ -415,24 +415,6 @@ class ExpenseBudget(models.Model):
             'expense_budget_control.action_report_expense_budget_annual'
         ).report_action(self)
 
-    def action_manage_rubros(self):
-        """Administrar rubros por separado de las líneas mensuales incompletas.
-
-        Crear un rubro NO requiere cuenta, centro, subcentro ni mes. El mismo
-        formulario permite volver a abrirlo y gestionar sus cuentas existentes.
-        """
-        self.ensure_one()
-        if not (self.env.user.has_group('expense_budget_control.group_expense_budget_manager')
-                or self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')):
-            raise AccessError(_('No tiene permisos para editar rubros.'))
-        action = self.env.ref('expense_budget_control.action_expense_budget_category').read()[0]
-        action['domain'] = [('company_id', '=', self.company_id.id)]
-        action['context'] = {
-            'default_company_id': self.company_id.id,
-            'search_default_company_id': self.company_id.id,
-        }
-        return action
-
     def action_sync_api(self):
         if not (self.env.user.has_group('expense_budget_control.group_expense_budget_manager')
                 or self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')):
@@ -472,6 +454,48 @@ class ExpenseBudgetLine(models.Model):
         help='Filtro de subcentro de líneas anteriores. Se conserva para no '
              'alterar presupuestos existentes, pero ya no se solicita al crear líneas.',
     )
+    # Selector alimentado del ERP. No crea un segundo dato contable: el
+    # valor persistente sigue siendo subcenter_code, compatible con gastos
+    # históricos, índices únicos y la conciliación existente.
+    subcenter_id = fields.Many2one(
+        'expense.budget.subcenter', string='Subcentro',
+        compute='_compute_subcenter_id', inverse='_inverse_subcenter_id',
+        readonly=False,
+        help='Seleccione un subcentro detectado por getconsumosgastos/2 para '
+             'el centro de costo. Se conservan los consumos históricos.',
+    )
+
+    @api.depends('subcenter_code', 'cost_center_id')
+    def _compute_subcenter_id(self):
+        Subcenter = self.env['expense.budget.subcenter'].sudo()
+        for line in self:
+            if line.subcenter_code and line.cost_center_id:
+                line.subcenter_id = Subcenter.search([
+                    ('company_id', '=', line.cost_center_id.company_id.id),
+                    ('center_id', '=', line.cost_center_id.id),
+                    ('code', '=', line.subcenter_code.strip().upper()),
+                ], limit=1)
+            else:
+                line.subcenter_id = False
+
+    def _inverse_subcenter_id(self):
+        for line in self:
+            selected = line.subcenter_id
+            if selected and selected.center_id != line.cost_center_id:
+                raise ValidationError(_('El subcentro debe pertenecer al centro de costo seleccionado.'))
+            line.subcenter_code = selected.code if selected else False
+
+    @api.onchange('subcenter_id')
+    def _onchange_subcenter_id(self):
+        for line in self:
+            line.subcenter_code = line.subcenter_id.code if line.subcenter_id else False
+
+    @api.onchange('cost_center_id')
+    def _onchange_cost_center_for_subcenter(self):
+        for line in self:
+            line.subcenter_id = False
+            line.subcenter_code = False
+
     erp_subcenter_codes = fields.Char(
         string='Subcentro', compute='_compute_erp_subcenter_codes', readonly=True,
         help='Subcentro(s) reales devueltos por getconsumosgastos/2, obtenidos '
