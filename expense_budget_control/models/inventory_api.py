@@ -7,6 +7,8 @@ movimientos ausentes de respuestas sucesivas, que podrían ser consultas parcial
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
+from time import monotonic
+from psycopg2.extras import execute_values
 from urllib.parse import urlsplit
 from psycopg2 import IntegrityError, errorcodes
 import hashlib
@@ -33,13 +35,12 @@ SPANISH_MONTHS = {
 
 
 def parse_erp_date(value):
-    """Ejemplo: abr 25 2026 12:00:00:000; sin depender del locale del SO."""
+    """Fechas ERP tipo `abr 25 2026 ...` sin 4 intentos fallidos de strptime.
+
+    La respuesta trae muchos años: este parser se ejecuta una vez por fila.
+    Se conservan los formatos ISO y DD/MM/AAAA usados por el módulo.
+    """
     value = as_text(value)
-    for fmt in ('%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '%d/%m/%Y', '%d-%m-%Y'):
-        try:
-            return datetime.strptime(value, fmt).date()
-        except ValueError:
-            pass
     parts = value.split()
     if len(parts) >= 3:
         month = SPANISH_MONTHS.get(parts[0].lower().strip('.'))
@@ -48,6 +49,11 @@ def parse_erp_date(value):
                 return datetime(int(parts[2]), month, int(parts[1])).date()
             except ValueError:
                 pass
+    for fmt in ('%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '%d/%m/%Y', '%d-%m-%Y'):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            pass
     raise ValueError(_('Fecha de consumo no reconocida: %s') % value)
 
 
@@ -130,12 +136,15 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             '[PRESUPUESTOS ERP] Solicitando endpoint=%s empresa_id=%s api_id=%s',
             ENDPOINTS[kind], company.id, record.id,
         )
+        started = monotonic()
         response = self.env['api.administrator'].sudo().call_api(
             record.name, method='get', company_id=company.id,
         )
+        received = monotonic()
         rows = self._rows(response)
-        _logger.info('[PRESUPUESTOS ERP] Respuesta endpoint=%s filas=%s empresa_id=%s',
-                     ENDPOINTS[kind], len(rows), company.id)
+        _logger.info('[PRESUPUESTOS ERP] Respuesta endpoint=%s filas=%s empresa_id=%s '
+                     'http=%.2fs parseo=%.2fs', ENDPOINTS[kind], len(rows), company.id,
+                     received - started, monotonic() - received)
         return rows
 
     @api.model
@@ -263,52 +272,87 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         return record, 'unchanged', collided
 
     @api.model
-    def _sync_accounts(self, company, rows):
-        Account = self.env['expense.budget.account'].sudo().with_company(company).with_context(active_test=False)
+    def _sync_catalog_batch(self, Model, company, rows, kind):
+        """Actualizar el catálogo en lotes, sin una consulta por código.
+
+        Solo se cambian nombres distintos y registros inactivos. Conserva
+        vínculos rubro/cuentas y los campos editados ajenos al catálogo ERP.
+        Las variantes históricas con espacios se delegan al upsert original.
+        """
         clean = {}
         for index, item in enumerate(rows, 1):
             code = as_text(get_value(item, 'Codigo', 'code', required=True))
             name = as_text(get_value(item, 'Nombre', 'name', required=True))
             if not code or not name:
-                raise ValueError('La cuenta %s necesita Codigo y Nombre.' % index)
+                raise ValueError('%s %s necesita Codigo y Nombre.' % (kind, index))
             if code in clean and clean[code] != name:
-                raise ValueError('Código de cuenta duplicado con nombres diferentes: %s' % code)
+                raise ValueError('Código de %s repetido con distintos nombres: %s' % (kind, code))
             clean[code] = name
         counts = {'created': 0, 'updated': 0, 'unchanged': 0, 'reused_conflicts': 0}
-        existing = {rec.code: rec for rec in Account.search([
-            ('company_id', '=', company.id), ('code', 'in', list(clean)),
-        ])}
-        for code, name in clean.items():
-            _record, outcome, collided = self._upsert_catalog_record(
-                Account, company, code, name, existing=existing.get(code),
+        if not clean:
+            return counts
+        table = self._catalog_table(Model)
+        # Leer la empresa una sola vez: también detecta códigos históricos
+        # almacenados con espacios a la izquierda/derecha.
+        self.env.cr.execute('SELECT id, code FROM %s WHERE company_id = %%s' % table,
+                            (company.id,))
+        legacy = {}
+        for record_id, stored_code in self.env.cr.fetchall():
+            normalized = as_text(stored_code)
+            if normalized != stored_code and normalized in clean:
+                legacy.setdefault(normalized, record_id)
+        fast = dict(clean)
+        for code, record_id in legacy.items():
+            # No crear un código exacto si ya existe uno histórico con espacios.
+            # La normalización individual conserva la protección de unicidad.
+            self.env.cr.execute('SELECT 1 FROM %s WHERE company_id = %%s AND code = %%s' % table,
+                                (company.id, code))
+            if self.env.cr.fetchone():
+                continue
+            _rec, outcome, collided = self._upsert_catalog_record(
+                Model, company, code, clean[code], existing=Model.browse(record_id),
             )
             counts[outcome] += 1
             counts['reused_conflicts'] += int(collided)
+            fast.pop(code, None)
+        # Una sentencia por bloque de 500 sustituye las búsquedas/escrituras
+        # por registro. ON CONFLICT solo actualiza cambios reales.
+        values = [(company.id, code, name, self.env.uid, self.env.uid)
+                  for code, name in fast.items()]
+        query = """INSERT INTO %s AS target
+            (company_id, code, name, active, create_uid, create_date, write_uid, write_date)
+            VALUES %%s
+            ON CONFLICT (company_id, code) DO UPDATE SET
+                name = EXCLUDED.name,
+                active = TRUE,
+                write_uid = EXCLUDED.write_uid,
+                write_date = NOW()
+            WHERE target.name IS DISTINCT FROM EXCLUDED.name
+               OR target.active IS DISTINCT FROM TRUE
+            RETURNING (xmax = 0) AS was_created""" % table
+        template = '(%s, %s, %s, TRUE, %s, NOW(), %s, NOW())'
+        batch_created = batch_updated = 0
+        for pos in range(0, len(values), 500):
+            result = execute_values(self.env.cr, query, values[pos:pos + 500],
+                                    template=template, fetch=True)
+            batch_created += sum(bool(row[0]) for row in result)
+            batch_updated += sum(not bool(row[0]) for row in result)
+        counts['created'] += batch_created
+        counts['updated'] += batch_updated
+        counts['unchanged'] += len(values) - batch_created - batch_updated
+        # Insert/UPDATE SQL no pasa por write() del ORM: invalidar caché.
+        Model.invalidate_model(['name', 'code', 'active'], flush=False)
         return counts
 
     @api.model
+    def _sync_accounts(self, company, rows):
+        Model = self.env['expense.budget.account'].sudo().with_company(company).with_context(active_test=False)
+        return self._sync_catalog_batch(Model, company, rows, 'Cuenta')
+
+    @api.model
     def _sync_centers(self, company, rows):
-        Center = self.env['expense.budget.cost.center'].sudo().with_company(company).with_context(active_test=False)
-        clean = {}
-        for index, item in enumerate(rows, 1):
-            code = as_text(get_value(item, 'Codigo', 'code', required=True))
-            name = as_text(get_value(item, 'Nombre', 'name', required=True))
-            if not code or not name:
-                raise ValueError('Centro %s necesita Codigo y Nombre.' % index)
-            if code in clean and clean[code] != name:
-                raise ValueError('Código de centro duplicado con nombres diferentes: %s' % code)
-            clean[code] = name
-        counts = {'created': 0, 'updated': 0, 'unchanged': 0, 'reused_conflicts': 0}
-        existing = {rec.code: rec for rec in Center.search([
-            ('company_id', '=', company.id), ('code', 'in', list(clean)),
-        ])}
-        for code, name in clean.items():
-            _record, outcome, collided = self._upsert_catalog_record(
-                Center, company, code, name, existing=existing.get(code),
-            )
-            counts[outcome] += 1
-            counts['reused_conflicts'] += int(collided)
-        return counts
+        Model = self.env['expense.budget.cost.center'].sudo().with_company(company).with_context(active_test=False)
+        return self._sync_catalog_batch(Model, company, rows, 'Centro')
 
     @api.model
     def _sync_subcenters(self, company, rows):
@@ -320,9 +364,10 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         """
         combinations = set()
         for item in rows:
-            _account, center_code, subcenter, _when, _amount, _external_id = (
-                self._normalize_consumption(item)
-            )
+            # Para catalogar subcentros no es necesario convertir Fecha/Valor
+            # de todos los años: basta con los códigos del propio JSON.
+            center_code = as_text(get_value(item, 'Centro', 'codigo_centro_costo'))
+            subcenter = as_text(get_value(item, 'Subcentro', 'codigo_subcentro')).upper()
             if center_code and subcenter:
                 combinations.add((center_code, subcenter))
         if not combinations:
@@ -345,30 +390,29 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             ('center_id', 'in', [rec.id for rec in centers.values()]),
         ])}
         count = {'created': 0, 'unchanged': 0}
+        to_create = []
         for center_code, subcenter_code in sorted(combinations):
             center_rec = centers[center_code]
             key = (center_rec.id, subcenter_code)
             if key in known:
                 count['unchanged'] += 1
-                continue
-            with self.env.cr.savepoint():
-                rec = Subcenter.create({
-                    'company_id': company.id,
-                    'center_id': center_rec.id,
-                    'code': subcenter_code,
-                })
-                known[key] = rec
-            count['created'] += 1
+            else:
+                to_create.append({'company_id': company.id, 'center_id': center_rec.id,
+                                  'code': subcenter_code})
+        for pos in range(0, len(to_create), 250):
+            Subcenter.create(to_create[pos:pos + 250])
+            count['created'] += len(to_create[pos:pos + 250])
         _logger.info('[PRESUPUESTOS ERP] Subcentros: nuevos=%s existentes=%s empresa=%s',
                      count['created'], count['unchanged'], company.id)
         return count
 
     @api.model
-    def _normalize_consumption(self, item):
+    def _normalize_consumption(self, item, known_date=None):
         code = as_text(get_value(item, 'Codigo', 'codigo_cuenta', required=True))
         center = as_text(get_value(item, 'Centro', 'codigo_centro_costo'))
         subcenter = as_text(get_value(item, 'Subcentro', 'codigo_subcentro')).upper()
-        date = parse_erp_date(get_value(item, 'Fecha', required=True))
+        date = known_date if known_date is not None else parse_erp_date(
+            get_value(item, 'Fecha', required=True))
         amount = parse_amount(get_value(item, 'Valor', required=True))
         external_id = as_text(get_value(item, 'id', 'external_id', 'id_movimiento'))
         return code, center, subcenter, date, amount, external_id
@@ -383,8 +427,13 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         Expense = self.env['expense.budget.expense'].sudo().with_company(company)
         Account = self.env['expense.budget.account'].sudo().with_company(company).with_context(active_test=False)
         Center = self.env['expense.budget.cost.center'].sudo().with_company(company).with_context(active_test=False)
-        normalized = [self._normalize_consumption(row) for row in rows]
-        relevant = [row for row in normalized if row[3].year == year]
+        # La API devuelve todos los años. No convertir importes, generar hashes
+        # ni validar cuentas de movimientos fuera del año seleccionado.
+        relevant = []
+        for row in rows:
+            when = parse_erp_date(get_value(row, 'Fecha', required=True))
+            if when.year == year:
+                relevant.append(self._normalize_consumption(row, known_date=when))
         counts = {'created': 0, 'updated': 0, 'unchanged': 0,
                   'received': len(rows), 'skipped': len(rows)-len(relevant),
                   'linked': 0, 'unmatched': 0, 'reused_conflicts': 0, 'placeholder_accounts': 0,
@@ -398,9 +447,13 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         ])}
         accounts = {}
         for code in sorted(account_codes):
+            rec = existing_accounts.get(code)
+            if rec and rec.active:
+                accounts[code] = rec
+                continue
             rec, outcome, collided = self._upsert_catalog_record(
                 Account, company, code, '%s (pendiente de catálogo)' % code,
-                placeholder=True, existing=existing_accounts.get(code),
+                placeholder=True, existing=rec,
             )
             accounts[code] = rec
             if outcome == 'created':
@@ -411,9 +464,13 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         ])}
         centers = {}
         for code in sorted(center_codes):
+            rec = existing_centers.get(code)
+            if rec and rec.active:
+                centers[code] = rec
+                continue
             rec, outcome, collided = self._upsert_catalog_record(
                 Center, company, code, '%s (pendiente de catálogo)' % code,
-                placeholder=True, existing=existing_centers.get(code),
+                placeholder=True, existing=rec,
             )
             centers[code] = rec
             if outcome == 'created':
@@ -435,46 +492,103 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                 ).hexdigest()
             prepared.append((code, center_code, subcenter, when, amount, key,
                              'api:%s:%s' % (api_record.id, key)))
-        existing = {}
+        # Una búsqueda de proyecciones para todo el año evita una consulta SQL
+        # por cada cuenta/centro/subcentro/mes detectado en la respuesta.
+        Line = self.env['expense.budget.line'].sudo()
+        budget_lines = Line.search([
+            ('budget_id.company_id', '=', company.id),
+            ('budget_id.year', '=', year),
+            ('account_id', 'in', [rec.id for rec in accounts.values()]),
+        ], order='id')
+        line_index = {}
+        for line in budget_lines:
+            key = (line.account_id.id, line.cost_center_id.id or False,
+                   int(line.month), as_text(line.subcenter_code).upper())
+            line_index.setdefault(key, line.id)
+
+        # Leer los campos de gastos existentes en bloques con SQL, sin
+        # construir un recordset ni ejecutar write() si el gasto no cambió.
         all_keys = list({row[6] for row in prepared})
+        existing = {}
         for pos in range(0, len(all_keys), 500):
-            records = Expense.search([
-                ('company_id', '=', company.id),
-                ('source_key', 'in', all_keys[pos:pos + 500]),
-            ])
-            existing.update({rec.source_key: rec for rec in records})
-        processed_keys = set()
-        matched_lines = {}
+            self.env.cr.execute("""SELECT id, source_key, account_id, cost_center_id, subcenter_code,
+                       date, amount, description, reference, api_administrator_id,
+                       budget_line_id
+                FROM expense_budget_expense
+                WHERE company_id = %s AND source_key = ANY(%s)""",
+                (company.id, all_keys[pos:pos + 500]),
+            )
+            existing.update({rec[1]: rec for rec in self.env.cr.fetchall()})
+
+        pending_creates = {}
+        # keys duplicadas con el mismo id explícito en una sola respuesta:
+        # conservar el último valor, sin crear varias filas con la misma clave.
+        duplicate_keys = 0
         for code, center_code, subcenter, when, amount, key, source_key in prepared:
             account = accounts[code]
             center = centers[center_code] if center_code else Center.browse()
-            period_key = (account.id, center.id or False, when.year, when.month, subcenter)
-            if period_key not in matched_lines:
-                matched_lines[period_key] = Expense._find_budget_line(
-                    company.id, account.id, when, center.id or False, subcenter,
-                )
-            line = matched_lines[period_key]
-            row = {
-                'Codigo': code, 'Valor': amount, 'Fecha': when.isoformat(),
-                'Centro': center_code, 'Subcentro': subcenter,
-                'Descripcion': 'Consumo ERP %s / %s / %s' % (
-                    code, center_code or 'Sin centro', subcenter or 'Sin subcentro'),
+            prefix = (account.id, center.id or False, when.month)
+            line_id = (line_index.get((*prefix, subcenter)) if subcenter else None) or \
+                      line_index.get((*prefix, '')) or False
+            description = 'Consumo ERP %s / %s / %s' % (
+                code, center_code or 'Sin centro', subcenter or 'Sin subcentro')
+            values = {
+                'company_id': company.id, 'account_id': account.id,
+                'cost_center_id': center.id or False,
+                'subcenter_code': subcenter or False,
+                'date': fields.Date.to_string(when), 'amount': amount,
+                'description': description, 'reference': False,
+                'source': 'api', 'source_key': source_key,
+                'api_administrator_id': api_record.id,
+                'budget_line_id': line_id,
             }
-            # Si la API repite un ID explícito en la misma respuesta,
-            # la segunda aparición consulta el registro recién creado.
-            known = (None if source_key in processed_keys
-                     else existing.get(source_key, Expense.browse()))
-            outcome = Expense._upsert_external(
-                company, row, 'api', key, api_record=api_record,
-                resolved_account=account, resolved_center=center,
-                resolved_line=line, known_existing=known,
-            )
-            processed_keys.add(source_key)
-            counts[outcome] += 1
-            if line:
+            if line_id:
                 counts['linked'] += 1
             else:
                 counts['unmatched'] += 1
+            if source_key in pending_creates:
+                pending_creates[source_key] = values
+                duplicate_keys += 1
+                continue
+            old = existing.get(source_key)
+            if not old:
+                pending_creates[source_key] = values
+                continue
+            (_old_id, _key, old_account, old_center, old_subcenter, old_date,
+             old_amount, old_description, old_reference, old_api, old_line) = old
+            identical = (
+                old_account == values['account_id'] and
+                (old_center or False) == values['cost_center_id'] and
+                as_text(old_subcenter).upper() == as_text(values['subcenter_code']).upper() and
+                old_date == when and
+                abs(float(old_amount or 0) - float(amount)) < 0.0000001 and
+                as_text(old_description) == description and
+                (old_reference or False) == values['reference'] and
+                (old_api or False) == api_record.id and
+                (old_line or False) == line_id
+            )
+            if identical:
+                counts['unchanged'] += 1
+            else:
+                # Solo para cambios reales reutilizar el método de escritura
+                # original, con validaciones y reconciliación de línea.
+                row = {'Codigo': code, 'Valor': amount, 'Fecha': when.isoformat(),
+                       'Centro': center_code, 'Subcentro': subcenter,
+                       'Descripcion': description}
+                outcome = Expense._upsert_external(
+                    company, row, 'api', key, api_record=api_record,
+                    resolved_account=account, resolved_center=center,
+                    resolved_line=Line.browse(line_id),
+                    known_existing=Expense.browse(old[0]),
+                )
+                counts[outcome] += 1
+        # batch create() activa los cómputos de Consumido en lotes, en vez
+        # de una creación por cada movimiento del histórico.
+        all_new = list(pending_creates.values())
+        for pos in range(0, len(all_new), 200):
+            Expense.create(all_new[pos:pos + 200])
+        counts['created'] += len(all_new)
+        counts['unchanged'] += duplicate_keys
         return counts
 
     @api.model
@@ -710,7 +824,9 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         ], limit=1)
         result = {'created': 0, 'updated': 0, 'unchanged': 0,
                   'errors': 0, 'apis': 0, 'year': year, 'details': []}
+        total_started = monotonic()
         for kind in ('accounts', 'centers', 'consumptions'):
+            phase_started = monotonic()
             api_rec = False
             counts = {}
             try:
@@ -723,6 +839,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                 result['apis'] += 1
                 with self.env.cr.savepoint():
                     rows = self._call(company, api_rec, kind)
+                    api_finished = monotonic()
                     if kind == 'accounts':
                         counts = self._sync_accounts(company, rows)
                     elif kind == 'centers':
@@ -748,14 +865,19 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                                counts.get('unmatched', 0), counts.get('placeholder_accounts', 0),
                                counts.get('placeholder_centers', 0), counts.get('subcenters_created', 0),
                                counts.get('reused_conflicts', 0)))
+                api_seconds = api_finished - phase_started
+                import_seconds = monotonic() - api_finished
+                message += ' tiempo_api=%.2fs tiempo_guardado=%.2fs' % (api_seconds, import_seconds)
                 self._save_log(company, api_rec, year, kind, 'success', message, counts)
                 _logger.info('[PRESUPUESTOS ERP] %s | empresa=%s año=%s | %s',
                              ENDPOINTS[kind], company.id, year, message)
-                result['details'].append('%s: %s filas (%s nuevas, %s vinculadas, %s omitidas, %s subcentros nuevos)' % (
+                result['details'].append('%s: %s filas (%s nuevas, %s vinculadas, %s omitidas, %s subcentros nuevos · HTTP %.1fs · Odoo %.1fs)' % (
                     kind, counts['received'], counts.get('created', 0),
                     counts.get('linked', 0), counts.get('skipped', 0),
-                    counts.get('subcenters_created', 0)))
+                    counts.get('subcenters_created', 0), api_seconds, import_seconds))
             except Exception as exc:
+                _logger.error('[PRESUPUESTOS ERP] Fase %s terminó con error tras %.2fs',
+                              kind, monotonic() - phase_started)
                 if getattr(exc, 'pgcode', None) in (
                     errorcodes.SERIALIZATION_FAILURE, errorcodes.DEADLOCK_DETECTED,
                 ):
@@ -772,6 +894,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                                   ENDPOINTS[kind], company.id, year, safe_message)
                 self._save_log(company, api_rec, year, kind, 'error', safe_message, counts)
                 result['details'].append('%s: ERROR %s' % (kind, safe_message[:180]))
+        _logger.info('[PRESUPUESTOS ERP] Tiempo total empresa=%s año=%s: %.2fs',
+                     company.id, year, monotonic() - total_started)
         return result
 
     @api.model
