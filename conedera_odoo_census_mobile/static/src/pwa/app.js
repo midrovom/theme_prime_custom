@@ -247,11 +247,12 @@ function shell(title, body, opts={}) {
       <div class="sidebar-brand"><span class="sidebar-logo">C</span><span><strong>Conedera</strong><small>Catastro de Campo</small></span></div>
       ${nav(opts.nav || state.page,"side-nav")}
       <button class="btn btn-primary sidebar-new" type="button" data-action="new-catastro">＋ Nuevo catastro</button>
+      <a class="sidebar-odoo-link" href="/web" title="Regresar al escritorio habitual de Odoo">↗ Volver a Odoo</a>
       <div class="sidebar-bottom"><span class="sidebar-user">${esc(state.meta?.user?.name||"Equipo comercial")}</span><small>${esc(state.meta?.user?.company_name||"Catastro Comercial")}</small><small>${pendingCount} operaciones por revisar</small></div>
     </aside>
     <div class="app-workspace">
       <header class="topbar"><div><div class="eyebrow">Conedera / Catastro Comercial</div><h1>${esc(title)}</h1></div>
-      <div class="header-actions"><span class="desktop-user">${esc(state.meta?.user?.name||"")}</span><button class="icon-btn" data-action="refresh" title="Actualizar desde Odoo" aria-label="Actualizar desde Odoo">↻</button></div></header>
+      <div class="header-actions"><span class="desktop-user">${esc(state.meta?.user?.name||"")}</span><a class="btn btn-outline back-to-odoo" href="/web" aria-label="Volver al escritorio de Odoo" title="Ir a Odoo y sus demás módulos">↗ Odoo</a><button class="icon-btn" data-action="refresh" title="Actualizar desde Odoo" aria-label="Actualizar desde Odoo">↻</button></div></header>
       <main class="content" id="main-content">${connectionBanner()}<div class="view-content">${body}</div></main>
       ${opts.fab ? `<button class="fab" data-action="new-catastro" aria-label="Nuevo catastro">＋</button>` : ""}
       ${nav(opts.nav || state.page)}
@@ -854,7 +855,20 @@ async function init() {
   await hydrateLocalState();
   render();
   if (window.isSecureContext && "serviceWorker" in navigator) {
-    try { await navigator.serviceWorker.register("/conedera/sw.js", { scope: "/conedera/" }); } catch (err) { console.warn("Service worker no disponible", err); }
+    try {
+      // Scope limitado a la PWA: no instalar controladores para /web ni otras aplicaciones.
+      await navigator.serviceWorker.register("/conedera/sw.js", { scope: "/conedera/app", updateViaCache: "none" });
+      // Migración: retirar exclusivamente la inscripción anterior de ESTA app (scope /conedera/).
+      // No toca controladores de otros módulos y NO borra IndexedDB ni pendientes offline.
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        const activeScript = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL || "";
+        if (registration.scope === new URL("/conedera/", location.origin).href
+            && activeScript && new URL(activeScript).pathname === "/conedera/sw.js") {
+          await registration.unregister();
+        }
+      }
+    } catch (err) { console.warn("Service worker no disponible", err); }
   }
   if (navigator.onLine) {
     await refreshFromServer(false);

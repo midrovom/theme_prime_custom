@@ -1,9 +1,11 @@
-const CACHE = "conedera-field-v3";
+// Aislamiento: este Service Worker sirve SOLO las páginas de Catastro PWA.
+// No registra redirecciones ni intercepta la navegación del escritorio Odoo (/web).
+const CACHE = "conedera-field-v4";
+const APP_PATH = "/conedera/app";
 const SHELL = [
-  "/conedera/app",
-  "/conedera/manifest.webmanifest",
-  "/conedera_odoo_census_mobile/static/src/pwa/app.css",
-  "/conedera_odoo_census_mobile/static/src/pwa/app.js",
+  "/conedera/manifest.webmanifest?v=18.0.1.3.0",
+  "/conedera_odoo_census_mobile/static/src/pwa/app.css?v=18.0.1.3.0",
+  "/conedera_odoo_census_mobile/static/src/pwa/app.js?v=18.0.1.3.0",
   "/conedera_odoo_census_mobile/static/description/icon.svg",
   "/conedera_odoo_census_mobile/static/description/icon-192.png",
   "/conedera_odoo_census_mobile/static/description/icon-512.png",
@@ -11,13 +13,27 @@ const SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches.open(CACHE).then(async (cache) => {
+      await cache.addAll(SHELL);
+      // Nunca guardar en caché una redirección a login como si fuera Catastro.
+      const response = await fetch(APP_PATH, { credentials: "same-origin", cache: "no-store" });
+      if (!response.ok || response.redirected || new URL(response.url).pathname !== APP_PATH
+          || !(response.headers.get("Content-Type") || "").includes("text/html")) {
+        throw new Error("No se pudo precargar Catastro PWA con una sesión válida");
+      }
+      await cache.put(APP_PATH, response);
+      await self.skipWaiting();
+    })
+  );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith("conedera-field-") && key !== CACHE).map((key) => caches.delete(key))))
-      .then(() => self.clients.claim())
+    caches.keys().then((keys) => Promise.all(
+      keys.filter((key) => key.startsWith("conedera-field-") && key !== CACHE)
+        .map((key) => caches.delete(key))
+    )).then(() => self.clients.claim())
   );
 });
 
@@ -27,27 +43,32 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  if (req.mode === "navigate" && url.pathname.startsWith("/conedera/")) {
+  // Se permite el fallback offline SOLO en la URL exacta del catastro.
+  if (req.mode === "navigate" && url.pathname === APP_PATH) {
     event.respondWith(
       fetch(req).then((res) => {
-        // Never cache redirects to login pages, errors, or responses outside our app.
-        if (res.ok && !res.redirected && new URL(res.url).pathname === "/conedera/app") {
+        if (res.ok && !res.redirected && new URL(res.url).pathname === APP_PATH
+            && (res.headers.get("Content-Type") || "").includes("text/html")) {
           const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put("/conedera/app", copy));
+          event.waitUntil(caches.open(CACHE).then((cache) => cache.put(APP_PATH, copy)));
         }
         return res;
-      }).catch(() => caches.match("/conedera/app"))
+      }).catch(async () => (await caches.match(APP_PATH)) || Response.error())
     );
     return;
   }
 
-  if (url.pathname.includes("/conedera_odoo_census_mobile/static/") || url.pathname === "/conedera/manifest.webmanifest") {
-    event.respondWith(caches.match(req).then((cached) => cached || fetch(req).then((res) => {
-      if (res.ok && !res.redirected) {
-        const copy = res.clone();
-        caches.open(CACHE).then((cache) => cache.put(req, copy));
-      }
-      return res;
-    })));
+  // Solo caché de recursos propios del complemento, nunca assets de otros módulos.
+  if (url.pathname.startsWith("/conedera_odoo_census_mobile/static/")
+      || url.pathname === "/conedera/manifest.webmanifest") {
+    event.respondWith(
+      caches.match(req).then((cached) => cached || fetch(req).then((res) => {
+        if (res.ok && !res.redirected) {
+          const copy = res.clone();
+          event.waitUntil(caches.open(CACHE).then((cache) => cache.put(req, copy)));
+        }
+        return res;
+      }))
+    );
   }
 });

@@ -107,3 +107,23 @@ Este addon no requiere desinstalar ni reemplazar el módulo principal.
 ### Alcance y límites
 
 Este ZIP fue sometido a validación estática de XML/Python/JavaScript y pruebas unitarias de lógica JS, **no** a una actualización real contra una base PostgreSQL de Odoo 18. No se garantiza compatibilidad con personalizaciones adicionales ajenas a las dos versiones inspeccionadas. La creación y administración de proformas, aprobación de solicitudes por supervisores y funciones administrativas avanzadas continúan disponibles en las pantallas del módulo base de Odoo; la PWA dispone de enlaces a esas pantallas. El cache offline de IndexedDB guarda información empresarial en el dispositivo: requiere dispositivos de confianza y medidas de protección de sesión y almacenamiento adecuadas.
+
+## Versión 18.0.1.3.0 — Acceso PWA opcional, sin sustituir Odoo
+
+- El menú **Abrir Catastro PWA** está dentro de **Catastro Comercial** en Odoo. Ya no ocupa una aplicación raíz propia ni reemplaza la pantalla estándar de Odoo.
+- Se mantiene el mismo XML ID del menú anterior para que las instalaciones **actualizadas** migren el menú existente, en vez de dejar dos entradas. La acción de URL cambia de `target=self` a `target=new` para abrir una pestaña independiente.
+- Acceso directo opcional: `/conedera/app`. Visitar `/web`, cualquier otro menú o un módulo diferente **no lleva a la PWA**. Los demás módulos mantienen su navegación habitual.
+- Dentro de la PWA existe un enlace visible **↗ Odoo** (móvil y escritorio), y otro en el menú lateral del escritorio.
+- Service Worker limitado al scope `/conedera/app` (antes `/conedera/`) y fallback offline solo en la página exacta de Catastro. Se retira únicamente el registro legado del Service Worker de esta PWA. No se borra IndexedDB ni la cola de datos pendientes.
+- Recursos estáticos versionados para reducir problemas de caché tras actualizar el módulo.
+- No se modifica el módulo base `conedera_odoo_census` ni el resto de acciones de Odoo.
+
+### Actualización desde 18.0.1.2.0
+
+1. Respalde base de datos y directorio de addons. Sustituya solo `conedera_odoo_census_mobile` y reinicie Odoo.
+2. Actualice el módulo (`-u conedera_odoo_census_mobile`) para **migrar el menú y el target**. Copiar los archivos sin actualizar el módulo NO cambia el menú en la base de datos.
+3. Con conexión, abra `/conedera/app` una vez desde la sesión autenticada para actualizar el Service Worker. Recargue la página si continúa sirviendo recursos del caché antiguo.
+4. Verifique que `/web` abra Odoo normalmente, que Catastro Comercial siga mostrando su menú estándar, y que **Abrir Catastro PWA** abra una nueva pestaña.
+5. Compruebe datos offline pendientes antes de limpiar datos de navegación: la actualización no los borra.
+
+**Validación pendiente**: requiere instalación de prueba en Odoo 18/PostgreSQL y revisión en navegador real; los cambios del paquete han sido inspeccionados y validados estáticamente, no desplegados en su servidor.

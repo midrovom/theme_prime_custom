@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Acción optativa: abrir en una pestaña independiente. No sustituye /web. -->
     <record id="action_conedera_field_app" model="ir.actions.act_url">
-        <field name="name">Catastro de Campo</field>
+        <field name="name">Abrir Catastro PWA</field>
         <field name="url">/conedera/app</field>
-        <field name="target">self</field>
+        <field name="target">new</field>
     </record>
 
+    <!-- Se reutiliza el ID de menú de la versión anterior para migrar la entrada
+         ya instalada: deja de ser una aplicación raíz y pasa a Catastro Comercial. -->
     <menuitem id="menu_conedera_field_app_root"
-              name="Catastro Campo"
-              sequence="4"
+              name="Abrir Catastro PWA"
+              parent="conedera_odoo_census.menu_census_root"
+              sequence="40"
               action="action_conedera_field_app"
-              groups="base.group_user"
-              web_icon="conedera_odoo_census_mobile,static/description/icon.svg"/>
+              groups="conedera_odoo_census.group_census_user"/>
 </odoo>

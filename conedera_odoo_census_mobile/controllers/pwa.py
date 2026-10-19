@@ -38,7 +38,7 @@ class ConederaFieldAppController(http.Controller):
             "application/javascript; charset=utf-8",
             cache=False,
         )
-        response.headers["Service-Worker-Allowed"] = "/conedera/"
+        response.headers["Service-Worker-Allowed"] = "/conedera/app"
         return response
 
     @http.route("/conedera/manifest.webmanifest", type="http", auth="public", methods=["GET"], csrf=False, sitemap=False)
@@ -48,7 +48,7 @@ class ConederaFieldAppController(http.Controller):
             "short_name": "Catastro",
             "description": "Catastro comercial y visitas de campo Conedera",
             "start_url": "/conedera/app",
-            "scope": "/conedera/",
+            "scope": "/conedera/app",
             "display": "standalone",
             "background_color": "#f7f6fb",
             "theme_color": "#6f5aa7",
