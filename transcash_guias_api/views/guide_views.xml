@@ -1,0 +1,37 @@
+<odoo>
+  <record id="view_tc_guide_list" model="ir.ui.view">
+    <field name="name">tc.guide.list</field><field name="model">tc.guide</field>
+    <field name="arch" type="xml"><list create="false" edit="false" delete="false">
+      <field name="name"/><field name="document_number"/><field name="erp_state"/>
+      <field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/>
+      <field name="destination_address"/><field name="erp_planned_date"/><field name="company_id" groups="base.group_multi_company"/>
+    </list></field>
+  </record>
+  <record id="view_tc_guide_form" model="ir.ui.view">
+    <field name="name">tc.guide.form</field><field name="model">tc.guide</field>
+    <field name="arch" type="xml"><form create="false" edit="false" delete="false"><sheet>
+      <group><group><field name="name"/><field name="external_id"/><field name="document_type"/><field name="document_number"/><field name="erp_state"/></group>
+      <group><field name="transport_id"/><field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/></group></group>
+      <group><group><field name="sender_id"/><field name="recipient_id"/><field name="destination_id"/></group>
+      <group><field name="origin_address"/><field name="destination_address"/><field name="destination_city"/></group></group>
+      <group><field name="erp_start_date"/><field name="erp_end_date"/><field name="erp_planned_date"/><field name="last_sync"/></group>
+      <field name="cargo_description"/>
+      <notebook><page string="Productos"><field name="line_ids" readonly="1"><list create="false" edit="false" delete="false">
+        <field name="sku"/><field name="name"/><field name="quantity"/><field name="weight_kg"/><field name="pallets"/><field name="boxes"/>
+      </list></field></page></notebook>
+    </sheet></form></field>
+  </record>
+  <record id="view_tc_log_list" model="ir.ui.view">
+    <field name="name">tc.guide.sync.log.list</field><field name="model">tc.guide.sync.log</field>
+    <field name="arch" type="xml"><list create="false" edit="false" delete="false"><field name="date"/><field name="company_id"/><field name="api_name"/><field name="created_count"/><field name="updated_count"/><field name="error_count"/></list></field>
+  </record>
+  <record id="view_tc_log_form" model="ir.ui.view">
+    <field name="name">tc.guide.sync.log.form</field><field name="model">tc.guide.sync.log</field>
+    <field name="arch" type="xml"><form create="false" edit="false" delete="false"><sheet><group><field name="date"/><field name="company_id"/><field name="api_name"/><field name="created_count"/><field name="updated_count"/><field name="error_count"/></group><field name="details"/></sheet></form></field>
+  </record>
+  <record id="action_tc_guide" model="ir.actions.act_window"><field name="name">Guías sincronizadas</field><field name="res_model">tc.guide</field><field name="view_mode">list,form</field></record>
+  <record id="action_tc_sync_log" model="ir.actions.act_window"><field name="name">Historial sincronizaciones</field><field name="res_model">tc.guide.sync.log</field><field name="view_mode">list,form</field></record>
+  <menuitem id="menu_tc_root" name="Transcash - Guías ERP" sequence="65" groups="transcash_guias_api.group_tc_operator"/>
+  <menuitem id="menu_tc_guides" name="Guías sincronizadas" parent="menu_tc_root" action="action_tc_guide" sequence="10" groups="transcash_guias_api.group_tc_operator"/>
+  <menuitem id="menu_tc_sync_logs" name="Historial de sincronización" parent="menu_tc_root" action="action_tc_sync_log" sequence="20" groups="transcash_guias_api.group_tc_sync_admin"/>
+</odoo>
