@@ -32,6 +32,10 @@
                         <field name="account_selection_ids" widget="many2many_tags"
                                domain="[('company_id', '=', company_id)]"
                                options="{'no_create': True, 'no_create_edit': True}"/>
+                        <field name="cost_center_ids" widget="many2many_tags" readonly="1"
+                               string="Centros detectados en consumos"/>
+                        <div class="text-muted">Una cuenta puede tener consumos en varios centros; seleccione el centro en la proyección.</div>
+                        
                     </group>
                 </sheet>
             </form>
@@ -64,6 +68,7 @@
                         <field name="code"/><field name="name"/>
                         <field name="company_id"/>
                         <field name="category_id" domain="[('company_id', '=', company_id)]"/>
+                        <field name="cost_center_ids" widget="many2many_tags" readonly="1"/>
                         <field name="active"/>
                     </group>
                     <field name="note"/>
@@ -133,6 +138,10 @@
                                            options="{'no_quick_create': True}"/>
                                     <field name="account_id" readonly="parent.state != 'draft'"
                                            domain="[('company_id', '=', parent.company_id), ('category_id', '=', category_id)]"/>
+                                    <field name="cost_center_id" string="Centro de costo"
+                                           readonly="parent.state != 'draft'"
+                                           domain="[('company_id', '=', parent.company_id)]"
+                                           options="{'no_create': True}"/>
                                     <field name="month" readonly="parent.state != 'draft'"/>
                                     <field name="planned_amount" readonly="parent.state != 'draft'" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
@@ -179,7 +188,7 @@
                             groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                 </header>
                 <field name="budget_id"/><field name="company_id"/>
-                <field name="account_id"/><field name="category_id"/><field name="year"/><field name="month"/>
+                <field name="account_id"/><field name="category_id"/><field name="cost_center_id"/><field name="year"/><field name="month"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Proyectado"/>
                 <field name="actual_amount" sum="Consumido"/>
@@ -194,6 +203,7 @@
             <pivot string="Análisis presupuestario">
                 <field name="budget_id" type="row"/>
                 <field name="category_id" type="row"/>
+                <field name="cost_center_id" type="row"/>
                 <field name="month" type="col"/>
                 <field name="planned_amount" type="measure"/>
                 <field name="actual_amount" type="measure"/>
@@ -216,10 +226,11 @@
         <field name="arch" type="xml">
             <search>
                 <field name="budget_id"/><field name="account_id"/><field name="category_id"/>
-                <field name="month"/>
+                <field name="month"/><field name="cost_center_id"/>
                 <filter string="Sobregirados" name="over_budget" domain="[('variance_amount', '&lt;', 0)]"/>
                 <group expand="0" string="Agrupar por">
                     <filter string="Rubro" name="group_category" context="{'group_by': 'category_id'}"/>
+                    <filter string="Centro de costo" name="group_cost_center" context="{'group_by': 'cost_center_id'}"/>
                     <filter string="Mes" name="group_month" context="{'group_by': 'month'}"/>
                     <filter string="Presupuesto" name="group_budget" context="{'group_by': 'budget_id'}"/>
                 </group>
@@ -238,8 +249,8 @@
         <field name="arch" type="xml">
             <list string="Gastos reales">
                 <field name="date"/><field name="company_id"/>
-                <field name="account_id"/><field name="category_id"/>
-                <field name="description"/><field name="reference"/>
+                <field name="account_id"/><field name="category_id"/><field name="cost_center_id"/>
+                <field name="description"/><field name="reference"/><field name="subcenter_code" optional="hide"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="amount" sum="Total gastado"/>
                 <field name="source"/><field name="budget_line_id" optional="hide"/>
@@ -257,6 +268,7 @@
                             <field name="company_id"/>
                             <field name="account_id" domain="[('company_id', '=', company_id)]"/>
                             <field name="category_id" readonly="True"/>
+                            <field name="cost_center_id" domain="[('company_id', '=', company_id)]"/>
                             <field name="budget_line_id" readonly="True"/>
                         </group>
                         <group>

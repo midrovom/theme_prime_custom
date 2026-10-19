@@ -99,6 +99,7 @@
                                             <tr>
                                                 <td class="account-name">
                                                     <span t-esc="account_data['account'].name"/>
+                                                    <span t-if="account_data.get('cost_center')"> — <span t-esc="account_data['cost_center'].name"/></span>
                                                     <span t-if="account_data['account'].code" class="category-code"> (<span t-esc="account_data['account'].code"/>)</span>
                                                 </td>
                                                 <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['planned'])"/>

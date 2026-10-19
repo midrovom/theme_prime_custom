@@ -11,5 +11,16 @@
         <field name="interval_type">days</field>
         <field name="active" eval="False"/>
     </record>
+    <!-- Tarea activa; solo consulta las empresas con las tres APIs ERP seleccionadas. -->
+    <record id="ir_cron_expense_budget_erp_five_hours" model="ir.cron">
+        <field name="name">Presupuestos: cuentas, centros y consumos ERP (5 horas)</field>
+        <field name="model_id" ref="model_expense_budget"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="state">code</field>
+        <field name="code">model.env['expense.budget.inventory.sync'].cron_sync_every_5h()</field>
+        <field name="interval_number">5</field>
+        <field name="interval_type">hours</field>
+        <field name="active" eval="True"/>
+    </record>
     </data>
 </odoo>

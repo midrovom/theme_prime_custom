@@ -67,12 +67,13 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
                     'months': self._empty_year(),
                 }
             group = categories[category.id]
-            if account.id not in group['accounts_by_id']:
-                group['accounts_by_id'][account.id] = {
-                    'account': account,
+            key = (account.id, line.cost_center_id.id or 0)
+            if key not in group['accounts_by_id']:
+                group['accounts_by_id'][key] = {
+                    'account': account, 'cost_center': line.cost_center_id,
                     'months': self._empty_year(),
                 }
-            month = group['accounts_by_id'][account.id]['months'][line.month]
+            month = group['accounts_by_id'][key]['months'][line.month]
             month['planned'] += line.planned_amount
             month['actual'] += line.actual_amount
             month['available'] += line.variance_amount

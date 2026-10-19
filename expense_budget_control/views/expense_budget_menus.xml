@@ -13,6 +13,12 @@
     <menuitem id="menu_expense_budget_config" name="Configuración" parent="menu_expense_budget_root" sequence="40"/>
     <menuitem id="menu_expense_budget_category" name="Rubros" parent="menu_expense_budget_config" action="action_expense_budget_category" sequence="10"/>
     <menuitem id="menu_expense_budget_account" name="Cuentas controladas" parent="menu_expense_budget_config" action="action_expense_budget_account" sequence="20"/>
+    <menuitem id="menu_expense_budget_cost_center" name="Centros de costo"
+              parent="menu_expense_budget_config" action="action_expense_budget_cost_center" sequence="25"
+              groups="expense_budget_control.group_expense_budget_manager"/>
+    <menuitem id="menu_expense_budget_cost_center_api" name="API de centros de costo"
+              parent="menu_expense_budget_config" action="action_expense_budget_cost_center_api" sequence="35"
+              groups="expense_budget_control.group_expense_budget_manager"/>
     <menuitem id="menu_expense_budget_import" name="Importar Excel/CSV" parent="menu_expense_budget_root" action="action_expense_budget_import" sequence="50"/>
     <menuitem id="menu_expense_budget_api" name="Configuración API de gastos" parent="menu_expense_budget_config" action="action_expense_budget_api_administrator" sequence="30"/>
     <menuitem id="menu_expense_budget_sync_log" name="Historial API" parent="menu_expense_budget_config" action="action_expense_budget_sync_log" sequence="40"/>

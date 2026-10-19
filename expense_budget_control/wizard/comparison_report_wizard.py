@@ -71,6 +71,8 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
         'expense.budget.account', string='Cuenta controlada (legado)',
         domain="[('company_id', '=', company_id)]",
     )
+    cost_center_id = fields.Many2one('expense.budget.cost.center', string='Centro de costo',
+                                     domain="[('company_id', '=', company_id)]")
     account_ids = fields.Many2many(
         'expense.budget.account',
         'expense_budget_comparison_wizard_account_rel',
@@ -81,6 +83,7 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
     @api.onchange('company_id')
     def _onchange_company_id(self):
         self.category_id = False
+        self.cost_center_id = False
         self.account_id = False
         self.account_ids = [(5, 0, 0)]
 
@@ -92,11 +95,13 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
         self.account_id = False
         self.account_ids = [(5, 0, 0)]
 
-    @api.constrains('year', 'company_id', 'category_id', 'account_id', 'account_ids', 'month_ids')
+    @api.constrains('year', 'company_id', 'category_id', 'cost_center_id', 'account_id', 'account_ids', 'month_ids')
     def _check_filters(self):
         for wizard in self:
             if not 1900 <= int(wizard.year) <= 2100:
                 raise ValidationError(_('Seleccione un año válido entre 1900 y 2100.'))
+            if wizard.cost_center_id and wizard.cost_center_id.company_id != wizard.company_id:
+                raise ValidationError(_('El centro de costo debe pertenecer a la empresa seleccionada.'))
             if wizard.category_id and wizard.category_id.company_id != wizard.company_id:
                 raise ValidationError(_('El rubro no pertenece a la empresa seleccionada.'))
             if wizard.account_id and wizard.account_id.company_id != wizard.company_id:

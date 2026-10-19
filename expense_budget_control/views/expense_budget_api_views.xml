@@ -8,7 +8,10 @@
         <field name="arch" type="xml">
             <list string="Configuración API de gastos" delete="false">
                 <field name="company_id"/>
-                <field name="api_administrator_id"/>
+                <field name="api_administrator_id" optional="hide"/>
+                <field name="account_api_id" optional="show"/>
+                <field name="center_catalog_api_id" optional="show"/>
+                <field name="consumption_api_id" optional="show"/>
                 <button name="action_sync" type="object" string="Sincronizar" icon="fa-refresh"/>
             </list>
         </field>
@@ -20,15 +23,21 @@
         <field name="arch" type="xml">
             <form string="Configuración API de gastos" delete="false">
                 <header>
-                    <button name="action_sync" type="object" string="Sincronizar gastos"
+                    <button name="action_sync" type="object" string="Sincronizar"
                             class="btn-primary"/>
                 </header>
                 <sheet>
                     <group>
                         <field name="company_id"/>
-                        <field name="api_administrator_id"
+                        <field name="api_administrator_id" string="API anterior (opcional)"
                                domain="[('company_id', '=', company_id), ('type', '=', 'get'), ('status', '=', 'A')]"
                                options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                        <group string="Tres endpoints ERP (APIs GET existentes)">
+                            <field name="account_api_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                            <field name="center_catalog_api_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                            <field name="consumption_api_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                            <div class="text-muted" colspan="2">Configure cada endpoint en API Administrator y selecciónelo aquí. Sin crear nuevas conexiones en Control de Gastos. Orden: cuentas, centros y consumos.</div>
+                        </group>
                     </group>
                 </sheet>
             </form>

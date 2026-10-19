@@ -42,6 +42,14 @@
                         </t>
                     </select>
                 </label>
+                <label>Centro de costo
+                    <select class="form-select" t-att-value="state.costCenterId" t-on-change="onCostCenterChange">
+                        <option value="">Todos los centros</option>
+                        <t t-foreach="state.data.cost_centers || []" t-as="center" t-key="center.id">
+                            <option t-att-value="center.id" t-esc="center.name"/>
+                        </t>
+                    </select>
+                </label>
                 <label>Rubro / línea de servicio
                     <select class="form-select" t-att-value="state.categoryId" t-on-change="onCategoryChange">
                         <option value="">Todos los rubros</option>

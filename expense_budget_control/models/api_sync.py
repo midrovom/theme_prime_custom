@@ -20,10 +20,29 @@ class ExpenseBudgetAPIConfig(models.Model):
         default=lambda self: self.env.company,
     )
     api_administrator_id = fields.Many2one(
-        'api.administrator', string='API existente', required=True,
+        'api.administrator', string='API anterior (opcional)',
         ondelete='restrict', check_company=True,
         domain="[('company_id', '=', company_id), ('type', '=', 'get'), ('status', '=', 'A')]",
         help='Seleccione una API GET activa creada previamente en API Administrator.',
+    )
+
+    account_api_id = fields.Many2one(
+        'api.administrator', string='API de cuentas de gastos',
+        ondelete='restrict', check_company=True,
+        domain="[('company_id', '=', company_id), ('type', '=', 'get'), ('status', '=', 'A')]",
+        help='Endpoint: inventory_odoo/consulta_odoo/getctagastos/2',
+    )
+    center_catalog_api_id = fields.Many2one(
+        'api.administrator', string='API de centros de costo (ERP)',
+        ondelete='restrict', check_company=True,
+        domain="[('company_id', '=', company_id), ('type', '=', 'get'), ('status', '=', 'A')]",
+        help='Endpoint: inventory_odoo/consulta_odoo/getcentrocostos/2',
+    )
+    consumption_api_id = fields.Many2one(
+        'api.administrator', string='API de consumos de gastos (ERP)',
+        ondelete='restrict', check_company=True,
+        domain="[('company_id', '=', company_id), ('type', '=', 'get'), ('status', '=', 'A')]",
+        help='Endpoint: inventory_odoo/consulta_odoo/getconsumosgastos/2',
     )
 
     _sql_constraints = [
@@ -31,7 +50,7 @@ class ExpenseBudgetAPIConfig(models.Model):
          'Ya existe una API de gastos seleccionada para esta empresa.'),
     ]
 
-    @api.constrains('company_id', 'api_administrator_id')
+    @api.constrains('company_id', 'api_administrator_id', 'account_api_id', 'center_catalog_api_id', 'consumption_api_id')
     def _check_selected_api(self):
         for record in self:
             selected = record.api_administrator_id
@@ -39,11 +58,19 @@ class ExpenseBudgetAPIConfig(models.Model):
                 raise UserError(_('La API seleccionada debe pertenecer a la misma empresa.'))
             if selected and selected.type != 'get':
                 raise UserError(_('Seleccione una API configurada como GET.'))
+            for api_record in (record.account_api_id, record.center_catalog_api_id,
+                               record.consumption_api_id):
+                if api_record and (api_record.company_id != record.company_id or
+                                   api_record.type != 'get' or api_record.status != 'A'):
+                    raise UserError(_('Las APIs seleccionadas deben ser GET activas de la empresa.'))
 
     def action_sync(self):
         if not self.env.user.has_group('expense_budget_control.group_expense_budget_manager'):
             raise AccessError(_('Requiere el grupo Administrador de presupuestos de gastos.'))
         self.ensure_one()
+        if self.account_api_id or self.center_catalog_api_id or self.consumption_api_id:
+            result = self.env['expense.budget.inventory.sync']._sync_company(self.company_id)
+            return self.env['expense.budget.inventory.sync']._notification(result)
         result = self.env['expense.budget.api.sync']._sync_company(
             self.company_id, api_records=self.api_administrator_id,
         )
@@ -169,5 +196,7 @@ class ExpenseBudgetAPISync(models.AbstractModel):
     def cron_sync_all(self):
         """Tarea opcional: la instalación la deja desactivada por seguridad."""
         companies = self.env['expense.budget.api.config'].sudo().search([]).mapped('company_id')
-        for company in companies:
+        center_companies = self.env['expense.budget.cost.center.api.config'].sudo().search([]).mapped('company_id')
+        for company in (companies | center_companies):
+            self.env['expense.budget.cost.center.sync']._sync_company(company)
             self._sync_company(company)

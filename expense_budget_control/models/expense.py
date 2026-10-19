@@ -80,6 +80,14 @@ class ExpenseBudgetExpense(models.Model):
                                  required=True, ondelete='restrict', check_company=True, index=True)
     category_id = fields.Many2one('expense.budget.category', related='account_id.category_id',
                                   store=True, string='Rubro', index=True)
+    cost_center_id = fields.Many2one(
+        'expense.budget.cost.center', string='Centro de costo',
+        check_company=True, ondelete='restrict', index=True,
+    )
+    subcenter_code = fields.Char(
+        string='Subcentro ERP', index=True,
+        help='Código Subcentro recibido de getconsumosgastos; se conserva para trazabilidad.',
+    )
     budget_line_id = fields.Many2one('expense.budget.line', string='Línea presupuestaria',
                                      ondelete='set null', index=True, check_company=True,
                                      readonly=True, copy=False)
@@ -99,20 +107,23 @@ class ExpenseBudgetExpense(models.Model):
          'Este movimiento externo ya fue importado para la empresa.'),
     ]
 
-    @api.constrains('account_id', 'company_id', 'budget_line_id', 'date')
+    @api.constrains('account_id', 'company_id', 'cost_center_id', 'budget_line_id', 'date')
     def _check_consistency(self):
         for rec in self:
             if rec.account_id.company_id != rec.company_id:
                 raise ValidationError(_('La cuenta de gasto debe pertenecer a la empresa.'))
+            if rec.cost_center_id and rec.cost_center_id.company_id != rec.company_id:
+                raise ValidationError(_('El centro de costo debe pertenecer a la empresa del gasto.'))
             line = rec.budget_line_id
-            if line and (line.account_id != rec.account_id or
+            if line and (line.cost_center_id != rec.cost_center_id or
+                         line.account_id != rec.account_id or
                          line.company_id != rec.company_id or
                          line.budget_id.year != rec.date.year or
                          int(line.month) != rec.date.month):
                 raise ValidationError(_('La línea presupuestaria no corresponde a la cuenta/mes/empresa del gasto.'))
 
     @api.model
-    def _find_budget_line(self, company_id, account_id, expense_date):
+    def _find_budget_line(self, company_id, account_id, expense_date, cost_center_id=False):
         expense_date = fields.Date.to_date(expense_date)
         if not expense_date or not company_id or not account_id:
             return self.env['expense.budget.line']
@@ -122,6 +133,7 @@ class ExpenseBudgetExpense(models.Model):
             ('budget_id.company_id', '=', company_id),
             ('budget_id.year', '=', expense_date.year),
             ('account_id', '=', account_id),
+            ('cost_center_id', '=', cost_center_id or False),
             ('month', '=', str(expense_date.month)),
         ], limit=1)
 
@@ -132,11 +144,13 @@ class ExpenseBudgetExpense(models.Model):
             date_value = vals.get('date') or fields.Date.context_today(self)
             account_id = vals.get('account_id')
             if account_id:
-                vals['budget_line_id'] = self._find_budget_line(company_id, account_id, date_value).id or False
+                vals['budget_line_id'] = self._find_budget_line(
+                    company_id, account_id, date_value, vals.get('cost_center_id')
+                ).id or False
         return super().create(vals_list)
 
     def write(self, vals):
-        changed = {'account_id', 'company_id', 'date'}
+        changed = {'account_id', 'company_id', 'date', 'cost_center_id'}
         if changed.intersection(vals):
             for rec in self:
                 record_vals = dict(vals)
@@ -144,6 +158,7 @@ class ExpenseBudgetExpense(models.Model):
                     vals.get('company_id', rec.company_id.id),
                     vals.get('account_id', rec.account_id.id),
                     vals.get('date', rec.date),
+                    vals.get('cost_center_id', rec.cost_center_id.id),
                 ).id or False
                 super(ExpenseBudgetExpense, rec).write(record_vals)
             return True
@@ -159,6 +174,13 @@ class ExpenseBudgetExpense(models.Model):
         ], limit=1)
         if not account:
             raise ValueError('La cuenta %s no existe en el catálogo de la empresa %s.' % (code, company.name))
+        center_code = as_text(get_value(data, 'codigo_centro_costo', 'centro_costo',
+                                         'cost_center_code', 'cost_center', 'Centro'))
+        center = self.env['expense.budget.cost.center']
+        if center_code:
+            center = center.search([('company_id', '=', company.id), ('code', '=', center_code)], limit=1)
+            if not center:
+                raise ValueError('El centro de costo %s no existe para %s.' % (center_code, company.name))
         expense_date = parse_expense_date(get_value(data, 'fecha', 'date', required=True))
         amount = parse_amount(get_value(data, 'monto', 'importe', 'valor', 'amount', required=True))
         scope = ('api:%s:' % api_record.id) if source == 'api' else 'excel:'
@@ -166,6 +188,8 @@ class ExpenseBudgetExpense(models.Model):
         values = {
             'company_id': company.id,
             'account_id': account.id,
+            'cost_center_id': center.id or False,
+            'subcenter_code': as_text(get_value(data, 'Subcentro', 'codigo_subcentro')) or False,
             'date': fields.Date.to_string(expense_date),
             'amount': amount,
             'description': as_text(get_value(data, 'descripcion', 'detalle', 'concepto', 'description')) or
@@ -182,7 +206,7 @@ class ExpenseBudgetExpense(models.Model):
                 if key in ('source', 'source_key'):
                     continue
                 current = existing[key]
-                if key in ('company_id', 'account_id', 'api_administrator_id'):
+                if key in ('company_id', 'account_id', 'cost_center_id', 'api_administrator_id'):
                     current = current.id or False
                 elif key == 'date':
                     current = fields.Date.to_string(current)

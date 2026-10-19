@@ -27,6 +27,17 @@ class ExpenseBudgetCategory(models.Model):
     company_id = fields.Many2one('res.company', string='Empresa', required=True,
                                  default=lambda self: self.env.company, index=True)
     active = fields.Boolean(default=True)
+    cost_center_ids = fields.Many2many(
+        'expense.budget.cost.center', compute='_compute_cost_center_ids',
+        string='Centros detectados en consumos',
+        help='Centros encontrados en consumos reales de las cuentas seleccionadas; una cuenta puede tener varios.',
+    )
+
+    @api.depends('account_ids', 'account_ids.expense_ids.cost_center_id')
+    def _compute_cost_center_ids(self):
+        for rec in self:
+            rec.cost_center_ids = rec.account_ids.mapped('expense_ids.cost_center_id')
+
     account_ids = fields.One2many('expense.budget.account', 'category_id', string='Cuentas')
     # Selector de cuentas existentes. El vínculo persistente sigue siendo
     # expense.budget.account.category_id, de modo que Excel, informes y gastos
@@ -112,6 +123,17 @@ class ExpenseBudgetAccount(models.Model):
     company_id = fields.Many2one('res.company', string='Empresa', required=True,
                                  default=lambda self: self.env.company, index=True)
     active = fields.Boolean(default=True)
+    expense_ids = fields.One2many('expense.budget.expense', 'account_id', string='Consumos ERP')
+    cost_center_ids = fields.Many2many(
+        'expense.budget.cost.center', compute='_compute_cost_center_ids',
+        string='Centros detectados',
+    )
+
+    @api.depends('expense_ids.cost_center_id')
+    def _compute_cost_center_ids(self):
+        for rec in self:
+            rec.cost_center_ids = rec.expense_ids.mapped('cost_center_id')
+
     note = fields.Text(string='Observaciones')
 
     _sql_constraints = [
@@ -340,7 +362,8 @@ class ExpenseBudget(models.Model):
         self.check_access('read')
         reconciled = 0
         for budget in self:
-            index = {(line.account_id.id, line.month): line for line in budget.line_ids}
+            index = {(line.account_id.id, line.month, line.cost_center_id.id): line
+                     for line in budget.line_ids}
             expenses = self.env['expense.budget.expense'].search([
                 ('company_id', '=', budget.company_id.id),
                 ('date', '>=', '%04d-01-01' % budget.year),
@@ -348,7 +371,8 @@ class ExpenseBudget(models.Model):
                 ('budget_line_id', '=', False),
             ])
             for expense in expenses:
-                line = index.get((expense.account_id.id, str(expense.date.month)))
+                line = index.get((expense.account_id.id, str(expense.date.month),
+                                  expense.cost_center_id.id))
                 if line:
                     # El registrador no puede editar gastos; este botón solo concilia
                     # movimientos ya visibles para él con líneas del mismo presupuesto.
@@ -380,7 +404,22 @@ class ExpenseBudget(models.Model):
             raise AccessError(_('No tiene permisos para sincronizar gastos.'))
         self.ensure_one()
         self.check_access('read')
+        # Primero catálogos ERP y luego consumos; el botón sigue llamándose Sincronizar.
+        api_config = self.env['expense.budget.api.config'].sudo().search([
+            ('company_id', '=', self.company_id.id),
+        ], limit=1)
+        if api_config and (api_config.account_api_id or api_config.center_catalog_api_id
+                           or api_config.consumption_api_id):
+            result = self.env['expense.budget.inventory.sync']._sync_company(self.company_id)
+            return self.env['expense.budget.inventory.sync']._notification(result)
+        # Compatibilidad con la configuración de API anterior.
+        center_result = self.env['expense.budget.cost.center.sync']._sync_company(self.company_id)
         result = self.env['expense.budget.api.sync']._sync_company(self.company_id)
+        result['created'] += center_result['created']
+        result['updated'] += center_result['updated']
+        result['unchanged'] += center_result['unchanged']
+        result['errors'] += center_result['errors']
+        result['apis'] += center_result['apis']
         return self.env['expense.budget.api.sync']._notification(result)
 
 
@@ -397,6 +436,11 @@ class ExpenseBudgetLine(models.Model):
     currency_id = fields.Many2one('res.currency', related='budget_id.currency_id', store=True)
     account_id = fields.Many2one('expense.budget.account', string='Cuenta controlada',
                                  required=True, ondelete='restrict', check_company=True)
+    cost_center_id = fields.Many2one(
+        'expense.budget.cost.center', string='Centro de costo', ondelete='restrict',
+        check_company=True, index=True,
+        help='Opcional para presupuestos anteriores; seleccione para distribuir por centro.',
+    )
     # El rubro se elige primero en la línea, para filtrar las cuentas controladas.
     # El dato persistente sigue reflejando el rubro real de la cuenta. No hacer
     # writable el antiguo related: eso cambiaría el rubro de la cuenta completa.
@@ -434,6 +478,9 @@ class ExpenseBudgetLine(models.Model):
         for line in self:
             if line.account_id:
                 line.category_id = line.account_id.category_id
+                centers = line.account_id.cost_center_ids
+                if not line.cost_center_id and len(centers) == 1:
+                    line.cost_center_id = centers.id
     year = fields.Integer(string='Año', related='budget_id.year', store=True, index=True,
                           aggregator='max')
     month = fields.Selection(MONTHS, string='Mes', required=True, index=True)
@@ -453,11 +500,22 @@ class ExpenseBudgetLine(models.Model):
                                         store=True, digits=(16, 2))
 
     _sql_constraints = [
-        ('budget_month_account_unique', 'unique(budget_id, account_id, month)',
-         'Solo puede existir una proyección para cada cuenta y mes del presupuesto.'),
         ('planned_amount_nonnegative', 'check(planned_amount >= 0)',
          'La proyección no puede ser negativa.'),
     ]
+
+    def init(self):
+        # Legado: la restricción account/mes no distinguía centros de costo.
+        # Odoo conserva constraints SQL antiguos al actualizar el modelo;
+        # sustituirla por un índice único compatible con los registros sin centro.
+        self.env.cr.execute('''
+            ALTER TABLE expense_budget_line
+            DROP CONSTRAINT IF EXISTS expense_budget_line_budget_month_account_unique
+        ''')
+        self.env.cr.execute('''
+            CREATE UNIQUE INDEX IF NOT EXISTS expense_budget_line_cc_month_uniq
+            ON expense_budget_line (budget_id, account_id, month, COALESCE(cost_center_id, 0))
+        ''')
 
     @api.depends('expense_ids.amount', 'manual_actual_amount')
     def _compute_actual_amount(self):
@@ -485,13 +543,29 @@ class ExpenseBudgetLine(models.Model):
         for rec in self:
             rec.manual_actual_amount = rec.actual_amount - sum(rec.expense_ids.mapped('amount'))
 
+    @api.constrains('cost_center_id', 'account_id', 'budget_id', 'month')
+    def _check_cost_center_and_uniqueness(self):
+        for rec in self:
+            if rec.cost_center_id and rec.cost_center_id.company_id != rec.company_id:
+                raise ValidationError(_('El centro de costo debe pertenecer a la empresa del presupuesto.'))
+            if rec.budget_id and rec.account_id and rec.month:
+                duplicate = self.sudo().search([
+                    ('id', '!=', rec.id), ('budget_id', '=', rec.budget_id.id),
+                    ('account_id', '=', rec.account_id.id), ('month', '=', rec.month),
+                    ('cost_center_id', '=', rec.cost_center_id.id or False),
+                ], limit=1)
+                if duplicate:
+                    raise ValidationError(_(
+                        'Ya existe una proyección para esta cuenta, mes y centro de costo.'
+                    ))
+
     @api.constrains('account_id', 'budget_id')
     def _check_account_company(self):
         for rec in self:
             if rec.account_id.company_id != rec.budget_id.company_id:
                 raise ValidationError(_('La cuenta debe pertenecer a la empresa del presupuesto.'))
 
-    @api.constrains('budget_id', 'account_id', 'month')
+    @api.constrains('budget_id', 'account_id', 'month', 'cost_center_id')
     def _check_unique_account_month_across_budgets(self):
         # Una cuenta/mes no debe duplicarse en distintos presupuestos del
         # mismo año, para no imputar un consumo en dos rubros diferentes.
@@ -503,10 +577,11 @@ class ExpenseBudgetLine(models.Model):
                 ('budget_id.year', '=', rec.budget_id.year),
                 ('account_id', '=', rec.account_id.id),
                 ('month', '=', rec.month),
+                ('cost_center_id', '=', rec.cost_center_id.id or False),
             ], limit=1)
             if existing:
                 raise ValidationError(_(
-                    'Esta cuenta ya está presupuestada para el mismo mes y año '
+                    'Esta cuenta y centro de costo ya están presupuestados para el mismo mes y año '
                     'en otro presupuesto de la empresa.'
                 ))
 
@@ -522,14 +597,14 @@ class ExpenseBudgetLine(models.Model):
         return records
 
     def write(self, vals):
-        protected = {'account_id', 'budget_id', 'month', 'planned_amount'}
+        protected = {'account_id', 'cost_center_id', 'budget_id', 'month', 'planned_amount'}
         if protected.intersection(vals) and any(rec.budget_id.state != 'draft' for rec in self):
             raise UserError(_('No puede cambiar proyecciones de presupuestos pendientes de aprobación o aprobados.'))
-        if {'account_id', 'budget_id', 'month'}.intersection(vals) and any(rec.expense_ids for rec in self):
+        if {'account_id', 'cost_center_id', 'budget_id', 'month'}.intersection(vals) and any(rec.expense_ids for rec in self):
             raise UserError(_('No puede cambiar cuenta, mes o presupuesto de una línea con gastos reales. '
                               'Puede modificar el monto proyectado o volver a conciliar los movimientos.'))
         result = super().write(vals)
-        if {'account_id', 'budget_id', 'month'}.intersection(vals):
+        if {'account_id', 'cost_center_id', 'budget_id', 'month'}.intersection(vals):
             self._assign_unmatched_expenses()
         return result
 
@@ -547,6 +622,7 @@ class ExpenseBudgetLine(models.Model):
             Expense.sudo().search([
                 ('company_id', '=', line.company_id.id),
                 ('account_id', '=', line.account_id.id),
+                ('cost_center_id', '=', line.cost_center_id.id or False),
                 ('date', '>=', fields.Date.to_string(start)),
                 ('date', '<', fields.Date.to_string(end)),
                 ('budget_line_id', '=', False),

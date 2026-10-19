@@ -2,7 +2,7 @@
 {
     'name': 'Control de Presupuesto de Gastos',
     'summary': 'Presupuesto mensual por rubro y cuenta, Excel y sincronización API',
-    'version': '18.0.1.4.58',
+    'version': '18.0.1.4.60',
     'category': 'Accounting/Accounting',
     'author': 'Conedera Desarrollo',
     'license': 'LGPL-3',
@@ -16,6 +16,7 @@
         'views/expense_budget_views.xml',
         'views/expense_budget_import_views.xml',
         'views/expense_budget_api_views.xml',
+        'views/expense_budget_cost_center_views.xml',
         'views/expense_budget_dashboard_views.xml',
         'views/expense_budget_mobile_views.xml',
         'views/expense_budget_pwa_views.xml',
