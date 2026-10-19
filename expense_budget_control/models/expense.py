@@ -85,7 +85,7 @@ class ExpenseBudgetExpense(models.Model):
         check_company=True, ondelete='restrict', index=True,
     )
     subcenter_code = fields.Char(
-        string='Subcentro ERP', index=True,
+        string='Subcentro', index=True,
         help='Código Subcentro recibido de getconsumosgastos; se conserva para trazabilidad.',
     )
     budget_line_id = fields.Many2one('expense.budget.line', string='Línea presupuestaria',
@@ -137,7 +137,7 @@ class ExpenseBudgetExpense(models.Model):
             ('month', '=', str(expense_date.month)),
         ]
         Line = self.env['expense.budget.line'].sudo()
-        subcenter = as_text(subcenter_code)
+        subcenter = as_text(subcenter_code).upper()
         # Si se presupuestó el subcentro específico, tiene prioridad.
         # Una línea sin subcentro funciona como total de los otros subcentros
         # de esa cuenta y centro, para respetar presupuestos históricos.
@@ -150,6 +150,8 @@ class ExpenseBudgetExpense(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            if 'subcenter_code' in vals:
+                vals['subcenter_code'] = as_text(vals['subcenter_code']).upper() or False
             company_id = vals.get('company_id') or self.env.company.id
             date_value = vals.get('date') or fields.Date.context_today(self)
             account_id = vals.get('account_id')
@@ -160,6 +162,8 @@ class ExpenseBudgetExpense(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
+        if 'subcenter_code' in vals:
+            vals = dict(vals, subcenter_code=as_text(vals['subcenter_code']).upper() or False)
         changed = {'account_id', 'company_id', 'date', 'cost_center_id', 'subcenter_code'}
         if changed.intersection(vals):
             for rec in self:
@@ -200,7 +204,7 @@ class ExpenseBudgetExpense(models.Model):
             'company_id': company.id,
             'account_id': account.id,
             'cost_center_id': center.id or False,
-            'subcenter_code': as_text(get_value(data, 'Subcentro', 'codigo_subcentro')) or False,
+            'subcenter_code': as_text(get_value(data, 'Subcentro', 'codigo_subcentro')).upper() or False,
             'date': fields.Date.to_string(expense_date),
             'amount': amount,
             'description': as_text(get_value(data, 'descripcion', 'detalle', 'concepto', 'description')) or

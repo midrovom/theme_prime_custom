@@ -197,7 +197,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
     def _normalize_consumption(self, item):
         code = as_text(get_value(item, 'Codigo', 'codigo_cuenta', required=True))
         center = as_text(get_value(item, 'Centro', 'codigo_centro_costo'))
-        subcenter = as_text(get_value(item, 'Subcentro', 'codigo_subcentro'))
+        subcenter = as_text(get_value(item, 'Subcentro', 'codigo_subcentro')).upper()
         date = parse_erp_date(get_value(item, 'Fecha', required=True))
         amount = parse_amount(get_value(item, 'Valor', required=True))
         external_id = as_text(get_value(item, 'id', 'external_id', 'id_movimiento'))

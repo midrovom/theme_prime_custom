@@ -139,3 +139,51 @@ class TestBudgetERPIntegration(TransactionCase):
         self.assertEqual(second.budget_line_id, generic)
         self.assertAlmostEqual(specific.actual_amount, 40)
         self.assertAlmostEqual(generic.actual_amount, 30)
+
+    def test_imported_consumed_relinked_when_rubro_and_line_created_later(self):
+        """ERP primero; después rubro/cuenta/centro/subcentro/año/mes."""
+        self.sync._sync_accounts(self.company, [
+            {'Codigo': '601010101002', 'Nombre': 'Decimo Tercer Sueldo'},
+        ])
+        self.sync._sync_centers(self.company, [
+            {'Codigo': 'ADM    ', 'Nombre': 'Administración'},
+        ])
+        account = self.account_model.search([
+            ('company_id', '=', self.company.id), ('code', '=', '601010101002'),
+        ], limit=1)
+        center = self.center_model.search([
+            ('company_id', '=', self.company.id), ('code', '=', 'ADM'),
+        ], limit=1)
+        # El consumo fue importado ANTES de crear el rubro / la proyección.
+        expense = self.env['expense.budget.expense'].create({
+            'company_id': self.company.id, 'account_id': account.id,
+            'cost_center_id': center.id, 'subcenter_code': ' gde   ',
+            'date': '2022-07-25', 'amount': 161.82,
+            'description': 'getconsumosgastos/2',
+        })
+        self.assertEqual(expense.subcenter_code, 'GDE')
+        self.assertFalse(expense.budget_line_id)
+        category = self.env['expense.budget.category'].create({
+            'company_id': self.company.id, 'name': 'Gastos de personal prueba',
+        })
+        category.write({'account_selection_ids': [(6, 0, [account.id])]})
+        self.assertEqual(account.category_id, category)
+        budget = self.env['expense.budget'].create({
+            'company_id': self.company.id, 'name': 'Año del consumo 2022',
+            'year': 2022,
+        })
+        line = self.env['expense.budget.line'].create({
+            'budget_id': budget.id, 'account_id': account.id,
+            'cost_center_id': center.id, 'subcenter_code': ' gde ',
+            'month': '7', 'planned_amount': 500,
+        })
+        self.assertEqual(line.subcenter_code, 'GDE')
+        self.assertEqual(expense.budget_line_id, line)
+        self.assertAlmostEqual(line.actual_amount, 161.82)
+        self.assertEqual(category.cost_center_ids, center)
+        other = self.env['expense.budget.line'].create({
+            'budget_id': budget.id, 'account_id': account.id,
+            'cost_center_id': center.id, 'subcenter_code': 'OTRO',
+            'month': '7', 'planned_amount': 100,
+        })
+        self.assertAlmostEqual(other.actual_amount, 0.0)

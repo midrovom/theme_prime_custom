@@ -435,9 +435,11 @@ class ExpenseBudgetLine(models.Model):
         help='Opcional para presupuestos anteriores; seleccione para distribuir por centro.',
     )
     subcenter_code = fields.Char(
-        string='Subcentro ERP', index=True,
-        help='Opcional: si se indica, Consumido incluye solo gastos de este Subcentro. '
-             'En blanco agrupa los subcentros sin línea específica.',
+        string='Subcentro', index=True,
+        help='Código Subcentro de getconsumosgastos (por ejemplo GDE). '
+             'El consumido se relaciona por código de cuenta, centro, subcentro, '
+             'año y mes del presupuesto. Si se deja vacío, agrupa los subcentros '
+             'que no tengan una proyección específica.',
     )
     # El rubro se elige primero en la línea, para filtrar las cuentas controladas.
     # El dato persistente sigue reflejando el rubro real de la cuenta. No hacer
@@ -594,7 +596,7 @@ class ExpenseBudgetLine(models.Model):
         budgets = self.env['expense.budget']
         for vals in vals_list:
             if 'subcenter_code' in vals:
-                vals['subcenter_code'] = (vals['subcenter_code'] or '').strip() or False
+                vals['subcenter_code'] = (vals['subcenter_code'] or '').strip().upper() or False
             budget = budgets.browse(vals.get('budget_id'))
             if budget.exists() and budget.state != 'draft':
                 raise UserError(_('Solo puede modificar proyecciones en presupuestos borrador.'))
@@ -604,7 +606,7 @@ class ExpenseBudgetLine(models.Model):
 
     def write(self, vals):
         if 'subcenter_code' in vals:
-            vals = dict(vals, subcenter_code=(vals['subcenter_code'] or '').strip() or False)
+            vals = dict(vals, subcenter_code=(vals['subcenter_code'] or '').strip().upper() or False)
         protected = {'account_id', 'cost_center_id', 'subcenter_code', 'budget_id', 'month', 'planned_amount'}
         if protected.intersection(vals) and any(rec.budget_id.state != 'draft' for rec in self):
             raise UserError(_('No puede cambiar proyecciones de presupuestos pendientes de aprobación o aprobados.'))

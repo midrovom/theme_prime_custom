@@ -27,3 +27,17 @@ El botón muestra el número de APIs, nuevos, actualizados y errores. **Historia
 No se contactaron los endpoints reales durante el desarrollo local. Para probar en su instancia, ejecute Sincronizar, compruebe el historial y después valide el presupuesto del mismo año. Use una base de pruebas para actualizar desde v1.4.60, ya que se amplía el índice único de las líneas mensuales a la dimensión Subcentro.
 
 **Limitación del origen:** sin `id` de movimiento, el identificador se infiere de Código+Centro+Subcentro+Fecha+Valor+ordinal; si el origen corrige cualquiera de esos datos el cambio puede crear otro movimiento. Enviar `id` estable permite actualizaciones inequívocas.
+
+### Menú y subcentro (v1.4.62)
+
+Solo se muestra **Configuración → Configuración API ERP** para las 3 conexiones
+existentes en `api_administrator`. La entrada antigua de API de centros de costo
+está deshabilitada también en Accesos rápidos (móvil/PWA).
+
+En **Presupuestos → Proyecciones mensuales** se muestra **Subcentro**, código libre
+del campo `Subcentro` de la API (ej. `GDE`). El importe `Valor` se registra en
+Gastos reales y se refleja automáticamente en `Consumido` de la línea cuya
+**empresa, cuenta (Codigo), centro (Centro), subcentro (Subcentro), año y mes
+(Fecha)** sean compatibles. La asociación también se realiza cuando la línea
+se crea **después** de importar el consumo. En una línea sin Subcentro se
+agrupan únicamente movimientos sin proyección más específica.

@@ -142,8 +142,9 @@
                                            readonly="parent.state != 'draft'"
                                            domain="[('company_id', '=', parent.company_id)]"
                                            options="{'no_create': True}"/>
-                                    <field name="subcenter_code" string="Subcentro ERP"
-                                           readonly="parent.state != 'draft'" optional="show"/>
+                                    <field name="subcenter_code" string="Subcentro"
+                                           readonly="parent.state != 'draft'" optional="show"
+                                           placeholder="Ej.: GDE"/>
                                     <field name="month" readonly="parent.state != 'draft'"/>
                                     <field name="planned_amount" readonly="parent.state != 'draft'" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
@@ -190,7 +191,9 @@
                             groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                 </header>
                 <field name="budget_id"/><field name="company_id"/>
-                <field name="account_id"/><field name="category_id"/><field name="cost_center_id"/><field name="year"/><field name="month"/>
+                <field name="account_id"/><field name="category_id"/><field name="cost_center_id"/>
+                <field name="subcenter_code" string="Subcentro" optional="show"/>
+                <field name="year"/><field name="month"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Proyectado"/>
                 <field name="actual_amount" sum="Consumido"/>
