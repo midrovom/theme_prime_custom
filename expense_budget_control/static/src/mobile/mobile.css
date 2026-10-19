@@ -251,3 +251,23 @@
         overflow-wrap: anywhere;
     }
 }
+
+/* Entrada de instalación de la PWA: se mantiene accesible al desplazarse. */
+.o_ebc_mobile_install_note .o_ebc_pwa_install_link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 14px;
+    min-height: 44px;
+    margin-bottom: 9px;
+    border-radius: 10px;
+    background: #204c68;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+}
+.o_ebc_mobile_install_note .o_ebc_pwa_install_link:hover,
+.o_ebc_mobile_install_note .o_ebc_pwa_install_link:focus-visible {
+    color: #fff;
+    background: #28668c;
+}

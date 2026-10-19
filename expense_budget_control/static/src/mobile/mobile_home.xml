@@ -23,9 +23,12 @@
                 </t>
                 <p t-if="!state.entries.length" class="o_ebc_mobile_status">No hay opciones para los permisos actuales.</p>
             </nav>
-            <p class="o_ebc_mobile_install_note">
-                
-            </p>
+            <div class="o_ebc_mobile_install_note">
+                <a class="o_ebc_pwa_install_link" href="/expense-budget/pwa" target="_blank" rel="noopener noreferrer">
+                    <i class="fa fa-mobile" aria-hidden="true"/> Instalar Control de Gastos
+                </a>
+                <p>Instala la aplicación con su propio icono y acceso rápido. Requiere HTTPS.</p>
+            </div>
         </main>
     </t>
 </templates>

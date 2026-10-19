@@ -12,21 +12,34 @@ No se modificaron ni elevaron los permisos de acceso.
 - Presupuestos: botones de cabecera y líneas mensuales desplazables sin esconder campos.
 - Se conservan los PDF, flujos de aprobación, API, importaciones y cálculos.
 
-## Instalación como PWA
+## Instalación como PWA de Control de Gastos (v1.4.58)
 
-Odoo 18 dispone de una **PWA nativa**; este módulo reutiliza esa instalación estándar.
-No instala otro service worker, otro manifest ni permite introducir datos sin conexión.
-**Requisito del navegador: utilizar HTTPS con un dominio válido.** Una dirección
-`http://IP:puerto` pública no cumple los requisitos de instalación de PWA.
+Odoo 18 ya proporciona una PWA para el backend. Este módulo agrega una
+**identidad de instalación propia** denominada "Control de Gastos", con iconos,
+manifest y acceso directo que abre la pantalla de Accesos rápidos del módulo.
+No instala otro service worker: reutiliza el existente de Odoo y no cachea
+información financiera sensible para trabajo sin conexión.
 
-1. Configurar Odoo detrás de un proxy inverso con certificado HTTPS y URL externa correcta.
-2. Iniciar sesión en Odoo desde Chrome en Android o Safari en iPhone.
-3. Android: menú de Chrome > **Instalar aplicación** (o Añadir a pantalla principal).
-4. iPhone: Compartir > **Añadir a pantalla de inicio**.
-5. Abrir **Control de Gastos** y usar las tarjetas de **Accesos rápidos**.
+**Requisitos:** dominio con certificado HTTPS válido, sesión de Odoo y un navegador
+que admita instalación. La URL pública `http://IP:puerto` no cumple los
+requisitos de instalación del navegador.
 
-La PWA nativa es el cliente Odoo completo; **no es una aplicación de gastos
-separada ni una solución de trabajo offline**. Los consumos requieren conexión al servidor.
+1. Actualizar `expense_budget_control` y abrir Odoo usando el dominio HTTPS.
+2. Iniciar sesión con un usuario que tenga alguno de los roles del módulo.
+3. Abrir **Control de Gastos → Accesos rápidos**.
+4. Pulsar **Instalar Control de Gastos**, que abre `/expense-budget/pwa`.
+5. Android (Chrome): pulsar **Instalar aplicación** si aparece el botón;
+   de lo contrario, menú del navegador > **Instalar aplicación**.
+6. iPhone (Safari): Compartir > **Añadir a pantalla de inicio**.
+7. Abrir el nuevo icono, que inicia directamente la pantalla del módulo.
+
+El manifest específico está en `/expense-budget/pwa/manifest.webmanifest`.
+Su identificador es estable; la navegación continúa dentro de Odoo y sigue
+respetando los roles y la sesión del usuario. No añade dependencias `pip`.
+
+**Nota:** la instalación completa y el gesto de instalación dependen del
+navegador y requieren probarse en un dispositivo físico. La PWA no permite
+registrar consumos offline y no sustituye la necesidad de HTTPS.
 
 ## Verificación funcional en servidor de pruebas
 

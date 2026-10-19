@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="pwa_install_page" name="Instalar Control de Gastos">
+        <html lang="es">
+        <head>
+            <meta charset="utf-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"/>
+            <meta name="theme-color" content="#204c68"/>
+            <meta name="apple-mobile-web-app-capable" content="yes"/>
+            <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+            <meta name="apple-mobile-web-app-title" content="Gastos"/>
+            <link rel="manifest" href="/expense-budget/pwa/manifest.webmanifest"/>
+            <link rel="icon" type="image/png" href="/expense_budget_control/static/pwa/icon-192.png"/>
+            <link rel="apple-touch-icon" href="/expense_budget_control/static/pwa/icon-192.png"/>
+            <link rel="stylesheet" href="/expense_budget_control/static/pwa/install.css"/>
+            <title>Instalar Control de Gastos</title>
+        </head>
+        <body>
+            <main class="app-wrap">
+                <article class="install-card">
+                    <img class="app-icon" src="/expense_budget_control/static/pwa/icon-192.png" width="88" height="88" alt="Control de Gastos"/>
+                    <h1>Control de Gastos</h1>
+                    <p>Instala la aplicación en tu teléfono o computadora y accede a presupuestos, reportes y gastos desde tu pantalla de inicio.</p>
+                    <button id="pwa-install-btn" type="button" hidden="hidden">Instalar aplicación</button>
+                    <a class="open-app" href="/expense-budget/pwa/launch">Abrir Control de Gastos</a>
+                    <p id="pwa-install-message" role="status" aria-live="polite"></p>
+                    <div id="pwa-install-guide" class="install-guide">
+                        <p><strong>Android:</strong> abre el menú de Chrome (⋮) y pulsa <strong>Instalar aplicación</strong>.</p>
+                        <p><strong>iPhone:</strong> en Safari, pulsa Compartir y después <strong>Añadir a pantalla de inicio</strong>.</p>
+                    </div>
+                    <p class="fineprint">Se requiere conexión HTTPS y una sesión de Odoo para registrar gastos. Los datos no se almacenan sin conexión.</p>
+                </article>
+            </main>
+            <script type="text/javascript" src="/expense_budget_control/static/pwa/install.js"></script>
+        </body>
+        </html>
+    </template>
+</odoo>
