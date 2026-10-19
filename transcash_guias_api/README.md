@@ -2,7 +2,7 @@
 
 ## Preparación indispensable
 
-1. Ubica el **nombre técnico del addon** que define `api.administrator` (no el nombre del modelo). En `__manifest__.py`, cambia `depends: ['base']` por `depends: ['base', 'NOMBRE_TECNICO_ADDON_APIS']` antes de instalar. Esto garantiza el orden de carga de `_inherit = 'api.administrator'`.
+1. Ubica el **nombre técnico del addon** que define `api.administrator` (no el nombre del modelo). En `__manifest__.py`, agrega a `depends` el addon que define `api.administrator` (además de `logistica_transcash`) antes de instalar. Esto garantiza el orden de carga de `_inherit = 'api.administrator'`.
 2. El modelo `api.administrator` existente debe tener `name`, `type`, `company_id`, `status`, `call_api()` y `button_run_sync()` tal como el usuario compartió.
 3. En la configuración API crea/activa: name = `getguiaslogistica`; type = `get`; status = `A`; company_id = empresa correspondiente; url + end_point = URL que resuelve `inventory_odoo/consulta_odoo/getguiasaut/2`; y credenciales.
 4. Asigna grupo `Administrador de integración guías` a un usuario administrador. Ejecuta el botón de sincronización **en esa configuración**. Por código: `env['tc.guide.sync'].sync_from_api(company_id)`.
@@ -25,3 +25,15 @@
 - Para uso productivo revisa políticas de actualización de cabeceras modificadas y agrega mapeo de roles de portales; el addon no concede permisos a chofer/proveedor de transporte/cliente.
 - Revisar equivalencia semántica de `peso_kg`, `cajas`, `pallets` y unidad de medida de cantidad.
 - Se validó sintaxis Python y XML de origen; todavía no se realizó instalación/pruebas contra base real Odoo 18.
+
+
+## Integración directa con Logística Transcash v5.32 (sin tercer addon)
+
+Se integró el anterior puente en `models/api_bridge.py` de **este mismo addon**.
+El botón `Sincronizar` de `transcash.guia`, el cron y las acciones `Probar` / `Sincronizar` del asistente ahora consultan `getguiaslogistica` mediante `api.administrator.call_api`.
+No leen `logistica_transcash.api_url` y no exigen URL HTTPS adicional en Ajustes.
+**La bandeja `tc.guide` sigue separada del modelo operativo `transcash.guia`** para no intervenir rutas, embarques, evidencias y liquidaciones.
+
+**Actualización**: sustituye exclusivamente el directorio `transcash_guias_api` por este y actualiza el addon en Odoo 18. No se instala `transcash_api_bridge`.
+Si tienes instalado previamente `transcash_api_bridge`, desinstálalo antes de actualizar este paquete para evitar dos overrides del mismo método.
+Mantén los nombres y configuración de la API en API Administrator: `getguiaslogistica`, GET, estado A, empresa correcta, credenciales y endpoint.
