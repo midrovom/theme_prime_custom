@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <templates xml:space="preserve">
     <t t-name="expense_budget_control.MobileHome">
-        <main class="o_ebc_mobile_home">
+        <main t-if="this.isMobile" class="o_ebc_mobile_home">
             <header class="o_ebc_mobile_header">
                 <div>
                     <h1>Control de Gastos</h1>
@@ -30,5 +30,6 @@
                 <p>Instala la aplicación con su propio icono y acceso rápido. Requiere HTTPS.</p>
             </div>
         </main>
+        <div t-else="" class="o_ebc_desktop_redirect" aria-live="polite">Abriendo Control de Gastos…</div>
     </t>
 </templates>

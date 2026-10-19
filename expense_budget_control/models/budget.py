@@ -45,7 +45,7 @@ class ExpenseBudgetCategory(models.Model):
     account_selection_ids = fields.Many2many(
         'expense.budget.account', string='Cuentas controladas',
         compute='_compute_account_selection_ids', inverse='_inverse_account_selection_ids',
-        help='Seleccione varias cuentas existentes de la empresa. Una cuenta puede pertenecer a un solo rubro; si ya pertenece a otro, solo se reasignará si no tiene movimientos ni proyecciones.',
+        help='Seleccione varias cuentas existentes de la empresa. Una cuenta puede pertenecer a un solo rubro; solo se permite reasignar o quitar cuentas sin proyecciones presupuestarias registradas.',
     )
 
     @api.depends('account_ids', 'account_ids.category_id')
@@ -74,27 +74,24 @@ class ExpenseBudgetCategory(models.Model):
             # de la empresa, incluso las ya asignadas a otro rubro. Es una
             # relación real uno-a-muchos mediante account.category_id: mover una
             # cuenta cambia su rubro, no crea una segunda relación paralela.
-            # Evitar mover cuentas con histórico para no alterar informes.
+            # Los consumos ERP sin presupuesto no impiden organizar los rubros.
+            # Sí se bloquea la reasignación cuando hay líneas históricas,
+            # para no alterar presupuestos ni reportes ya registrados.
             reassigned = added.filtered(lambda account: account.category_id)
-            if reassigned and (self.env['expense.budget.line'].sudo().search_count([
+            if reassigned and self.env['expense.budget.line'].sudo().search_count([
                     ('account_id', 'in', reassigned.ids),
-            ]) or self.env['expense.budget.expense'].sudo().search_count([
-                    ('account_id', 'in', reassigned.ids),
-            ])):
+            ]):
                 raise ValidationError(_(
                     'No puede cambiar de rubro una cuenta que ya tiene '
-                    'proyecciones o gastos registrados. '
-                    'Seleccione una cuenta sin movimientos.'
+                    'proyecciones presupuestarias registradas.'
                 ))
             # No dejar presupuestos históricos apuntando a una cuenta desligada
             # de su rubro: solo se pueden quitar cuentas nunca presupuestadas.
-            if removed and (self.env['expense.budget.line'].sudo().search_count([
+            if removed and self.env['expense.budget.line'].sudo().search_count([
                 ('account_id', 'in', removed.ids),
-            ]) or self.env['expense.budget.expense'].sudo().search_count([
-                ('account_id', 'in', removed.ids),
-            ])):
+            ]):
                 raise ValidationError(_(
-                    'No puede quitar una cuenta que ya tiene proyecciones o gastos registrados.'
+                    'No puede quitar una cuenta que ya tiene proyecciones presupuestarias registradas.'
                 ))
             if removed:
                 removed.sudo().write({'category_id': False})
@@ -418,6 +415,24 @@ class ExpenseBudget(models.Model):
             'expense_budget_control.action_report_expense_budget_annual'
         ).report_action(self)
 
+    def action_manage_rubros(self):
+        """Administrar rubros por separado de las líneas mensuales incompletas.
+
+        Crear un rubro NO requiere cuenta, centro, subcentro ni mes. El mismo
+        formulario permite volver a abrirlo y gestionar sus cuentas existentes.
+        """
+        self.ensure_one()
+        if not (self.env.user.has_group('expense_budget_control.group_expense_budget_manager')
+                or self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')):
+            raise AccessError(_('No tiene permisos para editar rubros.'))
+        action = self.env.ref('expense_budget_control.action_expense_budget_category').read()[0]
+        action['domain'] = [('company_id', '=', self.company_id.id)]
+        action['context'] = {
+            'default_company_id': self.company_id.id,
+            'search_default_company_id': self.company_id.id,
+        }
+        return action
+
     def action_sync_api(self):
         if not (self.env.user.has_group('expense_budget_control.group_expense_budget_manager')
                 or self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')):
@@ -453,11 +468,15 @@ class ExpenseBudgetLine(models.Model):
         help='Opcional para presupuestos anteriores; seleccione para distribuir por centro.',
     )
     subcenter_code = fields.Char(
-        string='Subcentro', index=True,
-        help='Código Subcentro de getconsumosgastos (por ejemplo GDE). '
-             'El consumido se relaciona por código de cuenta, centro, subcentro, '
-             'año y mes del presupuesto. Si se deja vacío, agrupa los subcentros '
-             'que no tengan una proyección específica.',
+        string='Subcentro (legado)', index=True,
+        help='Filtro de subcentro de líneas anteriores. Se conserva para no '
+             'alterar presupuestos existentes, pero ya no se solicita al crear líneas.',
+    )
+    erp_subcenter_codes = fields.Char(
+        string='Subcentro', compute='_compute_erp_subcenter_codes', readonly=True,
+        help='Subcentro(s) reales devueltos por getconsumosgastos/2, obtenidos '
+             'de los gastos vinculados a esta cuenta, centro, año y mes. '
+             'Si el ERP devuelve varios subcentros, se muestran separados por comas.',
     )
     # El rubro se elige primero en la línea, para filtrar las cuentas controladas.
     # El dato persistente sigue reflejando el rubro real de la cuenta. No hacer
@@ -539,10 +558,50 @@ class ExpenseBudgetLine(models.Model):
                 COALESCE(cost_center_id, 0), COALESCE(subcenter_code, ''))
         ''')
 
-    @api.depends('expense_ids.amount', 'manual_actual_amount')
+    def _period_expenses(self):
+        """Solo gastos con la cuenta, centro, mes y año exactos del presupuesto.
+
+        También evita mostrar consumos en un mes erróneo si una versión previa
+        dejó un vínculo histórico incoherente. Las líneas antiguas con filtro
+        de subcentro siguen restringiendo ese código.
+        """
+        self.ensure_one()
+        if not self.month or not self.account_id or not self.budget_id:
+            return self.env['expense.budget.expense']
+        year, month = int(self.budget_id.year), int(self.month)
+        return self.expense_ids.filtered(lambda expense: (
+            expense.account_id == self.account_id and
+            expense.company_id == self.company_id and
+            expense.cost_center_id == self.cost_center_id and
+            bool(expense.date) and expense.date.year == year and
+            expense.date.month == month and
+            (not self.subcenter_code or
+             (expense.subcenter_code or '').strip().upper() == self.subcenter_code)
+        ))
+
+    @api.depends('expense_ids.subcenter_code', 'expense_ids.date',
+                 'expense_ids.account_id', 'expense_ids.cost_center_id',
+                 'account_id', 'cost_center_id', 'month', 'budget_id.year',
+                 'subcenter_code')
+    def _compute_erp_subcenter_codes(self):
+        """Mostrar el subcentro recibido del ERP, nunca pedirlo al usuario.
+
+        Una proyección sin filtro de subcentro puede sumar gastos de GDE,
+        OTRO, etc. Mostrar todos evita etiquetar erróneamente el total.
+        Los gastos ya están conciliados con cuenta/centro/año/mes de la línea.
+        """
+        for rec in self:
+            codes = sorted({(expense.subcenter_code or '').strip().upper()
+                            for expense in rec._period_expenses() if expense.subcenter_code})
+            rec.erp_subcenter_codes = ', '.join(codes) or False
+
+    @api.depends('expense_ids.amount', 'expense_ids.date', 'expense_ids.account_id',
+                 'expense_ids.cost_center_id', 'expense_ids.subcenter_code',
+                 'manual_actual_amount', 'account_id', 'cost_center_id',
+                 'month', 'budget_id.year', 'subcenter_code')
     def _compute_actual_amount(self):
         for rec in self:
-            rec.actual_amount = sum(rec.expense_ids.mapped('amount')) + rec.manual_actual_amount
+            rec.actual_amount = sum(rec._period_expenses().mapped('amount')) + rec.manual_actual_amount
 
     @api.depends('planned_amount', 'actual_amount')
     def _compute_variance_execution(self):
@@ -563,7 +622,7 @@ class ExpenseBudgetLine(models.Model):
         un nuevo total, solo cambia el ajuste; el origen de los gastos se conserva.
         """
         for rec in self:
-            rec.manual_actual_amount = rec.actual_amount - sum(rec.expense_ids.mapped('amount'))
+            rec.manual_actual_amount = rec.actual_amount - sum(rec._period_expenses().mapped('amount'))
 
     @api.constrains('cost_center_id', 'account_id', 'budget_id', 'month', 'subcenter_code')
     def _check_cost_center_and_uniqueness(self):

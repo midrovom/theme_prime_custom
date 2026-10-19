@@ -139,26 +139,28 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         return rows
 
     @api.model
-    def _find_catalog_record(self, Model, company, code):
-        """Buscar también registros históricos inactivos o con espacios en código.
-
-        La búsqueda normal usa el ORM. Como recuperación para catálogos antiguos,
-        BTRIM localiza códigos guardados sin normalizar (ej.: 'MAT       ').
-        No modifica ni elimina registros históricos durante la búsqueda.
-        """
-        code = as_text(code)
-        record = Model.search([
-            ('company_id', '=', company.id), ('code', '=', code),
-        ], limit=1)
-        if record:
-            return record
-        # Model y tabla pertenecen solo a dos modelos fijos del módulo.
-        table = {
+    def _catalog_table(self, Model):
+        """Las únicas tablas admitidas para upsert idempotente de catálogos ERP."""
+        tables = {
             'expense.budget.account': 'expense_budget_account',
             'expense.budget.cost.center': 'expense_budget_cost_center',
-        }.get(Model._name)
+        }
+        table = tables.get(Model._name)
         if not table:
             raise ValueError('Modelo de catálogo no admitido: %s' % Model._name)
+        return table
+
+    @api.model
+    def _find_catalog_record(self, Model, company, code):
+        """Búsqueda por SQL contra empresa/código, incluyendo inactivos.
+
+        La consulta del ORM puede devolver un resultado obsoleto cuando hay
+        inserciones del cron y del formulario en la misma transacción. SQL
+        lee los valores efectivos y busca primero una coincidencia exacta;
+        la búsqueda por BTRIM recoge códigos heredados con espacios.
+        """
+        code = as_text(code)
+        table = self._catalog_table(Model)
         self.env.cr.execute(
             'SELECT id FROM %s WHERE company_id = %%s AND BTRIM(code) = %%s '
             'ORDER BY CASE WHEN code = %%s THEN 0 ELSE 1 END, id LIMIT 2' % table,
@@ -167,60 +169,96 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         matches = [row[0] for row in self.env.cr.fetchall()]
         if len(matches) > 1:
             _logger.warning(
-                '[PRESUPUESTOS ERP] Códigos históricos equivalentes en %s: '
-                'empresa=%s codigo=%s registros=%s. Se utilizará el primero; '
-                'revise posibles duplicados por espacios.',
+                '[PRESUPUESTOS ERP] Código con varias variantes históricas: '
+                'modelo=%s empresa=%s código=%s registros=%s',
                 Model._name, company.id, code, matches,
             )
         return Model.browse(matches[0]) if matches else Model.browse()
 
     @api.model
     def _upsert_catalog_record(self, Model, company, code, name, placeholder=False, existing=None):
-        """Crear o actualizar por (empresa,código) sin fallar por carrera de inserción.
+        """Upsert por (empresa,código), sin violar índices únicos existentes.
 
-        Un cron y un clic en Sincronizar podrían pasar ambos por un search vacío.
-        El SAVEPOINT permite recuperar el duplicado a nivel SQL y releer el
-        registro después del rollback, en vez de abortar los tres endpoints.
+        PostgreSQL ON CONFLICT DO NOTHING soporta incluso el caso en que otro
+        proceso ya insertó la misma cuenta/centro. Se usa exclusivamente en
+        los dos catálogos sencillos del módulo; la edición de registros
+        existentes sigue pasando por ORM para respetar sus validaciones.
         """
         code, name = as_text(code), as_text(name)
-        record = existing or self._find_catalog_record(Model, company, code)
+        if not code or not name:
+            raise ValueError('El código y el nombre del catálogo son obligatorios.')
+        table = self._catalog_table(Model)
+        record = self._find_catalog_record(Model, company, code)
+        if not record and existing and existing.exists() and as_text(existing.code) == code:
+            record = existing
         created = False
         collided = False
         if not record:
-            try:
-                with self.env.cr.savepoint():
-                    record = Model.create({
-                        'company_id': company.id, 'code': code, 'name': name,
-                    })
+            self.env.cr.execute(
+                'INSERT INTO %s '
+                '(company_id, code, name, active, create_uid, create_date, write_uid, write_date) '
+                'VALUES (%%s, %%s, %%s, TRUE, %%s, NOW(), %%s, NOW()) '
+                'ON CONFLICT (company_id, code) DO NOTHING RETURNING id' % table,
+                (company.id, code, name, self.env.uid, self.env.uid),
+            )
+            inserted = self.env.cr.fetchone()
+            if inserted:
+                # Al escribir con SQL invalidar cachés ORM para que los campos
+                # y dominios posteriores vean inmediatamente el nuevo registro.
+                Model.invalidate_model(['company_id', 'code', 'name', 'active'], flush=False)
+                record = Model.browse(inserted[0])
                 created = True
-            except IntegrityError as exc:
-                if exc.pgcode != errorcodes.UNIQUE_VIOLATION:
-                    raise
-                # Otra ejecución creó el mismo código entre la búsqueda y el
-                # INSERT: PostgreSQL espera al proceso concurrente y la nueva
-                # búsqueda lo encuentra. Nunca se eliminan datos existentes.
+            else:
                 record = self._find_catalog_record(Model, company, code)
                 if not record:
-                    raise
+                    raise UserError(_(
+                        'Se detectó una cuenta o centro duplicado (%s), '
+                        'pero no fue posible recuperar el registro existente.'
+                    ) % code)
                 collided = True
-                _logger.warning(
-                    '[PRESUPUESTOS ERP] Duplicado concurrente recuperado: '
-                    'modelo=%s empresa=%s codigo=%s registro=%s',
+                _logger.info(
+                    '[PRESUPUESTOS ERP] Código ya insertado por otra ejecución: '
+                    'modelo=%s empresa=%s código=%s id=%s',
                     Model._name, company.id, code, record.id,
                 )
         if created:
             return record, 'created', collided
+        # Si se localizó un registro con espacios, normalizar su código,
+        # siempre que no haya aparecido una versión exacta en paralelo.
         updates = {}
         if record.code != code:
-            updates['code'] = code
+            exact = Model.search([
+                ('company_id', '=', company.id), ('code', '=', code),
+            ], limit=1)
+            if exact and exact != record:
+                record = exact
+            else:
+                updates['code'] = code
         if not record.active:
             updates['active'] = True
-        # Un consumo no puede sustituir el nombre real del catálogo por
-        # "pendiente de catálogo". Solo el endpoint del catálogo lo actualiza.
         if not placeholder and record.name != name:
             updates['name'] = name
         if updates:
-            record.write(updates)
+            try:
+                with self.env.cr.savepoint():
+                    record.write(updates)
+                    record.flush_recordset(list(updates))
+            except IntegrityError as exc:
+                if exc.pgcode != errorcodes.UNIQUE_VIOLATION:
+                    raise
+                replacement = self._find_catalog_record(Model, company, code)
+                if not replacement or replacement == record:
+                    raise
+                record = replacement
+                collided = True
+                safe_updates = {}
+                if not record.active:
+                    safe_updates['active'] = True
+                if not placeholder and record.name != name:
+                    safe_updates['name'] = name
+                if safe_updates:
+                    record.write(safe_updates)
+                    record.flush_recordset(list(safe_updates))
             return record, 'updated', collided
         return record, 'unchanged', collided
 
@@ -358,11 +396,13 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
 
     @api.model
     def _rows_for_saved_lines(self, rows, lines):
-        """Solo movimientos cuyo Código/Centro/Subcentro/Año/Mes corresponda.
+        """Filtrar por Código, Centro, Año y Mes *exactos* de Fecha ERP.
 
-        ``_find_budget_line`` aplica también la prioridad de un subcentro
-        específico sobre el genérico para que un consumo no se cuente dos veces.
-        El endpoint ERP no ofrece filtros de servidor en el contrato recibido.
+        El subcentro no se pide al usuario: se conserva en el gasto recibido y
+        se muestra automáticamente en la proyección. Para líneas anteriores
+        con subcentro explícito, ``_find_budget_line`` respeta su prioridad
+        sobre la línea general, evitando sumar el mismo consumo dos veces.
+        El endpoint ERP devuelve varios años y no admite filtros remotos.
         """
         wanted = defaultdict(set)
         account_center_ids = {}
@@ -390,6 +430,50 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         return result
 
     @api.model
+    def _reconcile_saved_line_periods(self, lines):
+        """Revisar vinculaciones históricas antes y después de consultar el ERP.
+
+        Una importación antigua pudo enlazar un movimiento a un mes distinto.
+        Se recorren tanto los gastos actualmente enlazados a la proyección
+        como los que *deberían* corresponder a su Código/Centro/Año/Mes, y se
+        calcula otra vez la línea mediante la fecha real del gasto.
+        No se modifica el movimiento ni su importe ni su fecha.
+        """
+        from datetime import date
+        Expense = self.env['expense.budget.expense'].sudo()
+        processed = set()
+        corrected = 0
+        for line in lines.exists():
+            if not line.account_id or not line.month:
+                continue
+            year, month = int(line.budget_id.year), int(line.month)
+            start = date(year, month, 1)
+            end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+            domain = [
+                '|', ('budget_line_id', '=', line.id),
+                '&', '&', '&', '&',
+                ('company_id', '=', line.company_id.id),
+                ('account_id', '=', line.account_id.id),
+                ('cost_center_id', '=', line.cost_center_id.id or False),
+                ('date', '>=', fields.Date.to_string(start)),
+                ('date', '<', fields.Date.to_string(end)),
+            ]
+            for expense in Expense.search(domain):
+                if expense.id in processed:
+                    continue
+                processed.add(expense.id)
+                target = Expense._find_budget_line(
+                    expense.company_id.id, expense.account_id.id, expense.date,
+                    expense.cost_center_id.id or False, expense.subcenter_code,
+                )
+                if expense.budget_line_id != target:
+                    expense.write({'budget_line_id': target.id or False})
+                    corrected += 1
+        if corrected:
+            _logger.info('[PRESUPUESTOS ERP] Gastos reconciliados por fecha real: %s', corrected)
+        return corrected
+
+    @api.model
     def _sync_saved_lines(self, lines):
         """Consulta getconsumosgastos al guardar las proyecciones.
 
@@ -405,6 +489,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             grouped[(line.company_id.id, int(line.budget_id.year))] |= line
         for (company_id, year), group in grouped.items():
             company = self.env['res.company'].browse(company_id)
+            # Corregir gastos antiguos incluso si hoy el ERP no responde.
+            self._reconcile_saved_line_periods(group)
             api_rec = False
             counts = {}
             try:
@@ -425,15 +511,20 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                     all_rows = self._call(company, api_rec, 'consumptions')
                     selected_rows = self._rows_for_saved_lines(all_rows, group)
                     counts = self._sync_consumptions(company, selected_rows, api_rec, year)
+                    counts['reconciled'] = self._reconcile_saved_line_periods(group)
                     counts['received'] = len(all_rows)
                     counts['skipped'] = len(all_rows) - len(selected_rows)
                     detail = (
                         'Guardar proyección: recibidos=%s, coincidentes=%s, '
                         'nuevos=%s, actualizados=%s, sin_cambios=%s, '
-                        'vinculados=%s, sin_proyección=%s' % (
+                        'vinculados=%s, sin_proyección=%s, reconciliados=%s, '
+                        'periodos=%s' % (
                             len(all_rows), len(selected_rows), counts.get('created', 0),
                             counts.get('updated', 0), counts.get('unchanged', 0),
                             counts.get('linked', 0), counts.get('unmatched', 0),
+                            counts.get('reconciled', 0),
+                            ', '.join(sorted({'%04d-%02d' % (int(line.budget_id.year), int(line.month))
+                                              for line in group})),
                         )
                     )
                     self._save_log(company, api_rec, year, 'consumptions', 'success', detail, counts)

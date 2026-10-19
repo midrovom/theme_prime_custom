@@ -83,3 +83,12 @@ todo el año presupuestado, y deja un resultado detallado en **Historial API**.
 Si el endpoint falla mientras se guarda una proyección, el presupuesto se
 conserva y el error se registra en el historial; el consumido se actualizará
 cuando la API vuelva a responder y se sincronice de nuevo.
+
+
+## Desde v1.4.65 — subcentro automático y periodos exactos
+
+- El catálogo de cuentas `getctagastos/2` se une por `Codigo`; el de centros `getcentrocostos/2` por `Codigo`.
+- El consumo `getconsumosgastos/2` se filtra usando simultáneamente cuenta `Codigo`, `Centro` normalizado, **año y mes exactos extraídos de `Fecha`**. Por ejemplo, `abr 25 2026` solo corresponde a abril de 2026.
+- El campo visible **Subcentro (API)** es de solo lectura: muestra el valor recibido en `Subcentro` de los gastos reales vinculados. Si hay varios subcentros para ese mes, lista todos (p. ej. `GDE, VTA`) y el Consumido suma sus movimientos sin duplicarlos.
+- `subcenter_code` se conserva únicamente para líneas históricas que filtraban por subcentro. Esto preserva su conciliación y evita mezclar sus importes con líneas generales.
+- Al guardar proyecciones se revisan vínculos anteriores y se reasignan gastos si su fecha/cuenta/centro no corresponde a la línea original. La consulta al ERP no elimina movimientos históricos.

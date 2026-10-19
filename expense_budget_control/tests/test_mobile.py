@@ -21,6 +21,7 @@ class TestExpenseBudgetMobileNavigation(TransactionCase):
                   self._navigation_as('group_expense_budget_registrar')}
         self.assertIn('Presupuestos', titles)
         self.assertIn('Importar Excel / CSV', titles)
+        self.assertIn('Rubros', titles)
         self.assertNotIn('Aprobación de presupuestos', titles)
         self.assertNotIn('Configuración API ERP', titles)
         self.assertNotIn('Dashboard de gastos', titles)

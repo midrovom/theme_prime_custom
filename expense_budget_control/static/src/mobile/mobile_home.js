@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onWillStart, onMounted, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
@@ -11,6 +11,10 @@ export class ExpenseBudgetMobileHome extends Component {
     setup() {
         this.orm = useService("orm");
         this.action = useService("action");
+        // Mantener el menú de tarjetas solo en móviles, incluso al rotar
+        // teléfonos cuya pantalla horizontal supera el ancho de 768px.
+        this.isMobile = window.matchMedia("(max-width: 991.98px)").matches ||
+            /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
         this.state = useState({ loading: true, entries: [], error: "" });
         onWillStart(async () => {
             try {
@@ -21,6 +25,13 @@ export class ExpenseBudgetMobileHome extends Component {
                 this.state.error = error.message || "No fue posible cargar los accesos.";
             } finally {
                 this.state.loading = false;
+            }
+        });
+        onMounted(() => {
+            if (!this.isMobile && !this.state.error && this.state.entries.length) {
+                // En escritorio entrar directamente en una sección real,
+                // respetando el mismo control de roles del servidor.
+                this.action.doAction(this.state.entries[0].id);
             }
         });
     }

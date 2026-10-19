@@ -127,6 +127,13 @@
                     </group>
                     <notebook>
                         <page string="Proyecciones mensuales">
+                            <div class="mb-2">
+                                <button name="action_manage_rubros" type="object"
+                                        string="Crear / editar rubros y sus cuentas"
+                                        icon="fa-folder-open-o" class="btn btn-secondary"
+                                        groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
+                                <div class="text-muted">Puedes guardar un rubro solo con su nombre y agregar o quitar cuentas después. Las proyecciones mensuales se guardan cuando elijas cuenta y mes.</div>
+                            </div>
                             <field name="line_ids" class="o_ebc_lines">
                                 <list editable="bottom">
                                     <field name="company_id" column_invisible="True"/>
@@ -134,17 +141,15 @@
                                     <field name="category_id" string="Rubro"
                                            readonly="parent.state != 'draft'"
                                            domain="[('company_id', '=', parent.company_id)]"
-                                           context="{'default_company_id': parent.company_id}"
-                                           options="{'no_quick_create': True}"/>
+                                           context="{'default_company_id': parent.company_id, 'form_view_ref': 'expense_budget_control.view_expense_budget_category_form'}"
+                                           options="{'no_quick_create': True, 'no_open': False}"/>
                                     <field name="account_id" readonly="parent.state != 'draft'"
                                            domain="[('company_id', '=', parent.company_id), ('category_id', '=', category_id)]"/>
                                     <field name="cost_center_id" string="Centro de costo"
                                            readonly="parent.state != 'draft'"
                                            domain="[('company_id', '=', parent.company_id)]"
                                            options="{'no_create': True}"/>
-                                    <field name="subcenter_code" string="Subcentro"
-                                           readonly="parent.state != 'draft'" optional="show"
-                                           placeholder="Ej.: GDE"/>
+                                    <field name="erp_subcenter_codes" string="Subcentro" readonly="True" optional="show"/>
                                     <field name="month" readonly="parent.state != 'draft'"/>
                                     <field name="planned_amount" readonly="parent.state != 'draft'" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
@@ -192,7 +197,7 @@
                 </header>
                 <field name="budget_id"/><field name="company_id"/>
                 <field name="account_id"/><field name="category_id"/><field name="cost_center_id"/>
-                <field name="subcenter_code" string="Subcentro" optional="show"/>
+                <field name="erp_subcenter_codes" string="Subcentro" optional="show"/>
                 <field name="year"/><field name="month"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Proyectado"/>

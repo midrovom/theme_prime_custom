@@ -51,7 +51,7 @@ class ExpenseBudgetDashboard(models.AbstractModel):
              'fa-upload', 'action_expense_budget_import', register or manage,
              'expense.budget.import.wizard'),
             ('Rubros', 'Catálogo de rubros',
-             'fa-folder-open-o', 'action_expense_budget_category', manage,
+             'fa-folder-open-o', 'action_expense_budget_category', register or manage,
              'expense.budget.category'),
             ('Cuentas controladas', 'Administrar cuentas',
              'fa-list-alt', 'action_expense_budget_account', manage,
