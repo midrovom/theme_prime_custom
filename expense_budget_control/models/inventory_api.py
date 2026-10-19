@@ -5,7 +5,7 @@ No almacena credenciales nuevas: usa exclusivamente api.administrator. No elimin
 movimientos ausentes de respuestas sucesivas, que podrían ser consultas parciales.
 """
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from urllib.parse import urlsplit
 from psycopg2 import IntegrityError, errorcodes
@@ -419,7 +419,10 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             if outcome == 'created':
                 counts['placeholder_centers'] += 1
             counts['reused_conflicts'] += int(collided)
+        # Preparar todas las claves primero para hacer una sola búsqueda por
+        # lote en vez de una búsqueda de movimiento por cada fila recibida.
         duplicates = defaultdict(int)
+        prepared = []
         for code, center_code, subcenter, when, amount, external_id in relevant:
             canonical_amount = str(Decimal(str(amount)).quantize(Decimal('0.01')))
             material = '|'.join((code, center_code, subcenter, when.isoformat(), canonical_amount))
@@ -430,17 +433,44 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                 key = 'erp-fingerprint:' + hashlib.sha256(
                     ('%s|%s' % (material, duplicates[material])).encode('utf-8')
                 ).hexdigest()
+            prepared.append((code, center_code, subcenter, when, amount, key,
+                             'api:%s:%s' % (api_record.id, key)))
+        existing = {}
+        all_keys = list({row[6] for row in prepared})
+        for pos in range(0, len(all_keys), 500):
+            records = Expense.search([
+                ('company_id', '=', company.id),
+                ('source_key', 'in', all_keys[pos:pos + 500]),
+            ])
+            existing.update({rec.source_key: rec for rec in records})
+        processed_keys = set()
+        matched_lines = {}
+        for code, center_code, subcenter, when, amount, key, source_key in prepared:
+            account = accounts[code]
+            center = centers[center_code] if center_code else Center.browse()
+            period_key = (account.id, center.id or False, when.year, when.month, subcenter)
+            if period_key not in matched_lines:
+                matched_lines[period_key] = Expense._find_budget_line(
+                    company.id, account.id, when, center.id or False, subcenter,
+                )
+            line = matched_lines[period_key]
             row = {
                 'Codigo': code, 'Valor': amount, 'Fecha': when.isoformat(),
                 'Centro': center_code, 'Subcentro': subcenter,
                 'Descripcion': 'Consumo ERP %s / %s / %s' % (
                     code, center_code or 'Sin centro', subcenter or 'Sin subcentro'),
             }
-            outcome = Expense._upsert_external(company, row, 'api', key, api_record=api_record)
+            # Si la API repite un ID explícito en la misma respuesta,
+            # la segunda aparición consulta el registro recién creado.
+            known = (None if source_key in processed_keys
+                     else existing.get(source_key, Expense.browse()))
+            outcome = Expense._upsert_external(
+                company, row, 'api', key, api_record=api_record,
+                resolved_account=account, resolved_center=center,
+                resolved_line=line, known_existing=known,
+            )
+            processed_keys.add(source_key)
             counts[outcome] += 1
-            line = Expense._find_budget_line(company.id, accounts[code].id, when,
-                                             centers[center_code].id if center_code else False,
-                                             subcenter)
             if line:
                 counts['linked'] += 1
             else:
@@ -449,36 +479,52 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
 
     @api.model
     def _rows_for_saved_lines(self, rows, lines):
-        """Filtrar por Código, Centro, Año y Mes *exactos* de Fecha ERP.
+        """Filtrar el historial completo *antes* de convertir importes o consultar SQL.
 
-        El subcentro no se pide al usuario: se conserva en el gasto recibido y
-        se muestra automáticamente en la proyección. Para líneas anteriores
-        con subcentro explícito, ``_find_budget_line`` respeta su prioridad
-        sobre la línea general, evitando sumar el mismo consumo dos veces.
-        El endpoint ERP devuelve varios años y no admite filtros remotos.
+        El ERP devuelve todos los años. Índice en memoria por Código/Centro
+        y un único search de líneas evitan N búsquedas SQL por movimiento.
+        Se conserva la prioridad de subcentro exacto sobre línea general.
         """
-        wanted = defaultdict(set)
-        account_center_ids = {}
-        for line in lines.exists():
-            if not line.account_id or not line.month:
-                continue
-            code = as_text(line.account_id.code)
-            center = as_text(line.cost_center_id.code)
-            key = (code, center, int(line.budget_id.year), int(line.month))
-            wanted[key].add(line.id)
-            account_center_ids[key] = (line.account_id.id, line.cost_center_id.id or False)
+        lines = lines.exists().filtered(lambda rec: rec.account_id and rec.month)
+        if not lines:
+            return []
+        selected = defaultdict(set)
+        account_centers = {}
+        for line in lines:
+            key = (as_text(line.account_id.code), as_text(line.cost_center_id.code),
+                   int(line.budget_id.year), int(line.month))
+            selected[key].add(line.id)
+            account_centers[key] = (line.account_id.id, line.cost_center_id.id or False)
+        pairs = {(key[0], key[1]) for key in selected}
+        company = lines[0].company_id
+        candidates = self.env['expense.budget.line'].sudo().search([
+            ('budget_id.company_id', '=', company.id),
+            ('budget_id.year', 'in', list({key[2] for key in selected})),
+            ('account_id', 'in', list({rec.account_id.id for rec in lines})),
+            ('month', 'in', list({str(key[3]) for key in selected})),
+        ])
+        by_subcenter = {}
+        for line in candidates:
+            key = (line.account_id.id, line.cost_center_id.id or False,
+                   int(line.budget_id.year), int(line.month),
+                   (line.subcenter_code or '').strip().upper())
+            by_subcenter[key] = line.id
         result = []
-        Expense = self.env['expense.budget.expense'].sudo()
         for item in rows:
-            code, center, subcenter, when, _amount, _external_id = self._normalize_consumption(item)
-            key = (code, center, when.year, when.month)
-            if key not in wanted:
+            code = as_text(get_value(item, 'Codigo', 'codigo_cuenta'))
+            center = as_text(get_value(item, 'Centro', 'codigo_centro_costo'))
+            # Descartar la gran mayoría del histórico sin convertir Fecha/Valor.
+            if (code, center) not in pairs:
                 continue
-            account_id, center_id = account_center_ids[key]
-            matching_line = Expense._find_budget_line(
-                lines[0].company_id.id, account_id, when, center_id, subcenter,
-            )
-            if matching_line.id in wanted[key]:
+            when = parse_erp_date(get_value(item, 'Fecha', required=True))
+            key = (code, center, when.year, when.month)
+            if key not in selected:
+                continue
+            account_id, center_id = account_centers[key]
+            sub = as_text(get_value(item, 'Subcentro', 'codigo_subcentro')).upper()
+            index = (account_id, center_id, when.year, when.month)
+            target_id = by_subcenter.get((*index, sub)) or by_subcenter.get((*index, ''))
+            if target_id in selected[key]:
                 result.append(item)
         return result
 
@@ -528,11 +574,13 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
 
     @api.model
     def _sync_saved_lines(self, lines):
-        """Consulta getconsumosgastos al guardar las proyecciones.
+        """Obtener Consumido al guardar con preferencia por datos ya sincronizados.
 
-        Nunca borra ni sobreescribe la proyección. Si la API falla se conserva
-        el presupuesto y se registra el problema para que se pueda reintentar
-        con Sincronizar; no se presenta un importe antiguo como dato nuevo.
+        Guardar Proyectado nunca llama al ERP (se filtra desde budget/line.write).
+        Si el cron/manual ya importó el año completo recientemente o la línea
+        se consultó hace poco, enlazar gastos locales toma precedencia.
+        La primera consulta de un período todavía no sincronizado sí consulta
+        getconsumosgastos/2 y guarda la respuesta para futuras aperturas.
         """
         lines = lines.exists().filtered(lambda line: line.account_id and line.month)
         if not lines:
@@ -542,8 +590,19 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             grouped[(line.company_id.id, int(line.budget_id.year))] |= line
         for (company_id, year), group in grouped.items():
             company = self.env['res.company'].browse(company_id)
-            # Corregir gastos antiguos incluso si hoy el ERP no responde.
+            now = datetime.utcnow()
+            recently_checked = now - timedelta(minutes=30)
+            # Siempre enlazar gastos previamente importados, incluso si no
+            # se necesita red. La fecha real evita mezclar otros meses.
             self._reconcile_saved_line_periods(group)
+            pending = group.filtered(
+                lambda line: not line.erp_checked_at or
+                fields.Datetime.to_datetime(line.erp_checked_at) < recently_checked
+            )
+            if not pending:
+                _logger.info('[PRESUPUESTOS ERP] Guardar rápido: %s líneas en caché local (año=%s)',
+                             len(group), year)
+                continue
             api_rec = False
             counts = {}
             try:
@@ -552,33 +611,50 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                 ], limit=1)
                 api_rec = self._choose_api(company, config, 'consumptions')
                 if not api_rec:
-                    _logger.info(
-                        '[PRESUPUESTOS ERP] Al guardar no se consultó consumo: '
-                        'no existe API GET activa getconsumosgastos/2 para empresa=%s', company.id,
-                    )
+                    _logger.info('[PRESUPUESTOS ERP] No hay API de consumo para empresa=%s', company.id)
+                    continue
+                # La sincronización completa manual o programada trae TODOS los
+                # registros del año. Si está fresca, ya están en Gastos reales.
+                full_sync = self.env['expense.budget.sync.log'].sudo().search([
+                    ('company_id', '=', company.id),
+                    ('api_administrator_id', '=', api_rec.id),
+                    ('status', '=', 'success'),
+                    ('year', '=', year),
+                    ('create_date', '>=', fields.Datetime.to_string(now - timedelta(hours=5))),
+                    ('message', 'ilike', 'OK:'),
+                ], limit=1)
+                if full_sync:
+                    pending.sudo().with_context(skip_expense_budget_consumption_on_save=True).write({
+                        'erp_checked_at': fields.Datetime.now(),
+                    })
+                    _logger.info('[PRESUPUESTOS ERP] Guardar rápido: año=%s ya sincronizado; '
+                                 'sin segunda llamada HTTP. empresa=%s líneas=%s',
+                                 year, company.id, len(pending))
                     continue
                 with self.env.cr.savepoint():
-                    # Mismo bloqueo que la sincronización manual y el cron:
-                    # evita escrituras concurrentes e importes duplicados.
                     self.env.cr.execute('SELECT pg_advisory_xact_lock(%s, %s)', (484700, company.id))
                     all_rows = self._call(company, api_rec, 'consumptions')
-                    self._sync_subcenters(company, all_rows)
-                    selected_rows = self._rows_for_saved_lines(all_rows, group)
+                    selected_rows = self._rows_for_saved_lines(all_rows, pending)
+                    # Subcentros de otros años ya se importan en el cron/manual;
+                    # al guardar, limitar inserciones a los períodos pedidos.
+                    if selected_rows:
+                        self._sync_subcenters(company, selected_rows)
                     counts = self._sync_consumptions(company, selected_rows, api_rec, year)
-                    counts['reconciled'] = self._reconcile_saved_line_periods(group)
+                    counts['reconciled'] = self._reconcile_saved_line_periods(pending)
                     counts['received'] = len(all_rows)
                     counts['skipped'] = len(all_rows) - len(selected_rows)
+                    pending.sudo().with_context(skip_expense_budget_consumption_on_save=True).write({
+                        'erp_checked_at': fields.Datetime.now(),
+                    })
                     detail = (
                         'Guardar proyección: recibidos=%s, coincidentes=%s, '
                         'nuevos=%s, actualizados=%s, sin_cambios=%s, '
-                        'vinculados=%s, sin_proyección=%s, reconciliados=%s, '
-                        'periodos=%s' % (
+                        'vinculados=%s, reconciliados=%s, periodos=%s' % (
                             len(all_rows), len(selected_rows), counts.get('created', 0),
                             counts.get('updated', 0), counts.get('unchanged', 0),
-                            counts.get('linked', 0), counts.get('unmatched', 0),
-                            counts.get('reconciled', 0),
+                            counts.get('linked', 0), counts.get('reconciled', 0),
                             ', '.join(sorted({'%04d-%02d' % (int(line.budget_id.year), int(line.month))
-                                              for line in group})),
+                                              for line in pending})),
                         )
                     )
                     self._save_log(company, api_rec, year, 'consumptions', 'success', detail, counts)
@@ -587,16 +663,9 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                 if getattr(exc, 'pgcode', None) in (
                     errorcodes.SERIALIZATION_FAILURE, errorcodes.DEADLOCK_DETECTED,
                 ):
-                    _logger.warning('[PRESUPUESTOS ERP] Transacción concurrente al guardar; '
-                                    'se solicita reintento de Odoo (empresa=%s, año=%s)',
-                                    company.id, year)
                     raise
-                _logger.exception(
-                    '[PRESUPUESTOS ERP] ERROR al consultar consumo por guardar proyección, '
-                    'empresa=%s año=%s: %s', company.id, year, exc,
-                )
-                # Evitar que una caída HTTP/API impida guardar el presupuesto.
-                # El savepoint de consulta ya revierte importaciones parciales.
+                _logger.exception('[PRESUPUESTOS ERP] ERROR consultando consumos al guardar '
+                                  'empresa=%s año=%s: %s', company.id, year, exc)
                 self._save_log(
                     company, api_rec, year, 'consumptions', 'error',
                     'Guardar proyección: no fue posible consultar consumos: %s' % str(exc)[:1500],

@@ -155,7 +155,7 @@ class ExpenseBudgetExpense(models.Model):
             company_id = vals.get('company_id') or self.env.company.id
             date_value = vals.get('date') or fields.Date.context_today(self)
             account_id = vals.get('account_id')
-            if account_id:
+            if account_id and 'budget_line_id' not in vals:
                 vals['budget_line_id'] = self._find_budget_line(
                     company_id, account_id, date_value, vals.get('cost_center_id'), vals.get('subcenter_code')
                 ).id or False
@@ -180,20 +180,23 @@ class ExpenseBudgetExpense(models.Model):
         return super().write(vals)
 
     @api.model
-    def _upsert_external(self, company, data, source, external_id, api_record=None):
+    def _upsert_external(self, company, data, source, external_id, api_record=None,
+                         resolved_account=None, resolved_center=None,
+                         resolved_line=None, known_existing=None):
         if source not in ('api', 'excel') or not as_text(external_id):
             raise ValueError('El identificador externo es obligatorio para Excel y API.')
         code = as_text(get_value(data, 'codigo_cuenta', 'cuenta', 'codigo', 'account_code', required=True))
-        account = self.env['expense.budget.account'].search([
+        account = resolved_account if resolved_account is not None else self.env['expense.budget.account'].search([
             ('company_id', '=', company.id), ('code', '=', code),
         ], limit=1)
         if not account:
             raise ValueError('La cuenta %s no existe en el catálogo de la empresa %s.' % (code, company.name))
         center_code = as_text(get_value(data, 'codigo_centro_costo', 'centro_costo',
                                          'cost_center_code', 'cost_center', 'Centro'))
-        center = self.env['expense.budget.cost.center']
+        center = resolved_center if resolved_center is not None else self.env['expense.budget.cost.center']
         if center_code:
-            center = center.search([('company_id', '=', company.id), ('code', '=', center_code)], limit=1)
+            if resolved_center is None:
+                center = center.search([('company_id', '=', company.id), ('code', '=', center_code)], limit=1)
             if not center:
                 raise ValueError('El centro de costo %s no existe para %s.' % (center_code, company.name))
         expense_date = parse_expense_date(get_value(data, 'fecha', 'date', required=True))
@@ -217,12 +220,14 @@ class ExpenseBudgetExpense(models.Model):
         # Reconciliar también registros ya importados en versiones previas.
         # Un gasto sin línea debe poder aparecer en Consumido tras crear
         # posteriormente la proyección mensual correspondiente.
-        matched_line = self._find_budget_line(
+        matched_line = resolved_line if resolved_line is not None else self._find_budget_line(
             company.id, account.id, expense_date, center.id or False,
             values['subcenter_code'],
         )
         values['budget_line_id'] = matched_line.id or False
-        existing = self.search([('company_id', '=', company.id), ('source_key', '=', external_key)], limit=1)
+        existing = known_existing if known_existing is not None else self.search([
+            ('company_id', '=', company.id), ('source_key', '=', external_key),
+        ], limit=1)
         if existing:
             updates = {}
             for key, value in values.items():

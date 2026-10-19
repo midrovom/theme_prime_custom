@@ -289,14 +289,26 @@ class ExpenseBudget(models.Model):
             rec.state != 'draft' or rec.line_ids for rec in self
         ):
             raise UserError(_('No puede cambiar el año o la empresa de un presupuesto con líneas o aprobado.'))
+        # El formulario envía comandos One2many incluso cuando el usuario solo
+        # cambia un importe proyectado. No descargar todo el ERP en ese caso.
+        matching_fields = {'account_id', 'cost_center_id', 'subcenter_id',
+                           'subcenter_code', 'month', 'budget_id'}
+        commands = vals.get('line_ids') or []
+        previous_lines = {budget.id: set(budget.line_ids.ids) for budget in self} if commands else {}
+        changed_line_ids = set()
+        for command in commands:
+            if not isinstance(command, (tuple, list)) or not command:
+                continue
+            if command[0] == 1 and len(command) > 2 and matching_fields.intersection(command[2] or {}):
+                changed_line_ids.add(command[1])
         result = super(ExpenseBudget, self.with_context(
             skip_expense_budget_consumption_on_save=True,
         )).write(vals)
-        # Guardar otras opciones o aprobar no provoca consultas al ERP.
-        if ('line_ids' in vals and self and
-                not self.env.context.get('skip_expense_budget_consumption_on_save')):
-            lines = self.mapped('line_ids')
-            if lines:
+        if commands and not self.env.context.get('skip_expense_budget_consumption_on_save'):
+            for budget in self:
+                changed_line_ids.update(set(budget.line_ids.ids) - previous_lines[budget.id])
+            if changed_line_ids:
+                lines = self.env['expense.budget.line'].browse(list(changed_line_ids)).exists()
                 self.env['expense.budget.inventory.sync']._sync_saved_lines(lines)
         return result
 
@@ -548,6 +560,10 @@ class ExpenseBudgetLine(models.Model):
     planned_amount = fields.Monetary(string='Proyectado', required=True, default=0,
                                      currency_field='currency_id')
     expense_ids = fields.One2many('expense.budget.expense', 'budget_line_id', string='Gastos reales')
+    erp_checked_at = fields.Datetime(
+        string='Última consulta de consumo ERP', readonly=True, copy=False,
+        help='Evita consultar todo el historial ERP repetidamente al guardar la misma proyección.',
+    )
     # El ajuste manual conserva el cálculo automático de gastos Excel/API.
     manual_actual_amount = fields.Monetary(
         string='Ajuste manual del consumido', default=0.0,
@@ -710,6 +726,10 @@ class ExpenseBudgetLine(models.Model):
     def write(self, vals):
         if 'subcenter_code' in vals:
             vals = dict(vals, subcenter_code=(vals['subcenter_code'] or '').strip().upper() or False)
+        period_fields = {'account_id', 'cost_center_id', 'subcenter_code',
+                         'subcenter_id', 'budget_id', 'month'}
+        if period_fields.intersection(vals):
+            vals = dict(vals, erp_checked_at=False)
         protected = {'account_id', 'cost_center_id', 'subcenter_code', 'budget_id', 'month', 'planned_amount'}
         if protected.intersection(vals) and any(rec.budget_id.state != 'draft' for rec in self):
             raise UserError(_('No puede cambiar proyecciones de presupuestos pendientes de aprobación o aprobados.'))
@@ -719,7 +739,7 @@ class ExpenseBudgetLine(models.Model):
         result = super().write(vals)
         if {'account_id', 'cost_center_id', 'subcenter_code', 'budget_id', 'month'}.intersection(vals):
             self._assign_unmatched_expenses()
-        if ({'account_id', 'cost_center_id', 'subcenter_code', 'budget_id', 'month', 'planned_amount'} & set(vals)
+        if (period_fields.intersection(vals)
                 and not self.env.context.get('skip_expense_budget_consumption_on_save')):
             self.env['expense.budget.inventory.sync']._sync_saved_lines(self)
         return result
