@@ -23,22 +23,24 @@ export class ExpenseBudgetDashboard extends Component {
             year: "",
             categoryId: "",
             accountId: "",
+            costCenterId: "",
             selectedMonth: -1,
             chartType: "bar",
         });
         onWillStart(() => this.load());
     }
 
-    async load(companyId = this.state.companyId, year = this.state.year) {
+    async load(companyId = this.state.companyId, year = this.state.year, costCenterId = this.state.costCenterId) {
         this.state.loading = true;
         this.state.error = "";
         try {
             const data = await this.orm.call(
-                "expense.budget.dashboard", "get_dashboard_data", [companyId || false, year || false]
+                "expense.budget.dashboard", "get_dashboard_data", [companyId || false, year || false, costCenterId || false]
             );
             this.state.data = data;
             this.state.companyId = String(data.company_id || "");
             this.state.year = String(data.year || "");
+            this.state.costCenterId = String(data.cost_center_id || "");
             this.state.categoryId = "";
             this.state.accountId = "";
             this.state.selectedMonth = -1;
@@ -54,11 +56,15 @@ export class ExpenseBudgetDashboard extends Component {
     }
 
     onCompanyChange(event) {
-        this.load(event.target.value, false);
+        this.load(event.target.value, false, false);
     }
 
     onYearChange(event) {
         this.load(this.state.companyId, event.target.value);
+    }
+
+    onCostCenterChange(event) {
+        this.load(this.state.companyId, this.state.year, event.target.value);
     }
 
     onCategoryChange(event) {

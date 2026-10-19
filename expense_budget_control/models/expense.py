@@ -80,6 +80,14 @@ class ExpenseBudgetExpense(models.Model):
                                  required=True, ondelete='restrict', check_company=True, index=True)
     category_id = fields.Many2one('expense.budget.category', related='account_id.category_id',
                                   store=True, string='Rubro', index=True)
+    cost_center_id = fields.Many2one(
+        'expense.budget.cost.center', string='Centro de costo',
+        check_company=True, ondelete='restrict', index=True,
+    )
+    subcenter_code = fields.Char(
+        string='Subcentro', index=True,
+        help='Código Subcentro recibido de getconsumosgastos; se conserva para trazabilidad.',
+    )
     budget_line_id = fields.Many2one('expense.budget.line', string='Línea presupuestaria',
                                      ondelete='set null', index=True, check_company=True,
                                      readonly=True, copy=False)
@@ -99,44 +107,64 @@ class ExpenseBudgetExpense(models.Model):
          'Este movimiento externo ya fue importado para la empresa.'),
     ]
 
-    @api.constrains('account_id', 'company_id', 'budget_line_id', 'date')
+    @api.constrains('account_id', 'company_id', 'cost_center_id', 'budget_line_id', 'date', 'subcenter_code')
     def _check_consistency(self):
         for rec in self:
             if rec.account_id.company_id != rec.company_id:
                 raise ValidationError(_('La cuenta de gasto debe pertenecer a la empresa.'))
+            if rec.cost_center_id and rec.cost_center_id.company_id != rec.company_id:
+                raise ValidationError(_('El centro de costo debe pertenecer a la empresa del gasto.'))
             line = rec.budget_line_id
-            if line and (line.account_id != rec.account_id or
+            if line and (line.cost_center_id != rec.cost_center_id or
+                         line.account_id != rec.account_id or
                          line.company_id != rec.company_id or
                          line.budget_id.year != rec.date.year or
-                         int(line.month) != rec.date.month):
+                         int(line.month) != rec.date.month or
+                         (line.subcenter_code and line.subcenter_code != (rec.subcenter_code or ''))):
                 raise ValidationError(_('La línea presupuestaria no corresponde a la cuenta/mes/empresa del gasto.'))
 
     @api.model
-    def _find_budget_line(self, company_id, account_id, expense_date):
+    def _find_budget_line(self, company_id, account_id, expense_date,
+                          cost_center_id=False, subcenter_code=False):
         expense_date = fields.Date.to_date(expense_date)
         if not expense_date or not company_id or not account_id:
             return self.env['expense.budget.line']
-        # Hay varios presupuestos posibles por empresa/año: localizar la
-        # cuenta y el mes directamente, sin tomar el primer presupuesto.
-        return self.env['expense.budget.line'].search([
+        domain = [
             ('budget_id.company_id', '=', company_id),
             ('budget_id.year', '=', expense_date.year),
             ('account_id', '=', account_id),
+            ('cost_center_id', '=', cost_center_id or False),
             ('month', '=', str(expense_date.month)),
-        ], limit=1)
+        ]
+        Line = self.env['expense.budget.line'].sudo()
+        subcenter = as_text(subcenter_code).upper()
+        # Si se presupuestó el subcentro específico, tiene prioridad.
+        # Una línea sin subcentro funciona como total de los otros subcentros
+        # de esa cuenta y centro, para respetar presupuestos históricos.
+        if subcenter:
+            exact = Line.search(domain + [('subcenter_code', '=', subcenter)], limit=1)
+            if exact:
+                return exact
+        return Line.search(domain + [('subcenter_code', '=', False)], limit=1)
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            if 'subcenter_code' in vals:
+                vals['subcenter_code'] = as_text(vals['subcenter_code']).upper() or False
             company_id = vals.get('company_id') or self.env.company.id
             date_value = vals.get('date') or fields.Date.context_today(self)
             account_id = vals.get('account_id')
-            if account_id:
-                vals['budget_line_id'] = self._find_budget_line(company_id, account_id, date_value).id or False
+            if account_id and 'budget_line_id' not in vals:
+                vals['budget_line_id'] = self._find_budget_line(
+                    company_id, account_id, date_value, vals.get('cost_center_id'), vals.get('subcenter_code')
+                ).id or False
         return super().create(vals_list)
 
     def write(self, vals):
-        changed = {'account_id', 'company_id', 'date'}
+        if 'subcenter_code' in vals:
+            vals = dict(vals, subcenter_code=as_text(vals['subcenter_code']).upper() or False)
+        changed = {'account_id', 'company_id', 'date', 'cost_center_id', 'subcenter_code'}
         if changed.intersection(vals):
             for rec in self:
                 record_vals = dict(vals)
@@ -144,21 +172,33 @@ class ExpenseBudgetExpense(models.Model):
                     vals.get('company_id', rec.company_id.id),
                     vals.get('account_id', rec.account_id.id),
                     vals.get('date', rec.date),
+                    vals.get('cost_center_id', rec.cost_center_id.id),
+                    vals.get('subcenter_code', rec.subcenter_code),
                 ).id or False
                 super(ExpenseBudgetExpense, rec).write(record_vals)
             return True
         return super().write(vals)
 
     @api.model
-    def _upsert_external(self, company, data, source, external_id, api_record=None):
+    def _upsert_external(self, company, data, source, external_id, api_record=None,
+                         resolved_account=None, resolved_center=None,
+                         resolved_line=None, known_existing=None):
         if source not in ('api', 'excel') or not as_text(external_id):
             raise ValueError('El identificador externo es obligatorio para Excel y API.')
         code = as_text(get_value(data, 'codigo_cuenta', 'cuenta', 'codigo', 'account_code', required=True))
-        account = self.env['expense.budget.account'].search([
+        account = resolved_account if resolved_account is not None else self.env['expense.budget.account'].search([
             ('company_id', '=', company.id), ('code', '=', code),
         ], limit=1)
         if not account:
             raise ValueError('La cuenta %s no existe en el catálogo de la empresa %s.' % (code, company.name))
+        center_code = as_text(get_value(data, 'codigo_centro_costo', 'centro_costo',
+                                         'cost_center_code', 'cost_center', 'Centro'))
+        center = resolved_center if resolved_center is not None else self.env['expense.budget.cost.center']
+        if center_code:
+            if resolved_center is None:
+                center = center.search([('company_id', '=', company.id), ('code', '=', center_code)], limit=1)
+            if not center:
+                raise ValueError('El centro de costo %s no existe para %s.' % (center_code, company.name))
         expense_date = parse_expense_date(get_value(data, 'fecha', 'date', required=True))
         amount = parse_amount(get_value(data, 'monto', 'importe', 'valor', 'amount', required=True))
         scope = ('api:%s:' % api_record.id) if source == 'api' else 'excel:'
@@ -166,6 +206,8 @@ class ExpenseBudgetExpense(models.Model):
         values = {
             'company_id': company.id,
             'account_id': account.id,
+            'cost_center_id': center.id or False,
+            'subcenter_code': as_text(get_value(data, 'Subcentro', 'codigo_subcentro')).upper() or False,
             'date': fields.Date.to_string(expense_date),
             'amount': amount,
             'description': as_text(get_value(data, 'descripcion', 'detalle', 'concepto', 'description')) or
@@ -175,14 +217,24 @@ class ExpenseBudgetExpense(models.Model):
             'source_key': external_key,
             'api_administrator_id': api_record.id if api_record else False,
         }
-        existing = self.search([('company_id', '=', company.id), ('source_key', '=', external_key)], limit=1)
+        # Reconciliar también registros ya importados en versiones previas.
+        # Un gasto sin línea debe poder aparecer en Consumido tras crear
+        # posteriormente la proyección mensual correspondiente.
+        matched_line = resolved_line if resolved_line is not None else self._find_budget_line(
+            company.id, account.id, expense_date, center.id or False,
+            values['subcenter_code'],
+        )
+        values['budget_line_id'] = matched_line.id or False
+        existing = known_existing if known_existing is not None else self.search([
+            ('company_id', '=', company.id), ('source_key', '=', external_key),
+        ], limit=1)
         if existing:
             updates = {}
             for key, value in values.items():
                 if key in ('source', 'source_key'):
                     continue
                 current = existing[key]
-                if key in ('company_id', 'account_id', 'api_administrator_id'):
+                if key in ('company_id', 'account_id', 'cost_center_id', 'api_administrator_id', 'budget_line_id'):
                     current = current.id or False
                 elif key == 'date':
                     current = fields.Date.to_string(current)

@@ -101,6 +101,10 @@
                                 <t t-if="o.category_id">
                                     <span> | </span><strong>Rubro:</strong> <span t-esc="o.category_id.name"/>
                                 </t>
+                                <t t-if="o.cost_center_id">
+                                    <span> | </span><strong>Centro de costo:</strong>
+                                    <span t-esc="o.cost_center_id.name"/>
+                                </t>
                                 <t t-if="data['selected_accounts']">
                                     <span> | </span><strong>Cuentas:</strong>
                                     <span t-esc="', '.join(data['selected_accounts'].mapped('name'))"/>

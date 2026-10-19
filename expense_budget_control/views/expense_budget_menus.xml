@@ -1,20 +1,29 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <odoo>
     <menuitem id="menu_expense_budget_root" name="Control de Gastos" action="action_expense_budget_mobile_home" sequence="45"/>
-    <!-- Entrada accesible desde la navegación móvil de Odoo para todos los roles.
-         Los accesos que muestra la pantalla se filtran de nuevo en el servidor. -->
-    <menuitem id="menu_expense_budget_mobile_home" name="Accesos rápidos"
-              parent="menu_expense_budget_root" action="action_expense_budget_mobile_home"
-              sequence="1" groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
+    <!-- El acceso de versiones anteriores queda archivado también al recargar
+         datos XML, sin depender de que se ejecute una migración particular.
+         En móvil se abre desde la acción del menú raíz. -->
+    <record id="menu_expense_budget_mobile_home" model="ir.ui.menu">
+        <field name="name">Accesos rápidos</field>
+        <field name="parent_id" ref="menu_expense_budget_root"/>
+        <field name="active" eval="False"/>
+    </record>
     <menuitem id="menu_expense_budget_budget" name="Presupuestos" parent="menu_expense_budget_root" action="action_expense_budget" sequence="10"/>
     <menuitem id="menu_expense_budget_approval" name="Aprobación de presupuestos" parent="menu_expense_budget_root" action="action_expense_budget_approval" sequence="15"/>
     <menuitem id="menu_expense_budget_comparison" name="Proyectado vs. real" parent="menu_expense_budget_root" action="action_expense_budget_comparison" sequence="20"/>
-    <menuitem id="menu_expense_budget_expense" name="Gastos reales" parent="menu_expense_budget_root" action="action_expense_budget_expense" sequence="30"/>
     <menuitem id="menu_expense_budget_config" name="Configuración" parent="menu_expense_budget_root" sequence="40"/>
+    <menuitem id="menu_expense_budget_expense" name="Gastos reales" parent="menu_expense_budget_config" action="action_expense_budget_expense" sequence="35"/>
     <menuitem id="menu_expense_budget_category" name="Rubros" parent="menu_expense_budget_config" action="action_expense_budget_category" sequence="10"/>
     <menuitem id="menu_expense_budget_account" name="Cuentas controladas" parent="menu_expense_budget_config" action="action_expense_budget_account" sequence="20"/>
+    <menuitem id="menu_expense_budget_cost_center" name="Centros de costo"
+              parent="menu_expense_budget_config" action="action_expense_budget_cost_center" sequence="25"
+              groups="expense_budget_control.group_expense_budget_manager"/>
+    <!-- Solo un menú para las tres APIs; la migración desactiva la entrada
+         'API de centros de costo' de las bases actualizadas. No crear un menú
+         inactivo fantasma en las instalaciones nuevas. -->
     <menuitem id="menu_expense_budget_import" name="Importar Excel/CSV" parent="menu_expense_budget_root" action="action_expense_budget_import" sequence="50"/>
-    <menuitem id="menu_expense_budget_api" name="Configuración API de gastos" parent="menu_expense_budget_config" action="action_expense_budget_api_administrator" sequence="30"/>
+    <menuitem id="menu_expense_budget_api" name="Configuración API ERP" parent="menu_expense_budget_config" action="action_expense_budget_api_administrator" sequence="30"/>
     <menuitem id="menu_expense_budget_sync_log" name="Historial API" parent="menu_expense_budget_config" action="action_expense_budget_sync_log" sequence="40"/>
     <menuitem id="menu_expense_budget_dashboard" name="Dashboard de gastos"
               parent="menu_expense_budget_root" action="action_expense_budget_dashboard"

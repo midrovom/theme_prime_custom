@@ -50,19 +50,24 @@ class ExpenseBudgetDashboard(models.AbstractModel):
             ('Importar Excel / CSV', 'Cargar líneas desde archivo',
              'fa-upload', 'action_expense_budget_import', register or manage,
              'expense.budget.import.wizard'),
-            ('Rubros', 'Catálogo de rubros',
-             'fa-folder-open-o', 'action_expense_budget_category', manage,
-             'expense.budget.category'),
             ('Cuentas controladas', 'Administrar cuentas',
              'fa-list-alt', 'action_expense_budget_account', manage,
              'expense.budget.account'),
-            ('Configuración API de gastos', 'Seleccionar API existente',
+            ('Centros de costo', 'Catálogo de centros por empresa',
+             'fa-building-o', 'action_expense_budget_cost_center', manage,
+             'expense.budget.cost.center'),
+            ('Configuración API ERP', 'Tres conexiones: cuentas, centros y consumos',
              'fa-cogs', 'action_expense_budget_api_administrator', manage,
              'expense.budget.api.config'),
             ('Historial API', 'Resultados de sincronización',
              'fa-history', 'action_expense_budget_sync_log', manage,
              'expense.budget.sync.log'),
         ]
+        configuration_actions = {
+            'action_expense_budget_expense', 'action_expense_budget_category',
+            'action_expense_budget_account', 'action_expense_budget_cost_center',
+            'action_expense_budget_api_administrator', 'action_expense_budget_sync_log',
+        }
         sections = []
         for title, subtitle, icon, external_id, visible, model in options:
             if not visible:
@@ -73,11 +78,12 @@ class ExpenseBudgetDashboard(models.AbstractModel):
             if action:
                 sections.append({
                     'id': action.id, 'title': title, 'subtitle': subtitle, 'icon': icon,
+                    'configuration': external_id in configuration_actions,
                 })
         return sections
 
     @api.model
-    def get_dashboard_data(self, company_id=False, year=False):
+    def get_dashboard_data(self, company_id=False, year=False, cost_center_id=False):
         """Los gastos provienen del consumo calculado de las proyecciones mensuales.
 
         Se busca sin sudo para excluir borradores a los aprobadores y respetar
@@ -93,7 +99,7 @@ class ExpenseBudgetDashboard(models.AbstractModel):
         companies_data = [{'id': c.id, 'name': c.name} for c in companies]
         if not companies:
             return {'companies': [], 'company_id': False, 'years': [],
-                    'year': False, 'accounts': [], 'categories': [],
+                    'year': False, 'accounts': [], 'categories': [], 'cost_centers': [],
                     'month_names': list(MONTH_LABELS), 'currency': ''}
 
         chosen_id = int(company_id) if company_id else self.env.company.id
@@ -118,6 +124,14 @@ class ExpenseBudgetDashboard(models.AbstractModel):
             ('company_id', '=', company.id),
             ('budget_id.year', '=', selected_year),
         ])
+        centers = self.env['expense.budget.cost.center'].search([
+            ('company_id', '=', company.id),
+        ], order='name')
+        chosen_center = int(cost_center_id) if cost_center_id else False
+        if chosen_center and chosen_center not in centers.ids:
+            raise AccessError(_('El centro de costo no pertenece a la empresa seleccionada.'))
+        if chosen_center:
+            lines = lines.filtered(lambda line: line.cost_center_id.id == chosen_center)
         totals = defaultdict(lambda: [0.0] * 12)
         categories = {}
         accounts = {}
@@ -144,6 +158,8 @@ class ExpenseBudgetDashboard(models.AbstractModel):
             'currency': company.currency_id.symbol or company.currency_id.name,
             'month_names': list(MONTH_LABELS),
             'categories': sorted(categories.values(), key=lambda c: (c['name'], c['id'])),
+            'cost_centers': [{'id': cc.id, 'name': cc.name} for cc in centers],
+            'cost_center_id': chosen_center,
             'accounts': [dict(account, months=[round(v, 2) for v in totals[account['id']]])
                          for account in sorted(accounts.values(), key=lambda a: (a['name'], a['id']))],
         }

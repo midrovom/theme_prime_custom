@@ -178,3 +178,44 @@ En el PDF de Proyectado vs. real se oculta **Consumo inicial**, pero se
 conserva en el cálculo del **Consumo actual**. Se incorpora la columna
 **Total proyectado = Consumo actual + Saldo disponible**, ubicada antes de
 Consumo actual. **Consumo corte** y los saldos no modifican sus fórmulas.
+
+### v1.4.63 — ERP: catálogos completos y consumo al guardar
+
+- **Sincronizar** importa por separado el catálogo completo de cuentas
+  (`getctagastos/2`), el catálogo completo de centros (`getcentrocostos/2`)
+  y los consumos correspondientes al año seleccionado (`getconsumosgastos/2`).
+- La carga de catálogos reutiliza registros existentes por empresa y código,
+  incluso si están inactivos o tenían espacios en el código. Un bloqueo por
+  empresa impide que cron y sincronización manual inserten duplicados en paralelo.
+- Al **guardar** una proyección se vuelve a consultar `getconsumosgastos/2` y
+  se filtra por código de cuenta, centro, subcentro, mes y año del presupuesto.
+  `Consumido` suma los `Valor` correspondientes; los restantes no se asignan
+  a esa línea. Los errores de consulta se registran en **Historial API** sin
+  descartar el presupuesto que se está guardando.
+- No se crean conexiones ni credenciales adicionales. Se reutilizan las tres
+  APIs GET existentes en `api_administrator` desde una sola configuración ERP.
+
+
+## Ajustes v1.4.66 (API, subcentros y PWA)
+
+- **Configuración API ERP** conserva los tres selectores de `api_administrator`; el campo
+  Año no se presenta en esta pantalla. La sincronización desde esta pantalla
+  y el cron usan el año actual, mientras que al guardar una proyección se consulta
+  el año/mes definidos en el presupuesto y la línea.
+- Cuando el ERP devuelve `Centro` y `Subcentro`, se crea o recupera un subcentro
+  seleccionable *dentro del centro correspondiente*; el catálogo se descubre
+  incluso si los consumos pertenecen a años anteriores.
+- **Proyecciones mensuales → Subcentro** es un selector de los códigos importados
+  por `getconsumosgastos/2`, no un campo de texto libre. Dejarlo vacío mantiene
+  el comportamiento histórico de sumar todos los subcentros del mismo centro;
+  al seleccionarlo el consumo queda restringido a ese subcentro, código de cuenta,
+  centro, año y mes.
+- **Rubro** usa el diálogo nativo Crear y editar y permite abrir uno existente
+  para agregar o quitar cuentas; se elimina el botón de gestión de rubros de
+  Proyecciones.
+- **Gastos reales** está en Configuración. En la PWA móvil se navega con una
+  tarjeta Configuración que abre los accesos de gestión autorizados.
+- Ante SQLSTATE `40001` (actualización concurrente) o `40P01`, no se oculta
+  el error como tres endpoints fallidos: se deja que el manejador de transacciones
+  de Odoo reintente toda la operación. Después de los reintentos fallidos,
+  el administrador debe consultar el registro del servidor.

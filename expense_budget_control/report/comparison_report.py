@@ -117,6 +117,8 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
                 ('account_id.category_id', '=', wizard.category_id.id),
                 ('category_id', '=', wizard.category_id.id),
             ])
+        if wizard.cost_center_id:
+            domain.append(('cost_center_id', '=', wizard.cost_center_id.id))
         selected_accounts = wizard.account_ids | wizard.account_id
         # Sin cuentas seleccionadas NO limitar por cuenta: recuperar todas las
         # líneas presupuestarias visibles del año, empresa y rubro consultados.
@@ -145,8 +147,9 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             account_group['lines'].append({
                 'line': line, 'month_name': month_labels.get(line.month, line.month),
             })
-            budget_row = account_group['budgets_map'].setdefault(line.budget_id.id, {
-                'budget': line.budget_id, 'line_count': 0,
+            cost_key = (line.budget_id.id, line.cost_center_id.id or 0)
+            budget_row = account_group['budgets_map'].setdefault(cost_key, {
+                'budget': line.budget_id, 'cost_center': line.cost_center_id, 'line_count': 0,
                 'total': self._empty_totals(), 'monthly': self._empty_months(),
             })
             self._add_line(budget_row, line)
@@ -164,7 +167,7 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
                     int(item['line'].month), item['line'].budget_id.name or '', item['line'].id,
                 ))
                 account['budgets'] = sorted(account.pop('budgets_map').values(), key=lambda item: (
-                    item['budget'].name or '', item['budget'].id,
+                    item['budget'].name or '', item['budget'].id, item['cost_center'].name or '',
                 ))
                 for budget_row in account['budgets']:
                     self._add_summary(account, budget_row)
