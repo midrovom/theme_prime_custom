@@ -42,3 +42,5 @@ from . import test_filtros_embarques_v529
 from . import test_backoffice_ux_v530
 
 from . import test_deprecacion_guia_v531
+
+from . import test_backoffice_v532

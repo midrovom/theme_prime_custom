@@ -1,0 +1,17 @@
+/* V5.32: mejoras aditivas y confinadas a Transcash; sin afectar la PWA. */
+.o_kanban_renderer .tc-ux-kanban .tc-ux-card { border-radius: 12px; }
+.tc-ux-kanban .tc-ux-reference { overflow-wrap:anywhere; }
+.tc-ux-kanban .tc-ux-card-action { padding-block:11px 2px; }
+.tc-ux-kanban .tc-v532-transfer-card .tc-ux-card-main { font-size:21px; }
+.o_form_view .tc-accounting-form .o_notebook { min-width:0; }
+.o_form_view .tc-accounting-form .o_field_one2many { width:100%; max-width:100%; }
+@media (max-width: 767px) {
+  .tc-ux-kanban .tc-ux-card { min-width:0; border-radius:12px; }
+  .o_form_view .tc-ux-form.tc-accounting-form .oe_button_box { flex-wrap:wrap; }
+  .o_form_view .tc-ux-form.tc-accounting-form .oe_button_box .oe_stat_button { flex:1 1 132px; }
+  .o_form_view .tc-ux-form.tc-accounting-form .o_notebook { overflow-x:auto; }
+}
+@media (max-width: 360px) {
+  .tc-ux-kanban .tc-ux-finance-grid, .tc-ux-kanban .tc-ux-dates { grid-template-columns:1fr; }
+  .tc-ux-kanban .tc-ux-card-top .badge { max-width:60%; }
+}

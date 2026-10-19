@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- V5.32: las vistas se vinculan explícitamente a las acciones, no basta con view_mode. -->
+  <record id="view_tc_transfer_kanban_v532" model="ir.ui.view">
+    <field name="name">transcash.pago.registro.kanban.contabilidad</field>
+    <field name="model">transcash.pago.registro</field>
+    <field name="arch" type="xml"><kanban class="tc-ux-kanban tc-ux-transfers o_kanban_mobile" create="0" delete="0" quick_create="false" sample="0">
+      <field name="liquidacion_id"/><field name="referencia"/><field name="fecha_pago"/>
+      <field name="monto"/><field name="moneda_id"/><field name="recepcion_estado"/>
+      <field name="medio"/><field name="anulado"/><field name="comprobante_nombre"/>
+      <templates><t t-name="card"><div class="tc-ux-card tc-v532-transfer-card">
+        <div class="tc-ux-card-top"><strong class="tc-ux-reference"><field name="referencia"/></strong>
+          <span t-attf-class="badge #{record.anulado.raw_value ? 'bg-secondary' : record.recepcion_estado.raw_value === 'disputa' ? 'bg-danger' : record.recepcion_estado.raw_value === 'confirmada' ? 'bg-success' : 'bg-warning text-dark'}"><field name="recepcion_estado"/></span></div>
+        <div class="tc-ux-card-main"><field name="monto" widget="monetary"/></div>
+        <div class="tc-ux-muted">Liquidación: <field name="liquidacion_id"/></div>
+        <div class="tc-ux-finance-grid"><div><span>Fecha de pago</span><strong><field name="fecha_pago"/></strong></div>
+          <div><span>Medio</span><strong><field name="medio"/></strong></div></div>
+        <t t-if="record.anulado.raw_value"><div class="tc-ux-alert">Transferencia anulada</div></t>
+        <div class="tc-ux-card-action">Ver comprobante y estado de recepción →</div>
+      </div></t></templates>
+    </kanban></field>
+  </record>
+  <record id="view_tc_clientes_kanban_v532" model="ir.ui.view">
+    <field name="name">transcash.acceso.cliente.kanban.gestion</field>
+    <field name="model">transcash.acceso.cliente</field>
+    <field name="arch" type="xml"><kanban class="tc-ux-kanban tc-ux-access o_kanban_mobile" quick_create="false" sample="0">
+      <field name="usuario_id"/><field name="empresa_contacto_id"/><field name="correo"/>
+      <field name="acceso_habilitado"/><field name="activo"/><field name="company_id"/>
+      <templates><t t-name="card"><div class="tc-ux-card">
+        <div class="tc-ux-card-top"><strong class="tc-ux-reference"><field name="usuario_id"/></strong>
+          <span t-attf-class="badge #{record.acceso_habilitado.raw_value and record.activo.raw_value ? 'bg-success' : 'bg-secondary'}">
+            <t t-if="record.acceso_habilitado.raw_value and record.activo.raw_value">Habilitado</t><t t-else="">Sin acceso</t>
+          </span></div>
+        <div class="tc-ux-card-main"><field name="empresa_contacto_id"/></div>
+        <div class="tc-ux-muted"><field name="correo"/></div>
+        <div class="tc-ux-card-foot"><field name="company_id"/></div>
+        <div class="tc-ux-card-action">Abrir cliente → Revisar guías y permisos</div>
+      </div></t></templates>
+    </kanban></field>
+  </record>
+  <record id="view_tc_proveedores_kanban_v532" model="ir.ui.view">
+    <field name="name">transcash.acceso.proveedor.kanban.gestion</field>
+    <field name="model">transcash.acceso.proveedor</field>
+    <field name="arch" type="xml"><kanban class="tc-ux-kanban tc-ux-access o_kanban_mobile" quick_create="false" sample="0">
+      <field name="usuario_id"/><field name="empresa_contacto_id"/><field name="correo"/>
+      <field name="acceso_habilitado"/><field name="activo"/><field name="company_id"/>
+      <templates><t t-name="card"><div class="tc-ux-card">
+        <div class="tc-ux-card-top"><strong class="tc-ux-reference"><field name="usuario_id"/></strong>
+          <span t-attf-class="badge #{record.acceso_habilitado.raw_value and record.activo.raw_value ? 'bg-success' : 'bg-secondary'}">
+            <t t-if="record.acceso_habilitado.raw_value and record.activo.raw_value">Habilitado</t><t t-else="">Sin acceso</t>
+          </span></div>
+        <div class="tc-ux-card-main"><field name="empresa_contacto_id"/></div>
+        <div class="tc-ux-muted"><field name="correo"/></div>
+        <div class="tc-ux-card-foot"><field name="company_id"/></div>
+        <div class="tc-ux-card-action">Abrir proveedor → Viajes, liquidaciones y permisos</div>
+      </div></t></templates>
+    </kanban></field>
+  </record>
+  <record id="view_tc_chofer_kanban_v532" model="ir.ui.view">
+    <field name="name">transcash.chofer.kanban.gestion</field>
+    <field name="model">transcash.chofer</field>
+    <field name="arch" type="xml"><kanban class="tc-ux-kanban tc-ux-access o_kanban_mobile" quick_create="false" sample="0">
+      <field name="nombre"/><field name="empresa_transporte_id"/><field name="telefono"/>
+      <field name="acceso_activado"/><field name="activo"/>
+      <templates><t t-name="card"><div class="tc-ux-card">
+        <div class="tc-ux-card-top"><strong class="tc-ux-reference"><field name="nombre"/></strong>
+          <span t-attf-class="badge #{record.acceso_activado.raw_value and record.activo.raw_value ? 'bg-success' : 'bg-secondary'}">
+            <t t-if="record.acceso_activado.raw_value and record.activo.raw_value">Acceso habilitado</t><t t-else="">Sin acceso</t>
+          </span></div>
+        <div class="tc-ux-card-main"><field name="empresa_transporte_id"/></div>
+        <div class="tc-ux-muted"><field name="telefono"/></div>
+        <div class="tc-ux-card-action">Abrir ficha del chofer →</div>
+      </div></t></templates>
+    </kanban></field>
+  </record>
+  <record id="view_tc_novedades_kanban_v532" model="ir.ui.view">
+    <field name="name">transcash.novedad.resumen.kanban.seguimiento</field>
+    <field name="model">transcash.novedad.resumen</field>
+    <field name="arch" type="xml"><kanban class="tc-ux-kanban tc-ux-incidents o_kanban_mobile" create="0" delete="0" sample="0">
+      <field name="guia_id"/><field name="embarque_id"/><field name="destino"/>
+      <field name="incidencia_estado"/><field name="resultado_recepcion"/>
+      <field name="reportes_pendientes"/><field name="reportes_rotura"/>
+      <templates><t t-name="card"><div class="tc-ux-card">
+        <div class="tc-ux-card-top"><strong class="tc-ux-reference"><field name="embarque_id"/></strong>
+          <span t-attf-class="badge #{record.incidencia_estado.raw_value === 'abierta' || record.reportes_pendientes.raw_value > 0 ? 'bg-danger' : 'bg-success'}"><field name="incidencia_estado"/></span></div>
+        <div class="tc-ux-card-main">Guía <field name="guia_id"/></div>
+        <div class="tc-ux-muted"><field name="destino"/> · <field name="resultado_recepcion"/></div>
+        <div class="tc-ux-finance-grid"><div><span>Reportes</span><strong><field name="reportes_rotura"/></strong></div>
+          <div><span>Por revisar</span><strong><field name="reportes_pendientes"/></strong></div></div>
+        <div class="tc-ux-card-action">Consultar novedad interna →</div>
+      </div></t></templates>
+    </kanban></field>
+  </record>
+
+  <!-- Asignación inequívoca de kanban: garantiza que la tarjeta está en la acción que abre el menú. -->
+  <record id="action_tc_accounting_desk_v530" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_transcash_liquidacion_kanban_v530"/>
+  </record>
+  <record id="action_transcash_pago_liquidaciones" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_transcash_liquidacion_kanban_v530"/>
+  </record>
+  <record id="action_transcash_facturas_recibidas" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_transcash_liquidacion_kanban_v530"/>
+  </record>
+  <record id="action_transcash_payment" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_transcash_liquidacion_kanban_v530"/>
+  </record>
+  <record id="action_transcash_embarques" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_transcash_embarque_kanban_v530"/>
+  </record>
+  <record id="action_transcash_embarques_pagos" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_transcash_embarque_kanban_v530"/>
+  </record>
+  <record id="action_transcash_fletes_pendientes" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_transcash_embarque_kanban_v530"/>
+  </record>
+  <record id="action_transcash_rutas" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_transcash_ruta_kanban_v530"/>
+  </record>
+  <record id="action_tc_payments_v530" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_tc_transfer_kanban_v532"/>
+  </record>
+  <record id="action_transcash_acceso_clientes" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_tc_clientes_kanban_v532"/>
+  </record>
+  <record id="action_transcash_acceso_proveedores" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_tc_proveedores_kanban_v532"/>
+  </record>
+  <record id="action_transcash_chofer" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_tc_chofer_kanban_v532"/>
+  </record>
+  <record id="action_transcash_novedades" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_tc_novedades_kanban_v532"/>
+  </record>
+
+  <!-- El menú de Contabilidad es clicable y abre de inmediato la bandeja de trabajo. -->
+  <record id="menu_tc_accounting_v530" model="ir.ui.menu">
+    <field name="action" eval="'ir.actions.act_window,%d' % ref('action_tc_accounting_desk_v530')"/>
+  </record>
+  <record id="menu_transcash_root" model="ir.ui.menu">
+    <field name="groups_id" eval="[(4, ref('group_transcash_contabilidad'))]"/>
+  </record>
+
+  <!-- Puntos de entrada cortos para que no se necesite buscar dentro de Finance. -->
+  <record id="action_tc_transfers_disputes_v532" model="ir.actions.act_window">
+    <field name="name">Diferencias de transferencias</field><field name="res_model">transcash.pago.registro</field>
+    <field name="view_mode">kanban,list,form</field><field name="view_id" ref="view_tc_transfer_kanban_v532"/>
+    <field name="search_view_id" ref="view_tc_transfer_search_v530"/>
+    <field name="domain">[('anulado','=',False),('recepcion_estado','=','disputa')]</field>
+  </record>
+  <menuitem id="menu_tc_disputas_v532" name="Diferencias por conciliar" parent="menu_tc_accounting_v530"
+    sequence="45" action="action_tc_transfers_disputes_v532"
+    groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
+
+  <!-- Relaciones de acción-vista explícitas para instalaciones que conservaron vista list como predeterminada. -->
+  <record id="link_action_tc_accounting_desk_v530_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_tc_accounting_desk_v530"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_transcash_liquidacion_kanban_v530"/>
+  </record>
+  <record id="link_action_transcash_pago_liquidaciones_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_pago_liquidaciones"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_transcash_liquidacion_kanban_v530"/>
+  </record>
+  <record id="link_action_transcash_facturas_recibidas_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_facturas_recibidas"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_transcash_liquidacion_kanban_v530"/>
+  </record>
+  <record id="link_action_transcash_embarques_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_embarques"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_transcash_embarque_kanban_v530"/>
+  </record>
+  <record id="link_action_transcash_embarques_pagos_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_embarques_pagos"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_transcash_embarque_kanban_v530"/>
+  </record>
+  <record id="link_action_transcash_fletes_pendientes_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_fletes_pendientes"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_transcash_embarque_kanban_v530"/>
+  </record>
+  <record id="link_action_transcash_rutas_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_rutas"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_transcash_ruta_kanban_v530"/>
+  </record>
+  <record id="link_action_tc_payments_v530_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_tc_payments_v530"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_tc_transfer_kanban_v532"/>
+  </record>
+  <record id="link_action_transcash_acceso_clientes_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_acceso_clientes"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_tc_clientes_kanban_v532"/>
+  </record>
+  <record id="link_action_transcash_acceso_proveedores_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_acceso_proveedores"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_tc_proveedores_kanban_v532"/>
+  </record>
+  <record id="link_action_transcash_chofer_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_chofer"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_tc_chofer_kanban_v532"/>
+  </record>
+  <record id="link_action_transcash_novedades_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_novedades"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_tc_novedades_kanban_v532"/>
+  </record>
+  <record id="link_action_transcash_payment_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_transcash_payment"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_transcash_liquidacion_kanban_v530"/>
+  </record>
+  <record id="link_action_tc_transfers_disputes_v532_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/><field name="act_window_id" ref="action_tc_transfers_disputes_v532"/>
+    <field name="view_mode">kanban</field><field name="view_id" ref="view_tc_transfer_kanban_v532"/>
+  </record>
+
+  <!-- Menús heredados cerrados en última fase de la carga, además de migración SQL. -->
+  <record id="menu_transcash_pagos" model="ir.ui.menu"><field name="name">Menú histórico desactivado</field><field name="active" eval="False"/></record>
+  <record id="menu_transcash_activas" model="ir.ui.menu"><field name="name">Menú histórico desactivado</field><field name="active" eval="False"/></record>
+  <record id="menu_transcash_incidentes" model="ir.ui.menu"><field name="name">Menú histórico desactivado</field><field name="active" eval="False"/></record>
+  <record id="menu_transcash_carga" model="ir.ui.menu"><field name="name">Menú histórico desactivado</field><field name="active" eval="False"/></record>
+</odoo>

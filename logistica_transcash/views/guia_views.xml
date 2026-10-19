@@ -212,10 +212,9 @@
     <field name="domain">[('incidencia_estado','=','abierta')]</field>
   </record>
   <record id="action_transcash_payment" model="ir.actions.act_window">
-    <field name="name">Liquidaciones</field>
-    <field name="res_model">transcash.guia</field>
-    <field name="view_mode">list,form</field>
-    <field name="domain">[('state','in',['entregada','lista_pago','facturada','pagada'])]</field>
+    <field name="name">Liquidaciones de transporte por viaje</field>
+    <field name="res_model">transcash.pago.liquidacion</field>
+    <field name="view_mode">kanban,list,form</field>
   </record>
   <record id="action_transcash_sync" model="ir.actions.server">
     <field name="name">Sincronizar ahora desde ERP</field>
@@ -237,12 +236,15 @@
             groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_consulta,logistica_transcash.group_transcash_operador_rutas"/>
   <menuitem id="menu_transcash_guias" name="Guías (escritorio Odoo)" parent="menu_transcash_root"
             action="action_transcash_guia" sequence="6" groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta,logistica_transcash.group_transcash_operador_rutas"/>
-  <menuitem id="menu_transcash_activas" name="Operación en curso" parent="menu_transcash_root"
-            action="action_transcash_open" sequence="20" groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta,logistica_transcash.group_transcash_operador_rutas"/>
-  <menuitem id="menu_transcash_incidentes" name="Incidencias" parent="menu_transcash_root"
-            action="action_transcash_incidencias" sequence="30" groups="logistica_transcash.group_logistica_bodega,logistica_transcash.group_transcash_consulta,logistica_transcash.group_transcash_operador_rutas"/>
-  <menuitem id="menu_transcash_pagos" name="Liquidaciones antiguas (por guía)" parent="menu_transcash_root"
-            action="action_transcash_payment" sequence="40" groups="logistica_transcash.group_transcash_contabilidad"/>
+  <!-- Registro histórico: conservar XMLID, desactivar menú legado desde el inicio. -->
+  <record id="menu_transcash_activas" model="ir.ui.menu"><field name="name">Menú histórico desactivado</field>
+    <field name="active" eval="False"/><field name="parent_id" ref="menu_transcash_root"/></record>
+  <!-- Registro histórico: conservar XMLID, desactivar menú legado desde el inicio. -->
+  <record id="menu_transcash_incidentes" model="ir.ui.menu"><field name="name">Menú histórico desactivado</field>
+    <field name="active" eval="False"/><field name="parent_id" ref="menu_transcash_root"/></record>
+  <!-- Registro histórico: conservar XMLID, desactivar menú legado desde el inicio. -->
+  <record id="menu_transcash_pagos" model="ir.ui.menu"><field name="name">Menú histórico desactivado</field>
+    <field name="active" eval="False"/><field name="parent_id" ref="menu_transcash_root"/></record>
   <menuitem id="menu_transcash_sync" name="Sincronizar ERP" parent="menu_transcash_root"
             action="action_transcash_sync" sequence="50" groups="logistica_transcash.group_logistica_manager"/>
 </odoo>

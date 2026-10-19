@@ -5,10 +5,10 @@
 
   <!-- Eliminamos de la navegación las bandejas financieras y de operación basadas en guías.
        Los menús antiguos pueden persistir en PostgreSQL aun si se omiten del XML. -->
-  <record id="menu_transcash_pagos" model="ir.ui.menu"><field name="active" eval="False"/></record>
-  <record id="menu_transcash_activas" model="ir.ui.menu"><field name="active" eval="False"/></record>
-  <record id="menu_transcash_incidentes" model="ir.ui.menu"><field name="active" eval="False"/></record>
-  <record id="menu_transcash_carga" model="ir.ui.menu"><field name="active" eval="False"/></record>
+  <record id="menu_transcash_pagos" model="ir.ui.menu"><field name="active" eval="False"/><field name="name">Menú histórico desactivado</field></record>
+  <record id="menu_transcash_activas" model="ir.ui.menu"><field name="active" eval="False"/><field name="name">Menú histórico desactivado</field></record>
+  <record id="menu_transcash_incidentes" model="ir.ui.menu"><field name="active" eval="False"/><field name="name">Menú histórico desactivado</field></record>
+  <record id="menu_transcash_carga" model="ir.ui.menu"><field name="active" eval="False"/><field name="name">Menú histórico desactivado</field></record>
 
   <!-- Los documentos de guías siguen existiendo, pero solo como insumo de planificación.
        Usar el asistente de hoja de ruta para asignar guías realmente. -->

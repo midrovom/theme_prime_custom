@@ -63,6 +63,7 @@
       </form>
     </field>
   </record>
-  <menuitem id="menu_transcash_carga" name="Aprobar evidencias de carga" parent="menu_transcash_root"
-            action="action_transcash_evidencia_carga" sequence="25"/>
+  <!-- Botón antiguo por guía: XMLID conservado, menú inactivo. -->
+  <record id="menu_transcash_carga" model="ir.ui.menu"><field name="name">Control histórico desactivado</field>
+    <field name="active" eval="False"/><field name="parent_id" ref="menu_transcash_root"/></record>
 </odoo>
