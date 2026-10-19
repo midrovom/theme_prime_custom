@@ -25,6 +25,20 @@ class Embarque(models.Model):
     fecha_embarcado = fields.Datetime('Carga completada', readonly=True, copy=False)
     fecha_salida = fields.Datetime('Salida real', readonly=True, copy=False)
     fecha_entrega = fields.Datetime('Último cierre operativo del chofer', readonly=True, copy=False)
+    fecha_traslado_prevista = fields.Datetime('Traslado previsto (ERP)', compute='_compute_fechas_previstas')
+    fecha_entrega_prevista = fields.Datetime('Entrega prevista (ERP)', compute='_compute_fechas_previstas')
+
+    @api.depends('guia_ids', 'guia_ids.fecha_inicio_traslado', 'guia_ids.fecha_fin_traslado')
+    def _compute_fechas_previstas(self):
+        """La primera salida y última entrega prevista de las guías del viaje.
+
+        No inventa fechas ni modifica los datos históricos del ERP.
+        """
+        for trip in self:
+            salidas = [g.fecha_inicio_traslado for g in trip.guia_ids if g.fecha_inicio_traslado]
+            entregas = [g.fecha_fin_traslado for g in trip.guia_ids if g.fecha_fin_traslado]
+            trip.fecha_traslado_prevista = min(salidas) if salidas else False
+            trip.fecha_entrega_prevista = max(entregas) if entregas else False
     observacion_general = fields.Text('Observaciones del embarque')
     guia_ids = fields.One2many('transcash.guia', 'embarque_id', string='Guías')
     cantidad_guias = fields.Integer('Guías', compute='_compute_guia_stats')

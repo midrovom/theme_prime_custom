@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <link rel="manifest" href="/transcash/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/logistica_transcash/static/src/img/icon-192.png"/>
-    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=526"/>
+    <link rel="stylesheet" href="/logistica_transcash/static/src/css/mobile.css?v=529"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/offline-core.js?v=4"/>
     <script defer="defer" src="/logistica_transcash/static/src/js/mobile.js?v=526"/>
   <script defer="defer" src="/logistica_transcash/static/src/js/evidence_hub.js?v=526"/><script defer="defer" src="/logistica_transcash/static/src/js/signature.js?v=590"/><link rel="stylesheet" href="/logistica_transcash/static/src/css/signature.css?v=590"/></template>
@@ -38,7 +38,7 @@
       <t t-elif="driver">
         <div class="tc-sidebar-caption">MIS ENTREGAS</div>
         <a href="/transcash/embarques" class="tc-sidebar-link"><span>🚚</span> Mis viajes · rutas y guías</a>
-        <a href="/transcash/embarques?estado=pendientes" class="tc-sidebar-link"><span>🚚</span> Embarques pendientes</a>
+        <a href="/transcash/embarques?estado=curso" class="tc-sidebar-link"><span>🚚</span> Viajes en curso</a>
         <a href="/transcash/offline" class="tc-sidebar-link" data-tc-pending-link="1"><span>⇅</span> Archivos por sincronizar</a>
       </t>
       <t t-elif="supplier">
@@ -136,6 +136,20 @@
                     <div class="tc-route-line"><span class="tc-route-arrow">↓</span> DESTINO</div>
                     <div class="tc-route-city" t-esc="g.destino or 'Destino pendiente'"/>
                   </div></div>
+                <div t-if="request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_cliente')" class="tc-trip-dates tc-customer-guide-dates">
+                  <div class="tc-trip-date"><span class="tc-trip-date-label">🚚 Traslado</span>
+                    <strong t-if="g.fecha_salida" t-field="g.fecha_salida"/>
+                    <strong t-elif="g.fecha_inicio_traslado" t-field="g.fecha_inicio_traslado"/>
+                    <strong t-else="">Sin fecha registrada</strong>
+                    <small t-esc="'Salida real' if g.fecha_salida else 'Prevista · ERP' if g.fecha_inicio_traslado else 'Sin fecha registrada'"/>
+                  </div>
+                  <div class="tc-trip-date"><span class="tc-trip-date-label">📦 Entrega</span>
+                    <strong t-if="g.fecha_cierre_chofer" t-field="g.fecha_cierre_chofer"/>
+                    <strong t-elif="g.fecha_fin_traslado" t-field="g.fecha_fin_traslado"/>
+                    <strong t-else="">Pendiente</strong>
+                    <small t-esc="'Finalizada por chofer' if g.fecha_cierre_chofer else 'Prevista · ERP' if g.fecha_fin_traslado else 'Sin fecha registrada'"/>
+                  </div>
+                </div>
                 <div class="tc-guide-bottom"><div class="tc-mini-meta">
                   <span>◧ <t t-esc="g.total_productos"/> productos</span>
                   <span t-if="g.fecha_cierre_chofer and not g.fecha_entrega">✓ Chofer finalizó · pendiente cliente</span>
@@ -158,7 +172,7 @@
           <a t-elif="request.env.user.has_group('logistica_transcash.group_transcash_operador_rutas')" class="tc-bottom-item" href="/transcash/operacion"><span class="tc-nav-icon">▦</span>Operación</a>
           <a t-else="" class="tc-bottom-item" href="/transcash/embarques"><span class="tc-nav-icon">🚚</span>Viajes</a>
           <span class="tc-bottom-divider"/>
-          <a t-if="request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_chofer') and not request.env.user.has_group('logistica_transcash.group_transcash_cliente')" class="tc-bottom-item" href="/transcash/embarques?estado=pendientes"><span class="tc-nav-icon">🚚</span>Embarques pendientes</a>
+          <a t-if="request.env.user.share and request.env.user.has_group('logistica_transcash.group_transcash_chofer') and not request.env.user.has_group('logistica_transcash.group_transcash_cliente')" class="tc-bottom-item" href="/transcash/embarques?estado=curso"><span class="tc-nav-icon">🚚</span>Viajes en curso</a>
           <a t-else="" class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1"><span class="tc-nav-icon">⇅</span>Por sincronizar</a>
         </nav>
       </div>
@@ -454,7 +468,7 @@
           <button class="tc-bottom-item active" type="button" data-go-tab="resumen"><span class="tc-nav-icon">◉</span>Resumen</button>
           <button class="tc-bottom-item" type="button" data-go-tab="productos"><span class="tc-nav-icon">▦</span>Productos</button>
           <button class="tc-bottom-item" type="button" data-go-tab="roturas"><span class="tc-nav-icon">⚠</span>Roturas</button>
-          <a t-if="es_chofer" class="tc-bottom-item" href="/transcash/embarques?estado=pendientes"><span class="tc-nav-icon">🚚</span>Embarques pendientes</a>
+          <a t-if="es_chofer" class="tc-bottom-item" href="/transcash/embarques?estado=curso"><span class="tc-nav-icon">🚚</span>Viajes en curso</a>
           <a t-else="" class="tc-bottom-item" href="/transcash/offline" data-tc-pending-link="1"><span class="tc-nav-icon">⇅</span>Por sincronizar</a>
         </nav>
       </div>

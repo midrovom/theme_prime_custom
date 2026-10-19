@@ -36,3 +36,9 @@ from . import test_cliente_portal_v526
 from . import test_aprobacion_independiente_v527
 
 from . import test_accesos_portal_v528
+
+from . import test_filtros_embarques_v529
+
+from . import test_backoffice_ux_v530
+
+from . import test_deprecacion_guia_v531

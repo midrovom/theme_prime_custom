@@ -30,7 +30,7 @@
           <button name="action_ver_contacto" type="object" string="Abrir contacto" icon="fa-address-card"
                   invisible="not id" groups="logistica_transcash.group_logistica_manager"/>
         </header>
-        <sheet>
+        <sheet class="tc-ux-form tc-portal-access-form">
           <div class="oe_title"><h1>Cliente · Acceso a la PWA</h1></div>
           <div class="alert alert-info" role="alert">
             <strong>¿Cómo habilitarlo?</strong> En Contactos cree o ubique al cliente y utilice
@@ -123,7 +123,7 @@
           <button name="action_ver_contacto" type="object" string="Abrir contacto" icon="fa-address-card"
                   invisible="not id" groups="logistica_transcash.group_transcash_contabilidad"/>
         </header>
-        <sheet>
+        <sheet class="tc-ux-form tc-portal-access-form">
           <div class="oe_title"><h1>Transportista · Acceso al Portal</h1></div>
           <div class="alert alert-info" role="alert">
             <strong>Habilitación por Contabilidad:</strong> en Contactos busque la empresa transportista

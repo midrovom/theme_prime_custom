@@ -24,7 +24,7 @@
               <p class="tc-muted">Solo exige que el chofer cierre todas las entregas y que el flete sea válido. La aceptación del cliente, reclamos y notas de crédito se revisan por separado; no bloquean el transporte.</p>
               <div class="tc-embark-list"><t t-foreach="to_approve" t-as="e"><a class="tc-guide-card" t-att-href="'/transcash/finanzas/embarques/%d' % e.id">
                 <div class="tc-guide-top"><strong t-esc="e.name"/><span class="tc-status">Pendiente de aprobación</span></div>
-                <p><t t-esc="e.proveedor_id.name"/> · <t t-esc="e.rutas_entregadas"/>/<t t-esc="e.rutas_total"/> rutas · <t t-esc="e.cantidad_guias"/> guías</p>
+                <p><t t-esc="e.proveedor_id.name"/> · <t t-esc="e.rutas_entregadas"/>/<t t-esc="e.rutas_total"/> rutas · <t t-esc="e.cantidad_guias"/> guías</p><t t-call="logistica_transcash.trip_dates_card"/>
                 <p>Precio actual: <b><t t-esc="e.moneda_id.symbol"/><t t-esc="'%.2f' % e.valor_acordado"/></b> · Revisar y decidir →</p>
               </a></t><p t-if="not to_approve" class="tc-empty-inline">No hay viajes entregados pendientes de aprobación.</p></div>
             </section>
@@ -33,7 +33,7 @@
             <p class="tc-muted">Estos viajes ya están autorizados y todavía no figuran en ninguna liquidación. Solo el proveedor puede incluirlos en su próxima factura.</p>
             <div class="tc-embark-list"><t t-foreach="pending" t-as="e"><a class="tc-guide-card" t-att-href="'/transcash/finanzas/embarques/%d' % e.id">
               <div class="tc-guide-top"><strong t-esc="e.name"/><span class="tc-status">Pendiente de facturar</span></div>
-              <p><t t-esc="e.proveedor_id.name"/> · <t t-esc="e.cantidad_guias"/> guías · <t t-esc="e.rutas_total"/> rutas</p>
+              <p><t t-esc="e.proveedor_id.name"/> · <t t-esc="e.cantidad_guias"/> guías · <t t-esc="e.rutas_total"/> rutas</p><t t-call="logistica_transcash.trip_dates_card"/>
               <p>Flete aprobado: <b><t t-esc="e.moneda_id.symbol"/><t t-esc="'%.2f' % e.valor_acordado"/></b></p>
             </a></t><p t-if="not pending" class="tc-empty-inline">No existen viajes aprobados pendientes de liquidación.</p></div>
           </section>

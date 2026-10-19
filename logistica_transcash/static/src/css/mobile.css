@@ -427,3 +427,17 @@ body.tc-modal-open{overflow:hidden}
   padding:8px 8px calc(9px + env(safe-area-inset-bottom,0px)); box-sizing:border-box; }
 .tc-hub-overlay .tc-hub-modal-media img,.tc-hub-overlay .tc-hub-modal-media video { max-width:100%; max-height:100%; }
 @media(max-width:550px){.tc-hub-overlay .tc-hub-modal-media{height:auto;max-height:none;min-height:0}}
+
+/* V5.29 · Fechas claras en toda tarjeta, legibles con una sola mirada. */
+.tc-trip-dates {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0 8px}
+.tc-trip-date {min-width:0;padding:10px 11px;border:1px solid #e1eaf2;border-radius:11px;background:#f6f9fc;display:flex;flex-direction:column;gap:4px}
+.tc-trip-date-label {font-size:11px;font-weight:800;color:#385a73}
+.tc-trip-date strong {font-size:12px;color:#183349;overflow-wrap:anywhere;line-height:1.4}
+.tc-trip-date small {font-size:10px;color:#587188}
+.tc-trip-customer-notice {color:#982c22;background:#fff3ec;border:1px solid #f2ccbb;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:750;margin-top:10px}
+.tc-trip-filters {margin-bottom:17px;scroll-padding-inline:12px}
+@media(max-width:360px){.tc-trip-dates{gap:6px}.tc-trip-date{padding:9px 7px}}
+
+.tc-trip-checkbox-card{flex-wrap:wrap}.tc-trip-checkbox-card>.tc-trip-dates{flex:1 0 100%;margin:4px 0 0 31px}
+
+.tc-trip-filter-hint {font-size:12px;margin:2px 0 13px;line-height:1.5}

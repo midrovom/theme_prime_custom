@@ -17,10 +17,11 @@
               <p><b>Compañía: <t t-esc="grupo['company'].name"/></b> · <t t-esc="grupo['provider'].name"/></p>
               <button type="button" class="tc-button tc-button-outline tc-select-all-trips">✓ Seleccionar viajes disponibles (máximo 100)</button>
               <div class="tc-embark-options">
-                <t t-foreach="grupo['trips']" t-as="e"><label class="tc-embark-select">
+                <t t-foreach="grupo['trips']" t-as="e"><label class="tc-embark-select tc-trip-checkbox-card">
                   <input type="checkbox" name="embarques" t-att-value="e.id" t-att-data-amount="'%.2f' % e.valor_acordado"/>
                   <span><strong t-esc="e.name"/><small><t t-esc="e.placa or ''"/> · <t t-esc="e.cantidad_guias"/> guías · Aprobado</small>
                     <small>Flete: <t t-esc="e.moneda_id.symbol"/><t t-esc="'%.2f' % e.valor_acordado"/></small></span>
+                  <t t-call="logistica_transcash.trip_dates_card"/>
                 </label></t>
               </div><div class="tc-next-card" aria-live="polite">
                   <strong>Total de la liquidación por crear:</strong> <b><t t-esc="grupo['company'].currency_id.symbol"/><span class="tc-supplier-total">0.00</span></b>
@@ -39,11 +40,17 @@
               </a>
             </t><p t-if="not documents" class="tc-empty-inline">Todavía no has presentado liquidaciones.</p></div>
           </section>
-          <section class="tc-embark-section"><div class="tc-section-heading"><h2>Todos mis viajes recientes</h2></div>
+          <section class="tc-embark-section"><div class="tc-section-heading"><h2>Mis viajes recientes</h2></div>
+            <nav class="tc-filters tc-trip-filters" aria-label="Consultar viajes por estado">
+              <a href="/transcash/embarques?estado=curso" class="tc-filter">En curso</a>
+              <a href="/transcash/embarques?estado=revision" class="tc-filter">En revisión de factura</a>
+              <a href="/transcash/embarques?estado=entregados" class="tc-filter">Entregados</a>
+              <a href="/transcash/embarques?estado=todos" class="tc-filter">Todos</a>
+            </nav>
             <div class="tc-embark-list"><t t-foreach="trips" t-as="e">
               <div class="tc-guide-card"><div class="tc-guide-top"><b t-esc="e.name"/>
                 <span class="tc-status" t-esc="dict(e._fields['estado_aprobacion'].selection).get(e.estado_aprobacion)"/></div>
-                <p><t t-esc="e.placa or 'Sin placa'"/> · <t t-esc="e.cantidad_guias"/> guías</p>
+                <p><t t-esc="e.placa or 'Sin placa'"/> · <t t-esc="e.cantidad_guias"/> guías</p><t t-call="logistica_transcash.trip_dates_card"/>
                 <p><b>Valor:</b> <t t-if="e.estado_aprobacion == 'aprobado'"><t t-esc="e.moneda_id.symbol"/><t t-esc="'%.2f' % e.valor_acordado"/></t><t t-else="">Pendiente de aprobación de Logística</t> ·
                   <t t-esc="dict(e._fields['estado_financiero'].selection).get(e.estado_financiero)"/></p>
                 <p><a class="tc-inline-action" t-att-href="'/transcash/embarques/%d#tc-galeria-viaje' % e.id">📷 Abrir carga, descarga y firmas del viaje →</a></p>

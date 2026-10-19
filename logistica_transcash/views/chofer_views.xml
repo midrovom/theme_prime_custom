@@ -47,8 +47,8 @@
               <field name="company_id" groups="base.group_multi_company"/>
             </group>
           </group>
-          <p>El chofer abre <strong>/transcash/guias</strong> con su cuenta Portal.
-             Solo ve sus embarques y guías; acepta la carga e informa la entrega con evidencia y firma. Su cuenta no recibe acceso al ERP administrativo.</p>
+          <p>El chofer abre <strong>/transcash</strong> con su cuenta Portal.
+             Su navegación comienza por sus embarques, luego rutas y guías; acepta la carga e informa la entrega con evidencia y firma. Su cuenta no recibe acceso al ERP administrativo.</p>
         </sheet>
       </form>
     </field>

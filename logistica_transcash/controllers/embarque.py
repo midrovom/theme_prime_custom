@@ -5,6 +5,7 @@ from odoo.exceptions import UserError, AccessError, ValidationError
 from odoo.http import request
 from .portal import TranscashPortal
 from .evidence_hub import gallery_for_trip
+from .trip_filters import available_filters, resolve_filter, filter_domain
 
 
 class EmbarquePortal(TranscashPortal):
@@ -79,14 +80,15 @@ class EmbarquePortal(TranscashPortal):
             domain = [('company_id','in',user.company_ids.ids)]
         else:
             return request.not_found()
-        filtro = kw.get('estado') or ('pendientes' if user.share and user.has_group('logistica_transcash.group_transcash_chofer') else 'todos')
-        if filtro not in ('todos', 'pendientes', 'entregados'):
-            filtro = 'todos'
-        if filtro == 'pendientes':
-            domain += [('state', 'in', ['preparacion', 'embarcado', 'ruta'])]
-        elif filtro == 'entregados':
-            domain += [('state', '=', 'entregado')]
-        recs = request.env['transcash.embarque'].sudo().search(domain, order='create_date desc', limit=100)
+        # Filtro inicialmente EN CURSO en todos los perfiles que consultan viajes.
+        # El perfil interno es el único que ve revisión y novedades del cliente.
+        internal = not user.share
+        supplier = bool(user.share and user.has_group('logistica_transcash.group_transcash_transportista')
+                        and not user.has_group('logistica_transcash.group_transcash_chofer')
+                        and not user.has_group('logistica_transcash.group_transcash_cliente'))
+        filtro = resolve_filter(kw.get('estado'), internal=internal, supplier=supplier)
+        domain += filter_domain(filtro, supplier=supplier)
+        recs = request.env['transcash.embarque'].sudo().search(domain, order='create_date desc', limit=200)
         activo = request.env['transcash.embarque'].sudo().browse()
         if user.share and user.has_group('logistica_transcash.group_transcash_chofer'):
             activo = request.env['transcash.embarque'].sudo().search([
@@ -105,6 +107,8 @@ class EmbarquePortal(TranscashPortal):
             'es_chofer': user.share and user.has_group('logistica_transcash.group_transcash_chofer'),
             'es_operador': not user.share and (user.has_group('logistica_transcash.group_transcash_operador_rutas') or user.has_group('logistica_transcash.group_logistica_manager')),
             'error':kw.get('error'), 'estado_filtro': filtro,
+            'filtros_embarque': available_filters(internal=internal, supplier=supplier),
+            'puede_ver_revision': internal,
         })
 
     @http.route('/transcash/embarques/crear',type='http',auth='user',website=True,methods=['POST'],csrf=True)

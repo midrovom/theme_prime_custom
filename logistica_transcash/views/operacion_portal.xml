@@ -48,7 +48,7 @@
                 <a class="tc-guide-card tc-trip-objected" t-att-href="'/transcash/operacion/embarques/%d' % v.id">
                   <strong><t t-esc="v.name"/> · <t t-esc="v.placa"/></strong>
                   <div class="tc-trip-alert-label">⛔ Objeción del chofer pendiente</div>
-                  <p><t t-esc="v.chofer_usuario_id.name"/> · <t t-esc="v.proveedor_id.name"/></p>
+                  <p><t t-esc="v.chofer_usuario_id.name"/> · <t t-esc="v.proveedor_id.name"/></p><t t-set="e" t-value="v"/><t t-call="logistica_transcash.trip_dates_card"/>
                   <small t-esc="v.observacion_rechazo or 'Consulta la bitácora del embarque'"/>
                 </a>
               </t>

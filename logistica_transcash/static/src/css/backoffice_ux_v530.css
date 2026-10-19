@@ -1,0 +1,31 @@
+/* Odoo 18 backoffice: scoped, responsive, readable. No global website/PWA modifications. */
+.tc-ux-kanban .tc-ux-card { padding:16px; display:flex; flex-direction:column; gap:10px; min-width:0; overflow-wrap:anywhere; color:var(--body-color,#253549); }
+.tc-ux-kanban .tc-ux-card-top { display:flex; gap:8px; align-items:start; justify-content:space-between; }
+.tc-ux-kanban .tc-ux-card-top .badge { font-size:11px; white-space:normal; text-align:right; line-height:1.25; max-width:55%; }
+.tc-ux-kanban .tc-ux-reference { font-size:16px; line-height:1.35; }
+.tc-ux-kanban .tc-ux-card-main { font-weight:650; font-size:15px; }
+.tc-ux-kanban .tc-ux-muted { font-size:12px; opacity:.78; line-height:1.35; }
+.tc-ux-kanban .tc-ux-card-action { font-size:12px; border-top:1px solid var(--border-color,#dfe5ec); padding-top:10px; font-weight:600; color:var(--link-color,#126c89); }
+.tc-ux-kanban .tc-ux-alert { background:#fbe8ea; color:#951d35; border:1px solid #f2abb7; border-radius:8px; padding:8px 10px; font-weight:600; font-size:12px; }
+.tc-ux-kanban .tc-ux-progress { background:var(--gray-100,#f0f3f7); border-radius:8px; padding:9px 10px; font-size:13px; }
+.tc-ux-kanban .tc-ux-finance-grid, .tc-ux-kanban .tc-ux-dates { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.tc-ux-kanban .tc-ux-finance-grid > div, .tc-ux-kanban .tc-ux-dates > div { display:flex; flex-direction:column; gap:3px; min-width:0; border-radius:8px; padding:9px 10px; background:var(--gray-100,#f3f5f7); }
+.tc-ux-kanban .tc-ux-finance-grid span, .tc-ux-kanban .tc-ux-dates span { font-size:11px; opacity:.78; }
+.tc-ux-kanban .tc-ux-finance-grid strong, .tc-ux-kanban .tc-ux-dates strong { font-size:13px; line-height:1.35; overflow-wrap:anywhere; }
+.tc-ux-kanban .tc-ux-dates small { font-size:11px; opacity:.8; }
+.tc-ux-kanban .tc-ux-balance { outline:1px solid var(--border-color,#d5dde6); }
+.tc-ux-kanban .tc-ux-card-foot { border-top:1px solid var(--border-color,#dfe5ec); padding-top:9px; display:flex; gap:6px; align-items:start; justify-content:space-between; flex-wrap:wrap; font-size:11px; opacity:.9; }
+.o_form_view .tc-ux-form { max-width:1400px; }
+.o_form_view .tc-ux-form .oe_button_box { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px; }
+.o_form_view .tc-ux-form .tc-ux-hint { white-space:normal; line-height:1.55; }
+.o_form_view .tc-ux-form .o_field_x2many, .o_form_view .tc-ux-form .o_field_widget { min-width:0; }
+@media (max-width: 767px) {
+  .tc-ux-kanban .tc-ux-card { padding:11px; gap:9px; }
+  .tc-ux-kanban .tc-ux-card-top { align-items:start; }
+  .tc-ux-kanban .tc-ux-finance-grid, .tc-ux-kanban .tc-ux-dates { gap:6px; }
+  .tc-ux-kanban .tc-ux-finance-grid > div, .tc-ux-kanban .tc-ux-dates > div { padding:7px; }
+  .o_form_view .tc-ux-form { padding-inline:10px; }
+  .o_form_view .tc-ux-form .oe_button_box .oe_stat_button { min-height:42px; }
+  .o_form_view .tc-ux-form .o_notebook .nav-tabs { flex-wrap:nowrap; overflow-x:auto; scroll-snap-type:x proximity; }
+  .o_form_view .tc-ux-form .o_notebook .nav-tabs .nav-item { flex-shrink:0; scroll-snap-align:start; }
+}

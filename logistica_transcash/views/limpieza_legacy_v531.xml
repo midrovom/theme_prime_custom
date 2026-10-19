@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- V5.31: un solo flujo operativo. Mantener XMLIDs heredados y datos históricos:
+       nunca borrar menús con registros previos durante una actualización Odoo. -->
+
+  <!-- Eliminamos de la navegación las bandejas financieras y de operación basadas en guías.
+       Los menús antiguos pueden persistir en PostgreSQL aun si se omiten del XML. -->
+  <record id="menu_transcash_pagos" model="ir.ui.menu"><field name="active" eval="False"/></record>
+  <record id="menu_transcash_activas" model="ir.ui.menu"><field name="active" eval="False"/></record>
+  <record id="menu_transcash_incidentes" model="ir.ui.menu"><field name="active" eval="False"/></record>
+  <record id="menu_transcash_carga" model="ir.ui.menu"><field name="active" eval="False"/></record>
+
+  <!-- Los documentos de guías siguen existiendo, pero solo como insumo de planificación.
+       Usar el asistente de hoja de ruta para asignar guías realmente. -->
+  <record id="action_tc_guias_planificar_v531" model="ir.actions.act_window">
+    <field name="name">Guías disponibles para hojas de ruta</field>
+    <field name="res_model">transcash.guia</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_transcash_guia_search"/>
+    <field name="domain">[('state','=','registrada'),('embarque_id','=',False),('hoja_ruta_id','=',False)]</field>
+    <field name="context">{'create': False, 'edit': False, 'delete': False}</field>
+    <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Sin guías pendientes para planificar</p>
+      <p>Las guías llegan desde el ERP. Cree una hoja de ruta y utilice «Agregar / quitar guías» para asignarlas al chofer, transporte y destino.</p></field>
+  </record>
+  <record id="menu_transcash_guias" model="ir.ui.menu">
+    <field name="name">Guías para armar rutas</field>
+    <field name="action" eval="'ir.actions.act_window,%d' % ref('action_tc_guias_planificar_v531')"/>
+    <field name="groups_id" eval="[(6, 0, [ref('group_transcash_operador_rutas'), ref('group_logistica_manager')])]"/>
+    <field name="active" eval="True"/>
+  </record>
+
+  <!-- Accesos antiguos guardados: nunca más deben abrir liquidaciones por guía.
+       Reutilizamos la acción técnica anterior para llevar a documentos de transporte. -->
+  <record id="action_transcash_payment" model="ir.actions.act_window">
+    <field name="name">Liquidaciones por viaje (historial)</field>
+    <field name="res_model">transcash.pago.liquidacion</field>
+    <field name="view_mode">kanban,list,form</field>
+    <field name="search_view_id" ref="view_transcash_liquidacion_search_v530"/>
+    <field name="domain">[]</field>
+  </record>
+  <record id="action_transcash_open" model="ir.actions.act_window">
+    <field name="name">Embarques en curso</field>
+    <field name="res_model">transcash.embarque</field>
+    <field name="view_mode">kanban,list,form</field>
+    <field name="domain">[('state','in',['preparacion','embarcado','ruta'])]</field>
+  </record>
+  <record id="action_transcash_incidencias" model="ir.actions.act_window">
+    <field name="name">Novedades e incidencias internas</field>
+    <field name="res_model">transcash.novedad.resumen</field>
+    <field name="view_mode">list,form</field>
+    <field name="domain">[]</field>
+  </record>
+
+  <!-- Una ficha de embarque es la entrada natural del backoffice. -->
+  <record id="menu_transcash_root" model="ir.ui.menu">
+    <field name="action" eval="'ir.actions.act_window,%d' % ref('action_transcash_embarques')"/>
+  </record>
+</odoo>

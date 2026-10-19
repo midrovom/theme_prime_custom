@@ -4,6 +4,8 @@
     <field name="arch" type="xml"><list string="Embarques" create="0" delete="0" decoration-success="estado_aprobacion == 'aprobado'" decoration-danger="objecion_pendiente or observacion_rechazo">
       <field name="name"/><field name="state" widget="badge"/><field name="objecion_pendiente" widget="boolean_toggle" readonly="1"/>
       <field name="chofer_usuario_id"/><field name="proveedor_id"/><field name="placa"/>
+      <field name="fecha_traslado_prevista" optional="hide"/><field name="fecha_salida"/>
+      <field name="fecha_entrega_prevista" optional="hide"/><field name="fecha_entrega"/>
       <field name="cantidad_guias"/><field name="guias_cerradas_chofer"/><field name="guias_entregadas"/>
       <field name="estado_aprobacion" widget="badge"/>
       <field name="estado_financiero" widget="badge" groups="logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad"/>
@@ -15,8 +17,11 @@
   <record id="view_transcash_embarque_search" model="ir.ui.view">
     <field name="name">transcash.embarque.search</field><field name="model">transcash.embarque</field>
     <field name="arch" type="xml"><search><field name="name"/><field name="chofer_usuario_id"/><field name="proveedor_id"/>
-      <field name="placa"/><filter name="activas" string="Operación abierta" domain="[('state','in',['preparacion','embarcado','ruta'])]"/>
-      <filter name="entregadas" string="Entregas finalizadas" domain="[('state','=','entregado')]"/>
+      <field name="placa"/><filter name="activas" string="En curso" domain="[('state','in',['preparacion','embarcado','ruta'])]"/>
+      <filter name="en_revision" string="En revisión" domain="['|','|',('objecion_pendiente','=',True),'&amp;',('state','=','entregado'),('estado_aprobacion','=','pendiente'),('liquidacion_linea_id','any',[('liquidacion_id.estado','in',['revision','observada'])])]"/>
+      <filter name="novedades_cliente" string="Novedades del cliente" domain="[('guia_ids','any',['|',('incidencia_estado','=','abierta'),('resultado_recepcion','=','con_novedades')])]"/>
+      <filter name="entregadas" string="Entregados" domain="[('state','=','entregado')]"/>
+      <filter name="todos" string="Todos los embarques" domain="[]"/>
       <filter name="aprobadas" string="Fletes aprobados" domain="[('estado_aprobacion','=','aprobado')]"/>
       <filter name="objetados" string="Objetados por chofer" domain="['|',('objecion_pendiente','=',True),('observacion_rechazo','!=',False)]"/>
       <filter name="por_aprobar" string="Por aprobar Logística" domain="[('state','=','entregado'),('estado_aprobacion','=','pendiente')]"/>
@@ -48,7 +53,7 @@
           groups="logistica_transcash.group_logistica_manager"/>
         <field name="state" widget="statusbar" statusbar_visible="preparacion,embarcado,ruta,entregado"/>
       </header>
-      <sheet><div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+      <sheet class="tc-ux-form tc-operation-form"><div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
         <group string="Valor del embarque" class="tc-valor-embarque"
           groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad">
           <field name="moneda_id" invisible="1"/>
@@ -63,7 +68,9 @@
         </div>
         <group><group string="Transporte"><field name="company_id" groups="base.group_multi_company"/>
           <field name="chofer_usuario_id"/><field name="proveedor_id"/><field name="placa"/><field name="tipo_vehiculo"/><field name="origen"/>
-          <field name="fecha_creacion"/><field name="fecha_embarcado"/><field name="fecha_salida"/><field name="fecha_entrega"/>
+          <field name="fecha_creacion"/><field name="fecha_embarcado"/>
+          <field name="fecha_traslado_prevista" readonly="1"/><field name="fecha_salida"/>
+          <field name="fecha_entrega_prevista" readonly="1"/><field name="fecha_entrega"/>
         </group><group string="Control de entregas"><field name="cantidad_guias"/><field name="guias_cerradas_chofer"/>
           <field name="guias_entregadas"/><field name="rutas_total" readonly="1"/>
           <field name="rutas_entregadas" readonly="1"/>

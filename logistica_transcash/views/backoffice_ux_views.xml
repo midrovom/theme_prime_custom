@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Odoo 18 native Kanban (card template). No JS navigation or elevated data access. -->
+  <record id="view_transcash_liquidacion_kanban_v530" model="ir.ui.view">
+    <field name="name">transcash.pago.liquidacion.kanban.contabilidad</field>
+    <field name="model">transcash.pago.liquidacion</field>
+    <field name="arch" type="xml">
+      <kanban class="tc-ux-kanban tc-ux-finance o_kanban_mobile" create="0" quick_create="false" delete="0" sample="0">
+        <field name="name"/><field name="proveedor_id"/><field name="company_id"/>
+        <field name="estado"/><field name="confirmacion_pagos"/><field name="factura_numero"/>
+        <field name="factura_fecha"/><field name="factura_total"/><field name="total_acordado"/>
+        <field name="total_pagado"/><field name="saldo_pendiente"/><field name="moneda_id"/>
+        <templates>
+          <t t-name="card">
+            <div class="tc-ux-card tc-ux-finance-card">
+              <div class="tc-ux-card-top">
+                <strong class="tc-ux-reference"><field name="name"/></strong>
+                <span t-attf-class="badge #{record.estado.raw_value === 'pagada' ? 'bg-success' : record.estado.raw_value === 'observada' ? 'bg-danger' : record.estado.raw_value === 'revision' ? 'bg-warning text-dark' : 'bg-secondary'}"><field name="estado"/></span>
+              </div>
+              <div class="tc-ux-card-main"><field name="proveedor_id"/></div>
+              <div class="tc-ux-muted">Factura: <span t-if="record.factura_numero.raw_value"><field name="factura_numero"/></span><span t-else="">Pendiente de presentar</span></div>
+              <div class="tc-ux-finance-grid">
+                <div><span>Fletes</span><strong><field name="total_acordado" widget="monetary"/></strong></div>
+                <div><span>Factura</span><strong><field name="factura_total" widget="monetary"/></strong></div>
+                <div><span>Pagado</span><strong><field name="total_pagado" widget="monetary"/></strong></div>
+                <div class="tc-ux-balance"><span>Saldo</span><strong><field name="saldo_pendiente" widget="monetary"/></strong></div>
+              </div>
+              <div class="tc-ux-card-foot"><span><field name="company_id"/></span><span><field name="confirmacion_pagos"/></span></div>
+              <div class="tc-ux-card-action">Abrir liquidación y revisar viajes, factura y pagos →</div>
+            </div>
+          </t>
+        </templates>
+      </kanban>
+    </field>
+  </record>
+  <record id="view_transcash_liquidacion_search_v530" model="ir.ui.view">
+    <field name="name">transcash.pago.liquidacion.search.contabilidad</field>
+    <field name="model">transcash.pago.liquidacion</field>
+    <field name="arch" type="xml"><search string="Liquidaciones y facturas">
+      <field name="name"/><field name="proveedor_id"/><field name="factura_numero"/><field name="company_id"/>
+      <separator/>
+      <filter name="pendiente_revision" string="Facturas por revisar" domain="[('estado','=','revision')]"/>
+      <filter name="observadas" string="Observadas" domain="[('estado','=','observada')]"/>
+      <filter name="en_pago" string="En pago" domain="[('estado','in',['proceso_pago','parcial'])]"/>
+      <filter name="pagadas" string="Pagadas" domain="[('estado','=','pagada')]"/>
+      <filter name="trabajo_contable" string="En gestión" domain="[('estado','in',['revision','observada','proceso_pago','parcial'])]"/>
+      <group expand="0" string="Agrupar">
+        <filter name="por_estado" string="Estado" context="{'group_by':'estado'}"/>
+        <filter name="por_proveedor" string="Proveedor" context="{'group_by':'proveedor_id'}"/>
+        <filter name="por_compania" string="Compañía" context="{'group_by':'company_id'}"/>
+      </group>
+    </search></field>
+  </record>
+  <record id="view_transcash_embarque_kanban_v530" model="ir.ui.view">
+    <field name="name">transcash.embarque.kanban.operacion</field>
+    <field name="model">transcash.embarque</field>
+    <field name="arch" type="xml"><kanban class="tc-ux-kanban tc-ux-trips o_kanban_mobile" create="0" quick_create="false" delete="0" sample="0">
+      <field name="name"/><field name="state"/><field name="proveedor_id"/><field name="chofer_usuario_id"/>
+      <field name="placa"/><field name="tipo_vehiculo"/><field name="rutas_total"/><field name="rutas_entregadas"/>
+      <field name="cantidad_guias"/><field name="guias_cerradas_chofer"/><field name="objecion_pendiente"/>
+      <field name="estado_aprobacion"/><field name="fecha_salida"/><field name="fecha_entrega"/>
+      <field name="fecha_traslado_prevista"/><field name="fecha_entrega_prevista"/>
+      <templates><t t-name="card">
+        <div class="tc-ux-card tc-ux-trip-card">
+          <div class="tc-ux-card-top"><strong class="tc-ux-reference"><field name="name"/></strong>
+            <span t-attf-class="badge #{record.objecion_pendiente.raw_value ? 'bg-danger' : record.state.raw_value === 'entregado' ? 'bg-success' : 'bg-primary'}"><field name="state"/></span>
+          </div>
+          <t t-if="record.objecion_pendiente.raw_value"><div class="tc-ux-alert">⚠ Objeción de carga pendiente · requiere revisión de Logística</div></t>
+          <div class="tc-ux-card-main"><field name="proveedor_id"/></div>
+          <div class="tc-ux-muted">Chofer: <field name="chofer_usuario_id"/> · <field name="placa"/></div>
+          <div class="tc-ux-progress">Rutas: <strong><field name="rutas_entregadas"/> / <field name="rutas_total"/></strong> · Guías: <strong><field name="guias_cerradas_chofer"/> / <field name="cantidad_guias"/></strong></div>
+          <div class="tc-ux-dates"><div><span>Salida</span><strong t-if="record.fecha_salida.raw_value"><field name="fecha_salida"/></strong><strong t-else="">Pendiente</strong>
+            <small t-if="!record.fecha_salida.raw_value and record.fecha_traslado_prevista.raw_value">Prevista: <field name="fecha_traslado_prevista"/></small></div>
+            <div><span>Entrega</span><strong t-if="record.fecha_entrega.raw_value"><field name="fecha_entrega"/></strong><strong t-else="">Pendiente</strong>
+            <small t-if="!record.fecha_entrega.raw_value and record.fecha_entrega_prevista.raw_value">Prevista: <field name="fecha_entrega_prevista"/></small></div>
+          </div>
+          <div class="tc-ux-card-action">Abrir viaje → Ver rutas, guías y evidencias</div>
+        </div>
+      </t></templates>
+    </kanban></field>
+  </record>
+  <record id="view_transcash_ruta_kanban_v530" model="ir.ui.view">
+    <field name="name">transcash.hoja.ruta.kanban.seguimiento</field>
+    <field name="model">transcash.hoja.ruta</field>
+    <field name="arch" type="xml"><kanban class="tc-ux-kanban tc-ux-routes o_kanban_mobile" quick_create="false" sample="0">
+      <field name="name"/><field name="estado_operativo"/><field name="destino_id"/>
+      <field name="embarque_id"/><field name="proveedor_id"/><field name="chofer_usuario_id"/>
+      <field name="guias_total"/><field name="guias_cerradas_chofer"/><field name="placa"/>
+      <templates><t t-name="card">
+        <div class="tc-ux-card tc-ux-route-card">
+          <div class="tc-ux-card-top"><strong class="tc-ux-reference"><field name="name"/></strong>
+            <span t-attf-class="badge #{record.estado_operativo.raw_value === 'entregada' ? 'bg-success' : record.estado_operativo.raw_value === 'objetada' ? 'bg-danger' : 'bg-secondary'}"><field name="estado_operativo"/></span></div>
+          <div class="tc-ux-card-main"><field name="destino_id"/></div>
+          <div class="tc-ux-muted">Viaje: <span t-if="record.embarque_id.raw_value"><field name="embarque_id"/></span><span t-else="">Sin embarcar</span></div>
+          <div class="tc-ux-muted"><field name="proveedor_id"/> · <field name="placa"/></div>
+          <div class="tc-ux-progress">Guías entregadas: <strong><field name="guias_cerradas_chofer"/> / <field name="guias_total"/></strong></div>
+          <div class="tc-ux-card-action">Abrir ruta → Consultar guías y evidencias</div>
+        </div>
+      </t></templates>
+    </kanban></field>
+  </record>
+  <record id="view_tc_transfer_list_v530" model="ir.ui.view">
+    <field name="name">transcash.pago.registro.list.conciliacion</field>
+    <field name="model">transcash.pago.registro</field>
+    <field name="arch" type="xml"><list string="Transferencias de transporte" create="0" edit="0" delete="0"
+      decoration-danger="recepcion_estado == 'disputa'" decoration-success="recepcion_estado == 'confirmada'">
+      <field name="fecha_pago"/><field name="liquidacion_id"/>
+      <field name="company_id" groups="base.group_multi_company"/>
+      <field name="monto" sum="Transferido"/><field name="referencia"/>
+      <field name="medio"/><field name="recepcion_estado" widget="badge"/>
+      <field name="recepcion_fecha" optional="hide"/><field name="comprobante_nombre" optional="hide"/>
+      <field name="anulado"/>
+    </list></field>
+  </record>
+  <record id="view_tc_transfer_search_v530" model="ir.ui.view">
+    <field name="name">transcash.pago.registro.search.conciliacion</field>
+    <field name="model">transcash.pago.registro</field>
+    <field name="arch" type="xml"><search string="Buscar transferencias">
+      <field name="referencia"/><field name="liquidacion_id"/><field name="company_id"/>
+      <filter name="pendientes" string="Proveedor por confirmar" domain="[('recepcion_estado','=','pendiente'),('anulado','=',False)]"/>
+      <filter name="diferencias" string="Diferencias" domain="[('recepcion_estado','=','disputa'),('anulado','=',False)]"/>
+      <filter name="confirmadas" string="Confirmadas" domain="[('recepcion_estado','=','confirmada'),('anulado','=',False)]"/>
+      <filter name="anuladas" string="Anuladas" domain="[('anulado','=',True)]"/>
+      <group expand="0" string="Agrupar">
+        <filter name="por_liquidacion" string="Liquidación" context="{'group_by':'liquidacion_id'}"/>
+        <filter name="por_estado" string="Recepción bancaria" context="{'group_by':'recepcion_estado'}"/>
+      </group>
+    </search></field>
+  </record>
+  <record id="action_tc_payments_v530" model="ir.actions.act_window">
+    <field name="name">Transferencias y conciliación</field>
+    <field name="res_model">transcash.pago.registro</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_tc_transfer_search_v530"/>
+    <field name="context">{'search_default_pendientes':1}</field>
+  </record>
+  <!-- A focused Odoo-native accounting workspace; no separate accountant PWA. -->
+  <record id="action_tc_accounting_desk_v530" model="ir.actions.act_window">
+    <field name="name">Bandeja de Contabilidad</field>
+    <field name="res_model">transcash.pago.liquidacion</field>
+    <field name="view_mode">kanban,list,form</field>
+    <field name="search_view_id" ref="view_transcash_liquidacion_search_v530"/>
+    <field name="context">{'search_default_trabajo_contable': 1}</field>
+    <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Sin facturas pendientes de gestión</p>
+      <p>Revise las facturas de transporte, registre pagos y consulte la recepción confirmada por el proveedor.</p></field>
+  </record>
+  <menuitem id="menu_tc_logistics_v530" name="Operación logística" parent="menu_transcash_root" sequence="5"/>
+  <menuitem id="menu_tc_accounting_v530" name="Contabilidad · Transporte" parent="menu_transcash_root" sequence="30"
+            groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
+  <menuitem id="menu_tc_accounting_desk_v530" name="Bandeja contable" parent="menu_tc_accounting_v530" sequence="1"
+            action="action_tc_accounting_desk_v530"
+            groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
+  <menuitem id="menu_tc_payments_v530" name="Transferencias y conciliación" parent="menu_tc_accounting_v530"
+            action="action_tc_payments_v530" sequence="44"
+            groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
+  <!-- Preserve menu XMLIDs / legacy data, but move active workflows under role-based sections. -->
+  <record id="menu_transcash_rutas" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_logistics_v530"/></record>
+  <record id="menu_transcash_armar_embarque" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_logistics_v530"/></record>
+  <record id="menu_transcash_embarques" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_logistics_v530"/></record>
+  <record id="menu_transcash_guias" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_logistics_v530"/></record>
+  <record id="menu_transcash_activas" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_logistics_v530"/><field name="name">Guías en curso (consulta)</field></record>
+  <record id="menu_transcash_incidentes" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_logistics_v530"/></record>
+  <record id="menu_transcash_chofer" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_logistics_v530"/></record>
+  <record id="menu_transcash_acceso_clientes" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_logistics_v530"/></record>
+  <record id="menu_transcash_tarifas" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_logistics_v530"/></record>
+  <record id="menu_transcash_embarques_pagos" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_logistics_v530"/></record>
+  <record id="menu_transcash_acceso_proveedores" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_accounting_v530"/></record>
+  <record id="menu_transcash_fletes_pendientes" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_accounting_v530"/></record>
+  <record id="menu_transcash_facturas_recibidas" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_accounting_v530"/></record>
+  <record id="menu_transcash_pago_liquidaciones" model="ir.ui.menu"><field name="parent_id" ref="menu_tc_accounting_v530"/></record>
+  <record id="menu_transcash_pagos" model="ir.ui.menu"><field name="active" eval="False"/></record>
+  <!-- Point all existing native Odoo actions to the new cards (list view remains available). -->
+  <record id="action_transcash_embarques" model="ir.actions.act_window"><field name="view_mode">kanban,list,form</field></record>
+  <record id="action_transcash_embarques_pagos" model="ir.actions.act_window"><field name="view_mode">kanban,list,form</field></record>
+  <record id="action_transcash_rutas" model="ir.actions.act_window"><field name="view_mode">kanban,list,form</field></record>
+  <record id="action_transcash_pago_liquidaciones" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="search_view_id" ref="view_transcash_liquidacion_search_v530"/></record>
+  <record id="action_transcash_facturas_recibidas" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field><field name="search_view_id" ref="view_transcash_liquidacion_search_v530"/></record>
+  <record id="action_transcash_fletes_pendientes" model="ir.actions.act_window"><field name="view_mode">kanban,list,form</field></record>
+</odoo>

@@ -168,6 +168,46 @@ class TranscashLiquidacion(models.Model):
                 'res_model':'transcash.guia', 'view_mode':'list,form', 'domain':[('embarque_id','in',ids)],
                 'context':{'create':False, 'edit':False, 'delete':False}}
 
+    def action_open_trips(self):
+        """Open the shipments making up this invoice, never detached guides.
+
+        This is a read-only navigation action; server/company authorization is
+        checked before returning an action, and record rules apply afterwards.
+        """
+        self.ensure_one()
+        user = self.env.user
+        if (user.share or
+                not (user.has_group('logistica_transcash.group_transcash_contabilidad') or
+                     user.has_group('logistica_transcash.group_logistica_manager')) or
+                self.company_id not in user.company_ids):
+            raise AccessError(_('No tiene autorización para ver los viajes de esta liquidación.'))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Viajes de %s') % self.name,
+            'res_model': 'transcash.embarque',
+            'view_mode': 'kanban,list,form',
+            'domain': [('id', 'in', self.linea_ids.mapped('embarque_id').ids)],
+            'context': {'create': False, 'edit': False, 'delete': False},
+        }
+
+    def action_open_payments(self):
+        """Read-only reconciliation drill-down with the receipt viewer."""
+        self.ensure_one()
+        user = self.env.user
+        if (user.share or
+                not (user.has_group('logistica_transcash.group_transcash_contabilidad') or
+                     user.has_group('logistica_transcash.group_logistica_manager')) or
+                self.company_id not in user.company_ids):
+            raise AccessError(_('No tiene autorización para ver estos pagos.'))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Transferencias de %s') % self.name,
+            'res_model': 'transcash.pago.registro',
+            'view_mode': 'list,form',
+            'domain': [('liquidacion_id', '=', self.id)],
+            'context': {'create': False, 'edit': False, 'delete': False},
+        }
+
     def _check_supplier(self):
         user = self.env.user
         if (not user.share or not user.has_group('logistica_transcash.group_transcash_transportista') or

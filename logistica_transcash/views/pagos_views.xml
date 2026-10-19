@@ -21,12 +21,26 @@
           invisible="estado not in ('proceso_pago','parcial')" groups="logistica_transcash.group_transcash_contabilidad"/>
         <button name="action_preview_invoice" type="object" string="👁 Ver factura" icon="fa-eye"
           invisible="not factura_archivo" groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
-        <button name="action_open_guides" type="object" string="Ver guías y evidencias" icon="fa-folder-open"
-          groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager"/>
         <button name="action_print" type="object" string="Imprimir liquidación"/>
         <field name="estado" widget="statusbar" statusbar_visible="borrador,revision,observada,proceso_pago,parcial,pagada"/>
       </header>
-      <sheet><div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+      <sheet class="tc-ux-form tc-accounting-form">
+        <div class="oe_button_box" name="button_box">
+          <button type="object" name="action_open_trips" class="oe_stat_button" icon="fa-truck"
+            groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager">
+            <div class="o_stat_info"><span class="o_stat_text">Ver viajes incluidos</span></div>
+          </button>
+          <button type="object" name="action_open_payments" class="oe_stat_button" icon="fa-credit-card"
+            groups="logistica_transcash.group_transcash_contabilidad,logistica_transcash.group_logistica_manager">
+            <div class="o_stat_info"><span class="o_stat_text">Ver transferencias</span></div>
+          </button>
+        </div>
+        <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+        <div class="alert alert-info tc-ux-hint" role="note">
+          1. Revise los viajes, sus rutas y evidencias. 2. Abra la factura y apruébela u obsérvela.
+          3. Registre transferencias con comprobante. 4. Consulte la confirmación bancaria del proveedor.
+          La conciliación no modifica las entregas ni los estados logísticos.
+        </div>
         <group><group string="Proveedor y documento"><field name="proveedor_id"/><field name="company_id"/>
           <field name="factura_numero"/><field name="factura_fecha"/><field name="factura_archivo" filename="factura_nombre"/>
           <field name="factura_nombre" invisible="1"/>
@@ -49,9 +63,19 @@
     <field name="name">transcash.pago.registro.form</field><field name="model">transcash.pago.registro</field>
     <field name="arch" type="xml"><form string="Transferencia documentada" create="0" edit="0" delete="0">
       <header><button name="action_preview_receipt" type="object" string="👁 Ver comprobante" class="btn-primary"/></header>
-      <sheet><group><field name="liquidacion_id"/><field name="fecha_pago"/><field name="monto"/><field name="moneda_id" invisible="1"/>
-      <field name="referencia"/><field name="medio"/><field name="anulado"/>
-      <field name="recepcion_estado" widget="badge"/><field name="recepcion_por_id"/><field name="recepcion_fecha"/><field name="recepcion_nota"/></group></sheet>
+      <sheet class="tc-ux-form tc-accounting-form"><div class="oe_title"><h1>Transferencia <field name="referencia" readonly="1"/></h1></div>
+      <group><group string="Pago registrado por Contabilidad">
+        <field name="liquidacion_id" readonly="1"/><field name="fecha_pago" readonly="1"/>
+        <field name="monto" readonly="1"/><field name="moneda_id" invisible="1"/>
+        <field name="medio" readonly="1"/><field name="anulado" readonly="1"/>
+        <field name="comprobante_nombre" readonly="1"/>
+      </group><group string="Conciliación con el proveedor">
+        <field name="recepcion_estado" widget="badge" readonly="1"/>
+        <field name="recepcion_por_id" readonly="1"/><field name="recepcion_fecha" readonly="1"/>
+        <field name="recepcion_nota" readonly="1"/>
+      </group></group>
+      <div class="alert alert-info" role="note">Pulse «Ver comprobante» para abrir el archivo sin descargarlo. El proveedor confirma la recepción desde su Portal; Contabilidad conserva el control del pago.</div>
+      </sheet>
     </form></field>
   </record>
   <record id="view_transcash_pago_wizard_form" model="ir.ui.view">
