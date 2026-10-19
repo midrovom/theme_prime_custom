@@ -29,9 +29,59 @@
     <field name="name">tc.guide.sync.log.form</field><field name="model">tc.guide.sync.log</field>
     <field name="arch" type="xml"><form create="false" edit="false" delete="false"><sheet><group><field name="date"/><field name="company_id"/><field name="api_name"/><field name="created_count"/><field name="updated_count"/><field name="error_count"/></group><field name="details"/></sheet></form></field>
   </record>
-  <record id="action_tc_guide" model="ir.actions.act_window"><field name="name">Guías sincronizadas</field><field name="res_model">tc.guide</field><field name="view_mode">list,form</field></record>
+  <record id="view_tc_guide_search" model="ir.ui.view">
+    <field name="name">tc.guide.search</field>
+    <field name="model">tc.guide</field>
+    <field name="arch" type="xml">
+      <search string="Buscar guías importadas">
+        <field name="name" string="Número de guía"/>
+        <field name="external_id"/>
+        <field name="document_number"/>
+        <field name="transport_name"/>
+        <field name="driver_id"/>
+        <field name="recipient_id"/>
+        <field name="destination_city"/>
+        <filter name="sync_today" string="Sincronizadas hoy" domain="[('last_sync', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
+        <separator/>
+        <filter name="group_state" string="Estado ERP" context="{'group_by': 'erp_state'}"/>
+        <filter name="group_transport" string="Transportista" context="{'group_by': 'transport_name'}"/>
+        <filter name="group_date" string="Fecha prevista" context="{'group_by': 'erp_planned_date'}"/>
+        <filter name="group_company" string="Empresa" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+      </search>
+    </field>
+  </record>
+  <record id="view_tc_guide_kanban" model="ir.ui.view">
+    <field name="name">tc.guide.kanban</field>
+    <field name="model">tc.guide</field>
+    <field name="arch" type="xml">
+      <kanban create="false" edit="false" delete="false" default_order="id desc" sample="0">
+        <field name="name"/><field name="erp_state"/><field name="document_number"/>
+        <field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/>
+        <field name="recipient_id"/><field name="destination_address"/>
+        <field name="erp_planned_date"/><field name="last_sync"/>
+        <templates>
+          <t t-name="card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <strong class="fs-5">Guía <field name="name"/></strong>
+              <span class="badge rounded-pill text-bg-secondary"><field name="erp_state"/></span>
+            </div>
+            <div class="text-muted mb-2"><field name="document_number"/></div>
+            <div class="mb-1"><i class="fa fa-truck me-1" title="Transportista"/><field name="transport_name"/></div>
+            <div class="mb-1"><i class="fa fa-user me-1" title="Chofer"/><field name="driver_id"/></div>
+            <div class="mb-1"><i class="fa fa-map-marker me-1" title="Destino"/><field name="destination_address"/></div>
+            <div class="d-flex justify-content-between mt-2 text-muted small">
+              <span><i class="fa fa-calendar me-1"/><field name="erp_planned_date"/></span>
+              <span><i class="fa fa-clock-o me-1"/><field name="last_sync"/></span>
+            </div>
+          </t>
+        </templates>
+      </kanban>
+    </field>
+  </record>
+  <record id="action_tc_guide" model="ir.actions.act_window"><field name="name">Guías sincronizadas</field><field name="res_model">tc.guide</field><field name="view_mode">kanban,list,form</field><field name="search_view_id" ref="view_tc_guide_search"/></record>
   <record id="action_tc_sync_log" model="ir.actions.act_window"><field name="name">Historial sincronizaciones</field><field name="res_model">tc.guide.sync.log</field><field name="view_mode">list,form</field></record>
   <menuitem id="menu_tc_root" name="Transcash - Guías ERP" sequence="65" groups="transcash_guias_api.group_tc_operator"/>
+  <menuitem id="menu_tc_guides_operacion" name="Guías importadas ERP" parent="logistica_transcash.menu_tc_logistics_v530" action="action_tc_guide" sequence="3" groups="transcash_guias_api.group_tc_operator"/>
   <menuitem id="menu_tc_guides" name="Guías sincronizadas" parent="menu_tc_root" action="action_tc_guide" sequence="10" groups="transcash_guias_api.group_tc_operator"/>
   <menuitem id="menu_tc_sync_logs" name="Historial de sincronización" parent="menu_tc_root" action="action_tc_sync_log" sequence="20" groups="transcash_guias_api.group_tc_sync_admin"/>
 </odoo>

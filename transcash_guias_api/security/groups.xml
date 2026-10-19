@@ -17,4 +17,8 @@
     <field name="category_id" ref="module_category_tc"/>
     <field name="implied_ids" eval="[(4, ref('group_tc_chief'))]"/>
   </record>
+  <!-- Operadores y jefes existentes ven el panel sin reasignar sus usuarios. -->
+  <record id="logistica_transcash.group_transcash_operador_rutas" model="res.groups">
+    <field name="implied_ids" eval="[(4, ref('transcash_guias_api.group_tc_operator'))]"/>
+  </record>
 </odoo>
