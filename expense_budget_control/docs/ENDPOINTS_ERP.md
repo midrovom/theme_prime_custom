@@ -1,33 +1,29 @@
-# API de cuentas, centros de costo y consumos — v1.4.60
+# Integración ERP única — v1.4.61
 
-**Configuración previa:** en el módulo instalado `api_administrator`, registrar (o reutilizar) tres APIs `GET` activas de la empresa con sus credenciales y los endpoints siguientes (el prefijo URL pertenece a su servidor):
+## Una sola configuración
 
-| Campo en Configuración API de gastos | `end_point` en API Administrator |
-| --- | --- |
-| API de cuentas de gastos | `inventory_odoo/consulta_odoo/getctagastos/2` |
-| API de centros de costo (ERP) | `inventory_odoo/consulta_odoo/getcentrocostos/2` |
-| API de consumos de gastos (ERP) | `inventory_odoo/consulta_odoo/getconsumosgastos/2` |
+En **Control de Gastos → Configuración → Configuración API ERP** aparecen tres campos para seleccionar las APIs GET existentes en `api_administrator`. No se crean endpoints ni credenciales nuevas, y la antigua entrada separada «API de centros de costo» queda oculta. Si los tres registros ya existen, el botón **Sincronizar** también los detecta automáticamente por el campo `end_point`.
 
-1. En **Control de Gastos → Configuración → Configuración API de gastos**, seleccione Empresa y las tres APIs ya creadas. No se crea ni se modifica ninguna credencial ni API desde este módulo.
-2. Pulse **Sincronizar** en esta configuración o en el formulario de presupuesto (Registro y Administrador). Orden: cuentas → centros → consumos. El historial informa los resultados por endpoint.
-3. Hay un cron activo **Presupuestos: cuentas, centros y consumos ERP (5 horas)**. Sincroniza exclusivamente las empresas que tengan APIs seleccionadas; el cron antiguo de sincronización diaria permanece desactivado. Para detener la sincronización automática, desactive el nuevo cron desde Ajustes → Técnico → Automatización → Acciones planificadas.
+- **Cuentas**: `inventory_odoo/consulta_odoo/getctagastos/2`, JSON `data:[{"Codigo":"601010101002","Nombre":"Decimo Tercer Sueldo"}]`.
+- **Centros**: `inventory_odoo/consulta_odoo/getcentrocostos/2`, JSON `data:[{"Codigo":"ADM       ","Nombre":"Administración"}]`.
+- **Consumos**: `inventory_odoo/consulta_odoo/getconsumosgastos/2`, JSON `data:[{"Codigo":"601010101002","Valor":"161.82","Fecha":"jul 25 2022 12:00:00:000","Centro":"ADM       ","Subcentro":"GDE       "}]`.
 
-### Formatos recibidos
+Las tres APIs deben ser GET activas y pertenecer a la misma empresa, configuradas con el URL base y la autenticación en API Administrator. La sincronización hace GET y registra cuántas filas llegan de cada endpoint. Ver **Configuración → Historial API** y los mensajes `[PRESUPUESTOS ERP]` en los logs de Odoo. No imprime cabeceras ni contraseñas.
 
-- Cuentas: `{"data":[{"Codigo":"601010101001","Nombre":"Sueldos y Salarios"}]}`.
-- Centros: `{"data":[{"Codigo":"MAT       ","Nombre":"MAT- ALB - NEXUS "}]}`.
-- Consumos: `{"data":[{"Codigo":"601010101001","Valor":"2431.03","Fecha":"mar 25 2020 12:00:00:000","Centro":"ALM       ","Subcentro":"GDE       "}]}`.
+## Año, centro y subcentro
 
-Se eliminan espacios laterales de códigos y nombres. Los movimientos se registran en **Gastos reales**, con empresa, cuenta, fecha, código de centro y subcentro y `amount = Valor`. Los centros no presentes en el catálogo se identifican temporalmente por código como **pendiente de catálogo** y se completan con su nombre oficial en la próxima sincronización del catálogo.
+- Si sincroniza desde **Presupuestos → [presupuesto] → Sincronizar API**, importa solo consumos del **año de ese presupuesto** (por ejemplo 2022).
+- Si sincroniza desde la configuración única, usa el campo **Año de los consumos** (inicialmente el actual).
+- El cron **Presupuestos: cuentas, centros y consumos ERP (5 horas)** ejecuta cada cinco horas la importación de consumos del **año calendario actual**. Descubre empresas tanto por su configuración como por sus APIs GET ERP activas.
+- Los **catálogos** de cuentas y centros se actualizan independientemente del año. Los **movimientos** fuera del año solicitado se omiten y cuentan en `Omitidas por año`.
+- Cada gasto se vincula con la proyección que coincida en empresa + cuenta `Codigo` + centro `Centro` + año/mes de `Fecha` + `Subcentro` (si la proyección especifica uno). Una línea sin subcentro absorbe gastos de subcentros sin línea específica, para compatibilidad con presupuestos previos.
+- `Valor` se almacena en gasto real y se computa automáticamente como **Consumido** de la línea presupuestaria asociada. No sobrescribe **Proyectado** ni ajustes manuales.
+- Cuentas o centros con movimientos pero ausentes de sus respectivos catálogos se crean temporalmente con nombre «pendiente de catálogo» y se actualizan cuando llega el catálogo.
 
-El campo **Consumido** de una proyección se calcula desde los gastos reales vinculados a esa misma **empresa + cuenta + centro + mes + año**. Si todavía no existe una proyección con esos datos, el consumo queda guardado como gasto real sin línea asignada hasta que se registre la proyección correspondiente. Nunca se altera directamente `actual_amount` ni el proyectado.
+## Diagnóstico
 
-### Una cuenta, varios centros
+El botón muestra el número de APIs, nuevos, actualizados y errores. **Historial API** guarda una fila por endpoint y ejecución con el nombre/ruta consultada, filas recibidas, creadas, modificadas, omitidas por año, vinculadas al presupuesto y sin línea presupuestaria, así como el error si lo hay. Si un gasto figura como **Sin línea presupuestaria**, verifique `Codigo`, `Centro`, `Subcentro`, `Fecha`, compañía, y que exista una proyección mensual para ese período.
 
-`getctagastos` solo envía cuenta y descripción: **no** envía centro de costo. La relación **cuenta ↔ centro** se obtiene de los movimientos de `getconsumosgastos` (campos `Codigo` y `Centro`). Una misma cuenta puede tener varios centros. Al crear un rubro, la pantalla muestra los centros detectados de sus cuentas, pero **no inventa un centro único**: el responsable debe elegir el centro para cada proyección mensual. Si hay uno solo, el formulario puede proponerlo automáticamente.
+No se contactaron los endpoints reales durante el desarrollo local. Para probar en su instancia, ejecute Sincronizar, compruebe el historial y después valide el presupuesto del mismo año. Use una base de pruebas para actualizar desde v1.4.60, ya que se amplía el índice único de las líneas mensuales a la dimensión Subcentro.
 
-### Idempotencia y limitaciones
-
-El JSON de consumos mostrado no contiene ID inmutable por transacción. Para evitar duplicados al ejecutar el cron varias veces, el importador usa una huella criptográfica de `Codigo + Fecha + Valor + Centro + Subcentro`, distinguiendo filas idénticas repetidas mediante un ordinal. **Si cambia alguno de esos campos en el origen, no se puede saber si fue una corrección o un movimiento nuevo; podría importarse otro consumo.** Para actualización inequívoca por movimiento se necesita que el ERP envíe `id` o `external_id` estable. La sincronización no borra automáticamente consumos que ya no aparecen en el endpoint, porque la respuesta podría estar paginada o limitada.
-
-La empresa se toma de la configuración seleccionada en Odoo. El sufijo `/2` del endpoint es el proporcionado por el ERP; el módulo no supone que el código `2` sea el ID de compañía de Odoo. No se prueba la conexión real en el desarrollo local: debe validarse contra el servidor y su versión de `api_administrator`.
+**Limitación del origen:** sin `id` de movimiento, el identificador se infiere de Código+Centro+Subcentro+Fecha+Valor+ordinal; si el origen corrige cualquiera de esos datos el cambio puede crear otro movimiento. Enviar `id` estable permite actualizaciones inequívocas.

@@ -19,6 +19,13 @@ class ExpenseBudgetAPIConfig(models.Model):
         'res.company', string='Empresa', required=True, index=True,
         default=lambda self: self.env.company,
     )
+    sync_year = fields.Integer(
+        string='Año de los consumos', required=True,
+        default=lambda self: fields.Date.context_today(self).year,
+        help='Para Sincronizar desde esta pantalla se importan solo consumos de este año. '
+             'Desde un presupuesto se utiliza el año del presupuesto. '
+             'El cron automático siempre usa el año actual.',
+    )
     api_administrator_id = fields.Many2one(
         'api.administrator', string='API anterior (opcional)',
         ondelete='restrict', check_company=True,
@@ -68,13 +75,10 @@ class ExpenseBudgetAPIConfig(models.Model):
         if not self.env.user.has_group('expense_budget_control.group_expense_budget_manager'):
             raise AccessError(_('Requiere el grupo Administrador de presupuestos de gastos.'))
         self.ensure_one()
-        if self.account_api_id or self.center_catalog_api_id or self.consumption_api_id:
-            result = self.env['expense.budget.inventory.sync']._sync_company(self.company_id)
-            return self.env['expense.budget.inventory.sync']._notification(result)
-        result = self.env['expense.budget.api.sync']._sync_company(
-            self.company_id, api_records=self.api_administrator_id,
+        result = self.env['expense.budget.inventory.sync']._sync_company(
+            self.company_id, year=self.sync_year,
         )
-        return self.env['expense.budget.api.sync']._notification(result)
+        return self.env['expense.budget.inventory.sync']._notification(result)
 
 
 class ExpenseBudgetSyncLog(models.Model):
@@ -91,6 +95,11 @@ class ExpenseBudgetSyncLog(models.Model):
     updated_count = fields.Integer(string='Actualizados')
     unchanged_count = fields.Integer(string='Sin cambios')
     message = fields.Text(string='Detalle')
+    received_count = fields.Integer(string='Filas recibidas')
+    skipped_count = fields.Integer(string='Omitidas por año')
+    matched_count = fields.Integer(string='Vinculadas al presupuesto')
+    unmatched_count = fields.Integer(string='Sin línea presupuestaria')
+    year = fields.Integer(string='Año consultado')
 
 
 class ExpenseBudgetAPISync(models.AbstractModel):

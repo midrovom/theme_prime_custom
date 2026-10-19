@@ -31,6 +31,7 @@
         <field name="view_mode">list,form</field>
     </record>
     <record id="view_expense_budget_cost_center_api_form" model="ir.ui.view">
+        <field name="active" eval="False"/>
         <field name="name">expense.budget.cost.center.api.config.form</field>
         <field name="model">expense.budget.cost.center.api.config</field>
         <field name="arch" type="xml">
@@ -47,6 +48,7 @@
         </field>
     </record>
     <record id="view_expense_budget_cost_center_api_list" model="ir.ui.view">
+        <field name="active" eval="False"/>
         <field name="name">expense.budget.cost.center.api.config.list</field>
         <field name="model">expense.budget.cost.center.api.config</field>
         <field name="arch" type="xml"><list string="API de centros de costo" delete="false">

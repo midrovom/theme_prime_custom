@@ -6,9 +6,9 @@
         <field name="model">expense.budget.api.config</field>
         <field name="priority">35</field>
         <field name="arch" type="xml">
-            <list string="Configuración API de gastos" delete="false">
+            <list string="Configuración API ERP" delete="false">
                 <field name="company_id"/>
-                <field name="api_administrator_id" optional="hide"/>
+                <field name="sync_year"/>
                 <field name="account_api_id" optional="show"/>
                 <field name="center_catalog_api_id" optional="show"/>
                 <field name="consumption_api_id" optional="show"/>
@@ -21,7 +21,7 @@
         <field name="model">expense.budget.api.config</field>
         <field name="priority">35</field>
         <field name="arch" type="xml">
-            <form string="Configuración API de gastos" delete="false">
+            <form string="Configuración API ERP" delete="false">
                 <header>
                     <button name="action_sync" type="object" string="Sincronizar"
                             class="btn-primary"/>
@@ -29,14 +29,12 @@
                 <sheet>
                     <group>
                         <field name="company_id"/>
-                        <field name="api_administrator_id" string="API anterior (opcional)"
-                               domain="[('company_id', '=', company_id), ('type', '=', 'get'), ('status', '=', 'A')]"
-                               options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
-                        <group string="Tres endpoints ERP (APIs GET existentes)">
+                        <field name="sync_year"/>
+                        <group string="Endpoints ERP (GET de API Administrator)">
                             <field name="account_api_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                             <field name="center_catalog_api_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
                             <field name="consumption_api_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
-                            <div class="text-muted" colspan="2">Configure cada endpoint en API Administrator y selecciónelo aquí. Sin crear nuevas conexiones en Control de Gastos. Orden: cuentas, centros y consumos.</div>
+                            <div class="text-muted" colspan="2">Una sola configuración. Seleccione las 3 APIs GET existentes o déjelas vacías si sus endpoints ya están registrados en API Administrator. Orden: cuentas, centros y consumos. Desde un presupuesto se utiliza el año de ese presupuesto.</div>
                         </group>
                     </group>
                 </sheet>
@@ -44,7 +42,7 @@
         </field>
     </record>
     <record id="action_expense_budget_api_administrator" model="ir.actions.act_window">
-        <field name="name">Configuración API de gastos</field>
+        <field name="name">Configuración API ERP</field>
         <field name="res_model">expense.budget.api.config</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[]</field>
@@ -71,13 +69,15 @@
                 <field name="create_date"/><field name="company_id"/>
                 <field name="api_administrator_id"/><field name="status" widget="badge"/>
                 <field name="created_count"/><field name="updated_count"/>
-                <field name="unchanged_count"/><field name="message"/>
+                <field name="unchanged_count"/><field name="received_count"/>
+                <field name="skipped_count"/><field name="matched_count"/><field name="unmatched_count"/>
+                <field name="year"/><field name="message"/>
             </list>
         </field>
     </record>
     <record id="action_expense_budget_sync_log" model="ir.actions.act_window">
         <field name="name">Historial de sincronización</field>
         <field name="res_model">expense.budget.sync.log</field>
-        <field name="view_mode">list</field>
+        <field name="view_mode">list,form</field>
     </record>
 </odoo>

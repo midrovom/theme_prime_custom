@@ -142,6 +142,8 @@
                                            readonly="parent.state != 'draft'"
                                            domain="[('company_id', '=', parent.company_id)]"
                                            options="{'no_create': True}"/>
+                                    <field name="subcenter_code" string="Subcentro ERP"
+                                           readonly="parent.state != 'draft'" optional="show"/>
                                     <field name="month" readonly="parent.state != 'draft'"/>
                                     <field name="planned_amount" readonly="parent.state != 'draft'" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
@@ -226,7 +228,7 @@
         <field name="arch" type="xml">
             <search>
                 <field name="budget_id"/><field name="account_id"/><field name="category_id"/>
-                <field name="month"/><field name="cost_center_id"/>
+                <field name="month"/><field name="cost_center_id"/><field name="subcenter_code"/>
                 <filter string="Sobregirados" name="over_budget" domain="[('variance_amount', '&lt;', 0)]"/>
                 <group expand="0" string="Agrupar por">
                     <filter string="Rubro" name="group_category" context="{'group_by': 'category_id'}"/>
@@ -250,7 +252,7 @@
             <list string="Gastos reales">
                 <field name="date"/><field name="company_id"/>
                 <field name="account_id"/><field name="category_id"/><field name="cost_center_id"/>
-                <field name="description"/><field name="reference"/><field name="subcenter_code" optional="hide"/>
+                <field name="description"/><field name="reference"/><field name="subcenter_code" optional="show"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="amount" sum="Total gastado"/>
                 <field name="source"/><field name="budget_line_id" optional="hide"/>

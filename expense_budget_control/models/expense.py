@@ -107,7 +107,7 @@ class ExpenseBudgetExpense(models.Model):
          'Este movimiento externo ya fue importado para la empresa.'),
     ]
 
-    @api.constrains('account_id', 'company_id', 'cost_center_id', 'budget_line_id', 'date')
+    @api.constrains('account_id', 'company_id', 'cost_center_id', 'budget_line_id', 'date', 'subcenter_code')
     def _check_consistency(self):
         for rec in self:
             if rec.account_id.company_id != rec.company_id:
@@ -119,23 +119,33 @@ class ExpenseBudgetExpense(models.Model):
                          line.account_id != rec.account_id or
                          line.company_id != rec.company_id or
                          line.budget_id.year != rec.date.year or
-                         int(line.month) != rec.date.month):
+                         int(line.month) != rec.date.month or
+                         (line.subcenter_code and line.subcenter_code != (rec.subcenter_code or ''))):
                 raise ValidationError(_('La línea presupuestaria no corresponde a la cuenta/mes/empresa del gasto.'))
 
     @api.model
-    def _find_budget_line(self, company_id, account_id, expense_date, cost_center_id=False):
+    def _find_budget_line(self, company_id, account_id, expense_date,
+                          cost_center_id=False, subcenter_code=False):
         expense_date = fields.Date.to_date(expense_date)
         if not expense_date or not company_id or not account_id:
             return self.env['expense.budget.line']
-        # Hay varios presupuestos posibles por empresa/año: localizar la
-        # cuenta y el mes directamente, sin tomar el primer presupuesto.
-        return self.env['expense.budget.line'].search([
+        domain = [
             ('budget_id.company_id', '=', company_id),
             ('budget_id.year', '=', expense_date.year),
             ('account_id', '=', account_id),
             ('cost_center_id', '=', cost_center_id or False),
             ('month', '=', str(expense_date.month)),
-        ], limit=1)
+        ]
+        Line = self.env['expense.budget.line'].sudo()
+        subcenter = as_text(subcenter_code)
+        # Si se presupuestó el subcentro específico, tiene prioridad.
+        # Una línea sin subcentro funciona como total de los otros subcentros
+        # de esa cuenta y centro, para respetar presupuestos históricos.
+        if subcenter:
+            exact = Line.search(domain + [('subcenter_code', '=', subcenter)], limit=1)
+            if exact:
+                return exact
+        return Line.search(domain + [('subcenter_code', '=', False)], limit=1)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -145,12 +155,12 @@ class ExpenseBudgetExpense(models.Model):
             account_id = vals.get('account_id')
             if account_id:
                 vals['budget_line_id'] = self._find_budget_line(
-                    company_id, account_id, date_value, vals.get('cost_center_id')
+                    company_id, account_id, date_value, vals.get('cost_center_id'), vals.get('subcenter_code')
                 ).id or False
         return super().create(vals_list)
 
     def write(self, vals):
-        changed = {'account_id', 'company_id', 'date', 'cost_center_id'}
+        changed = {'account_id', 'company_id', 'date', 'cost_center_id', 'subcenter_code'}
         if changed.intersection(vals):
             for rec in self:
                 record_vals = dict(vals)
@@ -159,6 +169,7 @@ class ExpenseBudgetExpense(models.Model):
                     vals.get('account_id', rec.account_id.id),
                     vals.get('date', rec.date),
                     vals.get('cost_center_id', rec.cost_center_id.id),
+                    vals.get('subcenter_code', rec.subcenter_code),
                 ).id or False
                 super(ExpenseBudgetExpense, rec).write(record_vals)
             return True
@@ -199,6 +210,14 @@ class ExpenseBudgetExpense(models.Model):
             'source_key': external_key,
             'api_administrator_id': api_record.id if api_record else False,
         }
+        # Reconciliar también registros ya importados en versiones previas.
+        # Un gasto sin línea debe poder aparecer en Consumido tras crear
+        # posteriormente la proyección mensual correspondiente.
+        matched_line = self._find_budget_line(
+            company.id, account.id, expense_date, center.id or False,
+            values['subcenter_code'],
+        )
+        values['budget_line_id'] = matched_line.id or False
         existing = self.search([('company_id', '=', company.id), ('source_key', '=', external_key)], limit=1)
         if existing:
             updates = {}
@@ -206,7 +225,7 @@ class ExpenseBudgetExpense(models.Model):
                 if key in ('source', 'source_key'):
                     continue
                 current = existing[key]
-                if key in ('company_id', 'account_id', 'cost_center_id', 'api_administrator_id'):
+                if key in ('company_id', 'account_id', 'cost_center_id', 'api_administrator_id', 'budget_line_id'):
                     current = current.id or False
                 elif key == 'date':
                     current = fields.Date.to_string(current)

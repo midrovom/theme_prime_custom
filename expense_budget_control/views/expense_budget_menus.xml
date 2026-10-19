@@ -16,11 +16,13 @@
     <menuitem id="menu_expense_budget_cost_center" name="Centros de costo"
               parent="menu_expense_budget_config" action="action_expense_budget_cost_center" sequence="25"
               groups="expense_budget_control.group_expense_budget_manager"/>
-    <menuitem id="menu_expense_budget_cost_center_api" name="API de centros de costo"
-              parent="menu_expense_budget_config" action="action_expense_budget_cost_center_api" sequence="35"
-              groups="expense_budget_control.group_expense_budget_manager"/>
+    <!-- La configuración de las tres API ERP se concentra en menu_expense_budget_api.
+         La entrada antigua se desactiva también al actualizar instalaciones existentes. -->
+    <record id="menu_expense_budget_cost_center_api" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
     <menuitem id="menu_expense_budget_import" name="Importar Excel/CSV" parent="menu_expense_budget_root" action="action_expense_budget_import" sequence="50"/>
-    <menuitem id="menu_expense_budget_api" name="Configuración API de gastos" parent="menu_expense_budget_config" action="action_expense_budget_api_administrator" sequence="30"/>
+    <menuitem id="menu_expense_budget_api" name="Configuración API ERP" parent="menu_expense_budget_config" action="action_expense_budget_api_administrator" sequence="30"/>
     <menuitem id="menu_expense_budget_sync_log" name="Historial API" parent="menu_expense_budget_config" action="action_expense_budget_sync_log" sequence="40"/>
     <menuitem id="menu_expense_budget_dashboard" name="Dashboard de gastos"
               parent="menu_expense_budget_root" action="action_expense_budget_dashboard"

@@ -7,10 +7,11 @@ movimientos ausentes de respuestas sucesivas, que podrían ser consultas parcial
 from collections import defaultdict
 from datetime import datetime
 from decimal import Decimal
+from urllib.parse import urlsplit
 import hashlib
 import logging
 
-from odoo import api, models, _
+from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 from .expense import as_text, get_value, parse_amount
@@ -55,37 +56,68 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
 
     @api.model
     def _rows(self, response):
-        if isinstance(response, dict):
-            if response.get('success') is False:
-                raise ValueError(as_text(response.get('message')) or 'La API reportó error.')
-            payload = response.get('data', response.get('items', response.get('result')))
-        else:
-            payload = response
-        if isinstance(payload, dict):
-            for key in ('data', 'items', 'result', 'cuentas', 'centros'):
-                if isinstance(payload.get(key), list):
-                    payload = payload[key]
+        """Acepta respuesta lista, {data:[...]}, o envoltorios data/result/items."""
+        current = response
+        for _depth in range(5):
+            if isinstance(current, list):
+                if len(current) > 100000:
+                    raise ValueError('Límite de 100.000 filas por consulta.')
+                if any(not isinstance(row, dict) for row in current):
+                    raise ValueError('Todos los registros deben ser objetos JSON.')
+                return current
+            if not isinstance(current, dict):
+                break
+            if current.get('success') is False:
+                raise ValueError(as_text(current.get('message')) or 'La API devolvió success=false.')
+            for key in ('data', 'items', 'result', 'cuentas', 'centros', 'registros', 'Data'):
+                if key in current and current[key] is not None:
+                    current = current[key]
                     break
-        if not isinstance(payload, list):
-            raise ValueError('La API debe devolver un arreglo data de registros JSON.')
-        if len(payload) > 100000:
-            raise ValueError('Límite de 100.000 registros por consulta.')
-        if any(not isinstance(row, dict) for row in payload):
-            raise ValueError('Todos los registros de la API deben ser objetos JSON.')
-        return payload
+            else:
+                if get_value(current, 'Codigo', 'code'):
+                    return [current]
+                break
+        raise ValueError('Respuesta JSON sin lista de registros (data/items/result).')
+
+    @api.model
+    def _matches_endpoint(self, api_record, kind):
+        """Valida ruta, admitiendo URL completa, barra final y parámetros GET."""
+        path = as_text(api_record.end_point)
+        path = urlsplit(path).path.strip('/').lower()
+        wanted = ENDPOINTS[kind].lower()
+        return path == wanted or path.endswith('/' + wanted)
+
+    @api.model
+    def _choose_api(self, company, config, kind):
+        selected = {
+            'accounts': 'account_api_id',
+            'centers': 'center_catalog_api_id',
+            'consumptions': 'consumption_api_id',
+        }
+        configured = config[selected[kind]] if config else False
+        if configured:
+            self._validate_api(company, configured, kind)
+            return configured
+        # Si el usuario no seleccionó las APIs, intentar localizarlas entre
+        # las ya creadas en API Administrator, SIN crear endpoints adicionales.
+        candidates = self.env['api.administrator'].sudo().search([
+            ('company_id', '=', company.id), ('type', '=', 'get'), ('status', '=', 'A'),
+        ])
+        matches = candidates.filtered(lambda api_rec: self._matches_endpoint(api_rec, kind))
+        if len(matches) > 1:
+            raise UserError(_(
+                'Se encontraron varias APIs para %(path)s. Seleccione una en Configuración API ERP.'
+            ) % {'path': ENDPOINTS[kind]})
+        return matches[:1]
 
     @api.model
     def _validate_api(self, company, record, kind):
         if not record:
             return False
         if record.company_id != company or record.type != 'get' or record.status != 'A':
-            raise UserError(_('La API de %s debe ser GET, estar activa y pertenecer a la empresa.') % kind)
-        # Se usa la URL/endpoint ya configurados en API Administrator.
-        # No modificar credenciales ni fabricar conexiones alternativas.
-        expected = ENDPOINTS[kind].rstrip('/').lower()
-        current = as_text(record.end_point).strip('/').lower()
-        if not current.endswith(expected):
-            raise UserError(_('La API de %(kind)s debe tener el endpoint %(path)s en API Administrator.') % {
+            raise UserError(_('La API de %s debe ser GET, activa y de la misma empresa.') % kind)
+        if not self._matches_endpoint(record, kind):
+            raise UserError(_('La API de %(kind)s debe apuntar a %(path)s.') % {
                 'kind': kind, 'path': ENDPOINTS[kind],
             })
         return True
@@ -93,14 +125,21 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
     @api.model
     def _call(self, company, record, kind):
         self._validate_api(company, record, kind)
+        _logger.info(
+            '[PRESUPUESTOS ERP] Solicitando endpoint=%s empresa_id=%s api_id=%s',
+            ENDPOINTS[kind], company.id, record.id,
+        )
         response = self.env['api.administrator'].sudo().call_api(
             record.name, method='get', company_id=company.id,
         )
-        return self._rows(response)
+        rows = self._rows(response)
+        _logger.info('[PRESUPUESTOS ERP] Respuesta endpoint=%s filas=%s empresa_id=%s',
+                     ENDPOINTS[kind], len(rows), company.id)
+        return rows
 
     @api.model
     def _sync_accounts(self, company, rows):
-        Account = self.env['expense.budget.account'].sudo().with_company(company)
+        Account = self.env['expense.budget.account'].sudo().with_company(company).with_context(active_test=False)
         clean = {}
         for index, item in enumerate(rows, 1):
             code = as_text(get_value(item, 'Codigo', 'code', required=True))
@@ -119,8 +158,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             if not rec:
                 Account.create({'company_id': company.id, 'code': code, 'name': name})
                 counts['created'] += 1
-            elif rec.name != name:
-                rec.write({'name': name})
+            elif rec.name != name or not rec.active:
+                rec.write({'name': name, 'active': True})
                 counts['updated'] += 1
             else:
                 counts['unchanged'] += 1
@@ -128,7 +167,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
 
     @api.model
     def _sync_centers(self, company, rows):
-        Center = self.env['expense.budget.cost.center'].sudo().with_company(company)
+        Center = self.env['expense.budget.cost.center'].sudo().with_company(company).with_context(active_test=False)
         clean = {}
         for index, item in enumerate(rows, 1):
             code = as_text(get_value(item, 'Codigo', 'code', required=True))
@@ -147,8 +186,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             if not rec:
                 Center.create({'company_id': company.id, 'code': code, 'name': name})
                 counts['created'] += 1
-            elif rec.name != name:
-                rec.write({'name': name})
+            elif rec.name != name or not rec.active:
+                rec.write({'name': name, 'active': True})
                 counts['updated'] += 1
             else:
                 counts['unchanged'] += 1
@@ -165,121 +204,169 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         return code, center, subcenter, date, amount, external_id
 
     @api.model
-    def _sync_consumptions(self, company, rows, api_record):
-        """Upsert determinista; no DUPLICAR cuando reenvían el mismo lote.
+    def _sync_consumptions(self, company, rows, api_record, year):
+        """Importa solo el año pedido. Vincula por empresa/cuenta/centro/subcentro/mes.
 
-        Si no hay ID externo se utiliza hash de la tupla completa, con ordinal
-        para movimientos idénticos. Sin un ID ERP, importes corregidos pueden
-        aparecer como un nuevo movimiento (no se pueden inferir reemplazos).
+        La huella no es un ID contable: sin ID del ERP no se pueden detectar
+        rectificaciones en importe/fecha. Nunca mezcla años o empresas.
         """
         Expense = self.env['expense.budget.expense'].sudo().with_company(company)
-        Account = self.env['expense.budget.account'].sudo().with_company(company)
-        Center = self.env['expense.budget.cost.center'].sudo().with_company(company)
+        Account = self.env['expense.budget.account'].sudo().with_company(company).with_context(active_test=False)
+        Center = self.env['expense.budget.cost.center'].sudo().with_company(company).with_context(active_test=False)
         normalized = [self._normalize_consumption(row) for row in rows]
-        account_codes = {row[0] for row in normalized}
-        center_codes = {row[1] for row in normalized if row[1]}
+        relevant = [row for row in normalized if row[3].year == year]
+        counts = {'created': 0, 'updated': 0, 'unchanged': 0,
+                  'received': len(rows), 'skipped': len(rows)-len(relevant),
+                  'linked': 0, 'unmatched': 0, 'placeholder_accounts': 0,
+                  'placeholder_centers': 0}
+        if not relevant:
+            return counts
+        account_codes = {row[0] for row in relevant}
+        center_codes = {row[1] for row in relevant if row[1]}
         accounts = {rec.code: rec for rec in Account.search([
             ('company_id', '=', company.id), ('code', 'in', list(account_codes)),
         ])}
-        missing = account_codes - accounts.keys()
-        if missing:
-            raise ValueError('Cuentas aún no existentes: %s. Sincronice primero el catálogo.' %
-                             ', '.join(sorted(missing)[:20]))
+        for code in sorted(account_codes - accounts.keys()):
+            # No bloquear consumos reales si el catálogo llegó incompleto.
+            # El catálogo actualizará el nombre en una próxima sincronización.
+            accounts[code] = Account.create({
+                'company_id': company.id, 'code': code,
+                'name': '%s (pendiente de catálogo)' % code,
+            })
+            counts['placeholder_accounts'] += 1
         centers = {rec.code: rec for rec in Center.search([
             ('company_id', '=', company.id), ('code', 'in', list(center_codes)),
         ])}
-        # Algunos consumos usan centros ausentes del catálogo recibido. Conservar
-        # esos códigos y evitar pérdidas; getcentrocostos actualizará su nombre.
         for code in sorted(center_codes - centers.keys()):
             centers[code] = Center.create({
                 'company_id': company.id, 'code': code,
                 'name': '%s (pendiente de catálogo)' % code,
             })
+            counts['placeholder_centers'] += 1
         duplicates = defaultdict(int)
-        prepared = []
-        for code, center_code, subcenter, when, amount, external_id in normalized:
+        for code, center_code, subcenter, when, amount, external_id in relevant:
             canonical_amount = str(Decimal(str(amount)).quantize(Decimal('0.01')))
-            key_material = '|'.join((code, center_code, subcenter, when.isoformat(), canonical_amount))
+            material = '|'.join((code, center_code, subcenter, when.isoformat(), canonical_amount))
             if external_id:
                 key = 'erp:' + external_id
             else:
-                duplicates[key_material] += 1
+                duplicates[material] += 1
                 key = 'erp-fingerprint:' + hashlib.sha256(
-                    ('%s|%s' % (key_material, duplicates[key_material])).encode('utf-8')
+                    ('%s|%s' % (material, duplicates[material])).encode('utf-8')
                 ).hexdigest()
-            prepared.append((key, code, center_code, subcenter, when, amount))
-        if len({item[0] for item in prepared}) != len(prepared):
-            raise ValueError('La API devolvió identificadores de consumos duplicados.')
-        counts = {'created': 0, 'updated': 0, 'unchanged': 0}
-        for key, code, center_code, subcenter, when, amount in prepared:
-            center = centers.get(center_code)
-            data = {
+            row = {
                 'Codigo': code, 'Valor': amount, 'Fecha': when.isoformat(),
                 'Centro': center_code, 'Subcentro': subcenter,
-                'Descripcion': 'Consumo ERP %s / %s' % (code, center_code or 'Sin centro'),
+                'Descripcion': 'Consumo ERP %s / %s / %s' % (
+                    code, center_code or 'Sin centro', subcenter or 'Sin subcentro'),
             }
-            outcome = Expense._upsert_external(
-                company, data, 'api', key, api_record=api_record,
-            )
+            outcome = Expense._upsert_external(company, row, 'api', key, api_record=api_record)
             counts[outcome] += 1
+            line = Expense._find_budget_line(company.id, accounts[code].id, when,
+                                             centers[center_code].id if center_code else False,
+                                             subcenter)
+            if line:
+                counts['linked'] += 1
+            else:
+                counts['unmatched'] += 1
         return counts
 
     @api.model
-    def _sync_company(self, company):
+    def _save_log(self, company, api_record, year, kind, status, message, counts=None):
+        counts = counts or {}
+        self.env['expense.budget.sync.log'].sudo().create({
+            'company_id': company.id,
+            'api_administrator_id': api_record.id if api_record else False,
+            'year': year,
+            'status': status,
+            'created_count': counts.get('created', 0),
+            'updated_count': counts.get('updated', 0),
+            'unchanged_count': counts.get('unchanged', 0),
+            'received_count': counts.get('received', 0),
+            'skipped_count': counts.get('skipped', 0),
+            'matched_count': counts.get('linked', 0),
+            'unmatched_count': counts.get('unmatched', 0),
+            'message': ('[%s] %s' % (ENDPOINTS[kind], message))[:2000],
+        })
+
+    @api.model
+    def _sync_company(self, company, year=None):
+        """Una ejecución por empresa/año; cuentas -> centros -> consumos.
+
+        Cada endpoint tiene su savepoint y log. Los errores no se ocultan
+        tras una notificación 'sincronización completada'.
+        """
         company.ensure_one()
+        year = int(year or fields.Date.context_today(self).year)
+        if not 2000 <= year <= 2100:
+            raise UserError(_('El año de sincronización debe estar entre 2000 y 2100.'))
         config = self.env['expense.budget.api.config'].sudo().search([
             ('company_id', '=', company.id),
         ], limit=1)
-        result = {'created': 0, 'updated': 0, 'unchanged': 0, 'errors': 0, 'apis': 0}
-        if not config:
-            return result
-        chosen = (
-            ('accounts', config.account_api_id),
-            ('centers', config.center_catalog_api_id),
-            ('consumptions', config.consumption_api_id),
-        )
-        for kind, api_record in chosen:
-            if not api_record:
-                continue
-            result['apis'] += 1
-            counts = {'created': 0, 'updated': 0, 'unchanged': 0}
+        result = {'created': 0, 'updated': 0, 'unchanged': 0,
+                  'errors': 0, 'apis': 0, 'year': year, 'details': []}
+        for kind in ('accounts', 'centers', 'consumptions'):
+            api_rec = False
+            counts = {}
             try:
+                api_rec = self._choose_api(company, config, kind)
+                if not api_rec:
+                    raise UserError(_(
+                        'No hay una API GET activa para %s en esta empresa. '
+                        'Créela en API Administrator y selecciónela en Configuración API ERP.'
+                    ) % ENDPOINTS[kind])
+                result['apis'] += 1
                 with self.env.cr.savepoint():
-                    rows = self._call(company, api_record, kind)
+                    rows = self._call(company, api_rec, kind)
                     if kind == 'accounts':
                         counts = self._sync_accounts(company, rows)
                     elif kind == 'centers':
                         counts = self._sync_centers(company, rows)
                     else:
-                        counts = self._sync_consumptions(company, rows, api_record)
-                for name in counts:
-                    result[name] += counts[name]
-                self.env['expense.budget.sync.log'].sudo().create({
-                    'company_id': company.id, 'api_administrator_id': api_record.id,
-                    'status': 'success', 'created_count': counts['created'],
-                    'updated_count': counts['updated'], 'unchanged_count': counts['unchanged'],
-                    'message': '%s: sincronización terminada.' % ENDPOINTS[kind],
-                })
+                        counts = self._sync_consumptions(company, rows, api_rec, year)
+                    counts.setdefault('received', len(rows))
+                    # Una lista vacía no equivale a éxito cuando el usuario
+                    # está esperando cuentas/centros/consumos desde el ERP.
+                    if not rows:
+                        _logger.warning('[PRESUPUESTOS ERP] Respuesta vacía: %s empresa=%s',
+                                        ENDPOINTS[kind], company.id)
+                for name in ('created', 'updated', 'unchanged'):
+                    result[name] += counts.get(name, 0)
+                message = ('OK: %s filas; creados=%s actualizados=%s sin_cambios=%s '
+                           'omitidos_por_año=%s vinculados=%s sin_proyeccion=%s '
+                           'cuentas_pendientes=%s centros_pendientes=%s' % (
+                               counts.get('received', 0), counts.get('created', 0),
+                               counts.get('updated', 0), counts.get('unchanged', 0),
+                               counts.get('skipped', 0), counts.get('linked', 0),
+                               counts.get('unmatched', 0), counts.get('placeholder_accounts', 0),
+                               counts.get('placeholder_centers', 0)))
+                self._save_log(company, api_rec, year, kind, 'success', message, counts)
+                _logger.info('[PRESUPUESTOS ERP] %s | empresa=%s año=%s | %s',
+                             ENDPOINTS[kind], company.id, year, message)
+                result['details'].append('%s: %s filas (%s nuevas, %s vinculadas, %s omitidas)' % (
+                    kind, counts['received'], counts.get('created', 0),
+                    counts.get('linked', 0), counts.get('skipped', 0)))
             except Exception as exc:
                 result['errors'] += 1
-                _logger.exception('Error sincronizando %s para empresa %s', kind, company.id)
-                self.env['expense.budget.sync.log'].sudo().create({
-                    'company_id': company.id, 'api_administrator_id': api_record.id,
-                    'status': 'error', 'message': ('%s: %s' % (kind, exc))[:1000],
-                })
-                # No consultar consumos con catálogos incompletos.
-                if kind in ('accounts', 'centers'):
-                    break
+                safe_message = str(exc)[:1500]
+                _logger.exception('[PRESUPUESTOS ERP] ERROR endpoint=%s empresa=%s año=%s: %s',
+                                  ENDPOINTS[kind], company.id, year, safe_message)
+                self._save_log(company, api_rec, year, kind, 'error', safe_message, counts)
+                result['details'].append('%s: ERROR %s' % (kind, safe_message[:180]))
         return result
 
     @api.model
     def _notification(self, result):
+        details = ' | '.join(result.get('details', []))
+        message = ('Año %(year)s · APIs consultadas: %(apis)s · Nuevos: %(created)s · '
+                   'Actualizados: %(updated)s · Errores: %(errors)s' % result)
+        if details:
+            message += '\n' + details
         return {
             'type': 'ir.actions.client', 'tag': 'display_notification',
             'params': {
-                'title': _('Sincronización de cuentas, centros y consumos'),
-                'message': _('APIs: %(apis)s; creados: %(created)s; actualizados: %(updated)s; '
-                             'sin cambios: %(unchanged)s; errores: %(errors)s.') % result,
+                'title': _('Sincronización ERP: cuentas, centros y consumos'),
+                'message': message,
                 'type': 'warning' if result['errors'] else 'success',
                 'sticky': bool(result['errors']),
             },
@@ -287,9 +374,19 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
 
     @api.model
     def cron_sync_every_5h(self):
-        """Solo sincroniza empresas con endpoints configurados; cron ejecutado como root."""
-        Config = self.env['expense.budget.api.config'].sudo()
-        for config in Config.search([]):
-            if not (config.account_api_id or config.center_catalog_api_id or config.consumption_api_id):
-                continue
-            self._sync_company(config.company_id)
+        """Cada cinco horas: año actual, empresas con configuración o endpoints ERP.
+
+        Descubrir endpoints GET activos evita que un cron silenciosamente no
+        trabaje por no haberse creado aún la fila de configuración unificada.
+        """
+        configured = self.env['expense.budget.api.config'].sudo().search([])
+        companies = configured.mapped('company_id')
+        candidates = self.env['api.administrator'].sudo().search([
+            ('type', '=', 'get'), ('status', '=', 'A'),
+        ])
+        for record in candidates:
+            if any(self._matches_endpoint(record, kind) for kind in ENDPOINTS):
+                companies |= record.company_id
+        year = fields.Date.context_today(self).year
+        for company in companies:
+            self._sync_company(company, year=year)
