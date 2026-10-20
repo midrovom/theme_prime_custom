@@ -13,8 +13,9 @@ from urllib.parse import quote
 from odoo import http, fields
 from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
-from ..services.ai_client import plan_question, narrate_result, AIServiceError
-from ..services.ai_analytics import execute_plan
+from ..services.ai_client import plan_question, planner_context, narrate_result, AIServiceError
+from ..services.ai_sql import execute_sql_plan
+from ..services.ai_schema import schema_context
 from ..services.ai_config_store import read_ai_settings, public_ai_settings, save_ai_settings
 from odoo.exceptions import UserError
 
@@ -180,6 +181,51 @@ class TranscashDashboardController(http.Controller):
                            'model_configured': model_ok, 'state': state,
                            'message': message})
 
+    @http.route('/transcash_inventory/ai/prepare', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_prepare_relational(self, **kw):
+        """Lazy migration of previously imported snapshots to normalized Odoo tables."""
+        if not self._can_ai():
+            return self._json({'error': 'Se requiere el permiso Consultas ChatGPT.'}, 403)
+        snap_id = str(kw.get('snapshot_id') or '').strip()
+        domain = [('company_id', '=', request.env.company.id)]
+        if snap_id:
+            if not snap_id.isdigit():
+                return self._json({'error': 'Versión no válida.'}, 400)
+            domain.append(('id', '=', int(snap_id)))
+        snapshot = request.env['transcash.inventory.snapshot'].search(domain, order='create_date desc, id desc', limit=1)
+        if not snapshot:
+            return self._json({'error': 'No hay inventario importado en esta empresa.'}, 404)
+        try:
+            snapshot.ensure_relational_data()
+            return self._json({'ok': True, 'ready': True,
+                               'snapshot_id': snapshot.id,
+                               'product_count': snapshot.product_count,
+                               'message': 'Tablas de Odoo listas para consultas SQL.'})
+        except UserError as exc:
+            return self._json({'error': str(exc)}, 409)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: preparación de facts SQL')
+            return self._json({'error': 'No se pudo preparar las tablas Odoo. Consulte el log del servidor.'}, 500)
+
+    @http.route('/transcash_inventory/ai/schema', type='http', auth='user', methods=['GET'])
+    def ai_schema_public(self, **kw):
+        """Return ONLY whitelisted metadata for this module, never other Odoo tables."""
+        if not self._can_ai():
+            return self._json({'error': 'Se requiere el permiso Consultas ChatGPT.'}, 403)
+        snap_id = str(kw.get('snapshot_id') or '').strip()
+        domain = [('company_id', '=', request.env.company.id)]
+        if snap_id:
+            if not snap_id.isdigit():
+                return self._json({'error': 'Versión no válida.'}, 400)
+            domain.append(('id', '=', int(snap_id)))
+        snapshot = request.env['transcash.inventory.snapshot'].search(domain, order='create_date desc, id desc', limit=1)
+        if not snapshot:
+            return self._json({'error': 'No hay versiones del inventario.'}, 404)
+        if not snapshot.relational_ready:
+            return self._json({'error': 'Prepare primero las tablas de consultas SQL.'}, 409)
+        return self._json({'ok': True, 'schema': schema_context(request.env, snapshot)})
+
     @http.route('/transcash_inventory/ai/ask', type='http', auth='user', methods=['POST'], csrf=True)
     def ai_ask(self, **kw):
         if not self._can_ai():
@@ -211,8 +257,9 @@ class TranscashDashboardController(http.Controller):
                 domain, limit=1, order='create_date desc, id desc')
             if not snapshot:
                 return self._json({'error': 'No existe un Excel importado en la empresa actual.'}, 404)
-            dataset = json.loads(snapshot.get_dashboard_json())
-            available = dataset.get('months', [])
+            # Use Odoo's relational facts (SQL), not the imported Excel buffer.
+            snapshot.ensure_relational_data()
+            available = json.loads(snapshot.relational_months or '[]')
             default_end = str(kw.get('hasta') or available[-1])
             default_start = str(kw.get('desde') or available[max(0, len(available)-12)])
             if default_start not in available or default_end not in available:
@@ -232,7 +279,8 @@ class TranscashDashboardController(http.Controller):
                   'marca': str(kw.get('marca') or '')[:120],
                   'formato': str(kw.get('formato') or '')[:120],
                   'proveedor': str(kw.get('proveedor') or '')[:120]}
-            plan = plan_question(key, model, question, available, default_start, default_end, ui)
+            plan = plan_question(key, model, question, available, default_start, default_end, ui,
+                                 schema_context(request.env, snapshot))
             # Active filters are binding when the planner did not request a replacement.
             for k, value in ui.items():
                 if value and not plan.get(k):
@@ -248,14 +296,14 @@ class TranscashDashboardController(http.Controller):
                                'grupos_evaluados': 0, 'sku_evaluados': 0,
                                'observaciones': ['El sistema no inventa datos o métricas que requieren información no importada.']},
                     'warning': ''})
-            data = execute_plan(dataset, plan, default_start, default_end)
+            data = execute_sql_plan(request.env, snapshot, plan, default_start, default_end)
             # v1.10 uses two short HTTP calls. Calculated data becomes visible
             # immediately, even if the optional narration later times out.
             if str(kw.get('fast') or '') == '1':
                 expires_at = int(time.time()) + 600
                 signature = self._sign_narration(question, data, expires_at)
                 return self._json({'ok': True, 'result': data,
-                    'answer': 'Indicador calculado en Odoo. Preparando explicación...',
+                    'answer': 'Consulta SQL de solo lectura ejecutada en Odoo. Preparando explicación...',
                     'plan_reason': str(plan.get('razon') or '')[:300],
                     'narration_signature': signature, 'narration_expiry': expires_at,
                     'warning': ''})

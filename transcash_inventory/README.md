@@ -287,7 +287,7 @@ Permiten escritura, selección con Enter o clic, navegación con flechas, limpia
    - `Crea un indicador de utilidad bruta dividida entre valor del stock por marca.`
 5. Si la API Key no es válida, si el modelo no está disponible o se supera la cuota, verá un error concreto. Máximo **25 consultas por usuario cada hora**, con bloqueo transaccional para limitar consumo simultáneo.
 
-**Arquitectura y controles de privacidad**: solo la pregunta y metadatos mínimos se envían a OpenAI para construir el plan (con `store: false`), y luego la pregunta y hasta 50 filas de resultados agregados para redactar la explicación. Los cálculos económicos los hace Odoo con un conjunto de dimensiones, medidas y operaciones autorizadas; no se manda el Excel entero ni ninguna API Key al navegador. La API de OpenAI tiene su propia facturación y exige conexión HTTPS saliente desde el servidor.
+**Arquitectura y controles de privacidad**: la pregunta, un diccionario de métricas y una selección de etiquetas comerciales se envían a OpenAI para construir el plan (con `store: false`), y luego la pregunta y hasta 50 filas de resultados agregados para redactar la explicación. Los cálculos económicos los hace Odoo con un conjunto de dimensiones, medidas y operaciones autorizadas; no se manda el Excel entero ni ninguna API Key al navegador. La API de OpenAI tiene su propia facturación y exige conexión HTTPS saliente desde el servidor.
 
 **Limitaciones**: el motor cubre venta neta, costo de venta, utilidad, margen, compras, cantidades vendidas/compradas, stock y fórmulas aritméticas construidas con estas magnitudes. No crea indicadores que dependan de campos inexistentes (por ejemplo inventario medio, GMROI contable real o lead time). Las cantidades no se convierten entre cajas, unidades y m². No puede atribuir rentabilidad a cada proveedor real de una compra sin trazabilidad por lote; por ello se informan por separado compras reales y rentabilidad de cartera.
 
@@ -364,3 +364,75 @@ Permiten escritura, selección con Enter o clic, navegación con flechas, limpia
 - En la actualización debe reiniciar el servicio Odoo y ejecutar la actualización
   del módulo: de lo contrario puede continuar la pantalla vieja en caché.
 - Validación completa en Odoo real pendiente; no introducir secretos en capturas.
+
+
+## v1.14 — Consultas con varias métricas y contexto de datos
+
+- El plan JSON ahora soporta `metrics` (1 a 8 métricas) y `metric` como columna principal de orden.
+  Ejemplo: ventas, utilidad y margen **juntas** por formato 45x45, agrupado por marca.
+- El servidor aporta un **diccionario semántico compacto** a la llamada planificadora:
+  columnas disponibles, fórmulas reales, limitaciones, períodos y ejemplos de categorías,
+  marcas, formatos y proveedores con mayor presencia. No transfiere todos los SKU ni facturas.
+- El motor calcula todas las columnas en UNA agrupación determinista (sin SQL de IA),
+  con márgenes como ratio de sumas. El frontend genera columnas de resultados y totales
+  dinámicamente. Se mantienen las restricciones de empresa, permisos y firma HMAC.
+- Permite también las agrupaciones combinadas `categoria_formato`, `categoria_marca`,
+  `categoria_marca_formato`, además de las dimensiones anteriores.
+- Si el esquema recibe un resultado antiguo con una métrica, conserva compatibilidad
+  para que instalaciones que no hayan cargado el nuevo JavaScript sigan funcionando.
+- NO habilita rotación contable, utilidad neta ni GMROI si faltan datos históricos.
+
+**Prueba:** `¿Cuáles son las ventas, costo de ventas, utilidad, margen y cantidad vendida
+para el formato 45x45, agrupado por marca en los últimos 12 meses?`
+
+Los cálculos del nuevo motor pueden validarse localmente sin ninguna API Key; la
+planificación en lenguaje natural necesita pruebas con API Key activa en Odoo.
+
+
+## Arquitectura IA / SQL (v1.15)
+
+La fuente de cálculo de IA son los **modelos relacionales de Odoo**:
+
+| Modelo ORM | Tabla PostgreSQL | Semántica |
+| --- | --- | --- |
+| `transcash.inventory.fact.product` | `transcash_inventory_fact_product` | SKU, categoría, marca, formato, proveedor de catálogo, costo y stock actual |
+| `transcash.inventory.fact.sale` | `transcash_inventory_fact_sale` | Ventas netas, cantidad y costo de ventas por mes/SKU |
+| `transcash.inventory.fact.purchase` | `transcash_inventory_fact_purchase` | Compras y cantidades por mes/SKU |
+| `transcash.inventory.fact.supplier.purchase` | `transcash_inventory_fact_supplier_purchase` | Valor de compra por proveedor real/mes/SKU |
+| `transcash.inventory.fact.stock` | `transcash_inventory_fact_stock` | Stock al corte por SKU/bodega |
+
+La importación Excel y cualquier integración API que invoque
+`env['transcash.inventory.snapshot'].create_from_dataset(dataset, filename='API')`
+crean **simultáneamente** la versión histórica para el dashboard y los hechos
+normalizados. El adaptador de API debe llamar primero a
+`services.processor.build_dataset(...)` o construir el mismo contrato de datos,
+incluidos `products`, `sales`, `purchases`, `supplierPurchases`, `stockWarehouses`,
+`categories`, `brands`, `providers`, `months`, `summary` y `source`.
+No se confunden `proveedor_ficha` (cartera) y `proveedor_compra` (movimiento).
+
+Al usar ChatGPT con una importación de v1.14 o anterior, el endpoint de
+preparación crea las tablas normalizadas desde la versión ya conservada
+**una sola vez**, sin volver a cargar el Excel. La operación puede tardar
+segundos según tamaño/recursos de PostgreSQL; no cerrar la sesión.
+
+ChatGPT obtiene un diccionario generado desde `env[modelo]._fields` de solo
+cinco modelos aprobados. Devuelve un plan estructurado de dimensiones,
+métricas y filtros, no código SQL. El servidor genera un `SELECT` con
+**identificadores fijos** y parámetros enlazados, incluyendo `company_id`
+y `snapshot_id`. Cada consulta deja visible el SQL ejecutado y sus parámetros
+al usuario autorizado. No se ejecuta SQL libre ni sobre cualquier modelo de Odoo.
+La API Key nunca se incluye en el esquema ni en el SQL.
+
+### Pruebas de actualización
+
+1. Respaldar base de datos y carpeta del módulo. Actualizar (no desinstalar).
+2. Abrir consulta IA. El primer uso prepara las tablas para importaciones viejas.
+3. Pulsar «Ver esquema de datos Odoo autorizado» y comprobar los cinco modelos.
+4. Probar «Ventas, costo de ventas, utilidad, margen y compras del formato 45x45, agrupadas por marca».
+5. Verificar columna «Fuente: tablas relacionales de Odoo» y desplegar «Ver sentencia SQL».
+6. Probar con usuario que NO tenga permiso `Consultas de ChatGPT`, y con otra empresa.
+7. Registrar un nuevo dataset vía `create_from_dataset` para validar futuras API.
+
+**Limitaciones:** SQL probado por generación y comparación local; la instalación
+Odoo18 + PostgreSQL y OpenAI requieren validación en el servidor real.
+No existe histórico de stock al cierre ni ventas por bodega en el archivo fuente.

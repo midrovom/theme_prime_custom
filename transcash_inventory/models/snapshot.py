@@ -24,6 +24,8 @@ class TranscashInventorySnapshot(models.Model):
     period_start = fields.Char(readonly=True)
     period_end = fields.Char(readonly=True)
     note = fields.Text(readonly=True)
+    relational_ready = fields.Boolean(string='Datos SQL preparados', readonly=True, default=False, copy=False)
+    relational_months = fields.Text(string='Períodos disponibles para consultas', readonly=True, copy=False)
 
     @api.model
     def create_from_dataset(self, dataset, filename='API', raw_size=0):
@@ -35,7 +37,7 @@ class TranscashInventorySnapshot(models.Model):
         compressed = zlib.compress(raw, level=6)
         summary = dataset['summary']
         source = dataset['source']
-        return self.create({
+        snapshot = self.create({
             'name': '%s — %s' % (filename, fields.Datetime.now().strftime('%Y-%m-%d %H:%M')),
             'company_id': self.env.company.id,
             'original_filename': filename,
@@ -50,6 +52,19 @@ class TranscashInventorySnapshot(models.Model):
             'period_end': source.get('end'),
             'note': 'Importación terminada. Indicadores recalculados desde Productos, Stock, Ventas y Compras.',
         })
+        # El origen de datos para IA pasa a ser PostgreSQL/Odoo desde el instante
+        # de la importación; el paquete binario se conserva para el dashboard.
+        from .facts import materialize_snapshot
+        materialize_snapshot(snapshot, dataset)
+        return snapshot
+
+    def ensure_relational_data(self):
+        self.ensure_one()
+        self.check_access('read')
+        if not self.relational_ready:
+            from .facts import materialize_snapshot
+            materialize_snapshot(self)
+        return self
 
     def get_dashboard_json(self):
         self.ensure_one()

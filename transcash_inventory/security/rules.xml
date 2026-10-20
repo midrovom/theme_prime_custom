@@ -4,4 +4,29 @@
     <field name="model_id" ref="model_transcash_inventory_snapshot"/>
     <field name="domain_force">[('company_id', 'in', company_ids)]</field>
   </record>
+  <record id="tc_fact_product_company_rule" model="ir.rule">
+    <field name="name">Transcash hechos product: empresas autorizadas</field>
+    <field name="model_id" ref="model_transcash_inventory_fact_product"/>
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="tc_fact_sale_company_rule" model="ir.rule">
+    <field name="name">Transcash hechos sale: empresas autorizadas</field>
+    <field name="model_id" ref="model_transcash_inventory_fact_sale"/>
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="tc_fact_purchase_company_rule" model="ir.rule">
+    <field name="name">Transcash hechos purchase: empresas autorizadas</field>
+    <field name="model_id" ref="model_transcash_inventory_fact_purchase"/>
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="tc_fact_supplier_purchase_company_rule" model="ir.rule">
+    <field name="name">Transcash hechos supplier_purchase: empresas autorizadas</field>
+    <field name="model_id" ref="model_transcash_inventory_fact_supplier_purchase"/>
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
+  <record id="tc_fact_stock_company_rule" model="ir.rule">
+    <field name="name">Transcash hechos stock: empresas autorizadas</field>
+    <field name="model_id" ref="model_transcash_inventory_fact_stock"/>
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
 </odoo>
