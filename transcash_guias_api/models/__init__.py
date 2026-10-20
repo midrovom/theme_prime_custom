@@ -2,3 +2,7 @@ from . import guide
 from . import sync
 from . import api_bridge
 from . import publication
+
+from . import operational_metrics
+
+from . import partner_link

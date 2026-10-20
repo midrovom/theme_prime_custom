@@ -1,8 +1,4 @@
-"""Puente sin alterar las guías ni estados operativos de la versión 5.32.
-
-La importación se guarda en los modelos independientes tc.guide.
-La conciliación futura con transcash.guia es otra fase deliberada.
-"""
+"""Puente de API Administrator y actualización segura de guías v5.32."""
 import logging
 from odoo import api, models, fields, _
 from odoo.exceptions import AccessError, UserError
@@ -44,8 +40,8 @@ class TranscashGuiaAdministratorBridge(models.Model):
             'type': 'ir.actions.client', 'tag': 'display_notification',
             'params': {
                 'title': _('Guías sincronizadas desde API Administrator'),
-                'message': _('En bandeja de importación: creadas %(c)s, actualizadas %(u)s, errores %(e)s. Las guías operativas v5.32 no se modificaron.') % {
-                    'c': result['created'], 'u': result['updated'], 'e': len(result['errors']),
+                'message': _('Guías recibidas: creadas %(c)s, actualizadas %(u)s, vínculos Portal pendientes %(p)s, errores %(e)s. Revise los pendientes en Guías importadas ERP.') % {
+                    'c': result['created'], 'u': result['updated'], 'p': result['pending_links'], 'e': len(result['errors']),
                 },
                 'type': 'warning' if result['errors'] else 'success',
                 'sticky': bool(result['errors']),

@@ -57,3 +57,43 @@
 
 .tc-guide-kanban .tcg-card__metrics--three { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .tc-guide-kanban .tcg-card__notice { border-radius: 8px; background: #fff1e8; color: #98410f; font-size:11px; font-weight:650; padding:8px 10px; margin: -3px 0 12px; }
+
+/* V1.5 - misma familia visual para guías de selección y hojas de ruta. */
+.tc-guide-kanban .tcg-card__metrics--six {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.tc-guide-kanban .tcg-card__metrics--six > div { min-width: 0; }
+.tc-guide-kanban .tcg-card__metrics--six strong { overflow-wrap: anywhere; }
+.tc-route-kanban .tcg-card__accent {
+  background: linear-gradient(90deg, #1575a3, #23a7a4);
+}
+.tc-route-kanban .tcg-route-progress {
+  background: rgba(24, 108, 178, .07);
+  border: 1px solid rgba(24, 108, 178, .10);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+}
+.tc-route-kanban .tcg-route-progress__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.tc-route-kanban .tcg-route-progress__head strong { font-size: 14px; }
+.tc-route-kanban .tcg-route-progress__hint {
+  display: block;
+  color: var(--o-gray-600, #687586);
+  font-size: 10px;
+  margin-top: 5px;
+}
+.tc-route-kanban .tcg-route-card { min-height: 370px; }
+@media (max-width: 460px) {
+  .tc-guide-kanban .tcg-card__metrics--six { gap: 5px; }
+  .tc-guide-kanban .tcg-card__metrics--six > div { padding: 8px 4px; }
+  .tc-route-kanban .tcg-card__header { align-items: flex-start; }
+}

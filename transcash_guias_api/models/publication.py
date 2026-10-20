@@ -61,27 +61,35 @@ class TCGuidePublication(models.Model):
                 return False, _('Destino ambiguo: %s coincide con varios destinos.') % term
         return False, _('No existe código de destino y no hay coincidencia exacta en el catálogo: %s') % (', '.join(terms) or '(vacío)')
 
-    def _partner(self, code, name, as_company=False):
-        """Vincular por código ERP conocido; nunca inferir RUC a partir del nombre."""
-        if not code:
-            return False
-        Partner = self.env['res.partner'].sudo()
-        partner = Partner.search([('ref', '=', code)], limit=1)
-        if partner:
-            return partner
-        return Partner.create({'name': name or code, 'ref': code,
-                               'is_company': bool(as_company)})
-
     def _publish_one(self):
         self.ensure_one()
         Guide = self.env['transcash.guia'].sudo().with_company(self.company_id)
         existing = Guide.search([('company_id', '=', self.company_id.id),
                                  ('external_id_erp', '=', self.external_id)], limit=1)
-        # Nunca tocar información de una guía con proceso logístico iniciado.
+        # No tocar datos de carga, transportista, chofer ni estados de una guía
+        # en operación. Solo completar remitente/destinatario vacíos y, cuando
+        # coincidan EXACTAMENTE con ruta/embarque, asignaciones vacías.
         if existing and (existing.state != 'registrada' or existing.hoja_ruta_id or existing.embarque_id or existing.aprobacion_global == 'aprobada'):
+            additions = {}
+            if not existing.remitente_id and self.sender_partner_id:
+                additions['remitente_id'] = self.sender_partner_id.id
+            if not existing.destinatario_id and self.recipient_partner_id:
+                additions['destinatario_id'] = self.recipient_partner_id.id
+            plan = existing.hoja_ruta_id or existing.embarque_id
+            if plan:
+                if (not existing.proveedor_id and self.transport_partner_id and
+                        plan.proveedor_id == self.transport_partner_id):
+                    additions['proveedor_id'] = self.transport_partner_id.id
+                if (not existing.chofer_usuario_id and self.driver_user_id and
+                        plan.chofer_usuario_id == self.driver_user_id):
+                    additions['chofer_usuario_id'] = self.driver_user_id.id
+            if additions:
+                existing.write(additions)
             self.sudo().write({'operational_guide_id': existing.id,
                                'publication_state': 'assigned',
-                               'publication_note': _('Guía ya asignada o cerrada; no se modifica.')})
+                               'publication_note': '\n'.join(filter(None, (
+                                   _('Guía en operación: se respetan chofer, transporte, estado y evidencias.'),
+                                   self.master_link_note)))})
             return
         destination, note = self._destination_for_operation()
         values = {
@@ -103,19 +111,26 @@ class TCGuidePublication(models.Model):
         else:
             # Evitar datos de destino obsoletos si guía permanece sin ruta.
             values.update({'destino_id': False, 'destino_codigo': False})
-        if self.sender_id:
-            sender = self._partner(self.sender_id.external_code, self.sender_id.name)
-            if sender:
-                values['remitente_id'] = sender.id
-        if self.recipient_id:
-            receiver = self._partner(self.recipient_id.external_code, self.recipient_id.name)
-            if receiver:
-                values['destinatario_id'] = receiver.id
-        if self.transport_id:
-            partner = self._partner(self.transport_id.ruc, self.transport_id.name, as_company=True)
-            if partner:
-                values['proveedor_id'] = partner.id
-        # No asignar chofer_usuario_id: no hay login de usuario en el JSON.
+        # Relaciones operativas res.partner/res.users: resueltas previamente
+        # en partner_link.py por VAT/ref o perfil Portal verificado.
+        bindings = {
+            'remitente_id': self.sender_partner_id,
+            'destinatario_id': self.recipient_partner_id,
+            'proveedor_id': self.transport_partner_id,
+            'chofer_usuario_id': self.driver_user_id,
+        }
+        mismatches = []
+        for field_name, new_partner in bindings.items():
+            if not new_partner:
+                continue
+            current = existing[field_name] if existing else False
+            if current and current != new_partner:
+                # Las asignaciones manuales solo se cambian desde Logística.
+                mismatches.append(_('%s: ya existe una asignación diferente; se conserva.') % field_name)
+            else:
+                values[field_name] = new_partner.id
+        if mismatches:
+            note = '\n'.join(([note] if note else []) + mismatches)
         if existing:
             existing.write(values)
             operational = existing
@@ -130,9 +145,7 @@ class TCGuidePublication(models.Model):
                 'precio_unitario': 0.0, 'peso_kg': line.weight_kg,
                 'pallets_info': line.pallets, 'cajas_info': line.boxes,
                 'vigente_erp': True,
-                # Nunca copiar marca ni proveedor de producto a modelo operativo.
-                'marca_codigo': False, 'marca_nombre': False,
-                'proveedor_producto_codigo': False, 'proveedor_producto_nombre': False,
+                # No trasladar información comercial de marca/proveedor al modelo operativo.
             }
             old = Line.search([('guia_id', '=', operational.id),
                                ('external_line_id', '=', line.external_line_id)], limit=1)
@@ -145,7 +158,7 @@ class TCGuidePublication(models.Model):
                 Line.create(vals)
         self.sudo().write({'operational_guide_id': operational.id,
                            'publication_state': 'published' if destination else 'destination',
-                           'publication_note': note or False})
+                           'publication_note': '\n'.join(filter(None, (note, self.master_link_note))) or False})
 
     def _publish_safe(self):
         for guide in self:

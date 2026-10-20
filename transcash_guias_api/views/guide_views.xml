@@ -1,17 +1,18 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version='1.0' encoding='UTF-8'?>
 <odoo>
   <record id="view_tc_guide_list" model="ir.ui.view">
     <field name="name">tc.guide.list</field><field name="model">tc.guide</field>
-    <field name="arch" type="xml"><list create="false" edit="false" delete="false" decoration-danger="publication_state == 'error'" decoration-warning="publication_state == 'destination'">
+    <field name="arch" type="xml"><list create="false" edit="false" delete="false" decoration-danger="publication_state == 'error'" decoration-warning="publication_state == 'destination' or master_link_state == 'pending'">
       <field name="name"/><field name="document_number"/><field name="erp_state"/>
       <field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/>
-      <field name="destination_address"/><field name="publication_state" widget="badge"/><field name="line_count" optional="show"/><field name="total_weight_kg" optional="hide"/><field name="total_boxes" optional="hide"/><field name="erp_planned_date"/><field name="company_id" groups="base.group_multi_company"/>
+      <field name="destination_address"/><field name="publication_state" widget="badge"/><field name="master_link_state" widget="badge" optional="show"/><field name="line_count" optional="show"/><field name="total_weight_kg" optional="hide"/><field name="total_boxes" optional="hide"/><field name="erp_planned_date"/><field name="company_id" groups="base.group_multi_company"/>
     </list></field>
   </record>
   <record id="view_tc_guide_form" model="ir.ui.view">
     <field name="name">tc.guide.form</field><field name="model">tc.guide</field>
-    <field name="arch" type="xml"><form create="false" edit="false" delete="false"><header><button name="action_publish_to_logistics" type="object" string="Publicar en logística" class="btn-primary" groups="transcash_guias_api.group_tc_sync_admin,logistica_transcash.group_logistica_manager"/></header><sheet>
-      <group><field name="publication_state"/><field name="publication_note"/><field name="operational_guide_id"/></group>
+    <field name="arch" type="xml"><form create="false" edit="false" delete="false"><header><button name="action_publish_to_logistics" type="object" string="Publicar en logística" class="btn-primary" groups="transcash_guias_api.group_tc_sync_admin,logistica_transcash.group_logistica_manager"/><button name="action_reconcile_related_partners" type="object" string="Conciliar terceros y portales" groups="transcash_guias_api.group_tc_sync_admin,logistica_transcash.group_logistica_manager"/></header><sheet>
+      <group><field name="publication_state"/><field name="publication_note"/><field name="operational_guide_id"/><field name="master_link_state"/><field name="master_link_note"/></group>
+      <group string="Relaciones con contactos y Portal Odoo" col="4"><field name="transport_partner_id"/><field name="driver_partner_id"/><field name="driver_user_id"/><field name="sender_partner_id"/><field name="recipient_partner_id"/><field name="transport_tax_raw"/><field name="recipient_tax_raw"/></group>
       <group><group><field name="name"/><field name="external_id"/><field name="document_type"/><field name="document_number"/><field name="erp_state"/></group>
       <group><field name="transport_id"/><field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/></group></group>
       <group><group><field name="sender_id"/><field name="recipient_id"/><field name="destination_id"/></group>
@@ -45,7 +46,7 @@
         <field name="destination_city"/>
         <filter name="sync_today" string="Sincronizadas hoy" domain="[('last_sync', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
         <separator/>
-        <filter name="available_ruta" string="Disponibles para rutas" domain="[('publication_state','=','published')]"/><filter name="assigned_ruta" string="En operación" domain="[('publication_state','=','assigned')]"/><filter name="publishing_errors" string="Errores de publicación" domain="[('publication_state','=','error')]"/><filter name="pending_destination" string="Destinos pendientes" domain="[('publication_state','=','destination')]"/>
+        <filter name="available_ruta" string="Disponibles para rutas" domain="[('publication_state','=','published')]"/><filter name="assigned_ruta" string="En operación" domain="[('publication_state','=','assigned')]"/><filter name="publishing_errors" string="Errores de publicación" domain="[('publication_state','=','error')]"/><filter name="pending_destination" string="Destinos pendientes" domain="[('publication_state','=','destination')]"/><filter name="pending_portal" string="Vínculos Portal pendientes" domain="[('master_link_state','=','pending')]"/>
         <filter name="group_state" string="Estado ERP" context="{'group_by': 'erp_state'}"/>
         <filter name="group_transport" string="Transportista" context="{'group_by': 'transport_name'}"/>
         <filter name="group_date" string="Fecha prevista" context="{'group_by': 'erp_planned_date'}"/>
@@ -64,7 +65,7 @@
     <field name="origin_address"/><field name="destination_address"/><field name="destination_city"/>
     <field name="recipient_id"/><field name="erp_planned_date"/><field name="last_sync"/>
     <field name="line_count"/><field name="total_weight_kg"/><field name="total_pallets"/><field name="total_boxes"/>
-    <field name="operational_guide_id"/><field name="company_id"/>
+    <field name="operational_guide_id"/><field name="master_link_state"/><field name="company_id"/>
     <templates>
       <t t-name="card">
         <div class="tcg-card">
@@ -79,6 +80,7 @@
             </span>
           </div>
           <div class="tcg-card__document">
+            <span t-if="record.master_link_state.raw_value === 'pending'" class="tcg-card__separator"><i class="fa fa-exclamation-circle" aria-hidden="true"/> Vinculación Portal pendiente · </span>
             <i class="fa fa-file-text-o" aria-hidden="true"/>
             <span t-if="record.document_number.raw_value"><field name="document_number"/></span>
             <span t-else="">Sin documento ERP</span>
@@ -130,13 +132,13 @@
         <field name="fecha_prevista"/><field name="hoja_ruta_id"/><field name="embarque_id"/>
         <field name="incidencia_estado"/><field name="total_productos"/><field name="numero_bultos"/>
         <field name="peso_kg"/><field name="destinatario_id"/>
-        <templates>
+        <field name="tc_line_count"/><field name="tc_total_kg"/><field name="tc_total_m2"/><field name="tc_total_unidades"/><field name="tc_total_pallets"/><field name="tc_total_cajas"/><templates>
           <t t-name="card">
             <div class="tcg-card">
               <div class="tcg-card__accent"/>
               <div class="tcg-card__header">
                 <div class="tcg-card__reference">
-                  <div class="tcg-card__eyebrow">GUÍA OPERATIVA</div>
+                  <div class="tcg-card__eyebrow">GUÍA PARA OPERACIÓN</div>
                   <h4>№ <field name="name"/></h4>
                 </div>
                 <span t-attf-class="tcg-status #{record.incidencia_estado.raw_value === 'abierta' ? 'tcg-status--danger' : record.state.raw_value === 'entregada' || record.state.raw_value === 'pagada' ? 'tcg-status--success' : record.state.raw_value === 'ruta' ? 'tcg-status--neutral' : record.state.raw_value === 'revision' || record.state.raw_value === 'destino' ? 'tcg-status--warning' : 'tcg-status--pending'}">
@@ -150,7 +152,7 @@
                 <span class="tcg-card__separator">·</span>
                 <span t-if="record.hoja_ruta_id.raw_value"><i class="fa fa-sitemap" aria-hidden="true"/> <field name="hoja_ruta_id"/></span>
                 <span t-else="">Sin hoja de ruta</span>
-              </div>
+              <span t-if="record.state.raw_value === 'registrada'" class="tcg-card__separator">· Sin asignar</span></div>
               <t t-if="record.incidencia_estado.raw_value === 'abierta'">
                 <div class="tcg-card__notice"><i class="fa fa-exclamation-triangle" aria-hidden="true"/> Incidencia abierta · requiere revisión</div>
               </t>
@@ -167,11 +169,8 @@
                 <div><i class="fa fa-id-card-o" aria-hidden="true"/><span t-if="record.chofer_usuario_id.raw_value"><field name="chofer_usuario_id"/></span><span t-else="">Chofer por asignar</span>
                   <span class="tcg-card__plate" t-if="record.placa.raw_value"><field name="placa"/></span></div>
               </div>
-              <div class="tcg-card__metrics tcg-card__metrics--three">
-                <div><span>Productos</span><strong><field name="total_productos"/></strong></div>
-                <div><span>Peso (kg)</span><strong><field name="peso_kg"/></strong></div>
-                <div><span>Bultos</span><strong><field name="numero_bultos"/></strong></div>
-              </div>
+              <div class="tcg-card__metrics tcg-card__metrics--six">
+                <div><span>Productos</span><strong><field name="tc_line_count"/></strong></div><div><span>Peso kg</span><strong><field name="tc_total_kg"/></strong></div><div><span>m²</span><strong><field name="tc_total_m2"/></strong></div><div><span>Unidades</span><strong><field name="tc_total_unidades"/></strong></div><div><span>Pallets</span><strong><field name="tc_total_pallets"/></strong></div><div><span>Cajas</span><strong><field name="tc_total_cajas"/></strong></div></div>
               <div class="tcg-card__footer">
                 <span class="tcg-card__date"><i class="fa fa-calendar-o" aria-hidden="true"/>
                   <span t-if="record.fecha_prevista.raw_value"><field name="fecha_prevista"/></span><span t-else="">Sin fecha prevista</span>
@@ -189,4 +188,12 @@
   <menuitem id="menu_tc_guides_operacion" name="Guías importadas ERP" parent="logistica_transcash.menu_tc_logistics_v530" action="action_tc_guide" sequence="3" groups="transcash_guias_api.group_tc_operator"/>
   <menuitem id="menu_tc_guides" name="Guías sincronizadas" parent="menu_tc_root" action="action_tc_guide" sequence="10" groups="transcash_guias_api.group_tc_operator"/>
   <menuitem id="menu_tc_sync_logs" name="Historial de sincronización ERP" parent="logistica_transcash.menu_tc_logistics_v530" action="action_tc_sync_log" sequence="4" groups="transcash_guias_api.group_tc_sync_admin"/>
-<record id="menu_tc_root" model="ir.ui.menu"><field name="active" eval="False"/></record><record id="menu_tc_guides" model="ir.ui.menu"><field name="active" eval="False"/></record></odoo>
+<record id="menu_tc_root" model="ir.ui.menu"><field name="active" eval="False"/></record><record id="menu_tc_guides" model="ir.ui.menu"><field name="active" eval="False"/></record><record id="server_reconcile_tc_guide_company" model="ir.actions.server">
+    <field name="name">Conciliar terceros con Portal (empresa actual)</field>
+    <field name="model_id" ref="model_tc_guide"/>
+    <field name="state">code</field>
+    <field name="code">action = env['tc.guide'].action_reconcile_company()</field>
+    <field name="groups_id" eval="[(4, ref('transcash_guias_api.group_tc_sync_admin')), (4, ref('logistica_transcash.group_logistica_manager'))]"/>
+  </record>
+  <menuitem id="menu_tc_reconcile_company" name="Conciliar terceros y portales" parent="logistica_transcash.menu_tc_logistics_v530" action="server_reconcile_tc_guide_company" sequence="5" groups="transcash_guias_api.group_tc_sync_admin,logistica_transcash.group_logistica_manager"/>
+</odoo>

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Garantiza que el Kanban de guías operativas (con el mismo estilo ERP)
+       sea la primera vista real del menú, incluso después de actualizar v5.32. -->
+  <record id="logistica_transcash.action_transcash_guia" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field>
+    <field name="view_id" ref="view_tc_operational_guide_kanban"/>
+  </record>
+  <record id="action_tc_available_route_guides" model="ir.actions.act_window">
+    <field name="name">Guías para armar rutas</field>
+    <field name="res_model">transcash.guia</field>
+    <field name="view_mode">kanban,list,form</field>
+    <field name="view_id" ref="view_tc_operational_guide_kanban"/>
+    <field name="search_view_id" ref="logistica_transcash.view_transcash_guia_search"/>
+    <field name="domain">[('state','=','registrada'),('hoja_ruta_id','=',False),('embarque_id','=',False)]</field>
+    <field name="context">{'create': False, 'edit': False, 'delete': False}</field>
+    <field name="help" type="html"><p class="o_view_nocontent_smiling_face">No hay guías libres para preparar rutas.</p><p>La asignación se realiza desde la hoja de ruta, con las comprobaciones de destino y transporte.</p></field>
+  </record>
+  <record id="link_tc_available_route_guides_kanban" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/>
+    <field name="act_window_id" ref="action_tc_available_route_guides"/>
+    <field name="view_mode">kanban</field>
+    <field name="view_id" ref="view_tc_operational_guide_kanban"/>
+  </record>
+  <record id="link_tc_operational_guides_kanban" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/>
+    <field name="act_window_id" ref="logistica_transcash.action_transcash_guia"/>
+    <field name="view_mode">kanban</field>
+    <field name="view_id" ref="view_tc_operational_guide_kanban"/>
+  </record>
+  <menuitem id="menu_tc_available_route_guides" name="Guías para armar rutas"
+            parent="logistica_transcash.menu_tc_logistics_v530" action="action_tc_available_route_guides"
+            sequence="5" groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
+
+  <!-- Indicadores visibles en la lista del modal: selección continúa con casillas. -->
+  <record id="view_tc_selection_wizard_metrics_v15" model="ir.ui.view">
+    <field name="name">transcash.seleccionar.guias.ruta.wizard.load.metrics</field>
+    <field name="model">transcash.seleccionar.guias.ruta.wizard</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_seleccionar_guias_wizard"/>
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='linea_ids']/list/field[@name='peso_kg']" position="after">
+        <field name="tc_total_m2" readonly="1" optional="show"/>
+        <field name="tc_total_unidades" readonly="1" optional="show"/>
+        <field name="tc_total_pallets" readonly="1" optional="hide"/>
+        <field name="tc_total_cajas" readonly="1" optional="hide"/>
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Kanban de hojas de ruta: cifras de carga calculadas y progreso de entrega. -->
+  <record id="view_tc_route_kanban_v15" model="ir.ui.view">
+    <field name="name">transcash.hoja.ruta.kanban.resumen.carga.v15</field>
+    <field name="model">transcash.hoja.ruta</field>
+    <field name="arch" type="xml">
+      <kanban class="tc-guide-kanban tc-route-kanban o_kanban_mobile" quick_create="false" sample="0" default_order="id desc">
+        <field name="name"/><field name="state"/><field name="estado_operativo"/>
+        <field name="destino_id"/><field name="origen"/><field name="embarque_id"/>
+        <field name="proveedor_id"/><field name="chofer_usuario_id"/><field name="placa"/>
+        <field name="tipo_vehiculo"/><field name="guias_cerradas_chofer"/>
+        <field name="tc_guias_carga"/><field name="tc_productos_carga"/>
+        <field name="tc_kg_carga"/><field name="tc_m2_carga"/>
+        <field name="tc_unidades_carga"/><field name="tc_pallets_carga"/>
+        <field name="tc_cajas_carga"/><field name="tc_carga_preliminar"/>
+        <templates>
+          <t t-name="card">
+            <div class="tcg-card tcg-route-card">
+              <div class="tcg-card__accent"/>
+              <div class="tcg-card__header">
+                <div class="tcg-card__reference">
+                  <div class="tcg-card__eyebrow">HOJA DE RUTA</div>
+                  <h4><field name="name"/></h4>
+                </div>
+                <span t-attf-class="tcg-status #{record.estado_operativo.raw_value === 'entregada' ? 'tcg-status--success' : record.estado_operativo.raw_value === 'objetada' || record.estado_operativo.raw_value === 'revisar' ? 'tcg-status--danger' : record.estado_operativo.raw_value === 'en_ruta' || record.estado_operativo.raw_value === 'en_entrega' ? 'tcg-status--neutral' : record.estado_operativo.raw_value === 'planificada' || record.estado_operativo.raw_value === 'pendiente_aceptacion' ? 'tcg-status--warning' : 'tcg-status--pending'}">
+                  <span class="tcg-status__dot"/><field name="estado_operativo"/>
+                </span>
+              </div>
+              <div class="tcg-card__document">
+                <i class="fa fa-truck" aria-hidden="true"/>
+                <span t-if="record.embarque_id.raw_value">Embarque: <field name="embarque_id"/></span>
+                <span t-else="">Todavía sin embarque</span>
+                <span class="tcg-card__separator">·</span><field name="tipo_vehiculo"/>
+              </div>
+              <div class="tcg-card__route">
+                <div class="tcg-card__route-markers"><span/><span class="tcg-card__route-line"/><i class="fa fa-map-marker" aria-hidden="true"/></div>
+                <div class="tcg-card__route-text">
+                  <div><small>ORIGEN</small><strong t-if="record.origen.raw_value"><field name="origen"/></strong><strong t-else="">Sin origen informado</strong></div>
+                  <div><small>DESTINO</small><strong t-if="record.destino_id.raw_value"><field name="destino_id"/></strong><strong t-else="">Por definir</strong></div>
+                </div>
+              </div>
+              <div class="tcg-card__people">
+                <div><i class="fa fa-truck" aria-hidden="true"/><field name="proveedor_id"/></div>
+                <div><i class="fa fa-id-card-o" aria-hidden="true"/><field name="chofer_usuario_id"/>
+                  <span class="tcg-card__plate" t-if="record.placa.raw_value"><field name="placa"/></span>
+                </div>
+              </div>
+              <div class="tcg-route-progress">
+                <div class="tcg-route-progress__head">
+                  <span t-if="record.tc_carga_preliminar.raw_value">Guías seleccionadas (borrador)</span>
+                  <span t-else="">Guías entregadas / confirmadas</span>
+                  <strong t-if="record.tc_carga_preliminar.raw_value"><field name="tc_guias_carga"/></strong>
+                  <strong t-else=""><field name="guias_cerradas_chofer"/> / <field name="tc_guias_carga"/></strong>
+                </div>
+                <span t-if="record.tc_carga_preliminar.raw_value" class="tcg-route-progress__hint">Carga estimada, aún sin confirmar</span>
+              </div>
+              <div class="tcg-card__metrics tcg-card__metrics--six">
+                <div><span>Productos</span><strong><field name="tc_productos_carga"/></strong></div>
+                <div><span>Peso kg</span><strong><field name="tc_kg_carga"/></strong></div>
+                <div><span>m²</span><strong><field name="tc_m2_carga"/></strong></div>
+                <div><span>Unidades</span><strong><field name="tc_unidades_carga"/></strong></div>
+                <div><span>Pallets</span><strong><field name="tc_pallets_carga"/></strong></div>
+                <div><span>Cajas</span><strong><field name="tc_cajas_carga"/></strong></div>
+              </div>
+              <div class="tcg-card__footer">
+                <span class="tcg-card__date"><i class="fa fa-map-marker" aria-hidden="true"/> <field name="destino_id"/></span>
+                <a type="open" class="tcg-card__open">Ver hoja de ruta <i class="fa fa-arrow-right" aria-hidden="true"/></a>
+              </div>
+            </div>
+          </t>
+        </templates>
+      </kanban>
+    </field>
+  </record>
+
+  <!-- v5.32 enlaza explícitamente su Kanban; sustituimos ese enlace, sin
+       cambiar el código ni quitar las vistas originales del módulo base. -->
+  <record id="logistica_transcash.action_transcash_rutas" model="ir.actions.act_window">
+    <field name="view_mode">kanban,list,form</field>
+    <field name="view_id" ref="view_tc_route_kanban_v15"/>
+  </record>
+  <record id="logistica_transcash.link_action_transcash_rutas_v532" model="ir.actions.act_window.view">
+    <field name="sequence" eval="1"/>
+    <field name="view_mode">kanban</field>
+    <field name="view_id" ref="view_tc_route_kanban_v15"/>
+  </record>
+  <record id="view_tc_route_form_load_summary_v15" model="ir.ui.view">
+    <field name="name">transcash.hoja.ruta.form.resumen.carga.v15</field>
+    <field name="model">transcash.hoja.ruta</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_ruta_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet/notebook" position="before">
+        <group string="Resumen de carga (según guías)" col="4">
+          <field name="tc_carga_preliminar" invisible="1"/>
+          <field name="tc_guias_carga" readonly="1"/>
+          <field name="tc_productos_carga" readonly="1"/>
+          <field name="tc_kg_carga" readonly="1"/>
+          <field name="tc_m2_carga" readonly="1"/>
+          <field name="tc_unidades_carga" readonly="1"/>
+          <field name="tc_pallets_carga" readonly="1"/>
+          <field name="tc_cajas_carga" readonly="1"/>
+          <div class="alert alert-info" role="note" invisible="not tc_carga_preliminar">Estos totales son provisionales hasta confirmar la hoja de ruta.</div>
+        </group>
+      </xpath>
+    </field>
+  </record>
+  <record id="view_tc_route_list_load_summary_v15" model="ir.ui.view">
+    <field name="name">transcash.hoja.ruta.list.resumen.carga.v15</field>
+    <field name="model">transcash.hoja.ruta</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_ruta_list"/>
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='guias_total']" position="after">
+        <field name="tc_kg_carga" optional="show"/>
+        <field name="tc_m2_carga" optional="show"/>
+        <field name="tc_unidades_carga" optional="hide"/>
+        <field name="tc_pallets_carga" optional="hide"/>
+        <field name="tc_cajas_carga" optional="hide"/>
+      </xpath>
+    </field>
+  </record>
+</odoo>

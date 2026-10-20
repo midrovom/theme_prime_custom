@@ -112,6 +112,8 @@ class TCGuideSync(models.Model):
             'document_number': clean(data.get('numero_documento')),
             'erp_state': clean(data.get('estado_erp')),
             'transport_id': transport_id,
+            'transport_tax_raw': clean(transport.get('ruc')),
+            'recipient_tax_raw': clean(recipient.get('identificacion') or recipient.get('ruc')),
             'transport_name': clean(transport.get('nombre')),
             'driver_id': driver_id, 'vehicle_id': vehicle_id,
             'sender_id': sender_id, 'recipient_id': recipient_id, 'destination_id': destination_id,
@@ -205,13 +207,21 @@ class TCGuideSync(models.Model):
         data = result.get('data')
         if not isinstance(data, list):
             raise UserError(_('La API no devolvió data como lista.'))
-        created = updated = 0
+        created = updated = pending_links = 0
         errors = []
         for row in data:
             try:
                 # Aísla escrituras parcialmente fallidas de una guía.
                 with self.env.cr.savepoint():
                     was_created = self._import_one(row, company_id)
+                    staged = self.env['tc.guide'].sudo().search([
+                        ('company_id', '=', company_id),
+                        ('external_id', '=', clean(row.get('id_externo')))], limit=1)
+                    if staged:
+                        pending_links += int(staged.master_link_state == 'pending')
+                        if staged.publication_state == 'error':
+                            errors.append('%s: error publicando: %s' % (
+                                staged.external_id, staged.publication_note or 'Ver historial'))
                     created += int(was_created)
                     updated += int(not was_created)
             except Exception as exc:
@@ -221,9 +231,9 @@ class TCGuideSync(models.Model):
         self.env['tc.guide.sync.log'].sudo().create({
             'company_id': company_id, 'api_name': 'getguiaslogistica',
             'created_count': created, 'updated_count': updated,
-            'error_count': len(errors), 'details': '\n'.join(errors)[:20000],
+            'error_count': len(errors), 'details': ('Vínculos Portal pendientes: %s\n' % pending_links + '\n'.join(errors))[:20000],
         })
-        return {'created': created, 'updated': updated, 'errors': errors}
+        return {'created': created, 'updated': updated, 'pending_links': pending_links, 'errors': errors}
 
 
 class APIAdministrator(models.Model):
@@ -241,8 +251,8 @@ class APIAdministrator(models.Model):
             counts = self.env['tc.guide.sync'].sync_from_api(self.company_id.id)
             return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
                 'title': _('Guías ERP sincronizadas'),
-                'message': _('Creadas: %(new)s, actualizadas: %(updated)s, errores: %(bad)s') % {
-                    'new': counts['created'], 'updated': counts['updated'], 'bad': len(counts['errors'])},
+                'message': _('Creadas: %(new)s, actualizadas: %(updated)s, pendientes de Portal: %(pending)s, errores: %(bad)s') % {
+                    'new': counts['created'], 'updated': counts['updated'], 'pending': counts['pending_links'], 'bad': len(counts['errors'])},
                 'type': 'warning' if counts['errors'] else 'success', 'sticky': bool(counts['errors']),
             }}
         return super().button_run_sync()

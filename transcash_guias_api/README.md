@@ -53,3 +53,96 @@ Mantén los nombres y configuración de la API en API Administrator: `getguiaslo
 Actualizar el addon `transcash_guias_api` y recargar el navegador (Ctrl+F5 para recursos estáticos).
 
 - La acción existente `logistica_transcash.action_transcash_guia` cambia a `kanban,list,form` y gana una vista Kanban para `transcash.guia` desde este addon; no se editan archivos de v5.32.
+
+
+## Actualización 18.0.1.5.0 — Kanban de guías para rutas y carga acumulada
+
+- Nuevo menú en **Logística Transcash → Operación logística → Guías para armar rutas**. Filtra únicamente estado Registrada y guías sin hoja de ruta o embarque. La elegibilidad final sigue verificándose dentro del asistente de asignación.
+- La vista `transcash.guia` ahora utiliza el mismo formato de tarjeta que las importadas, con 6 métricas: líneas activas, peso, m², unidades, pallets y cajas.
+- Nueva vista Kanban de `transcash.hoja.ruta` con destino, transporte, chofer, placa, estado, guías seleccionadas/confirmadas y 6 métricas. Se reemplaza el vínculo de vista de la acción existente de v5.32 sin modificar ese addon.
+- En borrador se calcula la carga desde `seleccion_guia_ids`; en estados posteriores desde `guia_ids`. No se duplica el peso.
+- El asistente **Agregar / quitar guías** mantiene casillas, búsqueda, bloqueos y autorización de reasignación, pero incluye columnas informativas m², unidades, pallets y cajas.
+- El formulario/lista de la hoja de ruta incluye resumen logístico de solo lectura. No toca estados, liquidaciones, proveedores comerciales ni registros PWA.
+- Para actualizar: reemplazar solamente `transcash_guias_api`, reiniciar, actualizar addon y Ctrl+F5 en el navegador.
+
+## Actualización 18.0.1.6.0 — Contactos Odoo + acceso a Portal/PWA
+
+Esta versión mantiene la v5.32 operativa y actualiza **solo** `transcash_guias_api`.
+Las guías importadas en `tc.guide` se publican en `transcash.guia`; sus terceros se
+reconcilian con **`res.partner`** y sus usuarios Portal habilitados con **`res.users`**.
+
+### Reglas de vinculación
+
+- **Transportista**: buscar por RUC explícito (`transportista.ruc`) en `res.partner.vat`.
+  Reutilizar contacto existente o crear empresa. Sin RUC NO inventar empresa ni
+  tomar el campo `proveedor` variable del detalle como RUC de transportista.
+- **Chofer**: buscar por `chofer.identificacion` en `res.partner.vat` y crear
+  contacto si falta; enlazar `res.users` solo si ya es un usuario **Portal**, con
+  grupo `Chofer Transcash` y con su acceso no revocado. Si es un usuario legacy
+  autorizado y carece de registro `transcash.chofer`, crear su ficha SIN otorgar
+  permisos ni crear cuentas.
+- **Remitente**: buscar `res.partner.vat` cuando `remitente.codigo` tiene forma
+  de identificación, o `res.partner.ref` para el código ERP; crear si falta.
+- **Destinatario**: buscar por `destinatario.identificacion` / `ruc` (si se
+  envía), o `destinatario.codigo` en `res.partner.ref`. `-NAJ` es un **código**,
+  NO una cédula. No reconciliar destinatarios por nombre para evitar mostrar
+  guías de otro cliente.
+- **Proveedores de productos y marcas**: permanecen en `tc.guide.line.private`
+  (y modelos privados) con permisos de administrador. No se copian a las líneas
+  de guías operativas ni se introducen indiscriminadamente en Contactos.
+- **Guías**: `remitente_id`, `destinatario_id`, `proveedor_id` corresponden a
+  contactos `res.partner`. `chofer_usuario_id` apunta a un `res.users` Portal
+  activo, NO a `tc.driver`. Esto habilita el filtro original de la PWA de v5.32.
+- **Viajes y liquidaciones**: se siguen creando en Logística Transcash al
+  planificar rutas/embarques. No se crean viajes ni pagos desde el importador.
+  El acceso del proveedor se filtra por `proveedor_id.commercial_partner_id`.
+- **Seguridad**: ninguna importación crea `res.users`, asigna grupos Portal,
+  concede acceso a clientes o transportistas, ni modifica activaciones.
+  Conceder Portal usando Contactos y los menús de Accesos Portal existentes.
+- **Reimportación segura**: la guía en ruta o embarque no cambia de chofer,
+  transporte ni estado. Se pueden completar remitente/destinatario vacíos; para
+  completar un proveedor o chofer vacío ya asignado, el vinculo debe coincidir
+  exactamente con el que figura en la ruta/embarque.
+- **Multiempresa**: se buscan contactos globales o de la compañía correcta;
+  códigos duplicados y cédulas ambiguas se dejan pendientes, sin fusionarlos.
+
+### Conciliar guías ya importadas
+
+Tras actualizar el addon y reiniciar Odoo, desde **Logística Transcash →
+Operación logística → Conciliar terceros y portales** ejecuta la reconciliación
+para la compañía actual. En cada formulario de **Guías importadas ERP** existe
+el botón **Conciliar terceros y portales**. Revisa **Vínculos con el portal**,
+**Pendientes / observaciones de accesos**, y los campos vinculados a Contactos.
+Puedes ejecutar `getguiaslogistica` nuevamente con API Administrator; es
+idempotente y hace la conciliación al importar.
+
+### Datos del ERP que pueden impedir acceso automático
+
+Si transportista.ruc está vacío, la guía se importa y publica, pero no se
+vincula la empresa de transporte: primero corrige el JSON del ERP. Los ejemplos
+previos tienen `transportista.nombre = EZTRANSLOGIST S.A.` pero no RUC confirmado;
+la columna original `proveedor` varía por línea y NO identifica consistentemente
+al transportista. Si el destinatario llega como `codigo=-NAJ`, verifica que
+`res.partner.ref` del contacto/empresa autorizado en Portal contenga ese código;
+no se interpreta como RUC. Si el chofer solo tiene contacto y no usuario Portal,
+invítalo desde Odoo y habilita el acceso mediante las acciones originales de
+Logística. La importación nunca activa perfiles por su cuenta.
+
+### Verificación funcional
+
+1. En Contactos, verifica `vat` y `ref` de transportista, chofer y cliente.
+2. Desde `Guías importadas ERP`, comprueba vínculos a `res.partner` y
+   `res.users`, y los estados `Vínculos verificados` / `Pendiente de vinculación`.
+3. Desde `Guías para armar rutas`, verifica que el contacto proveedor, el
+   destinatario y el chofer (si está habilitado) figuren en la guía operativa.
+4. Crea una hoja de ruta de prueba y su embarque; accede como chofer Portal
+   **preexistente y habilitado** a `/transcash/embarques`.
+5. Accede como cliente Portal de ese destinatario a `/transcash/guias` y como
+   proveedor Portal a sus viajes y liquidaciones (estas últimas solo cuando
+   exista una liquidación).
+6. En guías con viajes en curso, verifica que se conservaron estados, chofer,
+   empresa transportista, evidencias, firmas y liquidaciones.
+
+**Importante:** no se ha ejecutado el módulo en el servidor del cliente.
+La validación disponible es estática (Python, XML y empaquetado); probar primero
+con copia de la base Odoo 18.
