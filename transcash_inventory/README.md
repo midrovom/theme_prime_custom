@@ -436,3 +436,24 @@ La API Key nunca se incluye en el esquema ni en el SQL.
 **Limitaciones:** SQL probado por generación y comparación local; la instalación
 Odoo18 + PostgreSQL y OpenAI requieren validación en el servidor real.
 No existe histórico de stock al cierre ni ventas por bodega en el archivo fuente.
+
+
+## Versión 1.16 — resultados sin detalles técnicos y auditoría administrativa
+
+- El asistente presenta exclusivamente tabla y totales, sin explicaciones ni SQL.
+- No se devuelve SQL, parámetros, plan, detalles de ejecución ni información de fuentes en la respuesta de usuario.
+- Exportación XLSX desde el resultado almacenado en Odoo, sin repetir la consulta y sin enviar resultados modificables desde el navegador.
+- Ruta autenticada `/transcash_inventory/ai/export_xlsx` requiere CSRF, permiso IA, propiedad de la consulta, empresa actual y consulta completada.
+- Bitácora: Inventario Inteligente → Bitácora de consultas IA, visible solo para administradores de Odoo (`base.group_system`).
+- Guarda usuario, empresa, consulta, fecha, estado, duración, métricas, SQL parametrizado y parámetros. **Nunca se guarda la API Key.**
+- Retención automática: 30 días. Resultados de consulta para exportación dejan de estar disponibles después de la purga.
+- Los datos siguen calculándose desde las tablas relacionales de Odoo; las importaciones anteriores se conservan.
+- No hay una segunda llamada OpenAI para narración. El planificador sigue llamándose desde el servidor.
+
+### Pruebas recomendadas en servidor
+
+1. Actualizar módulo, reiniciar Odoo y limpiar caché del navegador.
+2. Usuario con solo acceso al panel + IA: consulta y descarga Excel; intentar abrir menú Bitácora no debe ser posible.
+3. Administrador: comprobar usuario, fecha, tiempo, SQL y estado; comprobar contador de exportaciones.
+4. Usuario diferente: el ID de ejecución de otra persona debe devolver 404 al intentar exportar.
+5. Comprobar que la API Key nunca está en JSON, XLSX o bitácora.

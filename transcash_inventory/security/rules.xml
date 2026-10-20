@@ -29,4 +29,10 @@
     <field name="model_id" ref="model_transcash_inventory_fact_stock"/>
     <field name="domain_force">[('company_id', 'in', company_ids)]</field>
   </record>
+  <record id="transcash_ai_request_company_rule" model="ir.rule">
+    <field name="name">Auditoría IA: empresas permitidas</field>
+    <field name="model_id" ref="model_transcash_inventory_ai_request"/>
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    <field name="groups" eval="[(4, ref('base.group_system'))]"/>
+  </record>
 </odoo>
