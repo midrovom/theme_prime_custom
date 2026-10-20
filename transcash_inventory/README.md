@@ -1,3 +1,10 @@
+## v1.6 — Stock físico en Explorador y fotos en Reposición
+- Explorador de productos: se incorpora columna **Stock · cant.** entre comprado y ABC, ordenable, usando cantidades positivas del stock de corte y el filtro activo de bodega. La columna **Stock $** se conserva.
+- Simulador de reposición: se muestran miniaturas verificadas por SKU en la columna Producto, utilizando la misma API/cache de fotos del Explorador. No se alteran la fórmula, el orden, los filtros ni el número de candidatos.
+- Stock, demanda y propuesta del simulador muestran su referencia de unidad disponible o inferida, sin convertir m² a cajas o unidades.
+- Se corrige el repintado de miniaturas: al volver a una vista, los enlaces ya consultados se aplican de inmediato, sin esperar a la expiración de la caché.
+- No requiere volver a importar Excel ni reindexar imágenes que ya están asociadas.
+
 # TRANSCASH — Inventario Inteligente (Odoo 18 Community)
 
 Versión actual: 18.0.1.2.0.
