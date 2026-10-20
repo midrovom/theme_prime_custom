@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Fecha ERP exacta (día/mes/año) y compatibilidad de líneas mensuales."""
+"""Regresión histórica 1.4.69, adaptada al retorno a períodos mensuales."""
 from odoo.exceptions import ValidationError
 from odoo.tests.common import TransactionCase, tagged
 
 
 @tagged('post_install', '-at_install')
-class TestBudgetDateExact1469(TransactionCase):
+class TestBudgetMonthlyAfterDate1469(TransactionCase):
     def setUp(self):
         super().setUp()
         self.company = self.env.company
@@ -19,7 +19,7 @@ class TestBudgetDateExact1469(TransactionCase):
         self.budget = self.env['expense.budget'].with_context(
             skip_expense_budget_consumption_on_save=True,
         ).create({'company_id': self.company.id, 'year': 2023,
-                  'name': 'Pruebas consumos fechas exactas'})
+                  'name': 'Pruebas consumos mensuales'})
         self.Line = self.env['expense.budget.line'].with_context(
             skip_expense_budget_consumption_on_save=True,
         )
@@ -39,20 +39,16 @@ class TestBudgetDateExact1469(TransactionCase):
             'date': when, 'amount': amount, 'description': 'Consumo ERP test',
         })
 
-    def test_25_noviembre_no_suma_otros_dias_ni_anios(self):
-        nov25 = self._line(consumption_date='2023-11-25', subcenter_code='GDE')
-        nov26 = self._line(consumption_date='2023-11-26', subcenter_code='GDE')
-        self.assertEqual(nov25.month, '11')
-        self.assertEqual(nov26.month, '11')
+    def test_noviembre_suma_dias_y_excluye_otro_mes_y_anio(self):
+        november = self._line(month='11', subcenter_code='GDE')
         self._expense('2023-11-25', 2304.26)
         self._expense('2023-11-26', 50)
         self._expense('2023-10-25', 100)
         self._expense('2022-11-25', 200)
         self._expense('2023-11-25', 300, sub='VTA')
-        self.assertAlmostEqual(nov25.actual_amount, 2304.26)
-        self.assertAlmostEqual(nov26.actual_amount, 50)
+        self.assertAlmostEqual(november.actual_amount, 2354.26)
         self.assertEqual(self.Expense._find_budget_line(
-            self.company.id, self.account.id, '2023-11-25', self.center.id, 'GDE'), nov25)
+            self.company.id, self.account.id, '2023-11-26', self.center.id, 'GDE'), november)
         rows = [
             {'Codigo': self.account.code, 'Centro': self.center.code,
              'Subcentro': 'GDE', 'Fecha': when, 'Valor': str(amount)}
@@ -63,29 +59,31 @@ class TestBudgetDateExact1469(TransactionCase):
                 ('nov 25 2022 12:00:00:000', 200),
             ]
         ]
-        chosen = self.sync._rows_for_saved_lines(rows, nov25)
-        self.assertEqual(len(chosen), 1)
-        self.assertEqual(chosen[0]['Valor'], '2304.26')
+        chosen = self.sync._rows_for_saved_lines(rows, november)
+        self.assertEqual(len(chosen), 2)
+        self.assertAlmostEqual(sum(float(item['Valor']) for item in chosen), 2354.26)
 
-    def test_linea_antigua_sin_fecha_sigue_sumando_mes(self):
-        legacy = self._line(month='11')
+    def test_fecha_heredada_no_limita_el_mes(self):
+        # Registros creados con el antiguo selector diario también deben
+        # calcular el mes completo, aunque la fecha permanezca en BBDD.
+        old = self._line(consumption_date='2023-11-25', subcenter_code='GDE')
         self._expense('2023-11-20', 25)
         self._expense('2023-11-25', 50)
-        self.assertFalse(legacy.consumption_date)
-        self.assertAlmostEqual(legacy.actual_amount, 75)
+        self.assertAlmostEqual(old.actual_amount, 75)
+        self.assertEqual(old.month, '11')
 
-    def test_fecha_fuera_anio_rechazada(self):
+    def test_fecha_heredada_fuera_anio_rechazada(self):
         with self.assertRaises(ValidationError):
             with self.env.cr.savepoint():
                 self._line(consumption_date='2024-11-25')
 
-    def test_editar_fecha_reubica_gastos_locales(self):
+    def test_editar_mes_reubica_gastos_locales(self):
         original = self._line(month='11')
-        expense25 = self._expense('2023-11-25', 80)
-        expense26 = self._expense('2023-11-26', 15)
-        self.assertAlmostEqual(original.actual_amount, 95)
-        original.write({'consumption_date': '2023-11-25'})
-        self.assertEqual(original.month, '11')
-        self.assertEqual(expense25.budget_line_id, original)
-        self.assertFalse(expense26.budget_line_id)
+        expense_nov = self._expense('2023-11-25', 80)
+        expense_oct = self._expense('2023-10-26', 15)
         self.assertAlmostEqual(original.actual_amount, 80)
+        original.write({'month': '10'})
+        self.assertFalse(original.consumption_date)
+        self.assertFalse(expense_nov.budget_line_id)
+        self.assertEqual(expense_oct.budget_line_id, original)
+        self.assertAlmostEqual(original.actual_amount, 15)
