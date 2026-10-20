@@ -109,3 +109,10 @@
 @media(max-width:600px){.tc-provfilters{grid-template-columns:1fr}.ai-controls{flex-direction:column;align-items:stretch}}
 
 [hidden]{display:none!important}
+
+
+/* ChatGPT v1.10: bounded progress, cancellation, and results-first display. */
+.ai-action-buttons{display:flex;align-items:center;gap:9px;flex-wrap:wrap;flex-shrink:0}
+.ai-action-buttons #aiCancel{background:#eef2f6;color:#34455a;border:1px solid #c7d6e2}
+.ai-progress{margin:8px 0 12px;padding:11px 14px;background:#eef8ff;border:1px solid #c8e4fb;border-radius:8px;color:#235c86;font-size:13px}
+.ai-progress[hidden],#aiCancel[hidden]{display:none !important}

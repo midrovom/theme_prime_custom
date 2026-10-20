@@ -444,27 +444,97 @@ function aiMetricVal(metric,value){
  if(['ventas','utilidad','compras','stock_valor','costo_ventas','precio_promedio'].includes(metric))return usd(value,2);
  if(metric==='margen')return fmt(value,2)+' %';return fmt(value,3);
 }
+let aiController=null,aiCancelled=false;
+function aiProgress(message){$('aiProgress').hidden=false;$('aiProgress').textContent=message;}
+function aiStop(){if(aiController){aiController.abort();}aiCancelled=true;}
+async function aiFetch(url,form,limitMs){
+ const controller=new AbortController();aiController=controller;
+ let expired=false;
+ const timer=setTimeout(()=>{expired=true;controller.abort();},limitMs);
+ try{
+  const response=await fetch(url,{method:'POST',body:form,credentials:'same-origin',signal:controller.signal,cache:'no-store'});
+  const type=response.headers.get('content-type')||'';
+  if(!type.includes('application/json')){
+   if(response.redirected||type.includes('text/html'))throw Error('El servidor devolvió una página HTML en lugar del resultado. Verifique que la sesión de Odoo continúe activa y consulte el log del servidor.');
+   throw Error('Odoo devolvió una respuesta inesperada (HTTP '+response.status+').');
+  }
+  const data=await response.json();
+  if(!response.ok||data.error){
+   const errors={401:'La sesión de Odoo expiró.',403:'No tiene permiso para esta consulta.',409:'Existe otra consulta de IA en proceso.',502:'No se pudo completar la petición a OpenAI.',503:'El servicio no está disponible.'};
+   throw Error(data.error||errors[response.status]||'Error HTTP '+response.status);
+  }
+  return data;
+ }catch(e){
+  if(e.name==='AbortError'){
+   if(expired)throw Error('Tiempo de espera agotado. Revise la conectividad del servidor Odoo con OpenAI o utilice un modelo más rápido.');
+   throw Error('Consulta cancelada.');
+  }
+  if(e instanceof TypeError&&String(e.message).toLowerCase().includes('fetch')){
+   throw Error('No se pudo conectar con Odoo. Compruebe la red y los registros del servidor.');
+  }
+  throw e;
+ }finally{clearTimeout(timer);if(aiController===controller)aiController=null;}
+}
+function aiShowCalculated(data){
+ const r=data.result;
+ if(!r||!Array.isArray(r.filas))throw Error('Odoo devolvió un indicador sin tabla válida.');
+ $('aiAnswer').textContent=data.answer||'Cálculo terminado. Los resultados son verificables en Odoo.';
+ $('aiMethod').textContent=(r.etiqueta||r.metrica||'Indicador')+' · '+(r.periodo?.desde||'')+' a '+(r.periodo?.hasta||'')+' · '+(r.grupos_evaluados||0)+' grupos · '+(r.sku_evaluados||0)+' SKU. '+(r.observaciones||[]).join(' ')+(data.warning?' '+data.warning:'');
+ const hdr=['Grupo',r.etiqueta||'Resultado','Ventas','Utilidad','Compras','Margen','Stock USD'];
+ $('aiResults').innerHTML='<div class="boxsub"><b>Total general:</b> '+aiMetricVal(r.metrica,r.total)+'</div>'+simpleTable(hdr,r.filas.map(row=>[row.grupo,aiMetricVal(r.metrica,row.valor),usd(row.ventas,2),usd(row.utilidad,2),usd(row.compras,2),row.margen===null?'—':fmt(row.margen,2)+' %',usd(row.stock_valor,2)]));
+ $('aiResponse').hidden=false;
+}
 async function aiAsk(){
  if(aiBusy)return;
- const question=$('aiQuestion').value.trim();if(question.length<6){$('aiError').hidden=false;$('aiError').textContent='Escribe una pregunta de al menos seis caracteres.';return;}
- aiBusy=true;$('aiAsk').disabled=true;$('aiAsk').textContent='Calculando...';$('aiError').hidden=true;$('aiResponse').hidden=true;
- const form=new FormData();form.append('csrf_token',document.querySelector('meta[name="transcash-csrf"]').content);
+ const question=$('aiQuestion').value.trim();
+ if(question.length<6){$('aiError').hidden=false;$('aiError').textContent='Escribe una pregunta de al menos seis caracteres.';return;}
+ aiBusy=true;aiCancelled=false;
+ $('aiAsk').disabled=true;$('aiCancel').hidden=false;
+ $('aiError').hidden=true;$('aiResponse').hidden=true;
+ const csrf=document.querySelector('meta[name="transcash-csrf"]')?.content;
+ if(!csrf){$('aiError').hidden=false;$('aiError').textContent='No se obtuvo el token de seguridad. Recargue el dashboard.';aiBusy=false;$('aiAsk').disabled=false;$('aiCancel').hidden=true;return;}
+ const form=new FormData();form.append('csrf_token',csrf);form.append('fast','1');
  form.append('question',question);form.append('desde',months[st.start]);form.append('hasta',months[st.end]);
  const sid=new URLSearchParams(window.location.search).get('snapshot_id');if(sid&&/^\d+$/.test(sid))form.append('snapshot_id',sid);
  if(st.cat>=0)form.append('categoria',DATA.categories[st.cat]);
  if(st.brand>=0)form.append('marca',DATA.brands[st.brand]);
+ let calculated=false;
  try{
-  const res=await fetch('/transcash_inventory/ai/ask',{method:'POST',body:form,credentials:'same-origin'});
-  const data=await res.json();if(!res.ok||data.error)throw new Error(data.error||'No se pudo procesar la solicitud.');
-  const r=data.result;$('aiAnswer').textContent=data.answer;
-  $('aiMethod').textContent=r.etiqueta+' · '+r.periodo.desde+' a '+r.periodo.hasta+' · '+r.grupos_evaluados+' grupos · '+r.sku_evaluados+' SKU. '+r.observaciones.join(' ')+(data.warning?' '+data.warning:'');
-  const hdr=['Grupo',r.etiqueta,'Ventas','Utilidad','Compras','Margen','Stock USD'];
-  $('aiResults').innerHTML='<div class="boxsub"><b>Total general:</b> '+aiMetricVal(r.metrica,r.total)+'</div>'+simpleTable(hdr,r.filas.map(row=>[row.grupo,aiMetricVal(r.metrica,row.valor),usd(row.ventas,2),usd(row.utilidad,2),usd(row.compras,2),row.margen===null?'—':fmt(row.margen,2)+' %',usd(row.stock_valor,2)]));
-  $('aiResponse').hidden=false;
- }catch(e){$('aiError').textContent=e.message;$('aiError').hidden=false;}
- finally{aiBusy=false;$('aiAsk').disabled=false;$('aiAsk').textContent='✧ Calcular con ChatGPT';}
+  $('aiAsk').textContent='Interpretando...';
+  aiProgress('Paso 1 de 2 · ChatGPT interpreta la pregunta y Odoo calcula los indicadores. Máximo 40 segundos de espera.');
+  const data=await aiFetch('/transcash_inventory/ai/ask',form,40000);
+  if(aiCancelled)throw Error('Consulta cancelada.');
+  aiShowCalculated(data);calculated=true;
+  if(data.narration_signature&&data.narration_expiry){
+   $('aiAsk').textContent='Explicando...';
+   aiProgress('Paso 2 de 2 · Indicadores calculados. ChatGPT está preparando la explicación; la tabla ya está disponible.');
+   const explanation=new FormData();explanation.append('csrf_token',csrf);
+   explanation.append('question',question);
+   explanation.append('result_json',JSON.stringify(data.result));
+   explanation.append('signature',data.narration_signature);
+   explanation.append('expires_at',String(data.narration_expiry));
+   try{
+    const narration=await aiFetch('/transcash_inventory/ai/explain',explanation,40000);
+    if(!aiCancelled)$('aiAnswer').textContent=narration.answer;
+   }catch(e){
+    if(!aiCancelled){
+     $('aiAnswer').textContent='El indicador se calculó correctamente, pero no se pudo obtener la explicación automática. '+e.message;
+    }
+   }
+  }
+ }catch(e){
+  $('aiError').textContent=e.message||'No fue posible completar la consulta.';
+  $('aiError').hidden=false;
+  if(calculated)$('aiResponse').hidden=false;
+ }finally{
+  aiBusy=false;aiController=null;
+  $('aiAsk').disabled=false;$('aiCancel').hidden=true;
+  $('aiAsk').textContent='✧ Calcular con ChatGPT';
+  $('aiProgress').hidden=true;
+ }
 }
 $('aiAsk').addEventListener('click',aiAsk);
+$('aiCancel').addEventListener('click',aiStop);
 $('aiQuestion').addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();aiAsk();}});
 document.querySelectorAll('[data-ai-question]').forEach(btn=>btn.addEventListener('click',()=>{$('aiQuestion').value=btn.dataset.aiQuestion;$('aiQuestion').focus();}));
 if(allowAI)aiStatusCheck();

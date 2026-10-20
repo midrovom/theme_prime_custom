@@ -7,7 +7,7 @@
 
 # TRANSCASH — Inventario Inteligente (Odoo 18 Community)
 
-Versión actual: 18.0.1.9.0.
+Versión actual: 18.0.1.10.0.
 
 Módulo independiente para Odoo 18 Community que mantiene el mismo diseño del dashboard HTML de Transcash. La visualización web se carga dentro del cliente backend de Odoo mediante una acción OWL y un iframe del mismo origen. No requiere Enterprise ni Inventory de Odoo; la lectura del Excel funciona sin bibliotecas externas. Las consultas de ChatGPT requieren internet saliente y API Key propia de OpenAI.
 
@@ -300,3 +300,14 @@ Permiten escritura, selección con Enter o clic, navegación con flechas, limpia
 - Comparar las ventas, utilidad, compras y stock de los 12 meses con los resultados existentes; probar filtro de formato `45×45` y ranking de proveedores; comprobar proveedor catálogo versus proveedor real.
 
 **Validación local**: Python y XML compilan, cálculos contrastados con el Excel original. La comprobación visual automatizada y una prueba de API real requieren un entorno que permita Chromium y una API Key activa; no se realizaron contra su servidor Odoo de producción.
+
+
+## v1.10 — Consultas de IA sin espera infinita
+
+- **Dos etapas**: `/transcash_inventory/ai/ask` con `fast=1` devuelve los valores calculados; `/transcash_inventory/ai/explain` solicita la explicación. Se preserva el antiguo `/ai/ask` para clientes en caché.
+- El navegador muestra estados de cada fase, incorpora **Cancelar** y termina cada petición después de 40 segundos si Odoo no responde. Cancelar cierra la espera del navegador; no asegura interrumpir un proceso que el servidor ya esté ejecutando.
+- Se sustituye el bloqueo PostgreSQL indefinido por un `pg_try_advisory_xact_lock`: una consulta simultánea del mismo usuario responde HTTP 409 con explicación visible.
+- OpenAI usa timeout de conexión de 26 s por etapa. Los modelos de razonamiento GPT-5/GPT-6 y o-series utilizan razonamiento `low` para reducir latencia; límites de salida ajustados.
+- El resultado de la primera etapa se muestra aunque falle la redacción de la explicación. La respuesta de la segunda etapa se valida con firma HMAC de 10 minutos vinculada a usuario/empresa y resultados del cálculo; no se transmite API Key al cliente.
+- **Diagnóstico:** si persiste el error, primero usar `Configuración de ChatGPT → Probar conexión`; verificar HTTP 401, 403, 409, 429, 502 o 503, y los logs del servicio Odoo sin publicar el token secreto. Para que aplique la corrección es necesario actualizar el módulo y forzar recarga de navegador (`Ctrl+F5`).
+- No requiere migración ni reimportación de datos: los datos y permisos continúan almacenados en el mismo módulo. La conexión real requiere prueba dentro de Odoo con una API Key válida.

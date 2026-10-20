@@ -4,6 +4,10 @@ import base64
 import zipfile
 import xml.etree.ElementTree as ET
 import json
+import hashlib
+import hmac
+import secrets
+import time
 from pathlib import Path
 from urllib.parse import quote
 from odoo import http, fields
@@ -37,6 +41,24 @@ class TranscashDashboardController(http.Controller):
             headers=[('Content-Type', 'application/json; charset=utf-8'),
                      ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')],
             status=status)
+
+    def _narration_secret(self):
+        """Stable server-side HMAC secret; never exposed to the browser."""
+        params = request.env['ir.config_parameter'].sudo()
+        secret = params.get_param('transcash_inventory.ai_signing_secret')
+        if not secret:
+            # Stored within the DB so tokens survive multiple Odoo workers.
+            secret = secrets.token_hex(32)
+            params.set_param('transcash_inventory.ai_signing_secret', secret)
+        return secret.encode('utf-8')
+
+    def _sign_narration(self, question, result, expiry):
+        canonical = json.dumps({'question': question, 'result': result,
+            'expiry': int(expiry), 'user': request.env.user.id,
+            'company': request.env.company.id}, ensure_ascii=False,
+            sort_keys=True, separators=(',', ':'), allow_nan=False)
+        return hmac.new(self._narration_secret(), canonical.encode('utf-8'),
+                        hashlib.sha256).hexdigest()
 
     @http.route('/transcash_inventory/dashboard', type='http', auth='user', methods=['GET'])
     def dashboard(self, **kw):
@@ -116,7 +138,12 @@ class TranscashDashboardController(http.Controller):
             if default_start not in available or default_end not in available:
                 return self._json({'error': 'Las fechas elegidas no están disponibles.'}, 400)
             # Serialize user requests to avoid excess API costs in parallel tabs.
-            request.env.cr.execute('SELECT pg_advisory_xact_lock(%s, %s)', [82318, request.env.user.id])
+            # Never block indefinitely waiting on another tab's OpenAI request.
+            request.env.cr.execute('SELECT pg_try_advisory_xact_lock(%s, %s)',
+                                   [82318, request.env.user.id])
+            if not request.env.cr.fetchone()[0]:
+                return self._json({'error': 'Ya hay una consulta en proceso para este usuario. '
+                                            'Finalice la anterior antes de enviar otra.'}, 409)
             if logmodel.search_count([('user_id', '=', request.env.user.id),
                                       ('create_date', '>=', fields.Datetime.to_string(since))]) >= 25:
                 return self._json({'error': 'Límite de consultas por hora alcanzado.'}, 429)
@@ -142,6 +169,17 @@ class TranscashDashboardController(http.Controller):
                                'observaciones': ['El sistema no inventa datos o métricas que requieren información no importada.']},
                     'warning': ''})
             data = execute_plan(dataset, plan, default_start, default_end)
+            # v1.10 uses two short HTTP calls. Calculated data becomes visible
+            # immediately, even if the optional narration later times out.
+            if str(kw.get('fast') or '') == '1':
+                expires_at = int(time.time()) + 600
+                signature = self._sign_narration(question, data, expires_at)
+                return self._json({'ok': True, 'result': data,
+                    'answer': 'Indicador calculado en Odoo. Preparando explicación...',
+                    'plan_reason': str(plan.get('razon') or '')[:300],
+                    'narration_signature': signature, 'narration_expiry': expires_at,
+                    'warning': ''})
+            # Compatibility for clients still using the v1.9 frontend.
             try:
                 explanation = narrate_result(key, model, question, data)
                 warning = ''
@@ -158,6 +196,47 @@ class TranscashDashboardController(http.Controller):
             import logging
             logging.getLogger(__name__).exception('Transcash: error de consulta de IA')
             return self._json({'error': 'Error interno realizando la consulta. Revise el log Odoo.'}, 500)
+
+    @http.route('/transcash_inventory/ai/explain', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_explain(self, **kw):
+        if not self._can_ai():
+            return self._json({'error': 'Sin permiso para utilizar ChatGPT.'}, 403)
+        params = request.env['ir.config_parameter'].sudo()
+        key = (params.get_param('transcash_inventory.ai_api_key') or '').strip()
+        model = (params.get_param('transcash_inventory.ai_model') or 'gpt-5-mini').strip()
+        if params.get_param('transcash_inventory.ai_enabled') != 'True' or not key:
+            return self._json({'error': 'ChatGPT no está configurado o activado.'}, 503)
+        question = str(kw.get('question') or '').strip()
+        body = str(kw.get('result_json') or '')
+        signature = str(kw.get('signature') or '')
+        try:
+            expires_at = int(kw.get('expires_at') or 0)
+        except (TypeError, ValueError):
+            return self._json({'error': 'Solicitud de explicación no válida.'}, 400)
+        if not 6 <= len(question) <= 700 or len(body) > 40000 or not body:
+            return self._json({'error': 'Solicitud de explicación no válida.'}, 400)
+        if not int(time.time()) <= expires_at <= int(time.time()) + 600:
+            return self._json({'error': 'La consulta expiró. Vuelva a calcular el indicador.'}, 400)
+        try:
+            data = json.loads(body)
+            if not isinstance(data, dict) or not isinstance(data.get('filas'), list):
+                raise ValueError()
+            correct = self._sign_narration(question, data, expires_at)
+            if not hmac.compare_digest(correct, signature):
+                return self._json({'error': 'La información de la consulta no coincide. '
+                                           'Vuelva a calcular el indicador.'}, 403)
+            # Narration is bounded separately and never blocks access to results.
+            text = narrate_result(key, model, question, data)
+            return self._json({'ok': True, 'answer': text})
+        except (ValueError, TypeError):
+            return self._json({'error': 'Los resultados recibidos no son válidos.'}, 400)
+        except AIServiceError as exc:
+            return self._json({'error': str(exc)[:350]}, 502)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: explicación OpenAI fallida')
+            return self._json({'error': 'No fue posible generar la explicación. '
+                                       'Los cálculos locales siguen disponibles.'}, 500)
 
     @http.route('/transcash_inventory/upload', type='http', auth='user', methods=['POST'], csrf=True)
     def upload(self, **kw):

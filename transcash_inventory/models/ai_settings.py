@@ -34,7 +34,7 @@ class TranscashAISettings(models.TransientModel):
         model = (params.get_param('transcash_inventory.ai_model') or 'gpt-5-mini').strip()
         try:
             answer = call_responses(key, model, 'Responde únicamente: CONEXION OK',
-                                    'Confirma la conexión con la API de OpenAI.', max_tokens=50)
+                                    'Confirma la conexión con la API de OpenAI.', max_tokens=350)
         except AIServiceError as exc:
             raise UserError(str(exc)) from None
         return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
