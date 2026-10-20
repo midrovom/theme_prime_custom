@@ -11,7 +11,7 @@
                 <field name="account_api_id" optional="show"/>
                 <field name="center_catalog_api_id" optional="show"/>
                 <field name="consumption_api_id" optional="show"/>
-                <button name="action_sync" type="object" string="Sincronizar" icon="fa-refresh"/>
+                <button name="action_sync" type="object" string="Actualizar costos" icon="fa-refresh"/>
             </list>
         </field>
     </record>
@@ -22,7 +22,7 @@
         <field name="arch" type="xml">
             <form string="Configuración API ERP" delete="false">
                 <header>
-                    <button name="action_sync" type="object" string="Sincronizar"
+                    <button name="action_sync" type="object" string="Actualizar costos"
                             class="btn-primary"/>
                 </header>
                 <sheet>

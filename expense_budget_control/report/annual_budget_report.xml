@@ -60,15 +60,17 @@
                         <div class="report-scroll">
                             <table class="report-table">
                                 <colgroup>
-                                    <col style="width: 36%;"/>
-                                    <col style="width: 18%;"/>
+                                    <col style="width: 29%;"/>
+                                    <col style="width: 21%;"/>
                                     <col style="width: 14%;"/>
-                                    <col style="width: 18%;"/>
-                                    <col style="width: 14%;"/>
+                                    <col style="width: 13%;"/>
+                                    <col style="width: 13%;"/>
+                                    <col style="width: 10%;"/>
                                 </colgroup>
                                 <thead>
                                     <tr>
                                         <th rowspan="2" style="text-align: left;">Rubro / Cuenta controlada</th>
+                                        <th rowspan="2" style="text-align: left;">Centro de costo</th>
                                         <th colspan="4" class="year-header" t-esc="o.year"/>
                                     </tr>
                                     <tr>
@@ -80,7 +82,7 @@
                                 </thead>
                                 <t t-if="not report_data['categories']">
                                     <tbody>
-                                        <tr><td colspan="5" style="text-align:center; padding:18px;">No hay cuentas presupuestadas para este año.</td></tr>
+                                        <tr><td colspan="6" style="text-align:center; padding:18px;">No hay cuentas presupuestadas para este año.</td></tr>
                                     </tbody>
                                 </t>
                                 <t t-foreach="report_data['categories']" t-as="group">
@@ -90,6 +92,7 @@
                                                 <span t-esc="group['category'].name"/>
                                                 <span t-if="group['category'].code" class="category-code"> (<span t-esc="group['category'].code"/>)</span>
                                             </td>
+                                            <td></td>
                                             <td class="number"></td>
                                             <td class="number"></td>
                                             <td class="number"></td>
@@ -99,9 +102,9 @@
                                             <tr>
                                                 <td class="account-name">
                                                     <span t-esc="account_data['account'].name"/>
-                                                    <span t-if="account_data.get('cost_center')"> — <span t-esc="account_data['cost_center'].name"/></span>
                                                     <span t-if="account_data['account'].code" class="category-code"> (<span t-esc="account_data['account'].code"/>)</span>
                                                 </td>
+                                                <td t-esc="account_data['cost_center'].display_name if account_data.get('cost_center') else 'Sin centro'"/>
                                                 <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['planned'])"/>
                                                 <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['actual'])"/>
                                                 <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['available'])"/>
@@ -113,6 +116,7 @@
                                 <tbody>
                                     <tr class="total-row">
                                         <td>TOTAL GENERAL</td>
+                                        <td></td>
                                         <td class="number" t-esc="'{:,.2f}'.format(report_data['annual_total']['planned'])"/>
                                         <td class="number" t-esc="'{:,.2f}'.format(report_data['annual_total']['actual'])"/>
                                         <td class="number" t-esc="'{:,.2f}'.format(report_data['annual_total']['available'])"/>

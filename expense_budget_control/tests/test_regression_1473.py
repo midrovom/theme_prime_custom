@@ -38,7 +38,7 @@ class TestMonthlyConsumption1473(TransactionCase):
             'date': when, 'amount': amount, 'description': 'Consumo mensual de prueba',
         })
 
-    def test_filtra_cuenta_centro_subcentro_mes_y_anio(self):
+    def test_filtra_cuenta_centro_mes_y_anio_sin_subcentro(self):
         january = self.Line.create({
             'budget_id': self.budget.id, 'account_id': self.water.id,
             'cost_center_id': self.quito.id, 'subcenter_code': 'GND',
@@ -51,9 +51,9 @@ class TestMonthlyConsumption1473(TransactionCase):
         self._move(self.water, self.quito, 'GDE', '2026-01-02', 700)
         self._move(self.water, self.other_center, 'GND', '2026-01-02', 600)
         self._move(self.other_account, self.quito, 'GND', '2026-01-02', 500)
-        self.assertEqual(january.erp_matching_moves, 2)
-        self.assertAlmostEqual(january.actual_amount, 121.72)
-        self.assertAlmostEqual(january.variance_amount, 378.28)
+        self.assertEqual(january.erp_matching_moves, 3)
+        self.assertAlmostEqual(january.actual_amount, 821.72)
+        self.assertAlmostEqual(january.variance_amount, -321.72)
 
     def test_api_historica_se_filtra_por_mes_sin_dia_exacto(self):
         january = self.Line.create({

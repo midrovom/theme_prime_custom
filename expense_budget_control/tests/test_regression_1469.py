@@ -46,7 +46,7 @@ class TestBudgetMonthlyAfterDate1469(TransactionCase):
         self._expense('2023-10-25', 100)
         self._expense('2022-11-25', 200)
         self._expense('2023-11-25', 300, sub='VTA')
-        self.assertAlmostEqual(november.actual_amount, 2354.26)
+        self.assertAlmostEqual(november.actual_amount, 2654.26)
         self.assertEqual(self.Expense._find_budget_line(
             self.company.id, self.account.id, '2023-11-26', self.center.id, 'GDE'), november)
         rows = [
