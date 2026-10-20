@@ -15,8 +15,11 @@ from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
 from ..services.ai_client import plan_question, narrate_result, AIServiceError
 from ..services.ai_analytics import execute_plan
+from ..services.ai_config_store import read_ai_settings, public_ai_settings, save_ai_settings
+from odoo.exceptions import UserError
 
 _HTML = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'dashboard.html'
+_AI_CONFIG_HTML = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'ai_config.html'
 
 
 class TranscashDashboardController(http.Controller):
@@ -89,15 +92,77 @@ class TranscashDashboardController(http.Controller):
         return request.make_response(payload, headers=[('Content-Type', 'application/json; charset=utf-8'),
             ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
 
+    def _can_configure_ai(self):
+        return request.env.user.has_group('base.group_system')
+
+    @http.route('/transcash_inventory/ai/configuration', type='http', auth='user', methods=['GET'])
+    def ai_configuration_page(self, **kw):
+        if not self._can_configure_ai():
+            return request.make_response('Solo el administrador puede configurar ChatGPT.', status=403)
+        source = _AI_CONFIG_HTML.read_text(encoding='utf-8')
+        source = source.replace('@@CSRF@@', html.escape(request.csrf_token(), quote=True))
+        return request.make_response(source, headers=[
+            ('Content-Type', 'text/html; charset=utf-8'),
+            ('Cache-Control', 'no-store, no-cache, must-revalidate'),
+            ('X-Content-Type-Options', 'nosniff'),
+            ('Referrer-Policy', 'same-origin')])
+
+    @http.route('/transcash_inventory/ai/configuration/state', type='http', auth='user', methods=['GET'])
+    def ai_configuration_state(self, **kw):
+        if not self._can_configure_ai():
+            return self._json({'error': 'Solo un administrador puede consultar esta configuración.'}, 403)
+        return self._json({'ok': True, 'config': public_ai_settings(read_ai_settings(request.env))})
+
+    @http.route('/transcash_inventory/ai/configuration/save', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_configuration_save(self, **kw):
+        if not self._can_configure_ai():
+            return self._json({'error': 'Solo un administrador puede guardar esta configuración.'}, 403)
+        try:
+            enabled_raw = str(kw.get('ai_enabled') or '0').strip().lower()
+            if enabled_raw not in ('0', '1'):
+                return self._json({'error': 'Activación no válida.'}, 400)
+            clear_key = str(kw.get('remove_key') or '0') == '1'
+            with request.env.cr.savepoint():
+                config = save_ai_settings(request.env, enabled_raw == '1',
+                    str(kw.get('ai_model') or ''),
+                    str(kw.get('api_key_new') or ''), clear_key)
+            # Verificación definitiva en una SEGUNDA petición HTTP después del commit.
+            return self._json({'ok': True, 'saved': True,
+                               'config': public_ai_settings(config)})
+        except UserError as exc:
+            return self._json({'error': str(exc)}, 400)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: error al guardar configuración IA (sin credenciales)')
+            return self._json({'error': 'Error del servidor al guardar. Consulte el log de Odoo, sin compartir la clave.'}, 500)
+
+    @http.route('/transcash_inventory/ai/configuration/test', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_configuration_test(self, **kw):
+        if not self._can_configure_ai():
+            return self._json({'error': 'Solo un administrador puede probar la conexión.'}, 403)
+        config = read_ai_settings(request.env)
+        if not config['enabled'] or not config['key']:
+            return self._json({'error': 'Guarde primero una configuración activa con API Key.'}, 400)
+        try:
+            from ..services.ai_client import call_responses
+            result = call_responses(config['key'], config['model'],
+                'Responde únicamente con OK.', 'Verificar conexión de OpenAI.', max_tokens=350)
+            return self._json({'ok': True, 'message': 'Conexión confirmada con OpenAI: ' + result[:90]})
+        except AIServiceError as exc:
+            return self._json({'error': str(exc)}, 502)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: fallo al probar OpenAI (sin credenciales)')
+            return self._json({'error': 'Fallo al probar la conexión. Revise el log de Odoo.'}, 502)
+
     @http.route('/transcash_inventory/ai/status', type='http', auth='user', methods=['GET'])
     def ai_status(self, **kw):
         if not self._can_ai():
             return self._json({'error': 'Su usuario necesita el permiso Consultas de ChatGPT.'}, 403)
-        params = request.env['ir.config_parameter'].sudo()
-        raw = (params.get_param('transcash_inventory.ai_enabled') or '').strip().lower()
-        enabled = raw in ('true', '1', 'yes', 'on')
-        key_ok = bool((params.get_param('transcash_inventory.ai_api_key') or '').strip())
-        model_ok = bool((params.get_param('transcash_inventory.ai_model') or '').strip())
+        config = read_ai_settings(request.env)
+        enabled = config['enabled']
+        key_ok = bool(config['key'])
+        model_ok = bool(config['model'])
         if not key_ok:
             message = 'API Key no guardada en Odoo. Abra Configuración de ChatGPT, ingrese la clave y guarde.'
             state = 'missing_key'
@@ -122,10 +187,8 @@ class TranscashDashboardController(http.Controller):
         question = str(kw.get('question') or '').strip()
         if not 6 <= len(question) <= 700:
             return self._json({'error': 'La consulta debe contener entre 6 y 700 caracteres.'}, 400)
-        params = request.env['ir.config_parameter'].sudo()
-        enabled = (params.get_param('transcash_inventory.ai_enabled') or '').strip().lower() in ('true', '1', 'yes', 'on')
-        key = (params.get_param('transcash_inventory.ai_api_key') or '').strip()
-        model = (params.get_param('transcash_inventory.ai_model') or 'gpt-5-mini').strip()
+        config = read_ai_settings(request.env)
+        enabled, key, model = config['enabled'], config['key'], config['model']
         if not key:
             return self._json({'error': 'No hay API Key guardada en Odoo. Un administrador debe ingresar la clave y pulsar Guardar configuración.'}, 503)
         if not enabled:
@@ -218,12 +281,11 @@ class TranscashDashboardController(http.Controller):
     def ai_explain(self, **kw):
         if not self._can_ai():
             return self._json({'error': 'Sin permiso para utilizar ChatGPT.'}, 403)
-        params = request.env['ir.config_parameter'].sudo()
-        key = (params.get_param('transcash_inventory.ai_api_key') or '').strip()
-        model = (params.get_param('transcash_inventory.ai_model') or 'gpt-5-mini').strip()
+        config = read_ai_settings(request.env)
+        key, model = config['key'], config['model']
         if not key:
             return self._json({'error': 'No existe API Key guardada en el servidor Odoo.'}, 503)
-        if (params.get_param('transcash_inventory.ai_enabled') or '').strip().lower() not in ('true', '1', 'yes', 'on'):
+        if not config['enabled']:
             return self._json({'error': 'ChatGPT sigue desactivado en la configuración de Odoo.'}, 503)
         question = str(kw.get('question') or '').strip()
         body = str(kw.get('result_json') or '')

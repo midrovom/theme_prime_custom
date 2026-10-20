@@ -31,3 +31,9 @@ export class TranscashPhotosAction extends Component {
     static template = 'transcash_inventory.PhotosAction';
 }
 registry.category('actions').add('transcash_inventory.photos', TranscashPhotosAction);
+
+
+export class TranscashAIConfigurationAction extends Component {
+    static template = 'transcash_inventory.AIConfigurationAction';
+}
+registry.category('actions').add('transcash_inventory.ai_configuration', TranscashAIConfigurationAction);

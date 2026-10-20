@@ -346,3 +346,21 @@ Permiten escritura, selección con Enter o clic, navegación con flechas, limpia
 - Nuevo botón `Verificar estado` en el asistente. El endpoint indica por separado si falta la API Key, si está desactivada la integración o si está lista; jamás muestra la clave.
 - `Configuración de ChatGPT → Verificar configuración guardada` confirma el estado leído directamente de `ir.config_parameter` sin consumir API ni revelar credenciales.
 - Para aplicar: sustituir carpeta, reiniciar Odoo, actualizar aplicación y hacer Ctrl+F5. La prueba real de OpenAI requiere conectividad y clave válida en el servidor.
+
+
+## v1.13 — Guardado directo y verificable de ChatGPT
+
+- La opción **Configuración de ChatGPT** abre una página administrativa propia,
+  sin formularios transitorios que puedan perder valores al navegar.
+- Al guardar, las tres opciones se escriben en `ir.config_parameter` bajo
+  `transcash_inventory.ai_*`. Un segundo HTTP GET lee de la base de datos y
+  confirma la persistencia **en una transacción posterior**, sin exponer la clave.
+- Si el campo de clave llega vacío, mantiene la previamente guardada; se puede
+  eliminar intencionalmente mediante la casilla correspondiente.
+- Se añadió diagnóstico visible y prueba de conexión independiente.
+- Solo `base.group_system` puede abrir la pantalla y consumir sus rutas.
+- Los endpoints de consultas leen los mismos parámetros que el formulario y no
+  dependen de cachés de asistente. Se conservaron los menús, datos y reportes.
+- En la actualización debe reiniciar el servicio Odoo y ejecutar la actualización
+  del módulo: de lo contrario puede continuar la pantalla vieja en caché.
+- Validación completa en Odoo real pendiente; no introducir secretos en capturas.
