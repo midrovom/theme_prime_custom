@@ -25,7 +25,7 @@ class TestBudgetERPMatching1471(TransactionCase):
             'company_id': company.id, 'year': 2026, 'name': 'Regresión ERP código de cuenta',
         })
         vals = {'budget_id': budget.id, 'cost_center_id': center.id,
-                'consumption_date': '2026-06-25', 'subcenter_code': 'GDE',
+                'month': '6', 'subcenter_code': 'GDE',
                 'planned_amount': 1000}
         water_line = Line.with_context(skip_expense_budget_consumption_on_save=True).create({
             **vals, 'account_id': water.id,

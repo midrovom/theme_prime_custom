@@ -150,10 +150,9 @@
                                            options="{'no_create': True, 'no_create_edit': True}"/>
                                     <field name="erp_subcenter_codes" string="Subcentros detectados"
                                            readonly="True" optional="hide"/>
-                                    <field name="month" column_invisible="True"/>
-                                    <field name="consumption_date" string="Fecha"
+                                    <field name="month" string="Mes"
                                            readonly="parent.state != 'draft'"
-                                           help="Selecciona el día exacto del movimiento ERP; el consumo se calcula por esa fecha."/>
+                                           help="Mes del año indicado en el presupuesto. Consumido suma los movimientos de este mes para la cuenta, centro y subcentro seleccionados."/>
                                     <field name="planned_amount" readonly="parent.state != 'draft'" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="erp_matching_moves" string="Movimientos ERP" readonly="True" optional="show"/>
@@ -202,9 +201,7 @@
                 <field name="budget_id"/><field name="company_id"/>
                 <field name="account_id"/><field name="category_id"/><field name="cost_center_id"/>
                 <field name="erp_subcenter_codes" string="Subcentro" optional="show"/>
-                <field name="year"/><field name="consumption_date" string="Fecha de consumo"/>
-                
-                <field name="month" optional="hide"/>
+                <field name="year"/><field name="month" string="Mes"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Proyectado"/>
                 <field name="actual_amount" sum="Consumido"/>
@@ -242,7 +239,6 @@
         <field name="arch" type="xml">
             <search>
                 <field name="budget_id"/><field name="account_id"/><field name="category_id"/>
-                <field name="consumption_date" string="Fecha de consumo"/>
                 <field name="month"/><field name="cost_center_id"/><field name="subcenter_code"/>
                 <filter string="Sobregirados" name="over_budget" domain="[('variance_amount', '&lt;', 0)]"/>
                 <group expand="0" string="Agrupar por">

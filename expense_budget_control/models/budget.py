@@ -473,7 +473,7 @@ class ExpenseBudget(models.Model):
 class ExpenseBudgetLine(models.Model):
     _name = 'expense.budget.line'
     _description = 'Presupuesto mensual por cuenta'
-    _order = 'budget_id, month, consumption_date, account_id'
+    _order = 'budget_id, month, account_id'
     _check_company_auto = True
 
     budget_id = fields.Many2one('expense.budget', string='Presupuesto', required=True,
@@ -590,32 +590,24 @@ class ExpenseBudgetLine(models.Model):
                     line.cost_center_id = centers.id
     year = fields.Integer(string='Año', related='budget_id.year', store=True, index=True,
                           aggregator='max')
-    # La fecha es el día exacto del movimiento del ERP. El mes se conserva para
-    # las agrupaciones y los informes históricos, pero deja de elegirse a mano.
-    # Las líneas anteriores sin fecha siguen usando su antiguo filtro mensual.
+    # Campo legado: conservar las fechas de versiones anteriores sin eliminarlas.
+    # Nunca usar este dato oculto para filtrar Consumido: el criterio vigente es
+    # el MES completo del año del presupuesto.
     consumption_date = fields.Date(
-        string='Fecha de consumo', index=True,
-        help='Fecha exacta del gasto en la API (Fecha). Si se selecciona el 25/11/2023, '
-             'Consumido solo incluye movimientos de ese día. Las líneas antiguas '
-             'sin fecha conservan el cálculo mensual.',
+        string='Fecha de consumo (histórica)', index=True, copy=False,
+        help='Dato histórico de versiones anteriores. El consumo actual se calcula '
+             'por el mes completo y el año del presupuesto.',
     )
-    month = fields.Selection(MONTHS, string='Mes (agrupación)', required=True, index=True)
+    month = fields.Selection(MONTHS, string='Mes', required=True, index=True)
     consultation_date_label = fields.Char(
         string='Fecha interpretada', compute='_compute_consultation_date_label',
-        help='Confirma el día y el mes exactos utilizados para buscar en la API ERP. '
-             'Por ejemplo: oct 8 2026 = 8 de octubre de 2026.',
+        help='Texto informativo del mes y año usado para sumar gastos del ERP.',
     )
 
     @api.depends('consumption_date', 'month', 'budget_id.year')
     def _compute_consultation_date_label(self):
         for line in self:
-            when = line.consumption_date
-            if when:
-                month_name = MONTH_NAMES.get(str(when.month), '')
-                line.consultation_date_label = '%s de %s de %s' % (
-                    when.day, month_name.lower(), when.year,
-                )
-            elif line.month and line.budget_id:
+            if line.month and line.budget_id:
                 month_name = MONTH_NAMES.get(str(line.month), '')
                 line.consultation_date_label = 'Mes completo: %s de %s' % (
                     month_name.lower(), line.budget_id.year,
@@ -623,24 +615,16 @@ class ExpenseBudgetLine(models.Model):
             else:
                 line.consultation_date_label = False
 
-    @api.onchange('consumption_date')
-    def _onchange_consumption_date(self):
-        for line in self:
-            if line.consumption_date:
-                line.month = str(line.consumption_date.month)
-
-    @api.constrains('consumption_date', 'budget_id', 'month')
+    @api.constrains('consumption_date', 'budget_id')
     def _check_consumption_date(self):
+        # Conservar la comprobación de año de los registros heredados. Al
+        # editar el Mes se limpia su fecha histórica (véase write()).
         for line in self:
-            if line.consumption_date:
-                if line.budget_id and line.consumption_date.year != line.budget_id.year:
-                    raise ValidationError(_(
-                        'La Fecha de consumo debe corresponder al año del presupuesto (%s).'
-                    ) % line.budget_id.year)
-                if line.month != str(line.consumption_date.month):
-                    raise ValidationError(_(
-                        'El mes interno debe coincidir con la Fecha de consumo seleccionada.'
-                    ))
+            if (line.consumption_date and line.budget_id
+                    and line.consumption_date.year != line.budget_id.year):
+                raise ValidationError(_(
+                    'La fecha histórica debe corresponder al año del presupuesto (%s).'
+                ) % line.budget_id.year)
     planned_amount = fields.Monetary(string='Proyectado', required=True, default=0,
                                      currency_field='currency_id')
     expense_ids = fields.One2many('expense.budget.expense', 'budget_line_id', string='Gastos reales')
@@ -687,11 +671,12 @@ class ExpenseBudgetLine(models.Model):
         ''')
 
     def _period_expenses(self):
-        """Solo gastos con la cuenta, centro, mes y año exactos del presupuesto.
+        """Consumos de TODO el mes seleccionado y del año del presupuesto.
 
-        También evita mostrar consumos en un mes erróneo si una versión previa
-        dejó un vínculo histórico incoherente. Las líneas antiguas con filtro
-        de subcentro siguen restringiendo ese código.
+        Nunca filtrar por consumption_date (dato histórico oculto). La API
+        envía Fecha con día exacto, pero la proyección es mensual. Se agregan
+        los movimientos de todos los días del mes con cuenta, centro y
+        subcentro coincidentes, sin incluir otros meses ni años.
         """
         self.ensure_one()
         if not self.month or not self.account_id or not self.budget_id:
@@ -703,7 +688,6 @@ class ExpenseBudgetLine(models.Model):
             expense.cost_center_id == self.cost_center_id and
             bool(expense.date) and expense.date.year == year and
             expense.date.month == month and
-            (not self.consumption_date or expense.date == self.consumption_date) and
             (not self.subcenter_code or
              (expense.subcenter_code or '').strip().upper() == self.subcenter_code)
         ))
@@ -735,7 +719,7 @@ class ExpenseBudgetLine(models.Model):
     erp_matching_moves = fields.Integer(
         string='Movimientos coincidentes', compute='_compute_erp_matching_moves',
         help='Cantidad de gastos reales vinculados que coinciden con cuenta, '
-             'centro, subcentro y día exacto; no ejecuta llamadas a la API.',
+             'centro, subcentro y mes del presupuesto; no ejecuta llamadas a la API.',
     )
 
     @api.depends('expense_ids', 'expense_ids.amount', 'expense_ids.date',
@@ -778,13 +762,11 @@ class ExpenseBudgetLine(models.Model):
                     ('account_id', '=', rec.account_id.id), ('month', '=', rec.month),
                     ('cost_center_id', '=', rec.cost_center_id.id or False),
                     ('subcenter_code', '=', rec.subcenter_code or False),
-                ])
-                duplicate = duplicate.filtered(
-                    lambda other: other.consumption_date == rec.consumption_date
-                )
+                ], limit=1)
                 if duplicate:
                     raise ValidationError(_(
-                        'Ya existe una proyección para esta cuenta, fecha y centro de costo.'
+                        'Ya existe una proyección para esta cuenta, centro, subcentro y mes. '
+                        'El consumo mensual se consolida en una única línea.'
                     ))
 
     @api.constrains('account_id', 'budget_id')
@@ -807,11 +789,10 @@ class ExpenseBudgetLine(models.Model):
                 ('month', '=', rec.month),
                 ('cost_center_id', '=', rec.cost_center_id.id or False),
                 ('subcenter_code', '=', rec.subcenter_code or False),
-                ('consumption_date', '=', rec.consumption_date or False),
             ], limit=1)
             if existing:
                 raise ValidationError(_(
-                    'Esta cuenta y centro de costo ya están presupuestados para la misma fecha y año '
+                    'Esta cuenta, centro y subcentro ya están presupuestados para el mismo mes y año '
                     'en otro presupuesto de la empresa.'
                 ))
 
@@ -819,9 +800,10 @@ class ExpenseBudgetLine(models.Model):
     def create(self, vals_list):
         budgets = self.env['expense.budget']
         for vals in vals_list:
-            if vals.get('consumption_date'):
-                selected_date = fields.Date.to_date(vals['consumption_date'])
-                vals['month'] = str(selected_date.month)
+            # Fecha heredada solo se permite desde integraciones antiguas:
+            # no impone el mes cuando el usuario proporciona uno explícito.
+            if vals.get('consumption_date') and not vals.get('month'):
+                vals['month'] = str(fields.Date.to_date(vals['consumption_date']).month)
             if 'subcenter_code' in vals:
                 vals['subcenter_code'] = (vals['subcenter_code'] or '').strip().upper() or False
             budget = budgets.browse(vals.get('budget_id'))
@@ -834,7 +816,11 @@ class ExpenseBudgetLine(models.Model):
         return records
 
     def write(self, vals):
-        if vals.get('consumption_date'):
+        # Cambiar el mes en una línea creada cuando existía el calendario
+        # elimina el viejo filtro de día y fuerza una consulta mensual nueva.
+        if 'month' in vals:
+            vals = dict(vals, consumption_date=False)
+        elif vals.get('consumption_date') and 'month' not in vals:
             vals = dict(vals, month=str(fields.Date.to_date(vals['consumption_date']).month))
         if 'subcenter_code' in vals:
             vals = dict(vals, subcenter_code=(vals['subcenter_code'] or '').strip().upper() or False)
@@ -849,16 +835,13 @@ class ExpenseBudgetLine(models.Model):
         # reconciliación reasigna o desvincula movimientos de otros días.
         # Los cambios de cuenta/centro/subcentro siguen protegidos.
         locked_changes = {'account_id', 'cost_center_id', 'subcenter_code', 'budget_id'}.intersection(vals)
-        if 'month' in vals and 'consumption_date' not in vals:
-            locked_changes.add('month')
         if locked_changes and any(rec.expense_ids for rec in self):
-            raise UserError(_('No puede cambiar cuenta, mes o presupuesto de una línea con gastos reales. '
-                              'Puede modificar el monto proyectado o volver a conciliar los movimientos.'))
+            raise UserError(_('No puede cambiar cuenta, centro, subcentro o presupuesto de una línea con gastos reales. '
+                              'Puede cambiar el mes y el sistema volverá a conciliar los movimientos.'))
         result = super().write(vals)
-        if 'consumption_date' in vals:
-            # Al convertir una línea mensual histórica a una fecha concreta,
-            # los gastos de otros días deben desvincularse incluso cuando
-            # quien llama pidió omitir la petición HTTP.
+        if 'month' in vals or 'consumption_date' in vals:
+            # Al cambiar de mes, desvincular el mes anterior y vincular
+            # exclusivamente gastos del nuevo período mensual.
             self.env['expense.budget.inventory.sync']._reconcile_saved_line_periods(self)
         if {'account_id', 'cost_center_id', 'subcenter_code', 'budget_id', 'month', 'consumption_date'}.intersection(vals):
             self._assign_unmatched_expenses()
@@ -878,7 +861,7 @@ class ExpenseBudgetLine(models.Model):
             year, month = line.budget_id.year, int(line.month)
             start = date(year, month, 1)
             end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
-            period = [('date', '=', fields.Date.to_string(line.consumption_date))] if line.consumption_date else [
+            period = [
                 ('date', '>=', fields.Date.to_string(start)),
                 ('date', '<', fields.Date.to_string(end)),
             ]

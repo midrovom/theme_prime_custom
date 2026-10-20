@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Casos reportados: fecha de octubre vs septiembre y presupuesto vacío."""
+"""Parser de fechas ERP, presupuesto vacío y diferencia entre meses."""
 from datetime import date
 from unittest.mock import patch
 
 from odoo.tests.common import TransactionCase, tagged
-
 from ..models.inventory_api import parse_erp_date
 
 
@@ -32,7 +31,7 @@ class TestBudgetDateAndEmptySave1470(TransactionCase):
             budget.write({'note': 'Edición de cabecera sin proyecciones'})
         self.assertFalse(budget.line_ids)
 
-    def test_septiembre_no_suma_movimiento_de_octubre(self):
+    def test_septiembre_no_suma_octubre_y_octubre_suma_todos_sus_dias(self):
         account = self.Account.create({
             'name': 'Agua', 'code': 'T1470-601010102001',
             'company_id': self.company.id,
@@ -50,7 +49,7 @@ class TestBudgetDateAndEmptySave1470(TransactionCase):
         line = Line.create({
             'budget_id': budget.id, 'account_id': account.id,
             'cost_center_id': center.id, 'subcenter_code': 'GND',
-            'consumption_date': '2026-09-08', 'planned_amount': 150,
+            'month': '9', 'planned_amount': 150,
         })
         self.Expense.create({
             'company_id': self.company.id, 'account_id': account.id,
@@ -58,8 +57,14 @@ class TestBudgetDateAndEmptySave1470(TransactionCase):
             'date': '2026-10-08', 'amount': 121.72,
             'description': 'Movimiento de consumo octubre',
         })
+        self.Expense.create({
+            'company_id': self.company.id, 'account_id': account.id,
+            'cost_center_id': center.id, 'subcenter_code': 'GND',
+            'date': '2026-10-25', 'amount': 22,
+            'description': 'Otro movimiento del mes',
+        })
         self.assertAlmostEqual(line.actual_amount, 0)
-        self.assertEqual(line.consultation_date_label, '8 de septiembre de 2026')
-        line.write({'consumption_date': '2026-10-08'})
-        self.assertEqual(line.consultation_date_label, '8 de octubre de 2026')
-        self.assertAlmostEqual(line.actual_amount, 121.72)
+        self.assertEqual(line.consultation_date_label, 'Mes completo: septiembre de 2026')
+        line.write({'month': '10'})
+        self.assertEqual(line.consultation_date_label, 'Mes completo: octubre de 2026')
+        self.assertAlmostEqual(line.actual_amount, 143.72)
