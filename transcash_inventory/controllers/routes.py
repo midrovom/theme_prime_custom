@@ -15,6 +15,7 @@ from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
 from ..services.ai_client import plan_question, planner_context, narrate_result, AIServiceError
 from ..services.ai_sql import execute_sql_plan
+from ..services.ai_catalog_filters import resolve_catalog_filters
 from ..services.ai_schema import schema_context
 from ..services.ai_export import build_result_xlsx
 from ..services.ai_config_store import read_ai_settings, public_ai_settings, save_ai_settings
@@ -285,9 +286,7 @@ class TranscashDashboardController(http.Controller):
                 plan = plan_question(config['key'], config['model'], question,
                     available, default_start, default_end, ui,
                     schema_context(request.env, snapshot))
-                for k, value in ui.items():
-                    if value and not plan.get(k):
-                        plan[k] = value
+                plan = resolve_catalog_filters(request.env, snapshot, plan, question, ui)
                 if plan.get('metric') == 'no_disponible':
                     audit.write({
                         'state': 'unavailable', 'plan_json': json.dumps(plan, ensure_ascii=False),

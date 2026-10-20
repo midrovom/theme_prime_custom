@@ -76,17 +76,20 @@ def build_select(snapshot_id, company_id, plan, months, default_start=None, defa
     constraints = ['fp.snapshot_id = %s', 'fp.company_id = %s']
     for field in ('categoria', 'marca'):
         if filters[field]:
-            constraints.append(_contains('fp.' + field, filters[field], params))
+            params.append(filters[field])
+            constraints.append('LOWER(TRIM(fp.' + field + ')) = LOWER(TRIM(%s))')
     if filters['formato']:
         # Normalizes 45*45, 45×45 and 45x45 consistently; no SQL wildcards.
         normalize_sql = "REPLACE(REPLACE(REPLACE(LOWER(fp.formato),'×','x'),'*','x'),' ','')"
         normalized_value = filters['formato'].lower().replace('×','x').replace('*','x').replace(' ','')
-        constraints.append(_contains(normalize_sql, normalized_value, params))
+        params.append(normalized_value)
+        constraints.append(normalize_sql + ' = %s')
     if filters['sku']:
         params.extend([filters['sku'], filters['sku']])
         constraints.append("(POSITION(LOWER(%s) IN LOWER(fp.sku)) > 0 OR POSITION(LOWER(%s) IN LOWER(fp.name)) > 0)")
     if filters['proveedor'] and dim != 'proveedor_compra':
-        constraints.append(_contains('fp.proveedor_ficha', filters['proveedor'], params))
+        params.append(filters['proveedor'])
+        constraints.append('LOWER(TRIM(fp.proveedor_ficha)) = LOWER(TRIM(%s))')
     count_sql = 'SELECT COUNT(*) FROM ' + PRODUCT_TABLE + ' fp WHERE ' + ' AND '.join(constraints)
     count_params = list(params)
     fp_sql = ('fp AS (SELECT fp.* FROM ' + PRODUCT_TABLE + ' fp WHERE '
@@ -95,7 +98,8 @@ def build_select(snapshot_id, company_id, plan, months, default_start=None, defa
         supplier_filter = ''
         supplier_params = [start, end]
         if filters['proveedor']:
-            supplier_filter = ' AND ' + _contains('sp.proveedor_compra', filters['proveedor'], supplier_params)
+            supplier_params.append(filters['proveedor'])
+            supplier_filter = ' AND LOWER(TRIM(sp.proveedor_compra)) = LOWER(TRIM(%s))'
         sql = '''WITH {fp_sql}
 SELECT sp.proveedor_compra AS grupo,
  0::double precision AS ventas, 0::double precision AS costo_ventas,

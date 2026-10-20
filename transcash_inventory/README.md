@@ -457,3 +457,19 @@ No existe histórico de stock al cierre ni ventas por bodega en el archivo fuent
 3. Administrador: comprobar usuario, fecha, tiempo, SQL y estado; comprobar contador de exportaciones.
 4. Usuario diferente: el ID de ejecución de otra persona debe devolver 404 al intentar exportar.
 5. Comprobar que la API Key nunca está en JSON, XLSX o bitácora.
+
+## Cambios v1.17 — IA con filtros exactos y conexión API Administrator
+
+- Consultas IA: categorías, marcas, formatos y proveedores del catálogo con
+  filtros escribibles, resoluciones exactas (valor canónico de Odoo) y prioridad
+  de los criterios explícitos del usuario frente a propuestas del modelo.
+- Evita cambiar PORCELANATO por CERAMICA; si no encuentra un valor o existen
+  múltiples coincidencias, devuelve un error en lugar de consultar otra categoría.
+- SQL: filtros exactos parametrizados sobre PostgreSQL de Odoo.
+- Nueva opción administrativa **Sincronización API** que usa el contrato
+  `api.administrator.call_api(name, method='get', company_id=...)` con los
+  cuatro endpoints `getproductosinvt`, `getventasinvt`, `getcomprasinvt`,
+  `getstockinvt`.
+- Convierte datos de API al contrato existente de Excel, con exactamente el
+  mismo motor de indicadores y tablas relacionales. No duplica configuración.
+- Ver **API_CONTRATO.md** para el JSON esperado y las limitaciones.

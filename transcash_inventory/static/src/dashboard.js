@@ -430,6 +430,18 @@ function renderProviderProfit(){
 for(const input of [pfSupplier,pfFormat,pfBrand])input.addEventListener('input',()=>{if(st.page==='provprofit')renderProviderProfit()});
 $('pfClear').addEventListener('click',()=>{pfSupplier.value=pfFormat.value=pfBrand.value='';renderProviderProfit()});
 
+// v1.17: filtros explícitos para IA, independientes del Explorador.
+const aiChoices = {
+ aiCategories: DATA.categories||[], aiBrands: DATA.brands||[],
+ aiProviders: DATA.providers||[], aiFormats: [...new Set((DATA.products||[]).map(p=>String(p[21]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))
+};
+for(const [id,values] of Object.entries(aiChoices)){
+ const list=document.getElementById(id);
+ if(list)for(const value of values){const option=document.createElement('option');option.value=value;list.appendChild(option);}
+}
+$('aiClearFilters').addEventListener('click',()=>{
+ for(const id of ['aiFilterCategory','aiFilterBrand','aiFilterFormat','aiFilterProvider'])$(id).value='';
+});
 // ChatGPT nunca ve una API Key: todas las llamadas pasan por rutas autenticadas del backend.
 let aiBusy=false;
 async function aiStatusCheck(){
@@ -500,7 +512,9 @@ function aiShowCalculated(data){
   const hd=['Grupo',...measures.map(m=>labels[m]||m)];
   const tableRows=r.filas.map(row=>[row.grupo,...measures.map(m=>aiMetricVal(m,row.metricas?.[m]??null))]);
   const totalsHtml=measures.map(m=>'<span style="display:inline-block;margin:4px 17px 4px 0"><b>'+escapeHtml(labels[m]||m)+':</b> '+escapeHtml(aiMetricVal(m,totals[m]))+'</span>').join('');
-  $('aiResults').innerHTML='<div class="boxsub">'+totalsHtml+'</div>'+simpleTable(hd,tableRows);
+  const filtered=Object.entries(r.filtros||{}).filter(([key,val])=>val&&['categoria','marca','formato','proveedor'].includes(key));
+  const filterText=filtered.length?'<div class="boxsub">'+filtered.map(([key,val])=>escapeHtml(key)+': <b>'+escapeHtml(val)+'</b>').join(' · ')+'</div>':'';
+  $('aiResults').innerHTML=filterText+'<div class="boxsub">'+totalsHtml+'</div>'+simpleTable(hd,tableRows);
  }else{
   const hdr=['Grupo',r.etiqueta||'Resultado','Ventas','Utilidad','Compras','Margen','Stock USD'];
   $('aiResults').innerHTML='<div class="boxsub"><b>Total:</b> '+aiMetricVal(r.metrica,r.total)+'</div>'+simpleTable(hdr,r.filas.map(row=>[row.grupo,aiMetricVal(r.metrica,row.valor),usd(row.ventas,2),usd(row.utilidad,2),usd(row.compras,2),row.margen===null?'—':fmt(row.margen,2)+' %',usd(row.stock_valor,2)]));
@@ -538,10 +552,9 @@ async function aiAsk(){
  const form=new FormData();form.append('csrf_token',csrf);
  form.append('question',question);form.append('desde',months[st.start]);form.append('hasta',months[st.end]);
  const sid=new URLSearchParams(window.location.search).get('snapshot_id');if(sid&&/^\d+$/.test(sid))form.append('snapshot_id',sid);
- if(st.cat>=0)form.append('categoria',DATA.categories[st.cat]);
- if(st.brand>=0)form.append('marca',DATA.brands[st.brand]);
- if(st.providerExp>=0)form.append('proveedor',DATA.providers[st.providerExp]);
- if(st.formatExp>=0)form.append('formato',explorerFormats[st.formatExp]);
+ for(const [field,id] of [['categoria','aiFilterCategory'],['marca','aiFilterBrand'],['formato','aiFilterFormat'],['proveedor','aiFilterProvider']]){
+  const selected=$(id).value.trim();if(selected)form.append(field,selected);
+ }
  try{
   $('aiAsk').textContent='Consultando...';aiProgress('Preparando análisis...');
   const prepare=new FormData();prepare.append('csrf_token',csrf);

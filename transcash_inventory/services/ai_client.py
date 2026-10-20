@@ -121,6 +121,10 @@ proveedor_formato, proveedor_categoria_marca_formato.
 Si piden lista de marcas del formato 45x45, usa group_by="marca" y formato="45x45".
 Si piden indicadores "por formato", usa group_by="formato"; si indican formato concreto,
 agrega su filtro también. No fuerces filtros que no pidió el usuario.
+PRIORIDAD: los filtros explícitos de interfaz y los nombres literales en la pregunta
+prevalecen sobre cualquier inferencia. Nunca reemplaces PORCELANATO por CERAMICA,
+ni confundas marca, proveedor de catálogo y formato. Copia las etiquetas reales.
+Si una categoría es explícita, colócala en categoria aunque agrupes por marca o formato.
 
 PROVEEDORES: proveedor_ficha asocia cada SKU a proveedor principal declarado en
 catálogo. Sus ventas y utilidad son RENTABILIDAD DE CARTERA, no ventas atribuibles

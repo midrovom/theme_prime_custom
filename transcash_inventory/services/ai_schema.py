@@ -42,7 +42,7 @@ def schema_context(env, snapshot):
     cr.execute('SELECT DISTINCT bodega FROM transcash_inventory_fact_stock WHERE snapshot_id=%s AND company_id=%s ORDER BY bodega LIMIT 30', (snapshot.id, snapshot.company_id.id))
     examples['bodegas'] = [r[0] for r in cr.fetchall()]
     return {'origen': 'Tablas SQL PostgreSQL persistidas y administradas por Odoo 18',
-            'version_esquema': '1.15', 'modelos': catalog,
+            'version_esquema': '1.17', 'modelos': catalog,
             'relaciones': ['product_id → transcash.inventory.fact.product.id',
                            'snapshot_id → transcash.inventory.snapshot.id',
                            'company_id → res.company.id'],
@@ -52,5 +52,6 @@ def schema_context(env, snapshot):
             'no_disponible': ['Utilidad neta después de gastos','Stock histórico de cierre',
                               'Trazabilidad de lotes desde compra hasta venta',
                               'Conversión universal de cajas/piezas/m²'],
+            'filtros_validados': 'categoria, marca, formato y proveedor_ficha: coincidencia exacta contra el catálogo; en consultas por proveedor real solo compras de movimiento.',
             'regla': 'Los datos de Odoo son fuente de verdad. Devuelve un plan tipado; '
                      'el servidor genera SQL SELECT parametrizado y ejecuta los agregados.'}
