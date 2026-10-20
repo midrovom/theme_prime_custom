@@ -146,3 +146,14 @@ Logística. La importación nunca activa perfiles por su cuenta.
 **Importante:** no se ha ejecutado el módulo en el servidor del cliente.
 La validación disponible es estática (Python, XML y empaquetado); probar primero
 con copia de la base Odoo 18.
+
+
+## v1.7 — Chofer desde Contactos antes del Portal
+
+- La importación busca el `res.partner` por cédula/RUC y lo reutiliza; cuando no existe crea el contacto.
+- La guía operativa guarda `chofer_contacto_id` aunque `chofer_usuario_id` sea vacío; el Kanban lo muestra con la etiqueta Portal pendiente.
+- Gestión: **Operación logística > Choferes ERP (acceso pendiente)** para ubicar contactos registrados por el ERP.
+- Los usuarios `res.users` y el registro `transcash.chofer` continúan siendo gestionados explícitamente mediante Portal + **Choferes y acceso móvil** de v5.32.
+- Después de otorgar acceso Portal y habilitar la cuenta de chofer en el menú existente, ejecutar **Conciliar terceros y portales** para vincular las guías existentes al usuario.
+- Las rutas siguen requiriendo `chofer_usuario_id`. El contacto importado no obtiene credenciales ni puede ver viajes hasta que la cuenta y el grupo Portal existan.
+- Las guías en curso conservan al chofer asignado; solo se completa un contacto vacío si coincide la identificación.

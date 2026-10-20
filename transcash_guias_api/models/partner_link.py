@@ -110,6 +110,8 @@ class TCGuidePartnerLink(models.Model):
                 vals['ref'] = code
             if street:
                 vals['street'] = street
+            if kind == 'driver':
+                vals['tc_chofer_logistica'] = True
             partner = self.env['res.partner'].sudo().create(vals)
         else:
             if tax and partner.vat and _identifier(partner.vat) != _identifier(tax):
@@ -122,6 +124,8 @@ class TCGuidePartnerLink(models.Model):
                 vals['ref'] = code
             if street and not partner.street:
                 vals['street'] = street
+            if kind == 'driver' and not partner.tc_chofer_logistica:
+                vals['tc_chofer_logistica'] = True
             if vals:
                 partner.sudo().write(vals)
         return partner, message
@@ -199,6 +203,9 @@ class TCGuidePartnerLink(models.Model):
         user, message = self._resolve_driver_user(driver, transport)
         if message:
             notes.append(message)
+        # El contacto del chofer SIEMPRE se guarda aunque no tenga usuario Portal.
+        # No se crea res.users ni un registro transcash.chofer sin usuario,
+        # pues v5.32 exige un usuario Portal explícitamente habilitado.
         sender = False
         if self.sender_id:
             sender_code = _clean(self.sender_id.external_code)

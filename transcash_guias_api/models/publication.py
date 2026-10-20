@@ -75,6 +75,16 @@ class TCGuidePublication(models.Model):
                 additions['remitente_id'] = self.sender_partner_id.id
             if not existing.destinatario_id and self.recipient_partner_id:
                 additions['destinatario_id'] = self.recipient_partner_id.id
+            # El contacto no sustituye al usuario responsable del viaje.
+            # En viajes ya iniciados solo se completa cuando no contradice al
+            # chofer manual (usuario, o identificación ERP registrada).
+            if self.driver_partner_id and not existing.chofer_contacto_id:
+                same_document = (not existing.ruc_chofer or
+                                 normalized(existing.ruc_chofer) == normalized(self.driver_partner_id.vat))
+                same_user = (not existing.chofer_usuario_id or
+                             existing.chofer_usuario_id.partner_id == self.driver_partner_id)
+                if same_document and same_user:
+                    additions['chofer_contacto_id'] = self.driver_partner_id.id
             plan = existing.hoja_ruta_id or existing.embarque_id
             if plan:
                 if (not existing.proveedor_id and self.transport_partner_id and
@@ -117,11 +127,23 @@ class TCGuidePublication(models.Model):
             'remitente_id': self.sender_partner_id,
             'destinatario_id': self.recipient_partner_id,
             'proveedor_id': self.transport_partner_id,
+            # El contacto es independiente de la invitación Portal.
+            'chofer_contacto_id': self.driver_partner_id,
             'chofer_usuario_id': self.driver_user_id,
         }
         mismatches = []
         for field_name, new_partner in bindings.items():
             if not new_partner:
+                continue
+            if (field_name == 'chofer_contacto_id' and existing
+                    and existing.chofer_usuario_id
+                    and existing.chofer_usuario_id.partner_id != new_partner):
+                mismatches.append(_('Chofer ERP distinto del usuario del chofer asignado; conservar operación.'))
+                continue
+            if (field_name == 'chofer_usuario_id' and existing
+                    and existing.chofer_contacto_id
+                    and existing.chofer_contacto_id != new_partner.partner_id):
+                mismatches.append(_('El usuario Portal no coincide con el contacto chofer de la guía.'))
                 continue
             current = existing[field_name] if existing else False
             if current and current != new_partner:
