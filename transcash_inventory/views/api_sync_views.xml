@@ -1,0 +1,41 @@
+<odoo>
+  <record id="view_transcash_inventory_api_sync_form" model="ir.ui.view">
+    <field name="name">transcash.inventory.api.sync.wizard.form</field>
+    <field name="model">transcash.inventory.api.sync.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Sincronización de inventario por API">
+        <sheet>
+          <group>
+            <field name="company_id" readonly="1"/>
+            <field name="reference_end" placeholder="2026-09"/>
+          </group>
+          <separator string="Endpoints definidos en API Administrator"/>
+          <group col="2">
+            <field name="endpoint_products" readonly="1"/>
+            <field name="endpoint_sales" readonly="1"/>
+            <field name="endpoint_purchases" readonly="1"/>
+            <field name="endpoint_stock" readonly="1"/>
+          </group>
+          <div class="alert alert-info" role="alert">Las credenciales, URL y rutas se administran exclusivamente en API Administrator. Esta operación creará una versión nueva, sin eliminar las anteriores. Los cuatro endpoints deben devolver datos consistentes.</div>
+          <group>
+            <field name="snapshot_id" readonly="1"/>
+            <field name="last_result" readonly="1"/>
+          </group>
+        </sheet>
+        <footer>
+          <button name="action_sync" type="object" string="Sincronizar desde API Administrator" class="btn-primary"/>
+          <button special="cancel" string="Cerrar" class="btn-secondary"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+  <record id="action_transcash_inventory_api_sync" model="ir.actions.act_window">
+    <field name="name">Sincronizar desde API Administrator</field>
+    <field name="res_model">transcash.inventory.api.sync.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+  <menuitem id="menu_transcash_inventory_api_sync" parent="menu_transcash_root"
+            name="Sincronización API" action="action_transcash_inventory_api_sync"
+            sequence="16" groups="base.group_system"/>
+</odoo>

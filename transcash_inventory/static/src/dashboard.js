@@ -430,6 +430,18 @@ function renderProviderProfit(){
 for(const input of [pfSupplier,pfFormat,pfBrand])input.addEventListener('input',()=>{if(st.page==='provprofit')renderProviderProfit()});
 $('pfClear').addEventListener('click',()=>{pfSupplier.value=pfFormat.value=pfBrand.value='';renderProviderProfit()});
 
+// v1.17: filtros explícitos para IA, independientes del Explorador.
+const aiChoices = {
+ aiCategories: DATA.categories||[], aiBrands: DATA.brands||[],
+ aiProviders: DATA.providers||[], aiFormats: [...new Set((DATA.products||[]).map(p=>String(p[21]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))
+};
+for(const [id,values] of Object.entries(aiChoices)){
+ const list=document.getElementById(id);
+ if(list)for(const value of values){const option=document.createElement('option');option.value=value;list.appendChild(option);}
+}
+$('aiClearFilters').addEventListener('click',()=>{
+ for(const id of ['aiFilterCategory','aiFilterBrand','aiFilterFormat','aiFilterProvider'])$(id).value='';
+});
 // ChatGPT nunca ve una API Key: todas las llamadas pasan por rutas autenticadas del backend.
 let aiBusy=false;
 async function aiStatusCheck(){
@@ -440,10 +452,10 @@ async function aiStatusCheck(){
   const res=await fetch('/transcash_inventory/ai/status?check='+Date.now(),{credentials:'same-origin',cache:'no-store'});
   const data=await res.json();
   if(!res.ok)throw Error(data.error||'Error HTTP '+res.status);
-  status.textContent=data.message||'Estado no informado por Odoo.';
+  status.textContent=data.enabled?'Asistente disponible':'Consulte con el administrador';
   status.dataset.state=data.state||'unknown';
  }catch(e){
-  status.textContent='No se pudo verificar la configuración: '+e.message+'. Puede pulsar Consultar para obtener el error del servidor.';
+  status.textContent='No se pudo comprobar la disponibilidad';
   status.dataset.state='error';
  }
  // Never gate the button on this GET request. It must stay clickable unless a request is in flight.
@@ -452,7 +464,9 @@ async function aiStatusCheck(){
 function aiMetricVal(metric,value){
  if(value===null||value===undefined)return '—';
  if(['ventas','utilidad','compras','stock_valor','costo_ventas','precio_promedio'].includes(metric))return usd(value,2);
- if(metric==='margen')return fmt(value,2)+' %';return fmt(value,3);
+ if(metric==='margen')return fmt(value,2)+' %';
+ if(typeof value==='string')return value;
+ return fmt(value,3);
 }
 let aiController=null,aiCancelled=false;
 function aiProgress(message){$('aiProgress').hidden=false;$('aiProgress').textContent=message;}
@@ -485,70 +499,91 @@ async function aiFetch(url,form,limitMs){
   throw e;
  }finally{clearTimeout(timer);if(aiController===controller)aiController=null;}
 }
+let aiResultId=null;
 function aiShowCalculated(data){
+ if(data.available===false){
+  $('aiError').textContent=data.message||'No se puede calcular con la información disponible.';
+  $('aiError').hidden=false;
+  return;
+ }
  const r=data.result;
- if(!r||!Array.isArray(r.filas))throw Error('Odoo devolvió un indicador sin tabla válida.');
- $('aiAnswer').textContent=data.answer||'Cálculo terminado. Los resultados son verificables en Odoo.';
- $('aiMethod').textContent=(r.etiqueta||r.metrica||'Indicador')+' · '+(r.periodo?.desde||'')+' a '+(r.periodo?.hasta||'')+' · '+(r.grupos_evaluados||0)+' grupos · '+(r.sku_evaluados||0)+' SKU. '+(r.observaciones||[]).join(' ')+(data.warning?' '+data.warning:'');
- const hdr=['Grupo',r.etiqueta||'Resultado','Ventas','Utilidad','Compras','Margen','Stock USD'];
- $('aiResults').innerHTML='<div class="boxsub"><b>Total general:</b> '+aiMetricVal(r.metrica,r.total)+'</div>'+simpleTable(hdr,r.filas.map(row=>[row.grupo,aiMetricVal(r.metrica,row.valor),usd(row.ventas,2),usd(row.utilidad,2),usd(row.compras,2),row.margen===null?'—':fmt(row.margen,2)+' %',usd(row.stock_valor,2)]));
+ if(!r||!Array.isArray(r.filas))throw Error('No se recibió un resultado válido.');
+ const measures=Array.isArray(r.metricas)&&r.metricas.length?r.metricas:[r.metrica];
+ if(Array.isArray(r.metricas)&&r.metricas.length){
+  const labels=r.etiquetas||{}, totals=r.totales||{};
+  const hd=[r.tipo_resultado==='listado_stock'?'SKU':'Grupo',...measures.map(m=>labels[m]||m)];
+  const tableRows=r.filas.map(row=>[row.grupo,...measures.map(m=>aiMetricVal(m,row.metricas?.[m]??null))]);
+  const totalsHtml=r.tipo_resultado==='listado_stock'?
+   '<b>Productos encontrados:</b> '+fmt(r.total_filas)+' · <b>Mostrados:</b> '+fmt(r.filas_mostradas):
+   measures.map(m=>'<span style="display:inline-block;margin:4px 17px 4px 0"><b>'+escapeHtml(labels[m]||m)+':</b> '+escapeHtml(aiMetricVal(m,totals[m]))+'</span>').join('');
+  const filtered=Object.entries(r.filtros||{}).filter(([key,val])=>val&&['categoria','marca','formato','proveedor'].includes(key));
+  const filterText=filtered.length?'<div class="boxsub">'+filtered.map(([key,val])=>escapeHtml(key)+': <b>'+escapeHtml(val)+'</b>').join(' · ')+'</div>':'';
+  $('aiResults').innerHTML=filterText+'<div class="boxsub">'+totalsHtml+'</div>'+simpleTable(hd,tableRows);
+ }else{
+  const hdr=['Grupo',r.etiqueta||'Resultado','Ventas','Utilidad','Compras','Margen','Stock USD'];
+  $('aiResults').innerHTML='<div class="boxsub"><b>Total:</b> '+aiMetricVal(r.metrica,r.total)+'</div>'+simpleTable(hdr,r.filas.map(row=>[row.grupo,aiMetricVal(r.metrica,row.valor),usd(row.ventas,2),usd(row.utilidad,2),usd(row.compras,2),row.margen===null?'—':fmt(row.margen,2)+' %',usd(row.stock_valor,2)]));
+ }
+ aiResultId=Number(data.request_id)||null;
+ $('aiExportExcel').disabled=!aiResultId;
  $('aiResponse').hidden=false;
+}
+async function aiExportExcel(){
+ if(!aiResultId)return;
+ const button=$('aiExportExcel'),csrf=document.querySelector('meta[name="transcash-csrf"]')?.content;
+ if(!csrf)return;
+ button.disabled=true;button.textContent='Preparando Excel...';
+ try{
+  const form=new FormData();form.append('csrf_token',csrf);form.append('request_id',String(aiResultId));
+  const response=await fetch('/transcash_inventory/ai/export_xlsx',{method:'POST',body:form,credentials:'same-origin',cache:'no-store'});
+  if(!response.ok){const data=await response.json().catch(()=>({}));throw Error(data.error||'No fue posible exportar el resultado.');}
+  const blob=await response.blob();
+  if(!blob.size)throw Error('La exportación llegó vacía.');
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='Transcash_Consulta_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),6000);
+ }catch(e){$('aiError').textContent=e.message||'No fue posible exportar.';$('aiError').hidden=false;}
+ finally{button.disabled=false;button.textContent='↓ Exportar a Excel';}
 }
 async function aiAsk(){
  if(aiBusy)return;
  const question=$('aiQuestion').value.trim();
  if(question.length<6){$('aiError').hidden=false;$('aiError').textContent='Escribe una pregunta de al menos seis caracteres.';return;}
- aiBusy=true;aiCancelled=false;
+ aiBusy=true;aiCancelled=false;aiResultId=null;
  $('aiAsk').disabled=true;$('aiCancel').hidden=false;
- $('aiError').hidden=true;$('aiResponse').hidden=true;
+ $('aiError').hidden=true;$('aiResponse').hidden=true;$('aiExportExcel').disabled=true;
  const csrf=document.querySelector('meta[name="transcash-csrf"]')?.content;
- if(!csrf){$('aiError').hidden=false;$('aiError').textContent='No se obtuvo el token de seguridad. Recargue el dashboard.';aiBusy=false;$('aiAsk').disabled=false;$('aiCancel').hidden=true;return;}
- const form=new FormData();form.append('csrf_token',csrf);form.append('fast','1');
+ if(!csrf){$('aiError').hidden=false;$('aiError').textContent='Vuelve a cargar la página.';aiBusy=false;$('aiAsk').disabled=false;$('aiCancel').hidden=true;return;}
+ const form=new FormData();form.append('csrf_token',csrf);
  form.append('question',question);form.append('desde',months[st.start]);form.append('hasta',months[st.end]);
  const sid=new URLSearchParams(window.location.search).get('snapshot_id');if(sid&&/^\d+$/.test(sid))form.append('snapshot_id',sid);
- if(st.cat>=0)form.append('categoria',DATA.categories[st.cat]);
- if(st.brand>=0)form.append('marca',DATA.brands[st.brand]);
- let calculated=false;
+ for(const [field,id] of [['categoria','aiFilterCategory'],['marca','aiFilterBrand'],['formato','aiFilterFormat'],['proveedor','aiFilterProvider']]){
+  const selected=$(id).value.trim();if(selected)form.append(field,selected);
+ }
  try{
-  $('aiAsk').textContent='Interpretando...';
-  aiProgress('Paso 1 de 2 · ChatGPT interpreta la pregunta y Odoo calcula los indicadores. Máximo 40 segundos de espera.');
-  const data=await aiFetch('/transcash_inventory/ai/ask',form,40000);
+  $('aiAsk').textContent='Consultando...';aiProgress('Preparando análisis...');
+  const prepare=new FormData();prepare.append('csrf_token',csrf);
+  if(sid&&/^\d+$/.test(sid))prepare.append('snapshot_id',sid);
+  await aiFetch('/transcash_inventory/ai/prepare',prepare,120000);
   if(aiCancelled)throw Error('Consulta cancelada.');
-  aiShowCalculated(data);calculated=true;
-  if(data.narration_signature&&data.narration_expiry){
-   $('aiAsk').textContent='Explicando...';
-   aiProgress('Paso 2 de 2 · Indicadores calculados. ChatGPT está preparando la explicación; la tabla ya está disponible.');
-   const explanation=new FormData();explanation.append('csrf_token',csrf);
-   explanation.append('question',question);
-   explanation.append('result_json',JSON.stringify(data.result));
-   explanation.append('signature',data.narration_signature);
-   explanation.append('expires_at',String(data.narration_expiry));
-   try{
-    const narration=await aiFetch('/transcash_inventory/ai/explain',explanation,40000);
-    if(!aiCancelled)$('aiAnswer').textContent=narration.answer;
-   }catch(e){
-    if(!aiCancelled){
-     $('aiAnswer').textContent='El indicador se calculó correctamente, pero no se pudo obtener la explicación automática. '+e.message;
-    }
-   }
-  }
+  aiProgress('Analizando información...');
+  const data=await aiFetch('/transcash_inventory/ai/ask',form,60000);
+  if(aiCancelled)throw Error('Consulta cancelada.');
+  aiShowCalculated(data);
  }catch(e){
   $('aiError').textContent=e.message||'No fue posible completar la consulta.';
   $('aiError').hidden=false;
-  if(calculated)$('aiResponse').hidden=false;
-  // Diagnostics must not disable the button; refresh the informational status only.
   if(!aiCancelled)aiStatusCheck();
  }finally{
   aiBusy=false;aiController=null;
   $('aiAsk').disabled=false;$('aiCancel').hidden=true;
-  $('aiAsk').textContent='✧ Calcular con ChatGPT';
-  $('aiProgress').hidden=true;
+  $('aiAsk').textContent='✧ Consultar con ChatGPT';$('aiProgress').hidden=true;
  }
 }
 // Make the controls usable from the first render, even when the API is not configured.
 $('aiAsk').disabled=false;
 $('aiAsk').addEventListener('click',aiAsk);
 $('aiRecheck').addEventListener('click',aiStatusCheck);
+$('aiExportExcel').addEventListener('click',aiExportExcel);
 $('aiCancel').addEventListener('click',aiStop);
 $('aiQuestion').addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();aiAsk();}});
 document.querySelectorAll('[data-ai-question]').forEach(btn=>btn.addEventListener('click',()=>{$('aiQuestion').value=btn.dataset.aiQuestion;$('aiQuestion').focus();}));

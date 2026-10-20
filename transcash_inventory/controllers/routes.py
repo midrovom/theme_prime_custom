@@ -13,10 +13,16 @@ from urllib.parse import quote
 from odoo import http, fields
 from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
-from ..services.ai_client import plan_question, narrate_result, AIServiceError
-from ..services.ai_analytics import execute_plan
+from ..services.ai_client import plan_question, planner_context, narrate_result, AIServiceError
+from ..services.ai_sql import execute_sql_plan
+from ..services.ai_stock_lookup import detect_stock_lookup, execute_stock_lookup
+from ..services.ai_catalog_filters import resolve_catalog_filters
+from ..services.ai_schema import schema_context
+from ..services.ai_export import build_result_xlsx
 from ..services.ai_config_store import read_ai_settings, public_ai_settings, save_ai_settings
 from odoo.exceptions import UserError
+import logging
+from datetime import datetime
 
 _HTML = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'dashboard.html'
 _AI_CONFIG_HTML = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'ai_config.html'
@@ -180,144 +186,218 @@ class TranscashDashboardController(http.Controller):
                            'model_configured': model_ok, 'state': state,
                            'message': message})
 
+    @http.route('/transcash_inventory/ai/prepare', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_prepare_relational(self, **kw):
+        """Lazy migration of previously imported snapshots to normalized Odoo tables."""
+        if not self._can_ai():
+            return self._json({'error': 'No tiene permiso para consultar.'}, 403)
+        snap_id = str(kw.get('snapshot_id') or '').strip()
+        domain = [('company_id', '=', request.env.company.id)]
+        if snap_id:
+            if not snap_id.isdigit():
+                return self._json({'error': 'Versión no válida.'}, 400)
+            domain.append(('id', '=', int(snap_id)))
+        snapshot = request.env['transcash.inventory.snapshot'].search(domain, order='create_date desc, id desc', limit=1)
+        if not snapshot:
+            return self._json({'error': 'No hay inventario importado en esta empresa.'}, 404)
+        try:
+            snapshot.ensure_relational_data()
+            return self._json({'ok': True, 'ready': True})
+        except UserError as exc:
+            return self._json({'error': 'No fue posible preparar la información. Intente nuevamente.'}, 409)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: preparación de facts SQL')
+            return self._json({'error': 'No fue posible preparar la información. Intente nuevamente.'}, 500)
+
+    @http.route('/transcash_inventory/ai/schema', type='http', auth='user', methods=['GET'])
+    def ai_schema_public(self, **kw):
+        """Return ONLY whitelisted metadata for this module, never other Odoo tables."""
+        if not self._can_configure_ai():
+            return self._json({'error': 'Se requiere el permiso Consultas ChatGPT.'}, 403)
+        snap_id = str(kw.get('snapshot_id') or '').strip()
+        domain = [('company_id', '=', request.env.company.id)]
+        if snap_id:
+            if not snap_id.isdigit():
+                return self._json({'error': 'Versión no válida.'}, 400)
+            domain.append(('id', '=', int(snap_id)))
+        snapshot = request.env['transcash.inventory.snapshot'].search(domain, order='create_date desc, id desc', limit=1)
+        if not snapshot:
+            return self._json({'error': 'No hay versiones del inventario.'}, 404)
+        if not snapshot.relational_ready:
+            return self._json({'error': 'Prepare primero las tablas de consultas SQL.'}, 409)
+        return self._json({'ok': True, 'schema': schema_context(request.env, snapshot)})
+
     @http.route('/transcash_inventory/ai/ask', type='http', auth='user', methods=['POST'], csrf=True)
     def ai_ask(self, **kw):
+        """Solo datos al usuario; trazabilidad técnica exclusiva de la bitácora."""
         if not self._can_ai():
-            return self._json({'error': 'Acceso denegado. Se requiere el permiso Consultas de ChatGPT.'}, 403)
+            return self._json({'error': 'No tiene permiso para consultar.'}, 403)
         question = str(kw.get('question') or '').strip()
         if not 6 <= len(question) <= 700:
-            return self._json({'error': 'La consulta debe contener entre 6 y 700 caracteres.'}, 400)
+            return self._json({'error': 'Escriba una pregunta de entre 6 y 700 caracteres.'}, 400)
+        # Consultas deterministas de stock no consumen OpenAI ni su límite horario.
+        stock_lookup = detect_stock_lookup(question)
         config = read_ai_settings(request.env)
-        enabled, key, model = config['enabled'], config['key'], config['model']
-        if not key:
-            return self._json({'error': 'No hay API Key guardada en Odoo. Un administrador debe ingresar la clave y pulsar Guardar configuración.'}, 503)
-        if not enabled:
-            return self._json({'error': 'La API Key está guardada, pero la IA sigue desactivada. Active ChatGPT y guarde la configuración.'}, 503)
-        # Cost control. No questions or response bodies are saved here.
+        if not stock_lookup and (not config['enabled'] or not config['key'] or not config['model']):
+            return self._json({'error': 'El asistente no está disponible. Solicite al administrador revisar la configuración.'}, 503)
         from datetime import timedelta
         since = fields.Datetime.now() - timedelta(hours=1)
-        logmodel = request.env['transcash.inventory.ai.request'].sudo()
-        if logmodel.search_count([('user_id', '=', request.env.user.id),
-                                  ('create_date', '>=', fields.Datetime.to_string(since))]) >= 25:
-            return self._json({'error': 'Límite de 25 consultas por hora alcanzado. Intente más tarde.'}, 429)
+        audit_model = request.env['transcash.inventory.ai.request'].sudo()
+        # El máximo es configurable por un administrador en Parámetros del sistema.
+        # No se cuentan intentos fallidos ni consultas calculadas directamente en Odoo.
         try:
-            snapshot_id = str(kw.get('snapshot_id') or '').strip()
-            domain = [('company_id', '=', request.env.company.id)]
-            if snapshot_id:
-                if not snapshot_id.isdigit():
-                    return self._json({'error': 'Versión no válida'}, 400)
-                domain.append(('id', '=', int(snapshot_id)))
+            hourly_limit = int(request.env['ir.config_parameter'].sudo().get_param(
+                'transcash_inventory.ai_hourly_limit', '120'))
+        except (TypeError, ValueError):
+            hourly_limit = 120
+        hourly_limit = max(10, min(500, hourly_limit))
+        domain_limit = [('user_id', '=', request.env.user.id),
+                        ('company_id', '=', request.env.company.id),
+                        ('state', '=', 'done'), ('used_openai', '=', True),
+                        ('create_date', '>=', fields.Datetime.to_string(since))]
+        if not stock_lookup and audit_model.search_count(domain_limit) >= hourly_limit:
+            return self._json({'error': 'Límite de consultas de IA alcanzado. Puede continuar consultando existencias y filtros de stock. Intente más tarde.'}, 429)
+        started = time.monotonic()
+        audit = None
+        try:
+            snap_id = str(kw.get('snapshot_id') or '').strip()
+            snapshot_domain = [('company_id', '=', request.env.company.id)]
+            if snap_id:
+                if not snap_id.isdigit():
+                    return self._json({'error': 'Versión no válida.'}, 400)
+                snapshot_domain.append(('id', '=', int(snap_id)))
             snapshot = request.env['transcash.inventory.snapshot'].search(
-                domain, limit=1, order='create_date desc, id desc')
+                snapshot_domain, order='create_date desc, id desc', limit=1)
             if not snapshot:
-                return self._json({'error': 'No existe un Excel importado en la empresa actual.'}, 404)
-            dataset = json.loads(snapshot.get_dashboard_json())
-            available = dataset.get('months', [])
+                return self._json({'error': 'No hay información disponible para consultar.'}, 404)
+            # The browser never sees a SQL statement or database diagnostics.
+            with request.env.cr.savepoint():
+                snapshot.ensure_relational_data()
+            available = json.loads(snapshot.relational_months or '[]')
+            if not available:
+                return self._json({'error': 'No se encontraron períodos disponibles.'}, 400)
             default_end = str(kw.get('hasta') or available[-1])
             default_start = str(kw.get('desde') or available[max(0, len(available)-12)])
             if default_start not in available or default_end not in available:
-                return self._json({'error': 'Las fechas elegidas no están disponibles.'}, 400)
-            # Serialize user requests to avoid excess API costs in parallel tabs.
-            # Never block indefinitely waiting on another tab's OpenAI request.
+                return self._json({'error': 'Seleccione un período disponible.'}, 400)
             request.env.cr.execute('SELECT pg_try_advisory_xact_lock(%s, %s)',
                                    [82318, request.env.user.id])
             if not request.env.cr.fetchone()[0]:
-                return self._json({'error': 'Ya hay una consulta en proceso para este usuario. '
-                                            'Finalice la anterior antes de enviar otra.'}, 409)
-            if logmodel.search_count([('user_id', '=', request.env.user.id),
-                                      ('create_date', '>=', fields.Datetime.to_string(since))]) >= 25:
-                return self._json({'error': 'Límite de consultas por hora alcanzado.'}, 429)
-            logmodel.create({'user_id': request.env.user.id, 'company_id': request.env.company.id})
+                return self._json({'error': 'Ya tiene otra consulta en proceso. Espere a que termine.'}, 409)
+            if not stock_lookup and audit_model.search_count(domain_limit) >= hourly_limit:
+                return self._json({'error': 'Límite de consultas de IA alcanzado. Puede continuar consultando existencias.'}, 429)
+            audit = audit_model.create({
+                'user_id': request.env.user.id, 'company_id': request.env.company.id,
+                'snapshot_id': snapshot.id, 'question': question, 'state': 'started',
+                'used_openai': not bool(stock_lookup),
+            })
             ui = {'categoria': str(kw.get('categoria') or '')[:120],
                   'marca': str(kw.get('marca') or '')[:120],
                   'formato': str(kw.get('formato') or '')[:120],
                   'proveedor': str(kw.get('proveedor') or '')[:120]}
-            plan = plan_question(key, model, question, available, default_start, default_end, ui)
-            # Active filters are binding when the planner did not request a replacement.
-            for k, value in ui.items():
-                if value and not plan.get(k):
-                    plan[k] = value
-            if plan.get('metric') == 'no_disponible':
-                return self._json({'ok': True,
-                    'answer': 'No es posible calcular ese indicador con los datos disponibles: ' +
-                              str(plan.get('razon') or 'faltan campos requeridos.')[:350],
-                    'result': {'dimension': plan.get('group_by') or 'total',
-                               'metrica': 'no_disponible', 'etiqueta': 'Indicador no disponible',
-                               'periodo': {'desde': default_start, 'hasta': default_end},
-                               'filtros': ui, 'filas': [], 'total': None,
-                               'grupos_evaluados': 0, 'sku_evaluados': 0,
-                               'observaciones': ['El sistema no inventa datos o métricas que requieren información no importada.']},
-                    'warning': ''})
-            data = execute_plan(dataset, plan, default_start, default_end)
-            # v1.10 uses two short HTTP calls. Calculated data becomes visible
-            # immediately, even if the optional narration later times out.
-            if str(kw.get('fast') or '') == '1':
-                expires_at = int(time.time()) + 600
-                signature = self._sign_narration(question, data, expires_at)
-                return self._json({'ok': True, 'result': data,
-                    'answer': 'Indicador calculado en Odoo. Preparando explicación...',
-                    'plan_reason': str(plan.get('razon') or '')[:300],
-                    'narration_signature': signature, 'narration_expiry': expires_at,
-                    'warning': ''})
-            # Compatibility for clients still using the v1.9 frontend.
-            try:
-                explanation = narrate_result(key, model, question, data)
-                warning = ''
-            except AIServiceError:
-                explanation = ('Indicador calculado por Odoo utilizando los movimientos del Excel. '
-                               'Consulte los resultados y las limitaciones en la tabla.')
-                warning = 'No se pudo generar la explicación con OpenAI; los cálculos locales sí están disponibles.'
-            return self._json({'ok': True, 'answer': explanation, 'result': data,
-                               'plan_reason': str(plan.get('razon') or '')[:300],
-                               'warning': warning})
+            if stock_lookup:
+                # Comparaciones físicas: plan fijo, SELECT seguro, sin coste API.
+                data = execute_stock_lookup(request.env, snapshot, question, ui, stock_lookup,
+                                            (default_start, default_end))
+                sql = data.pop('sql_consulta', '')
+                sql_params = data.pop('sql_parametros', [])
+                audit.write({
+                    'state': 'done', 'dimension': 'sku', 'metrics': 'stock_unidades',
+                    'row_count': len(data['filas']),
+                    'duration_ms': int((time.monotonic() - started) * 1000),
+                    'finished_at': fields.Datetime.now(),
+                    'sql_query': sql,
+                    'sql_parameters': json.dumps(sql_params, ensure_ascii=False),
+                    'plan_json': json.dumps(stock_lookup, ensure_ascii=False),
+                    'result_json': json.dumps(data, ensure_ascii=False, allow_nan=False),
+                })
+                return self._json({'ok': True, 'available': True,
+                                   'result': data, 'request_id': audit.id})
+            with request.env.cr.savepoint():
+                plan = plan_question(config['key'], config['model'], question,
+                    available, default_start, default_end, ui,
+                    schema_context(request.env, snapshot))
+                plan = resolve_catalog_filters(request.env, snapshot, plan, question, ui)
+                if plan.get('metric') == 'no_disponible':
+                    audit.write({
+                        'state': 'unavailable', 'plan_json': json.dumps(plan, ensure_ascii=False),
+                        'error_detail': str(plan.get('razon') or '')[:2000],
+                        'duration_ms': int((time.monotonic()-started)*1000),
+                        'finished_at': fields.Datetime.now(),
+                    })
+                    return self._json({'ok': True, 'available': False,
+                        'message': 'No es posible calcular ese indicador con la información disponible.'})
+                data = execute_sql_plan(request.env, snapshot, plan,
+                                        default_start, default_end)
+            # Technical details persist exclusively in the administrator log.
+            sql = str(data.pop('sql_consulta', '') or '')
+            sql_params = data.pop('sql_parametros', [])
+            data.pop('fuente', None)
+            data.pop('observaciones', None)
+            record_data = {
+                'state': 'done', 'dimension': str(data.get('dimension') or '')[:100],
+                'metrics': ', '.join(data.get('metricas') or [])[:255],
+                'row_count': len(data.get('filas') or []),
+                'duration_ms': int((time.monotonic()-started)*1000),
+                'finished_at': fields.Datetime.now(),
+                'sql_query': sql,
+                'sql_parameters': json.dumps(sql_params, ensure_ascii=False, default=str),
+                'plan_json': json.dumps(plan, ensure_ascii=False, default=str),
+                'result_json': json.dumps(data, ensure_ascii=False, allow_nan=False),
+            }
+            audit.write(record_data)
+            return self._json({'ok': True, 'available': True,
+                               'result': data, 'request_id': audit.id})
         except (AIServiceError, ValueError, KeyError, TypeError) as exc:
-            return self._json({'error': str(exc)[:350]}, 400)
+            if audit:
+                audit.write({'state': 'failed', 'error_detail': str(exc)[:2000],
+                    'duration_ms': int((time.monotonic()-started)*1000),
+                    'finished_at': fields.Datetime.now()})
+            return self._json({'error': 'No se pudo completar el análisis. Revise su pregunta y los filtros.'}, 400)
+        except Exception as exc:
+            logging.getLogger(__name__).exception('Transcash: error de análisis IA')
+            if audit:
+                audit.write({'state': 'failed', 'error_detail': str(exc)[:2000],
+                    'duration_ms': int((time.monotonic()-started)*1000),
+                    'finished_at': fields.Datetime.now()})
+            return self._json({'error': 'No fue posible completar el análisis. Intente nuevamente.'}, 500)
+
+    @http.route('/transcash_inventory/ai/export_xlsx', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_export_xlsx(self, **kw):
+        """Exportar únicamente la propia consulta validada y guardada en Odoo."""
+        if not self._can_ai():
+            return self._json({'error': 'No tiene permiso para exportar consultas.'}, 403)
+        raw_id = str(kw.get('request_id') or '').strip()
+        if not raw_id.isdigit():
+            return self._json({'error': 'El resultado seleccionado no está disponible.'}, 400)
+        # Elevated read is bounded by an explicit owner/company/state check.
+        log = request.env['transcash.inventory.ai.request'].sudo().search([
+            ('id', '=', int(raw_id)), ('user_id', '=', request.env.user.id),
+            ('company_id', '=', request.env.company.id), ('state', '=', 'done')
+        ], limit=1)
+        if not log or not log.result_json:
+            return self._json({'error': 'El resultado ya no está disponible. Realice la consulta de nuevo.'}, 404)
+        try:
+            result = json.loads(log.result_json)
+            content = build_result_xlsx(result, log.question or '', created=fields.Datetime.now())
+            log.write({'export_count': log.export_count + 1,
+                       'last_export_at': fields.Datetime.now()})
         except Exception:
-            import logging
-            logging.getLogger(__name__).exception('Transcash: error de consulta de IA')
-            return self._json({'error': 'Error interno realizando la consulta. Revise el log Odoo.'}, 500)
+            logging.getLogger(__name__).exception('Transcash: fallo exportando resultados Excel')
+            return self._json({'error': 'No se pudo generar el archivo Excel.'}, 500)
+        filename = 'Transcash_Consulta_%s.xlsx' % fields.Datetime.now().strftime('%Y%m%d_%H%M%S')
+        return request.make_response(content, headers=[
+            ('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+            ('Content-Disposition', 'attachment; filename="%s"' % filename),
+            ('Cache-Control', 'private, no-store'),
+            ('X-Content-Type-Options', 'nosniff'),
+        ])
 
     @http.route('/transcash_inventory/ai/explain', type='http', auth='user', methods=['POST'], csrf=True)
     def ai_explain(self, **kw):
-        if not self._can_ai():
-            return self._json({'error': 'Sin permiso para utilizar ChatGPT.'}, 403)
-        config = read_ai_settings(request.env)
-        key, model = config['key'], config['model']
-        if not key:
-            return self._json({'error': 'No existe API Key guardada en el servidor Odoo.'}, 503)
-        if not config['enabled']:
-            return self._json({'error': 'ChatGPT sigue desactivado en la configuración de Odoo.'}, 503)
-        question = str(kw.get('question') or '').strip()
-        body = str(kw.get('result_json') or '')
-        signature = str(kw.get('signature') or '')
-        try:
-            expires_at = int(kw.get('expires_at') or 0)
-        except (TypeError, ValueError):
-            return self._json({'error': 'Solicitud de explicación no válida.'}, 400)
-        if not 6 <= len(question) <= 700 or len(body) > 40000 or not body:
-            return self._json({'error': 'Solicitud de explicación no válida.'}, 400)
-        if not int(time.time()) <= expires_at <= int(time.time()) + 600:
-            return self._json({'error': 'La consulta expiró. Vuelva a calcular el indicador.'}, 400)
-        try:
-            data = json.loads(body)
-            if not isinstance(data, dict) or not isinstance(data.get('filas'), list):
-                raise ValueError()
-            correct = self._sign_narration(question, data, expires_at)
-            if not hmac.compare_digest(correct, signature):
-                return self._json({'error': 'La información de la consulta no coincide. '
-                                           'Vuelva a calcular el indicador.'}, 403)
-            # Narration is bounded separately and never blocks access to results.
-            text = narrate_result(key, model, question, data)
-            return self._json({'ok': True, 'answer': text})
-        except (ValueError, TypeError):
-            return self._json({'error': 'Los resultados recibidos no son válidos.'}, 400)
-        except AIServiceError as exc:
-            return self._json({'error': str(exc)[:350]}, 502)
-        except Exception:
-            import logging
-            logging.getLogger(__name__).exception('Transcash: explicación OpenAI fallida')
-            return self._json({'error': 'No fue posible generar la explicación. '
-                                       'Los cálculos locales siguen disponibles.'}, 500)
+        # Retained as a compatibility endpoint but explanations are disabled.
+        return self._json({'error': 'Esta función ya no está disponible.'}, 410)
 
     @http.route('/transcash_inventory/upload', type='http', auth='user', methods=['POST'], csrf=True)
     def upload(self, **kw):

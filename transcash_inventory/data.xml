@@ -8,4 +8,13 @@
     <field name="interval_type">days</field>
     <field name="active" eval="True"/>
   </record>
+  <record id="ir_cron_transcash_ai_audit_cleanup" model="ir.cron">
+    <field name="name">TRANSCASH: depurar bitácora IA (30 días)</field>
+    <field name="model_id" ref="model_transcash_inventory_ai_request"/>
+    <field name="state">code</field>
+    <field name="code">model.cleanup_old_requests()</field>
+    <field name="interval_number">1</field>
+    <field name="interval_type">days</field>
+    <field name="active" eval="True"/>
+  </record>
 </odoo>

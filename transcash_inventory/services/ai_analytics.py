@@ -18,7 +18,8 @@ METRICS = {
 }
 DIMENSIONS = {
     'total', 'sku', 'categoria', 'marca', 'formato', 'proveedor_ficha',
-    'proveedor_compra', 'mes', 'marca_formato', 'proveedor_formato'
+    'proveedor_compra', 'mes', 'marca_formato', 'categoria_formato',
+    'categoria_marca', 'categoria_marca_formato', 'proveedor_formato'
 }
 BASE_FIELDS = {'ventas', 'utilidad', 'compras', 'cantidad_vendida',
                'cantidad_comprada', 'stock_unidades', 'stock_valor', 'costo_ventas'}
@@ -105,9 +106,14 @@ def execute_plan(dataset, plan, default_start=None, default_end=None):
         raise ValueError('La dimensión solicitada no está autorizada.')
     if metric not in METRICS and metric != 'formula':
         raise ValueError('La métrica solicitada no está autorizada.')
-    if dimension == 'proveedor_compra' and metric not in ('compras',):
+    metrics = plan.get('metrics') or [metric]
+    if not isinstance(metrics, list) or not (1 <= len(metrics) <= 8) or len(metrics) != len(set(metrics)):
+        raise ValueError('Se requieren entre 1 y 8 métricas distintas.')
+    if metric not in metrics or any(m not in METRICS and m != 'formula' for m in metrics):
+        raise ValueError('El conjunto de métricas contiene una columna no permitida.')
+    if dimension == 'proveedor_compra' and any(m != 'compras' for m in metrics):
         raise ValueError('Para un proveedor de compra solo existen importes de compras; la utilidad pertenece a la cartera del proveedor de ficha, no puede atribuirse al último comprador.')
-    if dimension == 'mes' and metric in ('stock_unidades', 'stock_valor'):
+    if dimension == 'mes' and any(m in ('stock_unidades', 'stock_valor') for m in metrics):
         raise ValueError('No existe stock histórico mensual para graficar existencias por mes.')
     if dimension == 'proveedor_compra' and any(plan.get(k) for k in ('proveedor', 'formato', 'marca', 'categoria')):
         # product attributes are supported, supplier is matched on actual buy supplier.
@@ -175,18 +181,25 @@ def execute_plan(dataset, plan, default_start=None, default_end=None):
                 groups[key]['cantidad_comprada'] += _number(qty)
                 groups[key]['compras'] += _number(amt)
     expression = str(plan.get('formula') or '').strip()
-    if metric == 'formula' and not expression:
+    if 'formula' in metrics and not expression:
         raise ValueError('Falta la expresión del indicador personalizado.')
+    def grouped_measures(values):
+        vals = _metrics(values)
+        if 'formula' in metrics:
+            vals['formula'] = _formula(expression, {key: vals[key] for key in BASE_FIELDS})
+        return vals
+
     result = []
     for label, values in groups.items():
-        vals = _metrics(values)
-        if metric == 'formula':
-            value = _formula(expression, {key: vals[key] for key in BASE_FIELDS})
-        else:
-            value = vals[metric]
+        vals = grouped_measures(values)
+        value = vals[metric]
         if value is not None:
-            result.append({'grupo': label, 'valor': round(value, 4), 'ventas': round(vals['ventas'], 2),
-                           'utilidad': round(vals['utilidad'], 2), 'compras': round(vals['compras'], 2),
+            selected_values = {m: round(vals[m], 4) if vals[m] is not None else None for m in metrics}
+            result.append({'grupo': label, 'valor': round(value, 4),
+                           'metricas': selected_values,
+                           'ventas': round(vals['ventas'], 2),
+                           'utilidad': round(vals['utilidad'], 2),
+                           'compras': round(vals['compras'], 2),
                            'margen': round(vals['margen'], 2) if vals['margen'] is not None else None,
                            'stock_valor': round(vals['stock_valor'], 2)})
     result.sort(key=lambda row: row['valor'], reverse=descending)
@@ -194,8 +207,9 @@ def execute_plan(dataset, plan, default_start=None, default_end=None):
     for value in groups.values():
         for key, val in value.items():
             totals[key] += val
-    total_metrics = _metrics(totals)
-    result_total = _formula(expression, {key: total_metrics[key] for key in BASE_FIELDS}) if metric == 'formula' else total_metrics[metric]
+    total_metrics = grouped_measures(totals)
+    result_total = total_metrics[metric]
+    selected_totals = {m: round(total_metrics[m], 4) if total_metrics[m] is not None else None for m in metrics}
     notes = ['Stock corresponde al corte actual, no al período de ventas. Se valoriza con costo de catálogo.',
              'Cantidades no deben sumarse entre productos con diferentes unidades de medida.']
     if dimension == 'proveedor_compra':
@@ -204,9 +218,12 @@ def execute_plan(dataset, plan, default_start=None, default_end=None):
         notes.append('Ventas, utilidad y compras se agrupan por proveedor declarado en ficha del producto, no por trazabilidad de abastecimiento.')
     if filters['proveedor'] and dimension == 'proveedor_compra':
         notes.append('El filtro de proveedor se aplica al proveedor real de la compra.')
-    if metric == 'formula':
+    if 'formula' in metrics:
         notes.append('Indicador personalizado calculado con fórmula aritmética validada: ' + expression)
-    return {'dimension': dimension, 'metrica': metric, 'etiqueta': METRICS.get(metric, 'Indicador personalizado: ' + expression),
+    metric_labels = {m: METRICS.get(m, 'Indicador personalizado: ' + expression) for m in metrics}
+    return {'dimension': dimension, 'metrica': metric, 'metricas': metrics,
+            'etiquetas': metric_labels, 'totales': selected_totals,
+            'etiqueta': METRICS.get(metric, 'Indicador personalizado: ' + expression),
             'periodo': {'desde': start, 'hasta': end}, 'filtros': filters, 'filas': result[:top_n],
             'total': round(result_total, 4) if result_total is not None else None,
             'grupos_evaluados': len(result), 'sku_evaluados': len(selected), 'observaciones': notes}
@@ -220,5 +237,8 @@ def _dimension_key(dataset, index, dimension):
     if dimension == 'formato': return product_format(p)
     if dimension == 'proveedor_ficha': return dataset['providers'][p[4]]
     if dimension == 'marca_formato': return dataset['brands'][p[3]] + ' / ' + product_format(p)
+    if dimension == 'categoria_formato': return dataset['categories'][p[2]] + ' / ' + product_format(p)
+    if dimension == 'categoria_marca': return dataset['categories'][p[2]] + ' / ' + dataset['brands'][p[3]]
+    if dimension == 'categoria_marca_formato': return dataset['categories'][p[2]] + ' / ' + dataset['brands'][p[3]] + ' / ' + product_format(p)
     if dimension == 'proveedor_formato': return dataset['providers'][p[4]] + ' / ' + product_format(p)
     return 'TOTAL'
