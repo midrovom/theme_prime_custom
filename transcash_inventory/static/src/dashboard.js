@@ -436,8 +436,10 @@ async function aiStatusCheck(){
  if(!allowAI)return;
  try{const res=await fetch('/transcash_inventory/ai/status',{credentials:'same-origin'});
  const data=await res.json();$('aiStatus').textContent=data.message||'No disponible';
- $('aiAsk').disabled=!data.enabled;
- }catch(e){$('aiStatus').textContent='No se pudo comprobar configuración';$('aiAsk').disabled=true;}
+ // Never disable the Ask button merely because status/configuration failed:
+ // the request route will report the actual actionable configuration error.
+ if(!aiBusy)$('aiAsk').disabled=false;
+ }catch(e){$('aiStatus').textContent='Estado de ChatGPT desconocido. Pulse Consultar para ver el error.';if(!aiBusy)$('aiAsk').disabled=false;}
 }
 function aiMetricVal(metric,value){
  if(value===null||value===undefined)return '—';

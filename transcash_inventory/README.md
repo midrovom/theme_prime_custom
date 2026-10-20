@@ -311,3 +311,29 @@ Permiten escritura, selección con Enter o clic, navegación con flechas, limpia
 - El resultado de la primera etapa se muestra aunque falle la redacción de la explicación. La respuesta de la segunda etapa se valida con firma HMAC de 10 minutos vinculada a usuario/empresa y resultados del cálculo; no se transmite API Key al cliente.
 - **Diagnóstico:** si persiste el error, primero usar `Configuración de ChatGPT → Probar conexión`; verificar HTTP 401, 403, 409, 429, 502 o 503, y los logs del servicio Odoo sin publicar el token secreto. Para que aplique la corrección es necesario actualizar el módulo y forzar recarga de navegador (`Ctrl+F5`).
 - No requiere migración ni reimportación de datos: los datos y permisos continúan almacenados en el mismo módulo. La conexión real requiere prueba dentro de Odoo con una API Key válida.
+
+
+## v1.11 — Guardado de configuración IA y botón desbloqueado
+
+- **Configuración de ChatGPT** ahora usa un asistente temporal EXCLUSIVO de Transcash
+  (`transcash.inventory.ai.configuration`), sin ejecutar el guardado masivo de
+  `res.config.settings`. Escribe explícitamente `transcash_inventory.ai_enabled`,
+  `transcash_inventory.ai_model` y `transcash_inventory.ai_api_key` en `ir.config_parameter`.
+- Tras guardar, comprueba lectura inmediata de los tres parámetros. Si no coincide,
+  muestra un error sin indicar que guardó. Volver a abrir el formulario crea un
+  asistente nuevo que lee la configuración persistida en la base de datos.
+- El campo de API Key está **vacío al abrir por seguridad**, incluso cuando ya hay
+  una guardada. El estado de clave guardada aparece en un aviso. Dejar el campo
+  en blanco CONSERVA la clave existente; para reemplazarla, ingrese una nueva.
+- **Guardar y probar conexión** persiste los cambios ANTES de llamar OpenAI. Un
+  problema de conexión se notifica sin invalidar la configuración guardada.
+- El botón **Calcular con ChatGPT** ya no queda deshabilitado si el endpoint
+  de estado falla o devuelve `enabled = false`. Al pulsarlo, el servidor muestra
+  el problema de configuración o permisos real.
+- El ACL limita el nuevo asistente a administradores `base.group_system`. Los
+  datos, fotografías, importaciones y otros análisis se conservan.
+- Prueba recomendada: Active la IA, guarde, salga del menú, entre nuevamente:
+  `Activar` debe seguir marcado, el modelo persistente visible y el aviso de
+  `API Key guardada` presente. Luego ejecute Guardar y probar conexión y
+  realice una consulta del dashboard. Si el aviso dice que no hay clave, revise
+  permisos de administrador y el log de Odoo. Nunca comparta la clave en logs.

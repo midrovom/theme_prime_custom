@@ -12,3 +12,4 @@ access_transcash_photo_system,transcash.inventory.photo.system,model_transcash_i
 access_transcash_photo_sync_manager,transcash.inventory.photo.sync.manager,model_transcash_inventory_photo_sync,transcash_inventory.group_transcash_manager,1,1,1,0
 access_transcash_photo_sync_system,transcash.inventory.photo.sync.system,model_transcash_inventory_photo_sync,base.group_system,1,1,1,0
 access_transcash_ai_request_system,transcash.inventory.ai.request.system,model_transcash_inventory_ai_request,base.group_system,1,0,0,0
+access_transcash_ai_configuration_system,transcash.inventory.ai.configuration.system,model_transcash_inventory_ai_configuration,base.group_system,1,1,1,1

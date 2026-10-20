@@ -1,32 +1,40 @@
 <odoo>
     <record id="view_transcash_ai_settings" model="ir.ui.view">
-        <field name="name">transcash.ai.settings.form</field>
-        <field name="model">res.config.settings</field>
+        <field name="name">transcash.ai.configuration.form</field>
+        <field name="model">transcash.inventory.ai.configuration</field>
         <field name="arch" type="xml">
-            <form string="Transcash · Configuración de ChatGPT">
+            <form string="Transcash · Configuración de ChatGPT" delete="0">
                 <sheet>
-                    <group string="Consultas inteligentes de inventario">
-                        <field name="transcash_ai_enabled"/>
-                        <field name="transcash_ai_model" placeholder="gpt-5-mini"/>
-                        <field name="transcash_ai_api_key" password="True" placeholder="sk-..."/>
+                    <group string="Configuración de consultas de inventario">
+                        <field name="ai_enabled"/>
+                        <field name="ai_model" placeholder="gpt-5-mini"/>
+                        <field name="has_api_key" invisible="1"/>
+                        <field name="api_key_new" password="True" placeholder="sk-... (dejar vacío para conservar la clave actual)" autocomplete="off"/>
+                        <field name="remove_api_key"/>
                     </group>
-                    <div class="alert alert-info" role="alert">
-                        La API Key se almacena como parámetro privado del servidor Odoo. Solo el administrador puede consultarla.
-                        El navegador nunca recibe la clave. Únicamente se envían la pregunta y los resultados
-                        agregados necesarios para generar la respuesta, no el catálogo completo.
-                        La facturación de la API de OpenAI es independiente de ChatGPT.
+                    <div class="alert alert-success" invisible="not has_api_key" role="status">
+                        Ya existe una API Key guardada en el servidor. El campo Nueva API Key se muestra vacío por seguridad.
+                        No es necesario volver a escribirla para activar la IA.
+                    </div>
+                    <div class="alert alert-warning" invisible="has_api_key" role="status">
+                        Aún no hay una API Key registrada. Introduzca una clave y pulse Guardar configuración.
+                    </div>
+                    <div class="alert alert-info" role="note">
+                        Guarde primero la configuración y vuelva a abrir este menú para confirmar que
+                        Activar consultas y el modelo se conservan. La clave nunca se muestra ni se envía al dashboard.
+                        Probar conexión guarda los cambios antes de enviar una prueba a OpenAI.
                     </div>
                 </sheet>
                 <footer>
                     <button name="action_save_transcash_ai" string="Guardar configuración" type="object" class="btn-primary"/>
-                    <button name="action_test_transcash_ai" string="Probar conexión" type="object" class="btn-secondary"/>
+                    <button name="action_test_transcash_ai" string="Guardar y probar conexión" type="object" class="btn-secondary"/>
                 </footer>
             </form>
         </field>
     </record>
     <record id="action_transcash_ai_settings" model="ir.actions.act_window">
-        <field name="name">Configurar ChatGPT</field>
-        <field name="res_model">res.config.settings</field>
+        <field name="name">Configuración de ChatGPT</field>
+        <field name="res_model">transcash.inventory.ai.configuration</field>
         <field name="view_mode">form</field>
         <field name="view_id" ref="view_transcash_ai_settings"/>
         <field name="target">current</field>
