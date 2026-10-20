@@ -150,8 +150,10 @@
                                     <field name="erp_subcenter_codes" string="Subcentros detectados"
                                            readonly="True" optional="hide"/>
                                     <field name="month" column_invisible="True"/>
-                                    <field name="consumption_date" string="Fecha de consumo"
-                                           readonly="parent.state != 'draft'"/>
+                                    <field name="consumption_date" string="Fecha (DD/MM/AAAA)"
+                                           readonly="parent.state != 'draft'"
+                                           help="La API usa meses en inglés/español: oct 8 2026 corresponde al 08/10/2026, NO al 08/09/2026."/>
+                                    <field name="consultation_date_label" string="Fecha interpretada" readonly="True" optional="show"/>
                                     <field name="planned_amount" readonly="parent.state != 'draft'" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="variance_amount" readonly="True" sum="Disponible"/>
@@ -200,6 +202,7 @@
                 <field name="account_id"/><field name="category_id"/><field name="cost_center_id"/>
                 <field name="erp_subcenter_codes" string="Subcentro" optional="show"/>
                 <field name="year"/><field name="consumption_date" string="Fecha de consumo"/>
+                <field name="consultation_date_label" string="Fecha interpretada" optional="hide"/>
                 <field name="month" optional="hide"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Proyectado"/>
