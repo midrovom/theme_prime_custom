@@ -9,10 +9,35 @@ from odoo import api, fields, models
 class ResPartnerTranscashDriver(models.Model):
     _inherit = 'res.partner'
 
+    # No almacenar este indicador en res_partner: la actualización de módulos
+    # puede leer res.partner antes de crear columnas de nuevos addons.
+    # El valor procede de tc.guide.driver_partner_id, que ya conserva el vínculo.
     tc_chofer_logistica = fields.Boolean(
         string='Chofer registrado por logística',
-        copy=False, index=True,
-        help='Contacto de chofer importado desde guías ERP; no concede acceso Portal.')
+        compute='_compute_tc_chofer_logistica',
+        search='_search_tc_chofer_logistica',
+        help='Contacto relacionado con guías importadas; NO habilita Portal.')
+
+    def _tc_driver_partner_ids(self):
+        guides = self.env['tc.guide'].sudo().search([
+            ('driver_partner_id', '!=', False),
+            ('company_id', 'in', self.env.companies.ids),
+        ])
+        return set(guides.mapped('driver_partner_id').ids)
+
+    def _compute_tc_chofer_logistica(self):
+        driver_ids = self._tc_driver_partner_ids() if self else set()
+        for partner in self:
+            partner.tc_chofer_logistica = partner.id in driver_ids
+
+    @api.model
+    def _search_tc_chofer_logistica(self, operator, value):
+        if operator not in ('=', '!=') or not isinstance(value, bool):
+            raise ValueError('Filtro de choferes: solo se permiten = o != con True/False.')
+        driver_ids = list(self._tc_driver_partner_ids())
+        is_in = (operator == '=' and value) or (operator == '!=' and not value)
+        return [('id', 'in' if is_in else 'not in', driver_ids)]
+
     tc_chofer_portal_activo = fields.Boolean(
         string='Portal chofer habilitado', compute='_compute_tc_chofer_portal_activo')
 

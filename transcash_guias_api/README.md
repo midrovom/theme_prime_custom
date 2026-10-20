@@ -157,3 +157,25 @@ con copia de la base Odoo 18.
 - Después de otorgar acceso Portal y habilitar la cuenta de chofer en el menú existente, ejecutar **Conciliar terceros y portales** para vincular las guías existentes al usuario.
 - Las rutas siguen requiriendo `chofer_usuario_id`. El contacto importado no obtiene credenciales ni puede ver viajes hasta que la cuenta y el grupo Portal existan.
 - Las guías en curso conservan al chofer asignado; solo se completa un contacto vacío si coincide la identificación.
+
+
+## v1.8 — Corrección de actualización: res.partner.tc_chofer_logistica
+
+El traceback `UndefinedColumn: res_partner.tc_chofer_logistica` aparece durante
+`ir.module.module.button_immediate_upgrade` porque Odoo inicia instalación de
+dependencias y lee `res.partner` antes de que el módulo haya creado su campo
+almacenado. Se reemplaza por un Boolean calculado y buscable, basado en los
+`tc.guide.driver_partner_id` ya sincronizados; **no crea columnas en res_partner**.
+
+Se eliminan las escrituras a ese indicador desde la homologación. La creación
+por cédula/RUC en `res.partner.vat`, la asignación de `chofer_contacto_id` a
+`transcash.guia` y el acceso Portal manual continúan igual.
+
+**Aplicación:** reemplazar directorio del addon, reiniciar Odoo (para quitar
+el modelo anterior del registro) y actualizar `transcash_guias_api`. En el
+menú «Choferes ERP (acceso pendiente)» se muestran los contactos vinculados
+a guías de empresas disponibles para el usuario. Si ya existen guías, ejecutar
+«Conciliar terceros y portales» para completar vinculaciones.
+
+No ejecutar migración SQL manual ni eliminar tablas/datos de integración.
+**No se ha probado contra la base de datos productiva del cliente.**

@@ -110,8 +110,6 @@ class TCGuidePartnerLink(models.Model):
                 vals['ref'] = code
             if street:
                 vals['street'] = street
-            if kind == 'driver':
-                vals['tc_chofer_logistica'] = True
             partner = self.env['res.partner'].sudo().create(vals)
         else:
             if tax and partner.vat and _identifier(partner.vat) != _identifier(tax):
@@ -124,8 +122,6 @@ class TCGuidePartnerLink(models.Model):
                 vals['ref'] = code
             if street and not partner.street:
                 vals['street'] = street
-            if kind == 'driver' and not partner.tc_chofer_logistica:
-                vals['tc_chofer_logistica'] = True
             if vals:
                 partner.sudo().write(vals)
         return partner, message
