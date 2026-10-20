@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 from datetime import date
+from time import monotonic
 from uuid import uuid4
+import logging
 
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 
 
+_logger = logging.getLogger(__name__)
+
 MONTHS = [(str(index), name) for index, name in enumerate((
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ), start=1)]
+MONTH_NAMES = dict(MONTHS)
 
 
 class ExpenseBudgetCategory(models.Model):
@@ -213,6 +218,7 @@ class ExpenseBudget(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        started = monotonic()
         if any(vals.get('state', 'draft') != 'draft' for vals in vals_list):
             raise UserError(_('Los presupuestos nuevos deben registrarse en borrador.'))
         # No se inicia el siguiente rubro mientras exista un presupuesto de
@@ -232,10 +238,10 @@ class ExpenseBudget(models.Model):
             company_id = vals.get('company_id') or self.env.company.id
             year = vals.get('year') or fields.Date.context_today(self).year
             period = (company_id, year)
-            if period in new_periods or self.search_count([
+            if period in new_periods or self.search([
                 ('company_id', '=', company_id), ('year', '=', year),
                 ('state', 'in', ('draft', 'to_approve')),
-            ]):
+            ], limit=1):
                 raise UserError(_(
                     'Ya existe un presupuesto en borrador o pendiente de aprobación '
                     'para esta empresa y año. Apruébelo antes de registrar otro rubro.'
@@ -243,16 +249,28 @@ class ExpenseBudget(models.Model):
             new_periods.add(period)
         # Las líneas anidadas no deben llamar a la API una vez por cada fila;
         # consultar una sola vez tras guardar el presupuesto completo.
+        checked_at = monotonic()
         budgets = super(ExpenseBudget, self.with_context(
             skip_expense_budget_consumption_on_save=True,
         )).create(vals_list)
-        if not self.env.context.get('skip_expense_budget_consumption_on_save'):
-            lines = budgets.mapped('line_ids')
-            if lines:
-                self.env['expense.budget.inventory.sync']._sync_saved_lines(lines)
+        saved_at = monotonic()
+        lines = budgets.mapped('line_ids') if not self.env.context.get(
+            'skip_expense_budget_consumption_on_save') else self.env['expense.budget.line']
+        # NO hacer llamadas al ERP para presupuestos vacíos. El servicio
+        # getconsumosgastos/2 se consulta solo cuando se registran líneas.
+        if lines:
+            self.env['expense.budget.inventory.sync']._sync_saved_lines(lines)
+        _logger.info(
+            '[PRESUPUESTOS GUARDADO] create ids=%s proyecciones=%s '
+            'validacion=%.3fs orm=%.3fs consumos=%.3fs total=%.3fs',
+            budgets.ids, len(lines), checked_at - started,
+            saved_at - checked_at, monotonic() - saved_at,
+            monotonic() - started,
+        )
         return budgets
 
     def write(self, vals):
+        started = monotonic()
         if 'category_id' in vals:
             if any(rec.state != 'draft' or rec.line_ids for rec in self):
                 raise UserError(_('No puede cambiar el rubro de un presupuesto con líneas o enviado.'))
@@ -304,12 +322,21 @@ class ExpenseBudget(models.Model):
         result = super(ExpenseBudget, self.with_context(
             skip_expense_budget_consumption_on_save=True,
         )).write(vals)
+        saved_at = monotonic()
+        consulted_lines = 0
         if commands and not self.env.context.get('skip_expense_budget_consumption_on_save'):
             for budget in self:
                 changed_line_ids.update(set(budget.line_ids.ids) - previous_lines[budget.id])
             if changed_line_ids:
                 lines = self.env['expense.budget.line'].browse(list(changed_line_ids)).exists()
+                consulted_lines = len(lines)
                 self.env['expense.budget.inventory.sync']._sync_saved_lines(lines)
+        _logger.info(
+            '[PRESUPUESTOS GUARDADO] write ids=%s lineas_consultadas=%s '
+            'orm=%.3fs consumos=%.3fs total=%.3fs',
+            self.ids, consulted_lines, saved_at - started,
+            monotonic() - saved_at, monotonic() - started,
+        )
         return result
 
     def action_submit(self):
@@ -566,6 +593,28 @@ class ExpenseBudgetLine(models.Model):
              'sin fecha conservan el cálculo mensual.',
     )
     month = fields.Selection(MONTHS, string='Mes (agrupación)', required=True, index=True)
+    consultation_date_label = fields.Char(
+        string='Fecha interpretada', compute='_compute_consultation_date_label',
+        help='Confirma el día y el mes exactos utilizados para buscar en la API ERP. '
+             'Por ejemplo: oct 8 2026 = 8 de octubre de 2026.',
+    )
+
+    @api.depends('consumption_date', 'month', 'budget_id.year')
+    def _compute_consultation_date_label(self):
+        for line in self:
+            when = line.consumption_date
+            if when:
+                month_name = MONTH_NAMES.get(str(when.month), '')
+                line.consultation_date_label = '%s de %s de %s' % (
+                    when.day, month_name.lower(), when.year,
+                )
+            elif line.month and line.budget_id:
+                month_name = MONTH_NAMES.get(str(line.month), '')
+                line.consultation_date_label = 'Mes completo: %s de %s' % (
+                    month_name.lower(), line.budget_id.year,
+                )
+            else:
+                line.consultation_date_label = False
 
     @api.onchange('consumption_date')
     def _onchange_consumption_date(self):
