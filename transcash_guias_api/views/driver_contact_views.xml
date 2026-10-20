@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <record id="view_transcash_guia_form_driver_contact" model="ir.ui.view">
+    <field name="name">transcash.guia.form.chofer.contacto.erp</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='chofer_usuario_id']" position="before">
+        <field name="chofer_contacto_id" readonly="1"/>
+        <field name="tc_estado_portal_chofer" readonly="1" widget="badge"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="view_transcash_guia_list_driver_contact" model="ir.ui.view">
+    <field name="name">transcash.guia.list.chofer.contacto.erp</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_list"/>
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='chofer_usuario_id']" position="before">
+        <field name="chofer_contacto_id" optional="show"/>
+        <field name="tc_estado_portal_chofer" widget="badge" optional="show"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="view_transcash_guia_search_driver_contact" model="ir.ui.view">
+    <field name="name">transcash.guia.search.chofer.contacto.erp</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_search"/>
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='chofer_usuario_id']" position="after">
+        <field name="chofer_contacto_id"/>
+        <filter name="tc_chofer_sin_portal" string="Chofer sin Portal"
+                domain="[('chofer_contacto_id','!=',False),('chofer_usuario_id','=',False)]"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="view_tc_partner_driver_list" model="ir.ui.view">
+    <field name="name">res.partner.tc.chofer.erp.list</field>
+    <field name="model">res.partner</field>
+    <field name="arch" type="xml">
+      <list string="Choferes ERP — contactos" create="false" delete="false">
+        <field name="name"/>
+        <field name="vat" string="Cédula/RUC"/>
+        <field name="mobile" optional="show"/>
+        <field name="email" optional="show"/>
+        <field name="tc_chofer_portal_activo" string="Portal habilitado" readonly="1"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_tc_partner_driver_search" model="ir.ui.view">
+    <field name="name">res.partner.tc.chofer.erp.search</field>
+    <field name="model">res.partner</field>
+    <field name="arch" type="xml">
+      <search string="Choferes ERP">
+        <field name="name"/><field name="vat"/><field name="mobile"/>
+        <filter name="pendiente_portal" string="Todos los choferes" domain="[('tc_chofer_logistica','=',True)]"/>
+      </search>
+    </field>
+  </record>
+  <record id="action_tc_partner_drivers" model="ir.actions.act_window">
+    <field name="name">Choferes ERP — activar Portal</field>
+    <field name="res_model">res.partner</field>
+    <field name="view_mode">list,form</field>
+    <field name="view_id" ref="view_tc_partner_driver_list"/>
+    <field name="search_view_id" ref="view_tc_partner_driver_search"/>
+    <field name="domain">[('tc_chofer_logistica','=',True)]</field>
+    <field name="help" type="html"><p>Contactos identificados desde las guías del ERP. El acceso Portal se habilita manualmente desde Contactos; después use Conciliar terceros y portales.</p></field>
+  </record>
+  <menuitem id="menu_tc_partner_drivers" name="Choferes ERP (acceso pendiente)"
+            parent="logistica_transcash.menu_tc_logistics_v530" action="action_tc_partner_drivers"
+            sequence="6" groups="transcash_guias_api.group_tc_sync_admin,logistica_transcash.group_logistica_manager"/>
+</odoo>

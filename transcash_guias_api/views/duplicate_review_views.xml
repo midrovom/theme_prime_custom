@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_tc_partner_duplicate_review_form" model="ir.ui.view">
+    <field name="name">tc.partner.duplicates.review.form</field>
+    <field name="model">tc.partner.duplicates.review</field>
+    <field name="arch" type="xml">
+      <form string="Revisión de contactos duplicados" create="false" delete="false">
+        <sheet>
+          <div class="alert alert-warning" role="alert">
+            Solamente se archivan contactos secundarios SIN relaciones en PostgreSQL. No se eliminan usuarios,
+            movimientos, guías ni proveedores con referencias. Las duplicidades vinculadas requieren revisión manual.
+          </div>
+          <group>
+            <field name="candidate_count" readonly="1"/>
+            <field name="archived_count" readonly="1"/>
+          </group>
+          <field name="report" nolabel="1" readonly="1" widget="text"/>
+        </sheet>
+        <footer>
+          <button name="action_analyze" type="object" string="Analizar duplicados" class="btn-primary"/>
+          <button name="action_archive_orphans" type="object" string="Archivar solo huérfanos" class="btn-secondary" confirm="Solo se archivarán registros duplicados que no tienen ninguna referencia FK. ¿Continuar?"/>
+          <button string="Cerrar" special="cancel"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+  <record id="action_tc_partner_duplicate_review" model="ir.actions.act_window">
+    <field name="name">Consolidación segura de terceros</field>
+    <field name="res_model">tc.partner.duplicates.review</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+  <menuitem id="menu_tc_partner_duplicate_review" name="Revisar terceros duplicados"
+            parent="logistica_transcash.menu_tc_logistics_v530"
+            action="action_tc_partner_duplicate_review" sequence="10"
+            groups="transcash_guias_api.group_tc_sync_admin,logistica_transcash.group_logistica_manager"/>
+</odoo>

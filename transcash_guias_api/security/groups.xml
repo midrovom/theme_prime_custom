@@ -1,0 +1,24 @@
+<odoo>
+  <record id="module_category_tc" model="ir.module.category">
+    <field name="name">Transcash Logística</field>
+    <field name="sequence">45</field>
+  </record>
+  <record id="group_tc_operator" model="res.groups">
+    <field name="name">Operador logística (guías)</field>
+    <field name="category_id" ref="module_category_tc"/>
+  </record>
+  <record id="group_tc_chief" model="res.groups">
+    <field name="name">Jefe logística (guías)</field>
+    <field name="category_id" ref="module_category_tc"/>
+    <field name="implied_ids" eval="[(4, ref('group_tc_operator'))]"/>
+  </record>
+  <record id="group_tc_sync_admin" model="res.groups">
+    <field name="name">Administrador de integración guías</field>
+    <field name="category_id" ref="module_category_tc"/>
+    <field name="implied_ids" eval="[(4, ref('group_tc_chief'))]"/>
+  </record>
+  <!-- Operadores y jefes existentes ven el panel sin reasignar sus usuarios. -->
+  <record id="logistica_transcash.group_transcash_operador_rutas" model="res.groups">
+    <field name="implied_ids" eval="[(4, ref('transcash_guias_api.group_tc_operator'))]"/>
+  </record>
+</odoo>

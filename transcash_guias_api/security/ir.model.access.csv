@@ -1,0 +1,21 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tc_guide_op,tc.guide operator,model_tc_guide,transcash_guias_api.group_tc_operator,1,0,0,0
+access_tc_line_op,tc.guide.line operator,model_tc_guide_line,transcash_guias_api.group_tc_operator,1,0,0,0
+access_tc_transport_op,tc.transport operator,model_tc_transport,transcash_guias_api.group_tc_operator,1,0,0,0
+access_tc_driver_op,tc.driver operator,model_tc_driver,transcash_guias_api.group_tc_operator,1,0,0,0
+access_tc_vehicle_op,tc.vehicle operator,model_tc_vehicle,transcash_guias_api.group_tc_operator,1,0,0,0
+access_tc_address_op,tc.address operator,model_tc_address,transcash_guias_api.group_tc_operator,1,0,0,0
+access_tc_product_op,tc.product operator,model_tc_product,transcash_guias_api.group_tc_operator,1,0,0,0
+access_tc_brand_admin,tc.brand admin,model_tc_product_brand,transcash_guias_api.group_tc_sync_admin,1,1,1,1
+access_tc_supplier_admin,tc.supplier admin,model_tc_product_supplier,transcash_guias_api.group_tc_sync_admin,1,1,1,1
+access_tc_private_admin,tc.private admin,model_tc_guide_line_private,transcash_guias_api.group_tc_sync_admin,1,1,1,1
+access_tc_sync_admin,tc.sync admin,model_tc_guide_sync,transcash_guias_api.group_tc_sync_admin,1,1,1,0
+access_tc_sync_log_admin,tc.sync.log admin,model_tc_guide_sync_log,transcash_guias_api.group_tc_sync_admin,1,0,1,0
+access_tc_duplicate_review_admin,tc.duplicate.review admin,model_tc_partner_duplicates_review,transcash_guias_api.group_tc_sync_admin,1,1,1,0
+access_tc_duplicate_review_manager,tc.duplicate.review manager,model_tc_partner_duplicates_review,logistica_transcash.group_logistica_manager,1,1,1,0
+access_tc_private_system,tc.private system,model_tc_guide_line_private,base.group_system,1,0,0,0
+access_tc_supplier_system,tc.supplier system,model_tc_product_supplier,base.group_system,1,0,0,0
+access_tc_brand_system,tc.brand system,model_tc_product_brand,base.group_system,1,0,0,0
+access_tc_log_system,tc.sync.log system,model_tc_guide_sync_log,base.group_system,1,0,1,0
+access_tc_guide_system,tc.guide system,model_tc_guide,base.group_system,1,0,0,0
+access_tc_line_system,tc.guide.line system,model_tc_guide_line,base.group_system,1,0,0,0

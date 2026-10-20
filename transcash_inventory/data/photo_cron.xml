@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cron_transcash_indexar_fotos" model="ir.cron">
+        <field name="name">TRANSCASH: Indexar fotos públicas por SKU</field>
+        <field name="model_id" ref="model_transcash_inventory_photo_sync"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_index_public_catalog()</field>
+        <field name="interval_number">15</field>
+        <field name="interval_type">minutes</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

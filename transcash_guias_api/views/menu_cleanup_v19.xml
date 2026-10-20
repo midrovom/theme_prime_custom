@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- No borrar XMLID ni datos históricos: dejar solo Kanban moderno. -->
+  <record id="logistica_transcash.menu_transcash_guias" model="ir.ui.menu">
+    <field name="active" eval="False"/>
+  </record>
+  <record id="menu_tc_available_route_guides" model="ir.ui.menu">
+    <field name="name">Guías para armar rutas</field>
+    <field name="active" eval="True"/>
+    <field name="action" eval="'ir.actions.act_window,%d' % ref('action_tc_available_route_guides')"/>
+  </record>
+</odoo>
