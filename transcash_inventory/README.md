@@ -209,3 +209,18 @@ producto y exista en el snapshot importado. No inventa ni confunde el código.
 - Se instala la tarea programada `TRANSCASH: Indexar fotos públicas por SKU` que examina hasta dos páginas del catálogo cada 15 minutos (una empresa por ejecución, con pausa si falla la web). Los registros con SKU exacto quedan vinculados.
 - La primera sincronización completa del catálogo no es instantánea: las fotos dependen de que Transcash.ec sea accesible y publique una ficha cuyo prefijo coincida exactamente con el SKU. Los SKU sin ficha mantienen marcador.
 - Si el servidor restringe salida HTTPS, puede usar **Buscar imágenes** manualmente o conectar la API posteriormente.
+
+
+## v1.5 — Fotografías verificadas y búsqueda puntual
+
+- El SKU visible en el Explorador entra a la cola si carece de foto; el panel no espera llamadas a Transcash.ec.
+- **Buscar imágenes → Buscar este SKU ahora** consulta la búsqueda pública y exige coincidencia exacta del SKU en la URL.
+- **Comprobar y vincular URL** permite pegar la URL exacta del producto y lee `og:image` u otras imágenes de la propia ficha.
+- Se valida que la respuesta sea una imagen real y se genera una miniatura JPEG local de 240 px, servida por una ruta autenticada desde Odoo para evitar fallos del navegador al acceder a otra web.
+- Fotos anteriores se marcan *Sin verificar* y son comprobadas progresivamente por el cron.
+- Estados: verificada, pendiente, no encontrada, imagen rota y error remoto, con un próximo reintento.
+- El cron existente procesa lotes pequeños cada 15 minutos. No se descargan las 16.000 fotos de golpe.
+- El ZIP actualiza el mismo módulo `transcash_inventory`; **no desinstalar** o se perderían los snapshots.
+- Dependencia de imagen: Pillow, incluida habitualmente con Odoo 18.
+- Las búsquedas y verificaciones dependen de que el servidor Odoo pueda acceder por HTTPS a `www.transcash.ec`.
+- No se modifica `product.template` ni el Excel importado.

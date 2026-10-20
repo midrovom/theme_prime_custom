@@ -31,6 +31,7 @@ const $=id=>document.getElementById(id),C={green:'#10a794',blue:'#3979ef',amber:
 const photoCache=new Map();
 const photoQueriedAt=new Map();
 const photoPending=new Set();
+const photoQueueSent=new Set();
 const PHOTO_REFRESH_MS=2*60*1000;
 // SKU photos are looked up as soon as the explorer is rendered. No manual click needed.
 
@@ -46,6 +47,16 @@ async function fetchPhotoRefs(skus){
   const data=await response.json();
   for(const sku of need)photoCache.set(sku,(data.images||{})[sku]||null);
   document.querySelectorAll('[data-photo-sku]').forEach(node=>renderPhoto(node));
+  // Missing photos are queued only for authorised inventory managers.
+  // Rendering never waits for remote shop requests.
+  const csrf=document.querySelector('meta[name="transcash-csrf"]')?.content;
+  if(document.querySelector('meta[name="transcash-can-upload"]')?.content==='1' && csrf){
+   const missing=need.filter(s=>!photoQueueSent.has(s) && data.images?.[s]?.status!=='verified' && data.images?.[s]?.status!=='queued').slice(0,40);
+   if(missing.length){missing.forEach(s=>photoQueueSent.add(s));
+    const body=new FormData();body.append('csrf_token',csrf);body.append('skus',JSON.stringify(missing));
+    fetch('/transcash_inventory/photos/queue',{method:'POST',credentials:'same-origin',body}).catch(e=>console.info('Cola de fotos:',e.message));
+   }
+  }
  }catch(e){console.warn('No se pudieron consultar las imágenes:',e.message);
   for(const sku of need)photoQueriedAt.delete(sku);
  }finally{for(const sku of need)photoPending.delete(sku);
@@ -55,7 +66,7 @@ function renderPhoto(node){
  const sku=node.getAttribute('data-photo-sku'),photo=photoCache.get(sku);
  const isLarge=node.classList.contains('tc-photo-large');
  // Do not replace loaded <img> on every filter change; this avoids a visual flash.
- if(photo?.image_url&&/^https:\/\/(?:www\.)?transcash\.ec\/web\/(?:image|content)\//i.test(photo.image_url)){
+ if(photo?.image_url&&(/^(?:https:\/\/(?:www\.)?transcash\.ec\/web\/(?:image|content)\/|\/transcash_inventory\/photos\/thumb\?sku=)/i.test(photo.image_url))){
   const existing=node.querySelector('img');
   if(existing&&existing.getAttribute('src')===photo.image_url)return;
   node.innerHTML='<img src="'+escapeHtml(photo.image_url)+'" alt="Fotografía de '+escapeHtml(sku)+'" loading="eager" decoding="async" referrerpolicy="no-referrer"/>'+(isLarge?'<a href="'+escapeHtml(photo.website_url||'https://www.transcash.ec/shop')+'" target="_blank" rel="noopener noreferrer">Ver producto en Transcash.ec ↗</a>':'');
@@ -64,7 +75,8 @@ function renderPhoto(node){
  }else if(photoPending.has(sku)){
   node.innerHTML='<span class="tc-photo-loading" title="Cargando foto vinculada...">◌</span>';
  }else if(!photo?.image_url){
-  node.innerHTML=isLarge?'<span>Sin fotografía vinculada a este SKU</span>':'<span title="Sin foto vinculada. Menú: Buscar imágenes">◫</span>';
+  const reason=photo?.status==='not_found'?'SKU no encontrado en tienda':photo?.status==='error'?'Error de conexión; se reintentará':photo?.status==='broken'?'La imagen necesita revisión':photo?.status==='queued'?'Búsqueda en cola':'Sin fotografía vinculada';
+  node.innerHTML=isLarge?'<span>'+escapeHtml(reason)+'</span>':'<span title="'+escapeHtml(reason)+'">◫</span>';
  }
 }
 // La fuente no trae U.M. explícita. Solo inferimos cuando el nombre lo declara,

@@ -5,6 +5,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 import json
 from pathlib import Path
+from urllib.parse import quote
 from odoo import http, fields
 from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
@@ -219,6 +220,25 @@ class TranscashDashboardController(http.Controller):
         except (TypeError, ValueError, json.JSONDecodeError):
             return self._json({'error': 'Lista de SKU mal formada'}, 400)
 
+    @http.route('/transcash_inventory/photos/thumb', type='http', auth='user', methods=['GET'])
+    def photo_thumbnail(self, **kw):
+        """Same-origin miniature avoids browser cross-site image/hotlink failures."""
+        if not self._can_view():
+            return request.make_response('Sin permisos', status=403)
+        sku = str(kw.get('sku') or '').strip()[:120]
+        photo = request.env['transcash.inventory.photo'].search([
+            ('company_id', '=', request.env.company.id), ('sku', '=', sku),
+            ('enabled', '=', True), ('status', '=', 'verified')], limit=1)
+        if not photo or not photo.image_thumbnail:
+            return request.make_response('Sin imagen verificada', status=404)
+        try:
+            binary = base64.b64decode(photo.image_thumbnail)
+            return request.make_response(binary, headers=[
+                ('Content-Type', 'image/jpeg'), ('Cache-Control', 'private, max-age=900'),
+                ('X-Content-Type-Options', 'nosniff')])
+        except (ValueError, TypeError):
+            return request.make_response('Miniatura no disponible', status=404)
+
     @http.route('/transcash_inventory/photos/lookup', type='http', auth='user', methods=['GET'])
     def photo_lookup(self, **kw):
         if not self._can_view():
@@ -275,30 +295,53 @@ class TranscashDashboardController(http.Controller):
         return self._json(dict(sync.public_stats(), total_products=snap.product_count if snap else 0,
                                pages_limit=90))
 
+    @http.route('/transcash_inventory/photos/queue', type='http', auth='user', methods=['POST'], csrf=True)
+    def photo_queue_visible(self, **kw):
+        """Enqueue visible, exact snapshot SKUs without blocking dashboard rendering."""
+        if not self._can_upload():
+            return self._json({'error': 'Sin permisos para buscar fotografías'}, 403)
+        try:
+            codes = json.loads(kw.get('skus', '[]'))
+            if not isinstance(codes, list) or len(codes) > 40 or any(not isinstance(x, str) for x in codes):
+                return self._json({'error': 'Lista de códigos no válida; máximo 40'}, 400)
+            sync = request.env['transcash.inventory.photo.sync'].get_current()
+            queued = sync.enqueue_skus(codes)
+            return self._json({'ok': True, 'queued': queued})
+        except (ValueError, TypeError, json.JSONDecodeError) as exc:
+            return self._json({'error': 'Lista no válida: %s' % str(exc)[:100]}, 400)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: error al encolar fotos visibles')
+            return self._json({'error': 'No se pudieron registrar las búsquedas'}, 500)
+
+    @http.route('/transcash_inventory/photos/resolve', type='http', auth='user', methods=['POST'], csrf=True)
+    def photo_resolve_one(self, **kw):
+        """Search and validate one SKU immediately, even if catalogue pagination missed it."""
+        if not self._can_upload():
+            return self._json({'error': 'Sin permisos para buscar fotografías'}, 403)
+        sku = str(kw.get('sku') or '').strip()[:120]
+        if not sku:
+            return self._json({'error': 'Ingrese un SKU'}, 400)
+        supplied = str(kw.get('url') or '').strip() or None
+        try:
+            from odoo.exceptions import UserError
+            sync = request.env['transcash.inventory.photo.sync'].get_current()
+            rec = sync.resolve_single_sku(sku, supplied_url=supplied,
+                                          manual=bool(supplied), force=True)
+            return self._json({'ok': rec.status == 'verified', 'sku': rec.sku,
+                               'status': rec.status, 'error': rec.last_error or '',
+                               'image_url': ('/transcash_inventory/photos/thumb?sku=' + quote(rec.sku, safe=''))
+                               if rec.status == 'verified' and rec.image_thumbnail else '',
+                               'source_url': rec.image_url or '',
+                               'website_url': rec.website_url or ''})
+        except UserError as exc:
+            return self._json({'error': str(exc)}, 400)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: búsqueda puntual fallida: %s', sku)
+            return self._json({'error': 'Error inesperado buscando el SKU. Consulte el log de Odoo.'}, 500)
+
     @http.route('/transcash_inventory/photos/link', type='http', auth='user', methods=['POST'], csrf=True)
     def photos_link_exact(self, **kw):
-        if not self._can_upload():
-            return self._json({'error': 'No tiene permisos'}, 403)
-        from ..services.photo_matcher import product_from_url, match_slug_prefix, index_by_sku, product_image_url
-        sku = str(kw.get('sku') or '').strip()[:120]
-        link = product_from_url(kw.get('url') or '')
-        if not sku or not link:
-            return self._json({'error': 'Ingrese SKU y URL válida https://transcash.ec/shop/...'}, 400)
-        if match_slug_prefix(link['slug'], index_by_sku([sku])) != sku:
-            return self._json({'error': 'El código SKU no coincide con el prefijo de la URL. Use Imágenes vinculadas para revisar coincidencias manualmente.'}, 400)
-        sync = request.env['transcash.inventory.photo.sync'].get_current()
-        _, names = sync._get_latest_sku_map()
-        if sku not in names:
-            return self._json({'error': 'Este SKU no existe en el último Excel importado.'}, 400)
-        Photo = request.env['transcash.inventory.photo']
-        domain = [('company_id', '=', request.env.company.id), ('sku', '=', sku)]
-        rec = Photo.search(domain, limit=1)
-        vals = {'sku': sku, 'company_id': request.env.company.id,
-                'description': names[sku], 'website_url': link['url'],
-                'image_url': product_image_url(link['template_id']),
-                'template_id_remote': link['template_id'], 'match_type': 'manual',
-                'checked_on': fields.Datetime.now(), 'enabled': True}
-        if rec: rec.write(vals)
-        else: rec = Photo.create(vals)
-        return self._json({'ok': True, 'sku': sku, 'image_url': rec.image_url,
-                          'website_url': rec.website_url})
+        # Backward compatibility with earlier "Vincular ficha exacta" UI.
+        return self.photo_resolve_one(**kw)

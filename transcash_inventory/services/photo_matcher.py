@@ -95,6 +95,52 @@ def is_safe_photo_url(value):
 def is_safe_shop_url(value):
     try:
         p = urlparse(str(value or ''))
-        return p.scheme == 'https' and p.hostname in ALLOWED_HOSTS and p.path.startswith('/shop/')
+        return p.scheme == 'https' and p.hostname in ALLOWED_HOSTS and bool(PRODUCT_PATH.match(p.path))
     except (TypeError, ValueError):
         return False
+
+
+class ProductImageParser(HTMLParser):
+    """Read product photo URLs from the actual shop page, not guessed IDs.
+
+    og:image / twitter:image is favoured. Other images must identify the
+    current product.template, so unrelated recommendations are never chosen.
+    """
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.meta = []
+        self.details = []
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag.lower() == 'meta' and (a.get('property') or a.get('name') or '').lower() in (
+            'og:image', 'og:image:url', 'twitter:image'):
+            if a.get('content'):
+                self.meta.append(a['content'])
+        elif tag.lower() == 'link' and 'image_src' in (a.get('rel') or '').lower():
+            if a.get('href'):
+                self.meta.append(a['href'])
+        elif tag.lower() == 'img':
+            for key in ('data-zoom-image', 'data-src', 'src'):
+                if a.get(key):
+                    self.details.append(a[key])
+
+
+def extract_product_image_candidates(raw_html, shop_url, template_id):
+    """Return unique HTTPS image candidates, prioritising actual page metadata."""
+    parser = ProductImageParser()
+    parser.feed(raw_html)
+    ordered = []
+    for raw in parser.meta + parser.details:
+        url = urljoin(shop_url, raw)
+        if not is_safe_photo_url(url):
+            continue
+        parsed = urlparse(url)
+        # Only page-level meta images or URLs for the template itself are safe;
+        # normal gallery <img> elements can belong to recommended products.
+        is_meta = raw in parser.meta
+        is_template = '/product.template/%d/' % template_id in parsed.path
+        if is_meta or is_template:
+            if url not in ordered:
+                ordered.append(url)
+    return ordered

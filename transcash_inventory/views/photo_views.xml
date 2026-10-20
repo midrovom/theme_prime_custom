@@ -7,10 +7,13 @@
         <field name="sku"/>
         <field name="description" readonly="1"/>
         <field name="match_type"/>
+        <field name="status" widget="badge" decoration-success="status == 'verified'" decoration-warning="status in ('queued', 'unchecked')" decoration-danger="status in ('broken', 'error')"/>
+        <field name="image_thumbnail" widget="image" optional="show"/>
         <field name="image_url" widget="url"/>
         <field name="website_url" widget="url"/>
         <field name="enabled"/>
         <field name="checked_on" readonly="1"/>
+        <field name="last_error" readonly="1" optional="show"/>
         <field name="company_id" groups="base.group_multi_company"/>
       </list>
     </field>
@@ -27,12 +30,17 @@
               <field name="sku"/>
               <field name="description" readonly="1"/>
               <field name="match_type"/>
+              <field name="status" readonly="1"/>
+              <field name="image_thumbnail" widget="image" readonly="1"/>
               <field name="enabled"/>
             </group>
             <group>
               <field name="website_url" widget="url"/>
               <field name="image_url" widget="url"/>
               <field name="checked_on" readonly="1"/>
+              <field name="last_error" readonly="1"/>
+              <field name="next_retry" readonly="1"/>
+        <field name="last_error" readonly="1" optional="show"/>
               <field name="template_id_remote" readonly="1"/>
             </group>
           </group>
