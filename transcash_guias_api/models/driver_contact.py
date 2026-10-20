@@ -71,10 +71,14 @@ class TranscashGuiaDriverContact(models.Model):
         ('sin_contacto', 'Sin contacto')
     ], string='Portal del chofer', compute='_compute_tc_estado_portal_chofer')
 
-    @api.depends('chofer_contacto_id', 'chofer_usuario_id')
+    @api.depends('chofer_contacto_id', 'chofer_usuario_id', 'chofer_usuario_id.groups_id')
     def _compute_tc_estado_portal_chofer(self):
         for guia in self:
+            user = guia.chofer_usuario_id
+            enabled = bool(user and user.active and user.share and
+                           user.has_group('base.group_portal') and
+                           user.has_group('logistica_transcash.group_transcash_chofer'))
             guia.tc_estado_portal_chofer = (
-                'habilitado' if guia.chofer_usuario_id else
+                'habilitado' if enabled else
                 'pendiente' if guia.chofer_contacto_id else 'sin_contacto'
             )

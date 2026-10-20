@@ -179,3 +179,42 @@ a guías de empresas disponibles para el usuario. Si ya existen guías, ejecutar
 
 No ejecutar migración SQL manual ni eliminar tablas/datos de integración.
 **No se ha probado contra la base de datos productiva del cliente.**
+
+## v1.9 — Usuarios de chofer, identificación única y menú consolidado
+
+- En una sincronización o conciliación de guías, un chofer identificado con cédula/RUC
+  se enlaza primero a `res.partner`. Si ese contacto no tiene `res.users`, se crea
+  una cuenta **Portal** con `login = identificación` y **contraseña inicial igual a
+  la identificación**, por solicitud expresa del administrador. Esta contraseña es
+  débil y deberá cambiarse inmediatamente. No se restablece la contraseña de
+  ningún usuario existente, ni se cambia la titularidad de logins ocupados.
+- La cuenta y su registro de `transcash.chofer` se generan una sola vez.
+  `chofer_usuario_id` se relaciona a la guía aunque el perfil de aplicación
+  `group_transcash_chofer` esté pendiente. El administrador habilita dicho rol
+  desde **Choferes y acceso móvil**; antes de ello la PWA no lo autoriza.
+- Los terceros se cotejan por RUC/cédula **normalizado**, y los que carecen
+  de identificación tributaria por referencia ERP inequívoca. Si el API sigue
+  omitiendo `transportista.ruc`, no se crea una empresa nueva basándose solo
+  en un nombre: solo se usa una coincidencia única de empresa existente.
+- Se desactiva explícitamente el menú antiguo `logistica_transcash.menu_transcash_guias`
+  y se conserva el único **Guías para armar rutas** con Kanban.
+- Nuevo menú **Revisar terceros duplicados** para auditar duplicados en
+  `res.partner` por VAT o referencia ERP y, bajo confirmación, **archivar solo
+  registros sin ninguna referencia FK**. Las fichas con referencias requieren
+  una fusión administrativa después de revisar historia y propiedad. Esta
+  herramienta no elimina contactos con guías, pagos, usuarios ni registros
+  de transporte; no borra claves ni reapunta liquidaciones automáticamente.
+
+### Secuencia de actualización
+1. Hacer copia de seguridad de la base y de la carpeta del módulo.
+2. Reemplazar `transcash_guias_api`, reiniciar el servicio Odoo 18 y **Actualizar**.
+3. Conciliar terceros y portales para crear usuarios faltantes (sin repetir guías).
+4. En Logística Transcash → Operación logística → Choferes y acceso móvil,
+   habilitar rol Chofer Transcash a los usuarios autorizados.
+5. Cambiar contraseñas iniciales mediante el flujo de seguridad de Odoo.
+6. En Revisar terceros duplicados, ejecutar **Analizar**; opcionalmente
+   **Archivar solo huérfanos** previa revisión y respaldo. Resolver los
+   duplicados relacionados manualmente.
+
+No ejecutar la opción Archivar sin revisión previa. Se requiere homologación
+con datos reales de RUC del transportista y RUC/código de cliente en el JSON.

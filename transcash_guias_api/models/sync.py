@@ -76,10 +76,24 @@ class TCGuideSync(models.Model):
 
         transport_id = False
         if clean(transport.get('ruc')):
-            ruc = clean(transport['ruc']).replace(' ', '')
-            transport_id = self._master('tc.transport', common + [('ruc', '=', ruc)], {
-                'ruc': ruc, 'name': clean(transport.get('nombre')) or ruc, 'company_id': company_id,
-            }).id
+            # Normalizar el RUC ANTES de buscar el maestro; no duplicar por
+            # guiones/espacios o por registros históricos sin normalizar.
+            ruc = re.sub(r'[^A-Za-z0-9]', '', clean(transport['ruc']).upper())
+            Transport = self.env['tc.transport'].sudo()
+            matches = Transport.search(common).filtered(
+                lambda x: re.sub(r'[^A-Za-z0-9]', '', (x.ruc or '').upper()) == ruc)
+            if matches:
+                transport_record = matches.sorted('id')[0]
+                if len(matches) > 1:
+                    _logger.warning('Maestros de transporte duplicados con RUC normalizado; RUC=%s', ruc)
+                if clean(transport.get('nombre')) and transport_record.name != clean(transport.get('nombre')):
+                    transport_record.write({'name': clean(transport.get('nombre'))})
+            else:
+                transport_record = Transport.create({
+                    'ruc': ruc, 'name': clean(transport.get('nombre')) or ruc,
+                    'company_id': company_id,
+                })
+            transport_id = transport_record.id
         driver_id = False
         if clean(driver.get('identificacion')):
             ident = clean(driver['identificacion'])
