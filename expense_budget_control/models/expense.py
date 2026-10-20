@@ -120,6 +120,7 @@ class ExpenseBudgetExpense(models.Model):
                          line.company_id != rec.company_id or
                          line.budget_id.year != rec.date.year or
                          int(line.month) != rec.date.month or
+                         (line.consumption_date and line.consumption_date != rec.date) or
                          (line.subcenter_code and line.subcenter_code != (rec.subcenter_code or ''))):
                 raise ValidationError(_('La línea presupuestaria no corresponde a la cuenta/mes/empresa del gasto.'))
 
@@ -138,14 +139,19 @@ class ExpenseBudgetExpense(models.Model):
         ]
         Line = self.env['expense.budget.line'].sudo()
         subcenter = as_text(subcenter_code).upper()
-        # Si se presupuestó el subcentro específico, tiene prioridad.
-        # Una línea sin subcentro funciona como total de los otros subcentros
-        # de esa cuenta y centro, para respetar presupuestos históricos.
-        if subcenter:
-            exact = Line.search(domain + [('subcenter_code', '=', subcenter)], limit=1)
-            if exact:
-                return exact
-        return Line.search(domain + [('subcenter_code', '=', False)], limit=1)
+        # Primero fecha exacta (25/11/2023); solo si no existe se admite una
+        # proyección histórica sin fecha, que mantiene su comportamiento mensual.
+        # Dentro de cada fecha tiene prioridad el subcentro concreto.
+        for when in (expense_date, False):
+            date_domain = domain + [('consumption_date', '=', when)]
+            if subcenter:
+                exact = Line.search(date_domain + [('subcenter_code', '=', subcenter)], limit=1)
+                if exact:
+                    return exact
+            generic = Line.search(date_domain + [('subcenter_code', '=', False)], limit=1)
+            if generic:
+                return generic
+        return Line.browse()
 
     @api.model_create_multi
     def create(self, vals_list):

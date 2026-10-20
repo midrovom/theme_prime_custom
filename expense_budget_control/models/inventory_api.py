@@ -503,7 +503,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         line_index = {}
         for line in budget_lines:
             key = (line.account_id.id, line.cost_center_id.id or False,
-                   int(line.month), as_text(line.subcenter_code).upper())
+                   int(line.month), as_text(line.subcenter_code).upper(),
+                   line.consumption_date or False)
             line_index.setdefault(key, line.id)
 
         # Leer los campos de gastos existentes en bloques con SQL, sin
@@ -528,8 +529,13 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             account = accounts[code]
             center = centers[center_code] if center_code else Center.browse()
             prefix = (account.id, center.id or False, when.month)
-            line_id = (line_index.get((*prefix, subcenter)) if subcenter else None) or \
-                      line_index.get((*prefix, '')) or False
+            line_id = (
+                (line_index.get((*prefix, subcenter, when)) if subcenter else None)
+                or line_index.get((*prefix, '', when))
+                or (line_index.get((*prefix, subcenter, False)) if subcenter else None)
+                or line_index.get((*prefix, '', False))
+                or False
+            )
             description = 'Consumo ERP %s / %s / %s' % (
                 code, center_code or 'Sin centro', subcenter or 'Sin subcentro')
             values = {
@@ -621,7 +627,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         for line in candidates:
             key = (line.account_id.id, line.cost_center_id.id or False,
                    int(line.budget_id.year), int(line.month),
-                   (line.subcenter_code or '').strip().upper())
+                   (line.subcenter_code or '').strip().upper(),
+                   line.consumption_date or False)
             by_subcenter[key] = line.id
         result = []
         for item in rows:
@@ -637,7 +644,12 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             account_id, center_id = account_centers[key]
             sub = as_text(get_value(item, 'Subcentro', 'codigo_subcentro')).upper()
             index = (account_id, center_id, when.year, when.month)
-            target_id = by_subcenter.get((*index, sub)) or by_subcenter.get((*index, ''))
+            target_id = (
+                by_subcenter.get((*index, sub, when))
+                or by_subcenter.get((*index, '', when))
+                or by_subcenter.get((*index, sub, False))
+                or by_subcenter.get((*index, '', False))
+            )
             if target_id in selected[key]:
                 result.append(item)
         return result
@@ -662,15 +674,19 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             year, month = int(line.budget_id.year), int(line.month)
             start = date(year, month, 1)
             end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
-            domain = [
-                '|', ('budget_line_id', '=', line.id),
-                '&', '&', '&', '&',
-                ('company_id', '=', line.company_id.id),
-                ('account_id', '=', line.account_id.id),
-                ('cost_center_id', '=', line.cost_center_id.id or False),
+            period = [('date', '=', fields.Date.to_string(line.consumption_date))] if line.consumption_date else [
                 ('date', '>=', fields.Date.to_string(start)),
                 ('date', '<', fields.Date.to_string(end)),
             ]
+            # OR(expenses linked to this line, expenses matching the period).
+            # Odoo normalizes this implicit AND with the explicit '&' operands.
+            period_filter = [
+                ('company_id', '=', line.company_id.id),
+                ('account_id', '=', line.account_id.id),
+                ('cost_center_id', '=', line.cost_center_id.id or False),
+            ] + period
+            domain = ['|', ('budget_line_id', '=', line.id),
+                      *(['&'] * (len(period_filter) - 1)), *period_filter]
             for expense in Expense.search(domain):
                 if expense.id in processed:
                     continue
@@ -767,7 +783,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                             len(all_rows), len(selected_rows), counts.get('created', 0),
                             counts.get('updated', 0), counts.get('unchanged', 0),
                             counts.get('linked', 0), counts.get('reconciled', 0),
-                            ', '.join(sorted({'%04d-%02d' % (int(line.budget_id.year), int(line.month))
+                            ', '.join(sorted({line.consumption_date.isoformat() if line.consumption_date else
+                                              '%04d-%02d' % (int(line.budget_id.year), int(line.month))
                                               for line in pending})),
                         )
                     )
