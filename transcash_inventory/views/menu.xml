@@ -10,5 +10,11 @@
   <menuitem id="menu_transcash_root" name="Inventario Inteligente" sequence="75" web_icon="transcash_inventory,static/src/app_icon.svg" groups="transcash_inventory.group_transcash_user,base.group_system"/>
   <menuitem id="menu_transcash_dashboard" name="Dashboard" parent="menu_transcash_root" action="action_transcash_dashboard" sequence="1"/>
   <menuitem id="menu_transcash_import" name="Cargar archivos" parent="menu_transcash_root" action="action_transcash_import_page" sequence="5" groups="transcash_inventory.group_transcash_manager,base.group_system"/>
+  <record id="action_transcash_photo_sync_page" model="ir.actions.client">
+    <field name="name">Buscar imágenes en Transcash.ec</field>
+    <field name="tag">transcash_inventory.photos</field>
+  </record>
+  <menuitem id="menu_transcash_photo_sync" name="Buscar imágenes" parent="menu_transcash_root" action="action_transcash_photo_sync_page" sequence="7" groups="transcash_inventory.group_transcash_manager,base.group_system"/>
+  <menuitem id="menu_transcash_photos" name="Imágenes vinculadas" parent="menu_transcash_root" action="action_transcash_product_photos" sequence="8" groups="transcash_inventory.group_transcash_manager,base.group_system"/>
   <menuitem id="menu_transcash_history" name="Historial de cargas" parent="menu_transcash_root" action="action_snapshots" sequence="10"/>
 </odoo>

@@ -136,3 +136,76 @@ El importador fue probado en Python con el archivo original y coincidieron sus p
 - Procesador probado con el Excel fuente de Transcash, obteniendo 16.150 SKU, ventas USD 23.790.118,40, utilidad USD 6.352.490,39 y stock catalogado USD 7.218.983,45.
 - Interfaz de importación probada en Chromium con un servidor simulado: selección de archivo, botón habilitado, 26 solicitudes de transferencia, señal de procesamiento y confirmación de éxito, sin errores JavaScript.
 - **Pendiente:** instalación y prueba de integración sobre tu servidor real de Odoo 18; no puede certificarse aquí el límite HTTP ni la configuración de tu instancia.
+
+## Novedad versión 1.3: Fotografías vinculadas desde Transcash.ec
+
+Esta versión mantiene la carga XLSX y el dashboard de la v1.2. No sustituye sus
+snapshots ni modifica `product.template` de Odoo 18.
+
+### Funcionamiento
+
+1. Instale/actualice el módulo sobre la carpeta existente `transcash_inventory`.
+2. Importe el Excel con las hojas Productos, Stock, Ventas, Compras.
+3. Abra **Inventario Inteligente > Buscar imágenes** (permisos Responsable).
+4. Pulse **Buscar fotografías** y mantenga abierta la pantalla; el navegador
+   procesará 2 páginas públicas de Transcash.ec por solicitud con pausas.
+   El proceso puede detenerse y retomarse, sin perder coincidencias guardadas.
+5. Revise las coincidencias desde **Inventario Inteligente > Imágenes vinculadas**.
+   Puede registrar una URL `https://transcash.ec/shop/...` y una imagen
+   `https://transcash.ec/web/image/...` para asociar manualmente un código.
+6. En **Dashboard > Explorador de productos**, la miniatura y la ficha individual
+   consultan el mapeo de imágenes por SKU y no alteran los indicadores.
+
+### Criterios de seguridad/precisión
+
+- Solo se vincula automáticamente cuando el código SKU coincide exactamente
+  con el prefijo de la URL de Odoo Website (antes de la descripción).
+- No se transfiere la imagen desde el navegador a Odoo; se guarda su enlace
+  público. El navegador carga la imagen desde `www.transcash.ec`.
+- No se usa coincidencia aproximada por nombre para evitar foto equivocada.
+- Las URL editables están limitadas a HTTPS y dominios transcash.ec.
+- Si la página está bloqueada, la sincronización muestra el error y no inventa
+  coincidencias ni repite indefinidamente la misma página.
+- No todos los SKU de ERP se encuentran publicados en el ecommerce. La tienda
+  puede ofrecer muchas menos fichas que los códigos del Excel.
+- En imágenes ausentes o rotas, el frontend presenta un marcador neutro.
+- No se han comprobado imágenes reales en Odoo de producción: probar primero
+  con el código de ejemplo `EURATENMARF` (ficha pública 1412).
+
+### Direcciones web de la función
+
+- `/transcash_inventory/photos/scan` - herramienta en iframe integrada en Odoo.
+- `/transcash_inventory/photos/status` - estado actual de búsqueda.
+- `/transcash_inventory/photos` - consulta limitada por SKU para el frontend.
+- `/transcash_inventory/photos/lookup?sku=EURATENMARF` - prueba de asociación.
+
+La conectividad HTTP(S) entre el servidor Odoo y `www.transcash.ec` es
+necesaria para la indexación. Si no hay conectividad se puede asociar URLs
+manualmente. El indexador no requiere credenciales del sitio ni instala
+paquetes adicionales.
+
+### Asociación puntual por URL
+
+En la misma pantalla **Buscar imágenes**:
+- Introduzca el código `EURATENMARF`.
+- Pegue `https://transcash.ec/shop/euratenmarf-ceramica-atenas-marfil-24-5-50-1-96-mt-51cjs-p-1412`.
+- Pulse **Vincular ficha exacta**.
+- En el dashboard, la ficha del SKU mostrará el enlace a la foto principal.
+
+La asociación puntual valida que el SKU aparezca como prefijo del slug de
+producto y exista en el snapshot importado. No inventa ni confunde el código.
+
+## v1.4: Explorador con fotos y cantidades físicas
+
+- En **Explorador de productos**, las miniaturas ya vinculadas a cada SKU se solicitan automáticamente al renderizar la página; si una imagen no está vinculada aparece el marcador «Sin foto» y puede sincronizarse en **Buscar imágenes**. No se asignan fotos por similitud de nombre.
+- Añadidas columnas ordenables **Vendido · cant.** y **Comprado · cant.**, calculadas con `Ventas.Cantidad` y `Compras.Cantidad` del período seleccionado, por código. Compras y ventas pueden ser negativas por devoluciones y se presentan netas; no convertir a valor monetario.
+- El campo **Unidad de medida** NO existe en el Excel original. «m²*» y «und.*» son inferencias solo cuando la descripción las menciona explícitamente y requieren validación con el ERP; «s/d» indica que no se conoce la U.M. real. No se realizan conversiones entre cajas, piezas y metros cuadrados.
+- La ficha individual y el CSV filtrado también incluyen cantidades vendidas, compradas y U.M. referencial. La foto requiere que el SKU haya sido vinculado por sincronización o manualmente.
+
+### Fotos: sincronización automática (v1.4)
+
+- Al abrir el Explorador, las imágenes ya vinculadas se muestran sin acciones del usuario.
+- Un usuario con permiso de importación inicia un barrido inicial ligero en segundo plano al abrir el Explorador (máximo 2 páginas por visita).
+- Se instala la tarea programada `TRANSCASH: Indexar fotos públicas por SKU` que examina hasta dos páginas del catálogo cada 15 minutos (una empresa por ejecución, con pausa si falla la web). Los registros con SKU exacto quedan vinculados.
+- La primera sincronización completa del catálogo no es instantánea: las fotos dependen de que Transcash.ec sea accesible y publique una ficha cuyo prefijo coincida exactamente con el SKU. Los SKU sin ficha mantienen marcador.
+- Si el servidor restringe salida HTTPS, puede usar **Buscar imágenes** manualmente o conectar la API posteriormente.

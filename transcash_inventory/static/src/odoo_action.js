@@ -26,3 +26,8 @@ export class TranscashImportAction extends Component {
     }
 }
 registry.category('actions').add('transcash_inventory.import', TranscashImportAction);
+
+export class TranscashPhotosAction extends Component {
+    static template = 'transcash_inventory.PhotosAction';
+}
+registry.category('actions').add('transcash_inventory.photos', TranscashPhotosAction);

@@ -1,0 +1,12 @@
+<odoo>
+    <record id="transcash_photo_multicompany_rule" model="ir.rule">
+        <field name="name">Fotos Transcash: empresas permitidas</field>
+        <field name="model_id" ref="model_transcash_inventory_photo"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="transcash_photo_sync_multicompany_rule" model="ir.rule">
+        <field name="name">Sincronización fotos: empresas permitidas</field>
+        <field name="model_id" ref="model_transcash_inventory_photo_sync"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

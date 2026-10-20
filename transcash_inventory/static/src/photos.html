@@ -1,0 +1,43 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="transcash-csrf" content="@@CSRF@@"/>
+<title>Transcash — Buscar fotos de productos</title>
+<link rel="stylesheet" href="/transcash_inventory/static/src/photos.css?v=1.3"/>
+</head><body>
+<header><a href="/transcash_inventory/dashboard" class="brand">◈ TRANSCASH</a><span>Imágenes de catálogo</span></header>
+<main>
+  <div class="intro">
+    <div class="eyebrow">INVENTARIO INTELIGENTE / FOTOGRAFÍAS</div>
+    <h1>Buscar imágenes en Transcash.ec</h1>
+    <p>Relaciona las fotografías públicas con los SKU del último Excel importado. La búsqueda identifica el código al inicio de la URL del producto y evita asignaciones aproximadas por nombre.</p>
+  </div>
+  <section class="metrics">
+    <article><span>Productos en inventario</span><strong id="totalProducts">—</strong></article>
+    <article><span>Enlaces revisados</span><strong id="examined">—</strong></article>
+    <article><span>Fotografías vinculadas</span><strong id="matched">—</strong></article>
+    <article><span>Siguiente página de tienda</span><strong id="nextPage">—</strong></article>
+  </section>
+  <section class="panel">
+    <h2>Sincronización del catálogo público</h2>
+    <p>Se consultan pocas páginas por solicitud para evitar sobrecargar el sitio. Solo se registran coincidencias exactas de SKU. Si la tienda limita el acceso automático, aparecerá el motivo y podrás utilizar la asociación manual.</p>
+    <div class="controls">
+      <button id="start" class="primary">Buscar fotografías</button>
+      <button id="stop" disabled>Detener</button>
+      <button id="reset">Reiniciar búsqueda</button>
+      <button id="reload">Actualizar estado</button>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="status" id="status" role="status">Listo para iniciar.</div>
+    <div class="caution">La tienda pública muestra solo una parte de los SKU del ERP. Los productos que no estén publicados o no incluyan el código en la URL permanecerán sin fotografía automática.</div>
+  </section>
+  <section class="panel">
+    <h2>Comprobación y asociación directa de un producto</h2>
+    <p>Busca un SKU que ya esté vinculado para comprobar su foto y acceder a su ficha original.</p>
+    <div class="checkline"><input id="sku" placeholder="Ejemplo: EURATENMARF" maxlength="100"/><button id="lookup">Consultar SKU</button></div>
+    <div class="checkline"><input id="productUrl" type="url" style="flex:1;min-width:300px" placeholder="Pegue la URL completa de la ficha en Transcash.ec"/><button id="link">Vincular ficha exacta</button></div>
+    <div id="example" class="example"><div class="placeholder">Sin consulta</div></div>
+    <p class="footnote">Puedes corregir o vincular manualmente las URL desde el menú <b>Inventario Inteligente → Imágenes vinculadas</b>. Las imágenes se obtienen desde el dominio oficial; no se copian a tu base de datos.</p>
+  </section>
+</main>
+<script src="/transcash_inventory/static/src/photos.js?v=1.3" defer></script>
+</body></html>

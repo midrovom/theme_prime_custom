@@ -5,7 +5,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 import json
 from pathlib import Path
-from odoo import http
+from odoo import http, fields
 from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
 
@@ -204,3 +204,101 @@ class TranscashDashboardController(http.Controller):
         if upload:
             upload.cleanup()
         return self._json({'ok': True})
+
+    # --- Catálogo de imágenes Transcash.ec, vinculado por SKU exacto ---
+    @http.route('/transcash_inventory/photos', type='http', auth='user', methods=['GET'])
+    def photos_by_skus(self, **kw):
+        if not self._can_view():
+            return self._json({'error': 'Sin permisos para ver imágenes'}, 403)
+        try:
+            codes = json.loads(kw.get('skus', '[]'))
+            if not isinstance(codes, list) or len(codes) > 80 or any(not isinstance(s, str) for s in codes):
+                return self._json({'error': 'Lista de SKU no válida (máximo 80)'}, 400)
+            data = request.env['transcash.inventory.photo'].images_for_skus(codes)
+            return self._json({'images': data})
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return self._json({'error': 'Lista de SKU mal formada'}, 400)
+
+    @http.route('/transcash_inventory/photos/lookup', type='http', auth='user', methods=['GET'])
+    def photo_lookup(self, **kw):
+        if not self._can_view():
+            return self._json({'error': 'Sin permisos'}, 403)
+        sku = str(kw.get('sku') or '').strip()[:120]
+        if not sku:
+            return self._json({'error': 'Ingrese el SKU'}, 400)
+        return self._json(request.env['transcash.inventory.photo'].images_for_skus([sku]).get(sku, {}))
+
+    @http.route('/transcash_inventory/photos/scan', type='http', auth='user', methods=['GET'])
+    def photos_sync_ui(self, **kw):
+        if not self._can_upload():
+            return request.make_response('No tiene permisos para sincronizar imágenes.', status=403)
+        source = (Path(__file__).resolve().parents[1] / 'static' / 'src' / 'photos.html').read_text(encoding='utf-8')
+        return request.make_response(source.replace('@@CSRF@@', html.escape(request.csrf_token(), quote=True)),
+            headers=[('Content-Type', 'text/html; charset=utf-8'), ('Cache-Control', 'no-store')])
+
+    @http.route('/transcash_inventory/photos/status', type='http', auth='user', methods=['GET'])
+    def photos_status(self, **kw):
+        if not self._can_upload():
+            return self._json({'error': 'No tiene permisos'}, 403)
+        sync = request.env['transcash.inventory.photo.sync'].get_current()
+        snap = self._latest()
+        return self._json(dict(sync.public_stats(), total_products=snap.product_count if snap else 0,
+                               pages_limit=90))
+
+    @http.route('/transcash_inventory/photos/scan', type='http', auth='user', methods=['POST'], csrf=True)
+    def photos_scan(self, **kw):
+        if not self._can_upload():
+            return self._json({'error': 'No tiene permisos para sincronizar imágenes'}, 403)
+        try:
+            amount = min(4, max(1, int(kw.get('limit') or 2)))
+            sync = request.env['transcash.inventory.photo.sync'].get_current()
+            result = sync.scan_pages(amount)
+            snap = self._latest()
+            return self._json(dict(result, total_products=snap.product_count if snap else 0, pages_limit=90))
+        except Exception as exc:
+            from odoo.exceptions import UserError
+            if isinstance(exc, UserError):
+                return self._json({'error': str(exc)}, 400)
+            import logging
+            logging.getLogger(__name__).exception('Transcash: error en sincronización de fotos')
+            return self._json({'error': 'No se pudo procesar el catálogo. Consulte el log de Odoo.'}, 500)
+
+    @http.route('/transcash_inventory/photos/reset', type='http', auth='user', methods=['POST'], csrf=True)
+    def photos_reset(self, **kw):
+        if not self._can_upload():
+            return self._json({'error': 'No tiene permisos'}, 403)
+        if kw.get('confirm') != 'yes':
+            return self._json({'error': 'Falta confirmación'}, 400)
+        sync = request.env['transcash.inventory.photo.sync'].get_current()
+        sync.reset_scan()
+        snap = self._latest()
+        return self._json(dict(sync.public_stats(), total_products=snap.product_count if snap else 0,
+                               pages_limit=90))
+
+    @http.route('/transcash_inventory/photos/link', type='http', auth='user', methods=['POST'], csrf=True)
+    def photos_link_exact(self, **kw):
+        if not self._can_upload():
+            return self._json({'error': 'No tiene permisos'}, 403)
+        from ..services.photo_matcher import product_from_url, match_slug_prefix, index_by_sku, product_image_url
+        sku = str(kw.get('sku') or '').strip()[:120]
+        link = product_from_url(kw.get('url') or '')
+        if not sku or not link:
+            return self._json({'error': 'Ingrese SKU y URL válida https://transcash.ec/shop/...'}, 400)
+        if match_slug_prefix(link['slug'], index_by_sku([sku])) != sku:
+            return self._json({'error': 'El código SKU no coincide con el prefijo de la URL. Use Imágenes vinculadas para revisar coincidencias manualmente.'}, 400)
+        sync = request.env['transcash.inventory.photo.sync'].get_current()
+        _, names = sync._get_latest_sku_map()
+        if sku not in names:
+            return self._json({'error': 'Este SKU no existe en el último Excel importado.'}, 400)
+        Photo = request.env['transcash.inventory.photo']
+        domain = [('company_id', '=', request.env.company.id), ('sku', '=', sku)]
+        rec = Photo.search(domain, limit=1)
+        vals = {'sku': sku, 'company_id': request.env.company.id,
+                'description': names[sku], 'website_url': link['url'],
+                'image_url': product_image_url(link['template_id']),
+                'template_id_remote': link['template_id'], 'match_type': 'manual',
+                'checked_on': fields.Datetime.now(), 'enabled': True}
+        if rec: rec.write(vals)
+        else: rec = Photo.create(vals)
+        return self._json({'ok': True, 'sku': sku, 'image_url': rec.image_url,
+                          'website_url': rec.website_url})

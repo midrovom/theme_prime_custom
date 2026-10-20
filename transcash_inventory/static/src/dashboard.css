@@ -15,3 +15,26 @@
 .tc-status-symbol {font-size:28px;color:#0e9a8b;margin-bottom:14px}
 .tc-status-notice h2 {font-size:22px;color:#233950;margin:0 0 12px}
 .tc-status-notice p {font-size:13px;line-height:1.7;color:#60788d;max-width:530px;margin:0 auto}
+
+/* Fotos web asociadas por SKU. No altera el cálculo de inventario. */
+.tc-product-cell{display:flex;align-items:center;gap:10px;min-width:225px}
+.tc-photo-mini{display:flex;align-items:center;justify-content:center;flex:none;width:42px;height:42px;border:1px solid #e4ebf2;border-radius:8px;background:#f4f7fb;color:#a2b0c0;font-size:21px;overflow:hidden}
+.tc-photo-mini img{height:100%;width:100%;object-fit:contain}
+.tc-photo-large{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:170px;background:#f4f8fc;border:1px solid #e8eff5;color:#8595a8;border-radius:10px;margin:15px 0}
+.tc-photo-large img{width:100%;max-height:250px;object-fit:contain}
+.tc-photo-large a{font-size:12px;color:#167bcb;text-decoration:none;padding:8px}
+
+/* v1.4 · Explorador: fotografías automáticas y cantidades físicas por SKU */
+.tc-photo-mini{width:52px;height:52px;border-radius:9px;background:#eef4f8;transition:background .2s}
+.tc-photo-mini img{display:block;max-width:100%;max-height:100%;object-fit:contain}
+.tc-photo-loading{animation:tc-spin 1.35s linear infinite;font-size:23px;color:#7aa9c0}
+@keyframes tc-spin{to{transform:rotate(360deg)}}
+.tc-product-cell{min-width:245px;gap:10px}
+#section-productos .data-table th{position:sticky;top:0;z-index:1}
+#section-productos .data-table tbody tr{height:68px}
+#section-productos .data-table .num{min-width:104px}
+.tc-unit{font-size:10px;font-weight:620;color:#708699}
+.tc-qty{white-space:nowrap;font-variant-numeric:tabular-nums}
+.tc-product-help{display:flex;gap:12px;justify-content:space-between;font-size:11px;color:#627a91;background:#ecf4fb;border:1px solid #d9e7f1;padding:12px 16px;border-radius:10px;margin-bottom:14px;line-height:1.5}
+.tc-product-help>span{max-width:50%}
+@media(max-width:700px){.tc-product-help{flex-direction:column}.tc-product-help>span{max-width:100%}}
