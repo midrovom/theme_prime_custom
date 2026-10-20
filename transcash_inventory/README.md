@@ -231,3 +231,30 @@ producto y exista en el snapshot importado. No inventa ni confunde el código.
 - Dependencia de imagen: Pillow, incluida habitualmente con Odoo 18.
 - Las búsquedas y verificaciones dependen de que el servidor Odoo pueda acceder por HTTPS a `www.transcash.ec`.
 - No se modifica `product.template` ni el Excel importado.
+
+
+## v1.7 — Filtros de Explorador con búsqueda por texto
+
+El Explorador de productos incorpora tres selectores buscables (proveedor del catálogo, formato y marca).
+Permiten escritura, selección con Enter o clic, navegación con flechas, limpiar filtros y combinarlos con los filtros actuales.
+
+- **Proveedor**: usa el campo Proveedor de la hoja Productos; no se confunde con el proveedor de cada compra.
+- **Marca**: reutiliza el filtro global de marca, por lo que se sincroniza con el selector superior.
+- **Formato**: se conserva exactamente desde la columna Formato del Excel para **nuevas importaciones**.
+  Las importaciones anteriores a v1.7 no almacenaron ese campo; en ellas se extraen medidas de la descripción
+  cuando están presentes y se agrupan los demás como 'SIN FORMATO IDENTIFICABLE'. Para tener el formato
+  comercial exacto de todos los artículos, vuelva a cargar el mismo Excel: el historial previo se conserva.
+- Los filtros de proveedor y formato aplican al **Explorador**. La exportación CSV desde esa vista los respeta.
+- Se conserva el índice histórico del dataset: la unidad de medida sigue reservada en `p[20]` y el formato se agrega en `p[21]`.
+
+
+## v1.8 — ABC × XYZ interactivo
+
+- Nueva sección **Análisis ABC × XYZ** en el menú lateral del dashboard. Se conservan las páginas, importaciones, fotos y filtros previos.
+- Matriz 3×3 con navegación AX, AY, AZ, BX, BY, BZ, CX, CY y CZ. Tabla por SKU con imagen vinculada, descripción, coeficiente de variación (CV), meses de venta, cantidades y cobertura, ordenamiento, paginación, ficha y exportación CSV.
+- Los filtros buscables de proveedor, formato y marca se reutilizan entre Explorador y ABC × XYZ; no hay dos controles que puedan quedar desincronizados. Otros filtros globales también aplican.
+- **ABC**: por ventas netas positivas durante el período seleccionado; orden acumulado 80/15/5 del universo filtrado (marca, proveedor, formato, categoría, búsqueda y bodega seleccionada). **XYZ**: CV poblacional de ventas mensuales en unidades durante los **12 meses completos que finalizan en el mes de fin seleccionado**, incluyendo meses sin ventas como cero. Para cada mes: `max(0, cantidad neta del mes)`. X ≤ 0,50; Y > 0,50 hasta 1,00; Z > 1,00.
+- Si no hay 12 meses previos, media de demanda cero o ventas acumuladas no positivas, queda «Sin clasificar» en la matriz. La clasificación depende del período y filtros y puede cambiar; el cálculo XYZ no es rotación ni pronóstico de demanda.
+- Al filtrar por bodega las ventas siguen siendo corporativas para SKU presentes en esa bodega, pues el archivo no desglosa ventas por bodega. No se mezclan ni suman cantidades entre unidades heterogéneas.
+- Indicadores ABC-XYZ dinámicos se obtienen de los datos mensuales ya guardados, por lo que **no requiere nueva importación**. Fotos enlazadas se reutilizan.
+- Actualización: reemplazar carpeta `transcash_inventory`, reiniciar Odoo, actualizar módulo desde Aplicaciones (sin desinstalar), refrescar navegador. Validar en entorno de prueba.
