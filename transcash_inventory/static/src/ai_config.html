@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="transcash-csrf" content="@@CSRF@@"/>
+<title>TRANSCASH · Configuración de ChatGPT</title>
+<link rel="stylesheet" href="/transcash_inventory/static/src/ai_config.css?v=18.0.1.13.0"/>
+</head><body>
+<main class="page">
+  <header><div><span class="eyebrow">TRANSCASH · INVENTARIO INTELIGENTE</span><h1>Configuración de ChatGPT</h1>
+  <p>Guarde su API Key directamente en Odoo y compruebe que persiste al volver a consultar el servidor.</p></div>
+  <span class="chip" id="currentState">Consultando configuración...</span></header>
+  <div id="banner" role="status" aria-live="polite" hidden></div>
+  <section class="panel">
+  <form id="settingsForm" autocomplete="off">
+    <label class="switchrow"><span><strong>Activar consultas con ChatGPT</strong><small>Habilita el análisis por IA para los usuarios autorizados</small></span>
+      <input type="checkbox" id="aiEnabled" name="aiEnabled"/></label>
+    <div class="grid">
+      <div><label for="aiModel">Modelo de OpenAI</label><input id="aiModel" type="text" maxlength="100" required value="gpt-5-mini" placeholder="gpt-5-mini"/></div>
+      <div><label for="apiKey">Nueva API Key</label><input id="apiKey" type="password" autocomplete="new-password" spellcheck="false" placeholder="sk-..."/>
+        <small id="keyHint">Deje vacío para conservar la clave previamente guardada.</small></div>
+    </div>
+    <label class="remove"><input type="checkbox" id="removeKey"/> Eliminar la API Key existente</label>
+    <div class="actions">
+      <button type="submit" id="saveBtn" class="primary">Guardar configuración</button>
+      <button type="button" id="verifyBtn">Verificar configuración guardada</button>
+      <button type="button" id="testBtn">Probar conexión con OpenAI</button>
+    </div>
+  </form>
+  </section>
+  <section class="panel help"><h2>Diagnóstico del guardado</h2>
+    <p>La clave se escribe en el servidor de Odoo, nunca se muestra al recuperar la configuración. Después de guardar, se hace una segunda lectura independiente para confirmar su persistencia.</p>
+    <dl><dt>Activación</dt><dd id="statusEnabled">—</dd><dt>API Key guardada</dt><dd id="statusKey">—</dd><dt>Modelo</dt><dd id="statusModel">—</dd><dt>Conexión</dt><dd id="statusConnection">No comprobada</dd></dl>
+    <p class="security">Solo los administradores pueden utilizar esta pantalla. Utilice HTTPS para introducir la clave y no la incluya en capturas ni registros compartidos.</p>
+  </section>
+</main><script defer src="/transcash_inventory/static/src/ai_config.js?v=18.0.1.13.0"></script></body></html>

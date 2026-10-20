@@ -88,3 +88,40 @@
 .xyz-badge.unclassified{color:#80909f;background:#ecf0f4}
 @media(max-width:1180px){.xyz-top-grid{grid-template-columns:1fr}}
 @media(max-width:540px){.xyz-matrix{gap:5px}.xyz-cell{padding:10px 7px}.xyz-cell small{font-size:9px}}
+
+/* v1.9 · Proveedores y asistente de IA */
+.tc-provfilters{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr)) auto;gap:12px;align-items:end;padding:16px;background:#fff;border:1px solid #e4e9f0;border-radius:12px;margin:14px 0}
+.tc-provfilters .ctrl{display:flex;flex-direction:column;gap:6px}
+.tc-provfilters label,.ai-q-label{font-size:12px;font-weight:700;color:#506279}
+.tc-provfilters input,#aiQuestion{width:100%;font:inherit;border:1px solid #d6e0ea;border-radius:9px;padding:10px 12px;background:white;color:#233648}
+.tc-provfilters input:focus,#aiQuestion:focus{border-color:#3995ce;outline:2px solid #c9edfd}
+.ai-examples{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 20px}
+.ai-examples button{padding:8px 12px;border-radius:20px;background:#edf6fc;border:1px solid #dcebf4;color:#275579;cursor:pointer;font-size:12px}
+.ai-examples button:hover{background:#d8eefb}
+#aiQuestion{display:block;margin:8px 0;min-height:90px;resize:vertical}
+.ai-controls{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:14px}
+.ai-controls .small{max-width:660px}
+.ai-answer{background:#f4f9fc;border-left:3px solid #2a87d2;color:#304457;padding:18px 20px;border-radius:8px;white-space:pre-wrap;line-height:1.65;margin:16px 0}
+.ai-error{border:1px solid #f5b7bb;background:#fff0f1;color:#872e36;border-radius:7px;padding:12px;margin-top:12px}
+#aiResults{margin-top:16px}
+#aiAsk[disabled]{opacity:.55;cursor:wait}
+@media(max-width:1050px){.tc-provfilters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.tc-provfilters{grid-template-columns:1fr}.ai-controls{flex-direction:column;align-items:stretch}}
+
+[hidden]{display:none!important}
+
+
+/* ChatGPT v1.10: bounded progress, cancellation, and results-first display. */
+.ai-action-buttons{display:flex;align-items:center;gap:9px;flex-wrap:wrap;flex-shrink:0}
+.ai-action-buttons #aiCancel{background:#eef2f6;color:#34455a;border:1px solid #c7d6e2}
+.ai-progress{margin:8px 0 12px;padding:11px 14px;background:#eef8ff;border:1px solid #c8e4fb;border-radius:8px;color:#235c86;font-size:13px}
+.ai-progress[hidden],#aiCancel[hidden]{display:none !important}
+
+/* v1.12 — Visibility of the real configuration state; never an overlay. */
+.ai-status-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ai-status-actions .small{max-width:440px;line-height:1.45}
+#aiStatus[data-state="ready"]{color:#087960;font-weight:700}
+#aiStatus[data-state="disabled"],#aiStatus[data-state="missing_key"],#aiStatus[data-state="missing_model"]{color:#a56a20;font-weight:650}
+#aiStatus[data-state="error"]{color:#ae3546}
+#aiRecheck{padding:6px 10px;font-size:11px}
+#aiAsk:not(:disabled){cursor:pointer;opacity:1;pointer-events:auto}

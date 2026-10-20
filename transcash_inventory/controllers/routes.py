@@ -4,19 +4,31 @@ import base64
 import zipfile
 import xml.etree.ElementTree as ET
 import json
+import hashlib
+import hmac
+import secrets
+import time
 from pathlib import Path
 from urllib.parse import quote
 from odoo import http, fields
 from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
+from ..services.ai_client import plan_question, narrate_result, AIServiceError
+from ..services.ai_analytics import execute_plan
+from ..services.ai_config_store import read_ai_settings, public_ai_settings, save_ai_settings
+from odoo.exceptions import UserError
 
 _HTML = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'dashboard.html'
+_AI_CONFIG_HTML = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'ai_config.html'
 
 
 class TranscashDashboardController(http.Controller):
     def _can_view(self):
         user = request.env.user
         return user.has_group('transcash_inventory.group_transcash_user') or user.has_group('base.group_system')
+
+    def _can_ai(self):
+        return self._can_view() and (request.env.user.has_group('transcash_inventory.group_transcash_ai') or request.env.user.has_group('base.group_system'))
 
     def _can_upload(self):
         user = request.env.user
@@ -33,6 +45,24 @@ class TranscashDashboardController(http.Controller):
                      ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')],
             status=status)
 
+    def _narration_secret(self):
+        """Stable server-side HMAC secret; never exposed to the browser."""
+        params = request.env['ir.config_parameter'].sudo()
+        secret = params.get_param('transcash_inventory.ai_signing_secret')
+        if not secret:
+            # Stored within the DB so tokens survive multiple Odoo workers.
+            secret = secrets.token_hex(32)
+            params.set_param('transcash_inventory.ai_signing_secret', secret)
+        return secret.encode('utf-8')
+
+    def _sign_narration(self, question, result, expiry):
+        canonical = json.dumps({'question': question, 'result': result,
+            'expiry': int(expiry), 'user': request.env.user.id,
+            'company': request.env.company.id}, ensure_ascii=False,
+            sort_keys=True, separators=(',', ':'), allow_nan=False)
+        return hmac.new(self._narration_secret(), canonical.encode('utf-8'),
+                        hashlib.sha256).hexdigest()
+
     @http.route('/transcash_inventory/dashboard', type='http', auth='user', methods=['GET'])
     def dashboard(self, **kw):
         if not self._can_view():
@@ -40,6 +70,7 @@ class TranscashDashboardController(http.Controller):
         source = _HTML.read_text(encoding='utf-8')
         source = source.replace('@@CSRF@@', html.escape(request.csrf_token(), quote=True))
         source = source.replace('@@CAN_UPLOAD@@', 'true' if self._can_upload() else 'false')
+        source = source.replace('@@CAN_AI@@', 'true' if self._can_ai() else 'false')
         return request.make_response(source, headers=[('Content-Type', 'text/html; charset=utf-8'),
             ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
 
@@ -60,6 +91,233 @@ class TranscashDashboardController(http.Controller):
         payload = snapshot.get_dashboard_json()
         return request.make_response(payload, headers=[('Content-Type', 'application/json; charset=utf-8'),
             ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
+
+    def _can_configure_ai(self):
+        return request.env.user.has_group('base.group_system')
+
+    @http.route('/transcash_inventory/ai/configuration', type='http', auth='user', methods=['GET'])
+    def ai_configuration_page(self, **kw):
+        if not self._can_configure_ai():
+            return request.make_response('Solo el administrador puede configurar ChatGPT.', status=403)
+        source = _AI_CONFIG_HTML.read_text(encoding='utf-8')
+        source = source.replace('@@CSRF@@', html.escape(request.csrf_token(), quote=True))
+        return request.make_response(source, headers=[
+            ('Content-Type', 'text/html; charset=utf-8'),
+            ('Cache-Control', 'no-store, no-cache, must-revalidate'),
+            ('X-Content-Type-Options', 'nosniff'),
+            ('Referrer-Policy', 'same-origin')])
+
+    @http.route('/transcash_inventory/ai/configuration/state', type='http', auth='user', methods=['GET'])
+    def ai_configuration_state(self, **kw):
+        if not self._can_configure_ai():
+            return self._json({'error': 'Solo un administrador puede consultar esta configuración.'}, 403)
+        return self._json({'ok': True, 'config': public_ai_settings(read_ai_settings(request.env))})
+
+    @http.route('/transcash_inventory/ai/configuration/save', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_configuration_save(self, **kw):
+        if not self._can_configure_ai():
+            return self._json({'error': 'Solo un administrador puede guardar esta configuración.'}, 403)
+        try:
+            enabled_raw = str(kw.get('ai_enabled') or '0').strip().lower()
+            if enabled_raw not in ('0', '1'):
+                return self._json({'error': 'Activación no válida.'}, 400)
+            clear_key = str(kw.get('remove_key') or '0') == '1'
+            with request.env.cr.savepoint():
+                config = save_ai_settings(request.env, enabled_raw == '1',
+                    str(kw.get('ai_model') or ''),
+                    str(kw.get('api_key_new') or ''), clear_key)
+            # Verificación definitiva en una SEGUNDA petición HTTP después del commit.
+            return self._json({'ok': True, 'saved': True,
+                               'config': public_ai_settings(config)})
+        except UserError as exc:
+            return self._json({'error': str(exc)}, 400)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: error al guardar configuración IA (sin credenciales)')
+            return self._json({'error': 'Error del servidor al guardar. Consulte el log de Odoo, sin compartir la clave.'}, 500)
+
+    @http.route('/transcash_inventory/ai/configuration/test', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_configuration_test(self, **kw):
+        if not self._can_configure_ai():
+            return self._json({'error': 'Solo un administrador puede probar la conexión.'}, 403)
+        config = read_ai_settings(request.env)
+        if not config['enabled'] or not config['key']:
+            return self._json({'error': 'Guarde primero una configuración activa con API Key.'}, 400)
+        try:
+            from ..services.ai_client import call_responses
+            result = call_responses(config['key'], config['model'],
+                'Responde únicamente con OK.', 'Verificar conexión de OpenAI.', max_tokens=350)
+            return self._json({'ok': True, 'message': 'Conexión confirmada con OpenAI: ' + result[:90]})
+        except AIServiceError as exc:
+            return self._json({'error': str(exc)}, 502)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: fallo al probar OpenAI (sin credenciales)')
+            return self._json({'error': 'Fallo al probar la conexión. Revise el log de Odoo.'}, 502)
+
+    @http.route('/transcash_inventory/ai/status', type='http', auth='user', methods=['GET'])
+    def ai_status(self, **kw):
+        if not self._can_ai():
+            return self._json({'error': 'Su usuario necesita el permiso Consultas de ChatGPT.'}, 403)
+        config = read_ai_settings(request.env)
+        enabled = config['enabled']
+        key_ok = bool(config['key'])
+        model_ok = bool(config['model'])
+        if not key_ok:
+            message = 'API Key no guardada en Odoo. Abra Configuración de ChatGPT, ingrese la clave y guarde.'
+            state = 'missing_key'
+        elif not enabled:
+            message = 'API Key guardada, pero ChatGPT está desactivado. Active la casilla y guarde la configuración.'
+            state = 'disabled'
+        elif not model_ok:
+            message = 'Falta configurar el modelo de OpenAI. Revise Configuración de ChatGPT.'
+            state = 'missing_model'
+        else:
+            message = 'ChatGPT activado y API Key guardada. Puede consultar.'
+            state = 'ready'
+        return self._json({'enabled': enabled and key_ok and model_ok,
+                           'activated': enabled, 'configured': key_ok,
+                           'model_configured': model_ok, 'state': state,
+                           'message': message})
+
+    @http.route('/transcash_inventory/ai/ask', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_ask(self, **kw):
+        if not self._can_ai():
+            return self._json({'error': 'Acceso denegado. Se requiere el permiso Consultas de ChatGPT.'}, 403)
+        question = str(kw.get('question') or '').strip()
+        if not 6 <= len(question) <= 700:
+            return self._json({'error': 'La consulta debe contener entre 6 y 700 caracteres.'}, 400)
+        config = read_ai_settings(request.env)
+        enabled, key, model = config['enabled'], config['key'], config['model']
+        if not key:
+            return self._json({'error': 'No hay API Key guardada en Odoo. Un administrador debe ingresar la clave y pulsar Guardar configuración.'}, 503)
+        if not enabled:
+            return self._json({'error': 'La API Key está guardada, pero la IA sigue desactivada. Active ChatGPT y guarde la configuración.'}, 503)
+        # Cost control. No questions or response bodies are saved here.
+        from datetime import timedelta
+        since = fields.Datetime.now() - timedelta(hours=1)
+        logmodel = request.env['transcash.inventory.ai.request'].sudo()
+        if logmodel.search_count([('user_id', '=', request.env.user.id),
+                                  ('create_date', '>=', fields.Datetime.to_string(since))]) >= 25:
+            return self._json({'error': 'Límite de 25 consultas por hora alcanzado. Intente más tarde.'}, 429)
+        try:
+            snapshot_id = str(kw.get('snapshot_id') or '').strip()
+            domain = [('company_id', '=', request.env.company.id)]
+            if snapshot_id:
+                if not snapshot_id.isdigit():
+                    return self._json({'error': 'Versión no válida'}, 400)
+                domain.append(('id', '=', int(snapshot_id)))
+            snapshot = request.env['transcash.inventory.snapshot'].search(
+                domain, limit=1, order='create_date desc, id desc')
+            if not snapshot:
+                return self._json({'error': 'No existe un Excel importado en la empresa actual.'}, 404)
+            dataset = json.loads(snapshot.get_dashboard_json())
+            available = dataset.get('months', [])
+            default_end = str(kw.get('hasta') or available[-1])
+            default_start = str(kw.get('desde') or available[max(0, len(available)-12)])
+            if default_start not in available or default_end not in available:
+                return self._json({'error': 'Las fechas elegidas no están disponibles.'}, 400)
+            # Serialize user requests to avoid excess API costs in parallel tabs.
+            # Never block indefinitely waiting on another tab's OpenAI request.
+            request.env.cr.execute('SELECT pg_try_advisory_xact_lock(%s, %s)',
+                                   [82318, request.env.user.id])
+            if not request.env.cr.fetchone()[0]:
+                return self._json({'error': 'Ya hay una consulta en proceso para este usuario. '
+                                            'Finalice la anterior antes de enviar otra.'}, 409)
+            if logmodel.search_count([('user_id', '=', request.env.user.id),
+                                      ('create_date', '>=', fields.Datetime.to_string(since))]) >= 25:
+                return self._json({'error': 'Límite de consultas por hora alcanzado.'}, 429)
+            logmodel.create({'user_id': request.env.user.id, 'company_id': request.env.company.id})
+            ui = {'categoria': str(kw.get('categoria') or '')[:120],
+                  'marca': str(kw.get('marca') or '')[:120],
+                  'formato': str(kw.get('formato') or '')[:120],
+                  'proveedor': str(kw.get('proveedor') or '')[:120]}
+            plan = plan_question(key, model, question, available, default_start, default_end, ui)
+            # Active filters are binding when the planner did not request a replacement.
+            for k, value in ui.items():
+                if value and not plan.get(k):
+                    plan[k] = value
+            if plan.get('metric') == 'no_disponible':
+                return self._json({'ok': True,
+                    'answer': 'No es posible calcular ese indicador con los datos disponibles: ' +
+                              str(plan.get('razon') or 'faltan campos requeridos.')[:350],
+                    'result': {'dimension': plan.get('group_by') or 'total',
+                               'metrica': 'no_disponible', 'etiqueta': 'Indicador no disponible',
+                               'periodo': {'desde': default_start, 'hasta': default_end},
+                               'filtros': ui, 'filas': [], 'total': None,
+                               'grupos_evaluados': 0, 'sku_evaluados': 0,
+                               'observaciones': ['El sistema no inventa datos o métricas que requieren información no importada.']},
+                    'warning': ''})
+            data = execute_plan(dataset, plan, default_start, default_end)
+            # v1.10 uses two short HTTP calls. Calculated data becomes visible
+            # immediately, even if the optional narration later times out.
+            if str(kw.get('fast') or '') == '1':
+                expires_at = int(time.time()) + 600
+                signature = self._sign_narration(question, data, expires_at)
+                return self._json({'ok': True, 'result': data,
+                    'answer': 'Indicador calculado en Odoo. Preparando explicación...',
+                    'plan_reason': str(plan.get('razon') or '')[:300],
+                    'narration_signature': signature, 'narration_expiry': expires_at,
+                    'warning': ''})
+            # Compatibility for clients still using the v1.9 frontend.
+            try:
+                explanation = narrate_result(key, model, question, data)
+                warning = ''
+            except AIServiceError:
+                explanation = ('Indicador calculado por Odoo utilizando los movimientos del Excel. '
+                               'Consulte los resultados y las limitaciones en la tabla.')
+                warning = 'No se pudo generar la explicación con OpenAI; los cálculos locales sí están disponibles.'
+            return self._json({'ok': True, 'answer': explanation, 'result': data,
+                               'plan_reason': str(plan.get('razon') or '')[:300],
+                               'warning': warning})
+        except (AIServiceError, ValueError, KeyError, TypeError) as exc:
+            return self._json({'error': str(exc)[:350]}, 400)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: error de consulta de IA')
+            return self._json({'error': 'Error interno realizando la consulta. Revise el log Odoo.'}, 500)
+
+    @http.route('/transcash_inventory/ai/explain', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_explain(self, **kw):
+        if not self._can_ai():
+            return self._json({'error': 'Sin permiso para utilizar ChatGPT.'}, 403)
+        config = read_ai_settings(request.env)
+        key, model = config['key'], config['model']
+        if not key:
+            return self._json({'error': 'No existe API Key guardada en el servidor Odoo.'}, 503)
+        if not config['enabled']:
+            return self._json({'error': 'ChatGPT sigue desactivado en la configuración de Odoo.'}, 503)
+        question = str(kw.get('question') or '').strip()
+        body = str(kw.get('result_json') or '')
+        signature = str(kw.get('signature') or '')
+        try:
+            expires_at = int(kw.get('expires_at') or 0)
+        except (TypeError, ValueError):
+            return self._json({'error': 'Solicitud de explicación no válida.'}, 400)
+        if not 6 <= len(question) <= 700 or len(body) > 40000 or not body:
+            return self._json({'error': 'Solicitud de explicación no válida.'}, 400)
+        if not int(time.time()) <= expires_at <= int(time.time()) + 600:
+            return self._json({'error': 'La consulta expiró. Vuelva a calcular el indicador.'}, 400)
+        try:
+            data = json.loads(body)
+            if not isinstance(data, dict) or not isinstance(data.get('filas'), list):
+                raise ValueError()
+            correct = self._sign_narration(question, data, expires_at)
+            if not hmac.compare_digest(correct, signature):
+                return self._json({'error': 'La información de la consulta no coincide. '
+                                           'Vuelva a calcular el indicador.'}, 403)
+            # Narration is bounded separately and never blocks access to results.
+            text = narrate_result(key, model, question, data)
+            return self._json({'ok': True, 'answer': text})
+        except (ValueError, TypeError):
+            return self._json({'error': 'Los resultados recibidos no son válidos.'}, 400)
+        except AIServiceError as exc:
+            return self._json({'error': str(exc)[:350]}, 502)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: explicación OpenAI fallida')
+            return self._json({'error': 'No fue posible generar la explicación. '
+                                       'Los cálculos locales siguen disponibles.'}, 500)
 
     @http.route('/transcash_inventory/upload', type='http', auth='user', methods=['POST'], csrf=True)
     def upload(self, **kw):
