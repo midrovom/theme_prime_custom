@@ -264,3 +264,40 @@ ORDER BY g.id DESC, l.id;
 ```
 
 **Nota:** este paquete pasó análisis estático y pruebas del algoritmo de reconciliación con ORM simulado, pero no ha sido instalado en una base Odoo real. El usuario debe validar los permisos y la actualización de columna nullable en un entorno de pruebas antes de producción.
+
+## Versión 18.0.2.1.0 — Diagnóstico y reparación de marcas/proveedores
+
+**Causa comprobada en el código v2.0:** los atributos comerciales se guardaban
+exclusivamente en `tc.guide.line.private` y no se mostraban en las guías operativas.
+El acceso al menú comercial exigía `group_tc_sync_admin`; los administradores de
+Ajustes (`base.group_system`) podían no ver la pantalla. Adicionalmente, no había
+contadores que permitieran distinguir una respuesta ERP sin datos comerciales de
+un fallo de persistencia en Odoo.
+
+**Corrección:**
+1. Se admiten campos anidados `marca.codigo/nombre`, `proveedor_producto.codigo/nombre`,
+   y planos `marca_codigo`, `marca_nombre`, `proveedor_producto_codigo`,
+   `proveedor_producto_nombre` (mayúsculas/minúsculas indistintas en claves).
+2. Los campos de marca/proveedor se guardan o reparan en los maestros privados
+   y en `tc.guide.line.private`; **no** se escriben en `transcash.guia.linea`.
+3. La guía importada ofrece pestaña privada «Marcas y proveedores (privado)» para
+   `group_tc_sync_admin` y `base.group_system`. Los operadores, choferes, clientes,
+   proveedores de transporte y jefes de logística no ven el dato comercial.
+4. La sincronización muestra las cantidades de líneas que llegan desde el ERP con
+   marca y proveedor. Su log guarda el conteo de registros realmente presentes en
+   staging; si faltan campos, muestra claves observadas en el JSON.
+5. Menú **Logística Transcash → Operación logística → Datos comerciales ERP
+   (restringido)** contiene:
+   - **1. Auditar datos desde API**: hace GET a `getguiaslogistica`, verifica
+     cobertura de campos comerciales y compara contra staging; NO modifica datos.
+   - **2. Reparar datos desde API**: vuelve a hacer GET, repara exclusivamente
+     registros `tc.guide.line.private`, marcas y proveedores de productos;
+     puede crear líneas de staging faltantes para guías ya importadas. NO escribe
+     en `transcash.guia`, hojas de ruta, embarques o liquidaciones. No crea
+     guías completas ausentes en staging (utilizar Sincronizar Guías habitual).
+6. Ambas opciones abren un reporte detallado en `tc.guide.sync.log`, útil para
+   determinar si el problema está en el JSON, en el staging o únicamente en la UI.
+
+**Importante:** no hay conexión desde este entorno a la base Odoo del cliente;
+las correcciones fueron inspeccionadas y probadas en código, no en el servidor.
+Realizar respaldo y actualizar `transcash_guias_api` desde Aplicaciones.

@@ -40,11 +40,13 @@ class TranscashGuiaAdministratorBridge(models.Model):
             'type': 'ir.actions.client', 'tag': 'display_notification',
             'params': {
                 'title': _('Guías sincronizadas desde API Administrator'),
-                'message': _('Guías recibidas: creadas %(c)s, actualizadas %(u)s, vínculos Portal pendientes %(p)s, errores %(e)s. Revise los pendientes en Guías importadas ERP.') % {
-                    'c': result['created'], 'u': result['updated'], 'p': result['pending_links'], 'e': len(result['errors']),
+                'message': _('Guías creadas %(c)s; actualizadas %(u)s. Líneas ERP con marca %(bm)s, con proveedor producto %(sp)s. Vínculos Portal pendientes %(p)s, errores %(e)s.') % {
+                    'c': result['created'], 'u': result['updated'], 'p': result['pending_links'],
+                    'bm': result['incoming_brands'], 'sp': result['incoming_suppliers'],
+                    'e': len(result['errors']),
                 },
-                'type': 'warning' if result['errors'] else 'success',
-                'sticky': bool(result['errors']),
+                'type': 'warning' if (result['errors'] or not result['incoming_brands'] or not result['incoming_suppliers']) else 'success',
+                'sticky': bool(result['errors'] or not result['incoming_brands'] or not result['incoming_suppliers']),
             }
         }
 

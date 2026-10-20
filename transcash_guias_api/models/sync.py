@@ -2,6 +2,7 @@ import logging
 import re
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
+from .commercial_parser import extract_commercial, guide_lines
 
 _logger = logging.getLogger(__name__)
 
@@ -118,25 +119,19 @@ class TCGuideSync(models.Model):
         """
         Private = self.env['tc.guide.line.private'].sudo()
         private = Private.search([('line_id', '=', line.id)], limit=1)
-        item = item if isinstance(item, dict) else {}
-        brand = item.get('marca') if isinstance(item.get('marca'), dict) else {}
-        supplier = item.get('proveedor_producto') if isinstance(item.get('proveedor_producto'), dict) else {}
+        extracted = extract_commercial(item)
 
         def previous(field):
             return clean(private[field]) if private else ''
 
-        brand_code = (clean(brand.get('codigo')) or clean(item.get('marca_codigo'))
-                      or previous('brand_code_raw'))
-        brand_name = (clean(brand.get('nombre')) or clean(item.get('marca_nombre'))
-                      or previous('brand_name_raw'))
-        supplier_code = (clean(supplier.get('codigo')) or clean(item.get('proveedor_producto_codigo'))
-                         or previous('supplier_code_raw'))
-        supplier_name = (clean(supplier.get('nombre')) or clean(item.get('proveedor_producto_nombre'))
-                         or previous('supplier_name_raw'))
-        supplier_tax = (clean(supplier.get('identificacion_fiscal') or supplier.get('ruc'))
-                        or clean(item.get('proveedor_producto_ruc')) or previous('supplier_tax_raw'))
-        supplier_reference = (clean(supplier.get('referencia_erp'))
-                              or previous('supplier_reference_raw'))
+        # Se privilegia el valor no vacío del ERP; si omite una clave se
+        # conserva el último valor conocido de la misma línea.
+        brand_code = extracted['brand_code'] or previous('brand_code_raw')
+        brand_name = extracted['brand_name'] or previous('brand_name_raw')
+        supplier_code = extracted['supplier_code'] or previous('supplier_code_raw')
+        supplier_name = extracted['supplier_name'] or previous('supplier_name_raw')
+        supplier_tax = extracted['supplier_tax'] or previous('supplier_tax_raw')
+        supplier_reference = extracted['supplier_reference'] or previous('supplier_reference_raw')
         # Se preserva el dato crudo para auditoría aunque no haya RUC.
         brand_rec = self._commercial_brand(company_id, brand_code, brand_name)
         supplier_rec = self._commercial_supplier(company_id, supplier_code, supplier_name, supplier_tax)
@@ -167,8 +162,9 @@ class TCGuideSync(models.Model):
     @api.model
     def reconcile_private_data(self, company_id):
         """Reparar vínculos comerciales a partir de datos crudos ya guardados, sin API."""
-        if not self.env.user.has_group('transcash_guias_api.group_tc_sync_admin'):
-            raise UserError(_('Solo administradores de integración pueden consultar datos comerciales.'))
+        if not (self.env.user.has_group('transcash_guias_api.group_tc_sync_admin') or
+                self.env.user.has_group('base.group_system')):
+            raise UserError(_('Solo administradores autorizados pueden consultar datos comerciales.'))
         company = self.env['res.company'].browse(company_id).exists()
         if not company:
             raise UserError(_('Empresa no válida.'))
@@ -205,7 +201,7 @@ class TCGuideSync(models.Model):
         recipient = data.get('destinatario') or {}
         route = data.get('ruta') or {}
         dates = data.get('fechas') or {}
-        lines = data.get('detalle', data.get('lineas', []))
+        lines = guide_lines(data)
         if not isinstance(lines, list):
             raise ValidationError('detalle debe ser una lista.')
         line_ids = [clean(x.get('id_linea')) for x in lines if isinstance(x, dict)]
@@ -332,16 +328,34 @@ class TCGuideSync(models.Model):
         if not isinstance(data, list):
             raise UserError(_('La API no devolvió data como lista.'))
         created = updated = pending_links = 0
+        commercial_lines = commercial_brands = commercial_suppliers = 0
+        incoming_brands = incoming_suppliers = 0
+        unexpected_sample = []
         errors = []
         for row in data:
             try:
                 # Aísla escrituras parcialmente fallidas de una guía.
                 with self.env.cr.savepoint():
+                    incoming = guide_lines(row)
+                    for payload in incoming:
+                        commercial = extract_commercial(payload)
+                        incoming_brands += int(bool(commercial['brand_code'] or commercial['brand_name']))
+                        incoming_suppliers += int(bool(commercial['supplier_code'] or commercial['supplier_name']))
+                        if (not commercial['brand_code'] and not commercial['supplier_code']
+                                and len(unexpected_sample) < 3):
+                            unexpected_sample.append('%s: línea %s sin claves comerciales; claves recibidas: %s' % (
+                                clean(row.get('id_externo')), clean(payload.get('id_linea')),
+                                ', '.join(sorted(str(k) for k in payload.keys())[:20])))
                     was_created = self._import_one(row, company_id)
                     staged = self.env['tc.guide'].sudo().search([
                         ('company_id', '=', company_id),
                         ('external_id', '=', clean(row.get('id_externo')))], limit=1)
                     if staged:
+                        privates = self.env['tc.guide.line.private'].sudo().search([
+                            ('line_id', 'in', staged.line_ids.ids)])
+                        commercial_lines += len(privates)
+                        commercial_brands += len(privates.filtered(lambda p: p.brand_code_raw or p.brand_name_raw))
+                        commercial_suppliers += len(privates.filtered(lambda p: p.supplier_code_raw or p.supplier_name_raw))
                         pending_links += int(staged.master_link_state == 'pending')
                         if staged.publication_state == 'error':
                             errors.append('%s: error publicando: %s' % (
@@ -355,9 +369,20 @@ class TCGuideSync(models.Model):
         self.env['tc.guide.sync.log'].sudo().create({
             'company_id': company_id, 'api_name': 'getguiaslogistica',
             'created_count': created, 'updated_count': updated,
-            'error_count': len(errors), 'details': ('Vínculos Portal pendientes: %s\n' % pending_links + '\n'.join(errors))[:20000],
+            'error_count': len(errors), 'details': (
+                'Vínculos Portal pendientes: %s\n'
+                'Líneas ERP con marca: %s; con proveedor de producto: %s\n'
+                'Registros privados en guías procesadas: %s; con marca: %s; con proveedor: %s\n'
+                'Posibles problemas de estructura JSON:\n%s\n'
+                'Errores:\n%s' % (
+                    pending_links, incoming_brands, incoming_suppliers,
+                    commercial_lines, commercial_brands, commercial_suppliers,
+                    '\n'.join(unexpected_sample), '\n'.join(errors)))[:20000],
         })
-        return {'created': created, 'updated': updated, 'pending_links': pending_links, 'errors': errors}
+        return {'created': created, 'updated': updated, 'pending_links': pending_links,
+                'incoming_brands': incoming_brands, 'incoming_suppliers': incoming_suppliers,
+                'stored_brands': commercial_brands, 'stored_suppliers': commercial_suppliers,
+                'errors': errors}
 
 
 class APIAdministrator(models.Model):
@@ -375,8 +400,11 @@ class APIAdministrator(models.Model):
             counts = self.env['tc.guide.sync'].sync_from_api(self.company_id.id)
             return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
                 'title': _('Guías ERP sincronizadas'),
-                'message': _('Creadas: %(new)s, actualizadas: %(updated)s, pendientes de Portal: %(pending)s, errores: %(bad)s') % {
-                    'new': counts['created'], 'updated': counts['updated'], 'pending': counts['pending_links'], 'bad': len(counts['errors'])},
-                'type': 'warning' if counts['errors'] else 'success', 'sticky': bool(counts['errors']),
+                'message': _('Guías creadas: %(new)s, actualizadas: %(updated)s. Líneas con marca desde ERP: %(bm)s; con proveedor de producto: %(sp)s. Pendientes Portal: %(pending)s; errores: %(bad)s') % {
+                    'new': counts['created'], 'updated': counts['updated'],
+                    'bm': counts['incoming_brands'], 'sp': counts['incoming_suppliers'],
+                    'pending': counts['pending_links'], 'bad': len(counts['errors'])},
+                'type': 'warning' if (counts['errors'] or not counts['incoming_brands'] or not counts['incoming_suppliers']) else 'success',
+                'sticky': bool(counts['errors'] or not counts['incoming_brands'] or not counts['incoming_suppliers']),
             }}
         return super().button_run_sync()

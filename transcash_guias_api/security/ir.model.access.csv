@@ -13,3 +13,9 @@ access_tc_sync_admin,tc.sync admin,model_tc_guide_sync,transcash_guias_api.group
 access_tc_sync_log_admin,tc.sync.log admin,model_tc_guide_sync_log,transcash_guias_api.group_tc_sync_admin,1,0,1,0
 access_tc_duplicate_review_admin,tc.duplicate.review admin,model_tc_partner_duplicates_review,transcash_guias_api.group_tc_sync_admin,1,1,1,0
 access_tc_duplicate_review_manager,tc.duplicate.review manager,model_tc_partner_duplicates_review,logistica_transcash.group_logistica_manager,1,1,1,0
+access_tc_private_system,tc.private system,model_tc_guide_line_private,base.group_system,1,0,0,0
+access_tc_supplier_system,tc.supplier system,model_tc_product_supplier,base.group_system,1,0,0,0
+access_tc_brand_system,tc.brand system,model_tc_product_brand,base.group_system,1,0,0,0
+access_tc_log_system,tc.sync.log system,model_tc_guide_sync_log,base.group_system,1,0,1,0
+access_tc_guide_system,tc.guide system,model_tc_guide,base.group_system,1,0,0,0
+access_tc_line_system,tc.guide.line system,model_tc_guide_line,base.group_system,1,0,0,0

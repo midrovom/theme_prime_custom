@@ -119,7 +119,31 @@
             <xpath expr="//form/header" position="inside">
                 <button name="action_view_commercial_lines" type="object"
                         string="Ver marcas y proveedores" class="btn-secondary"
-                        groups="transcash_guias_api.group_tc_sync_admin"/>
+                        groups="transcash_guias_api.group_tc_sync_admin,base.group_system"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Vista inmediata en la propia guía importada. No se muestra al operador. -->
+    <record id="view_tc_guide_form_commercial_tab" model="ir.ui.view">
+        <field name="name">tc.guide.form.commercial.private.tab</field>
+        <field name="model">tc.guide</field>
+        <field name="inherit_id" ref="view_tc_guide_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet/notebook" position="inside">
+                <page string="Marcas y proveedores (privado)"
+                      groups="transcash_guias_api.group_tc_sync_admin,base.group_system">
+                    <field name="commercial_private_line_ids" readonly="1" nolabel="1">
+                        <list create="false" edit="false" delete="false">
+                            <field name="sku"/>
+                            <field name="brand_code_raw" string="Código marca"/>
+                            <field name="brand_name_raw" string="Nombre marca"/>
+                            <field name="supplier_code_raw" string="Código proveedor"/>
+                            <field name="supplier_name_raw" string="Proveedor producto"/>
+                            <field name="supplier_tax_raw" optional="hide"/>
+                        </list>
+                    </field>
+                </page>
             </xpath>
         </field>
     </record>
@@ -128,7 +152,7 @@
         <field name="name">Reconciliar marcas y proveedores existentes</field>
         <field name="model_id" ref="model_tc_guide_sync"/>
         <field name="state">code</field>
-        <field name="groups_id" eval="[(4, ref('transcash_guias_api.group_tc_sync_admin'))]"/>
+        <field name="groups_id" eval="[(4, ref('transcash_guias_api.group_tc_sync_admin')), (4, ref('base.group_system'))]"/>
         <field name="code"><![CDATA[
 result = env['tc.guide.sync'].reconcile_private_data(env.company.id)
 action = {
@@ -148,21 +172,21 @@ action = {
     <!-- Bajo la aplicación Logística, NO se crea una aplicación nueva. -->
     <menuitem id="menu_tc_commercial_private" name="Datos comerciales ERP (restringido)"
               parent="logistica_transcash.menu_tc_logistics_v530" sequence="75"
-              groups="transcash_guias_api.group_tc_sync_admin"/>
+              groups="transcash_guias_api.group_tc_sync_admin,base.group_system"/>
     <menuitem id="menu_tc_private_lines" name="Marcas y proveedores por guía"
               parent="menu_tc_commercial_private" sequence="1"
               action="action_tc_private_lines"
-              groups="transcash_guias_api.group_tc_sync_admin"/>
+              groups="transcash_guias_api.group_tc_sync_admin,base.group_system"/>
     <menuitem id="menu_tc_private_brands" name="Marcas"
               parent="menu_tc_commercial_private" sequence="2"
               action="action_tc_brands_private"
-              groups="transcash_guias_api.group_tc_sync_admin"/>
+              groups="transcash_guias_api.group_tc_sync_admin,base.group_system"/>
     <menuitem id="menu_tc_private_suppliers" name="Proveedores de productos"
               parent="menu_tc_commercial_private" sequence="3"
               action="action_tc_suppliers_private"
-              groups="transcash_guias_api.group_tc_sync_admin"/>
+              groups="transcash_guias_api.group_tc_sync_admin,base.group_system"/>
     <menuitem id="menu_tc_private_reconcile" name="Reconciliar datos comerciales"
               parent="menu_tc_commercial_private" sequence="4"
               action="server_tc_reconcile_commercial"
-              groups="transcash_guias_api.group_tc_sync_admin"/>
+              groups="transcash_guias_api.group_tc_sync_admin,base.group_system"/>
 </odoo>

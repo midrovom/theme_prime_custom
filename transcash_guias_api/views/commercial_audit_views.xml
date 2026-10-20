@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="server_tc_audit_commercial_api" model="ir.actions.server">
+        <field name="name">Auditar marcas y proveedores desde API (solo lectura)</field>
+        <field name="model_id" ref="model_tc_guide_sync"/>
+        <field name="state">code</field>
+        <field name="groups_id" eval="[(4, ref('transcash_guias_api.group_tc_sync_admin')), (4, ref('base.group_system'))]"/>
+        <field name="code"><![CDATA[
+action = env['tc.guide.sync'].run_commercial_audit(env.company.id, repair=False)
+        ]]></field>
+    </record>
+    <record id="server_tc_repair_commercial_api" model="ir.actions.server">
+        <field name="name">Reparar marcas y proveedores desde API</field>
+        <field name="model_id" ref="model_tc_guide_sync"/>
+        <field name="state">code</field>
+        <field name="groups_id" eval="[(4, ref('transcash_guias_api.group_tc_sync_admin')), (4, ref('base.group_system'))]"/>
+        <field name="code"><![CDATA[
+action = env['tc.guide.sync'].run_commercial_audit(env.company.id, repair=True)
+        ]]></field>
+    </record>
+    <menuitem id="menu_tc_commercial_api_audit" name="1. Auditar datos desde API"
+              parent="menu_tc_commercial_private" sequence="5"
+              action="server_tc_audit_commercial_api"
+              groups="transcash_guias_api.group_tc_sync_admin,base.group_system"/>
+    <menuitem id="menu_tc_commercial_api_repair" name="2. Reparar datos desde API"
+              parent="menu_tc_commercial_private" sequence="6"
+              action="server_tc_repair_commercial_api"
+              groups="transcash_guias_api.group_tc_sync_admin,base.group_system"/>
+</odoo>
