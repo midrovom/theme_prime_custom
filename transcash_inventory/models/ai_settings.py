@@ -99,6 +99,21 @@ class TranscashAIConfiguration(models.TransientModel):
         self._persist_configuration()
         return self._new_form_action()
 
+    def action_check_saved_ai(self):
+        """Confirm database settings without connecting to OpenAI or exposing secrets."""
+        self._check_admin()
+        params = self.env['ir.config_parameter'].sudo()
+        enabled = (params.get_param(PARAM_ENABLED) or '').strip().lower() in ('true', '1', 'yes', 'on')
+        has_key = bool((params.get_param(PARAM_KEY) or '').strip())
+        model = (params.get_param(PARAM_MODEL) or DEFAULT_MODEL).strip()
+        msg = (_('Activación: %s. API Key guardada: %s. Modelo: %s. ') %
+               (_('Sí') if enabled else _('No'), _('Sí') if has_key else _('No'), model))
+        msg += (_('Puede utilizar el botón Consultar desde el panel.') if enabled and has_key else
+                _('Active las consultas e ingrese una API Key; después pulse Guardar configuración.'))
+        return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
+            'title': _('Estado de configuración guardada'), 'message': msg,
+            'type': 'success' if enabled and has_key else 'warning', 'sticky': True}}
+
     def action_test_transcash_ai(self):
         key, model = self._persist_configuration()
         if not self.ai_enabled:

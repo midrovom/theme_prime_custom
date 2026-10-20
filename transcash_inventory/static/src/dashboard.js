@@ -434,12 +434,20 @@ $('pfClear').addEventListener('click',()=>{pfSupplier.value=pfFormat.value=pfBra
 let aiBusy=false;
 async function aiStatusCheck(){
  if(!allowAI)return;
- try{const res=await fetch('/transcash_inventory/ai/status',{credentials:'same-origin'});
- const data=await res.json();$('aiStatus').textContent=data.message||'No disponible';
- // Never disable the Ask button merely because status/configuration failed:
- // the request route will report the actual actionable configuration error.
+ const status=$('aiStatus');
+ status.textContent='Verificando configuración de ChatGPT...';
+ try{
+  const res=await fetch('/transcash_inventory/ai/status?check='+Date.now(),{credentials:'same-origin',cache:'no-store'});
+  const data=await res.json();
+  if(!res.ok)throw Error(data.error||'Error HTTP '+res.status);
+  status.textContent=data.message||'Estado no informado por Odoo.';
+  status.dataset.state=data.state||'unknown';
+ }catch(e){
+  status.textContent='No se pudo verificar la configuración: '+e.message+'. Puede pulsar Consultar para obtener el error del servidor.';
+  status.dataset.state='error';
+ }
+ // Never gate the button on this GET request. It must stay clickable unless a request is in flight.
  if(!aiBusy)$('aiAsk').disabled=false;
- }catch(e){$('aiStatus').textContent='Estado de ChatGPT desconocido. Pulse Consultar para ver el error.';if(!aiBusy)$('aiAsk').disabled=false;}
 }
 function aiMetricVal(metric,value){
  if(value===null||value===undefined)return '—';
@@ -528,6 +536,8 @@ async function aiAsk(){
   $('aiError').textContent=e.message||'No fue posible completar la consulta.';
   $('aiError').hidden=false;
   if(calculated)$('aiResponse').hidden=false;
+  // Diagnostics must not disable the button; refresh the informational status only.
+  if(!aiCancelled)aiStatusCheck();
  }finally{
   aiBusy=false;aiController=null;
   $('aiAsk').disabled=false;$('aiCancel').hidden=true;
@@ -535,7 +545,10 @@ async function aiAsk(){
   $('aiProgress').hidden=true;
  }
 }
+// Make the controls usable from the first render, even when the API is not configured.
+$('aiAsk').disabled=false;
 $('aiAsk').addEventListener('click',aiAsk);
+$('aiRecheck').addEventListener('click',aiStatusCheck);
 $('aiCancel').addEventListener('click',aiStop);
 $('aiQuestion').addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();aiAsk();}});
 document.querySelectorAll('[data-ai-question]').forEach(btn=>btn.addEventListener('click',()=>{$('aiQuestion').value=btn.dataset.aiQuestion;$('aiQuestion').focus();}));

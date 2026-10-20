@@ -116,3 +116,12 @@
 .ai-action-buttons #aiCancel{background:#eef2f6;color:#34455a;border:1px solid #c7d6e2}
 .ai-progress{margin:8px 0 12px;padding:11px 14px;background:#eef8ff;border:1px solid #c8e4fb;border-radius:8px;color:#235c86;font-size:13px}
 .ai-progress[hidden],#aiCancel[hidden]{display:none !important}
+
+/* v1.12 — Visibility of the real configuration state; never an overlay. */
+.ai-status-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ai-status-actions .small{max-width:440px;line-height:1.45}
+#aiStatus[data-state="ready"]{color:#087960;font-weight:700}
+#aiStatus[data-state="disabled"],#aiStatus[data-state="missing_key"],#aiStatus[data-state="missing_model"]{color:#a56a20;font-weight:650}
+#aiStatus[data-state="error"]{color:#ae3546}
+#aiRecheck{padding:6px 10px;font-size:11px}
+#aiAsk:not(:disabled){cursor:pointer;opacity:1;pointer-events:auto}

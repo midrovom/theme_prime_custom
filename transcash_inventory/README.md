@@ -337,3 +337,12 @@ Permiten escritura, selección con Enter o clic, navegación con flechas, limpia
   `API Key guardada` presente. Luego ejecute Guardar y probar conexión y
   realice una consulta del dashboard. Si el aviso dice que no hay clave, revise
   permisos de administrador y el log de Odoo. Nunca comparta la clave en logs.
+
+
+## v1.12 — Botón ChatGPT siempre accesible y estado verificable
+
+- Corregidos los parámetros de versión de `dashboard.js`, `dashboard.css` y el `iframe` de Odoo: v1.11 mantenía versiones de caché de v1.10 y v1.9. Eso podía conservar el JavaScript anterior, que bloqueaba la consulta cuando la configuración estaba inactiva.
+- `Consultar con ChatGPT` permanece habilitado si no hay una petición en curso. Los errores reales del servidor se muestran debajo del formulario (sin prometer que ChatGPT esté configurado).
+- Nuevo botón `Verificar estado` en el asistente. El endpoint indica por separado si falta la API Key, si está desactivada la integración o si está lista; jamás muestra la clave.
+- `Configuración de ChatGPT → Verificar configuración guardada` confirma el estado leído directamente de `ir.config_parameter` sin consumir API ni revelar credenciales.
+- Para aplicar: sustituir carpeta, reiniciar Odoo, actualizar aplicación y hacer Ctrl+F5. La prueba real de OpenAI requiere conectividad y clave válida en el servidor.

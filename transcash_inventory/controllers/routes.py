@@ -92,13 +92,28 @@ class TranscashDashboardController(http.Controller):
     @http.route('/transcash_inventory/ai/status', type='http', auth='user', methods=['GET'])
     def ai_status(self, **kw):
         if not self._can_ai():
-            return self._json({'error': 'No tiene permiso para utilizar ChatGPT.'}, 403)
+            return self._json({'error': 'Su usuario necesita el permiso Consultas de ChatGPT.'}, 403)
         params = request.env['ir.config_parameter'].sudo()
-        enabled = params.get_param('transcash_inventory.ai_enabled') == 'True'
-        key_ok = bool(params.get_param('transcash_inventory.ai_api_key'))
-        return self._json({'enabled': enabled and key_ok, 'configured': key_ok,
-                           'message': 'Disponible' if enabled and key_ok else
-                                      'Pida al administrador configurar y activar ChatGPT.'})
+        raw = (params.get_param('transcash_inventory.ai_enabled') or '').strip().lower()
+        enabled = raw in ('true', '1', 'yes', 'on')
+        key_ok = bool((params.get_param('transcash_inventory.ai_api_key') or '').strip())
+        model_ok = bool((params.get_param('transcash_inventory.ai_model') or '').strip())
+        if not key_ok:
+            message = 'API Key no guardada en Odoo. Abra Configuración de ChatGPT, ingrese la clave y guarde.'
+            state = 'missing_key'
+        elif not enabled:
+            message = 'API Key guardada, pero ChatGPT está desactivado. Active la casilla y guarde la configuración.'
+            state = 'disabled'
+        elif not model_ok:
+            message = 'Falta configurar el modelo de OpenAI. Revise Configuración de ChatGPT.'
+            state = 'missing_model'
+        else:
+            message = 'ChatGPT activado y API Key guardada. Puede consultar.'
+            state = 'ready'
+        return self._json({'enabled': enabled and key_ok and model_ok,
+                           'activated': enabled, 'configured': key_ok,
+                           'model_configured': model_ok, 'state': state,
+                           'message': message})
 
     @http.route('/transcash_inventory/ai/ask', type='http', auth='user', methods=['POST'], csrf=True)
     def ai_ask(self, **kw):
@@ -108,11 +123,13 @@ class TranscashDashboardController(http.Controller):
         if not 6 <= len(question) <= 700:
             return self._json({'error': 'La consulta debe contener entre 6 y 700 caracteres.'}, 400)
         params = request.env['ir.config_parameter'].sudo()
-        enabled = params.get_param('transcash_inventory.ai_enabled') == 'True'
+        enabled = (params.get_param('transcash_inventory.ai_enabled') or '').strip().lower() in ('true', '1', 'yes', 'on')
         key = (params.get_param('transcash_inventory.ai_api_key') or '').strip()
         model = (params.get_param('transcash_inventory.ai_model') or 'gpt-5-mini').strip()
-        if not enabled or not key:
-            return self._json({'error': 'ChatGPT no está activado. Configure la API Key desde el menú de administración.'}, 503)
+        if not key:
+            return self._json({'error': 'No hay API Key guardada en Odoo. Un administrador debe ingresar la clave y pulsar Guardar configuración.'}, 503)
+        if not enabled:
+            return self._json({'error': 'La API Key está guardada, pero la IA sigue desactivada. Active ChatGPT y guarde la configuración.'}, 503)
         # Cost control. No questions or response bodies are saved here.
         from datetime import timedelta
         since = fields.Datetime.now() - timedelta(hours=1)
@@ -204,8 +221,10 @@ class TranscashDashboardController(http.Controller):
         params = request.env['ir.config_parameter'].sudo()
         key = (params.get_param('transcash_inventory.ai_api_key') or '').strip()
         model = (params.get_param('transcash_inventory.ai_model') or 'gpt-5-mini').strip()
-        if params.get_param('transcash_inventory.ai_enabled') != 'True' or not key:
-            return self._json({'error': 'ChatGPT no está configurado o activado.'}, 503)
+        if not key:
+            return self._json({'error': 'No existe API Key guardada en el servidor Odoo.'}, 503)
+        if (params.get_param('transcash_inventory.ai_enabled') or '').strip().lower() not in ('true', '1', 'yes', 'on'):
+            return self._json({'error': 'ChatGPT sigue desactivado en la configuración de Odoo.'}, 503)
         question = str(kw.get('question') or '').strip()
         body = str(kw.get('result_json') or '')
         signature = str(kw.get('signature') or '')

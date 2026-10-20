@@ -28,6 +28,7 @@
                 <footer>
                     <button name="action_save_transcash_ai" string="Guardar configuración" type="object" class="btn-primary"/>
                     <button name="action_test_transcash_ai" string="Guardar y probar conexión" type="object" class="btn-secondary"/>
+                    <button name="action_check_saved_ai" string="Verificar configuración guardada" type="object" class="btn-secondary"/>
                 </footer>
             </form>
         </field>
