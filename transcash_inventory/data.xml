@@ -1,0 +1,11 @@
+<odoo>
+  <record id="ir_cron_transcash_upload_cleanup" model="ir.cron">
+    <field name="name">TRANSCASH: limpiar importaciones incompletas</field>
+    <field name="model_id" ref="model_transcash_inventory_upload_session"/>
+    <field name="state">code</field>
+    <field name="code">model.cleanup_expired()</field>
+    <field name="interval_number">1</field>
+    <field name="interval_type">days</field>
+    <field name="active" eval="True"/>
+  </record>
+</odoo>

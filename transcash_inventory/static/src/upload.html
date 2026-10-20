@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TRANSCASH | Cargar archivos</title>
+<meta name="transcash-csrf" content="@@CSRF@@"/>
+<link href="/transcash_inventory/static/src/upload.css?v=18.0.1.2.0" rel="stylesheet"/>
+</head><body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><span class="brand-square">▦</span> TRANSCASH</div>
+    <small>INVENTORY INTELLIGENCE</small>
+    <div class="nav-title">ADMINISTRACIÓN</div>
+    <div class="active-link"><span>⬆</span> Cargar archivos</div>
+    <div class="side-info"><b>Importación segura</b><p>Los archivos se procesan en Odoo y se almacenan como versiones privadas por empresa.</p></div>
+  </aside>
+  <main class="main">
+    <div class="head"><div><span class="eyebrow">INVENTARIO INTELIGENTE / ACTUALIZACIÓN</span><h1>Cargar archivo de inventario</h1><p>Importa el Excel original de TRANSCASH y actualiza los análisis del dashboard.</p></div>
+      <span class="tag">Odoo 18 Community</span></div>
+    <div class="content">
+      <div class="card">
+        <div class="step"><span>01</span><div><h2>Seleccionar archivo Excel</h2><p>Debe tener las hojas <strong>Productos, Stock, Ventas y Compras</strong>.</p></div></div>
+        <div class="field"><b>Empresa activa</b><div class="company">@@COMPANY@@</div></div>
+        <form id="uploadForm" autocomplete="off">
+          <label id="dropZone" class="drop" for="excelFile"><span class="upload-icon">↑</span><strong id="selectedName">Haz clic aquí para elegir un Excel</strong><span id="selectedInfo">Archivo .xlsx — máximo 45 MB</span><span class="select-btn">Seleccionar Excel</span></label>
+          <input id="excelFile" name="excelFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
+          <div id="validation" class="note">La selección del archivo <strong>no inicia la carga</strong>. Después pulsa el botón «Cargar y procesar Excel».</div>
+          <div class="progress-box" id="progressBox" hidden>
+            <div class="progress-top"><b id="progressStage">Preparando...</b><span id="progressPercent">0%</span></div>
+            <div class="progress"><div id="progressBar" style="width:0%"></div></div>
+            <small id="progressDetail">No cierres esta ventana durante la importación.</small>
+          </div>
+          <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+          <div class="controls"><button id="uploadBtn" type="submit" disabled>Cargar y procesar Excel</button><button type="button" id="resetBtn" class="secondary">Limpiar</button></div>
+        </form>
+      </div>
+      <div class="side-column">
+        <div class="info-card"><span class="eyebrow">QUÉ OCURRIRÁ</span><h3>Actualización por versión</h3>
+          <div class="item"><span>1</span><p>Se envía el Excel en bloques pequeños, con avance visible.</p></div>
+          <div class="item"><span>2</span><p>Se validan las cuatro hojas y se recalculan los indicadores.</p></div>
+          <div class="item"><span>3</span><p>Se guarda una nueva versión y se puede volver a consultar el historial.</p></div>
+        </div>
+        <div class="info-card pale"><h3>¿Qué archivo debes usar?</h3><p>Sube <b>Analisis Transcash inventarios.xlsx</b>, el archivo fuente con los movimientos. No subas el informe final de ABC de 14 hojas: no reemplaza a las cuatro hojas de origen.</p></div>
+        <button id="goDashboard" class="ghost" type="button">← Volver al dashboard</button>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="/transcash_inventory/static/src/upload.js?v=18.0.1.2.0"></script>
+</body></html>

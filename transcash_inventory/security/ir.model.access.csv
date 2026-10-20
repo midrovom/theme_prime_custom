@@ -4,3 +4,5 @@ access_transcash_inventory_manager,transcash.inventory.snapshot.manager,model_tr
 access_transcash_inventory_system,transcash.inventory.snapshot.system,model_transcash_inventory_snapshot,base.group_system,1,0,1,0
 access_transcash_import_manager,transcash.inventory.import.wizard.manager,model_transcash_inventory_import_wizard,transcash_inventory.group_transcash_manager,1,1,1,1
 access_transcash_import_system,transcash.inventory.import.wizard.system,model_transcash_inventory_import_wizard,base.group_system,1,1,1,1
+access_transcash_upload_manager,transcash.inventory.upload.session.manager,model_transcash_inventory_upload_session,transcash_inventory.group_transcash_manager,1,1,1,1
+access_transcash_upload_system,transcash.inventory.upload.session.system,model_transcash_inventory_upload_session,base.group_system,1,1,1,1

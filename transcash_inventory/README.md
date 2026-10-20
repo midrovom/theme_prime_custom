@@ -1,10 +1,12 @@
 # TRANSCASH — Inventario Inteligente (Odoo 18 Community)
 
+Versión actual: 18.0.1.2.0.
+
 Módulo independiente para Odoo 18 Community que mantiene el mismo diseño del dashboard HTML de Transcash. La visualización web se carga dentro del cliente backend de Odoo mediante una acción OWL y un iframe del mismo origen. No requiere Enterprise, Inventory de Odoo, internet ni bibliotecas externas para leer el Excel.
 
 ## Funcionalidad incluida
 
-- Importación mediante el menú nativo **Cargar archivos** (sin modal) de un archivo `.xlsx` con las hojas **Productos**, **Stock**, **Ventas** y **Compras** (estructura del archivo `Analisis Transcash inventarios.xlsx`).
+- Importación mediante el menú **Cargar archivos** (sin modal, carga por bloques) de un archivo `.xlsx` con las hojas **Productos**, **Stock**, **Ventas** y **Compras** (estructura del archivo `Analisis Transcash inventarios.xlsx`).
 - Procesamiento en el servidor con lectores OOXML estándar, sin `pandas` ni `openpyxl`.
 - Ocho apartados: Resumen ejecutivo, ABC/rentabilidad, cobertura/riesgo, simulación de reposición, bodegas, proveedores, explorador de productos y auditoría.
 - Filtros interactivos por meses, categoría, marca, bodega y búsqueda de código/descripción/proveedor.
@@ -19,7 +21,7 @@ Módulo independiente para Odoo 18 Community que mantiene el mismo diseño del d
 2. Asegura que el usuario del servicio Odoo pueda leer la carpeta y los archivos, reinicia el servicio Odoo correspondiente.
 3. En Odoo: **Aplicaciones → Actualizar lista de aplicaciones**, busca `TRANSCASH | Inventario Inteligente` e instálalo.
 4. Ve a **Ajustes → Usuarios** y asigna uno de los roles del módulo: **Consulta de inventarios** o **Responsable de inventarios (importar)**. Los administradores con el grupo Ajustes también pueden gestionar la carga.
-5. Abre **Inventario Inteligente → Cargar archivos**, selecciona el Excel de cuatro hojas y pulsa **Procesar archivo y abrir dashboard**. La aplicación abrirá el **Dashboard** automáticamente. Si aún no hay datos, el dashboard muestra un aviso integrado en la página, nunca un modal.
+5. Abre **Inventario Inteligente → Cargar archivos**, selecciona el Excel de cuatro hojas y pulsa **Cargar y procesar Excel**. La aplicación abrirá el **Dashboard** automáticamente. Si aún no hay datos, el dashboard muestra un aviso integrado en la página, nunca un modal.
 
 ### Instalación desde consola (opcional)
 
@@ -99,3 +101,38 @@ El importador fue probado en Python con el archivo original y coincidieron sus p
 - Carga nativa Odoo con validación de Excel, barra de acción y redirección al dashboard cuando la versión se almacena correctamente.
 - Cuando no existen datos, un aviso informativo se muestra dentro de la página sin bloquear la navegación.
 - Para actualizar una instalación existente usa `-u transcash_inventory` (no `-i`), reinicia el servicio y actualiza los recursos web del navegador.
+
+## Corrección v18.0.1.2.0 — carga que no responde al seleccionar archivo
+
+- **Nuevo menú Cargar archivos** conectado a una acción OWL de Odoo con un formulario HTML dedicado. Ya no depende del campo Binary del asistente anterior (el asistente se conserva por compatibilidad, pero el menú apunta a la nueva pantalla).
+- Al elegir el archivo se muestra su nombre y tamaño; **la selección no sube automáticamente**. Pulsa **Cargar y procesar Excel** para iniciar la importación.
+- Transferencia fragmentada en bloques de 384 KiB (26 bloques para el Excel original de ~9,5 MB), con barra de progreso real de fragmentos enviados y una fase final de procesamiento.
+- Las peticiones van autenticadas en la sesión activa de Odoo, incluyen CSRF y mantienen los permisos de responsable y separación por empresa.
+- Los bloques se guardan temporalmente en adjuntos privados vinculados a una sesión de carga; al finalizar se genera una versión histórica y se eliminan los adjuntos temporales. Un cron elimina sesiones abandonadas después de 24 horas.
+- Un fallo devuelve un mensaje visible con código o motivo y permite intentar otra vez; si la importación termina correctamente, retorna al dashboard.
+- No cambia `static/src/dashboard.html`, sus indicadores ni la funcionalidad anterior.
+
+### Para actualizar desde v1.1 (no reinstalar ni desinstalar)
+
+1. Haz **respaldo de la base y addons**.
+2. Copia la carpeta `transcash_inventory` de este ZIP **reemplazando** la carpeta v1.1 existente, sin duplicar addons en otro lugar.
+3. Reinicia el servicio Odoo correspondiente.
+4. **Actualiza el módulo**, desde Aplicaciones → TRANSCASH Inventario Inteligente → Actualizar. Alternativamente, en mantenimiento, usa `odoo-bin -c /etc/odoo18wv.conf -d odoo18wv -u transcash_inventory --stop-after-init` con el entorno/usuario adecuados; luego reinicia Odoo.
+5. En el navegador haz `Ctrl+F5` para obtener los nuevos activos. Abre **Inventario Inteligente → Cargar archivos**, selecciona el **Excel original** y pulsa **Cargar y procesar Excel**.
+6. Debes ver «Subiendo Excel...» y «Transferencia completa. Procesando datos...», y finalmente el número de SKU, período y versión importada.
+
+### Si continúa el problema
+
+- Si el menú nuevo no aparece, normalmente falta **actualizar el módulo** (no basta copiar el ZIP).
+- Si aparece `HTTP 403`, verifica que el usuario tenga el grupo Responsable de inventarios, empresa activa y sesión válida.
+- Si aparece `HTTP 413`, revisa `client_max_body_size` en Nginx y los límites HTTP de Odoo/servidor: la transferencia ahora usa bloques de menos de 400 KB, pero una configuración excepcionalmente restrictiva podría bloquearlos.
+- Si muestra `HTTP 404` en `/upload/start`, la versión desplegada aún no tiene los controladores nuevos o el servicio no se reinició.
+- Si el error ocurre al terminar, valida que el Excel tenga las hojas **Productos, Stock, Ventas, Compras** y revisa el log de Odoo para excepciones del procesador.
+- Si el archivo supera 45 MB, reduce su tamaño o solicita subir el límite en una siguiente versión; no aumentes los límites globales sin evaluar seguridad.
+
+### Verificaciones realizadas antes de distribuir
+
+- `compileall` de módulos Python y parsing de archivos XML.
+- Procesador probado con el Excel fuente de Transcash, obteniendo 16.150 SKU, ventas USD 23.790.118,40, utilidad USD 6.352.490,39 y stock catalogado USD 7.218.983,45.
+- Interfaz de importación probada en Chromium con un servidor simulado: selección de archivo, botón habilitado, 26 solicitudes de transferencia, señal de procesamiento y confirmación de éxito, sin errores JavaScript.
+- **Pendiente:** instalación y prueba de integración sobre tu servidor real de Odoo 18; no puede certificarse aquí el límite HTTP ni la configuración de tu instancia.
