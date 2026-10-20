@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- El modelo privado tiene ACL únicamente para administradores de integración. -->
+    <record id="view_tc_private_line_list" model="ir.ui.view">
+        <field name="name">tc.guide.line.private.list.commercial</field>
+        <field name="model">tc.guide.line.private</field>
+        <field name="arch" type="xml">
+            <list string="Marcas y proveedores por línea ERP" create="false" edit="false" delete="false">
+                <field name="guide_id"/>
+                <field name="sku"/>
+                <field name="product_description" optional="show"/>
+                <field name="brand_code_raw" string="Código marca"/>
+                <field name="brand_name_raw" string="Marca"/>
+                <field name="supplier_code_raw" string="Código proveedor producto"/>
+                <field name="supplier_name_raw" string="Proveedor producto"/>
+                <field name="supplier_tax_raw" string="Identificación fiscal" optional="show"/>
+                <field name="brand_id" string="Marca vinculada" optional="hide"/>
+                <field name="supplier_id" string="Proveedor vinculado" optional="show"/>
+                <field name="supplier_reference_raw" string="Referencia original ERP" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tc_private_line_form" model="ir.ui.view">
+        <field name="name">tc.guide.line.private.form.commercial</field>
+        <field name="model">tc.guide.line.private</field>
+        <field name="arch" type="xml">
+            <form string="Datos comerciales privados" create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <field name="guide_id"/>
+                        <field name="sku"/>
+                        <field name="product_description"/>
+                    </group>
+                    <group string="Marca">
+                        <field name="brand_code_raw"/>
+                        <field name="brand_name_raw"/>
+                        <field name="brand_id"/>
+                    </group>
+                    <group string="Proveedor del producto">
+                        <field name="supplier_code_raw"/>
+                        <field name="supplier_name_raw"/>
+                        <field name="supplier_tax_raw"/>
+                        <field name="supplier_reference_raw"/>
+                        <field name="supplier_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_tc_private_line_search" model="ir.ui.view">
+        <field name="name">tc.guide.line.private.search.commercial</field>
+        <field name="model">tc.guide.line.private</field>
+        <field name="arch" type="xml">
+            <search string="Buscar información comercial del ERP">
+                <field name="guide_id"/>
+                <field name="sku"/>
+                <field name="brand_code_raw"/>
+                <field name="brand_name_raw"/>
+                <field name="supplier_code_raw"/>
+                <field name="supplier_name_raw"/>
+                <field name="supplier_tax_raw"/>
+                <filter name="brand_unlinked" string="Marca sin vincular" domain="[('brand_id','=',False),('brand_code_raw','!=',False)]"/>
+                <filter name="supplier_unlinked" string="Proveedor sin vincular" domain="[('supplier_id','=',False),('supplier_code_raw','!=',False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_tc_private_lines" model="ir.actions.act_window">
+        <field name="name">Marcas y proveedores por guía ERP</field>
+        <field name="res_model">tc.guide.line.private</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_tc_private_line_search"/>
+    </record>
+
+    <record id="view_tc_brand_list_private" model="ir.ui.view">
+        <field name="name">tc.product.brand.list.private</field>
+        <field name="model">tc.product.brand</field>
+        <field name="arch" type="xml">
+            <list string="Marcas del ERP" create="false" edit="false" delete="false">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tc_brands_private" model="ir.actions.act_window">
+        <field name="name">Marcas de productos ERP</field>
+        <field name="res_model">tc.product.brand</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_tc_supplier_list_private" model="ir.ui.view">
+        <field name="name">tc.product.supplier.list.private</field>
+        <field name="model">tc.product.supplier</field>
+        <field name="arch" type="xml">
+            <list string="Proveedores de productos ERP" create="false" edit="false" delete="false">
+                <field name="external_code"/>
+                <field name="name"/>
+                <field name="tax_id" string="RUC/Identificación fiscal"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tc_suppliers_private" model="ir.actions.act_window">
+        <field name="name">Proveedores de productos ERP</field>
+        <field name="res_model">tc.product.supplier</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_tc_guide_form_commercial_button" model="ir.ui.view">
+        <field name="name">tc.guide.form.commercial.button</field>
+        <field name="model">tc.guide</field>
+        <field name="inherit_id" ref="view_tc_guide_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/header" position="inside">
+                <button name="action_view_commercial_lines" type="object"
+                        string="Ver marcas y proveedores" class="btn-secondary"
+                        groups="transcash_guias_api.group_tc_sync_admin"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="server_tc_reconcile_commercial" model="ir.actions.server">
+        <field name="name">Reconciliar marcas y proveedores existentes</field>
+        <field name="model_id" ref="model_tc_guide_sync"/>
+        <field name="state">code</field>
+        <field name="groups_id" eval="[(4, ref('transcash_guias_api.group_tc_sync_admin'))]"/>
+        <field name="code"><![CDATA[
+result = env['tc.guide.sync'].reconcile_private_data(env.company.id)
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Conciliación comercial ERP',
+        'message': 'Líneas revisadas: %s, marcas vinculadas: %s, proveedores vinculados: %s, errores: %s' % (
+            result['processed'], result['brands_linked'], result['suppliers_linked'], len(result['errors'])),
+        'type': 'warning' if result['errors'] else 'success',
+        'sticky': bool(result['errors']),
+    },
+}
+        ]]></field>
+    </record>
+
+    <!-- Bajo la aplicación Logística, NO se crea una aplicación nueva. -->
+    <menuitem id="menu_tc_commercial_private" name="Datos comerciales ERP (restringido)"
+              parent="logistica_transcash.menu_tc_logistics_v530" sequence="75"
+              groups="transcash_guias_api.group_tc_sync_admin"/>
+    <menuitem id="menu_tc_private_lines" name="Marcas y proveedores por guía"
+              parent="menu_tc_commercial_private" sequence="1"
+              action="action_tc_private_lines"
+              groups="transcash_guias_api.group_tc_sync_admin"/>
+    <menuitem id="menu_tc_private_brands" name="Marcas"
+              parent="menu_tc_commercial_private" sequence="2"
+              action="action_tc_brands_private"
+              groups="transcash_guias_api.group_tc_sync_admin"/>
+    <menuitem id="menu_tc_private_suppliers" name="Proveedores de productos"
+              parent="menu_tc_commercial_private" sequence="3"
+              action="action_tc_suppliers_private"
+              groups="transcash_guias_api.group_tc_sync_admin"/>
+    <menuitem id="menu_tc_private_reconcile" name="Reconciliar datos comerciales"
+              parent="menu_tc_commercial_private" sequence="4"
+              action="server_tc_reconcile_commercial"
+              groups="transcash_guias_api.group_tc_sync_admin"/>
+</odoo>

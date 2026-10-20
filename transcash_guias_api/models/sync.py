@@ -52,6 +52,144 @@ class TCGuideSync(models.Model):
         return rec
 
     @api.model
+    def _commercial_brand(self, company_id, code, name):
+        """Maestro privado de marca, localizado por código ERP (empresa)."""
+        code = clean(code).upper()
+        name = clean(name)
+        if not code:
+            return False
+        Brand = self.env['tc.product.brand'].sudo()
+        rec = Brand.search([('company_id', '=', company_id), ('code', '=', code)], limit=1)
+        if rec:
+            if name and name != rec.name:
+                rec.write({'name': name})
+        else:
+            rec = Brand.create({'company_id': company_id, 'code': code, 'name': name or code})
+        return rec
+
+    @api.model
+    def _commercial_supplier(self, company_id, code, name, tax_id):
+        """Proveedor privado: RUC/identificación fiscal primero, código ERP si no hay RUC.
+
+        Nunca usa referencia_erp como RUC: en los ejemplos esa referencia
+        tiene valores ambiguos y algunos son códigos de otro tipo.
+        """
+        code = clean(code).upper()
+        name = clean(name)
+        tax_id = re.sub(r'[^A-Za-z0-9]', '', clean(tax_id)).upper()
+        if not code and not tax_id:
+            return False
+        Supplier = self.env['tc.product.supplier'].sudo()
+        base = [('company_id', '=', company_id)]
+        by_tax = Supplier.search(base + [('tax_id', '=', tax_id)], limit=1) if tax_id else Supplier.browse()
+        by_code = Supplier.search(base + [('external_code', '=', code)], limit=1) if code else Supplier.browse()
+        if by_tax and by_code and by_tax != by_code:
+            # Nunca fusionar ni reasignar RUC/codigo silenciosamente.
+            _logger.warning('Proveedor producto: conflicto RUC=%s código=%s; revisar maestros %s y %s.',
+                            tax_id, code, by_tax.id, by_code.id)
+            return by_tax
+        rec = by_tax or by_code
+        if not rec:
+            return Supplier.create({
+                'company_id': company_id, 'tax_id': tax_id or False,
+                'external_code': code or False, 'name': name or code or tax_id,
+            })
+        changes = {}
+        if name and rec.name != name:
+            changes['name'] = name
+        if tax_id and not rec.tax_id:
+            changes['tax_id'] = tax_id
+        elif tax_id and rec.tax_id and re.sub(r'[^A-Za-z0-9]', '', rec.tax_id).upper() != tax_id:
+            _logger.warning('Proveedor producto: código %s tiene RUC diferente. Se conserva RUC del maestro.', code)
+        if code and not rec.external_code:
+            changes['external_code'] = code
+        elif code and rec.external_code and rec.external_code != code:
+            _logger.warning('Proveedor producto: RUC %s tiene otro código ERP. Se conserva código previo.', tax_id)
+        if changes:
+            rec.write(changes)
+        return rec
+
+    @api.model
+    def _commercial_line_payload(self, line, item, company_id):
+        """Persistir y relacionar marca/proveedor en el modelo privado, nunca en transcash.guia.
+
+        Permite volver a sincronizar líneas ya existentes y recupera los
+        campos crudos de las versiones anteriores cuando el ERP omite datos.
+        """
+        Private = self.env['tc.guide.line.private'].sudo()
+        private = Private.search([('line_id', '=', line.id)], limit=1)
+        item = item if isinstance(item, dict) else {}
+        brand = item.get('marca') if isinstance(item.get('marca'), dict) else {}
+        supplier = item.get('proveedor_producto') if isinstance(item.get('proveedor_producto'), dict) else {}
+
+        def previous(field):
+            return clean(private[field]) if private else ''
+
+        brand_code = (clean(brand.get('codigo')) or clean(item.get('marca_codigo'))
+                      or previous('brand_code_raw'))
+        brand_name = (clean(brand.get('nombre')) or clean(item.get('marca_nombre'))
+                      or previous('brand_name_raw'))
+        supplier_code = (clean(supplier.get('codigo')) or clean(item.get('proveedor_producto_codigo'))
+                         or previous('supplier_code_raw'))
+        supplier_name = (clean(supplier.get('nombre')) or clean(item.get('proveedor_producto_nombre'))
+                         or previous('supplier_name_raw'))
+        supplier_tax = (clean(supplier.get('identificacion_fiscal') or supplier.get('ruc'))
+                        or clean(item.get('proveedor_producto_ruc')) or previous('supplier_tax_raw'))
+        supplier_reference = (clean(supplier.get('referencia_erp'))
+                              or previous('supplier_reference_raw'))
+        # Se preserva el dato crudo para auditoría aunque no haya RUC.
+        brand_rec = self._commercial_brand(company_id, brand_code, brand_name)
+        supplier_rec = self._commercial_supplier(company_id, supplier_code, supplier_name, supplier_tax)
+        values = {
+            'line_id': line.id,
+            'brand_id': brand_rec.id if brand_rec else (private.brand_id.id if private else False),
+            'supplier_id': supplier_rec.id if supplier_rec else (private.supplier_id.id if private else False),
+            'brand_code_raw': brand_code,
+            'brand_name_raw': brand_name,
+            'supplier_code_raw': supplier_code,
+            'supplier_name_raw': supplier_name,
+            'supplier_reference_raw': supplier_reference,
+            'supplier_tax_raw': supplier_tax,
+        }
+        if private:
+            delta = {}
+            for key, value in values.items():
+                old_value = private[key]
+                old = getattr(old_value, 'id', old_value) if key in ('line_id', 'brand_id', 'supplier_id') else old_value
+                if old != value:
+                    delta[key] = value
+            if delta:
+                private.write(delta)
+        else:
+            private = Private.create(values)
+        return private
+
+    @api.model
+    def reconcile_private_data(self, company_id):
+        """Reparar vínculos comerciales a partir de datos crudos ya guardados, sin API."""
+        if not self.env.user.has_group('transcash_guias_api.group_tc_sync_admin'):
+            raise UserError(_('Solo administradores de integración pueden consultar datos comerciales.'))
+        company = self.env['res.company'].browse(company_id).exists()
+        if not company:
+            raise UserError(_('Empresa no válida.'))
+        records = self.env['tc.guide.line.private'].sudo().search([('company_id', '=', company_id)])
+        processed = brands = suppliers = 0
+        errors = []
+        for private in records:
+            try:
+                with self.env.cr.savepoint():
+                    had_brand, had_supplier = bool(private.brand_id), bool(private.supplier_id)
+                    updated = self._commercial_line_payload(private.line_id, {}, company_id)
+                    brands += int(not had_brand and bool(updated.brand_id))
+                    suppliers += int(not had_supplier and bool(updated.supplier_id))
+                    processed += 1
+            except Exception as exc:
+                _logger.exception('Error reconciliando datos comerciales de línea %s', private.line_id.id)
+                errors.append('%s: %s' % (private.line_id.id, str(exc)))
+        return {'processed': processed, 'brands_linked': brands,
+                'suppliers_linked': suppliers, 'errors': errors}
+
+    @api.model
     def _import_one(self, data, company_id):
         if not isinstance(data, dict):
             raise ValidationError('Cada guía debe ser un objeto JSON.')
@@ -171,35 +309,7 @@ class TCGuideSync(models.Model):
             else:
                 line = Line.create(line_vals)
 
-            brand = item.get('marca') or {}
-            supplier = item.get('proveedor_producto') or {}
-            brand_id = False
-            code = clean(brand.get('codigo'))
-            if code:
-                brand_id = self._master('tc.product.brand', common + [('code', '=', code)], {
-                    'code': code, 'name': clean(brand.get('nombre')) or code, 'company_id': company_id,
-                }).id
-            supplier_id = False
-            tax_id = clean(supplier.get('identificacion_fiscal') or supplier.get('ruc'))
-            if tax_id:
-                supplier_id = self._master('tc.product.supplier', common + [('tax_id', '=', tax_id)], {
-                    'tax_id': tax_id, 'name': clean(supplier.get('nombre')) or tax_id,
-                    'external_code': clean(supplier.get('codigo')), 'company_id': company_id,
-                }).id
-            private_vals = {
-                'line_id': line.id, 'brand_id': brand_id, 'supplier_id': supplier_id,
-                'supplier_code_raw': clean(supplier.get('codigo')),
-                'supplier_reference_raw': clean(supplier.get('referencia_erp')),
-                'supplier_name_raw': clean(supplier.get('nombre')),
-                'supplier_tax_raw': tax_id,
-                'brand_code_raw': code, 'brand_name_raw': clean(brand.get('nombre')),
-            }
-            Private = self.env['tc.guide.line.private'].sudo()
-            private = Private.search([('line_id', '=', line.id)], limit=1)
-            if private:
-                private.write(private_vals)
-            else:
-                Private.create(private_vals)
+            self._commercial_line_payload(line, item, company_id)
         # Nunca se eliminan líneas ausentes: podría haber cambios operativos posteriores.
         return created
 

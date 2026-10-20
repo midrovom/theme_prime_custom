@@ -10,3 +10,5 @@ from . import partner_link
 from . import driver_contact
 
 from . import duplicate_review
+
+from . import commercial

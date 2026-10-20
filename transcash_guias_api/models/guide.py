@@ -68,8 +68,9 @@ class TCProductSupplier(models.Model):
     _description = 'Proveedor de producto - Privado'
     _sql_constraints = [('taxid_uniq', 'unique(company_id, tax_id)', 'La identificación fiscal del proveedor ya existe.')]
     name = fields.Char(required=True)
-    tax_id = fields.Char(required=True, index=True)
-    external_code = fields.Char()
+    # El ERP puede identificar proveedores solo por codigo interno; NO inventar un RUC.
+    tax_id = fields.Char(index=True)
+    external_code = fields.Char(index=True)
     company_id = fields.Many2one('res.company', required=True, index=True, ondelete='cascade')
 
 

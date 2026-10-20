@@ -12,7 +12,7 @@
 
 - Se espera un objeto de respuesta `{'success': true, 'data': [ ...]}`; `data` contiene guías agrupadas con `detalle`.
 - Los datos no operativos (marca y proveedor producto) se guardan en `tc.guide.line.private`. Sin lectura permitida para operador o jefe. Otros grupos no reciben ACL por este addon.
-- Los maestros de transportistas/proveedores **solo** se crean con RUC/identificación fiscal **explícitos y verificados externamente**; no se infieren de códigos variables ni nombres.
+- Los transportistas se crean solo con su RUC explícito. Los **proveedores de productos**, que son maestros privados, se crean/reutilizan por RUC explícito o por código ERP cuando no llegue RUC; jamás se interpreta `referencia_erp` como RUC sin validación.
 - Remitente, destinatario y destino se crean si hay códigos no vacíos. El campo `-NAJ` se trata como código ERP de destinatario, **no** como RUC.
 - Se hace upsert por empresa + id_externo y por guía + id_linea. Los artículos no presentes en respuestas posteriores no se borran.
 - Cada guía se procesa dentro de un savepoint para aislar errores; la ejecución genera registro de auditoría.
@@ -218,3 +218,49 @@ No ejecutar migración SQL manual ni eliminar tablas/datos de integración.
 
 No ejecutar la opción Archivar sin revisión previa. Se requiere homologación
 con datos reales de RUC del transportista y RUC/código de cliente en el JSON.
+
+
+## Actualización 18.0.2.0.0 — Marcas y proveedores de productos ERP (privado)
+
+### Hallazgo en v1.9
+
+- La marca ya se guardaba como `brand_code_raw`, `brand_name_raw` y en `tc.product.brand`.
+- El proveedor de productos se guardaba en `supplier_code_raw` y `supplier_name_raw` en `tc.guide.line.private`, pero **no se creaba el maestro `tc.product.supplier` si faltaba identificacion_fiscal**.
+- No existía una vista administrativa para consultar estos datos: las vistas operativas de `transcash.guia` los ocultan por seguridad.
+
+### Cambios
+
+- Crear/reutilizar `tc.product.brand` por empresa y `marca.codigo`, actualizar el nombre cuando llega.
+- Crear/reutilizar `tc.product.supplier`: buscar preferentemente por identificación fiscal explícita, si está disponible, o por `proveedor_producto.codigo`. Se admite un RUC vacío; no se genera identificación ficticia. Si luego llega RUC para el mismo código, se actualiza el maestro, sin duplicar.
+- Mantener datos crudos (`supplier_code_raw`, `supplier_name_raw`, `supplier_reference_raw`, `supplier_tax_raw`, `brand_code_raw`, `brand_name_raw`) por línea en `tc.guide.line.private`, incluso si falta un dato para homologar. Admite estructura JSON anidada y nombres planos equivalentes.
+- No borrar datos comerciales existentes si una respuesta parcial los omite.
+- Menú **Logística Transcash > Operación logística > Datos comerciales ERP (restringido)**, exclusivamente para el grupo **Administrador de integración guías**. Incluye líneas por guía, marcas, proveedores y herramienta de conciliación.
+- Botón **Ver marcas y proveedores** dentro de cada guía importada, solo para administradores.
+- **Reconciliar datos comerciales** recupera los vínculos de maestros para registros privados ya importados, sin llamar nuevamente a la API. Si faltan también los datos crudos, es necesaria una nueva sincronización `getguiaslogistica`.
+- No crea nuevas aplicaciones, no modifica `transcash.guia`, PWA, rutas, embarques, ni liquidaciones.
+
+### Después de actualizar
+
+1. Realizar copia de seguridad; reemplazar solamente `transcash_guias_api`; reiniciar y actualizar la aplicación en Odoo.
+2. Con el grupo **Administrador de integración guías**, abrir **Datos comerciales ERP (restringido) > Marcas y proveedores por guía**.
+3. Ejecutar **Reconciliar datos comerciales** para registros importados de versiones anteriores.
+4. Ejecutar `getguiaslogistica` otra vez para completar información que no se haya guardado anteriormente.
+5. Comprobar guías ERP 32625 (`TRN`, `PRE0078`) y 32629 (`TAU`, `PRE0079`; `CSL`, `PRE0008`) con sus proveedores originales.
+6. Si se envía `proveedor_producto.identificacion_fiscal`, se utiliza como identificación fiscal. **No inferirla de `proveedor_producto.referencia_erp`**.
+
+### Consultas SQL de auditoría PostgreSQL (solo lectura)
+
+```sql
+SELECT g.name AS guia, l.sku, p.brand_code_raw, p.brand_name_raw,
+       p.supplier_code_raw, p.supplier_name_raw, p.supplier_tax_raw,
+       b.code AS marca_maestro, s.external_code AS proveedor_maestro_codigo,
+       s.tax_id AS proveedor_maestro_ruc
+FROM tc_guide_line_private p
+JOIN tc_guide_line l ON l.id = p.line_id
+JOIN tc_guide g ON g.id = l.guide_id
+LEFT JOIN tc_product_brand b ON b.id = p.brand_id
+LEFT JOIN tc_product_supplier s ON s.id = p.supplier_id
+ORDER BY g.id DESC, l.id;
+```
+
+**Nota:** este paquete pasó análisis estático y pruebas del algoritmo de reconciliación con ORM simulado, pero no ha sido instalado en una base Odoo real. El usuario debe validar los permisos y la actualización de columna nullable en un entorno de pruebas antes de producción.
