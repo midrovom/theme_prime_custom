@@ -102,7 +102,7 @@ class TestBudgetERPIntegration(TransactionCase):
         self.assertFalse(expense_model._find_budget_line(
             self.company.id, account.id, '2022-07-25', False, 'GDE'))
 
-    def test_subcenter_exact_precedes_generic_and_unmatched_stays_unlinked(self):
+    def test_subcenter_no_longer_splits_line_and_duplicates_blocked(self):
         account = self.account_model.create({
             'company_id': self.company.id, 'code': '601010101099',
             'name': 'Servicios para subcentros',
@@ -125,20 +125,20 @@ class TestBudgetERPIntegration(TransactionCase):
             'date': '2091-06-15', 'amount': 40, 'description': 'Antes de especificar',
         })
         self.assertEqual(first.budget_line_id, generic)
-        specific = Line.create({
-            'budget_id': budget.id, 'account_id': account.id,
-            'cost_center_id': center.id, 'subcenter_code': 'GDE',
-            'month': '6', 'planned_amount': 120,
-        })
-        self.assertEqual(first.budget_line_id, specific)
+        with self.assertRaises(ValidationError):
+            with self.env.cr.savepoint():
+                Line.create({
+                    'budget_id': budget.id, 'account_id': account.id,
+                    'cost_center_id': center.id, 'subcenter_code': 'GDE',
+                    'month': '6', 'planned_amount': 120,
+                })
         second = Expense.create({
             'company_id': self.company.id, 'account_id': account.id,
             'cost_center_id': center.id, 'subcenter_code': 'OTRO',
             'date': '2091-06-17', 'amount': 30, 'description': 'Otro subcentro',
         })
         self.assertEqual(second.budget_line_id, generic)
-        self.assertAlmostEqual(specific.actual_amount, 40)
-        self.assertAlmostEqual(generic.actual_amount, 30)
+        self.assertAlmostEqual(generic.actual_amount, 70)
 
     def test_imported_consumed_relinked_when_rubro_and_line_created_later(self):
         """ERP primero; después rubro/cuenta/centro/subcentro/año/mes."""
@@ -181,12 +181,14 @@ class TestBudgetERPIntegration(TransactionCase):
         self.assertEqual(expense.budget_line_id, line)
         self.assertAlmostEqual(line.actual_amount, 161.82)
         self.assertEqual(category.cost_center_ids, center)
-        other = self.env['expense.budget.line'].create({
-            'budget_id': budget.id, 'account_id': account.id,
-            'cost_center_id': center.id, 'subcenter_code': 'OTRO',
-            'month': '7', 'planned_amount': 100,
-        })
-        self.assertAlmostEqual(other.actual_amount, 0.0)
+        # Aunque varíe Subcentro, la misma cuenta+centro+mes no se duplica.
+        with self.assertRaises(ValidationError):
+            with self.env.cr.savepoint():
+                self.env['expense.budget.line'].create({
+                    'budget_id': budget.id, 'account_id': account.id,
+                    'cost_center_id': center.id, 'subcenter_code': 'OTRO',
+                    'month': '7', 'planned_amount': 100,
+                })
 
     def test_existing_catalogs_with_inactive_or_historical_padded_codes(self):
         """Una API no debe insertar un código si ya existe (inactivo o con espacios)."""
@@ -313,9 +315,9 @@ class TestBudgetERPIntegration(TransactionCase):
              'Fecha': 'abr 25 2020 12:00:00:000', 'Valor': '999.00'},
         ]
         selected = self.sync._rows_for_saved_lines(rows, line)
-        self.assertEqual(len(selected), 2)
-        self.assertEqual(sum(float(item['Valor']) for item in selected), 60.0)
-        self.assertEqual(len(self.sync._rows_for_saved_lines(rows, line)), 2)
+        self.assertEqual(len(selected), 3)
+        self.assertEqual(sum(float(item['Valor']) for item in selected), 1059.0)
+        self.assertEqual(len(self.sync._rows_for_saved_lines(rows, line)), 3)
 
     def test_sincronizacion_catalogo_registros_existentes_no_repite_codigos(self):
         """Regresión del error unique(company_id, code) reportado por el ERP."""

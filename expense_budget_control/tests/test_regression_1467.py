@@ -41,11 +41,8 @@ class TestGuardarPresupuestoRapido1467(TransactionCase):
             self.sync._sync_saved_lines(self.line)
 
     def test_filtro_exactamente_mismo_anio_mes_centro_subcentro(self):
-        special = self.env['expense.budget.line'].with_context(
-            skip_expense_budget_consumption_on_save=True,
-        ).create({'budget_id': self.budget.id, 'account_id': self.account.id,
-                  'cost_center_id': self.center.id, 'subcenter_code': 'GDE',
-                  'month': '4', 'planned_amount': 40})
+        # La línea única consume todos los subcentros; no crear duplicado.
+        special = self.line
         rows = [
             {'Codigo': 'FAST67-A', 'Centro': 'FAST67-C   ', 'Subcentro': 'GDE   ',
              'Fecha': 'abr  7 2026 12:00:00:000', 'Valor': '45.26'},
@@ -57,6 +54,4 @@ class TestGuardarPresupuestoRapido1467(TransactionCase):
              'Fecha': 'abr  7 2020 12:00:00:000', 'Valor': '888'},
         ]
         self.assertEqual([r['Valor'] for r in self.sync._rows_for_saved_lines(rows, special)],
-                         ['45.26'])
-        self.assertEqual([r['Valor'] for r in self.sync._rows_for_saved_lines(rows, self.line)],
-                         ['10'])
+                         ['45.26', '10'])

@@ -419,7 +419,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
 
     @api.model
     def _sync_consumptions(self, company, rows, api_record, year):
-        """Importa solo el año pedido. Vincula por empresa/cuenta/centro/subcentro/mes.
+        """Importa solo el año pedido. Vincula por empresa/cuenta/centro/mes.
 
         La huella no es un ID contable: sin ID del ERP no se pueden detectar
         rectificaciones en importe/fecha. Nunca mezcla años o empresas.
@@ -493,7 +493,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             prepared.append((code, center_code, subcenter, when, amount, key,
                              'api:%s:%s' % (api_record.id, key)))
         # Una búsqueda de proyecciones para todo el año evita una consulta SQL
-        # por cada cuenta/centro/subcentro/mes detectado en la respuesta.
+        # por cada cuenta/centro/mes detectado en la respuesta.
         Line = self.env['expense.budget.line'].sudo()
         budget_lines = Line.search([
             ('budget_id.company_id', '=', company.id),
@@ -503,7 +503,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         line_index = {}
         for line in budget_lines:
             key = (line.account_id.id, line.cost_center_id.id or False,
-                   int(line.month), as_text(line.subcenter_code).upper())
+                   int(line.month))
             line_index.setdefault(key, line.id)
 
         # Leer los campos de gastos existentes en bloques con SQL, sin
@@ -527,12 +527,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         for code, center_code, subcenter, when, amount, key, source_key in prepared:
             account = accounts[code]
             center = centers[center_code] if center_code else Center.browse()
-            prefix = (account.id, center.id or False, when.month)
-            line_id = (
-                (line_index.get((*prefix, subcenter)) if subcenter else None)
-                or line_index.get((*prefix, ''))
-                or False
-            )
+            line_id = line_index.get((account.id, center.id or False, when.month), False)
             description = 'Consumo ERP %s / %s / %s' % (
                 code, center_code or 'Sin centro', subcenter or 'Sin subcentro')
             values = {
@@ -600,7 +595,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
 
         El ERP devuelve todos los años. Índice en memoria por Código/Centro
         y un único search de líneas evitan N búsquedas SQL por movimiento.
-        Se conserva la prioridad de subcentro exacto sobre línea general.
+        El subcentro solo se conserva en Gastos reales, sin usarlo como filtro.
         """
         lines = lines.exists().filtered(lambda rec: rec.account_id and rec.month)
         if not lines:
@@ -620,12 +615,11 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             ('account_id', 'in', list({rec.account_id.id for rec in lines})),
             ('month', 'in', list({str(key[3]) for key in selected})),
         ])
-        by_subcenter = {}
+        by_period = {}
         for line in candidates:
             key = (line.account_id.id, line.cost_center_id.id or False,
-                   int(line.budget_id.year), int(line.month),
-                   (line.subcenter_code or '').strip().upper())
-            by_subcenter.setdefault(key, line.id)
+                   int(line.budget_id.year), int(line.month))
+            by_period.setdefault(key, line.id)
         result = []
         for item in rows:
             code = as_text(get_value(item, 'Codigo', 'codigo_cuenta'))
@@ -638,12 +632,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             if key not in selected:
                 continue
             account_id, center_id = account_centers[key]
-            sub = as_text(get_value(item, 'Subcentro', 'codigo_subcentro')).upper()
             index = (account_id, center_id, when.year, when.month)
-            target_id = (
-                by_subcenter.get((*index, sub))
-                or by_subcenter.get((*index, ''))
-            )
+            target_id = by_period.get(index)
             if target_id in selected[key]:
                 result.append(item)
         return result

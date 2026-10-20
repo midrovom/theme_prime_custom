@@ -492,7 +492,7 @@ class ExpenseBudgetLine(models.Model):
     # referida por el ERP. Mostrar el código real evita imputaciones falsas
     # (por ejemplo, un movimiento de Sueldos visto desde una cuenta Agua).
     erp_account_code = fields.Char(
-        string='Código ERP cuenta', related='account_id.code', readonly=True,
+        string='Código', related='account_id.code', readonly=True,
         help='El consumo se asocia por este código y no por el nombre de la cuenta.',
     )
     subcenter_code = fields.Char(
@@ -675,8 +675,8 @@ class ExpenseBudgetLine(models.Model):
 
         Nunca filtrar por consumption_date (dato histórico oculto). La API
         envía Fecha con día exacto, pero la proyección es mensual. Se agregan
-        los movimientos de todos los días del mes con cuenta, centro y
-        subcentro coincidentes, sin incluir otros meses ni años.
+        los movimientos de todos los días del mes con cuenta y centro,
+        sin filtrar por subcentro y sin incluir otros meses ni años.
         """
         self.ensure_one()
         if not self.month or not self.account_id or not self.budget_id:
@@ -687,9 +687,7 @@ class ExpenseBudgetLine(models.Model):
             expense.company_id == self.company_id and
             expense.cost_center_id == self.cost_center_id and
             bool(expense.date) and expense.date.year == year and
-            expense.date.month == month and
-            (not self.subcenter_code or
-             (expense.subcenter_code or '').strip().upper() == self.subcenter_code)
+            expense.date.month == month
         ))
 
     @api.depends('expense_ids.subcenter_code', 'expense_ids.date',
@@ -761,11 +759,10 @@ class ExpenseBudgetLine(models.Model):
                     ('id', '!=', rec.id), ('budget_id', '=', rec.budget_id.id),
                     ('account_id', '=', rec.account_id.id), ('month', '=', rec.month),
                     ('cost_center_id', '=', rec.cost_center_id.id or False),
-                    ('subcenter_code', '=', rec.subcenter_code or False),
                 ], limit=1)
                 if duplicate:
                     raise ValidationError(_(
-                        'Ya existe una proyección para esta cuenta, centro, subcentro y mes. '
+                        'Ya existe una proyección para esta cuenta, centro y mes. '
                         'El consumo mensual se consolida en una única línea.'
                     ))
 
@@ -788,11 +785,10 @@ class ExpenseBudgetLine(models.Model):
                 ('account_id', '=', rec.account_id.id),
                 ('month', '=', rec.month),
                 ('cost_center_id', '=', rec.cost_center_id.id or False),
-                ('subcenter_code', '=', rec.subcenter_code or False),
             ], limit=1)
             if existing:
                 raise ValidationError(_(
-                    'Esta cuenta, centro y subcentro ya están presupuestados para el mismo mes y año '
+                    'Esta cuenta y centro ya están presupuestados para el mismo mes y año '
                     'en otro presupuesto de la empresa.'
                 ))
 
