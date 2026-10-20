@@ -205,9 +205,11 @@ def build_dataset(products, stocks, sales, purchases, reference_end=None, today=
             continue
         cost = number(value(row, 'Costo'))
         price = number(value(row, 'Precio'))
+        # Formato original de la ficha comercial. No inferirlo en el servidor
+        # ni alterar la posición de las columnas utilizadas por versiones 1.0-1.6.
         catalog[sku] = (text(value(row, 'Descripcion')) or sku, text(value(row, 'Categoria')) or 'SIN CATEGORIA',
                         text(value(row, 'Marca')) or 'SIN MARCA', text(value(row, 'Proveedor')) or 'SIN PROVEEDOR',
-                        cost, price)
+                        cost, price, text(value(row, 'Formato')))
         all_skus.add(sku)
         if cost <= 0:
             errors['costos_cero_o_negativos'] += 1
@@ -273,7 +275,7 @@ def build_dataset(products, stocks, sales, purchases, reference_end=None, today=
     ref_days_3 = sum(calendar.monthrange(int(m[:4]), int(m[5:]))[1] for m in r3)
     this_ytd = {'%d-%02d' % (ref_year, m) for m in range(1, ref_month + 1)}
     prior_ytd = {'%d-%02d' % (ref_year - 1, m) for m in range(1, ref_month + 1)}
-    catalog_defaults = ('', 'SIN CATEGORIA', 'SIN MARCA', 'SIN PROVEEDOR', 0.0, 0.0)
+    catalog_defaults = ('', 'SIN CATEGORIA', 'SIN MARCA', 'SIN PROVEEDOR', 0.0, 0.0, '')
     sorted_skus = sorted(all_skus)
     categories = sorted({(catalog.get(s) or (s,) + catalog_defaults[1:])[1] for s in sorted_skus})
     brands = sorted({(catalog.get(s) or (s,) + catalog_defaults[1:])[2] for s in sorted_skus})
@@ -326,7 +328,7 @@ def build_dataset(products, stocks, sales, purchases, reference_end=None, today=
     stale_special = 0.0
     xyz_codes = {'X': 0, 'Y': 0, 'Z': 0}
     for sku in sorted_skus:
-        desc, category, brand, prov, cost, price = catalog.get(sku, (sku, 'SIN CATEGORIA', 'SIN MARCA', 'SIN PROVEEDOR', 0.0, 0.0))
+        desc, category, brand, prov, cost, price, product_format = catalog.get(sku, (sku, 'SIN CATEGORIA', 'SIN MARCA', 'SIN PROVEEDOR', 0.0, 0.0, ''))
         if sku not in catalog:
             errors['sku_sin_ficha'] += 1
         volumes = stock_map.get(sku, [])
@@ -373,7 +375,7 @@ def build_dataset(products, stocks, sales, purchases, reference_end=None, today=
         products_out.append([sku, desc, idx_cat[category], idx_brand[brand], idx_prov[prov],
                              round(cost, 5), round(price, 4), round(stock_pos, 4), round(pos_val, 4),
                              round(stock_neg, 4), abc_rev.get(sku, '—'), abc_profit.get(sku, '—'), xyz, action,
-                             round(q3, 4), round(q6, 4), round(q12, 4), round(profit, 4), reason, active_months])
+                             round(q3, 4), round(q6, 4), round(q12, 4), round(profit, 4), reason, active_months, '', product_format])
     # Bodegas comerciales/especiales: indicador orientativo, no clasificación contable.
     by_sku_q6 = {p[0]: p[15] for p in products_out}
     for (sku, wh), q in qty_stock.items():

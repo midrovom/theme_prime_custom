@@ -1,7 +1,7 @@
 {
     'name': 'TRANSCASH | Inventario Inteligente',
-    'summary': 'Dashboard HTML de compras, stock, ABC, rentabilidad y reposición con importación XLSX e fotografías verificadas por SKU y miniaturas',
-    'version': '18.0.1.6.0',
+    'summary': 'Dashboard HTML de compras, stock, ABC, rentabilidad y reposición con importación XLSX, fotografías por SKU, filtros buscables y matriz ABC × XYZ',
+    'version': '18.0.1.8.0',
     'category': 'Inventory/Reporting',
     'author': 'RADIS / Solución personalizada',
     'license': 'LGPL-3',
