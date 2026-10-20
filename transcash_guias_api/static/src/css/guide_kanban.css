@@ -1,0 +1,59 @@
+/* Transcash Guías ERP - tarjetas Kanban responsivas v1.4.
+   Solo afecta a tc.guide; no modifica las vistas operativas v5.32. */
+.tc-guide-kanban.o_kanban_view .o_kanban_record,
+.tc-guide-kanban .o_kanban_record { border: 0; background: transparent; padding: 0; box-shadow: none; }
+.tc-guide-kanban .tcg-card {
+  --tcg-border: var(--border-color, #dde4eb);
+  background: var(--o-view-background-color, var(--o-webclient-background-color, #fff));
+  border: 1px solid var(--tcg-border); border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(19, 43, 68, .055); overflow: hidden;
+  height: 100%; padding: 0 17px 14px; transition: box-shadow .14s ease, transform .14s ease;
+}
+.tc-guide-kanban .tcg-card:hover { box-shadow: 0 8px 24px rgba(19,43,68,.12); transform: translateY(-1px); }
+.tc-guide-kanban .tcg-card__accent { height: 4px; margin: 0 -17px 14px; background: linear-gradient(90deg,#186cb2,#20a3a2); }
+.tc-guide-kanban .tcg-card__header { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.tc-guide-kanban .tcg-card__reference { min-width: 0; }
+.tc-guide-kanban .tcg-card__eyebrow { color: var(--o-gray-600,#718096); font-size: 10px; font-weight:700; letter-spacing:.08em; }
+.tc-guide-kanban .tcg-card__reference h4 { margin: 3px 0 0; font-size:20px; font-weight:750; line-height:1.15; overflow-wrap:anywhere; }
+.tc-guide-kanban .tcg-status { flex: 0 0 auto; font-size:10px; line-height:1.4; font-weight:700; border-radius:999px; padding:5px 8px; display:inline-flex; align-items:center; gap:5px; max-width:57%; text-align:center; white-space:normal; }
+.tc-guide-kanban .tcg-status__dot { width:6px; height:6px; border-radius:99px; background:currentColor; flex:none; }
+.tc-guide-kanban .tcg-status--success { color:#136849; background:#def6eb; }
+.tc-guide-kanban .tcg-status--warning { color:#835000; background:#fff1cc; }
+.tc-guide-kanban .tcg-status--danger { color:#a52b37; background:#ffe7ea; }
+.tc-guide-kanban .tcg-status--neutral { color:#325b7b; background:#e6eff8; }
+.tc-guide-kanban .tcg-status--pending { color:#576274; background:#edf0f4; }
+.tc-guide-kanban .tcg-card__document { display:flex; align-items:center; gap:7px; color:var(--o-gray-600,#697586); font-size:12px; margin:10px 0 14px; min-height:18px; overflow-wrap:anywhere; }
+.tc-guide-kanban .tcg-card__separator { opacity:.5; }
+.tc-guide-kanban .tcg-card__route { display:flex; gap:13px; background:rgba(27,108,164,.055); padding:12px 11px; border-radius:10px; margin-bottom:12px; min-height:106px; }
+.tc-guide-kanban .tcg-card__route-markers { display:flex; flex-direction:column; align-items:center; padding:3px 0 5px; color:#2181b8; }
+.tc-guide-kanban .tcg-card__route-markers > span:first-child { width:9px; height:9px; border-radius:50%; border:2px solid currentColor; flex:none; }
+.tc-guide-kanban .tcg-card__route-line { display:block; flex:1; min-height:19px; border-left:1px dashed #9cb7c7; margin:3px 0; }
+.tc-guide-kanban .tcg-card__route-markers i { font-size:14px; }
+.tc-guide-kanban .tcg-card__route-text { flex:1; display:flex; flex-direction:column; gap:11px; min-width:0; }
+.tc-guide-kanban .tcg-card__route-text > div { display:flex; flex-direction:column; gap:2px; }
+.tc-guide-kanban .tcg-card__route-text small { font-size:9px; letter-spacing:.07em; color:var(--o-gray-600,#788395); font-weight:700; }
+.tc-guide-kanban .tcg-card__route-text strong { font-size:12px; font-weight:600; line-height:1.4; overflow-wrap:anywhere; }
+.tc-guide-kanban .tcg-card__city { font-size:11px; color:var(--o-gray-600,#7d8795); }
+.tc-guide-kanban .tcg-card__people { display:flex; flex-direction:column; gap:7px; font-size:12px; margin-bottom:15px; min-width:0; }
+.tc-guide-kanban .tcg-card__people > div { display:flex; align-items:baseline; gap:7px; min-width:0; overflow-wrap:anywhere; }
+.tc-guide-kanban .tcg-card__people i { width:15px; flex:none; color:#2d7ca9; }
+.tc-guide-kanban .tcg-card__people span { min-width:0; }
+.tc-guide-kanban .tcg-card__plate { flex:none; font-size:10px; border-radius:5px; padding:2px 5px; background:var(--o-gray-100,#eef2f5); color:var(--o-gray-700,#4d586a); margin-left:auto; }
+.tc-guide-kanban .tcg-card__metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; margin:0 0 13px; }
+.tc-guide-kanban .tcg-card__metrics > div { display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center; background:var(--o-gray-100,#f5f7f9); border-radius:8px; padding:9px 3px; min-width:0; }
+.tc-guide-kanban .tcg-card__metrics span { color:var(--o-gray-600,#697586); font-size:10px; }
+.tc-guide-kanban .tcg-card__metrics strong { font-size:13px; font-weight:750; overflow-wrap:anywhere; }
+.tc-guide-kanban .tcg-card__footer { display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--tcg-border); padding-top:12px; gap:8px; font-size:11px; }
+.tc-guide-kanban .tcg-card__date { color:var(--o-gray-600,#718096); display:flex; align-items:center; gap:6px; }
+.tc-guide-kanban .tcg-card__open { color:#1469a8; font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap; }
+.tc-guide-kanban .tcg-card__open:hover { color:#084d85; text-decoration:underline; }
+@media (max-width:600px) {
+  .tc-guide-kanban .tcg-card { padding:0 12px 12px; }
+  .tc-guide-kanban .tcg-card__accent { margin:0 -12px 12px; }
+  .tc-guide-kanban .tcg-card__header { gap:7px; }
+  .tc-guide-kanban .tcg-status { max-width:52%; }
+  .tc-guide-kanban .tcg-card__metrics { gap:4px; }
+}
+
+.tc-guide-kanban .tcg-card__metrics--three { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.tc-guide-kanban .tcg-card__notice { border-radius: 8px; background: #fff1e8; color: #98410f; font-size:11px; font-weight:650; padding:8px 10px; margin: -3px 0 12px; }

@@ -37,3 +37,19 @@ No leen `logistica_transcash.api_url` y no exigen URL HTTPS adicional en Ajustes
 **Actualización**: sustituye exclusivamente el directorio `transcash_guias_api` por este y actualiza el addon en Odoo 18. No se instala `transcash_api_bridge`.
 Si tienes instalado previamente `transcash_api_bridge`, desinstálalo antes de actualizar este paquete para evitar dos overrides del mismo método.
 Mantén los nombres y configuración de la API en API Administrator: `getguiaslogistica`, GET, estado A, empresa correcta, credenciales y endpoint.
+
+
+## Actualización 18.0.1.4.0 - Kanban y menú integrado
+
+- Guías importadas **y guías operativas**: tarjetas Kanban adaptativas con origen, destino, transportista, chofer, placa,
+  fecha prevista, estado de publicación, líneas, peso, pallets y cajas. Los totales informativos
+  se calculan desde las líneas recibidas y **no incluyen datos comerciales**.
+- Se mantiene el mismo XMLID de acción/vista para que la actualización preserve la navegación.
+- El menú independiente `Transcash - Guías ERP` se reubica bajo Logística y se desactiva,
+  igual que su acceso duplicado. La vista queda en **Logística Transcash → Operación logística → Guías importadas ERP**.
+- Historial de sincronización ERP se mueve a Operación logística y sigue visible solo a administradores de integración.
+- No cambia la API, los modelos de guías operativas ni las reglas de publicación v1.3.
+
+Actualizar el addon `transcash_guias_api` y recargar el navegador (Ctrl+F5 para recursos estáticos).
+
+- La acción existente `logistica_transcash.action_transcash_guia` cambia a `kanban,list,form` y gana una vista Kanban para `transcash.guia` desde este addon; no se editan archivos de v5.32.

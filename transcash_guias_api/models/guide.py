@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class TCTransport(models.Model):
@@ -101,6 +101,21 @@ class TCGuide(models.Model):
     cargo_description = fields.Text()
     line_ids = fields.One2many('tc.guide.line', 'guide_id', string='Productos')
     last_sync = fields.Datetime(readonly=True)
+
+    # Indicadores únicamente logísticos (sin información comercial restringida).
+    line_count = fields.Integer(string='Productos', compute='_compute_logistic_summary')
+    total_weight_kg = fields.Float(string='Peso ERP (kg)', compute='_compute_logistic_summary', digits=(16, 2))
+    total_pallets = fields.Float(string='Pallets', compute='_compute_logistic_summary', digits=(16, 2))
+    total_boxes = fields.Float(string='Cajas', compute='_compute_logistic_summary', digits=(16, 2))
+
+    @api.depends('line_ids', 'line_ids.weight_kg', 'line_ids.pallets', 'line_ids.boxes')
+    def _compute_logistic_summary(self):
+        for guide in self:
+            lines = guide.line_ids
+            guide.line_count = len(lines)
+            guide.total_weight_kg = sum(lines.mapped('weight_kg'))
+            guide.total_pallets = sum(lines.mapped('pallets'))
+            guide.total_boxes = sum(lines.mapped('boxes'))
 
 
 class TCGuideLine(models.Model):

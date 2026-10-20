@@ -1,10 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
 <odoo>
   <record id="view_tc_guide_list" model="ir.ui.view">
     <field name="name">tc.guide.list</field><field name="model">tc.guide</field>
-    <field name="arch" type="xml"><list create="false" edit="false" delete="false">
+    <field name="arch" type="xml"><list create="false" edit="false" delete="false" decoration-danger="publication_state == 'error'" decoration-warning="publication_state == 'destination'">
       <field name="name"/><field name="document_number"/><field name="erp_state"/>
       <field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/>
-      <field name="destination_address"/><field name="publication_state"/><field name="erp_planned_date"/><field name="company_id" groups="base.group_multi_company"/>
+      <field name="destination_address"/><field name="publication_state" widget="badge"/><field name="line_count" optional="show"/><field name="total_weight_kg" optional="hide"/><field name="total_boxes" optional="hide"/><field name="erp_planned_date"/><field name="company_id" groups="base.group_multi_company"/>
     </list></field>
   </record>
   <record id="view_tc_guide_form" model="ir.ui.view">
@@ -44,46 +45,148 @@
         <field name="destination_city"/>
         <filter name="sync_today" string="Sincronizadas hoy" domain="[('last_sync', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
         <separator/>
-        <filter name="pending_destination" string="Destinos pendientes" domain="[('publication_state','=','destination')]"/>
+        <filter name="available_ruta" string="Disponibles para rutas" domain="[('publication_state','=','published')]"/><filter name="assigned_ruta" string="En operación" domain="[('publication_state','=','assigned')]"/><filter name="publishing_errors" string="Errores de publicación" domain="[('publication_state','=','error')]"/><filter name="pending_destination" string="Destinos pendientes" domain="[('publication_state','=','destination')]"/>
         <filter name="group_state" string="Estado ERP" context="{'group_by': 'erp_state'}"/>
         <filter name="group_transport" string="Transportista" context="{'group_by': 'transport_name'}"/>
         <filter name="group_date" string="Fecha prevista" context="{'group_by': 'erp_planned_date'}"/>
         <filter name="group_company" string="Empresa" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
-      </search>
+      <filter name="group_publication" string="Estado de publicación" context="{'group_by': 'publication_state'}"/></search>
     </field>
   </record>
   <record id="view_tc_guide_kanban" model="ir.ui.view">
     <field name="name">tc.guide.kanban</field>
     <field name="model">tc.guide</field>
     <field name="arch" type="xml">
-      <kanban create="false" edit="false" delete="false" default_order="id desc" sample="0">
-        <field name="name"/><field name="erp_state"/><field name="document_number"/>
-        <field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/>
-        <field name="recipient_id"/><field name="destination_address"/>
-        <field name="erp_planned_date"/><field name="last_sync"/>
+      <kanban class="tc-guide-kanban o_kanban_mobile" create="false" edit="false" delete="false" quick_create="false" sample="0" default_order="id desc">
+    <field name="name"/><field name="document_number"/><field name="document_type"/>
+    <field name="erp_state"/><field name="publication_state"/>
+    <field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/>
+    <field name="origin_address"/><field name="destination_address"/><field name="destination_city"/>
+    <field name="recipient_id"/><field name="erp_planned_date"/><field name="last_sync"/>
+    <field name="line_count"/><field name="total_weight_kg"/><field name="total_pallets"/><field name="total_boxes"/>
+    <field name="operational_guide_id"/><field name="company_id"/>
+    <templates>
+      <t t-name="card">
+        <div class="tcg-card">
+          <div class="tcg-card__accent"/>
+          <div class="tcg-card__header">
+            <div class="tcg-card__reference">
+              <div class="tcg-card__eyebrow">GUÍA DE TRANSPORTE <i class="fa fa-check-circle-o text-success" t-if="record.operational_guide_id.raw_value" title="Guía operativa vinculada"/></div>
+              <h4>№ <field name="name"/></h4>
+            </div>
+            <span t-attf-class="tcg-status #{record.publication_state.raw_value === 'published' ? 'tcg-status--success' : record.publication_state.raw_value === 'assigned' ? 'tcg-status--neutral' : record.publication_state.raw_value === 'destination' ? 'tcg-status--warning' : record.publication_state.raw_value === 'error' ? 'tcg-status--danger' : 'tcg-status--pending'}">
+              <span class="tcg-status__dot"/><field name="publication_state"/>
+            </span>
+          </div>
+          <div class="tcg-card__document">
+            <i class="fa fa-file-text-o" aria-hidden="true"/>
+            <span t-if="record.document_number.raw_value"><field name="document_number"/></span>
+            <span t-else="">Sin documento ERP</span>
+            <span class="tcg-card__separator">·</span>
+            <span t-if="record.erp_state.raw_value"><field name="erp_state"/></span>
+            <span t-else="">Sin estado ERP</span>
+          </div>
+          <div class="tcg-card__route">
+            <div class="tcg-card__route-markers"><span/><span class="tcg-card__route-line"/><i class="fa fa-map-marker" aria-hidden="true"/></div>
+            <div class="tcg-card__route-text">
+              <div><small>ORIGEN</small><strong t-if="record.origin_address.raw_value"><field name="origin_address"/></strong><strong t-else="">No informado</strong></div>
+              <div><small>DESTINO</small><strong t-if="record.destination_address.raw_value"><field name="destination_address"/></strong><strong t-else="">Por definir</strong>
+                <span class="tcg-card__city" t-if="record.destination_city.raw_value"><field name="destination_city"/></span>
+              </div>
+            </div>
+          </div>
+          <div class="tcg-card__people">
+            <div><i class="fa fa-truck" aria-hidden="true"/><span t-if="record.transport_name.raw_value"><field name="transport_name"/></span><span t-else="">Transportista sin identificar</span></div>
+            <div><i class="fa fa-id-card-o" aria-hidden="true"/><span t-if="record.driver_id.raw_value"><field name="driver_id"/></span><span t-else="">Chofer por asignar</span>
+              <span class="tcg-card__plate" t-if="record.vehicle_id.raw_value"><field name="vehicle_id"/></span>
+            </div>
+          </div>
+          <div class="tcg-card__metrics">
+            <div><span>Productos</span><strong><field name="line_count"/></strong></div>
+            <div><span>Peso ERP (kg)</span><strong><field name="total_weight_kg"/></strong></div>
+            <div><span>Pallets</span><strong><field name="total_pallets"/></strong></div>
+            <div><span>Cajas</span><strong><field name="total_boxes"/></strong></div>
+          </div>
+          <div class="tcg-card__footer">
+            <span class="tcg-card__date"><i class="fa fa-calendar-o" aria-hidden="true"/>
+              <span t-if="record.erp_planned_date.raw_value"><field name="erp_planned_date"/></span>
+              <span t-else="">Sin fecha prevista</span>
+            </span>
+            <a type="open" class="tcg-card__open">Ver guía <i class="fa fa-arrow-right" aria-hidden="true"/></a>
+          </div>
+        </div>
+      </t>
+    </templates>
+  </kanban></field>
+  </record>
+  <record id="view_tc_operational_guide_kanban" model="ir.ui.view">
+    <field name="name">transcash.guia.kanban.integrado.erp</field>
+    <field name="model">transcash.guia</field>
+    <field name="arch" type="xml">
+      <kanban class="tc-guide-kanban tc-operational-kanban o_kanban_mobile" create="false" quick_create="false" sample="0" default_order="id desc">
+        <field name="name"/><field name="state"/><field name="numero_documento"/><field name="tipo_documento"/>
+        <field name="origen"/><field name="destino"/><field name="destino_ciudad"/>
+        <field name="proveedor_id"/><field name="chofer_usuario_id"/><field name="placa"/>
+        <field name="fecha_prevista"/><field name="hoja_ruta_id"/><field name="embarque_id"/>
+        <field name="incidencia_estado"/><field name="total_productos"/><field name="numero_bultos"/>
+        <field name="peso_kg"/><field name="destinatario_id"/>
         <templates>
           <t t-name="card">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <strong class="fs-5">Guía <field name="name"/></strong>
-              <span class="badge rounded-pill text-bg-secondary"><field name="erp_state"/></span>
-            </div>
-            <div class="text-muted mb-2"><field name="document_number"/> · <field name="publication_state"/></div>
-            <div class="mb-1"><i class="fa fa-truck me-1" title="Transportista"/><field name="transport_name"/></div>
-            <div class="mb-1"><i class="fa fa-user me-1" title="Chofer"/><field name="driver_id"/></div>
-            <div class="mb-1"><i class="fa fa-map-marker me-1" title="Destino"/><field name="destination_address"/></div>
-            <div class="d-flex justify-content-between mt-2 text-muted small">
-              <span><i class="fa fa-calendar me-1"/><field name="erp_planned_date"/></span>
-              <span><i class="fa fa-clock-o me-1"/><field name="last_sync"/></span>
+            <div class="tcg-card">
+              <div class="tcg-card__accent"/>
+              <div class="tcg-card__header">
+                <div class="tcg-card__reference">
+                  <div class="tcg-card__eyebrow">GUÍA OPERATIVA</div>
+                  <h4>№ <field name="name"/></h4>
+                </div>
+                <span t-attf-class="tcg-status #{record.incidencia_estado.raw_value === 'abierta' ? 'tcg-status--danger' : record.state.raw_value === 'entregada' || record.state.raw_value === 'pagada' ? 'tcg-status--success' : record.state.raw_value === 'ruta' ? 'tcg-status--neutral' : record.state.raw_value === 'revision' || record.state.raw_value === 'destino' ? 'tcg-status--warning' : 'tcg-status--pending'}">
+                  <span class="tcg-status__dot"/><field name="state"/>
+                </span>
+              </div>
+              <div class="tcg-card__document">
+                <i class="fa fa-file-text-o" aria-hidden="true"/>
+                <span t-if="record.numero_documento.raw_value"><field name="numero_documento"/></span>
+                <span t-else="">Sin documento ERP</span>
+                <span class="tcg-card__separator">·</span>
+                <span t-if="record.hoja_ruta_id.raw_value"><i class="fa fa-sitemap" aria-hidden="true"/> <field name="hoja_ruta_id"/></span>
+                <span t-else="">Sin hoja de ruta</span>
+              </div>
+              <t t-if="record.incidencia_estado.raw_value === 'abierta'">
+                <div class="tcg-card__notice"><i class="fa fa-exclamation-triangle" aria-hidden="true"/> Incidencia abierta · requiere revisión</div>
+              </t>
+              <div class="tcg-card__route">
+                <div class="tcg-card__route-markers"><span/><span class="tcg-card__route-line"/><i class="fa fa-map-marker" aria-hidden="true"/></div>
+                <div class="tcg-card__route-text">
+                  <div><small>ORIGEN</small><strong t-if="record.origen.raw_value"><field name="origen"/></strong><strong t-else="">No informado</strong></div>
+                  <div><small>DESTINO</small><strong t-if="record.destino.raw_value"><field name="destino"/></strong><strong t-else="">Por definir</strong>
+                    <span class="tcg-card__city" t-if="record.destino_ciudad.raw_value"><field name="destino_ciudad"/></span></div>
+                </div>
+              </div>
+              <div class="tcg-card__people">
+                <div><i class="fa fa-truck" aria-hidden="true"/><span t-if="record.proveedor_id.raw_value"><field name="proveedor_id"/></span><span t-else="">Transportista sin asignar</span></div>
+                <div><i class="fa fa-id-card-o" aria-hidden="true"/><span t-if="record.chofer_usuario_id.raw_value"><field name="chofer_usuario_id"/></span><span t-else="">Chofer por asignar</span>
+                  <span class="tcg-card__plate" t-if="record.placa.raw_value"><field name="placa"/></span></div>
+              </div>
+              <div class="tcg-card__metrics tcg-card__metrics--three">
+                <div><span>Productos</span><strong><field name="total_productos"/></strong></div>
+                <div><span>Peso (kg)</span><strong><field name="peso_kg"/></strong></div>
+                <div><span>Bultos</span><strong><field name="numero_bultos"/></strong></div>
+              </div>
+              <div class="tcg-card__footer">
+                <span class="tcg-card__date"><i class="fa fa-calendar-o" aria-hidden="true"/>
+                  <span t-if="record.fecha_prevista.raw_value"><field name="fecha_prevista"/></span><span t-else="">Sin fecha prevista</span>
+                </span>
+                <a type="open" class="tcg-card__open">Ver guía <i class="fa fa-arrow-right" aria-hidden="true"/></a>
+              </div>
             </div>
           </t>
         </templates>
       </kanban>
     </field>
-  </record>
-  <record id="action_tc_guide" model="ir.actions.act_window"><field name="name">Guías sincronizadas</field><field name="res_model">tc.guide</field><field name="view_mode">kanban,list,form</field><field name="search_view_id" ref="view_tc_guide_search"/></record>
+  </record><record id="logistica_transcash.action_transcash_guia" model="ir.actions.act_window"><field name="view_mode">kanban,list,form</field></record><record id="action_tc_guide" model="ir.actions.act_window"><field name="name">Guías importadas del ERP</field><field name="res_model">tc.guide</field><field name="view_mode">kanban,list,form</field><field name="search_view_id" ref="view_tc_guide_search"/><field name="help" type="html"><p class="o_view_nocontent_smiling_face">Las guías recibidas de getguiaslogistica aparecerán aquí.</p></field></record>
   <record id="action_tc_sync_log" model="ir.actions.act_window"><field name="name">Historial sincronizaciones</field><field name="res_model">tc.guide.sync.log</field><field name="view_mode">list,form</field></record>
-  <menuitem id="menu_tc_root" name="Transcash - Guías ERP" sequence="65" groups="transcash_guias_api.group_tc_operator"/>
+  <menuitem id="menu_tc_root" name="Integración de guías ERP (antiguo)" sequence="65" groups="transcash_guias_api.group_tc_operator" parent="logistica_transcash.menu_transcash_root"/>
   <menuitem id="menu_tc_guides_operacion" name="Guías importadas ERP" parent="logistica_transcash.menu_tc_logistics_v530" action="action_tc_guide" sequence="3" groups="transcash_guias_api.group_tc_operator"/>
   <menuitem id="menu_tc_guides" name="Guías sincronizadas" parent="menu_tc_root" action="action_tc_guide" sequence="10" groups="transcash_guias_api.group_tc_operator"/>
-  <menuitem id="menu_tc_sync_logs" name="Historial de sincronización" parent="menu_tc_root" action="action_tc_sync_log" sequence="20" groups="transcash_guias_api.group_tc_sync_admin"/>
-</odoo>
+  <menuitem id="menu_tc_sync_logs" name="Historial de sincronización ERP" parent="logistica_transcash.menu_tc_logistics_v530" action="action_tc_sync_log" sequence="4" groups="transcash_guias_api.group_tc_sync_admin"/>
+<record id="menu_tc_root" model="ir.ui.menu"><field name="active" eval="False"/></record><record id="menu_tc_guides" model="ir.ui.menu"><field name="active" eval="False"/></record></odoo>
