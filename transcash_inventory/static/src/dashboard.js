@@ -464,7 +464,9 @@ async function aiStatusCheck(){
 function aiMetricVal(metric,value){
  if(value===null||value===undefined)return '—';
  if(['ventas','utilidad','compras','stock_valor','costo_ventas','precio_promedio'].includes(metric))return usd(value,2);
- if(metric==='margen')return fmt(value,2)+' %';return fmt(value,3);
+ if(metric==='margen')return fmt(value,2)+' %';
+ if(typeof value==='string')return value;
+ return fmt(value,3);
 }
 let aiController=null,aiCancelled=false;
 function aiProgress(message){$('aiProgress').hidden=false;$('aiProgress').textContent=message;}
@@ -509,9 +511,11 @@ function aiShowCalculated(data){
  const measures=Array.isArray(r.metricas)&&r.metricas.length?r.metricas:[r.metrica];
  if(Array.isArray(r.metricas)&&r.metricas.length){
   const labels=r.etiquetas||{}, totals=r.totales||{};
-  const hd=['Grupo',...measures.map(m=>labels[m]||m)];
+  const hd=[r.tipo_resultado==='listado_stock'?'SKU':'Grupo',...measures.map(m=>labels[m]||m)];
   const tableRows=r.filas.map(row=>[row.grupo,...measures.map(m=>aiMetricVal(m,row.metricas?.[m]??null))]);
-  const totalsHtml=measures.map(m=>'<span style="display:inline-block;margin:4px 17px 4px 0"><b>'+escapeHtml(labels[m]||m)+':</b> '+escapeHtml(aiMetricVal(m,totals[m]))+'</span>').join('');
+  const totalsHtml=r.tipo_resultado==='listado_stock'?
+   '<b>Productos encontrados:</b> '+fmt(r.total_filas)+' · <b>Mostrados:</b> '+fmt(r.filas_mostradas):
+   measures.map(m=>'<span style="display:inline-block;margin:4px 17px 4px 0"><b>'+escapeHtml(labels[m]||m)+':</b> '+escapeHtml(aiMetricVal(m,totals[m]))+'</span>').join('');
   const filtered=Object.entries(r.filtros||{}).filter(([key,val])=>val&&['categoria','marca','formato','proveedor'].includes(key));
   const filterText=filtered.length?'<div class="boxsub">'+filtered.map(([key,val])=>escapeHtml(key)+': <b>'+escapeHtml(val)+'</b>').join(' · ')+'</div>':'';
   $('aiResults').innerHTML=filterText+'<div class="boxsub">'+totalsHtml+'</div>'+simpleTable(hd,tableRows);

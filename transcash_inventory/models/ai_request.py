@@ -24,6 +24,7 @@ class TranscashAIRequest(models.Model):
         ('unavailable', 'No disponible'),
         ('failed', 'Error'),
     ], default='started', index=True, string='Estado')
+    used_openai = fields.Boolean(string='Consumió OpenAI', default=False, index=True)
     metrics = fields.Char(string='Indicadores solicitados')
     dimension = fields.Char(string='Agrupación')
     row_count = fields.Integer(string='Filas devueltas')

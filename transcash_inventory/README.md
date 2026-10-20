@@ -285,7 +285,7 @@ Permiten escritura, selección con Enter o clic, navegación con flechas, limpia
    - `Top 20 formatos 60x60 por ventas y margen` (para ranking de ventas; puede preguntar después por margen).
    - `¿Qué proveedor real suministró más mercadería por valor de compra?`
    - `Crea un indicador de utilidad bruta dividida entre valor del stock por marca.`
-5. Si la API Key no es válida, si el modelo no está disponible o se supera la cuota, verá un error concreto. Máximo **25 consultas por usuario cada hora**, con bloqueo transaccional para limitar consumo simultáneo.
+5. Si la API Key no es válida, si el modelo no está disponible o se supera la cuota, verá un error concreto. Límite predeterminado de **120 consultas completadas con OpenAI por usuario y hora**, configurable para el administrador mediante `transcash_inventory.ai_hourly_limit` (entre 10 y 500). Las consultas físicas de stock resueltas por Odoo y los intentos fallidos no agotan ese cupo. Las consultas simultáneas del mismo usuario siguen bloqueadas.
 
 **Arquitectura y controles de privacidad**: la pregunta, un diccionario de métricas y una selección de etiquetas comerciales se envían a OpenAI para construir el plan (con `store: false`), y luego la pregunta y hasta 50 filas de resultados agregados para redactar la explicación. Los cálculos económicos los hace Odoo con un conjunto de dimensiones, medidas y operaciones autorizadas; no se manda el Excel entero ni ninguna API Key al navegador. La API de OpenAI tiene su propia facturación y exige conexión HTTPS saliente desde el servidor.
 
@@ -473,3 +473,18 @@ No existe histórico de stock al cierre ni ventas por bodega en el archivo fuent
 - Convierte datos de API al contrato existente de Excel, con exactamente el
   mismo motor de indicadores y tablas relacionales. No duplica configuración.
 - Ver **API_CONTRATO.md** para el JSON esperado y las limitaciones.
+
+
+## Novedades v1.18 — stock numérico y cupo de consultas
+
+- **Consulta directa de inventario sin OpenAI:** por ejemplo: `¿Cuáles son los porcelanatos de 60X1.20 con stock menor a 100?`. La consulta lee **exclusivamente** `transcash_inventory_fact_product` de la empresa y versión seleccionadas, usa una comparación `< 100` parametrizada y entrega SKU, descripción, categoría, marca, formato, proveedor y stock con exportación Excel. Los resultados se ordenan de menor a mayor existencia, hasta 1.000 SKU por consulta; indica el total de coincidencias si supera ese máximo. El stock corresponde al último corte del inventario de Odoo, no a ventas ni stock histórico. Las existencias negativas también cumplen el comparador y deben revisarse.
+- **Formato comercial:** `60X1.20`, `60x120`, `60*120`, `60×120` y `60x1,20` se interpretan como 60 × 120 cm al comparar contra los formatos **realmente almacenados** en el catálogo. No se seleccionan cerámicas cuando el usuario solicita porcelanatos. Si existe un filtro de pantalla contradictorio con la pregunta, se comunica el conflicto en vez de usar el filtro silenciosamente.
+- **Cupo por hora corregido:** la versión 1.17 bloqueaba tras 25 intentos, incluso errores. A partir de v1.18 solo las **consultas exitosas que consumieron OpenAI** cuentan frente a un límite configurable con el parámetro de sistema `transcash_inventory.ai_hourly_limit`; valor predeterminado `120`. Los indicadores directos de stock no consumen cuota. Este límite de aplicación es independiente de la cuota y facturación del servicio OpenAI.
+- **Administración:** la bitácora continúa siendo privada para administradores. Se añade `used_openai` para auditar si una consulta consumió el servicio externo. Las consultas directas también dejan trazabilidad SQL en la bitácora, pero **nunca se devuelve al navegador**.
+- **Integración API:** `getproductosinvt`, `getventasinvt`, `getcomprasinvt`, `getstockinvt` continúan alimentando las tablas relacionales y la misma búsqueda funciona después de la sincronización.
+
+### Instalación de la actualización
+
+No desinstalar. Reemplazar la carpeta `transcash_inventory`, reiniciar Odoo, ejecutar la actualización del módulo y recargar `Ctrl+F5`. No hace falta importar el Excel ni introducir de nuevo la API Key. La columna `used_openai` se creará al actualizar el módulo.
+
+**Pendiente de validar:** prueba extremo a extremo en el PostgreSQL/Odoo del usuario y comprobación de las respuestas reales de sus endpoints API Administrator.

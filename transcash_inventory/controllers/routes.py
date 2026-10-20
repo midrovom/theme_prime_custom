@@ -15,6 +15,7 @@ from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
 from ..services.ai_client import plan_question, planner_context, narrate_result, AIServiceError
 from ..services.ai_sql import execute_sql_plan
+from ..services.ai_stock_lookup import detect_stock_lookup, execute_stock_lookup
 from ..services.ai_catalog_filters import resolve_catalog_filters
 from ..services.ai_schema import schema_context
 from ..services.ai_export import build_result_xlsx
@@ -235,16 +236,28 @@ class TranscashDashboardController(http.Controller):
         question = str(kw.get('question') or '').strip()
         if not 6 <= len(question) <= 700:
             return self._json({'error': 'Escriba una pregunta de entre 6 y 700 caracteres.'}, 400)
+        # Consultas deterministas de stock no consumen OpenAI ni su límite horario.
+        stock_lookup = detect_stock_lookup(question)
         config = read_ai_settings(request.env)
-        if not config['enabled'] or not config['key'] or not config['model']:
+        if not stock_lookup and (not config['enabled'] or not config['key'] or not config['model']):
             return self._json({'error': 'El asistente no está disponible. Solicite al administrador revisar la configuración.'}, 503)
         from datetime import timedelta
         since = fields.Datetime.now() - timedelta(hours=1)
         audit_model = request.env['transcash.inventory.ai.request'].sudo()
+        # El máximo es configurable por un administrador en Parámetros del sistema.
+        # No se cuentan intentos fallidos ni consultas calculadas directamente en Odoo.
+        try:
+            hourly_limit = int(request.env['ir.config_parameter'].sudo().get_param(
+                'transcash_inventory.ai_hourly_limit', '120'))
+        except (TypeError, ValueError):
+            hourly_limit = 120
+        hourly_limit = max(10, min(500, hourly_limit))
         domain_limit = [('user_id', '=', request.env.user.id),
+                        ('company_id', '=', request.env.company.id),
+                        ('state', '=', 'done'), ('used_openai', '=', True),
                         ('create_date', '>=', fields.Datetime.to_string(since))]
-        if audit_model.search_count(domain_limit) >= 25:
-            return self._json({'error': 'Ha alcanzado el límite de consultas por hora. Intente más tarde.'}, 429)
+        if not stock_lookup and audit_model.search_count(domain_limit) >= hourly_limit:
+            return self._json({'error': 'Límite de consultas de IA alcanzado. Puede continuar consultando existencias y filtros de stock. Intente más tarde.'}, 429)
         started = time.monotonic()
         audit = None
         try:
@@ -272,16 +285,35 @@ class TranscashDashboardController(http.Controller):
                                    [82318, request.env.user.id])
             if not request.env.cr.fetchone()[0]:
                 return self._json({'error': 'Ya tiene otra consulta en proceso. Espere a que termine.'}, 409)
-            if audit_model.search_count(domain_limit) >= 25:
-                return self._json({'error': 'Ha alcanzado el límite de consultas por hora.'}, 429)
+            if not stock_lookup and audit_model.search_count(domain_limit) >= hourly_limit:
+                return self._json({'error': 'Límite de consultas de IA alcanzado. Puede continuar consultando existencias.'}, 429)
             audit = audit_model.create({
                 'user_id': request.env.user.id, 'company_id': request.env.company.id,
                 'snapshot_id': snapshot.id, 'question': question, 'state': 'started',
+                'used_openai': not bool(stock_lookup),
             })
             ui = {'categoria': str(kw.get('categoria') or '')[:120],
                   'marca': str(kw.get('marca') or '')[:120],
                   'formato': str(kw.get('formato') or '')[:120],
                   'proveedor': str(kw.get('proveedor') or '')[:120]}
+            if stock_lookup:
+                # Comparaciones físicas: plan fijo, SELECT seguro, sin coste API.
+                data = execute_stock_lookup(request.env, snapshot, question, ui, stock_lookup,
+                                            (default_start, default_end))
+                sql = data.pop('sql_consulta', '')
+                sql_params = data.pop('sql_parametros', [])
+                audit.write({
+                    'state': 'done', 'dimension': 'sku', 'metrics': 'stock_unidades',
+                    'row_count': len(data['filas']),
+                    'duration_ms': int((time.monotonic() - started) * 1000),
+                    'finished_at': fields.Datetime.now(),
+                    'sql_query': sql,
+                    'sql_parameters': json.dumps(sql_params, ensure_ascii=False),
+                    'plan_json': json.dumps(stock_lookup, ensure_ascii=False),
+                    'result_json': json.dumps(data, ensure_ascii=False, allow_nan=False),
+                })
+                return self._json({'ok': True, 'available': True,
+                                   'result': data, 'request_id': audit.id})
             with request.env.cr.savepoint():
                 plan = plan_question(config['key'], config['model'], question,
                     available, default_start, default_end, ui,

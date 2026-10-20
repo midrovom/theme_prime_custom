@@ -47,7 +47,7 @@ def build_result_xlsx(result, question, created=None):
         raise ValueError('No hay indicadores para exportar.')
     period = result.get('periodo') or {}
     when = created or datetime.now()
-    headers = ['Grupo'] + [labels.get(m) or m for m in measures]
+    headers = ['SKU' if result.get('tipo_resultado') == 'listado_stock' else 'Grupo'] + [labels.get(m) or m for m in measures]
     end_col = _col(len(headers))
     sheet_rows = []
     def add_row(number, values, styles=None):
@@ -61,7 +61,7 @@ def build_result_xlsx(result, question, created=None):
     add_row(3, ['Período: %s a %s' % (period.get('desde') or '-', period.get('hasta') or '-')], [2])
     add_row(4, ['Generado: %s' % when.strftime('%Y-%m-%d %H:%M')], [2])
     add_row(6, headers, [3] * len(headers))
-    values = ['TOTAL'] + [totals.get(m) for m in measures]
+    values = [('PRODUCTOS ENCONTRADOS: %s' % result.get('total_filas', len(rows))) if result.get('tipo_resultado') == 'listado_stock' else 'TOTAL'] + [totals.get(m) for m in measures]
     styles = [7] + [5 if m == 'margen' else 4 if m in ('ventas', 'costo_ventas', 'compras', 'utilidad', 'stock_valor', 'precio_promedio') else 6 for m in measures]
     add_row(7, values, styles)
     for j, item in enumerate(rows, start=8):

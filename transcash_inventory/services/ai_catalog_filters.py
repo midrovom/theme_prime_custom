@@ -40,6 +40,11 @@ def _canonical(value, choices, field):
     value = _norm(value)
     if not value:
         return ''
+    if field == 'formato':
+        from .ai_stock_lookup import canonical_format
+        matched_format = [name for name in choices if canonical_format(name) == canonical_format(value)]
+        if matched_format:
+            return sorted(matched_format)[0]
     matched = [name for name in choices if _norm(name) == value]
     if len(matched) == 1:
         return matched[0]
@@ -101,8 +106,15 @@ def resolve_catalog_filters(env, snapshot, plan, question, ui_filters):
         values = catalog_values(env, snapshot, field, real_supplier=real_supplier)
         ui = str((ui_filters or {}).get(field) or '').strip()
         explicit = _mentioned(category_question if field == 'categoria' else question,
-                              values, field) if not ui else ''
+                              values, field)
+        if field == 'formato':
+            from .ai_stock_lookup import FORMAT_IN_TEXT
+            found = FORMAT_IN_TEXT.search(question)
+            if found:
+                explicit = found.group(0)
         proposal = str(plan.get(field) or '').strip()
+        if ui and explicit and _canonical(ui, values, field) != _canonical(explicit, values, field):
+            raise ValueError('La pregunta y el filtro de %s seleccionado son diferentes. Corrija el filtro antes de consultar.' % field)
         if ui:
             plan[field] = _canonical(ui, values, field)
         elif explicit:
