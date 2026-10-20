@@ -18,3 +18,4 @@ from . import test_regression_1468
 from . import test_regression_1469
 
 from . import test_regression_1470
+from . import test_regression_1471

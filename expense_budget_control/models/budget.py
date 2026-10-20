@@ -488,6 +488,13 @@ class ExpenseBudgetLine(models.Model):
         check_company=True, index=True,
         help='Opcional para presupuestos anteriores; seleccione para distribuir por centro.',
     )
+    # El nombre que muestra el Many2one puede no coincidir con la cuenta
+    # referida por el ERP. Mostrar el código real evita imputaciones falsas
+    # (por ejemplo, un movimiento de Sueldos visto desde una cuenta Agua).
+    erp_account_code = fields.Char(
+        string='Código ERP cuenta', related='account_id.code', readonly=True,
+        help='El consumo se asocia por este código y no por el nombre de la cuenta.',
+    )
     subcenter_code = fields.Char(
         string='Subcentro (legado)', index=True,
         help='Filtro de subcentro de líneas anteriores. Se conserva para no '
@@ -724,6 +731,20 @@ class ExpenseBudgetLine(models.Model):
     def _compute_actual_amount(self):
         for rec in self:
             rec.actual_amount = sum(rec._period_expenses().mapped('amount')) + rec.manual_actual_amount
+
+    erp_matching_moves = fields.Integer(
+        string='Movimientos coincidentes', compute='_compute_erp_matching_moves',
+        help='Cantidad de gastos reales vinculados que coinciden con cuenta, '
+             'centro, subcentro y día exacto; no ejecuta llamadas a la API.',
+    )
+
+    @api.depends('expense_ids', 'expense_ids.amount', 'expense_ids.date',
+                 'expense_ids.account_id', 'expense_ids.cost_center_id',
+                 'expense_ids.subcenter_code', 'account_id', 'cost_center_id',
+                 'month', 'consumption_date', 'budget_id.year', 'subcenter_code')
+    def _compute_erp_matching_moves(self):
+        for line in self:
+            line.erp_matching_moves = len(line._period_expenses())
 
     @api.depends('planned_amount', 'actual_amount')
     def _compute_variance_execution(self):
