@@ -4,17 +4,18 @@
     <field name="arch" type="xml"><list create="false" edit="false" delete="false">
       <field name="name"/><field name="document_number"/><field name="erp_state"/>
       <field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/>
-      <field name="destination_address"/><field name="erp_planned_date"/><field name="company_id" groups="base.group_multi_company"/>
+      <field name="destination_address"/><field name="publication_state"/><field name="erp_planned_date"/><field name="company_id" groups="base.group_multi_company"/>
     </list></field>
   </record>
   <record id="view_tc_guide_form" model="ir.ui.view">
     <field name="name">tc.guide.form</field><field name="model">tc.guide</field>
-    <field name="arch" type="xml"><form create="false" edit="false" delete="false"><sheet>
+    <field name="arch" type="xml"><form create="false" edit="false" delete="false"><header><button name="action_publish_to_logistics" type="object" string="Publicar en logística" class="btn-primary" groups="transcash_guias_api.group_tc_sync_admin,logistica_transcash.group_logistica_manager"/></header><sheet>
+      <group><field name="publication_state"/><field name="publication_note"/><field name="operational_guide_id"/></group>
       <group><group><field name="name"/><field name="external_id"/><field name="document_type"/><field name="document_number"/><field name="erp_state"/></group>
       <group><field name="transport_id"/><field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/></group></group>
       <group><group><field name="sender_id"/><field name="recipient_id"/><field name="destination_id"/></group>
       <group><field name="origin_address"/><field name="destination_address"/><field name="destination_city"/></group></group>
-      <group><field name="erp_start_date"/><field name="erp_end_date"/><field name="erp_planned_date"/><field name="last_sync"/></group>
+      <group><field name="erp_start_date"/><field name="erp_end_date"/><field name="erp_planned_date"/><field name="publication_state"/><field name="last_sync"/></group>
       <field name="cargo_description"/>
       <notebook><page string="Productos"><field name="line_ids" readonly="1"><list create="false" edit="false" delete="false">
         <field name="sku"/><field name="name"/><field name="quantity"/><field name="weight_kg"/><field name="pallets"/><field name="boxes"/>
@@ -43,6 +44,7 @@
         <field name="destination_city"/>
         <filter name="sync_today" string="Sincronizadas hoy" domain="[('last_sync', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
         <separator/>
+        <filter name="pending_destination" string="Destinos pendientes" domain="[('publication_state','=','destination')]"/>
         <filter name="group_state" string="Estado ERP" context="{'group_by': 'erp_state'}"/>
         <filter name="group_transport" string="Transportista" context="{'group_by': 'transport_name'}"/>
         <filter name="group_date" string="Fecha prevista" context="{'group_by': 'erp_planned_date'}"/>
@@ -65,7 +67,7 @@
               <strong class="fs-5">Guía <field name="name"/></strong>
               <span class="badge rounded-pill text-bg-secondary"><field name="erp_state"/></span>
             </div>
-            <div class="text-muted mb-2"><field name="document_number"/></div>
+            <div class="text-muted mb-2"><field name="document_number"/> · <field name="publication_state"/></div>
             <div class="mb-1"><i class="fa fa-truck me-1" title="Transportista"/><field name="transport_name"/></div>
             <div class="mb-1"><i class="fa fa-user me-1" title="Chofer"/><field name="driver_id"/></div>
             <div class="mb-1"><i class="fa fa-map-marker me-1" title="Destino"/><field name="destination_address"/></div>
