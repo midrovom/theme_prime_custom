@@ -488,3 +488,17 @@ No existe histórico de stock al cierre ni ventas por bodega en el archivo fuent
 No desinstalar. Reemplazar la carpeta `transcash_inventory`, reiniciar Odoo, ejecutar la actualización del módulo y recargar `Ctrl+F5`. No hace falta importar el Excel ni introducir de nuevo la API Key. La columna `used_openai` se creará al actualizar el módulo.
 
 **Pendiente de validar:** prueba extremo a extremo en el PostgreSQL/Odoo del usuario y comprobación de las respuestas reales de sus endpoints API Administrator.
+
+
+## v1.19 · Consulta rápida de stock (sin OpenAI)
+
+Para preguntas como «¿Cuáles son los porcelanatos de 60X120 con stock menor a 100?»,
+la vista usa `/transcash_inventory/ai/stock` en vez del proceso general. Este
+endpoint no prepara los hechos SQL, no consume OpenAI ni la cuota por hora.
+Para importaciones nuevas consulta las tablas relacionales de Odoo; para
+importaciones históricas sin materializar, lee el snapshot guardado en Odoo
+sin bloquear al usuario con una migración de datos. Conserva filtros por
+categoría, marca, formato y proveedor y la exportación Excel y bitácora.
+
+Las consultas analíticas generales siguen utilizando los hechos SQL. Si todavía
+no existen en snapshots antiguos, su preparación se realiza por separado.

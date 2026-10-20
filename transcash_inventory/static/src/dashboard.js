@@ -471,7 +471,7 @@ function aiMetricVal(metric,value){
 let aiController=null,aiCancelled=false;
 function aiProgress(message){$('aiProgress').hidden=false;$('aiProgress').textContent=message;}
 function aiStop(){if(aiController){aiController.abort();}aiCancelled=true;}
-async function aiFetch(url,form,limitMs){
+async function aiFetch(url,form,limitMs,timeoutMessage){
  const controller=new AbortController();aiController=controller;
  let expired=false;
  const timer=setTimeout(()=>{expired=true;controller.abort();},limitMs);
@@ -490,7 +490,7 @@ async function aiFetch(url,form,limitMs){
   return data;
  }catch(e){
   if(e.name==='AbortError'){
-   if(expired)throw Error('Tiempo de espera agotado. Revise la conectividad del servidor Odoo con OpenAI o utilice un modelo más rápido.');
+   if(expired)throw Error(timeoutMessage||'El servidor tardó demasiado en responder. Intente de nuevo.');
    throw Error('Consulta cancelada.');
   }
   if(e instanceof TypeError&&String(e.message).toLowerCase().includes('fetch')){
@@ -560,13 +560,27 @@ async function aiAsk(){
   const selected=$(id).value.trim();if(selected)form.append(field,selected);
  }
  try{
-  $('aiAsk').textContent='Consultando...';aiProgress('Preparando análisis...');
-  const prepare=new FormData();prepare.append('csrf_token',csrf);
-  if(sid&&/^\d+$/.test(sid))prepare.append('snapshot_id',sid);
-  await aiFetch('/transcash_inventory/ai/prepare',prepare,120000);
-  if(aiCancelled)throw Error('Consulta cancelada.');
-  aiProgress('Analizando información...');
-  const data=await aiFetch('/transcash_inventory/ai/ask',form,60000);
+  $('aiAsk').textContent='Consultando...';
+  // Comparaciones físicas de stock se resuelven directamente en Odoo,
+  // sin reconstruir tablas históricas ni consumir OpenAI.
+  const directStock = /\b(?:stock|existencias?|inventario)\b/i.test(question) &&
+      /(?:\b(?:menor(?:es)?|mayor(?:es)?|inferior(?:es)?|superior(?:es)?|igual(?:es)?|menos de|m[aá]s de)\b|[<>]=?|=)\s*(?:(?:a|de|que)\s*)?\d+/i.test(question);
+  let data;
+  if(directStock){
+   aiProgress('Consultando existencias en Odoo...');
+   data=await aiFetch('/transcash_inventory/ai/stock',form,35000,
+      'La consulta de stock tardó demasiado en Odoo. Contacte al administrador para revisar el servidor.');
+  }else{
+   aiProgress('Preparando análisis...');
+   const prepare=new FormData();prepare.append('csrf_token',csrf);
+   if(sid&&/^\d+$/.test(sid))prepare.append('snapshot_id',sid);
+   await aiFetch('/transcash_inventory/ai/prepare',prepare,120000,
+      'La preparación de indicadores en Odoo superó el tiempo permitido. Solicite al administrador ejecutar la preparación de datos.');
+   if(aiCancelled)throw Error('Consulta cancelada.');
+   aiProgress('Analizando información...');
+   data=await aiFetch('/transcash_inventory/ai/ask',form,60000,
+      'La consulta con ChatGPT tardó demasiado. Revise la conexión y el modelo configurado.');
+  }
   if(aiCancelled)throw Error('Consulta cancelada.');
   aiShowCalculated(data);
  }catch(e){

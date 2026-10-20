@@ -87,7 +87,11 @@ def resolve_stock_filters(env, snapshot, question, ui, detected):
             raise ValueError('La pregunta y el filtro de %s seleccionado son diferentes. Corrija el filtro antes de consultar.' % field)
         result[field] = _canonical(supplied or mentioned, choices, field) if (supplied or mentioned) else ''
     choices = catalog_values(env, snapshot, 'formato')
-    selected = str((ui or {}).get('formato') or '').strip() or detected.get('formato') or ''
+    selected_ui = str((ui or {}).get('formato') or '').strip()
+    mentioned_format = str(detected.get('formato') or '').strip()
+    if selected_ui and mentioned_format and canonical_format(selected_ui) != canonical_format(mentioned_format):
+        raise ValueError('El formato seleccionado es diferente al solicitado. Corrija el filtro de formato.')
+    selected = selected_ui or mentioned_format
     if selected:
         same = [v for v in choices if canonical_format(v) == canonical_format(selected)]
         if not same:
@@ -145,4 +149,106 @@ def execute_stock_lookup(env, snapshot, question, ui, detected, period, max_rows
         'periodo': {'desde': period[0], 'hasta': period[1]},
         'filtros': {k: v for k, v in filters.items() if k != 'format_aliases'},
         'sql_consulta': sql, 'sql_parametros': params + [max_rows],
+    }
+
+
+def _dataset_filters(dataset, question, ui, detected):
+    """Resolve filters against the stored Odoo snapshot when SQL facts aren't built."""
+    from .ai_catalog_filters import _canonical
+    from .ai_analytics import product_format
+    result = {}
+    choices_map = {
+        'categoria': dataset.get('categories') or [],
+        'marca': dataset.get('brands') or [],
+        'proveedor': dataset.get('providers') or [],
+    }
+    for field, choices in choices_map.items():
+        supplied = str((ui or {}).get(field) or '').strip()
+        mentioned = _question_catalog_value(question, choices, field)
+        if supplied and mentioned and _canonical(supplied, choices, field) != _canonical(mentioned, choices, field):
+            raise ValueError('La pregunta y el filtro de %s seleccionado son diferentes.' % field)
+        result[field] = _canonical(supplied or mentioned, choices, field) if supplied or mentioned else ''
+    formats = sorted({product_format(p) for p in dataset.get('products') or []})
+    supplied = str((ui or {}).get('formato') or '').strip()
+    mentioned = str(detected.get('formato') or '').strip()
+    if supplied and mentioned and canonical_format(supplied) != canonical_format(mentioned):
+        raise ValueError('El formato seleccionado es diferente al solicitado. Corrija el filtro de formato.')
+    chosen = supplied or mentioned
+    if chosen:
+        result['format_aliases'] = [fmt for fmt in formats if canonical_format(fmt) == canonical_format(chosen)]
+        if not result['format_aliases']:
+            raise ValueError('No existe el formato solicitado en el catálogo: %s.' % chosen[:70])
+        result['formato'] = result['format_aliases'][0]
+    else:
+        result['format_aliases'] = []
+        result['formato'] = ''
+    return result
+
+
+def execute_stock_lookup_snapshot(snapshot, question, ui, detected, period, max_rows=1000):
+    """Fast DB-resident snapshot fallback; never materializes or calls OpenAI.
+
+    Old imports are already persisted as a compact JSON attachment in Odoo.
+    Reading that attachment is preferable to forcing migration of 100k+ fact
+    rows during a simple stock query. New/API imports use the SQL facts path.
+    """
+    import json
+    from .ai_analytics import product_format
+    dataset = json.loads(snapshot.get_dashboard_json())
+    products = dataset.get('products') or []
+    filters = _dataset_filters(dataset, question, ui, detected)
+    op = detected['operator']
+    if op not in ('<', '<=', '=', '>', '>='):
+        raise ValueError('Comparación de stock no válida.')
+    threshold = float(detected['limit_value'])
+    comparison = {
+        '<': lambda value: value < threshold,
+        '<=': lambda value: value <= threshold,
+        '=': lambda value: value == threshold,
+        '>': lambda value: value > threshold,
+        '>=': lambda value: value >= threshold,
+    }[op]
+    labels = {
+        'categoria': dataset.get('categories') or [],
+        'marca': dataset.get('brands') or [],
+        'proveedor': dataset.get('providers') or [],
+    }
+    filtered = []
+    total_value = 0.0
+    for p in products:
+        if len(p) < 8:
+            continue
+        category = labels['categoria'][p[2]]
+        brand = labels['marca'][p[3]]
+        provider = labels['proveedor'][p[4]]
+        fmt = product_format(p)
+        stock = float(p[7] or 0)
+        if not comparison(stock):
+            continue
+        if (filters['categoria'] and _norm(category) != _norm(filters['categoria']) or
+            filters['marca'] and _norm(brand) != _norm(filters['marca']) or
+            filters['proveedor'] and _norm(provider) != _norm(filters['proveedor']) or
+            filters['format_aliases'] and fmt not in filters['format_aliases']):
+            continue
+        value = stock * max(0.0, float(p[5] or 0))
+        total_value += value
+        filtered.append((str(p[0]), str(p[1]), category, brand, fmt, provider, stock, value))
+    filtered.sort(key=lambda row: (row[6], row[0]))
+    metrics = ['descripcion', 'categoria', 'marca', 'formato', 'proveedor_ficha', 'stock_unidades', 'stock_valor']
+    column_names = {'descripcion': 'Descripción', 'categoria': 'Categoría', 'marca': 'Marca',
+                    'formato': 'Formato', 'proveedor_ficha': 'Proveedor',
+                    'stock_unidades': 'Stock · cantidad', 'stock_valor': 'Stock · valor USD'}
+    result_rows = []
+    for sku, name, cat, brand, fmt, prov, stock, value in filtered[:max_rows]:
+        fields = dict(zip(metrics, [name, cat, brand, fmt, prov, round(stock, 4), round(value, 2)]))
+        result_rows.append({'grupo': sku, 'valor': fields['stock_unidades'], 'metricas': fields})
+    return {
+        'tipo_resultado': 'listado_stock', 'dimension': 'sku',
+        'metrica': 'stock_unidades', 'metricas': metrics, 'etiquetas': column_names,
+        'totales': {'stock_unidades': None, 'stock_valor': round(total_value, 2)},
+        'total': len(filtered), 'grupos_evaluados': len(filtered), 'sku_evaluados': len(filtered),
+        'filas': result_rows, 'total_filas': len(filtered), 'filas_mostradas': len(result_rows),
+        'periodo': {'desde': period[0], 'hasta': period[1]},
+        'filtros': {k: v for k, v in filters.items() if k != 'format_aliases'},
+        'sql_consulta': '', 'sql_parametros': [],
     }

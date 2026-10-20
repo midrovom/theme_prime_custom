@@ -15,7 +15,7 @@ from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
 from ..services.ai_client import plan_question, planner_context, narrate_result, AIServiceError
 from ..services.ai_sql import execute_sql_plan
-from ..services.ai_stock_lookup import detect_stock_lookup, execute_stock_lookup
+from ..services.ai_stock_lookup import detect_stock_lookup, execute_stock_lookup, execute_stock_lookup_snapshot
 from ..services.ai_catalog_filters import resolve_catalog_filters
 from ..services.ai_schema import schema_context
 from ..services.ai_export import build_result_xlsx
@@ -228,6 +228,84 @@ class TranscashDashboardController(http.Controller):
             return self._json({'error': 'Prepare primero las tablas de consultas SQL.'}, 409)
         return self._json({'ok': True, 'schema': schema_context(request.env, snapshot)})
 
+    def _stock_fast_response(self, kw, question, detected):
+        """Stock-only endpoint: ZERO OpenAI calls, ZERO on-demand SQL migration."""
+        if not self._can_ai():
+            return self._json({'error': 'No tiene permiso para consultar el inventario.'}, 403)
+        audit = None
+        started = time.monotonic()
+        try:
+            snapshot_domain = [('company_id', '=', request.env.company.id)]
+            snapshot_id = str(kw.get('snapshot_id') or '').strip()
+            if snapshot_id:
+                if not snapshot_id.isdigit():
+                    return self._json({'error': 'Versión no válida.'}, 400)
+                snapshot_domain.append(('id', '=', int(snapshot_id)))
+            snapshot = request.env['transcash.inventory.snapshot'].search(
+                snapshot_domain, order='create_date desc, id desc', limit=1)
+            if not snapshot:
+                return self._json({'error': 'No hay información de inventario disponible.'}, 404)
+            period = (str(kw.get('desde') or snapshot.period_start or ''),
+                      str(kw.get('hasta') or snapshot.period_end or ''))
+            ui = {name: str(kw.get(name) or '')[:120] for name in
+                  ('categoria', 'marca', 'formato', 'proveedor')}
+            audit = request.env['transcash.inventory.ai.request'].sudo().create({
+                'user_id': request.env.user.id, 'company_id': request.env.company.id,
+                'snapshot_id': snapshot.id, 'question': question, 'state': 'started',
+                'used_openai': False, 'dimension': 'sku', 'metrics': 'stock_unidades',
+                'plan_json': json.dumps(detected, ensure_ascii=False),
+            })
+            # SQL facts for new/API imports; stored Odoo snapshot for older imports.
+            # Never invoke ensure_relational_data() on this route: rebuilding
+            # 100k+ historical rows can exhaust proxy and browser timeouts.
+            # A savepoint leaves the transaction usable if a SQL query fails.
+            with request.env.cr.savepoint():
+                if snapshot.relational_ready:
+                    # Fixed SQL limits; never user-controlled and transaction local.
+                    request.env.cr.execute("SET LOCAL statement_timeout = '18s'")
+                    request.env.cr.execute("SET LOCAL lock_timeout = '5s'")
+                    data = execute_stock_lookup(request.env, snapshot, question, ui, detected, period)
+                    origin = 'sql_odoo'
+                else:
+                    data = execute_stock_lookup_snapshot(snapshot, question, ui, detected, period)
+                    origin = 'snapshot_odoo'
+            sql = data.pop('sql_consulta', '')
+            params = data.pop('sql_parametros', [])
+            audit.write({
+                'state': 'done', 'row_count': len(data['filas']),
+                'duration_ms': int((time.monotonic() - started) * 1000),
+                'finished_at': fields.Datetime.now(), 'sql_query': sql,
+                'sql_parameters': json.dumps(params, ensure_ascii=False),
+                'plan_json': json.dumps({'engine': origin, 'request': detected}, ensure_ascii=False),
+                'result_json': json.dumps(data, ensure_ascii=False, allow_nan=False),
+            })
+            return self._json({'ok': True, 'available': True, 'result': data, 'request_id': audit.id})
+        except ValueError as exc:
+            if audit:
+                audit.write({'state': 'failed', 'error_detail': str(exc)[:2000],
+                    'duration_ms': int((time.monotonic() - started) * 1000),
+                    'finished_at': fields.Datetime.now()})
+            # These are strictly catalog validation messages, no SQL or internals.
+            return self._json({'error': str(exc)[:220]}, 400)
+        except Exception as exc:
+            logging.getLogger(__name__).exception('Transcash: error en consulta directa de stock')
+            if audit:
+                audit.write({'state': 'failed', 'error_detail': str(exc)[:2000],
+                    'duration_ms': int((time.monotonic() - started) * 1000),
+                    'finished_at': fields.Datetime.now()})
+            return self._json({'error': 'No fue posible completar la consulta. Contacte al administrador.'}, 500)
+
+    @http.route('/transcash_inventory/ai/stock', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_stock_fast(self, **kw):
+        """Explicit fast route used by the dashboard for physical-stock questions."""
+        question = str(kw.get('question') or '').strip()
+        if not 6 <= len(question) <= 700:
+            return self._json({'error': 'Escriba una pregunta válida.'}, 400)
+        detected = detect_stock_lookup(question)
+        if not detected:
+            return self._json({'error': 'No se identificó una comparación de stock válida. Use: productos con stock menor a 100.'}, 400)
+        return self._stock_fast_response(kw, question, detected)
+
     @http.route('/transcash_inventory/ai/ask', type='http', auth='user', methods=['POST'], csrf=True)
     def ai_ask(self, **kw):
         """Solo datos al usuario; trazabilidad técnica exclusiva de la bitácora."""
@@ -238,6 +316,8 @@ class TranscashDashboardController(http.Controller):
             return self._json({'error': 'Escriba una pregunta de entre 6 y 700 caracteres.'}, 400)
         # Consultas deterministas de stock no consumen OpenAI ni su límite horario.
         stock_lookup = detect_stock_lookup(question)
+        if stock_lookup:
+            return self._stock_fast_response(kw, question, stock_lookup)
         config = read_ai_settings(request.env)
         if not stock_lookup and (not config['enabled'] or not config['key'] or not config['model']):
             return self._json({'error': 'El asistente no está disponible. Solicite al administrador revisar la configuración.'}, 503)
