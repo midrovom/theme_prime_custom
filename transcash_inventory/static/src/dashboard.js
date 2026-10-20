@@ -17,6 +17,8 @@ function showUnavailable(message) {
  if(!DATA.products||!DATA.months||!DATA.months.length){showUnavailable('La última importación está incompleta.');return;}
  document.getElementById('tcStatusArea').hidden=true;
  document.body.classList.remove('tc-awaiting-data');
+ const allowAI=document.querySelector('meta[name="transcash-can-ai"]')?.content==='true';
+ document.getElementById('navAI').hidden=!allowAI;
  const firstMonth=DATA.months[0],lastMonth=DATA.months[DATA.months.length-1];
  const suspiciousStock=DATA.summary.stock_catalogo>0&&(DATA.summary.stock_fuente>DATA.summary.stock_catalogo*2||DATA.summary.stock_fuente<DATA.summary.stock_catalogo*.1);
  const risk=document.querySelector('.risk-banner');
@@ -330,7 +332,7 @@ function calculate(){let selected=[],selectedIndex=new Set(),yoy={rev25:0,rev26:
 function update(){st.xyzPage=0;let time=performance.now();view=calculate();let labels=months[st.start]+' a '+months[st.end];$('scopeinfo').textContent=fmt(view.rows.length)+' productos · '+labels+' · '+(st.wh>=0?'stock de bodega seleccionada y ventas corporativas':'stock agregado de todas las bodegas');$('warehouseWarning').innerHTML=st.wh>=0?'<b>Filtro bodega:</b> las ventas y compras siguen siendo corporativas para los SKU de la bodega; por eso no se calcula cobertura por bodega.':'';$('dateLegend').textContent=labels;$('skuCount').textContent=fmt(view.rows.length)+' SKU';const page=st.page;renderAll();}
 function kpi(label,val,foot,icon,kind=''){return '<div class="metric"><div class="meta"><span class="label">'+label+'</span><span class="miniicon">'+icon+'</span></div><div class="amount '+kind+'" title="'+escapeHtml(val)+'">'+val+'</div><div class="foot">'+foot+'</div></div>'}
 function renderAll(){let v=view,t=v.tot; $('kpis').innerHTML=kpi('Ventas netas',compact(t.rev),'Periodo seleccionado','↗')+kpi('Utilidad bruta',compact(t.profit),'Ingresos menos costo de ventas','◉','good')+kpi('Margen bruto',pct(t.rev?t.profit/t.rev:0),'Rentabilidad bruta sobre ventas','%')+kpi('Compras',compact(t.purchases),'Compras de los SKU incluidos','↘')+kpi('Stock valorizado',compact(t.stock),'Positivo × costo catálogo','▣')+kpi('Sin demanda 6 meses',compact(t.stalecap),'Global '+months[Math.max(0,refLast-5)]+' a '+refMonth+' · stock visible','⚑','warn')+kpi('Contribución negativa',usd(t.negativeprofit),'SKU con venta positiva y pérdida','−','bad')+kpi('Cobertura de 180+ días',st.wh>=0?'N/D':compact(t.excesscap),st.wh>=0?'Sin ventas por bodega':'Referencia '+months[Math.max(0,refLast-2)]+' a '+refMonth,'◷','warn');
- renderLine();renderABC();renderBars('catTop',v.categories,'rev',9,'cat');renderProductBars();renderCallouts();if(st.page==='abc')renderABCPage();else if(st.page==='xyz')renderXYZ();else if(st.page==='rotacion')renderRisk();else if(st.page==='comprasplan')renderPlan();else if(st.page==='bodegas')renderWare();else if(st.page==='proveedores')renderSup();else if(st.page==='productos')renderProducts();else if(st.page==='calidad')renderQuality();}
+ renderLine();renderABC();renderBars('catTop',v.categories,'rev',9,'cat');renderProductBars();renderCallouts();if(st.page==='abc')renderABCPage();else if(st.page==='xyz')renderXYZ();else if(st.page==='rotacion')renderRisk();else if(st.page==='comprasplan')renderPlan();else if(st.page==='bodegas')renderWare();else if(st.page==='proveedores')renderSup();else if(st.page==='productos')renderProducts();else if(st.page==='provprofit')renderProviderProfit();else if(st.page==='calidad')renderQuality();}
 function renderLine(){const arr=view.trends.slice(st.start,st.end+1),W=720,H=265,pad={t:22,b:43,l:69,r:15};const left=pad.l,right=W-pad.r,top=pad.t,bottom=H-pad.b;let mx=Math.max(1,...arr.map(t=>Math.max(t.rev,t.profit,t.purchases)))*1.16;const Y=v=>bottom-(v/mx)*(bottom-top),X=i=>left+(arr.length<=1?(right-left)/2:i*(right-left)/(arr.length-1));let parts=['<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Gráfico mensual de ventas utilidad y compras">'];for(let k=0;k<=4;k++){let value=mx*k/4,y=Y(value);parts.push('<line x1="'+left+'" x2="'+right+'" y1="'+y+'" y2="'+y+'" stroke="#e9eff4"/><text x="'+(left-9)+'" y="'+(y+4)+'" font-size="11" text-anchor="end" fill="#8092a2">'+escapeHtml(compact(value))+'</text>')}
  for(let [field,color] of [['rev',C.blue],['profit',C.green],['purchases',C.amber]]){let points=arr.map((m,i)=>[X(i),Y(m[field])]);parts.push('<polyline points="'+points.map(p=>p.join(',')).join(' ')+'" fill="none" stroke="'+color+'" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"/>');for(let [i,p] of points.entries()){parts.push('<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.5" fill="'+color+'" stroke="white" stroke-width="1"><title>'+escapeHtml(months[st.start+i]+' · '+({rev:'Ventas',profit:'Utilidad',purchases:'Compras'}[field])+' '+usd(arr[i][field],2))+'</title></circle>')}}
  for(let i=0;i<arr.length;i++){if(arr.length>13&&i%Math.ceil(arr.length/10)!==0&&i!==arr.length-1)continue;parts.push('<text x="'+X(i)+'" y="'+(H-15)+'" fill="#8292a1" font-size="11" text-anchor="middle">'+monthLabels[st.start+i]+'</text>')}parts.push('</svg>');$('monthlyChart').innerHTML=parts.join('')}
@@ -388,8 +390,87 @@ async function maybeAutoIndexPhotos(){
   if(st.page==='productos') fetchPhotoRefs([...document.querySelectorAll('#productTable [data-photo-sku]')].map(node=>node.getAttribute('data-photo-sku')));
  }catch(e){console.info('Índice de imágenes en segundo plano no disponible:',e.message);}
 }
-function setPage(p){st.page=p;mountExplorerFilters(p);for(let btn of document.querySelectorAll('#nav button'))btn.classList.toggle('active',btn.dataset.page===p);document.querySelectorAll('.section').forEach(n=>n.classList.toggle('on',n.id==='section-'+p));$('pageTitle').textContent=({resumen:'Panorama del inventario',abc:'ABC y rentabilidad',rotacion:'Cobertura y capital inmovilizado',comprasplan:'Simulador de reposición',bodegas:'Stock por ubicación',proveedores:'Compras y proveedores',productos:'Explorador de productos',xyz:'Análisis ABC × XYZ',calidad:'Control y metodología'})[p];renderAll();if(p==='productos'||p==='xyz')maybeAutoIndexPhotos();window.scrollTo({top:0,behavior:'smooth'})}
-function exportCsv(){const v=view,rows=st.page==='xyz'?xyzSortRows(xyzSelectedRows()):st.page==='productos'?expFilterRows():v.rows.filter(r=>(st.action<0||r.action===st.action)&&(st.abcFilter==='all'||r.abc===st.abcFilter)),head=['Codigo','Descripcion','Categoria','Marca','Formato','Proveedor_ficha','Ventas_USD_periodo','CostoVentas_USD_periodo','UtilidadBruta_USD_periodo','MargenBruto','ABC_ventas_filtrado','ABC_utilidad_filtrado','ABC_ventas_global_12m','XYZ_global_12m','ABC_XYZ_filtrado','XYZ_periodo','CV_XYZ_12m','Meses_ventas_12m','Compras_USD_periodo','Cantidad_vendida_periodo','Cantidad_comprada_periodo','Unidad_medida_referencial','Stock_cantidad','Stock_valorizado_estimado_USD','Cobertura_global_dias','Accion_global','Motivo_global'];const safe=s=>'"'+String(s??'').replace(/"/g,'""')+'"';const lines=[head.map(safe).join(';')];for(const r of rows){let p=r.p;const vals=[p[0],p[1],DATA.categories[p[2]],DATA.brands[p[3]],productFormat(p),DATA.providers[p[4]],r.rev.toFixed(2),r.cogs.toFixed(2),r.profit.toFixed(2),r.rev?(r.profit/r.rev).toFixed(5):'',r.abc,r.abcProfit,p[10],p[12],r.xyzGroup||'',r.xyz||'',r.xyzCv==null?'':r.xyzCv.toFixed(5),r.xyzActive==null?'':r.xyzActive,r.buys.toFixed(2),r.qty.toFixed(4),r.buyQty.toFixed(4),unitForProduct(p).label,r.stockQty.toFixed(4),r.stock.toFixed(2),r.coverage===null?'':r.coverage.toFixed(2),DATA.actions[p[13]],p[18]];lines.push(vals.map(safe).join(';'))}const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Transcash_analisis_filtrado_'+months[st.start]+'_'+months[st.end]+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)}
+// v1.9 · Análisis financiero por proveedor de ficha y proveedor real de compra.
+const pfSupplier=$('pfSupplier'),pfFormat=$('pfFormat'),pfBrand=$('pfBrand');
+for(const [id,values] of [['pfSupplierList',DATA.providers],['pfFormatList',explorerFormats],['pfBrandList',DATA.brands]]){
+ $(id).innerHTML=values.map(x=>'<option value="'+escapeHtml(x)+'"></option>').join('');
+}
+function pfMatches(value,input){return !input||expNormal(value).includes(expNormal(input));}
+function pfFilterRows(){return view.rows.filter(r=>pfMatches(DATA.providers[r.p[4]],pfSupplier.value.trim())&&pfMatches(productFormat(r.p),pfFormat.value.trim())&&pfMatches(DATA.brands[r.p[3]],pfBrand.value.trim()));}
+function renderProviderProfit(){
+ const rows=pfFilterRows(),tot={rev:0,profit:0,purchases:0,stock:0,sku:0},groups=new Map(),actual=new Map();
+ for(const r of rows){
+  const supplier=DATA.providers[r.p[4]],format=productFormat(r.p),key=supplier+'\u0001'+format;
+  let ob=groups.get(key);if(!ob){ob={supplier,format,sku:0,rev:0,profit:0,buy:0,stock:0,qty:0};groups.set(key,ob)}
+  ob.sku++;ob.rev+=r.rev;ob.profit+=r.profit;ob.buy+=r.buys;ob.stock+=r.stock;ob.qty+=r.qty;
+  tot.rev+=r.rev;tot.profit+=r.profit;tot.purchases+=r.buys;tot.stock+=r.stock;tot.sku++;
+  for(const [m,s,amt] of suppBySku[r.i])if(inPeriod(m)){
+   const name=DATA.purchaseSuppliers[s];actual.set(name,(actual.get(name)||0)+amt);
+  }
+ }
+ const ranked=[...groups.values()].sort((a,b)=>b.profit-a.profit);
+ const rollup=new Map();for(const r of ranked){const a=rollup.get(r.supplier)||{name:r.supplier,profit:0,rev:0};a.profit+=r.profit;a.rev+=r.rev;rollup.set(r.supplier,a)}
+ const profitBySup=[...rollup.values()].sort((a,b)=>b.profit-a.profit);
+ const purchased=[...actual].map(([name,buy])=>({name,buy})).sort((a,b)=>b.buy-a.buy);
+ $('pfScope').textContent=fmt(tot.sku)+' SKU · '+months[st.start]+' a '+months[st.end]+' · stock al corte disponible'+(st.wh>=0?' · ventas/compras corporativas para SKU de bodega seleccionada':'');
+ $('pfKpis').innerHTML=kpi('Ventas cartera proveedor',compact(tot.rev),'Periodo seleccionado','↗')+
+  kpi('Utilidad bruta de cartera',compact(tot.profit),'No atribuible a compras por lote','◉','good')+
+  kpi('Margen bruto',pct(tot.rev?tot.profit/tot.rev:0),'Utilidad / ventas','%')+
+  kpi('Compras de los SKU',compact(tot.purchases),'Todos los proveedores que suministraron los SKU','↘')+
+  kpi('Valor stock cartera',compact(tot.stock),'Cantidad positiva × costo catálogo','▣');
+ const bars=(id,array,key)=>{
+  if(!array.length){$(id).innerHTML='<p class="empty">Sin resultados para estos filtros.</p>';return}
+  const max=Math.max(1,...array.slice(0,12).map(x=>x[key]));
+  $(id).innerHTML='<div class="barbox">'+array.slice(0,12).map(x=>'<div class="hbar" title="'+escapeHtml(x.name)+'"><span class="hlabel">'+escapeHtml(x.name)+'</span><span class="track"><span class="fill" style="display:block;width:'+Math.max(0,x[key]/max*100)+'%"></span></span><span class="hvalue">'+compact(x[key])+'</span></div>').join('')+'</div>';
+ };
+ bars('pfProfitBars',profitBySup,'profit');bars('pfPurchaseBars',purchased,'buy');
+ $('pfTable').innerHTML=simpleTable(['Proveedor de ficha','Formato','SKU','Ventas netas','Utilidad bruta','Margen','Compras de SKU','Stock estimado'],ranked.slice(0,250).map(x=>[x.supplier,x.format,fmt(x.sku),usd(x.rev,2),usd(x.profit,2),pct(x.rev?x.profit/x.rev:0),usd(x.buy,2),usd(x.stock,2)]));
+ $('pfActual').innerHTML=simpleTable(['Proveedor real de compra','Compras netas (USD)','% de compras filtradas'],purchased.slice(0,150).map(x=>[x.name,usd(x.buy,2),pct(tot.purchases?x.buy/tot.purchases:0)]));
+}
+for(const input of [pfSupplier,pfFormat,pfBrand])input.addEventListener('input',()=>{if(st.page==='provprofit')renderProviderProfit()});
+$('pfClear').addEventListener('click',()=>{pfSupplier.value=pfFormat.value=pfBrand.value='';renderProviderProfit()});
+
+// ChatGPT nunca ve una API Key: todas las llamadas pasan por rutas autenticadas del backend.
+let aiBusy=false;
+async function aiStatusCheck(){
+ if(!allowAI)return;
+ try{const res=await fetch('/transcash_inventory/ai/status',{credentials:'same-origin'});
+ const data=await res.json();$('aiStatus').textContent=data.message||'No disponible';
+ $('aiAsk').disabled=!data.enabled;
+ }catch(e){$('aiStatus').textContent='No se pudo comprobar configuración';$('aiAsk').disabled=true;}
+}
+function aiMetricVal(metric,value){
+ if(value===null||value===undefined)return '—';
+ if(['ventas','utilidad','compras','stock_valor','costo_ventas','precio_promedio'].includes(metric))return usd(value,2);
+ if(metric==='margen')return fmt(value,2)+' %';return fmt(value,3);
+}
+async function aiAsk(){
+ if(aiBusy)return;
+ const question=$('aiQuestion').value.trim();if(question.length<6){$('aiError').hidden=false;$('aiError').textContent='Escribe una pregunta de al menos seis caracteres.';return;}
+ aiBusy=true;$('aiAsk').disabled=true;$('aiAsk').textContent='Calculando...';$('aiError').hidden=true;$('aiResponse').hidden=true;
+ const form=new FormData();form.append('csrf_token',document.querySelector('meta[name="transcash-csrf"]').content);
+ form.append('question',question);form.append('desde',months[st.start]);form.append('hasta',months[st.end]);
+ const sid=new URLSearchParams(window.location.search).get('snapshot_id');if(sid&&/^\d+$/.test(sid))form.append('snapshot_id',sid);
+ if(st.cat>=0)form.append('categoria',DATA.categories[st.cat]);
+ if(st.brand>=0)form.append('marca',DATA.brands[st.brand]);
+ try{
+  const res=await fetch('/transcash_inventory/ai/ask',{method:'POST',body:form,credentials:'same-origin'});
+  const data=await res.json();if(!res.ok||data.error)throw new Error(data.error||'No se pudo procesar la solicitud.');
+  const r=data.result;$('aiAnswer').textContent=data.answer;
+  $('aiMethod').textContent=r.etiqueta+' · '+r.periodo.desde+' a '+r.periodo.hasta+' · '+r.grupos_evaluados+' grupos · '+r.sku_evaluados+' SKU. '+r.observaciones.join(' ')+(data.warning?' '+data.warning:'');
+  const hdr=['Grupo',r.etiqueta,'Ventas','Utilidad','Compras','Margen','Stock USD'];
+  $('aiResults').innerHTML='<div class="boxsub"><b>Total general:</b> '+aiMetricVal(r.metrica,r.total)+'</div>'+simpleTable(hdr,r.filas.map(row=>[row.grupo,aiMetricVal(r.metrica,row.valor),usd(row.ventas,2),usd(row.utilidad,2),usd(row.compras,2),row.margen===null?'—':fmt(row.margen,2)+' %',usd(row.stock_valor,2)]));
+  $('aiResponse').hidden=false;
+ }catch(e){$('aiError').textContent=e.message;$('aiError').hidden=false;}
+ finally{aiBusy=false;$('aiAsk').disabled=false;$('aiAsk').textContent='✧ Calcular con ChatGPT';}
+}
+$('aiAsk').addEventListener('click',aiAsk);
+$('aiQuestion').addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();aiAsk();}});
+document.querySelectorAll('[data-ai-question]').forEach(btn=>btn.addEventListener('click',()=>{$('aiQuestion').value=btn.dataset.aiQuestion;$('aiQuestion').focus();}));
+if(allowAI)aiStatusCheck();
+
+function setPage(p){if(p==='asistente'&&!allowAI)return;st.page=p;mountExplorerFilters(p);for(let btn of document.querySelectorAll('#nav button'))btn.classList.toggle('active',btn.dataset.page===p);document.querySelectorAll('.section').forEach(n=>n.classList.toggle('on',n.id==='section-'+p));$('pageTitle').textContent=({resumen:'Panorama del inventario',abc:'ABC y rentabilidad',rotacion:'Cobertura y capital inmovilizado',comprasplan:'Simulador de reposición',bodegas:'Stock por ubicación',proveedores:'Compras y proveedores',productos:'Explorador de productos',provprofit:'Rentabilidad por proveedor',asistente:'Consultar con ChatGPT',xyz:'Análisis ABC × XYZ',calidad:'Control y metodología'})[p];renderAll();if(p==='productos'||p==='xyz')maybeAutoIndexPhotos();window.scrollTo({top:0,behavior:'smooth'})}
+function exportCsv(){const v=view,rows=st.page==='xyz'?xyzSortRows(xyzSelectedRows()):st.page==='productos'?expFilterRows():st.page==='provprofit'?pfFilterRows():v.rows.filter(r=>(st.action<0||r.action===st.action)&&(st.abcFilter==='all'||r.abc===st.abcFilter)),head=['Codigo','Descripcion','Categoria','Marca','Formato','Proveedor_ficha','Ventas_USD_periodo','CostoVentas_USD_periodo','UtilidadBruta_USD_periodo','MargenBruto','ABC_ventas_filtrado','ABC_utilidad_filtrado','ABC_ventas_global_12m','XYZ_global_12m','ABC_XYZ_filtrado','XYZ_periodo','CV_XYZ_12m','Meses_ventas_12m','Compras_USD_periodo','Cantidad_vendida_periodo','Cantidad_comprada_periodo','Unidad_medida_referencial','Stock_cantidad','Stock_valorizado_estimado_USD','Cobertura_global_dias','Accion_global','Motivo_global'];const safe=s=>'"'+String(s??'').replace(/"/g,'""')+'"';const lines=[head.map(safe).join(';')];for(const r of rows){let p=r.p;const vals=[p[0],p[1],DATA.categories[p[2]],DATA.brands[p[3]],productFormat(p),DATA.providers[p[4]],r.rev.toFixed(2),r.cogs.toFixed(2),r.profit.toFixed(2),r.rev?(r.profit/r.rev).toFixed(5):'',r.abc,r.abcProfit,p[10],p[12],r.xyzGroup||'',r.xyz||'',r.xyzCv==null?'':r.xyzCv.toFixed(5),r.xyzActive==null?'':r.xyzActive,r.buys.toFixed(2),r.qty.toFixed(4),r.buyQty.toFixed(4),unitForProduct(p).label,r.stockQty.toFixed(4),r.stock.toFixed(2),r.coverage===null?'':r.coverage.toFixed(2),DATA.actions[p[13]],p[18]];lines.push(vals.map(safe).join(';'))}const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Transcash_analisis_filtrado_'+months[st.start]+'_'+months[st.end]+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)}
 function reset(){st.cat=-1;st.brand=-1;st.wh=-1;st.providerExp=-1;st.formatExp=-1;st.search='';st.action=-1;st.abcFilter='all';st.xyzCell='all';st.xyzPage=0;st.xyzSort='rev';st.xyzDesc=true;st.goalDays=60;$('goalDays').value='60';st.pagenum=0;st.sort='rev';st.desc=true;$('cat').value=$('brand').value=$('wh').value='-1';$('search').value='';if(openExpCombo)expClose(openExpCombo,false);expSyncValues();$('period').value='12';setPeriod('12')}
 $('nav').addEventListener('click',e=>{const el=e.target.closest('[data-page]');if(el)setPage(el.dataset.page)});$('period').addEventListener('change',e=>setPeriod(e.target.value));for(let id of ['from','to'])$(id).addEventListener('change',()=>{let from=+$('from').value,to=+$('to').value;if(from>to){if(id==='from')$('to').value=from;else $('from').value=to}st.start=+$('from').value;st.end=+$('to').value;st.pagenum=0;update()});for(let [id,key]of [['cat','cat'],['brand','brand'],['wh','wh']])$(id).addEventListener('change',e=>{st[key]=+e.target.value;st.pagenum=0;update()});let debounce; $('search').addEventListener('input',e=>{clearTimeout(debounce);const value=e.target.value;debounce=setTimeout(()=>{st.search=value;st.pagenum=0;update()},180)});$('goalDays').addEventListener('change',e=>{st.goalDays=+e.target.value;renderPlan()});$('resetBtn').addEventListener('click',reset);$('exportBtn').addEventListener('click',exportCsv);$('helpBtn').addEventListener('click',()=>setPage('calidad'));$('drawerClose').addEventListener('click',closeDrawer);$('detailBack').addEventListener('click',closeDrawer);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});document.addEventListener('click',e=>{const xy=e.target.closest('[data-xyz-cell]');if(xy){st.xyzCell=xy.dataset.xyzCell;st.xyzPage=0;renderXYZ();return;}const xySort=e.target.closest('[data-xyz-sort]');if(xySort){const key=xySort.dataset.xyzSort;if(key===st.xyzSort)st.xyzDesc=!st.xyzDesc;else{st.xyzSort=key;st.xyzDesc=!['sku','name','abcxyz','xyz'].includes(key);}st.xyzPage=0;renderXYZ();return;}const ab=e.target.closest('[data-abc]');if(ab&&ab.dataset.abc){st.abcFilter=ab.dataset.abc;st.pagenum=0;setPage('productos');return}const abcClear=e.target.closest('[data-abcclear]');if(abcClear){st.abcFilter='all';st.pagenum=0;renderProducts();return}const cat=e.target.closest('[data-cat]');if(cat){st.cat=+cat.dataset.cat;$('cat').value=st.cat;st.pagenum=0;update();return}const wh=e.target.closest('[data-wh]');if(wh){st.wh=+wh.dataset.wh;$('wh').value=st.wh;st.pagenum=0;update();return}const act=e.target.closest('[data-action]');if(act){st.action=+act.dataset.action;st.pagenum=0;renderProducts();return}const th=e.target.closest('[data-sort]');if(th){let key=th.dataset.sort;if(key===st.sort)st.desc=!st.desc;else{st.sort=key;st.desc=!['sku','name','category','abc','action'].includes(key)}st.pagenum=0;renderProducts();return}const sku=e.target.closest('[data-sku]');if(sku){openSku(+sku.dataset.sku);return}});[['firstPage',()=>st.pagenum=0],['prevPage',()=>st.pagenum--],['nextPage',()=>st.pagenum++],['lastPage',()=>{let n=expFilterRows().length;st.pagenum=Math.max(0,Math.ceil(n/st.pageSize)-1)}]].forEach(([id,fn])=>$(id).addEventListener('click',()=>{fn();renderProducts()}));[['xyzFirst',()=>st.xyzPage=0],['xyzPrev',()=>st.xyzPage--],['xyzNext',()=>st.xyzPage++],['xyzLast',()=>st.xyzPage=Math.max(0,Math.ceil(xyzSelectedRows().length/st.xyzPageSize)-1)]].forEach(([id,fn])=>$(id).addEventListener('click',()=>{fn();renderXYZ()}));expInit();update();
 })().catch(e=>{console.error("Transcash - dashboard",e);showUnavailable("Error cargando indicadores: "+e.message);});

@@ -9,6 +9,8 @@ from urllib.parse import quote
 from odoo import http, fields
 from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
+from ..services.ai_client import plan_question, narrate_result, AIServiceError
+from ..services.ai_analytics import execute_plan
 
 _HTML = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'dashboard.html'
 
@@ -17,6 +19,9 @@ class TranscashDashboardController(http.Controller):
     def _can_view(self):
         user = request.env.user
         return user.has_group('transcash_inventory.group_transcash_user') or user.has_group('base.group_system')
+
+    def _can_ai(self):
+        return self._can_view() and (request.env.user.has_group('transcash_inventory.group_transcash_ai') or request.env.user.has_group('base.group_system'))
 
     def _can_upload(self):
         user = request.env.user
@@ -40,6 +45,7 @@ class TranscashDashboardController(http.Controller):
         source = _HTML.read_text(encoding='utf-8')
         source = source.replace('@@CSRF@@', html.escape(request.csrf_token(), quote=True))
         source = source.replace('@@CAN_UPLOAD@@', 'true' if self._can_upload() else 'false')
+        source = source.replace('@@CAN_AI@@', 'true' if self._can_ai() else 'false')
         return request.make_response(source, headers=[('Content-Type', 'text/html; charset=utf-8'),
             ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
 
@@ -60,6 +66,98 @@ class TranscashDashboardController(http.Controller):
         payload = snapshot.get_dashboard_json()
         return request.make_response(payload, headers=[('Content-Type', 'application/json; charset=utf-8'),
             ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
+
+    @http.route('/transcash_inventory/ai/status', type='http', auth='user', methods=['GET'])
+    def ai_status(self, **kw):
+        if not self._can_ai():
+            return self._json({'error': 'No tiene permiso para utilizar ChatGPT.'}, 403)
+        params = request.env['ir.config_parameter'].sudo()
+        enabled = params.get_param('transcash_inventory.ai_enabled') == 'True'
+        key_ok = bool(params.get_param('transcash_inventory.ai_api_key'))
+        return self._json({'enabled': enabled and key_ok, 'configured': key_ok,
+                           'message': 'Disponible' if enabled and key_ok else
+                                      'Pida al administrador configurar y activar ChatGPT.'})
+
+    @http.route('/transcash_inventory/ai/ask', type='http', auth='user', methods=['POST'], csrf=True)
+    def ai_ask(self, **kw):
+        if not self._can_ai():
+            return self._json({'error': 'Acceso denegado. Se requiere el permiso Consultas de ChatGPT.'}, 403)
+        question = str(kw.get('question') or '').strip()
+        if not 6 <= len(question) <= 700:
+            return self._json({'error': 'La consulta debe contener entre 6 y 700 caracteres.'}, 400)
+        params = request.env['ir.config_parameter'].sudo()
+        enabled = params.get_param('transcash_inventory.ai_enabled') == 'True'
+        key = (params.get_param('transcash_inventory.ai_api_key') or '').strip()
+        model = (params.get_param('transcash_inventory.ai_model') or 'gpt-5-mini').strip()
+        if not enabled or not key:
+            return self._json({'error': 'ChatGPT no está activado. Configure la API Key desde el menú de administración.'}, 503)
+        # Cost control. No questions or response bodies are saved here.
+        from datetime import timedelta
+        since = fields.Datetime.now() - timedelta(hours=1)
+        logmodel = request.env['transcash.inventory.ai.request'].sudo()
+        if logmodel.search_count([('user_id', '=', request.env.user.id),
+                                  ('create_date', '>=', fields.Datetime.to_string(since))]) >= 25:
+            return self._json({'error': 'Límite de 25 consultas por hora alcanzado. Intente más tarde.'}, 429)
+        try:
+            snapshot_id = str(kw.get('snapshot_id') or '').strip()
+            domain = [('company_id', '=', request.env.company.id)]
+            if snapshot_id:
+                if not snapshot_id.isdigit():
+                    return self._json({'error': 'Versión no válida'}, 400)
+                domain.append(('id', '=', int(snapshot_id)))
+            snapshot = request.env['transcash.inventory.snapshot'].search(
+                domain, limit=1, order='create_date desc, id desc')
+            if not snapshot:
+                return self._json({'error': 'No existe un Excel importado en la empresa actual.'}, 404)
+            dataset = json.loads(snapshot.get_dashboard_json())
+            available = dataset.get('months', [])
+            default_end = str(kw.get('hasta') or available[-1])
+            default_start = str(kw.get('desde') or available[max(0, len(available)-12)])
+            if default_start not in available or default_end not in available:
+                return self._json({'error': 'Las fechas elegidas no están disponibles.'}, 400)
+            # Serialize user requests to avoid excess API costs in parallel tabs.
+            request.env.cr.execute('SELECT pg_advisory_xact_lock(%s, %s)', [82318, request.env.user.id])
+            if logmodel.search_count([('user_id', '=', request.env.user.id),
+                                      ('create_date', '>=', fields.Datetime.to_string(since))]) >= 25:
+                return self._json({'error': 'Límite de consultas por hora alcanzado.'}, 429)
+            logmodel.create({'user_id': request.env.user.id, 'company_id': request.env.company.id})
+            ui = {'categoria': str(kw.get('categoria') or '')[:120],
+                  'marca': str(kw.get('marca') or '')[:120],
+                  'formato': str(kw.get('formato') or '')[:120],
+                  'proveedor': str(kw.get('proveedor') or '')[:120]}
+            plan = plan_question(key, model, question, available, default_start, default_end, ui)
+            # Active filters are binding when the planner did not request a replacement.
+            for k, value in ui.items():
+                if value and not plan.get(k):
+                    plan[k] = value
+            if plan.get('metric') == 'no_disponible':
+                return self._json({'ok': True,
+                    'answer': 'No es posible calcular ese indicador con los datos disponibles: ' +
+                              str(plan.get('razon') or 'faltan campos requeridos.')[:350],
+                    'result': {'dimension': plan.get('group_by') or 'total',
+                               'metrica': 'no_disponible', 'etiqueta': 'Indicador no disponible',
+                               'periodo': {'desde': default_start, 'hasta': default_end},
+                               'filtros': ui, 'filas': [], 'total': None,
+                               'grupos_evaluados': 0, 'sku_evaluados': 0,
+                               'observaciones': ['El sistema no inventa datos o métricas que requieren información no importada.']},
+                    'warning': ''})
+            data = execute_plan(dataset, plan, default_start, default_end)
+            try:
+                explanation = narrate_result(key, model, question, data)
+                warning = ''
+            except AIServiceError:
+                explanation = ('Indicador calculado por Odoo utilizando los movimientos del Excel. '
+                               'Consulte los resultados y las limitaciones en la tabla.')
+                warning = 'No se pudo generar la explicación con OpenAI; los cálculos locales sí están disponibles.'
+            return self._json({'ok': True, 'answer': explanation, 'result': data,
+                               'plan_reason': str(plan.get('razon') or '')[:300],
+                               'warning': warning})
+        except (AIServiceError, ValueError, KeyError, TypeError) as exc:
+            return self._json({'error': str(exc)[:350]}, 400)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Transcash: error de consulta de IA')
+            return self._json({'error': 'Error interno realizando la consulta. Revise el log Odoo.'}, 500)
 
     @http.route('/transcash_inventory/upload', type='http', auth='user', methods=['POST'], csrf=True)
     def upload(self, **kw):

@@ -7,9 +7,9 @@
 
 # TRANSCASH — Inventario Inteligente (Odoo 18 Community)
 
-Versión actual: 18.0.1.2.0.
+Versión actual: 18.0.1.9.0.
 
-Módulo independiente para Odoo 18 Community que mantiene el mismo diseño del dashboard HTML de Transcash. La visualización web se carga dentro del cliente backend de Odoo mediante una acción OWL y un iframe del mismo origen. No requiere Enterprise, Inventory de Odoo, internet ni bibliotecas externas para leer el Excel.
+Módulo independiente para Odoo 18 Community que mantiene el mismo diseño del dashboard HTML de Transcash. La visualización web se carga dentro del cliente backend de Odoo mediante una acción OWL y un iframe del mismo origen. No requiere Enterprise ni Inventory de Odoo; la lectura del Excel funciona sin bibliotecas externas. Las consultas de ChatGPT requieren internet saliente y API Key propia de OpenAI.
 
 ## Funcionalidad incluida
 
@@ -258,3 +258,45 @@ Permiten escritura, selección con Enter o clic, navegación con flechas, limpia
 - Al filtrar por bodega las ventas siguen siendo corporativas para SKU presentes en esa bodega, pues el archivo no desglosa ventas por bodega. No se mezclan ni suman cantidades entre unidades heterogéneas.
 - Indicadores ABC-XYZ dinámicos se obtienen de los datos mensuales ya guardados, por lo que **no requiere nueva importación**. Fotos enlazadas se reutilizan.
 - Actualización: reemplazar carpeta `transcash_inventory`, reiniciar Odoo, actualizar módulo desde Aplicaciones (sin desinstalar), refrescar navegador. Validar en entorno de prueba.
+
+---
+
+## v1.9 — Permisos, proveedor + rentabilidad y ChatGPT integrado
+
+### Nuevos apartados
+- **Rentabilidad por proveedor**: dos perspectivas: por proveedor de ficha del producto (ventas netas, utilidad bruta, margen, compras de esos SKU, stock a costo de catálogo) y por proveedor **real** de cada movimiento de compras. Ambos respetan los filtros del período y los filtros buscables de formato/proveedor de catálogo/marca, además del filtro global de categoría, marca y bodega. La exportación CSV del dashboard ahora respeta estos filtros en esta pestaña.
+- **Consultar con ChatGPT**: preguntas en español, plan estructurado con OpenAI, cálculo determinista desde el snapshot autorizado y explicación sobre el resultado. Permite fórmulas aritméticas controladas entre métricas precalculadas; no genera ni ejecuta SQL o código arbitrario.
+- **Configuración de ChatGPT**: menú nativo de Odoo exclusivo de administradores (grupo `base.group_system`). Campos de activar/desactivar, modelo (`gpt-5-mini` predeterminado) y API Key. Incluye botón `Probar conexión` para verificar conectividad y acceso al modelo.
+
+### Permisos
+1. **Acceso al panel de inventarios (consulta)** (`transcash_inventory.group_transcash_user`): lectura de los snapshots autorizados y panel general. Los usuarios que ya tenían este grupo mantienen su acceso después de actualizar.
+2. **Responsable de inventarios (importar)** (`transcash_inventory.group_transcash_manager`): hereda consulta y permite cargar archivos e indexar fotos.
+3. **Consultas de ChatGPT (IA)** (`transcash_inventory.group_transcash_ai`): hereda consulta y permite el asistente, sujeto a que el administrador configure y active la API. Los administradores técnicos pueden usar las rutas IA.
+4. **Administrador de Ajustes** (`base.group_system`): único autorizado a administrar API Key, modelo y activación. Las vistas, los modelos y los endpoints hacen comprobaciones de grupo. Los snapshots están restringidos a la empresa actual.
+
+**Asignación**: Ajustes → Usuarios → seleccione usuario → Derechos de acceso → Transcash Inventario. La API Key se guarda en `ir.config_parameter` del servidor; la clave no aparece en el HTML ni en JSON del navegador. Como otros secretos en parámetros de Odoo, es accesible a administradores y personas con acceso a la base de datos o copias de seguridad; proteja ambos recursos y rote las credenciales si se filtran. También puede usarse una clave restringida a este proyecto y límites presupuestarios en la plataforma de OpenAI.
+
+### Configuración y consultas
+1. Actualice la aplicación a **18.0.1.9.0** (NO desinstalar).
+2. Asigne grupos de consulta y, según sea necesario, grupo de consultas IA.
+3. En **Inventario Inteligente → Configuración de ChatGPT**, habilite la IA, introduzca su API Key y modelo; pulse **Guardar configuración** y **Probar conexión**.
+4. Abra Dashboard → **Consultar con ChatGPT**. Preguntas ejemplo:
+   - `¿Cuáles son los 10 proveedores de ficha cuyos productos dejaron más utilidad en 2026?`
+   - `Top 20 formatos 60x60 por ventas y margen` (para ranking de ventas; puede preguntar después por margen).
+   - `¿Qué proveedor real suministró más mercadería por valor de compra?`
+   - `Crea un indicador de utilidad bruta dividida entre valor del stock por marca.`
+5. Si la API Key no es válida, si el modelo no está disponible o se supera la cuota, verá un error concreto. Máximo **25 consultas por usuario cada hora**, con bloqueo transaccional para limitar consumo simultáneo.
+
+**Arquitectura y controles de privacidad**: solo la pregunta y metadatos mínimos se envían a OpenAI para construir el plan (con `store: false`), y luego la pregunta y hasta 50 filas de resultados agregados para redactar la explicación. Los cálculos económicos los hace Odoo con un conjunto de dimensiones, medidas y operaciones autorizadas; no se manda el Excel entero ni ninguna API Key al navegador. La API de OpenAI tiene su propia facturación y exige conexión HTTPS saliente desde el servidor.
+
+**Limitaciones**: el motor cubre venta neta, costo de venta, utilidad, margen, compras, cantidades vendidas/compradas, stock y fórmulas aritméticas construidas con estas magnitudes. No crea indicadores que dependan de campos inexistentes (por ejemplo inventario medio, GMROI contable real o lead time). Las cantidades no se convierten entre cajas, unidades y m². No puede atribuir rentabilidad a cada proveedor real de una compra sin trazabilidad por lote; por ello se informan por separado compras reales y rentabilidad de cartera.
+
+### Comprobaciones antes de producción
+- Copia de seguridad de la base de Odoo y prueba inicial en una instancia clonada.
+- Usuario sin grupo: no ve ni consulta el dashboard ni sus rutas JSON.
+- Usuario con grupo Consulta: ve el dashboard y análisis por proveedor, pero no importa ni consulta ChatGPT si no se lo autoriza expresamente.
+- Usuario con grupo IA: puede consultar ChatGPT pero no ver la clave ni modificarla.
+- Administrador: guarda clave, prueba conexión y activa/desactiva integración.
+- Comparar las ventas, utilidad, compras y stock de los 12 meses con los resultados existentes; probar filtro de formato `45×45` y ranking de proveedores; comprobar proveedor catálogo versus proveedor real.
+
+**Validación local**: Python y XML compilan, cálculos contrastados con el Excel original. La comprobación visual automatizada y una prueba de API real requieren un entorno que permita Chromium y una API Key activa; no se realizaron contra su servidor Odoo de producción.
