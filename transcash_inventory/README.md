@@ -502,3 +502,24 @@ categoría, marca, formato y proveedor y la exportación Excel y bitácora.
 
 Las consultas analíticas generales siguen utilizando los hechos SQL. Si todavía
 no existen en snapshots antiguos, su preparación se realiza por separado.
+
+
+## Versión 1.20 — Filtros compuestos de existencias
+
+Se corrigió la pérdida del segundo predicado en preguntas como
+«¿Cuáles son los porcelanatos 60x120 con stock menor a 100 y mayor a 0?».
+El motor conserva **ambos** límites, valida conflictos y los aplica en el WHERE
+parametrizado de PostgreSQL para snapshots relacionales o en el filtro idéntico
+para snapshots previos guardados en Odoo. Las consultas sencillas no necesitan
+OpenAI: la compilación determinista de un plan tipado es más rápida y segura.
+Para análisis abiertos el plan tipado proviene de ChatGPT con el diccionario
+de los modelos Odoo; el servidor reaplica todas las condiciones de stock literales
+y resuelve el formato y las categorías contra el catálogo real.
+
+Ejemplo de SQL generado internamente (jamás mostrado al usuario):
+`WHERE fp.snapshot_id = %s AND fp.company_id = %s
+ AND fp.stock_unidades < %s AND fp.stock_unidades > %s
+ AND LOWER(TRIM(fp.categoria)) = LOWER(TRIM(%s)) AND fp.formato = ANY(%s)`
+
+El usuario conserva exportación Excel, bitácora administrativa, permisos
+y los filtros anteriores. Esta actualización NO modifica las tablas ni los datos.

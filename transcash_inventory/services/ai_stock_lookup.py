@@ -7,17 +7,126 @@ selected company and import snapshot. No SQL or column names from the user.
 import re
 from .ai_catalog_filters import _norm, _canonical, catalog_values
 
-STOCK_FILTER = re.compile(
-    r'(?:stock|existencias?|inventario\s+(?:actual|disponible))\s*'
-    r'(?:de\s*)?'
-    r'(?:es\s*)?'
-    r'(?P<cmp>menor(?:es)?\s+(?:a|de|que)|inferior(?:es)?\s+a|'
-    r'menos\s+de|por\s+debajo\s+de|debajo\s+de|<\s*=?|'
-    r'mayor(?:es)?\s+(?:a|de|que)|superior(?:es)?\s+a|'
-    r'm[aá]s\s+de|por\s+encima\s+de|>\s*=?|igual(?:es)?\s+a|=)\s*'
-    r'(?P<num>\d+(?:[.,]\d+)?)', re.IGNORECASE)
+# Comparison tokens are only interpreted in the explicit physical-stock clause.
+# A list of predicates (rather than a single one) preserves "stock < 100 y > 0".
+_STOCK_WORD = r'(?:stock|existencias?|inventario\s+(?:actual|disponible))'
+_CMP = (r'(?:menor(?:es)?\s+(?:a|de|que)|inferior(?:es)?\s+a|'
+        r'menos\s+de|por\s+debajo\s+de|debajo\s+de|<=?|'
+        r'mayor(?:es)?\s+(?:a|de|que)|superior(?:es)?\s+a|'
+        r'm[aá]s\s+de|por\s+encima\s+de|>=?|igual(?:es)?\s+a|=)')
+_NUM = r'(-?\d+(?:[.,]\d+)?)'
+_STOCK_START = re.compile(r'\b' + _STOCK_WORD +
+    r'\b\s*(?:de\s*)?(?:es\s*)?(?P<cmp>' + _CMP + r')\s*(?P<num>' + _NUM + r')', re.IGNORECASE)
+_STOCK_NEXT = re.compile(r'\s*(?:,|y|e)\s*(?:(?:con\s+)?' + _STOCK_WORD +
+    r'\s*)?(?P<cmp>' + _CMP + r')\s*(?P<num>' + _NUM + r')', re.IGNORECASE)
+_STOCK_REPEAT = re.compile(r'\b' + _STOCK_WORD + r'\s*(?:de\s*)?(?:es\s*)?(?P<cmp>' +
+    _CMP + r')\s*(?P<num>' + _NUM + r')', re.IGNORECASE)
+_STOCK_BETWEEN = re.compile(r'\b' + _STOCK_WORD +
+    r'\b\s+entre\s+(?P<low>' + _NUM + r')\s+y\s+(?P<high>' + _NUM + r')', re.IGNORECASE)
 FORMAT_IN_TEXT = re.compile(r'(?<!\d)(\d{1,3}(?:[.,]\d{1,2})?)\s*[x×*]\s*'
                             r'(\d{1,3}(?:[.,]\d{1,2})?)(?!\d)', re.IGNORECASE)
+
+
+def _make_condition(comparator, raw_number):
+    label = _norm(comparator)
+    if label.startswith('<='):
+        operator = '<='
+    elif label.startswith('>='):
+        operator = '>='
+    elif label == '=' or label.startswith('igual'):
+        operator = '='
+    elif any(word in label for word in ('mayor', 'superior', 'mas', 'encima', '>')):
+        operator = '>'
+    else:
+        operator = '<'
+    value = float(str(raw_number).replace(',', '.'))
+    if not -100000000 <= value <= 100000000:
+        raise ValueError('La cantidad de stock está fuera del intervalo permitido.')
+    return {'operator': operator, 'value': value}
+
+
+def validate_stock_conditions(conditions):
+    """Whitelist operators/numbers, reject contradictions rather than return all."""
+    if not isinstance(conditions, list) or not 1 <= len(conditions) <= 6:
+        raise ValueError('Indique de una a seis condiciones de stock.')
+    validated = []
+    minimum, maximum = None, None
+    equals = []
+    for item in conditions:
+        if not isinstance(item, dict):
+            raise ValueError('Condición de stock incorrecta.')
+        op = item.get('operator')
+        if op not in ('<', '<=', '>', '>=', '='):
+            raise ValueError('Operador de stock no permitido.')
+        try:
+            amount = float(item.get('value'))
+        except (ValueError, TypeError, OverflowError):
+            raise ValueError('Valor numérico de stock no válido.') from None
+        import math
+        if not math.isfinite(amount) or not -100000000 <= amount <= 100000000:
+            raise ValueError('Valor de stock fuera del intervalo permitido.')
+        validated.append({'operator': op, 'value': amount})
+        if op in ('>', '>='):
+            candidate = (amount, op == '>=')
+            if minimum is None or candidate[0] > minimum[0] or (candidate[0] == minimum[0] and not candidate[1]):
+                minimum = candidate
+        elif op in ('<', '<='):
+            candidate = (amount, op == '<=')
+            if maximum is None or candidate[0] < maximum[0] or (candidate[0] == maximum[0] and not candidate[1]):
+                maximum = candidate
+        else:
+            equals.append(amount)
+    if len(set(equals)) > 1 or (minimum and maximum and
+       (minimum[0] > maximum[0] or (minimum[0] == maximum[0] and not (minimum[1] and maximum[1])))):
+        raise ValueError('Las condiciones de stock son incompatibles.')
+    if equals and ((minimum and (equals[0] < minimum[0] or equals[0] == minimum[0] and not minimum[1])) or
+                   (maximum and (equals[0] > maximum[0] or equals[0] == maximum[0] and not maximum[1]))):
+        raise ValueError('Las condiciones de stock son incompatibles.')
+    return validated
+
+
+def parse_stock_conditions(question):
+    """Read every AND-bound stock comparison, including repeated 'stock'.
+
+    Do not treat 60x120 tile dimensions or 12-month periods as stock comparisons.
+    """
+    phrase = _norm(question)
+    between = _STOCK_BETWEEN.search(phrase)
+    if between:
+        conditions = [{'operator': '>=', 'value': float(between.group('low').replace(',', '.'))},
+                      {'operator': '<=', 'value': float(between.group('high').replace(',', '.'))}]
+        return validate_stock_conditions(conditions)
+    first = _STOCK_START.search(phrase)
+    if not first:
+        return []
+    conditions = [_make_condition(first.group('cmp'), first.group('num'))]
+    cursor = first.end()
+    while True:
+        next_match = _STOCK_NEXT.match(phrase, cursor)
+        if not next_match:
+            break
+        conditions.append(_make_condition(next_match.group('cmp'), next_match.group('num')))
+        cursor = next_match.end()
+    # Independently mentioned stock comparisons must also be enforced.
+    for extra in _STOCK_REPEAT.finditer(phrase):
+        if extra.start() == first.start() or first.start() < extra.start() < cursor:
+            continue
+        conditions.append(_make_condition(extra.group('cmp'), extra.group('num')))
+    # Never treat OR as AND and silently change the request.
+    if re.search(r'\s+o\s+(?:' + _STOCK_WORD + r'\s*)?' + _CMP + r'\s*' + _NUM, phrase):
+        raise ValueError('La comparación con «o» requiere una consulta distinta; utilice condiciones unidas por «y».')
+    return validate_stock_conditions(conditions)
+
+
+def condition_matches(stock, conditions):
+    operators = {'<': lambda x,y: x < y, '<=': lambda x,y: x <= y,
+                 '>': lambda x,y: x > y, '>=': lambda x,y: x >= y,
+                 '=': lambda x,y: x == y}
+    return all(operators[item['operator']](stock, item['value']) for item in conditions)
+
+
+def condition_summary(conditions):
+    return ' y '.join('stock %s %g' % (item['operator'], item['value']) for item in conditions)
 
 
 def canonical_format(value):
@@ -36,24 +145,16 @@ def canonical_format(value):
 
 
 def detect_stock_lookup(question):
-    """Only list SKUs for an unambiguous physical-stock comparison."""
+    """Direct path for physical-stock SKU listings; never drop extra bounds."""
     normalized = _norm(question)
     if not (re.search(r'\b(cuales|que|lista|listado|muestrame|dame|productos|articulos|skus)\b',
                       normalized) or normalized.startswith('stock')):
         return None
-    match = STOCK_FILTER.search(normalized)
-    if not match:
-        return None
-    comparator = match.group('cmp').strip()
-    op = '>' if any(word in comparator for word in ('mayor', 'superior', 'mas', 'encima', '>')) else '=' if ('igual' in comparator or comparator == '=') else '<'
-    if comparator.startswith('<=') or comparator.startswith('>='):
-        op = comparator[:2]
-    value = float(match.group('num').replace(',', '.'))
-    if not 0 <= value <= 100000000:
+    conditions = parse_stock_conditions(question)
+    if not conditions:
         return None
     fmt = FORMAT_IN_TEXT.search(question)
-    return {'operator': op, 'limit_value': value,
-            'formato': fmt.group(0) if fmt else ''}
+    return {'conditions': conditions, 'formato': fmt.group(0) if fmt else ''}
 
 
 def _question_catalog_value(question, choices, field):
@@ -106,12 +207,12 @@ def resolve_stock_filters(env, snapshot, question, ui, detected):
 
 def execute_stock_lookup(env, snapshot, question, ui, detected, period, max_rows=1000):
     filters = resolve_stock_filters(env, snapshot, question, ui, detected)
-    operator = detected['operator']
-    if operator not in ('<','<=','=','>','>='):
-        raise ValueError('Comparación de stock no válida.')
-    conditions = ['fp.snapshot_id = %s', 'fp.company_id = %s',
-                  'fp.stock_unidades ' + operator + ' %s']
-    params = [snapshot.id, snapshot.company_id.id, float(detected['limit_value'])]
+    stock_conditions = validate_stock_conditions(detected['conditions'])
+    conditions = ['fp.snapshot_id = %s', 'fp.company_id = %s']
+    params = [snapshot.id, snapshot.company_id.id]
+    for predicate in stock_conditions:
+        conditions.append('fp.stock_unidades ' + predicate['operator'] + ' %s')
+        params.append(predicate['value'])
     for field, column in (('categoria', 'categoria'), ('marca', 'marca'), ('proveedor', 'proveedor_ficha')):
         if filters[field]:
             conditions.append('LOWER(TRIM(fp.' + column + ')) = LOWER(TRIM(%s))')
@@ -147,7 +248,8 @@ def execute_stock_lookup(env, snapshot, question, ui, detected, period, max_rows
         'total': int(count), 'grupos_evaluados': int(count), 'sku_evaluados': int(count),
         'filas': rows, 'total_filas': int(count), 'filas_mostradas': len(rows),
         'periodo': {'desde': period[0], 'hasta': period[1]},
-        'filtros': {k: v for k, v in filters.items() if k != 'format_aliases'},
+        'filtros': dict({k: v for k, v in filters.items() if k != 'format_aliases'},
+                        stock=condition_summary(stock_conditions)),
         'sql_consulta': sql, 'sql_parametros': params + [max_rows],
     }
 
@@ -197,17 +299,7 @@ def execute_stock_lookup_snapshot(snapshot, question, ui, detected, period, max_
     dataset = json.loads(snapshot.get_dashboard_json())
     products = dataset.get('products') or []
     filters = _dataset_filters(dataset, question, ui, detected)
-    op = detected['operator']
-    if op not in ('<', '<=', '=', '>', '>='):
-        raise ValueError('Comparación de stock no válida.')
-    threshold = float(detected['limit_value'])
-    comparison = {
-        '<': lambda value: value < threshold,
-        '<=': lambda value: value <= threshold,
-        '=': lambda value: value == threshold,
-        '>': lambda value: value > threshold,
-        '>=': lambda value: value >= threshold,
-    }[op]
+    stock_conditions = validate_stock_conditions(detected['conditions'])
     labels = {
         'categoria': dataset.get('categories') or [],
         'marca': dataset.get('brands') or [],
@@ -223,7 +315,7 @@ def execute_stock_lookup_snapshot(snapshot, question, ui, detected, period, max_
         provider = labels['proveedor'][p[4]]
         fmt = product_format(p)
         stock = float(p[7] or 0)
-        if not comparison(stock):
+        if not condition_matches(stock, stock_conditions):
             continue
         if (filters['categoria'] and _norm(category) != _norm(filters['categoria']) or
             filters['marca'] and _norm(brand) != _norm(filters['marca']) or
@@ -249,6 +341,7 @@ def execute_stock_lookup_snapshot(snapshot, question, ui, detected, period, max_
         'total': len(filtered), 'grupos_evaluados': len(filtered), 'sku_evaluados': len(filtered),
         'filas': result_rows, 'total_filas': len(filtered), 'filas_mostradas': len(result_rows),
         'periodo': {'desde': period[0], 'hasta': period[1]},
-        'filtros': {k: v for k, v in filters.items() if k != 'format_aliases'},
+        'filtros': dict({k: v for k, v in filters.items() if k != 'format_aliases'},
+                        stock=condition_summary(stock_conditions)),
         'sql_consulta': '', 'sql_parametros': [],
     }

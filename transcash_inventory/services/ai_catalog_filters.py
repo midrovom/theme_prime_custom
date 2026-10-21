@@ -123,4 +123,8 @@ def resolve_catalog_filters(env, snapshot, plan, question, ui_filters):
             plan[field] = _canonical(proposal, values, field)
         else:
             plan[field] = ''
+        if field == 'formato' and plan[field]:
+            from .ai_stock_lookup import canonical_format
+            plan['_format_aliases'] = [v for v in values
+                                       if canonical_format(v) == canonical_format(plan[field])]
     return plan

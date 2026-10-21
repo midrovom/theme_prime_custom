@@ -15,7 +15,7 @@ from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
 from ..services.ai_client import plan_question, planner_context, narrate_result, AIServiceError
 from ..services.ai_sql import execute_sql_plan
-from ..services.ai_stock_lookup import detect_stock_lookup, execute_stock_lookup, execute_stock_lookup_snapshot
+from ..services.ai_stock_lookup import detect_stock_lookup, execute_stock_lookup, execute_stock_lookup_snapshot, parse_stock_conditions
 from ..services.ai_catalog_filters import resolve_catalog_filters
 from ..services.ai_schema import schema_context
 from ..services.ai_export import build_result_xlsx
@@ -301,9 +301,12 @@ class TranscashDashboardController(http.Controller):
         question = str(kw.get('question') or '').strip()
         if not 6 <= len(question) <= 700:
             return self._json({'error': 'Escriba una pregunta válida.'}, 400)
-        detected = detect_stock_lookup(question)
+        try:
+            detected = detect_stock_lookup(question)
+        except ValueError as exc:
+            return self._json({'error': str(exc)[:220]}, 400)
         if not detected:
-            return self._json({'error': 'No se identificó una comparación de stock válida. Use: productos con stock menor a 100.'}, 400)
+            return self._json({'error': 'No se identificó una comparación válida. Ejemplo: stock mayor a 0 y menor a 100.'}, 400)
         return self._stock_fast_response(kw, question, detected)
 
     @http.route('/transcash_inventory/ai/ask', type='http', auth='user', methods=['POST'], csrf=True)
@@ -315,7 +318,10 @@ class TranscashDashboardController(http.Controller):
         if not 6 <= len(question) <= 700:
             return self._json({'error': 'Escriba una pregunta de entre 6 y 700 caracteres.'}, 400)
         # Consultas deterministas de stock no consumen OpenAI ni su límite horario.
-        stock_lookup = detect_stock_lookup(question)
+        try:
+            stock_lookup = detect_stock_lookup(question)
+        except ValueError as exc:
+            return self._json({'error': str(exc)[:220]}, 400)
         if stock_lookup:
             return self._stock_fast_response(kw, question, stock_lookup)
         config = read_ai_settings(request.env)
@@ -399,6 +405,10 @@ class TranscashDashboardController(http.Controller):
                     available, default_start, default_end, ui,
                     schema_context(request.env, snapshot))
                 plan = resolve_catalog_filters(request.env, snapshot, plan, question, ui)
+                # The user's literal stock bounds override an AI omission or guess.
+                # Every explicit bound must reach the resulting SQL WHERE clause.
+                predicates = parse_stock_conditions(question)
+                plan['stock_conditions'] = predicates
                 if plan.get('metric') == 'no_disponible':
                     audit.write({
                         'state': 'unavailable', 'plan_json': json.dumps(plan, ensure_ascii=False),

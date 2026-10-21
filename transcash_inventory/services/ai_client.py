@@ -86,9 +86,15 @@ PLAN_SCHEMA = {
         'formato': {'type': 'string'}, 'proveedor': {'type': 'string'}, 'sku': {'type': 'string'},
         'top_n': {'type': 'integer'}, 'orden': {'type': 'string', 'enum': ['asc', 'desc']},
         'formula': {'type': 'string'}, 'razon': {'type': 'string'},
+        'stock_conditions': {'type': 'array', 'items': {
+            'type': 'object', 'additionalProperties': False,
+            'properties': {'operator': {'type': 'string', 'enum': ['<', '<=', '>', '>=', '=']},
+                           'value': {'type': 'number'}},
+            'required': ['operator', 'value']}},
     },
     'required': ['metric', 'metrics', 'group_by', 'desde', 'hasta', 'categoria',
-                 'marca', 'formato', 'proveedor', 'sku', 'top_n', 'orden', 'formula', 'razon'],
+                 'marca', 'formato', 'proveedor', 'sku', 'top_n', 'orden', 'formula', 'razon',
+                 'stock_conditions'],
 }
 
 
@@ -132,6 +138,14 @@ al proveedor que vendió el lote. proveedor_compra atribuye compras a proveedor
 REAL del movimiento; SOLO admite métrica compras: no hay cantidades, utilidad ni ventas
 trazables por proveedor real en este exportado. No inventar atribuciones.
 STOCK: existencias al corte actual sin histórico mensual de cierre; valor a costo de catálogo.
+STOCK COMPARACIONES: en "stock menor a 100 y mayor a 0" debes incluir AMBAS condiciones:
+stock_conditions=[{"operator":"<","value":100},{"operator":">","value":0}].
+No descartes límites inferiores, superiores ni comparaciones encadenadas.
+"stock entre 0 y 100" es inclusivo. Para otras preguntas usa stock_conditions=[].
+Esos filtros se aplican a transcash.inventory.fact.product.stock_unidades,
+no a stock_valor (USD). Categoría PORCELANATO, formato 60x120 y ambas condiciones
+han de coexistir en la misma consulta. Nunca respondas con artículos que incumplen
+alguna condición. Odoo valida y aplica de nuevo los valores literales del usuario.
 La dimensión bodega solo tiene stock_unidades y stock_valor; NO ventas ni compras por bodega.
 Rotación contable real y GMROI real NO disponibles sin inventario promedio a costo.
 Cantidades de distintos SKU pueden mezclar m2, cajas y piezas; no sumar unidades heterogéneas

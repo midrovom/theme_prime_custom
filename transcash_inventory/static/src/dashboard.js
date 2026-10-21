@@ -516,7 +516,7 @@ function aiShowCalculated(data){
   const totalsHtml=r.tipo_resultado==='listado_stock'?
    '<b>Productos encontrados:</b> '+fmt(r.total_filas)+' · <b>Mostrados:</b> '+fmt(r.filas_mostradas):
    measures.map(m=>'<span style="display:inline-block;margin:4px 17px 4px 0"><b>'+escapeHtml(labels[m]||m)+':</b> '+escapeHtml(aiMetricVal(m,totals[m]))+'</span>').join('');
-  const filtered=Object.entries(r.filtros||{}).filter(([key,val])=>val&&['categoria','marca','formato','proveedor'].includes(key));
+  const filtered=Object.entries(r.filtros||{}).filter(([key,val])=>val&&['categoria','marca','formato','proveedor','stock'].includes(key));
   const filterText=filtered.length?'<div class="boxsub">'+filtered.map(([key,val])=>escapeHtml(key)+': <b>'+escapeHtml(val)+'</b>').join(' · ')+'</div>':'';
   $('aiResults').innerHTML=filterText+'<div class="boxsub">'+totalsHtml+'</div>'+simpleTable(hd,tableRows);
  }else{

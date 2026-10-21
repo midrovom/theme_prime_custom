@@ -9,6 +9,7 @@ import json
 import re
 
 from .ai_analytics import METRICS, DIMENSIONS, BASE_FIELDS, _formula, _metrics
+from .ai_stock_lookup import validate_stock_conditions, canonical_format
 
 # Constant Odoo tables and pre-approved dimensions. No table or column name ever
 # comes from the model, query string or HTTP request.
@@ -79,11 +80,20 @@ def build_select(snapshot_id, company_id, plan, months, default_start=None, defa
             params.append(filters[field])
             constraints.append('LOWER(TRIM(fp.' + field + ')) = LOWER(TRIM(%s))')
     if filters['formato']:
-        # Normalizes 45*45, 45×45 and 45x45 consistently; no SQL wildcards.
-        normalize_sql = "REPLACE(REPLACE(REPLACE(LOWER(fp.formato),'×','x'),'*','x'),' ','')"
-        normalized_value = filters['formato'].lower().replace('×','x').replace('*','x').replace(' ','')
-        params.append(normalized_value)
-        constraints.append(normalize_sql + ' = %s')
+        # Names are resolved against the ACTIVE catalog in resolve_catalog_filters.
+        # 60x1.20m, 60X120 and 60*120 are equivalent, but 60x60 is not.
+        aliases = plan.get('_format_aliases') or [filters['formato']]
+        if not isinstance(aliases, list) or any(not isinstance(f, str) for f in aliases):
+            raise ValueError('Formato no válido.')
+        aliases = [f for f in aliases if canonical_format(f) == canonical_format(filters['formato'])]
+        if not aliases:
+            raise ValueError('El formato solicitado no existe en el catálogo.')
+        params.append(aliases)
+        constraints.append('fp.formato = ANY(%s)')
+    stock_conditions = validate_stock_conditions(plan['stock_conditions']) if plan.get('stock_conditions') else []
+    for predicate in stock_conditions:
+        constraints.append('fp.stock_unidades ' + predicate['operator'] + ' %s')
+        params.append(predicate['value'])
     if filters['sku']:
         params.extend([filters['sku'], filters['sku']])
         constraints.append("(POSITION(LOWER(%s) IN LOWER(fp.sku)) > 0 OR POSITION(LOWER(%s) IN LOWER(fp.name)) > 0)")
@@ -182,7 +192,8 @@ SELECT grupo, {totals} FROM per_product GROUP BY grupo'''.format(
                           'period': {'desde': start, 'hasta': end}, 'filters': filters,
                           'top_n': top_n, 'descending': plan.get('orden') != 'asc',
                           'formula': str(plan.get('formula') or '').strip(),
-                          'count_sql': count_sql, 'count_params': count_params}
+                          'count_sql': count_sql, 'count_params': count_params,
+                          'stock_conditions': stock_conditions}
 
 
 def execute_sql_plan(env, snapshot, plan, default_start=None, default_end=None):
@@ -243,7 +254,8 @@ def execute_sql_plan(env, snapshot, plan, default_start=None, default_end=None):
     return {'dimension': info['dimension'], 'metrica': metric, 'metricas': metrics,
             'etiquetas': {m: METRICS.get(m, 'Indicador personalizado: '+expression) for m in metrics},
             'totales': totals, 'etiqueta': METRICS.get(metric, 'Indicador personalizado: '+expression),
-            'periodo': info['period'], 'filtros': info['filters'],
+            'periodo': info['period'],
+            'filtros': dict(info['filters'], **({'stock': ' y '.join('stock %s %g' % (c['operator'], c['value']) for c in info['stock_conditions'])} if info['stock_conditions'] else {})),
             'filas': evaluated[:info['top_n']],
             'total': round(total_vals[metric],4) if total_vals[metric] is not None else None,
             'grupos_evaluados': len(evaluated), 'sku_evaluados': selected_products,
