@@ -19,6 +19,7 @@ from ..services.ai_stock_lookup import detect_stock_lookup, execute_stock_lookup
 from ..services.ai_catalog_filters import resolve_catalog_filters
 from ..services.ai_schema import schema_context
 from ..services.ai_export import build_result_xlsx
+from ..services.table_export import build_table_xlsx, MAX_ROWS
 from ..services.ai_config_store import read_ai_settings, public_ai_settings, save_ai_settings
 from odoo.exceptions import UserError, AccessError
 import logging
@@ -91,7 +92,7 @@ class TranscashDashboardController(http.Controller):
         if not self._can_view():
             return request.make_response('Sin permiso para consultar inventario.', status=403)
         page = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'imported.html'
-        return request.make_response(page.read_text(encoding='utf-8').replace('@@COMPANY@@', html.escape(request.env.company.display_name, quote=True)), headers=[
+        return request.make_response(page.read_text(encoding='utf-8').replace('@@COMPANY@@', html.escape(request.env.company.display_name, quote=True)).replace('@@CSRF@@', html.escape(request.csrf_token(), quote=True)).replace('@@COMPANY_ID@@', str(request.env.company.id)), headers=[
             ('Content-Type', 'text/html; charset=utf-8'),
             ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
 
@@ -201,6 +202,7 @@ class TranscashDashboardController(http.Controller):
         source = source.replace('@@CAN_UPLOAD@@', 'true' if self._can_upload() else 'false')
         source = source.replace('@@CAN_AI@@', 'true' if self._can_ai() else 'false')
         source = source.replace('@@COMPANY@@', html.escape(request.env.company.display_name, quote=True))
+        source = source.replace('@@COMPANY_ID@@', str(request.env.company.id))
         return request.make_response(source, headers=[('Content-Type', 'text/html; charset=utf-8'),
             ('Cache-Control', 'no-store, no-cache, must-revalidate'), ('Pragma', 'no-cache'), ('X-Content-Type-Options', 'nosniff')])
 
@@ -583,6 +585,100 @@ class TranscashDashboardController(http.Controller):
                     'finished_at': fields.Datetime.now()})
             return self._json({'error': 'No fue posible completar el análisis. Intente nuevamente.'}, 500)
 
+    @http.route('/transcash_inventory/table/export_xlsx', type='http', auth='user', methods=['POST'], csrf=True)
+    def table_export_xlsx(self, **kw):
+        """Exports the user's currently filtered dashboard table, never raw SQL or another company."""
+        if not self._can_view():
+            return self._json({'error': 'No tiene permiso de consulta.'}, 403)
+        # Dashboard values originate from the company's authorized /data endpoint.
+        # We receive a table snapshot and never fetch records by arbitrary IDs.
+        try:
+            raw = kw.get('payload') or ''
+            if len(raw) > 18 * 1024 * 1024:
+                return self._json({'error': 'Demasiados datos para exportar.'}, 413)
+            data = json.loads(raw)
+            headers = data.get('headers')
+            rows = data.get('rows')
+            if not isinstance(rows, list) or len(rows) > MAX_ROWS:
+                return self._json({'error': 'Tabla demasiado grande.'}, 413)
+            workbook = build_table_xlsx(str(data.get('title') or 'Datos de inventario')[:180],
+                request.env.company.display_name, headers, rows,
+                str(data.get('period') or '')[:120], str(data.get('filters') or '')[:700])
+        except (ValueError, TypeError, KeyError) as exc:
+            return self._json({'error': 'No se pudo preparar el Excel: %s' % str(exc)[:200]}, 400)
+        filename = 'Inventario_%s.xlsx' % fields.Datetime.now().strftime('%Y%m%d_%H%M%S')
+        return request.make_response(workbook, headers=[
+            ('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+            ('Content-Disposition', 'attachment; filename="%s"' % filename),
+            ('Cache-Control', 'private, no-store'),
+            ('X-Content-Type-Options', 'nosniff'),
+        ])
+
+    @http.route('/transcash_inventory/imported/export_xlsx', type='http', auth='user', methods=['POST'], csrf=True)
+    def imported_export_xlsx(self, **kw):
+        """Reads ALL matching rows from Odoo ORM, never merely the current page."""
+        if not self._can_view():
+            return self._json({'error': 'Sin permiso para exportar.'}, 403)
+        supported = {'productos': 'transcash.inventory.fact.product',
+                     'ventas': 'transcash.inventory.fact.sale',
+                     'compras': 'transcash.inventory.fact.purchase',
+                     'proveedores': 'transcash.inventory.fact.supplier.purchase',
+                     'stock': 'transcash.inventory.fact.stock'}
+        kind = str(kw.get('kind') or '')
+        if kind not in supported:
+            return self._json({'error': 'Tabla no válida.'}, 400)
+        snapshot = self._latest()
+        if not snapshot or not snapshot.relational_ready:
+            return self._json({'error': 'No existen datos relacionales vigentes.'}, 409)
+        import re
+        start, end = str(kw.get('from') or ''), str(kw.get('to') or '')
+        for value in (start, end):
+            if value and not re.fullmatch(r'20\d{2}-(?:0[1-9]|1[0-2])', value):
+                return self._json({'error': 'Período incorrecto.'}, 400)
+        if start and end and start > end:
+            return self._json({'error': 'Fecha inicial mayor que final.'}, 400)
+        domain = [('company_id', '=', request.env.company.id), ('snapshot_id', '=', snapshot.id)]
+        sku = str(kw.get('sku') or '')[:100].strip()
+        if sku:
+            domain.append(('sku' if kind == 'productos' else 'product_id.sku', 'ilike', sku))
+        if kind in ('ventas', 'compras', 'proveedores'):
+            if start: domain.append(('mes','>=', start))
+            if end: domain.append(('mes','<=', end))
+        model = request.env[supported[kind]]
+        count = model.search_count(domain)
+        if count > MAX_ROWS:
+            return self._json({'error': 'Exportación superior al máximo de filas admitido. Aplique filtros.'}, 413)
+        headers = {
+            'productos': ['SKU', 'Descripción', 'Categoría', 'Marca', 'Formato', 'Proveedor catálogo', 'Costo unit.', 'Precio', 'Stock cant.', 'Stock $'],
+            'ventas': ['Período', 'SKU', 'Descripción', 'Vendido cant.', 'Ventas $', 'Costo ventas $', 'Utilidad $'],
+            'compras': ['Período', 'SKU', 'Descripción', 'Comprado cant.', 'Compras $'],
+            'proveedores': ['Período', 'SKU', 'Descripción', 'Proveedor real', 'Compras $'],
+            'stock': ['SKU', 'Descripción', 'Bodega', 'Stock cant.', 'Costo unit.', 'Valor $'],
+        }[kind]
+        order = 'sku asc, id asc' if kind == 'productos' else ('mes desc, id desc' if kind in ('ventas','compras','proveedores') else 'id desc')
+        rows = []
+        for offset in range(0, count, 1000):
+            for e in model.search(domain, order=order, limit=1000, offset=offset):
+                if kind == 'productos':
+                    rows.append([e.sku, e.name, e.categoria, e.marca, e.formato, e.proveedor_ficha, e.costo_unitario, e.precio_venta, e.stock_unidades, e.stock_valor])
+                elif kind == 'ventas':
+                    rows.append([e.mes, e.product_id.sku, e.product_id.name, e.cantidad_vendida, e.ventas, e.costo_ventas, e.ventas-e.costo_ventas])
+                elif kind == 'compras':
+                    rows.append([e.mes, e.product_id.sku, e.product_id.name, e.cantidad_comprada, e.compras])
+                elif kind == 'proveedores':
+                    rows.append([e.mes, e.product_id.sku, e.product_id.name, e.proveedor_compra, e.compras])
+                else:
+                    rows.append([e.product_id.sku, e.product_id.name, e.bodega, e.cantidad, e.product_id.costo_unitario, e.cantidad*max(0, e.product_id.costo_unitario)])
+        workbook = build_table_xlsx('Datos importados · ' + kind.capitalize(),
+            request.env.company.display_name, headers, rows,
+            ('%s a %s' % (start or 'Inicio', end or 'Último')),
+            'SKU: ' + sku if sku else 'Todos los SKU')
+        return request.make_response(workbook, headers=[
+            ('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+            ('Content-Disposition', 'attachment; filename="Inventario_%s_%s.xlsx"' % (kind, fields.Datetime.now().strftime('%Y%m%d_%H%M%S'))),
+            ('Cache-Control', 'private, no-store'), ('X-Content-Type-Options', 'nosniff'),
+        ])
+
     @http.route('/transcash_inventory/ai/export_xlsx', type='http', auth='user', methods=['POST'], csrf=True)
     def ai_export_xlsx(self, **kw):
         """Exportar únicamente la propia consulta validada y guardada en Odoo."""
@@ -648,6 +744,7 @@ class TranscashDashboardController(http.Controller):
         source = (Path(__file__).resolve().parents[1] / 'static' / 'src' / 'upload.html').read_text(encoding='utf-8')
         source = source.replace('@@CSRF@@', html.escape(request.csrf_token(), quote=True))
         source = source.replace('@@COMPANY@@', html.escape(request.env.company.display_name, quote=True))
+        source = source.replace('@@COMPANY_ID@@', str(request.env.company.id))
         return request.make_response(source, headers=[('Content-Type', 'text/html; charset=utf-8'),
             ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
 

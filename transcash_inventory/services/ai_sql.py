@@ -36,6 +36,7 @@ GROUP_COLUMNS = {
 
 SQL_METRIC_COLUMNS = ('ventas', 'costo_ventas', 'cantidad_vendida', 'compras',
                       'cantidad_comprada', 'stock_unidades', 'stock_valor')
+TEXT_METRICS = ('descripcion', 'ultima_compra', 'ultima_venta')
 SQL_TOTAL_EXPR = ',\n '.join('COALESCE(SUM({}),0) AS {}'.format(col, col) for col in SQL_METRIC_COLUMNS)
 
 
@@ -54,6 +55,11 @@ def build_select(snapshot_id, company_id, plan, months, default_start=None, defa
         raise ValueError('Dimensión desconocida; SQL no generado.')
     if metric not in METRICS and metric != 'formula':
         raise ValueError('Métrica desconocida; SQL no generado.')
+    if metric in TEXT_METRICS:
+        raise ValueError('Ordene por una métrica numérica, como stock_unidades.')
+    requested_text = [m for m in metrics if m in TEXT_METRICS]
+    if requested_text and dim != 'sku':
+        raise ValueError('Descripción y fechas de último movimiento solo se consultan por SKU.')
     if not isinstance(metrics, list) or not 1 <= len(metrics) <= 8 or len(set(metrics)) != len(metrics):
         raise ValueError('Se requieren entre 1 y 8 métricas diferentes.')
     if metric not in metrics or any(m not in METRICS and m != 'formula' for m in metrics):
@@ -165,7 +171,25 @@ FROM calendar LEFT JOIN s ON s.mes=calendar.mes LEFT JOIN b ON b.mes=calendar.me
     else:
         params.extend([int(snapshot_id), int(company_id), start, end,
                        int(snapshot_id), int(company_id), start, end])
-        group_expr = GROUP_COLUMNS[dim]
+        group_expr = 'fp.sku' if requested_text and dim == 'sku' else GROUP_COLUMNS[dim]
+        # For text columns, join distinct per-SKU last movement months without
+        # restricting them to the sales period. Never join detail rows together.
+        extra_cte = ''
+        extra_joins = ''
+        extra_product = ''
+        extra_select = ''
+        if requested_text:
+            extra_cte = ''',
+last_s AS (SELECT m.product_id, MAX(m.mes) AS ultima_venta FROM {sales} m
+ WHERE m.snapshot_id=%s AND m.company_id=%s AND m.cantidad_vendida > 0
+ GROUP BY m.product_id),
+last_b AS (SELECT m.product_id, MAX(m.mes) AS ultima_compra FROM {buys} m
+ WHERE m.snapshot_id=%s AND m.company_id=%s AND m.cantidad_comprada > 0
+ GROUP BY m.product_id)'''
+            extra_joins = ' LEFT JOIN last_s ls ON ls.product_id=fp.id LEFT JOIN last_b lb ON lb.product_id=fp.id'
+            extra_product = ', fp.name AS descripcion, lb.ultima_compra, ls.ultima_venta'
+            extra_select = ', MAX(descripcion) AS descripcion, MAX(ultima_compra) AS ultima_compra, MAX(ultima_venta) AS ultima_venta'
+            params.extend([int(snapshot_id), int(company_id), int(snapshot_id), int(company_id)])
         sql = '''WITH {fp_sql},
 s AS (SELECT s.product_id, SUM(s.ventas) AS ventas,
  SUM(s.costo_ventas) AS costo_ventas, SUM(s.cantidad_vendida) AS cantidad_vendida
@@ -174,18 +198,19 @@ s AS (SELECT s.product_id, SUM(s.ventas) AS ventas,
 b AS (SELECT b.product_id, SUM(b.compras) AS compras,
  SUM(b.cantidad_comprada) AS cantidad_comprada
  FROM {buys} b JOIN fp ON fp.id=b.product_id
- WHERE b.snapshot_id=%s AND b.company_id=%s AND b.mes BETWEEN %s AND %s GROUP BY b.product_id),
+ WHERE b.snapshot_id=%s AND b.company_id=%s AND b.mes BETWEEN %s AND %s GROUP BY b.product_id){extra_cte},
 per_product AS (SELECT {grp} AS grupo,
  COALESCE(s.ventas,0) AS ventas,
  COALESCE(s.costo_ventas,0) AS costo_ventas,
  COALESCE(s.cantidad_vendida,0) AS cantidad_vendida,
  COALESCE(b.compras,0) AS compras,
  COALESCE(b.cantidad_comprada,0) AS cantidad_comprada,
- fp.stock_unidades AS stock_unidades, fp.stock_valor AS stock_valor
- FROM fp LEFT JOIN s ON s.product_id=fp.id LEFT JOIN b ON b.product_id=fp.id)
-SELECT grupo, {totals} FROM per_product GROUP BY grupo'''.format(
+ fp.stock_unidades AS stock_unidades, fp.stock_valor AS stock_valor{extra_product}
+ FROM fp LEFT JOIN s ON s.product_id=fp.id LEFT JOIN b ON b.product_id=fp.id{extra_joins})
+SELECT grupo, {totals}{extra_select} FROM per_product GROUP BY grupo'''.format(
     fp_sql=fp_sql, sales=SALES_TABLE, buys=PURCHASE_TABLE, grp=group_expr,
-    totals=SQL_TOTAL_EXPR)
+    totals=SQL_TOTAL_EXPR, extra_cte=extra_cte.format(sales=SALES_TABLE,buys=PURCHASE_TABLE),
+    extra_product=extra_product, extra_select=extra_select, extra_joins=extra_joins)
     # There is no user-controlled SQL here: all identifiers originate in constant
     # dictionaries and all filter values are bound params.
     return sql, params, {'dimension': dim, 'metric': metric, 'metrics': metrics,
@@ -193,7 +218,7 @@ SELECT grupo, {totals} FROM per_product GROUP BY grupo'''.format(
                           'top_n': top_n, 'descending': plan.get('orden') != 'asc',
                           'formula': str(plan.get('formula') or '').strip(),
                           'count_sql': count_sql, 'count_params': count_params,
-                          'stock_conditions': stock_conditions}
+                          'stock_conditions': stock_conditions, 'requested_text': requested_text}
 
 
 def execute_sql_plan(env, snapshot, plan, default_start=None, default_end=None):
@@ -223,13 +248,18 @@ def execute_sql_plan(env, snapshot, plan, default_start=None, default_end=None):
     agg = collections.defaultdict(float)
     for row in rows:
         label = str(row[0])
-        vals = computed(row[1:])
-        for field, value in zip(SQL_METRIC_COLUMNS, row[1:]):
+        vals = computed(row[1:1+len(SQL_METRIC_COLUMNS)])
+        if info['requested_text']:
+            # Approved SQL always appends the three text fields in this order.
+            for name, val in zip(TEXT_METRICS, row[1+len(SQL_METRIC_COLUMNS):]):
+                vals[name] = val or None
+        for field, value in zip(SQL_METRIC_COLUMNS, row[1:1+len(SQL_METRIC_COLUMNS)]):
             agg[field] += float(value or 0)
         target = vals.get(metric)
         if target is None:
             continue
-        detail = {k: round(vals[k], 4) if vals[k] is not None else None for k in metrics}
+        detail = {k: (vals.get(k) if k in TEXT_METRICS else
+                      round(vals[k], 4) if vals[k] is not None else None) for k in metrics}
         evaluated.append({'grupo': label, 'valor': round(target, 4), 'metricas': detail,
                           'ventas': round(vals['ventas'], 2), 'utilidad': round(vals['utilidad'], 2),
                           'compras': round(vals['compras'], 2),
@@ -237,12 +267,15 @@ def execute_sql_plan(env, snapshot, plan, default_start=None, default_end=None):
                           'stock_valor': round(vals['stock_valor'],2)})
     evaluated.sort(key=lambda row: row['valor'], reverse=info['descending'])
     total_vals = computed([agg[k] for k in SQL_METRIC_COLUMNS])
-    totals = {m: round(total_vals[m], 4) if total_vals[m] is not None else None for m in metrics}
+    totals = {m: (None if m in TEXT_METRICS else
+                  round(total_vals[m], 4) if total_vals[m] is not None else None) for m in metrics}
     env.cr.execute(info['count_sql'], info['count_params'])
     selected_products = int(env.cr.fetchone()[0])
     notes = ['Fuente: tablas relacionales de Odoo (no el Excel ni datos generados por ChatGPT).',
              'Stock es existencia al corte, valorada con costo de catálogo.',
              'No sumar cantidades de distintas unidades (m², cajas, piezas).']
+    if info['requested_text']:
+        notes.append('Última compra y venta se muestran como último mes YYYY-MM disponible; no fecha diaria.')
     if info['dimension'] == 'bodega':
         notes.append('No existen ventas históricas por bodega en esta fuente; solo stock al corte.')
     if info['dimension'] == 'proveedor_compra':

@@ -15,6 +15,8 @@ METRICS = {
     'cantidad_vendida': 'Cantidad vendida', 'cantidad_comprada': 'Cantidad comprada',
     'stock_unidades': 'Stock positivo (cantidad)', 'stock_valor': 'Stock estimado (USD)',
     'costo_ventas': 'Costo de ventas (USD)', 'precio_promedio': 'Precio medio por unidad vendida',
+    'descripcion': 'Descripción del producto',
+    'ultima_compra': 'Última compra (mes)', 'ultima_venta': 'Última venta (mes)',
 }
 DIMENSIONS = {
     'total', 'sku', 'categoria', 'marca', 'formato', 'proveedor_ficha',

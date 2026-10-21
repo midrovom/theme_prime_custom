@@ -53,6 +53,12 @@ def schema_context(env, snapshot):
                               'Trazabilidad de lotes desde compra hasta venta',
                               'Conversión universal de cajas/piezas/m²'],
             'filtros_validados': 'categoria, marca, formato y proveedor_ficha: coincidencia exacta contra el catálogo; en consultas por proveedor real solo compras de movimiento.',
+            'indicadores_derivados_por_sku': {
+                'descripcion': 'transcash.inventory.fact.product.name',
+                'ultima_compra': 'MAX(transcash.inventory.fact.purchase.mes) por SKU en todo el historial de la versión',
+                'ultima_venta': 'MAX(transcash.inventory.fact.sale.mes) por SKU en todo el historial de la versión',
+                'granularidad': 'YYYY-MM, no día ni número de factura',
+            },
             'filtros_numericos': {'stock_unidades': 'Cantidad física en el catálogo de la versión activa; soporta AND con <, <=, >, >=, =; ejemplo stock < 100 AND stock > 0.'},
             'regla': 'Los datos de Odoo son fuente de verdad. Devuelve un plan tipado; '
                      'el servidor genera SQL SELECT parametrizado y ejecuta los agregados.'}

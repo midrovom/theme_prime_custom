@@ -267,10 +267,20 @@ def build_dataset(products, stocks, sales, purchases, reference_end=None, today=
     today = today or datetime.date.today()
     previous = _months_until('%04d-%02d' % (today.year, today.month), 2)[0]
     cutoff_candidates = [m for m in available_months if m <= previous]
-    ref = reference_end or (max(cutoff_candidates) if cutoff_candidates else max(available_months))
-    months = _months_until(ref, 36)
+    ref = reference_end or (max(cutoff_candidates) if cutoff_candidates else previous)
+    # Históricos/presets: solo meses cerrados.  En el selector Personalizado
+    # también se permite consultar el mes en curso, aun si la fuente todavía
+    # no ha enviado movimientos. No alterar las estadísticas históricas.
+    closed_months = _months_until(ref, 36)
+    r12, r6, r3 = closed_months[-12:], closed_months[-6:], closed_months[-3:]
+    months = list(closed_months)
+    current_ym = '%04d-%02d' % (today.year, today.month)
+    if months[-1] < current_ym:
+        year, month = map(int, months[-1].split('-'))
+        while '%04d-%02d' % (year, month) < current_ym:
+            year, month = year + (month == 12), month % 12 + 1
+            months.append('%04d-%02d' % (year, month))
     month_index = {month: idx for idx, month in enumerate(months)}
-    r12, r6, r3 = months[-12:], months[-6:], months[-3:]
     ref_year, ref_month = map(int, ref.split('-'))
     ref_days_3 = sum(calendar.monthrange(int(m[:4]), int(m[5:]))[1] for m in r3)
     this_ytd = {'%d-%02d' % (ref_year, m) for m in range(1, ref_month + 1)}
@@ -420,6 +430,8 @@ def build_dataset(products, stocks, sales, purchases, reference_end=None, today=
                    top5supply_share=top5/buys12 if buys12 else 0,
                    negativeprofit_codes=negativeprofit_count, negativeprofit_sum=round(negativeprofit_amount, 4))
     source = dict(start=r12[0], end=ref, lastMonth=ref,
+                  selectableThrough=months[-1], currentMonth=current_ym,
+                  monthWithMovements=max((m for m in available_months if m <= current_ym), default=''),
                   stockCostMethod='Stock positivo por bodega × costo de catálogo; no usar Stock.Valor sin conciliación.',
                   stockDate='Sin fecha de corte en hoja Stock.', historicStock=False,
                   productsLines=counts['productos'], stockLines=counts['stock'],

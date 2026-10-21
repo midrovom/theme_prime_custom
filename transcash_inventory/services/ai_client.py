@@ -2,6 +2,8 @@
 """OpenAI Responses API adapter. Server-side only; secrets never go to client."""
 import json
 import logging
+import re
+import unicodedata
 from collections import Counter
 import urllib.error
 import urllib.request
@@ -69,7 +71,8 @@ def call_responses(api_key, model, instructions, user_input, json_schema=None, m
 # El modelo no recibe registros por SKU, ni construye SQL ni calcula indicadores.
 PLAN_METRICS = ['ventas', 'utilidad', 'margen', 'compras', 'cantidad_vendida',
                 'cantidad_comprada', 'stock_unidades', 'stock_valor',
-                'costo_ventas', 'precio_promedio', 'formula']
+                'costo_ventas', 'precio_promedio', 'formula',
+                'descripcion', 'ultima_compra', 'ultima_venta']
 PLAN_DIMENSIONS = ['total', 'sku', 'categoria', 'marca', 'formato',
                    'proveedor_ficha', 'proveedor_compra', 'bodega', 'mes',
                    'marca_formato', 'categoria_formato', 'categoria_marca',
@@ -115,6 +118,19 @@ IMPORTANTE: una pregunta puede pedir VARIAS métricas y debe resolverse en UN SO
   con operaciones permitidas entre agregados y selecciona metric="formula" si debe ordenar.
 - Para "margen": utilidad/ventas*100 calculado por Odoo tras agrupar. No sumar porcentajes.
 
+COLUMNAS DE MOVIMIENTO POR SKU (solo group_by="sku"):
+- descripcion: texto de transcash.inventory.fact.product.name.
+- ultima_compra: MAX(mes) histórico de transcash.inventory.fact.purchase.
+- ultima_venta: MAX(mes) histórico de transcash.inventory.fact.sale.
+El campo mes contiene YYYY-MM, NO fecha diaria. Los dos últimos meses se
+calculan sobre TODO el historial de la versión vigente, no solo el filtro de
+ventas utilizado para otras métricas. Muestra vacío si no hay movimiento.
+Estas columnas son TEXTO, no se pueden sumar, promediar ni usar para ordenar
+por cantidad. Solo se admiten con group_by="sku" y no pueden ser "metric".
+EJEMPLO OBLIGATORIO: "top 10 de productos con más stock, última compra y última
+venta" -> metric="stock_unidades", group_by="sku", top_n=10, orden="desc",
+metrics=["descripcion","stock_unidades","ultima_compra","ultima_venta"].
+No uses stock_valor como principal cuando solicitan mayor CANTIDAD de stock.
 METRICAS: ventas netas USD, utilidad bruta USD, margen bruto porcentaje, compras USD,
 cantidad vendida, cantidad comprada, stock actual positivo, valor stock a costo catálogo,
 costo de ventas, precio promedio ponderado por cantidad vendida, formula.
@@ -190,6 +206,9 @@ def planner_context(dataset, max_names=30):
             'stock_valor': 'Existencia positiva * costo del catálogo, USD estimado',
             'precio_promedio': 'ventas / cantidad_vendida, si denominador != 0',
             'formula': 'Operaciones aritméticas controladas sobre sumas agrupadas',
+            'descripcion': 'Nombre original del SKU, texto; solo por SKU',
+            'ultima_compra': 'MAX(mes) sobre todos los meses de compras del SKU, YYYY-MM, no día exacto',
+            'ultima_venta': 'MAX(mes) sobre todos los meses de ventas del SKU, YYYY-MM, no día exacto',
         },
         'catalogo_ejemplos': {
             'categorias_frecuentes': common(dataset.get('categories') or [], 2, max_names),
@@ -217,6 +236,38 @@ def plan_question(api_key, model, question, available_months, default_start, def
         raise AIServiceError('No se pudo interpretar el plan del modelo.') from None
     if not isinstance(plan, dict):
         raise AIServiceError('El plan recibido no tiene la estructura esperada.')
+    # Deterministic safety net for common top-stock ranking questions. Model
+    # output cannot discard requested columns or switch quantities to USD.
+    normalized = unicodedata.normalize('NFKD', question or '')
+    normalized = ''.join(c for c in normalized if not unicodedata.combining(c)).lower()
+    asks_stock_rank = bool(re.search(r'\b(top\s*\d+|\d+\s+(?:productos|articulos)|mayor(?:es)?\s+(?:cantidad|stock)|mas\s+stock)\b', normalized)
+                           and re.search(r'\b(stock|existencias|inventario)\b', normalized))
+    last_purchase = bool(re.search(r'ultim[ao]\s+(?:fecha\s+de\s+)?compra', normalized))
+    last_sale = bool(re.search(r'ultim[ao]\s+(?:fecha\s+de\s+)?venta', normalized))
+    if asks_stock_rank:
+        plan['metric'] = 'stock_unidades'
+        plan['group_by'] = 'sku'
+        plan['orden'] = 'desc'
+        # A stock ranking must not inherit an unrelated value metric from a
+        # speculative model plan. Keep the answer's table exactly on topic.
+        plan['metrics'] = ['descripcion', 'stock_unidades']
+        match = re.search(r'\btop\s*(\d{1,2})\b', normalized)
+        if match:
+            plan['top_n'] = min(50, max(1, int(match.group(1))))
+    if last_purchase or last_sale:
+        plan['group_by'] = 'sku'
+        if plan.get('metric') == 'no_disponible':
+            plan['metric'] = 'stock_unidades' if asks_stock_rank else 'ventas'
+        cols = plan.get('metrics') or []
+        if not isinstance(cols, list): cols = []
+        for key in (plan['metric'], 'descripcion',
+                    'ultima_compra' if last_purchase else None,
+                    'ultima_venta' if last_sale else None):
+            if key and key not in cols:
+                cols.append(key)
+        if len(cols) > 8:
+            cols = [plan['metric'], 'descripcion'] + [m for m in ('ultima_compra','ultima_venta') if m in cols]
+        plan['metrics'] = cols
     if plan.get('metric') != 'no_disponible':
         metrics = plan.get('metrics') or [plan.get('metric')]
         if not isinstance(metrics, list) or not 1 <= len(metrics) <= 8:
@@ -225,6 +276,10 @@ def plan_question(api_key, model, question, available_months, default_start, def
             raise AIServiceError('La consulta contiene métricas repetidas o no autorizadas.')
         if plan.get('metric') not in metrics:
             raise AIServiceError('La columna de orden no coincide con los indicadores solicitados.')
+        if any(m in ('descripcion', 'ultima_compra', 'ultima_venta') for m in metrics) and plan.get('group_by') != 'sku':
+            raise AIServiceError('Las columnas de descripción y últimos movimientos requieren un listado por SKU.')
+        if plan.get('metric') in ('descripcion', 'ultima_compra', 'ultima_venta'):
+            raise AIServiceError('Seleccione una métrica numérica para ordenar el listado.')
         plan['metrics'] = metrics
     if plan['desde'] not in available_months or plan['hasta'] not in available_months:
         raise AIServiceError('El asistente propuso fechas que no están en el archivo. Consulte otro período.')
