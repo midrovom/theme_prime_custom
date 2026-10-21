@@ -46,7 +46,7 @@
           </group>
           <field name="note" placeholder="Validación manual, diferencias de descripción, etc."/>
           <div class="alert alert-info" role="status">
-            Las imágenes se enlazan desde transcash.ec. Confirme visualmente que corresponden al SKU.
+            Las fotografías se obtienen de la tienda configurada para la empresa activa. Confirme visualmente que corresponden al SKU.
           </div>
         </sheet>
       </form>

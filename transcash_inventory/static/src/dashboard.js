@@ -68,10 +68,10 @@ function renderPhoto(node){
  const sku=node.getAttribute('data-photo-sku'),photo=photoCache.get(sku);
  const isLarge=node.classList.contains('tc-photo-large');
  // Do not replace loaded <img> on every filter change; this avoids a visual flash.
- if(photo?.image_url&&(/^(?:https:\/\/(?:www\.)?transcash\.ec\/web\/(?:image|content)\/|\/transcash_inventory\/photos\/thumb\?sku=)/i.test(photo.image_url))){
+ if(photo?.image_url&&(/^\/transcash_inventory\/photos\/thumb\?sku=/i.test(photo.image_url))){
   const existing=node.querySelector('img');
   if(existing&&existing.getAttribute('src')===photo.image_url)return;
-  node.innerHTML='<img src="'+escapeHtml(photo.image_url)+'" alt="Fotografía de '+escapeHtml(sku)+'" loading="eager" decoding="async" referrerpolicy="no-referrer"/>'+(isLarge?'<a href="'+escapeHtml(photo.website_url||'https://www.transcash.ec/shop')+'" target="_blank" rel="noopener noreferrer">Ver producto en Transcash.ec ↗</a>':'');
+  node.innerHTML='<img src="'+escapeHtml(photo.image_url)+'" alt="Fotografía de '+escapeHtml(sku)+'" loading="eager" decoding="async" referrerpolicy="no-referrer"/>'+(isLarge&&photo.website_url?'<a href="'+escapeHtml(photo.website_url||'')+'" target="_blank" rel="noopener noreferrer">Ver producto en tienda ↗</a>':'');
   const img=node.querySelector('img');
   img.addEventListener('error',()=>{node.innerHTML=isLarge?'<span>Imagen no disponible en el sitio</span>':'<span title="La foto vinculada no pudo descargarse">◫</span>';},{once:true});
  }else if(photoPending.has(sku)){

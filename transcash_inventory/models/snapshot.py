@@ -9,6 +9,7 @@ from odoo.exceptions import ValidationError
 
 class TranscashInventorySnapshot(models.Model):
     _name = 'transcash.inventory.snapshot'
+    _check_company_auto = True
     _description = 'Versión de inventario inteligente Transcash'
     _order = 'create_date desc, id desc'
 

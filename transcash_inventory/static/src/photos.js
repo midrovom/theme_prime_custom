@@ -16,6 +16,7 @@ async function req(url, payload=null){
 }
 function paint(d){
  state=d;
+ $('shopRoot').textContent=d.site_root||'No configurada';
  $('totalProducts').textContent=fmt(d.total_products);$('examined').textContent=fmt(d.examined);
  $('matched').textContent=fmt(d.photos_linked);$('nextPage').textContent=String(d.next_page||1);
  $('bar').style.width=Math.min(100,(Math.max(1,d.next_page)-1)/Math.max(1,d.pages_limit||90)*100)+'%';
@@ -38,7 +39,7 @@ const statuses={verified:'Imagen verificada',queued:'Pendiente de búsqueda',unc
   not_found:'El SKU no apareció en la búsqueda pública',broken:'Ficha o imagen no válida',error:'Error consultando la tienda',unindexed:'Sin búsqueda registrada'};
 function preview(d,sku){
  let title=statuses[d.status]||'No se encontró registro', details=d.error?'<p class="problem">'+esc(d.error)+'</p>':'';
- const photo=d.image_url&&(/^(?:https:\/\/(?:www\.)?transcash\.ec\/web\/(?:image|content)\/|\/transcash_inventory\/photos\/thumb\?sku=)/i.test(d.image_url))
+ const photo=d.image_url&&(/^\/transcash_inventory\/photos\/thumb\?sku=/i.test(d.image_url))
   ?'<img src="'+esc(d.image_url)+'" alt="Foto de '+esc(sku)+'" referrerpolicy="no-referrer"/>'
   :'<div class="placeholder">'+esc(d.status==='error'?'Reintentar':d.status==='not_found'?'Sin coincidencia':'Sin foto')+'</div>';
  $('example').innerHTML=photo+'<div><b>'+esc(d.sku||sku)+'</b><p>'+esc(title)+'</p>'+details+
@@ -52,7 +53,7 @@ async function resolve(exact=false){
  const sku=$('sku').value.trim(),url=$('productUrl').value.trim();
  if(!sku || exact&&!url){message(exact?'Ingrese SKU y URL de la ficha':'Ingrese un SKU',true);return;}
  const btn=$(exact?'link':'resolve');btn.disabled=true;
- message(exact?'Comprobando la ficha y su imagen…':'Buscando SKU exacto en Transcash.ec…');
+ message(exact?'Comprobando la ficha y su imagen…':'Buscando SKU exacto en la tienda configurada…');
  try{
    const r=await req('/transcash_inventory/photos/resolve',exact?{sku,url}:{sku});
    preview(r,sku);message(r.ok?'Fotografía verificada y vinculada a '+r.sku:

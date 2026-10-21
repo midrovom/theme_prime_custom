@@ -9,6 +9,7 @@ sent to the dashboard.
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError
 from ..services.ai_client import call_responses, AIServiceError
+from ..services.ai_config_store import read_ai_settings, save_ai_settings
 
 
 PARAM_ENABLED = 'transcash_inventory.ai_enabled'
@@ -34,11 +35,11 @@ class TranscashAIConfiguration(models.TransientModel):
         vals = super().default_get(field_names)
         if not self.env.user.has_group('base.group_system'):
             raise AccessError(_('Solo el administrador puede configurar ChatGPT.'))
-        params = self.env['ir.config_parameter'].sudo()
+        setting = read_ai_settings(self.env)
         current = {
-            'ai_enabled': params.get_param(PARAM_ENABLED, 'False') in ('True', 'true', '1'),
-            'ai_model': (params.get_param(PARAM_MODEL) or DEFAULT_MODEL).strip(),
-            'has_api_key': bool((params.get_param(PARAM_KEY) or '').strip()),
+            'ai_enabled': setting['enabled'],
+            'ai_model': setting['model'],
+            'has_api_key': bool(setting['key']),
             'api_key_new': False,
             'remove_api_key': False,
         }
@@ -52,37 +53,11 @@ class TranscashAIConfiguration(models.TransientModel):
 
     def _persist_configuration(self):
         self._check_admin()
-        params = self.env['ir.config_parameter'].sudo()
-        key = (self.api_key_new or '').strip()
-        model = (self.ai_model or '').strip()
-        if not model or len(model) > 100 or any(ch.isspace() for ch in model):
-            raise UserError(_('Indique un modelo de OpenAI válido, sin espacios.'))
-        if self.remove_api_key and key:
-            raise UserError(_('Para reemplazar la API Key, desmarque «Eliminar API Key guardada».'))
-        if key and (len(key) < 15 or not key.startswith('sk-')):
-            raise UserError(_('La API Key no tiene el formato esperado (sk-...).'))
-        old_key = (params.get_param(PARAM_KEY) or '').strip()
-        next_key = '' if self.remove_api_key else (key or old_key)
-        if self.ai_enabled and not next_key:
-            raise UserError(_('Ingrese una API Key y guarde antes de activar las consultas.'))
-
-        # Do not overwrite an existing key with a blank edit field.
-        if self.remove_api_key:
-            params.set_param(PARAM_KEY, '')
-        elif key:
-            params.set_param(PARAM_KEY, key)
-        params.set_param(PARAM_MODEL, model)
-        params.set_param(PARAM_ENABLED, 'True' if self.ai_enabled else 'False')
-
-        # Read-after-write assertion catches integration/config regressions.
-        if (params.get_param(PARAM_ENABLED) != ('True' if self.ai_enabled else 'False') or
-                params.get_param(PARAM_MODEL) != model or
-                (params.get_param(PARAM_KEY) or '').strip() != next_key):
-            raise UserError(_('La configuración no se pudo verificar después de guardarla. Revise el log de Odoo.'))
-
-        # Minimize persistence of the submitted secret in the transient wizard.
-        self.write({'api_key_new': False, 'has_api_key': bool(next_key), 'remove_api_key': False})
-        return next_key, model
+        saved = save_ai_settings(self.env, bool(self.ai_enabled), self.ai_model,
+                                 (self.api_key_new or '').strip(), bool(self.remove_api_key))
+        self.write({'api_key_new': False, 'has_api_key': bool(saved['key']),
+                    'remove_api_key': False})
+        return saved['key'], saved['model']
 
     def _new_form_action(self):
         return {
@@ -102,10 +77,10 @@ class TranscashAIConfiguration(models.TransientModel):
     def action_check_saved_ai(self):
         """Confirm database settings without connecting to OpenAI or exposing secrets."""
         self._check_admin()
-        params = self.env['ir.config_parameter'].sudo()
-        enabled = (params.get_param(PARAM_ENABLED) or '').strip().lower() in ('true', '1', 'yes', 'on')
-        has_key = bool((params.get_param(PARAM_KEY) or '').strip())
-        model = (params.get_param(PARAM_MODEL) or DEFAULT_MODEL).strip()
+        settings = read_ai_settings(self.env)
+        enabled = settings['enabled']
+        has_key = bool(settings['key'])
+        model = settings['model']
         msg = (_('Activación: %s. API Key guardada: %s. Modelo: %s. ') %
                (_('Sí') if enabled else _('No'), _('Sí') if has_key else _('No'), model))
         msg += (_('Puede utilizar el botón Consultar desde el panel.') if enabled and has_key else

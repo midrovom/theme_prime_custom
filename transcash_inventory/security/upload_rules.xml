@@ -2,6 +2,6 @@
   <record id="transcash_upload_own_company_rule" model="ir.rule">
     <field name="name">Inventario: cargas temporales propias de empresa</field>
     <field name="model_id" ref="model_transcash_inventory_upload_session"/>
-    <field name="domain_force">[('user_id', '=', user.id), ('company_id', 'in', company_ids)]</field>
+    <field name="domain_force">[('user_id', '=', user.id), ('company_id', '=', company_id)]</field>
   </record>
 </odoo>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+  <t t-name="transcash_inventory.DashboardAction">
+    <div class="o_transcash_inventory_action">
+      <iframe class="o_transcash_inventory_frame" src="/transcash_inventory/dashboard?v=18.0.1.27.0" title="Transcash - Inventario Inteligente"/>
+    </div>
+  </t>
+  <t t-name="transcash_inventory.ImportAction">
+    <div class="o_transcash_inventory_action">
+      <iframe t-ref="importFrame" class="o_transcash_inventory_frame" src="/transcash_inventory/import?v=18.0.1.27.0" title="Transcash - Cargar Excel"/>
+    </div>
+  </t>
+  <t t-name="transcash_inventory.PhotosAction">
+    <div class="o_transcash_inventory_action">
+      <iframe class="o_transcash_inventory_frame" src="/transcash_inventory/photos/scan?v=18.0.1.27.0" title="Transcash - Buscar imágenes de productos"/>
+    </div>
+  </t>
+  <t t-name="transcash_inventory.AIConfigurationAction">
+    <div class="o_transcash_inventory_action">
+      <iframe class="o_transcash_inventory_frame" src="/transcash_inventory/ai/configuration?v=18.0.1.27.0" title="Transcash - Configuración de ChatGPT"/>
+    </div>
+  </t>
+  <t t-name="transcash_inventory.ImportedAction">
+    <div class="o_transcash_inventory_action">
+      <iframe class="o_transcash_inventory_frame" src="/transcash_inventory/imported?v=18.0.1.27.0" title="Transcash - Datos importados desde Odoo"/>
+    </div>
+  </t>
+</templates>

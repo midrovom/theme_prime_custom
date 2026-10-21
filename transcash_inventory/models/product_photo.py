@@ -11,6 +11,10 @@ from io import BytesIO
 from PIL import Image, UnidentifiedImageError
 from datetime import timedelta
 from urllib.parse import urlencode, urlparse, quote
+import ipaddress
+import socket
+from functools import lru_cache
+import time
 from urllib.request import Request, urlopen, build_opener, HTTPRedirectHandler
 from urllib.error import HTTPError, URLError
 
@@ -18,9 +22,9 @@ from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
 
 from ..services.photo_matcher import (
-    SITE_ROOT, ALLOWED_HOSTS, extract_catalog_links, extract_product_image_candidates,
+    DEFAULT_SITE_ROOT, allowed_hosts, extract_catalog_links, extract_product_image_candidates,
     index_by_sku, match_slug_prefix, product_from_url, product_image_url,
-    is_safe_photo_url, is_safe_shop_url,
+    is_safe_photo_url, is_safe_shop_url, normalize_site_root,
 )
 
 _logger = logging.getLogger(__name__)
@@ -28,31 +32,51 @@ MAX_HTML = 3 * 1024 * 1024
 AGENT = 'TranscashInventoryPhoto/1.5 (+catalog-image-validation)'
 
 
-def _safe_remote(url):
+def _public_dns(host):
+    return _public_dns_cached(host, int(time.time() // 300))
+
+
+@lru_cache(maxsize=256)
+def _public_dns_cached(host, bucket):
+    """Reject internal/private target addresses for administrator-configured sites."""
+    try:
+        addresses = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+        if not addresses:
+            return False
+        return all(ipaddress.ip_address(entry[4][0]).is_global for entry in addresses)
+    except (OSError, ValueError):
+        return False
+
+
+def _safe_remote(url, site_root):
     try:
         p = urlparse(url)
-        return (len(url) <= 2048 and p.scheme == 'https' and p.hostname in ALLOWED_HOSTS
-                and (p.port in (None, 443)) and not p.username and not p.password)
+        return (len(url) <= 2048 and p.scheme == 'https' and
+                p.hostname in allowed_hosts(site_root) and
+                p.port in (None, 443) and not p.username and not p.password and
+                _public_dns(p.hostname))
     except (ValueError, TypeError):
         return False
 
 
 class _RestrictedRedirect(HTTPRedirectHandler):
+    def __init__(self, site_root):
+        super().__init__()
+        self.site_root = site_root
+
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        if not _safe_remote(newurl):
+        if not _safe_remote(newurl, self.site_root):
             raise ValueError('Redirección a un dominio o puerto no permitido')
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-_HTTP = build_opener(_RestrictedRedirect())
-
-
-def _http_get(url, accept='text/html', max_bytes=MAX_HTML):
-    if not _safe_remote(url):
-        raise ValueError('Dominio o esquema remoto no permitido')
+def _http_get(url, site_root, accept='text/html', max_bytes=MAX_HTML):
+    if not _safe_remote(url, site_root):
+        raise ValueError('La URL no pertenece a la tienda HTTPS configurada o no es pública')
     headers = {'User-Agent': AGENT, 'Accept': accept, 'Accept-Language': 'es-EC,es;q=0.9'}
-    with _HTTP.open(Request(url, headers=headers), timeout=10) as response:
-        if not _safe_remote(response.geturl()):
+    opener = build_opener(_RestrictedRedirect(site_root))
+    with opener.open(Request(url, headers=headers), timeout=10) as response:
+        if not _safe_remote(response.geturl(), site_root):
             raise ValueError('Redirección a otro dominio no permitida')
         content_type = (response.headers.get('Content-Type') or '').lower()
         content = response.read(max_bytes + 1)
@@ -61,8 +85,8 @@ def _http_get(url, accept='text/html', max_bytes=MAX_HTML):
         return content_type, content
 
 
-def _shop_html(url):
-    typ, data = _http_get(url, max_bytes=MAX_HTML)
+def _shop_html(url, site_root):
+    typ, data = _http_get(url, site_root, max_bytes=MAX_HTML)
     if 'text/html' not in typ and 'application/xhtml+xml' not in typ:
         raise ValueError('La tienda no devolvió HTML')
     return data.decode('utf-8', errors='replace')
@@ -75,14 +99,14 @@ def _valid_image_signature(buf):
             (len(buf) >= 12 and buf[:4] == b'RIFF' and buf[8:12] == b'WEBP'))
 
 
-def _verified_photo_with_thumbnail(url):
+def _verified_photo_with_thumbnail(url, site_root):
     """Check image bytes and store a bounded 240px JPEG for same-origin display."""
-    if not is_safe_photo_url(url) or not _safe_remote(url):
+    if not is_safe_photo_url(url, site_root) or not _safe_remote(url, site_root):
         return None
     headers = {'User-Agent': AGENT, 'Accept': 'image/webp,image/png,image/jpeg,image/gif,image/*'}
     try:
-        with _HTTP.open(Request(url, headers=headers), timeout=10) as response:
-            if not _safe_remote(response.geturl()):
+        with build_opener(_RestrictedRedirect(site_root)).open(Request(url, headers=headers), timeout=10) as response:
+            if not _safe_remote(response.geturl(), site_root):
                 raise ValueError('Redirección de foto no permitida')
             typ = (response.headers.get('Content-Type') or '').split(';')[0].strip().lower()
             if typ not in ('image/jpeg', 'image/png', 'image/gif', 'image/webp'):
@@ -120,7 +144,7 @@ class TranscashInventoryPhoto(models.Model):
                                  default=lambda self: self.env.company)
     sku = fields.Char('SKU', required=True, index=True)
     description = fields.Char('Descripción inventario', readonly=True)
-    website_url = fields.Char('Ficha Transcash')
+    website_url = fields.Char('Ficha de la tienda')
     image_url = fields.Char('Imagen principal verificada')
     image_thumbnail = fields.Binary('Miniatura almacenada', attachment=True, readonly=True)
     template_id_remote = fields.Integer('ID ficha web', readonly=True)
@@ -147,10 +171,10 @@ class TranscashInventoryPhoto(models.Model):
     @api.constrains('image_url', 'website_url')
     def _check_public_urls(self):
         for rec in self:
-            if rec.image_url and not is_safe_photo_url(rec.image_url):
-                raise ValidationError(_('La imagen debe ser HTTPS de transcash.ec/web/image o web/content.'))
-            if rec.website_url and not is_safe_shop_url(rec.website_url):
-                raise ValidationError(_('La ficha debe pertenecer a https://transcash.ec/shop/...'))
+            if rec.image_url and not is_safe_photo_url(rec.image_url, rec.company_id.transcash_photo_site_url or DEFAULT_SITE_ROOT):
+                raise ValidationError(_('La imagen debe pertenecer al dominio HTTPS configurado para esta empresa.'))
+            if rec.website_url and not is_safe_shop_url(rec.website_url, rec.company_id.transcash_photo_site_url or DEFAULT_SITE_ROOT):
+                raise ValidationError(_('La ficha debe pertenecer a /shop/ en el dominio configurado para esta empresa.'))
 
     def write(self, vals):
         # If a URL is modified by hand in Odoo's list/form, its old cached
@@ -167,9 +191,9 @@ class TranscashInventoryPhoto(models.Model):
             return {}
         rows = self.search([('company_id', '=', self.env.company.id),
                             ('sku', 'in', codes), ('enabled', '=', True)])
-        return {rec.sku: {'image_url': ('/transcash_inventory/photos/thumb?sku=' + quote(rec.sku, safe=''))
+        return {rec.sku: {'image_url': ('/transcash_inventory/photos/thumb?sku=' + quote(rec.sku, safe='') + '&company_id=' + str(self.env.company.id))
                                        if rec.status == 'verified' and rec.image_thumbnail else
-                                       (rec.image_url if rec.status == 'unchecked' else ''),
+                                       '',
                           'source_url': rec.image_url or '',
                           'website_url': rec.website_url or '',
                           'match_type': rec.match_type,
@@ -209,7 +233,7 @@ class TranscashInventoryPhotoSync(models.Model):
             ('company_id', '=', self.env.company.id)], limit=1,
             order='create_date desc, id desc')
         if not snapshot:
-            raise UserError(_('Primero importe el Excel desde Cargar archivos.'))
+            raise UserError(_('Primero sincronice el inventario desde Sincronización API.'))
         dataset = json.loads(snapshot.get_dashboard_json())
         items = [(str(p[0]).strip(), str(p[1])) for p in dataset.get('products', []) if len(p) > 1]
         return index_by_sku([sku for sku, _ in items]), dict(items)
@@ -244,6 +268,9 @@ class TranscashInventoryPhotoSync(models.Model):
                 found += 1
         return found
 
+    def _site_root(self):
+        return self.env['res.company'].transcash_photo_root()
+
     def _search_public_product(self, sku, description, sku_index):
         # Odoo shop search is public, but its search behaviour may depend on the
         # site's configuration. Always confirm exact SKU prefix in returned URLs.
@@ -251,28 +278,30 @@ class TranscashInventoryPhotoSync(models.Model):
         if description:
             terms.append(description[:80])
         for term in terms:
-            html = _shop_html(SITE_ROOT + '/shop?' + urlencode({'search': term}))
-            for link in extract_catalog_links(html):
+            site_root = self._site_root()
+            html = _shop_html(site_root + '/shop?' + urlencode({'search': term}), site_root)
+            for link in extract_catalog_links(html, site_root):
                 if match_slug_prefix(link['slug'], sku_index) == sku:
                     return link
         return None
 
     def _verify_shop_photo(self, shop_link):
         """Check shop SKU & image response; never assume template and variant IDs match."""
-        html = _shop_html(shop_link['url'])
-        candidates = extract_product_image_candidates(html, shop_link['url'], shop_link['template_id'])
+        site_root = self._site_root()
+        html = _shop_html(shop_link['url'], site_root)
+        candidates = extract_product_image_candidates(html, shop_link['url'], shop_link['template_id'], site_root)
         # Some older templates omit OpenGraph; these URLs are fallbacks only
         # and *must* pass actual image-response validation before being saved.
         candidates.extend([
-            '%s/web/image/product.template/%d/image_1920' % (SITE_ROOT, shop_link['template_id']),
-            product_image_url(shop_link['template_id']),
+            '%s/web/image/product.template/%d/image_1920' % (site_root, shop_link['template_id']),
+            product_image_url(shop_link['template_id'], site_root),
         ])
         tested = set()
         for url in candidates[:12]:
             if url in tested:
                 continue
             tested.add(url)
-            thumbnail = _verified_photo_with_thumbnail(url)
+            thumbnail = _verified_photo_with_thumbnail(url, site_root)
             if thumbnail:
                 return url, thumbnail
         raise ValueError('La ficha existe, pero ninguna URL devuelve una imagen JPEG, PNG, GIF o WebP válida')
@@ -285,7 +314,7 @@ class TranscashInventoryPhotoSync(models.Model):
             raise UserError(_('El SKU no existe en el último inventario importado.'))
         # Reject mismatched manual links without mutating any existing photo.
         if supplied_url:
-            supplied_link = product_from_url(supplied_url)
+            supplied_link = product_from_url(supplied_url, self._site_root())
             if not supplied_link or match_slug_prefix(supplied_link['slug'], sku_index) != canonical:
                 raise UserError(_('La dirección web no corresponde al SKU indicado.'))
         rec = self._photo_record(canonical, names[canonical])
@@ -297,7 +326,7 @@ class TranscashInventoryPhotoSync(models.Model):
         vals = {'checked_on': now, 'attempt_count': rec.attempt_count + 1,
                 'last_error': False, 'next_retry': False}
         try:
-            shop_link = product_from_url(supplied_url or rec.website_url)
+            shop_link = product_from_url(supplied_url or rec.website_url, self._site_root())
             if shop_link and match_slug_prefix(shop_link['slug'], sku_index) != canonical:
                 shop_link = None
             if not shop_link:
@@ -317,15 +346,15 @@ class TranscashInventoryPhotoSync(models.Model):
         except ValueError as exc:
             vals.update({'status': 'broken', 'image_url': False, 'image_thumbnail': False,
                          'last_error': str(exc)[:250], 'next_retry': now + timedelta(days=2)})
-            if supplied_url and product_from_url(supplied_url):
-                vals['website_url'] = product_from_url(supplied_url)['url']
+            if supplied_url and product_from_url(supplied_url, self._site_root()):
+                vals['website_url'] = product_from_url(supplied_url, self._site_root())['url']
         except (HTTPError, URLError, OSError, TimeoutError) as exc:
             # A blocked/outage site is not proof the product has no photo.
             vals.update({'status': 'error', 'image_url': False, 'image_thumbnail': False,
                          'last_error': ('Error consultando tienda: %s' % str(exc))[:250],
                          'next_retry': now + timedelta(hours=12)})
-            if supplied_url and product_from_url(supplied_url):
-                vals['website_url'] = product_from_url(supplied_url)['url']
+            if supplied_url and product_from_url(supplied_url, self._site_root()):
+                vals['website_url'] = product_from_url(supplied_url, self._site_root())['url']
         rec.write(vals)
         return rec
 
@@ -361,7 +390,8 @@ class TranscashInventoryPhotoSync(models.Model):
 
     def _download_listing(self, page):
         path = '/shop' if page == 1 else '/shop/page/%s' % page
-        return _shop_html(SITE_ROOT + path)
+        site_root = self._site_root()
+        return _shop_html(site_root + path, site_root)
 
     def scan_pages(self, amount=2):
         """Discover product URLs only; image resolution is a bounded second step."""
@@ -376,7 +406,7 @@ class TranscashInventoryPhotoSync(models.Model):
                 self.write({'finished': True, 'last_error': 'Se alcanzó el límite de 90 páginas.'})
                 break
             try:
-                links = extract_catalog_links(self._download_listing(page))
+                links = extract_catalog_links(self._download_listing(page), self._site_root())
             except (HTTPError, URLError, TimeoutError, ValueError, OSError) as exc:
                 self.write({'last_error': ('No se pudo consultar la página %s: %s' % (page, exc))[:250],
                             'last_run': fields.Datetime.now()})
@@ -424,7 +454,7 @@ class TranscashInventoryPhotoSync(models.Model):
         self.ensure_one()
         Photo = self.env['transcash.inventory.photo']
         domain = [('company_id', '=', self.env.company.id), ('enabled', '=', True)]
-        return {'next_page': self.next_page, 'examined': self.examined,
+        return {'site_root': self._site_root(), 'next_page': self.next_page, 'examined': self.examined,
                 'matched_last_scan': self.matched,
                 'photos_linked': Photo.search_count(domain + [('status', '=', 'verified')]),
                 'photos_pending': Photo.search_count(domain + [('status', 'in', ['queued', 'unchecked'])]),

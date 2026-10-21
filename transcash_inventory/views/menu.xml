@@ -9,7 +9,9 @@
   </record>
   <menuitem id="menu_transcash_root" name="Inventario Inteligente" sequence="75" web_icon="transcash_inventory,static/src/app_icon.svg" groups="transcash_inventory.group_transcash_user,transcash_inventory.group_transcash_ai,base.group_system"/>
   <menuitem id="menu_transcash_dashboard" name="Dashboard" parent="menu_transcash_root" action="action_transcash_dashboard" sequence="1"/>
-  <menuitem id="menu_transcash_import" name="Cargar archivos" parent="menu_transcash_root" action="action_transcash_import_page" sequence="5" groups="transcash_inventory.group_transcash_manager,base.group_system"/>
+  <!-- Conservar el XMLID para actualizar instalaciones previas; menú inactivo desde v1.27. -->
+  <menuitem id="menu_transcash_import" name="Cargar archivos (legado)" parent="menu_transcash_root" action="action_transcash_import_page" sequence="5" groups="base.group_system"/>
+  <record id="menu_transcash_import" model="ir.ui.menu"><field name="active" eval="False"/></record>
   <record id="action_transcash_imported" model="ir.actions.client">
     <field name="name">Datos importados</field>
     <field name="tag">transcash_inventory.imported</field>
@@ -18,15 +20,19 @@
             action="action_transcash_imported" sequence="6"
             groups="transcash_inventory.group_transcash_user,transcash_inventory.group_transcash_manager,base.group_system"/>
   <record id="action_transcash_photo_sync_page" model="ir.actions.client">
-    <field name="name">Buscar imágenes en Transcash.ec</field>
+    <field name="name">Buscar imágenes de la tienda</field>
     <field name="tag">transcash_inventory.photos</field>
   </record>
   <menuitem id="menu_transcash_photo_sync" name="Buscar imágenes" parent="menu_transcash_root" action="action_transcash_photo_sync_page" sequence="7" groups="transcash_inventory.group_transcash_manager,base.group_system"/>
+  <menuitem id="menu_transcash_photo_settings" name="Configuración de fotografías" parent="menu_transcash_root"
+            action="action_transcash_photo_company_settings" sequence="9" groups="base.group_system"/>
   <menuitem id="menu_transcash_photos" name="Imágenes vinculadas" parent="menu_transcash_root" action="action_transcash_product_photos" sequence="8" groups="transcash_inventory.group_transcash_manager,base.group_system"/>
   <record id="action_transcash_ai_direct_configuration" model="ir.actions.client">
     <field name="name">Configuración de ChatGPT</field>
     <field name="tag">transcash_inventory.ai_configuration</field>
   </record>
   <menuitem id="menu_transcash_ai_config" name="Configuración de ChatGPT" parent="menu_transcash_root" action="action_transcash_ai_direct_configuration" sequence="15" groups="base.group_system"/>
-  <menuitem id="menu_transcash_history" name="Historial de cargas" parent="menu_transcash_root" action="action_snapshots" sequence="10"/>
+  <!-- Conserva versiones pasadas en BD para auditoría, pero retira el menú obsoleto. -->
+  <menuitem id="menu_transcash_history" name="Historial de cargas (legado)" parent="menu_transcash_root" action="action_snapshots" sequence="10" groups="base.group_system"/>
+  <record id="menu_transcash_history" model="ir.ui.menu"><field name="active" eval="False"/></record>
 </odoo>

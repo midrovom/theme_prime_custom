@@ -11,12 +11,13 @@ from odoo import api, fields, models
 
 class TranscashAIRequest(models.Model):
     _name = 'transcash.inventory.ai.request'
+    _check_company_auto = True
     _description = 'Bitácora administrativa de consultas de IA Transcash'
     _order = 'create_date desc, id desc'
 
     user_id = fields.Many2one('res.users', required=True, ondelete='cascade', index=True)
     company_id = fields.Many2one('res.company', required=True, ondelete='cascade', index=True)
-    snapshot_id = fields.Many2one('transcash.inventory.snapshot', ondelete='set null', index=True)
+    snapshot_id = fields.Many2one('transcash.inventory.snapshot', ondelete='set null', index=True, check_company=True)
     question = fields.Text(string='Solicitud del usuario')
     state = fields.Selection([
         ('started', 'En proceso'),

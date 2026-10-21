@@ -17,10 +17,11 @@ _logger = logging.getLogger(__name__)
 
 class FactProduct(models.Model):
     _name = 'transcash.inventory.fact.product'
+    _check_company_auto = True
     _description = 'Inventario: catálogo normalizado por versión'
     _order = 'sku'
 
-    snapshot_id = fields.Many2one('transcash.inventory.snapshot', required=True, ondelete='cascade', index=True)
+    snapshot_id = fields.Many2one('transcash.inventory.snapshot', required=True, ondelete='cascade', index=True, check_company=True)
     company_id = fields.Many2one('res.company', required=True, index=True)
     sku = fields.Char(required=True, index=True)
     name = fields.Char(required=True)
@@ -38,10 +39,11 @@ class FactProduct(models.Model):
 
 class FactSale(models.Model):
     _name = 'transcash.inventory.fact.sale'
+    _check_company_auto = True
     _description = 'Inventario: ventas mensuales normalizadas'
-    snapshot_id = fields.Many2one('transcash.inventory.snapshot', required=True, ondelete='cascade', index=True)
+    snapshot_id = fields.Many2one('transcash.inventory.snapshot', required=True, ondelete='cascade', index=True, check_company=True)
     company_id = fields.Many2one('res.company', required=True, index=True)
-    product_id = fields.Many2one('transcash.inventory.fact.product', required=True, ondelete='cascade', index=True)
+    product_id = fields.Many2one('transcash.inventory.fact.product', required=True, ondelete='cascade', index=True, check_company=True)
     mes = fields.Char(required=True, index=True)  # YYYY-MM, no día inferido
     cantidad_vendida = fields.Float(digits=(20, 4))
     ventas = fields.Float(digits=(20, 4))
@@ -50,10 +52,11 @@ class FactSale(models.Model):
 
 class FactPurchase(models.Model):
     _name = 'transcash.inventory.fact.purchase'
+    _check_company_auto = True
     _description = 'Inventario: compras mensuales por producto'
-    snapshot_id = fields.Many2one('transcash.inventory.snapshot', required=True, ondelete='cascade', index=True)
+    snapshot_id = fields.Many2one('transcash.inventory.snapshot', required=True, ondelete='cascade', index=True, check_company=True)
     company_id = fields.Many2one('res.company', required=True, index=True)
-    product_id = fields.Many2one('transcash.inventory.fact.product', required=True, ondelete='cascade', index=True)
+    product_id = fields.Many2one('transcash.inventory.fact.product', required=True, ondelete='cascade', index=True, check_company=True)
     mes = fields.Char(required=True, index=True)
     cantidad_comprada = fields.Float(digits=(20, 4))
     compras = fields.Float(digits=(20, 4))
@@ -61,10 +64,11 @@ class FactPurchase(models.Model):
 
 class FactSupplierPurchase(models.Model):
     _name = 'transcash.inventory.fact.supplier.purchase'
+    _check_company_auto = True
     _description = 'Inventario: compras al proveedor real de movimiento'
-    snapshot_id = fields.Many2one('transcash.inventory.snapshot', required=True, ondelete='cascade', index=True)
+    snapshot_id = fields.Many2one('transcash.inventory.snapshot', required=True, ondelete='cascade', index=True, check_company=True)
     company_id = fields.Many2one('res.company', required=True, index=True)
-    product_id = fields.Many2one('transcash.inventory.fact.product', required=True, ondelete='cascade', index=True)
+    product_id = fields.Many2one('transcash.inventory.fact.product', required=True, ondelete='cascade', index=True, check_company=True)
     mes = fields.Char(required=True, index=True)
     proveedor_compra = fields.Char(required=True, index=True)
     compras = fields.Float(digits=(20, 4))
@@ -72,10 +76,11 @@ class FactSupplierPurchase(models.Model):
 
 class FactStock(models.Model):
     _name = 'transcash.inventory.fact.stock'
+    _check_company_auto = True
     _description = 'Inventario: existencia por bodega en el corte'
-    snapshot_id = fields.Many2one('transcash.inventory.snapshot', required=True, ondelete='cascade', index=True)
+    snapshot_id = fields.Many2one('transcash.inventory.snapshot', required=True, ondelete='cascade', index=True, check_company=True)
     company_id = fields.Many2one('res.company', required=True, index=True)
-    product_id = fields.Many2one('transcash.inventory.fact.product', required=True, ondelete='cascade', index=True)
+    product_id = fields.Many2one('transcash.inventory.fact.product', required=True, ondelete='cascade', index=True, check_company=True)
     bodega = fields.Char(required=True, index=True)
     cantidad = fields.Float(digits=(20, 4))
 

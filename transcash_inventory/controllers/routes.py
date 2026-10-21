@@ -20,7 +20,7 @@ from ..services.ai_catalog_filters import resolve_catalog_filters
 from ..services.ai_schema import schema_context
 from ..services.ai_export import build_result_xlsx
 from ..services.ai_config_store import read_ai_settings, public_ai_settings, save_ai_settings
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, AccessError
 import logging
 from datetime import datetime
 
@@ -29,7 +29,39 @@ _AI_CONFIG_HTML = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'ai_c
 
 
 class TranscashDashboardController(http.Controller):
+    def _scope_company(self):
+        """Force one authorized company for this HTTP request.
+
+        A user may enable several companies in Odoo, but this dashboard must
+        never merge them.  The primary selected company comes from Odoo's
+        `cids` cookie; the OWL action also passes it explicitly.  Reject stale
+        iframe requests when the primary company changes.
+        """
+        from odoo.exceptions import AccessError
+        import re
+        raw = str(request.params.get('company_id') or
+                  request.httprequest.args.get('company_id') or '').strip()
+        if raw and not re.fullmatch(r'[1-9]\d*', raw):
+            raise AccessError('Empresa solicitada inválida.')
+        cookie = str(request.httprequest.cookies.get('cids') or '').strip()
+        selected = None
+        if cookie and re.fullmatch(r'\d+(?:[-,]\d+)*', cookie):
+            selected = int(re.split(r'[-,]', cookie)[0])
+        cid = int(raw) if raw else (selected or request.env.company.id)
+        allowed = set(request.env.user.company_ids.ids)
+        if cid not in allowed:
+            raise AccessError('No tiene acceso a esta empresa.')
+        if selected and raw and int(raw) != selected:
+            raise AccessError('La empresa seleccionada cambió. Actualice el panel.')
+        if request.env.company.id != cid or request.env.context.get('allowed_company_ids') != [cid]:
+            request.update_env(context=dict(request.env.context, allowed_company_ids=[cid]))
+        return cid
+
     def _can_view(self):
+        try:
+            self._scope_company()
+        except AccessError:
+            return False
         user = request.env.user
         return user.has_group('transcash_inventory.group_transcash_user') or user.has_group('base.group_system')
 
@@ -37,6 +69,10 @@ class TranscashDashboardController(http.Controller):
         return self._can_view() and (request.env.user.has_group('transcash_inventory.group_transcash_ai') or request.env.user.has_group('base.group_system'))
 
     def _can_upload(self):
+        try:
+            self._scope_company()
+        except AccessError:
+            return False
         user = request.env.user
         return user.has_group('transcash_inventory.group_transcash_manager') or user.has_group('base.group_system')
 
@@ -46,7 +82,8 @@ class TranscashDashboardController(http.Controller):
     def _json(self, obj, status=200):
         return request.make_response(json.dumps(obj, ensure_ascii=False),
             headers=[('Content-Type', 'application/json; charset=utf-8'),
-                     ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')],
+                     ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff'),
+                     ('X-Transcash-Company-ID', str(request.env.company.id))],
             status=status)
 
     @http.route('/transcash_inventory/imported', type='http', auth='user', methods=['GET'])
@@ -54,7 +91,7 @@ class TranscashDashboardController(http.Controller):
         if not self._can_view():
             return request.make_response('Sin permiso para consultar inventario.', status=403)
         page = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'imported.html'
-        return request.make_response(page.read_text(encoding='utf-8'), headers=[
+        return request.make_response(page.read_text(encoding='utf-8').replace('@@COMPANY@@', html.escape(request.env.company.display_name, quote=True)), headers=[
             ('Content-Type', 'text/html; charset=utf-8'),
             ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
 
@@ -163,6 +200,7 @@ class TranscashDashboardController(http.Controller):
         source = source.replace('@@CSRF@@', html.escape(request.csrf_token(), quote=True))
         source = source.replace('@@CAN_UPLOAD@@', 'true' if self._can_upload() else 'false')
         source = source.replace('@@CAN_AI@@', 'true' if self._can_ai() else 'false')
+        source = source.replace('@@COMPANY@@', html.escape(request.env.company.display_name, quote=True))
         return request.make_response(source, headers=[('Content-Type', 'text/html; charset=utf-8'),
             ('Cache-Control', 'no-store, no-cache, must-revalidate'), ('Pragma', 'no-cache'), ('X-Content-Type-Options', 'nosniff')])
 
@@ -180,12 +218,17 @@ class TranscashDashboardController(http.Controller):
         snapshot = (request.env['transcash.inventory.snapshot'].search(domain, limit=1, order='create_date desc, id desc')
                     if snapshot_id else self._latest())
         if not snapshot:
-            return self._json({'error': 'No hay importaciones. Carga el Excel desde el panel.'}, 404)
+            return self._json({'error': 'No hay inventario sincronizado para la empresa seleccionada. Solicite sincronizar desde API Administrator.'}, 404)
         payload = snapshot.get_dashboard_json()
         return request.make_response(payload, headers=[('Content-Type', 'application/json; charset=utf-8'),
-            ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
+            ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff'),
+                     ('X-Transcash-Company-ID', str(request.env.company.id))])
 
     def _can_configure_ai(self):
+        try:
+            self._scope_company()
+        except AccessError:
+            return False
         return request.env.user.has_group('base.group_system')
 
     @http.route('/transcash_inventory/ai/configuration', type='http', auth='user', methods=['GET'])
@@ -750,6 +793,7 @@ class TranscashDashboardController(http.Controller):
             binary = base64.b64decode(photo.image_thumbnail)
             return request.make_response(binary, headers=[
                 ('Content-Type', 'image/jpeg'), ('Cache-Control', 'private, max-age=900'),
+                ('Vary', 'Cookie'), ('X-Transcash-Company-ID', str(request.env.company.id)),
                 ('X-Content-Type-Options', 'nosniff')])
         except (ValueError, TypeError):
             return request.make_response('Miniatura no disponible', status=404)
