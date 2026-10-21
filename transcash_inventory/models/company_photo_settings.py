@@ -1,20 +1,70 @@
 # -*- coding: utf-8 -*-
-"""Persistent, company-scoped storefront URL used by the photo sync service."""
+"""Company-scoped photo storefront without an added res_company SQL column.
+
+Why non-stored: Odoo can fetch ``res.company`` while installing modules before
+it has created columns for newly registered stored company fields. This caused
+``psycopg2.errors.UndefinedColumn`` during the upgrade to v1.29.
+
+The same editable field exists in the original settings view but uses a
+per-company ir.config_parameter key. This is intentionally not a column on
+res_company. Other dashboards, photos and API settings are left untouched.
+"""
 from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError, AccessError
+from odoo.exceptions import AccessError, ValidationError
 from ..services.photo_matcher import DEFAULT_SITE_ROOT, normalize_site_root
+
+PARAM_PREFIX = 'transcash_inventory.photo_site_url.company_'
 
 
 class TranscashCompanyPhotoConfiguration(models.Model):
     _inherit = 'res.company'
 
     transcash_photo_site_url = fields.Char(
-        string='URL base de fotografías', default=DEFAULT_SITE_ROOT,
-        help='Tienda Odoo pública que contiene /shop y /web/image. Configurable por empresa.')
+        string='URL base de fotografías',
+        compute='_compute_transcash_photo_site_url',
+        inverse='_inverse_transcash_photo_site_url',
+        store=False,
+        help='Tienda Odoo pública que contiene /shop y /web/image. '
+             'Configuración independiente para cada empresa.')
+
+    @api.model
+    def _legacy_photo_site_url(self, company_id):
+        """Read v1.29 data only IF an earlier successful install made a column.
+
+        Never ask the ORM to fetch a field from a missing column. Existing
+        installations that successfully created the old column keep their URL.
+        """
+        self.env.cr.execute("""            SELECT EXISTS (
+                SELECT 1 FROM pg_attribute a
+                JOIN pg_class t ON a.attrelid = t.oid
+                JOIN pg_namespace n ON t.relnamespace = n.oid
+                WHERE t.relname = 'res_company' AND n.nspname = current_schema()
+                  AND a.attname = 'transcash_photo_site_url' AND NOT a.attisdropped
+            )
+        """)
+        if not self.env.cr.fetchone()[0]:
+            return False
+        self.env.cr.execute(
+            'SELECT transcash_photo_site_url FROM res_company WHERE id = %s',
+            (int(company_id),))
+        row = self.env.cr.fetchone()
+        return row[0] if row and row[0] else False
+
+    @api.model
+    def _photo_site_url_for_company(self, company_id):
+        key = '%s%d' % (PARAM_PREFIX, int(company_id))
+        saved = self.env['ir.config_parameter'].sudo().get_param(key)
+        return normalize_site_root(saved or self._legacy_photo_site_url(company_id)
+                                   or DEFAULT_SITE_ROOT)
+
+    @api.depends_context('company')
+    def _compute_transcash_photo_site_url(self):
+        for company in self:
+            company.transcash_photo_site_url = self._photo_site_url_for_company(company.id)
 
     @api.model
     def transcash_photo_root(self):
-        return normalize_site_root(self.env.company.transcash_photo_site_url or DEFAULT_SITE_ROOT)
+        return self._photo_site_url_for_company(self.env.company.id)
 
     @api.model
     def action_transcash_photo_settings(self):
@@ -30,32 +80,21 @@ class TranscashCompanyPhotoConfiguration(models.Model):
             'target': 'current',
         }
 
-    @api.constrains('transcash_photo_site_url')
-    def _check_transcash_photo_root(self):
-        for company in self:
-            if company.transcash_photo_site_url:
-                try:
-                    normalize_site_root(company.transcash_photo_site_url)
-                except ValueError as error:
-                    raise ValidationError(str(error)) from error
-
-    def write(self, vals):
-        if 'transcash_photo_site_url' not in vals:
-            return super().write(vals)
+    def _inverse_transcash_photo_site_url(self):
         if not self.env.user.has_group('base.group_system'):
             raise AccessError(_('La URL de fotografías solo puede modificarla el administrador.'))
-        try:
-            vals = dict(vals, transcash_photo_site_url=normalize_site_root(
-                vals['transcash_photo_site_url']))
-        except ValueError as error:
-            raise ValidationError(str(error)) from error
-        changed = self.filtered(lambda c: normalize_site_root(
-            c.transcash_photo_site_url or DEFAULT_SITE_ROOT) != vals['transcash_photo_site_url'])
-        result = super().write(vals)
-        # On a real host change, discard links to the previous business's photo
-        # site in THIS company only, and restart catalog discovery. Inventory
-        # facts/snapshots and other companies are deliberately untouched.
-        for company in changed:
+        params = self.env['ir.config_parameter'].sudo()
+        for company in self:
+            try:
+                new_root = normalize_site_root(company.transcash_photo_site_url)
+                old_root = self._photo_site_url_for_company(company.id)
+            except ValueError as error:
+                raise ValidationError(str(error)) from error
+            params.set_param('%s%d' % (PARAM_PREFIX, company.id), new_root)
+            if old_root == new_root:
+                continue
+            # Invalidate only THIS company's photo links after an actual
+            # storefront change. Do not touch its inventory, sales or purchases.
             photos = self.env['transcash.inventory.photo'].with_company(company).search([
                 ('company_id', '=', company.id)])
             if photos:
@@ -67,4 +106,3 @@ class TranscashCompanyPhotoConfiguration(models.Model):
                 ('company_id', '=', company.id)], limit=1)
             if sync:
                 sync.reset_scan()
-        return result
