@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+  <t t-name="transcash_guias_api.OperacionBI" owl="1">
+    <div class="tc-bi tc-bi-v533 tc-bi-v22">
+      <aside class="tc-bi-nav" aria-label="Secciones del dashboard">
+        <div class="tc-bi-logo"><span class="tc-bi-brandmark">◆</span><span>TRANSCASH <small>INTELIGENCIA LOGÍSTICA</small></span></div>
+        <div class="tc-bi-nav-caption">ANÁLISIS CON DATOS REALES</div>
+        <t t-foreach="allowedSections()" t-as="item" t-key="item.id">
+          <button type="button" t-att-class="'tc-bi-menu ' + (state.page === item.id ? 'on' : '')" t-att-data-page="item.id" t-on-click="showSection">
+            <span class="tc-bi-navicon" t-esc="item.icon"/><span t-esc="item.label"/>
+          </button>
+        </t>
+        <div class="tc-bi-nav-foot">Indicadores de las compañías autorizadas. Las cifras no modifican guías, rutas ni liquidaciones.</div>
+      </aside>
+      <div class="tc-bi-main">
+        <header class="tc-bi-head">
+          <div class="tc-bi-headline"><div class="tc-bi-eyebrow">TRANSCASH · CONTROL OPERATIVO</div><h1 t-esc="pageTitle()"/>
+            <p>Seguimiento de la operación en preparación, en tránsito, entrega y liquidación.</p></div>
+          <div class="tc-bi-actions"><button class="tc-bi-btn tc-bi-green" type="button" t-on-click="exportEverything" t-att-disabled="!state.data || state.loading">↓ Exportar Excel</button></div>
+        </header>
+        <main class="tc-bi-body">
+          <section class="tc-bi-filters">
+            <div class="tc-bi-filter-title"><strong>Filtros de análisis</strong><span>Se aplican a las consultas reales de Odoo 18</span></div>
+            <div class="tc-bi-filter-fields">
+              <label>DESDE <input type="date" t-att-value="state.desde" t-on-change="changeStart"/></label>
+              <label>HASTA <input type="date" t-att-value="state.hasta" t-on-change="changeEnd"/></label>
+              <label>TIPO DE FECHA<select t-att-value="state.base" t-on-change="changeBase">
+                <option value="registro">Registro en Odoo</option><option value="prevista">Fecha prevista ERP</option><option value="salida">Salida real</option></select></label>
+              <label>AGRUPACIÓN<select t-att-value="state.periodo" t-on-change="changePeriod"><option value="dia">Diario</option><option value="semana">Semanal</option><option value="mes">Mensual</option></select></label>
+              <button type="button" class="tc-bi-btn tc-bi-update" t-on-click="refresh" t-att-disabled="state.loading">↻ Actualizar</button>
+            </div>
+          </section>
+          <t t-if="state.loading"><div class="tc-bi-loading" role="status"><span class="tc-bi-spinner"/> Consultando guías, rutas y embarques...</div></t>
+          <t t-if="state.error"><div class="tc-bi-error" role="alert"><strong>Error consultando indicadores</strong><p t-esc="state.error"/><button type="button" class="tc-bi-btn" t-on-click="refresh">Reintentar</button></div></t>
+          <t t-if="state.data">
+            <t t-if="state.page === 'resumen'">
+              <div class="tc-bi-section-heading"><div><span>RESUMEN EJECUTIVO</span><h2>Indicadores del periodo</h2></div><span t-esc="state.desde + ' — ' + state.hasta"/></div>
+              <div class="tc-bi-kpis tc-bi-v533-kpis">
+                <t t-foreach="kpiCards()" t-as="k" t-key="k.label"><div class="tc-bi-kpi"><div class="tc-bi-kpi-head"><small t-esc="k.label"/><span class="tc-bi-kpi-icon">◆</span></div>
+                  <strong t-esc="k.text ? k.value : (k.money ? currency(k.value) : number(k.value))"/><span t-esc="k.detail"/></div></t>
+              </div>
+              <div class="tc-bi-layout">
+                <section class="tc-bi-card"><div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">EVOLUCIÓN</span><h2>Guías, rutas y viajes</h2><small>Filtrado según la fecha seleccionada</small></div></div>
+                  <div t-if="state.data.tendencia.length" class="tc-bi-chart">
+                    <t t-foreach="state.data.tendencia" t-as="p" t-key="p.periodo">
+                      <div class="tc-bi-v533-trend"><b t-esc="p.periodo"/><div><span>Guías</span><div class="tc-bi-track"><div class="tc-bi-fill" t-att-style="'width:'+trendWidth(p.guias,'guias')+'%'"/></div><strong t-esc="p.guias"/></div>
+                        <div><span>Viajes</span><div class="tc-bi-track"><div class="tc-bi-fill tc-bi-blue" t-att-style="'width:'+trendWidth(p.viajes,'viajes')+'%'"/></div><strong t-esc="p.viajes"/></div></div>
+                    </t>
+                  </div><div t-else="" class="tc-bi-empty">No hay movimientos para estas fechas. Prueba «Registro en Odoo» para consultar las guías recién importadas.</div>
+                </section>
+                <section class="tc-bi-card tc-bi-summary"><div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">ESTADOS</span><h2>Flujo de embarques</h2></div></div>
+                  <t t-foreach="state.data.estados_embarques" t-as="e" t-key="e.clave"><div class="tc-bi-summaryrow"><span t-esc="e.nombre"/><strong t-esc="number(e.cantidad)"/></div></t>
+                  <t t-if="!state.data.estados_embarques.length"><div class="tc-bi-empty">Aún no hay embarques en el periodo.</div></t>
+                  <div class="tc-bi-summaryrow"><span>Con salida real</span><strong t-esc="number(state.data.kpis.salidas_reales)"/></div>
+                  <p>Los viajes en preparación se cuentan como programados, no como realizados.</p>
+                </section>
+              </div>
+              <div class="tc-bi-layout tc-bi-v533-shortcuts">
+                <section t-if="state.data.permisos.operacion" class="tc-bi-card"><div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">OPERACIÓN</span><h2>Accesos directos</h2></div></div>
+                  <button type="button" class="tc-bi-v533-link" data-xmlid="logistica_transcash.action_transcash_guia" t-on-click="quickOpen">Guías operativas →</button>
+                  <button type="button" class="tc-bi-v533-link" data-xmlid="logistica_transcash.action_transcash_rutas" t-on-click="quickOpen">Hojas de ruta →</button>
+                  <button type="button" class="tc-bi-v533-link" data-xmlid="logistica_transcash.action_transcash_embarques" t-on-click="quickOpen">Embarques →</button>
+                </section>
+                <section class="tc-bi-card"><div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">CALIDAD</span><h2>Seguimiento</h2></div></div>
+                  <div class="tc-bi-summaryrow"><span>Guías con novedades</span><strong t-esc="number(state.data.kpis.guias_novedad)"/></div>
+                  <div class="tc-bi-summaryrow"><span>Novedades abiertas</span><strong t-esc="number(state.data.kpis.novedades_abiertas)"/></div>
+                  <div class="tc-bi-summaryrow"><span>Reportes de rotura</span><strong t-esc="number(state.data.kpis.reportes_rotura)"/></div>
+                  <button t-if="state.data.permisos.operacion" type="button" class="tc-bi-v533-link" data-xmlid="logistica_transcash.action_transcash_novedades" t-on-click="quickOpen">Abrir control de novedades →</button>
+                </section>
+              </div>
+              <section class="tc-bi-quality-dashboard" aria-label="Comparación de roturas e incidencias">
+                <div class="tc-bi-section-heading"><div><span>CONTROL DE CALIDAD</span><h2>Roturas e incidencias por responsable y destino</h2></div></div>
+                <div class="tc-bi-v22-rank-grid">
+                  <t t-foreach="[{id:'transportistas',label:'Empresas de transporte'},{id:'choferes',label:'Choferes'},{id:'destinos',label:'Destinos'}]" t-as="section" t-key="section.id">
+                    <section class="tc-bi-card tc-bi-v22-rank-card">
+                      <div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">RIESGOS EN EL PERIODO</span><h2 t-esc="section.label"/></div>
+                        <button type="button" class="tc-bi-smallbtn" t-att-data-page="section.id" t-on-click="goPage">Ver detalle ↗</button></div>
+                      <t t-foreach="qualityTop(section.id, 'roturas', 7)" t-as="row" t-key="row.clave">
+                        <div class="tc-bi-v22-rank-row">
+                          <span class="tc-bi-v22-name" t-att-title="row.nombre" t-esc="row.nombre"/>
+                          <div class="tc-bi-v22-rank-measures">
+                            <div class="tc-bi-v22-rank-measure"><small>Roturas</small><div class="tc-bi-track"><div class="tc-bi-fill" t-att-style="'width:' + qualityWidth(section.id, 'roturas', row.roturas) + '%'"/></div><b t-esc="number(row.roturas)"/></div>
+                            <div class="tc-bi-v22-rank-measure"><small>Incid.</small><div class="tc-bi-track"><div class="tc-bi-fill tc-bi-blue" t-att-style="'width:' + qualityWidth(section.id, 'novedades', row.novedades) + '%'"/></div><b t-esc="number(row.novedades)"/></div>
+                          </div>
+                        </div>
+                      </t>
+                      <div t-if="!qualityTop(section.id, 'roturas', 7).length" class="tc-bi-empty">Sin registros para el periodo.</div>
+                    </section>
+                  </t>
+                </div>
+              </section>
+              <details class="tc-bi-methodology"><summary>Definiciones de indicadores y restricciones del periodo</summary><ul><t t-foreach="state.data.notas" t-as="note" t-key="note"><li t-esc="note"/></t></ul></details>
+            </t>
+            <t t-else="">
+              <section class="tc-bi-card tc-bi-data-card">
+                <div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">CONSULTA OPERATIVA</span><h2 t-esc="pageTitle()"/><small>Datos reales de registros en Odoo; selecciona una fila para abrir su ficha cuando corresponda.</small></div>
+                  <button t-if="state.page !== 'auditoria'" type="button" class="tc-bi-smallbtn" t-on-click="exportCurrent">↓ Exportar tabla</button>
+                  <button t-else="" type="button" class="tc-bi-smallbtn" t-on-click="auditMenus">↻ Revisar menús</button>
+                </div>
+                <div class="tc-bi-tablefilters"><label class="tc-bi-searchbox">Buscar <input type="search" placeholder="Nombre, estado, destino..." t-att-value="state.busqueda" t-on-input="changeSearch"/></label>
+                  <label>Ordenar<select t-att-value="state.sort" t-on-change="changeSort"><option value="">Por defecto</option>
+                    <t t-foreach="columns()" t-as="col" t-key="col.key"><option t-att-value="col.key" t-esc="col.label"/></t></select></label>
+                  <span class="tc-bi-count"><t t-esc="tableRows().length"/> registros visibles</span></div>
+                <div t-if="state.auditError" class="tc-bi-error" t-esc="state.auditError"/>
+                <div class="tc-bi-tablewrap"><table class="tc-bi-table"><thead><tr>
+                  <t t-foreach="columns()" t-as="col" t-key="col.key"><th t-esc="col.label"/></t><th>Acción</th>
+                </tr></thead><tbody>
+                  <t t-foreach="tableRows()" t-as="row" t-key="row.clave"><tr>
+                    <t t-foreach="columns()" t-as="col" t-key="col.key"><td t-esc="formatValue(row[col.key],col.type)"/></t>
+                    <td><button t-if="row.modelo &amp;&amp; row.id &amp;&amp; state.page !== 'auditoria'" class="tc-bi-smallbtn" type="button" t-att-data-id="row.id" t-att-data-model="row.modelo" t-on-click="openRecord">Ver ficha ↗</button>
+                    <button t-elif="state.page === 'auditoria' &amp;&amp; row.action_id" class="tc-bi-smallbtn" type="button" t-att-data-action="row.action_id" t-on-click="openMenu">Abrir ↗</button></td>
+                  </tr></t>
+                </tbody></table><div t-if="!tableRows().length" class="tc-bi-empty">Sin resultados para este periodo, consulta o perfil.</div></div>
+                <p class="tc-bi-footer-note">Las tablas de documentos presentan hasta 300 fichas recientes. Los KPI usan la totalidad del periodo (hasta el límite de seguridad). Exportar conserva los filtros.</p>
+              </section>
+            </t>
+          </t>
+        </main>
+      </div>
+    </div>
+  </t>
+</templates>

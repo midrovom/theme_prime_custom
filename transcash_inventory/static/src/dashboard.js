@@ -15,8 +15,8 @@ function showUnavailable(message) {
  catch(e){showUnavailable('No se pudo obtener la información del servidor Odoo: '+e.message);return;}
  const DATA=await response.json();
  if(!DATA.products||!DATA.months||!DATA.months.length){showUnavailable('La última importación está incompleta.');return;}
- document.getElementById('tcStatusArea').hidden=true;
- document.body.classList.remove('tc-awaiting-data');
+ // Keep loading state visible until all initial KPI cards have been calculated.
+ // An error will remain visible with a diagnostic instead of leaving blank cards.
  const allowAI=document.querySelector('meta[name="transcash-can-ai"]')?.content==='true';
  document.getElementById('navAI').hidden=!allowAI;
  const firstMonth=DATA.months[0],lastMonth=DATA.months[DATA.months.length-1];
@@ -28,7 +28,7 @@ function showUnavailable(message) {
  document.querySelector('#period option[value="26"]').textContent='Acumulado '+lastMonth.substring(0,4);
  document.querySelector('#period option[value="25"]').textContent='Año anterior comparable';
  document.querySelector('#period option[value="all"]').textContent='Todo el histórico ('+firstMonth+' a '+lastMonth+')';
-const $=id=>document.getElementById(id),C={green:'#10a794',blue:'#3979ef',amber:'#f0ac4b',red:'#e05b6a',ink:'#253a51',gray:'#92a1b3'};const months=DATA.months;const refLast=months.length-1;const refMonth=months[refLast];const refYear=Number(refMonth.substring(0,4));const refNumber=Number(refMonth.substring(5));const prevYear=refYear-1;const refDays3=Array.from({length:3},(_,k)=>{const d=new Date(refYear,refNumber-k,0);return d.getDate()}).reduce((a,b)=>a+b,0);const monthLabels=months.map(m=>{let d=m.split('-');return new Date(+d[0],+d[1]-1,1).toLocaleDateString('es-EC',{month:'short',year:'2-digit'}).replace('.','')});const stockWare=Array.from({length:DATA.products.length},()=>[]);for(const [i,w,q] of DATA.stockWarehouses)stockWare[i].push([w,q]);const saleBySku=Array.from({length:DATA.products.length},()=>[]);for(const [i,m,q,rev,cogs] of DATA.sales)saleBySku[i].push([m,q,rev,cogs]);const buyBySku=Array.from({length:DATA.products.length},()=>[]);for(const [i,m,q,amt] of DATA.purchases)buyBySku[i].push([m,q,amt]);const suppBySku=Array.from({length:DATA.products.length},()=>[]);for(const [i,m,s,amt] of DATA.supplierPurchases)suppBySku[i].push([m,s,amt]);
+const $=id=>document.getElementById(id),C={green:'#10a794',blue:'#3979ef',amber:'#f0ac4b',red:'#e05b6a',ink:'#253a51',gray:'#92a1b3'};const months=DATA.months;const periodCutoff=DATA.source?.lastMonth||DATA.source?.end||'';const refLast=Math.max(0,months.indexOf(periodCutoff)>=0?months.indexOf(periodCutoff):months.length-1);const refMonth=months[refLast];const refYear=Number(refMonth.substring(0,4));const refNumber=Number(refMonth.substring(5));const prevYear=refYear-1;const refDays3=Array.from({length:3},(_,k)=>{const d=new Date(refYear,refNumber-k,0);return d.getDate()}).reduce((a,b)=>a+b,0);const monthLabels=months.map(m=>{let d=m.split('-');return new Date(+d[0],+d[1]-1,1).toLocaleDateString('es-EC',{month:'short',year:'2-digit'}).replace('.','')});const stockWare=Array.from({length:DATA.products.length},()=>[]);for(const [i,w,q] of DATA.stockWarehouses)stockWare[i].push([w,q]);const saleBySku=Array.from({length:DATA.products.length},()=>[]);for(const [i,m,q,rev,cogs] of DATA.sales)saleBySku[i].push([m,q,rev,cogs]);const buyBySku=Array.from({length:DATA.products.length},()=>[]);for(const [i,m,q,amt] of DATA.purchases)buyBySku[i].push([m,q,amt]);const suppBySku=Array.from({length:DATA.products.length},()=>[]);for(const [i,m,s,amt] of DATA.supplierPurchases)suppBySku[i].push([m,s,amt]);
 // Fotos de Transcash.ec: el dashboard siempre consulta un índice privado de Odoo por SKU.
 const photoCache=new Map();
 const photoQueriedAt=new Map();
@@ -130,13 +130,14 @@ function expSyncValues(){
  for(const [type,config] of Object.entries(expConfigs)){
   if(openExpCombo===type)continue;
   const index=expSelected(type);
-  $(config.input).value=index<0?'':config.options[index]||'';
+  const freeValue=type==='provider'?st.providerQuery:type==='format'?st.formatQuery:st.brandQuery;
+  $(config.input).value=index<0?(freeValue||''):config.options[index]||'';
  }
 }
 function expClose(type,restore=true){
  if(!expConfigs[type])return;
  const conf=expConfigs[type];$(conf.menu).hidden=true;$(conf.input).setAttribute('aria-expanded','false');
- if(restore){const index=expSelected(type);$(conf.input).value=index<0?'':conf.options[index]||'';}
+ if(restore){const index=expSelected(type),freeValue=type==='provider'?st.providerQuery:type==='format'?st.formatQuery:st.brandQuery;$(conf.input).value=index<0?(freeValue||''):conf.options[index]||'';}
  if(openExpCombo===type)openExpCombo=null;
 }
 function expOpen(type){
@@ -202,7 +203,7 @@ function expInit(){
    else{st.brand=-1;st.brandQuery=input.value.trim();$('brand').value='-1';}
    st.pagenum=0;st.xyzPage=0;
    expOpen(type);
-   scheduleUpdate(160);
+   scheduleUpdate(120);
   });
   input.addEventListener('keydown',e=>{
    const opts=[...menu.querySelectorAll('[data-exp-select]')];
@@ -317,7 +318,7 @@ function renderXYZ(){
  $('xyzPagerNum').textContent=(st.xyzPage+1)+' / '+pages;
  $('xyzFirst').disabled=$('xyzPrev').disabled=st.xyzPage<=0;
  $('xyzNext').disabled=$('xyzLast').disabled=st.xyzPage>=pages-1;
- const host=$('xyzFilterHost');if(host.contains(document.querySelector('.tc-explorer-filters')))expStatus(rows.length);
+ expStatus(rows.length);
  loadTablePhotos('xyzTable');
 }
 function mountExplorerFilters(page){
@@ -325,7 +326,7 @@ function mountExplorerFilters(page){
  // Deliberately no DOM re-parenting, so their event listeners remain stable.
 }
 
-function setPeriod(v){st.period=v;const r={12:[Math.max(0,refLast-11),refLast],6:[Math.max(0,refLast-5),refLast],3:[Math.max(0,refLast-2),refLast],26:[Math.max(0,months.indexOf(refYear+'-01')),refLast],25:[Math.max(0,months.indexOf(prevYear+'-01')),Math.max(0,months.indexOf(prevYear+'-'+String(refNumber).padStart(2,'0')))],all:[0,refLast]};if(r[v])[st.start,st.end]=r[v];$('from').disabled=$('to').disabled=v!=='custom';$('from').value=st.start;$('to').value=st.end;st.pagenum=0;scheduleUpdate()}
+function setPeriod(v){st.period=v;const r={12:[Math.max(0,refLast-11),refLast],6:[Math.max(0,refLast-5),refLast],3:[Math.max(0,refLast-2),refLast],26:[Math.max(0,months.indexOf(refYear+'-01')),refLast],25:[Math.max(0,months.indexOf(prevYear+'-01')),Math.max(0,months.indexOf(prevYear+'-'+String(refNumber).padStart(2,'0')))],all:[0,refLast]};if(r[v])[st.start,st.end]=r[v];$('from').disabled=$('to').disabled=v!=='custom';$('fromWrap').hidden=$('toWrap').hidden=v!=='custom';$('from').value=st.start;$('to').value=st.end;st.pagenum=0;st.xyzPage=0;scheduleUpdate()}
 function actionClass(a){return a===0?'buy':a===1?'keep':a===2?'reduce':a===3?'stop':'review'}
 function actionBadge(a){return '<span class="action '+actionClass(a)+'">'+escapeHtml(DATA.actions[a])+'</span>'}
 function inPeriod(m){return m>=st.start&&m<=st.end}
@@ -383,10 +384,12 @@ function scheduleUpdate(delay=0){
  const commit=()=>{pendingRender=requestAnimationFrame(()=>{
    pendingRender=null;
    try{update();}catch(e){console.error('Error actualizando filtros',e);
-      if(status){status.textContent='No se pudieron actualizar los indicadores: '+e.message;status.classList.remove('is-updating');}}
+      if(status){status.textContent='Error al actualizar indicadores: '+e.message;status.classList.remove('is-updating');}
+      if(!initialRenderComplete)showUnavailable('No fue posible calcular el período inicial: '+e.message);}
  });};
  if(delay>0)pendingTimer=setTimeout(()=>{pendingTimer=null;commit();},delay);else commit();
 }
+let initialRenderComplete=false;
 function update(){st.xyzPage=0;view=calculate();let labels=months[st.start]+' a '+months[st.end];
  const hasMovements=DATA.sales.some(r=>r[1]>=st.start&&r[1]<=st.end)||DATA.purchases.some(r=>r[1]>=st.start&&r[1]<=st.end);
  const notice=$('periodDataNotice');if(notice){notice.hidden=hasMovements;notice.textContent=hasMovements?'':'Sin ventas ni compras registradas en este período. El stock sigue siendo el del último corte, no stock histórico.';}
@@ -403,7 +406,13 @@ const applied=[];
  expStatus(view.rows.length);
  syncAssistantFilters();invalidateStaleAIResults();
  const live=$('liveFilterStatus');if(live){live.textContent=fmt(view.rows.length)+' SKU · '+labels+(applied.length?' · '+applied.join(' · '):' · Todas las categorías, marcas, proveedores y formatos');live.classList.remove('is-updating');}
- $('scopeinfo').textContent=fmt(view.rows.length)+' productos · '+labels+' · '+(st.wh>=0?'stock de bodega seleccionada y ventas corporativas':'stock agregado de todas las bodegas');$('warehouseWarning').innerHTML=st.wh>=0?'<b>Filtro bodega:</b> las ventas y compras siguen siendo corporativas para los SKU de la bodega; por eso no se calcula cobertura por bodega.':'';$('dateLegend').textContent=labels;$('skuCount').textContent=fmt(view.rows.length)+' SKU';const page=st.page;renderAll();}
+ $('scopeinfo').textContent=fmt(view.rows.length)+' productos · '+labels+' · '+(st.wh>=0?'stock de bodega seleccionada y ventas corporativas':'stock agregado de todas las bodegas');$('warehouseWarning').innerHTML=st.wh>=0?'<b>Filtro bodega:</b> las ventas y compras siguen siendo corporativas para los SKU de la bodega; por eso no se calcula cobertura por bodega.':'';$('dateLegend').textContent=labels;$('skuCount').textContent=fmt(view.rows.length)+' SKU';const page=st.page;renderAll();
+ if(!initialRenderComplete){
+   initialRenderComplete=true;
+   document.getElementById('tcStatusArea').hidden=true;
+   document.body.classList.remove('tc-awaiting-data');
+ }
+}
 function kpi(label,val,foot,icon,kind=''){return '<div class="metric"><div class="meta"><span class="label">'+label+'</span><span class="miniicon">'+icon+'</span></div><div class="amount '+kind+'" title="'+escapeHtml(val)+'">'+val+'</div><div class="foot">'+foot+'</div></div>'}
 function renderAll(){let v=view,t=v.tot; $('kpis').innerHTML=kpi('Ventas netas',compact(t.rev),'Periodo seleccionado','↗')+kpi('Utilidad bruta',compact(t.profit),'Ingresos menos costo de ventas','◉','good')+kpi('Margen bruto',pct(t.rev?t.profit/t.rev:0),'Rentabilidad bruta sobre ventas','%')+kpi('Compras',compact(t.purchases),'Compras de los SKU incluidos','↘')+kpi('Stock valorizado',compact(t.stock),'Positivo × costo catálogo','▣')+kpi('Sin demanda 6 meses',compact(t.stalecap),'Demanda '+months[Math.max(st.start,st.end-5)]+' a '+months[st.end]+'; stock al corte','⚑','warn')+kpi('Contribución negativa',usd(t.negativeprofit),'SKU con venta positiva y pérdida','−','bad')+kpi('Cobertura de 180+ días',st.wh>=0?'N/D':compact(t.excesscap),st.wh>=0?'Sin ventas por bodega':'Demanda '+months[st.start]+' a '+months[st.end],'◷','warn');
  renderLine();renderABC();renderBars('catTop',v.categories,'rev',9,'cat');renderProductBars();renderCallouts();if(st.page==='abc')renderABCPage();else if(st.page==='xyz')renderXYZ();else if(st.page==='rotacion')renderRisk();else if(st.page==='comprasplan')renderPlan();else if(st.page==='bodegas')renderWare();else if(st.page==='proveedores')renderSup();else if(st.page==='productos')renderProducts();else if(st.page==='provprofit')renderProviderProfit();else if(st.page==='calidad')renderQuality();}
@@ -504,7 +513,7 @@ function renderProviderProfit(){
 for(const input of [pfSupplier,pfFormat,pfBrand])input.addEventListener('input',()=>{if(st.page==='provprofit')renderProviderProfit()});
 $('pfClear').addEventListener('click',()=>{pfSupplier.value=pfFormat.value=pfBrand.value='';renderProviderProfit()});
 
-// v1.17: filtros explícitos para IA, independientes del Explorador.
+// v1.24: filtros de IA usan exclusivamente la barra unificada del dashboard.
 const aiChoices = {
  aiCategories: DATA.categories||[], aiBrands: DATA.brands||[],
  aiProviders: DATA.providers||[], aiFormats: [...new Set((DATA.products||[]).map(p=>String(p[21]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))
@@ -533,7 +542,7 @@ function syncAssistantFilters(){
  for(const [field,id] of [['categoria','aiFilterCategory'],['marca','aiFilterBrand'],['formato','aiFilterFormat'],['proveedor','aiFilterProvider']]){
   const input=$(id),current=input.value.trim();
   if(global[field]){input.value=global[field];aiAutoFilled[field]=global[field];}
-  else if(aiAutoFilled[field]&&current===aiAutoFilled[field]){input.value='';delete aiAutoFilled[field];}
+  else {input.value='';delete aiAutoFilled[field];}
  }
 }
 function filterFingerprint(){return JSON.stringify({period:[st.start,st.end],cat:st.cat,brand:st.brand,provider:st.providerExp,format:st.formatExp,providerQuery:st.providerQuery,formatQuery:st.formatQuery,brandQuery:st.brandQuery,wh:st.wh,search:st.search});}
@@ -713,5 +722,10 @@ $('nav').addEventListener('click',e=>{const el=e.target.closest('[data-page]');i
  st[key]=+e.target.value;
  if(key==='brand'){st.brandQuery='';expSyncValues();}
  st.pagenum=0;st.xyzPage=0;scheduleUpdate();
-});let debounce; $('search').addEventListener('input',e=>{clearTimeout(debounce);const value=e.target.value;debounce=setTimeout(()=>{st.search=value;st.pagenum=0;scheduleUpdate()},180)});$('goalDays').addEventListener('change',e=>{st.goalDays=+e.target.value;renderPlan()});$('resetBtn').addEventListener('click',reset);$('exportBtn').addEventListener('click',exportCsv);$('helpBtn').addEventListener('click',()=>setPage('calidad'));$('drawerClose').addEventListener('click',closeDrawer);$('detailBack').addEventListener('click',closeDrawer);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});document.addEventListener('click',e=>{const xy=e.target.closest('[data-xyz-cell]');if(xy){st.xyzCell=xy.dataset.xyzCell;st.xyzPage=0;renderXYZ();return;}const xySort=e.target.closest('[data-xyz-sort]');if(xySort){const key=xySort.dataset.xyzSort;if(key===st.xyzSort)st.xyzDesc=!st.xyzDesc;else{st.xyzSort=key;st.xyzDesc=!['sku','name','abcxyz','xyz'].includes(key);}st.xyzPage=0;renderXYZ();return;}const ab=e.target.closest('[data-abc]');if(ab&&ab.dataset.abc){st.abcFilter=ab.dataset.abc;st.pagenum=0;setPage('productos');return}const abcClear=e.target.closest('[data-abcclear]');if(abcClear){st.abcFilter='all';st.pagenum=0;renderProducts();return}const cat=e.target.closest('[data-cat]');if(cat){st.cat=+cat.dataset.cat;$('cat').value=st.cat;st.pagenum=0;scheduleUpdate();return}const wh=e.target.closest('[data-wh]');if(wh){st.wh=+wh.dataset.wh;$('wh').value=st.wh;st.pagenum=0;scheduleUpdate();return}const act=e.target.closest('[data-action]');if(act){st.action=+act.dataset.action;st.pagenum=0;renderProducts();return}const th=e.target.closest('[data-sort]');if(th){let key=th.dataset.sort;if(key===st.sort)st.desc=!st.desc;else{st.sort=key;st.desc=!['sku','name','category','abc','action'].includes(key)}st.pagenum=0;renderProducts();return}const sku=e.target.closest('[data-sku]');if(sku){openSku(+sku.dataset.sku);return}});[['firstPage',()=>st.pagenum=0],['prevPage',()=>st.pagenum--],['nextPage',()=>st.pagenum++],['lastPage',()=>{let n=expFilterRows().length;st.pagenum=Math.max(0,Math.ceil(n/st.pageSize)-1)}]].forEach(([id,fn])=>$(id).addEventListener('click',()=>{fn();renderProducts()}));[['xyzFirst',()=>st.xyzPage=0],['xyzPrev',()=>st.xyzPage--],['xyzNext',()=>st.xyzPage++],['xyzLast',()=>st.xyzPage=Math.max(0,Math.ceil(xyzSelectedRows().length/st.xyzPageSize)-1)]].forEach(([id,fn])=>$(id).addEventListener('click',()=>{fn();renderXYZ()}));expInit();update();
+});let debounce; $('search').addEventListener('input',e=>{clearTimeout(debounce);const value=e.target.value;debounce=setTimeout(()=>{st.search=value;st.pagenum=0;scheduleUpdate()},180)});$('goalDays').addEventListener('change',e=>{st.goalDays=+e.target.value;if(st.page==='comprasplan')renderPlan()});$('resetBtn').addEventListener('click',reset);$('exportBtn').addEventListener('click',exportCsv);$('helpBtn').addEventListener('click',()=>setPage('calidad'));$('drawerClose').addEventListener('click',closeDrawer);$('detailBack').addEventListener('click',closeDrawer);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});document.addEventListener('click',e=>{const xy=e.target.closest('[data-xyz-cell]');if(xy){st.xyzCell=xy.dataset.xyzCell;st.xyzPage=0;renderXYZ();return;}const xySort=e.target.closest('[data-xyz-sort]');if(xySort){const key=xySort.dataset.xyzSort;if(key===st.xyzSort)st.xyzDesc=!st.xyzDesc;else{st.xyzSort=key;st.xyzDesc=!['sku','name','abcxyz','xyz'].includes(key);}st.xyzPage=0;renderXYZ();return;}const ab=e.target.closest('[data-abc]');if(ab&&ab.dataset.abc){st.abcFilter=ab.dataset.abc;st.pagenum=0;setPage('productos');return}const abcClear=e.target.closest('[data-abcclear]');if(abcClear){st.abcFilter='all';st.pagenum=0;renderProducts();return}const cat=e.target.closest('[data-cat]');if(cat){st.cat=+cat.dataset.cat;$('cat').value=st.cat;st.pagenum=0;scheduleUpdate();return}const wh=e.target.closest('[data-wh]');if(wh){st.wh=+wh.dataset.wh;$('wh').value=st.wh;st.pagenum=0;scheduleUpdate();return}const act=e.target.closest('[data-action]');if(act){st.action=+act.dataset.action;st.pagenum=0;renderProducts();return}const th=e.target.closest('[data-sort]');if(th){let key=th.dataset.sort;if(key===st.sort)st.desc=!st.desc;else{st.sort=key;st.desc=!['sku','name','category','abc','action'].includes(key)}st.pagenum=0;renderProducts();return}const sku=e.target.closest('[data-sku]');if(sku){openSku(+sku.dataset.sku);return}});[['firstPage',()=>st.pagenum=0],['prevPage',()=>st.pagenum--],['nextPage',()=>st.pagenum++],['lastPage',()=>{let n=expFilterRows().length;st.pagenum=Math.max(0,Math.ceil(n/st.pageSize)-1)}]].forEach(([id,fn])=>$(id).addEventListener('click',()=>{fn();renderProducts()}));[['xyzFirst',()=>st.xyzPage=0],['xyzPrev',()=>st.xyzPage--],['xyzNext',()=>st.xyzPage++],['xyzLast',()=>st.xyzPage=Math.max(0,Math.ceil(xyzSelectedRows().length/st.xyzPageSize)-1)]].forEach(([id,fn])=>$(id).addEventListener('click',()=>{fn();renderXYZ()}));expInit();
+// Bootstrap once, from the real selected defaults, then expose KPIs.
+$('period').value='12';st.period='12';st.start=Math.max(0,refLast-11);st.end=refLast;
+$('from').value=st.start;$('to').value=st.end;
+$('fromWrap').hidden=true;$('toWrap').hidden=true;
+update();
 })().catch(e=>{console.error("Transcash - dashboard",e);showUnavailable("Error cargando indicadores: "+e.message);});

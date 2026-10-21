@@ -1,0 +1,18 @@
+/* BI v2.2 - integrado únicamente en transcash_guias_api. */
+.tc-bi-v22 {height:calc(100dvh - 55px);min-height:400px;overflow-y:auto !important;overflow-x:hidden !important;overscroll-behavior:contain;align-content:start;}
+.tc-bi-v22>.tc-bi-nav{position:sticky;top:0;min-height:calc(100dvh - 55px);height:max-content;max-height:calc(100dvh - 55px);overflow-y:auto;}
+.tc-bi-v22>.tc-bi-main{min-height:100%;height:auto;align-self:start;overflow:visible;}
+.tc-bi-v22 .tc-bi-body{padding-bottom:110px;}
+.tc-bi-v22 .tc-bi-tablewrap{max-height:min(70vh,720px);min-height:260px;overflow:auto;overscroll-behavior:contain;}
+.tc-bi-v22 .tc-bi-v22-rank-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:22px;}
+.tc-bi-v22 .tc-bi-v22-rank-card{padding:16px;min-width:0;}
+.tc-bi-v22 .tc-bi-v22-rank-row{padding:10px 0;border-bottom:1px solid #edf2f6;min-width:0;}
+.tc-bi-v22 .tc-bi-v22-name{display:block;font-size:12px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-bottom:8px;}
+.tc-bi-v22 .tc-bi-v22-rank-measures{display:grid;gap:5px;}
+.tc-bi-v22 .tc-bi-v22-rank-measure{display:grid;grid-template-columns:48px minmax(0,1fr) 35px;gap:7px;align-items:center;}
+.tc-bi-v22 .tc-bi-v22-rank-measure small{color:#7b8ca1;font-size:10px;}
+.tc-bi-v22 .tc-bi-v22-rank-measure b{text-align:right;font-size:12px;font-variant-numeric:tabular-nums;}
+.tc-bi-v22 .tc-bi-v22-rank-measure .tc-bi-track{height:9px;min-width:0;}
+@media(max-width:1250px){.tc-bi-v22 .tc-bi-v22-rank-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:850px){.tc-bi-v22 .tc-bi-v22-rank-grid{grid-template-columns:1fr;}}
+@media(max-width:600px){.tc-bi-v22{height:calc(100dvh - 55px);overflow-y:auto;}.tc-bi-v22>.tc-bi-nav{position:relative;top:auto;min-height:auto;height:auto;max-height:none;overflow-x:auto;}.tc-bi-v22>.tc-bi-main{width:100%;}.tc-bi-v22 .tc-bi-head{position:relative;}}
