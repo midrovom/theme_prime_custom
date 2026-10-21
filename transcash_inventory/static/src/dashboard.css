@@ -146,3 +146,12 @@
 @media(max-width:560px){.ai-catalog-grid{grid-template-columns:1fr}}
 
 .period-data-notice{background:#fff6e7;color:#855c16;border:1px solid #f1daa8;border-radius:9px;padding:12px 16px;margin:-4px 0 16px;font-size:12px}.period-data-notice[hidden]{display:none}
+
+/* v1.23: un único estado de filtros para todos los dashboards. */
+#globalProductFilters{position:relative;z-index:8;margin-top:12px}
+#globalProductFilters .tc-explorer-filters{margin-top:0;margin-bottom:10px}
+.tc-filter-live{font-size:12px;font-weight:650;color:#166878;border-left:3px solid #0c9c8e;background:#f1faf9;padding:9px 13px;margin:5px 0 14px;border-radius:5px;min-height:34px}
+.tc-filter-live.is-updating{color:#73551f;background:#fff9eb;border-color:#e6a63a}
+@media(max-width:760px){#globalProductFilters .tc-explorer-filter-grid{grid-template-columns:1fr}}
+
+.tc-awaiting-data #globalProductFilters,.tc-awaiting-data #liveFilterStatus{display:none!important}
