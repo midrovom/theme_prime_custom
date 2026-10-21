@@ -41,12 +41,16 @@ class TranscashInventoryApiSyncWizard(models.TransientModel):
         except APIInventoryError as exc:
             raise UserError(str(exc)) from None
         # Create a new atomic version: old dashboard and fact tables remain untouched.
-        snapshot = self.env['transcash.inventory.snapshot'].create_from_dataset(
-            dataset, filename='API Administrator', raw_size=0)
+        inventory = self.env['transcash.inventory.snapshot']
+        previous = inventory.current_for_company()
+        snapshot = inventory.create_from_dataset(dataset, filename='API Administrator', raw_size=0)
+        unchanged = bool(previous and previous.id == snapshot.id)
         self.write({'last_result': json.dumps({
+            'estado': 'Sin cambios; versión vigente conservada' if unchanged else 'Datos reemplazados en la versión vigente',
             'version_id': snapshot.id, 'productos': counts['productos'],
             'ventas': counts['ventas'], 'compras': counts['compras'],
-            'stock': counts['stock'], 'corte': dataset['source']['end']}, ensure_ascii=False),
+            'stock': counts['stock'], 'duplicados_reemplazados': counts.get('reemplazos', {}),
+            'corte': dataset['source']['end']}, ensure_ascii=False),
             'snapshot_id': snapshot.id})
         # Important Odoo 18 action contract: doAction() preprocesses act_window
         # with action.views.map(...). Returning only view_mode on an inline

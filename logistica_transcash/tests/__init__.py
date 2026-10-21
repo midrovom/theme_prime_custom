@@ -44,3 +44,5 @@ from . import test_backoffice_ux_v530
 from . import test_deprecacion_guia_v531
 
 from . import test_backoffice_v532
+
+from . import test_dashboard_v533

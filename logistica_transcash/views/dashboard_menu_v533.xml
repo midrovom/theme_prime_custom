@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <!-- El dashboard es la entrada principal; las pantallas operativas se conservan
+       debajo de la misma aplicación, sin crear un icono adicional. -->
+  <record id="menu_transcash_root" model="ir.ui.menu">
+    <field name="action" eval="'ir.actions.client,%d' % ref('action_transcash_dashboard')"/>
+    <field name="groups_id" eval="[(4, ref('group_transcash_dashboard'))]"/>
+  </record>
+  <record id="menu_transcash_dashboard" model="ir.ui.menu">
+    <field name="parent_id" ref="menu_transcash_root"/>
+    <field name="name">Inteligencia logística</field>
+    <field name="sequence">2</field>
+  </record>
+</odoo>

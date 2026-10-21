@@ -24,3 +24,6 @@ from . import carga_ruta
 from . import objecion_embarque
 
 from . import accesos_portal
+
+# V5.33: tablero operativo completo, sobre modelo existente.
+from . import dashboard_v533

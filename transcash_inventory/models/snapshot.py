@@ -2,6 +2,7 @@
 import base64
 import json
 import zlib
+import hashlib
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 
@@ -24,8 +25,42 @@ class TranscashInventorySnapshot(models.Model):
     period_start = fields.Char(readonly=True)
     period_end = fields.Char(readonly=True)
     note = fields.Text(readonly=True)
+    is_current = fields.Boolean(string='Versión vigente', default=False, index=True, copy=False, readonly=True)
+    content_fingerprint = fields.Char(string='Huella de datos', index=True, copy=False, readonly=True)
     relational_ready = fields.Boolean(string='Datos SQL preparados', readonly=True, default=False, copy=False)
     relational_months = fields.Text(string='Períodos disponibles para consultas', readonly=True, copy=False)
+
+    @api.model
+    def _fingerprint(self, dataset):
+        """Canonical content key: API order changes must not create duplicate versions.
+
+        The source metadata and aggregate summaries are intentionally excluded: only
+        the normalized, actual catalog and fact rows determine identity.
+        """
+        contents = {
+            'products': sorted(dataset['products'], key=lambda p: str(p[0])),
+            'sales': sorted(dataset['sales']),
+            'purchases': sorted(dataset['purchases']),
+            'stock': sorted(dataset['stockWarehouses']),
+            'supplier_purchases': sorted(dataset.get('supplierPurchases') or []),
+            'months': dataset['months'],
+            'categories': dataset['categories'],
+            'brands': dataset['brands'],
+            'providers': dataset['providers'],
+            'warehouses': dataset['warehouses'],
+            'suppliers': dataset.get('purchaseSuppliers') or [],
+        }
+        canonical = json.dumps(contents, separators=(',', ':'), sort_keys=True, ensure_ascii=False, allow_nan=False)
+        return hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+
+    @api.model
+    def current_for_company(self, company=None):
+        """Support legacy snapshots created before is_current existed."""
+        company = company or self.env.company
+        domain = [('company_id', '=', company.id)]
+        return (self.search(domain + [('is_current', '=', True)], limit=1,
+                            order='create_date desc, id desc') or
+                self.search(domain, limit=1, order='create_date desc, id desc'))
 
     @api.model
     def create_from_dataset(self, dataset, filename='API', raw_size=0):
@@ -37,6 +72,24 @@ class TranscashInventorySnapshot(models.Model):
         compressed = zlib.compress(raw, level=6)
         summary = dataset['summary']
         source = dataset['source']
+        fingerprint = self._fingerprint(dataset)
+        # Serialize updates for this company. One complete API snapshot replaces the
+        # active version; archived versions remain read-only and are never summed.
+        self.env.cr.execute('SELECT pg_advisory_xact_lock(%s, %s)', (872245, self.env.company.id))
+        current = self.current_for_company()
+        if current:
+            old_fingerprint = current.content_fingerprint
+            if not old_fingerprint:
+                old_fingerprint = self._fingerprint(json.loads(current.get_dashboard_json()))
+                current.sudo().write({'content_fingerprint': old_fingerprint})
+            if old_fingerprint == fingerprint:
+                if not current.is_current:
+                    current.sudo().write({'is_current': True})
+                return current
+            # The new snapshot is the sole active data source for this company.
+            self.search([('company_id', '=', self.env.company.id),
+                         ('is_current', '=', True)]).sudo().write({'is_current': False})
+
         snapshot = self.create({
             'name': '%s — %s' % (filename, fields.Datetime.now().strftime('%Y-%m-%d %H:%M')),
             'company_id': self.env.company.id,
@@ -44,6 +97,8 @@ class TranscashInventorySnapshot(models.Model):
             'file_size': raw_size,
             'imported_by': self.env.user.id,
             'dashboard_data': base64.b64encode(compressed).decode('ascii'),
+            'is_current': True,
+            'content_fingerprint': fingerprint,
             'product_count': len(dataset['products']),
             'stock_value': summary.get('stock_catalogo', 0),
             'revenue_12': summary.get('ventas12', 0),

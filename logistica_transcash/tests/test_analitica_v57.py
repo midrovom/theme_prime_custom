@@ -56,8 +56,11 @@ class TestAnaliticaV57(TransactionCase):
 
     def test_dashboard_separate_permission(self):
         with self.assertRaises(AccessError):
-            self.env['transcash.dashboard.service'].with_user(self.manager).get_dashboard('mes','2026-10-01','2026-10-31')
-        result = self.env['transcash.dashboard.service'].with_user(self.analyst).get_dashboard('mes','2026-10-01','2026-10-31')
+            self.env['transcash.dashboard.service'].with_user(self.driver).get_dashboard('mes','2026-10-01','2026-10-31')
+        # V5.33: el jefe de Logística puede consultar BI sin ver datos comerciales.
+        manager_data = self.env['transcash.dashboard.service'].with_user(self.manager).get_dashboard('mes','2026-10-01','2026-10-31','salida')
+        self.assertFalse(manager_data['permisos']['comercial'])
+        result = self.env['transcash.dashboard.service'].with_user(self.analyst).get_dashboard('mes','2026-10-01','2026-10-31','salida')
         self.assertEqual(result['kpis']['viajes'],1)
         self.assertEqual(result['kpis']['guias'],1)
         self.assertTrue(any(x['nombre']=='UIO' for x in result['destinos']))
@@ -69,7 +72,7 @@ class TestAnaliticaV57(TransactionCase):
         chofer o destino. Esto provocaba Server Error cuando había viajes.
         """
         data = self.env['transcash.dashboard.service'].with_user(self.analyst).get_dashboard(
-            'dia', '2026-10-15', '2026-10-15')
+            'dia', '2026-10-15', '2026-10-15', 'salida')
         self.assertEqual(data['kpis']['viajes'], 1)
         self.assertEqual(data['transportistas'][0]['nombre'], self.supplier.display_name)
         self.assertEqual(data['choferes'][0]['nombre'], self.driver.display_name)

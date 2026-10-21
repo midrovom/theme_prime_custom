@@ -533,3 +533,32 @@ y los filtros anteriores. Esta actualización NO modifica las tablas ni los dato
 - No se modifican los cuatro endpoints, el adaptador API, la base, el dashboard, la IA ni las fotografías.
 
 **Prueba en Odoo:** sincronice desde Inventario Inteligente → Sincronización API; el formulario se debe reabrir con el ID de la nueva versión y el resultado de importación. Luego revise los datos en el Dashboard. Si el error ocurre antes de pulsar Sincronizar o en otra pantalla, adjunte el nombre del botón y la traza del servidor para identificar una segunda acción.
+
+
+## Versión 1.22 — Datos importados, reemplazo e indicadores dinámicos
+
+- **Inventario Inteligente → Datos importados**: consulta paginada directamente
+  desde los modelos relacionales de Odoo. Incluye Productos, Ventas, Compras,
+  Compras por proveedor y Stock por bodega; búsqueda SKU y períodos YYYY-MM.
+- **Sin duplicación entre sincronizaciones**: cada feed completo se normaliza,
+  los duplicados de clave natural dentro de la respuesta API se reemplazan por
+  el último registro y una huella estable evita crear dos versiones iguales.
+  Si los datos cambiaron, la nueva versión pasa a ser la única vigente; las
+  anteriores quedan en el historial y **no se suman** en dashboards ni ChatGPT.
+  Este diseño es `snapshot replace`, no una API incremental.
+- **Contrato API importante**: getventasinvt debe devolver **un registro
+  consolidado por SKU/mes**, getcomprasinvt uno por SKU/mes/proveedor, getstockinvt
+  uno por SKU/bodega y getproductosinvt uno por SKU. Si la API devuelve líneas
+  de documentos, consolidarlas primero por esas claves en API Administrator:
+  con datos transaccionales no se debe usar la regla de reemplazo por clave.
+- **Período**: ventas, compras, utilidad, ABC, consultas ChatGPT y demanda
+  estimada de reposición/riesgo usan los meses elegidos. El escenario de
+  reposición usa la demanda media de TODO el período elegido, de modo que
+  cambiar de 12 a 3 meses modifica el cálculo. El inventario físico y su valor
+  representan el **último corte**, incluso al seleccionar ventas históricas.
+  Esta versión no inventa existencias a fechas anteriores.
+- **Permisos**: los datos se leen mediante el ORM, dominio por empresa activa,
+  los endpoints son autenticados y los usuarios no pueden modificar facts.
+- **Actualización**: hacer respaldo de PostgreSQL y filestore antes de actualizar;
+  reemplazar la carpeta del módulo, reiniciar Odoo, actualizar Aplicaciones y
+  limpiar caché del navegador. No se requiere nueva importación.

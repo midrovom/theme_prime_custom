@@ -83,6 +83,25 @@
       <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
       <field name="comment">Permite consultar solo métricas agregadas de compañías autorizadas, sin acceso a modificación de guías ni pagos.</field>
     </record>
+    <record id="group_transcash_product_analytics" model="res.groups">
+      <field name="name">Analítica reservada: marcas y proveedores de productos</field>
+      <field name="category_id" ref="module_category_transcash"/>
+      <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+      <field name="comment">Acceso excepcional a datos comerciales de productos; no se implica desde perfiles logísticos.</field>
+    </record>
+    <record id="group_logistica_manager" model="res.groups">
+      <field name="implied_ids" eval="[(4, ref('group_transcash_dashboard'))]"/>
+    </record>
+    <record id="group_logistica_bodega" model="res.groups">
+      <field name="implied_ids" eval="[(4, ref('group_transcash_dashboard'))]"/>
+    </record>
+    <record id="group_transcash_operador_rutas" model="res.groups">
+      <field name="implied_ids" eval="[(4, ref('group_transcash_dashboard'))]"/>
+    </record>
+    <record id="group_transcash_consulta" model="res.groups">
+      <field name="implied_ids" eval="[(4, ref('group_transcash_dashboard'))]"/>
+    </record>
+
     <record id="rule_transcash_guia_consulta_compania" model="ir.rule">
       <field name="name">Guías visibles solo en compañías autorizadas</field>
       <field name="model_id" ref="model_transcash_guia"/>

@@ -37,3 +37,18 @@
 .tc-bi > .tc-bi-nav{grid-column:1;grid-row:1}
 .tc-bi > .tc-bi-main{grid-column:2;grid-row:1}
 @media(max-width:600px){.tc-bi > .tc-bi-nav,.tc-bi > .tc-bi-main{grid-column:auto;grid-row:auto}}
+
+/* v5.33: dashboard integrado con operaciones y datos reales */
+.tc-bi-v533 .tc-bi-v533-kpis {grid-template-columns:repeat(auto-fit,minmax(205px,1fr));}
+.tc-bi-v533 .tc-bi-v533-trend {padding:.65rem 0;border-bottom:1px solid rgba(128,145,166,.15);}
+.tc-bi-v533 .tc-bi-v533-trend > b {font-size:.82rem;display:block;margin-bottom:.55rem;}
+.tc-bi-v533 .tc-bi-v533-trend > div {display:grid;grid-template-columns:70px minmax(0,1fr) 40px;align-items:center;gap:8px;margin:4px 0;font-size:.78rem;}
+.tc-bi-v533 .tc-bi-v533-trend .tc-bi-track {min-width:0;}
+.tc-bi-v533 .tc-bi-v533-link {display:block;width:100%;border:1px solid rgba(100,125,145,.25);padding:.7rem .8rem;margin:.45rem 0;border-radius:9px;text-align:left;background:transparent;color:inherit;font-weight:650;cursor:pointer;}
+.tc-bi-v533 .tc-bi-v533-link:hover {background:rgba(50,140,160,.08);border-color:rgba(50,140,160,.55);}
+.tc-bi-v533 .tc-bi-table td {vertical-align:middle;max-width:350px;}
+.tc-bi-v533 .tc-bi-table th {white-space:nowrap;}
+.tc-bi-v533 .tc-bi-tablewrap {max-height:calc(100vh - 370px);overflow:auto;}
+.tc-bi-v533 .tc-bi-table thead th {position:sticky;top:0;z-index:1;}
+.tc-bi-v533 .tc-bi-table td:first-child {font-weight:650;}
+@media(max-width:1000px){.tc-bi-v533 .tc-bi-v533-kpis{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));}}

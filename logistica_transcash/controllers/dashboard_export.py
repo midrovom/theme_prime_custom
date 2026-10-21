@@ -1,112 +1,89 @@
-"""Excel export for dashboard aggregates (never grants access to raw private guides)."""
+"""Excel de los datasets del dashboard, con revisión de rol y compañías."""
 from io import BytesIO
-
 from odoo import http
 from odoo.exceptions import AccessError, UserError
 from odoo.http import request
 
 
 class TranscashDashboardExport(http.Controller):
-    @http.route('/transcash/dashboard/export/xlsx', type='http', auth='user',
-                methods=['GET'], csrf=False)
-    def export(self, dataset='all', periodo='semana', desde=None, hasta=None, q='', sort='', **kw):
-        allowed = {'all', 'tendencia', 'transportistas', 'choferes', 'destinos',
-                   'marcas', 'proveedores_producto'}
-        if dataset not in allowed:
+    @http.route('/transcash/dashboard/export/xlsx', type='http', auth='user', methods=['GET'], csrf=False)
+    def export(self, dataset='all', periodo='semana', desde=None, hasta=None,
+               base='registro', q='', sort='', **kw):
+        sections = {
+            'tendencia': ('Evolución', [('periodo','Periodo'), ('guias','Guías'), ('rutas','Rutas'), ('viajes','Viajes programados'), ('salidas','Salidas reales')]),
+            'guias': ('Guías', [('nombre','Guía'),('estado','Estado'),('documento','Documento'),('destino','Destino'),('transportista','Transportista'),('chofer','Chofer'),('ruta','Hoja de ruta'),('viaje','Embarque'),('kg','Kg'),('m2','m²'),('metros_lineales','m lineales'),('unidades','Unidades'),('pallets','Pallets'),('cajas','Cajas')]),
+            'rutas': ('Hojas de ruta', [('nombre','Ruta'),('estado','Estado'),('destino','Destino'),('transportista','Transportista'),('chofer','Chofer'),('guias','Guías'),('kg','Kg'),('m2','m²'),('metros_lineales','m lineales'),('unidades','Unidades'),('pallets','Pallets'),('cajas','Cajas')]),
+            'embarques': ('Embarques', [('nombre','Embarque'),('estado','Estado'),('transportista','Transportista'),('chofer','Chofer'),('guias','Guías'),('rutas','Rutas'),('kg','Kg'),('m2','m²'),('metros_lineales','m lineales'),('unidades','Unidades'),('pallets','Pallets'),('cajas','Cajas')]),
+            'destinos': ('Destinos', [('nombre','Destino'),('guias','Guías'),('viajes','Viajes'),('kg','Kg'),('m2','m²'),('metros_lineales','m lineales'),('unidades','Unidades'),('novedades','Novedades'),('roturas','Roturas')]),
+            'transportistas': ('Transportistas', [('nombre','Empresa transportista'),('guias','Guías'),('viajes','Viajes'),('kg','Kg'),('m2','m²'),('metros_lineales','m lineales'),('unidades','Unidades'),('novedades','Novedades'),('roturas','Roturas')]),
+            'choferes': ('Choferes', [('nombre','Chofer'),('guias','Guías'),('viajes','Viajes'),('kg','Kg'),('m2','m²'),('metros_lineales','m lineales'),('unidades','Unidades'),('novedades','Novedades'),('roturas','Roturas')]),
+            'incidencias': ('Incidencias', [('nombre','Guía'),('destino','Destino'),('estado','Incidencia'),('reportes','Reportes'),('fecha','Fecha')]),
+            'liquidaciones': ('Liquidaciones', [('nombre','Liquidación'),('estado','Estado'),('transportista','Transportista'),('moneda','Moneda'),('total','Acordado'),('pagado','Pagado'),('pendiente','Saldo'),('fecha','Fecha')]),
+            'marcas': ('Marcas privado', [('codigo','Código marca'),('nombre','Nombre marca'),('guias','Guías'),('reportes','Reportes')]),
+            'proveedores_producto': ('Proveedores producto', [('codigo','Código proveedor'),('nombre','Proveedor de producto'),('guias','Guías'),('reportes','Reportes')]),
+        }
+        if dataset not in sections and dataset != 'all':
             return request.not_found()
-        # get_dashboard validates dashboard-only group, internal account, range, companies.
         try:
-            data = request.env['transcash.dashboard.service'].get_dashboard(periodo, desde, hasta)
+            data = request.env['transcash.dashboard.service'].get_dashboard(periodo, desde, hasta, base)
         except (AccessError, UserError) as exc:
             return request.make_response(str(exc), status=403)
-
+        perms = data['permisos']
+        if dataset == 'liquidaciones' and not perms['finanzas']:
+            return request.make_response('No autorizado a consultar finanzas.', status=403)
+        if dataset in ('marcas','proveedores_producto') and not perms['comercial']:
+            return request.make_response('No autorizado a consultar datos comerciales.', status=403)
         try:
             import xlsxwriter
         except ImportError:
-            return request.make_response('Falta instalar la dependencia Python xlsxwriter en Odoo.', status=503)
-
+            return request.make_response('Instale xlsxwriter en el Python de Odoo.', status=503)
         output = BytesIO()
-        book = xlsxwriter.Workbook(output, {'in_memory': True, 'strings_to_formulas': False,
-                                           'strings_to_urls': False})
-        title_fmt = book.add_format({'bold': True, 'font_size': 16, 'font_color': '#193348'})
-        header_fmt = book.add_format({'bold': True, 'bg_color': '#0C192B',
-                                      'font_color': '#FFFFFF', 'border': 0})
-        num_fmt = book.add_format({'num_format': '#,##0.00'})
-        sections = {
-            'tendencia': ('Viajes por periodo', [('periodo','Periodo'), ('viajes','Viajes')]),
-            'transportistas': ('Transportistas', [('nombre','Empresa transportista'), ('viajes','Viajes'),
-                ('guias','Guías'), ('novedades','Guías con novedades'), ('roturas','Guías con rotura'),
-                ('pct_novedad','% novedades'), ('pct_rotura','% roturas')]),
-            'choferes': ('Choferes', [('nombre','Chofer'), ('viajes','Viajes'),
-                ('guias','Guías'), ('novedades','Guías con novedades'), ('roturas','Guías con rotura'),
-                ('pct_novedad','% novedades'), ('pct_rotura','% roturas')]),
-            'destinos': ('Destinos', [('nombre','Destino'), ('viajes','Viajes'),
-                ('guias','Guías'), ('peso_kg','Peso kg'), ('novedades','Guías con novedades'),
-                ('roturas','Guías con rotura'), ('pct_novedad','% novedades'),
-                ('pct_rotura','% roturas')]),
-            'marcas': ('Marcas', [('nombre','Marca'), ('reportes','Reportes'),
-                ('guias','Guías con roturas'), ('guias_transportadas','Guías con marca'),
-                ('pct_guias_danadas','% guías afectadas'), ('kg_estimados','Kg dañados estimados'),
-                ('cantidades','Cantidades por UDM')]),
-            'proveedores_producto': ('Proveedores producto', [('nombre','Proveedor de producto'),
-                ('reportes','Reportes'), ('guias','Guías con roturas'),
-                ('guias_transportadas','Guías con producto'),
-                ('pct_guias_danadas','% guías afectadas'), ('kg_estimados','Kg dañados estimados'),
-                ('cantidades','Cantidades por UDM')]),
-        }
-        sheets = list(sections) if dataset == 'all' else [dataset]
-        for section in sheets:
-            tab, fields = sections[section]
-            ws = book.add_worksheet(tab[:31])
+        workbook = xlsxwriter.Workbook(output, {'in_memory':True, 'strings_to_urls':False,
+                                                'strings_to_formulas':False})
+        header = workbook.add_format({'bold':True,'bg_color':'#17283D','font_color':'#FFFFFF'})
+        title = workbook.add_format({'bold':True,'font_size':15})
+        number = workbook.add_format({'num_format':'#,##0.000'})
+        names = [x for x in sections if x in data] if dataset == 'all' else [dataset]
+        for key in names:
+            sheet_title, cols = sections[key]
+            ws = workbook.add_worksheet(sheet_title[:31])
             ws.hide_gridlines(2)
-            ws.write(0, 0, 'TRANSCASH · ' + tab, title_fmt)
-            dates = data['fechas']
-            ws.write_string(1, 0, 'Del %s al %s · %s' % (
-                dates['desde'], dates['hasta'], dates['agrupacion']))
-            ws.write_row(3, 0, [label for _,label in fields], header_fmt)
-            ws.freeze_panes(4, 1)
-            rows = list(data.get(section, []))
+            ws.write_string(0,0,'TRANSCASH · ' + sheet_title,title)
+            ws.write_string(1,0,'%s — %s · %s · %s' % (data['fechas']['desde'],
+                 data['fechas']['hasta'],data['fechas']['agrupacion'],data['fechas']['base']))
+            ws.write_row(3,0,[label for _,label in cols],header)
+            rows = list(data.get(key,[]))
             if dataset != 'all':
-                query = str(q or '')[:120].lower().strip()
-                if query:
-                    rows = [r for r in rows if query in str(r.get('nombre', '')).lower()]
-                if sort in {'novedades','roturas','pct_novedad','pct_rotura','viajes',
-                            'guias','reportes','kg_estimados','peso_kg'}:
-                    rows.sort(key=lambda r: (-float(r.get(sort, 0) or 0),
-                                             str(r.get('nombre', ''))))
-            for row_idx, record in enumerate(rows, start=4):
-                for col_idx, (key, _label) in enumerate(fields):
-                    val = record.get(key)
-                    if isinstance(val, (int, float)) and not isinstance(val, bool):
-                        ws.write_number(row_idx, col_idx, val, num_fmt)
+                term = str(q or '')[:120].lower().strip()
+                if term:
+                    rows = [r for r in rows if term in ' '.join(str(v) for v in r.values()).lower()]
+                allowed_sort = {f for f,_ in cols}
+                if sort in allowed_sort:
+                    rows.sort(key=lambda r: (r.get(sort) is None,
+                        -r.get(sort) if isinstance(r.get(sort),(int,float)) else str(r.get(sort) or '')))
+            for i, row in enumerate(rows,4):
+                for j,(field,_label) in enumerate(cols):
+                    value=row.get(field)
+                    if isinstance(value,(int,float)) and not isinstance(value,bool):
+                        ws.write_number(i,j,value,number)
                     else:
-                        # write_string prevents spreadsheet-formula injection from ERP names.
-                        ws.write_string(row_idx, col_idx, str(val if val is not None else ''))
-            ws.set_column(0, 0, 34)
-            if len(fields) > 1:
-                ws.set_column(1, len(fields)-1, 17)
-            ws.autofilter(3, 0, max(4, len(rows)+3), len(fields)-1)
+                        ws.write_string(i,j,str(value or ''))
+            ws.freeze_panes(4,1)
+            ws.set_column(0,0,34)
+            ws.set_column(1,max(1,len(cols)-1),20)
+            ws.autofilter(3,0,max(4,3+len(rows)),len(cols)-1)
         if dataset == 'all':
-            sheet = book.add_worksheet('Resumen KPI')
-            sheet.write(0, 0, 'TRANSCASH · Indicadores principales', title_fmt)
-            sheet.write_row(2, 0, ['Métrica','Valor'], header_fmt)
-            labels = {
-                'viajes':'Viajes únicos','guias':'Guías transportadas', 'kg':'Kilos transportados',
-                'toneladas':'Toneladas transportadas','guias_novedad':'Guías con novedades',
-                'guias_rotura':'Guías con roturas','novedades_abiertas':'Novedades abiertas',
-                'pct_guias_rotura':'% guías con roturas',
-                'kg_rotura_estimados':'Kg rotura estimados',
-            }
-            for i, (key, label) in enumerate(labels.items(), 3):
-                sheet.write_string(i, 0, label)
-                sheet.write_number(i, 1, data['kpis'].get(key, 0), num_fmt)
-            sheet.set_column(0, 0, 31)
-            sheet.set_column(1, 1, 21)
-        book.close()
-        filename = 'transcash_%s.xlsx' % dataset
+            ws = workbook.add_worksheet('KPIs')
+            ws.write(0,0,'TRANSCASH · Indicadores',title)
+            ws.write_row(2,0,['Indicador','Valor'],header)
+            for i,(key,value) in enumerate(data['kpis'].items(),3):
+                ws.write_string(i,0,key.replace('_',' ').capitalize())
+                ws.write_number(i,1,float(value or 0),number)
+            ws.set_column(0,0,38)
+            ws.set_column(1,1,22)
+        workbook.close()
         return request.make_response(output.getvalue(), headers=[
-            ('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
-            ('Content-Disposition', 'attachment; filename="%s"' % filename),
-            ('Cache-Control', 'private, no-store'),
-            ('X-Content-Type-Options', 'nosniff'),
+            ('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+            ('Content-Disposition','attachment; filename="transcash_dashboard_%s.xlsx"' % dataset),
+            ('Cache-Control','private, no-store'), ('X-Content-Type-Options','nosniff'),
         ])

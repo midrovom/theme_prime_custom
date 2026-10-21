@@ -7,6 +7,7 @@ Both Excel and API converge into build_dataset -> snapshots -> SQL fact models.
 import datetime
 import json
 import re
+import collections
 from .processor import build_dataset, normalize, InventoryImportError
 
 ENDPOINTS = {
@@ -167,10 +168,33 @@ def convert_api_payloads(payloads, reference_end=None):
     # be silently read as zero because it is not keyed as totalventa).
     def canonical(mapped):
         return {normalize(key): val for key, val in mapped.items()}
-    products = [canonical(_map_product(row)) for row in records['productos']]
-    sales = [canonical(_map_sale(row)) for row in records['ventas']]
-    purchases = [canonical(_map_purchase(row)) for row in records['compras']]
-    stock = [canonical(_map_stock(row)) for row in records['stock']]
+    # API endpoints deliver complete, already-consolidated monthly datasets.
+    # Last record wins for the SAME natural key *within a single response*.
+    # Re-running the same feed must never multiply sales or stock. If endpoints
+    # return invoice lines rather than monthly totals, first aggregate them in
+    # API Administrator (SKU+year+month [+supplier]).
+    keys = {
+        'productos': ('codigo',),
+        'ventas': ('producto', 'anio', 'mes'),
+        'compras': ('producto', 'anio', 'mes', 'proveedor'),
+        'stock': ('producto', 'nbodega'),
+    }
+    adapters = {
+        'productos': _map_product, 'ventas': _map_sale,
+        'compras': _map_purchase, 'stock': _map_stock,
+    }
+    deduplicated = {}
+    replaced = collections.Counter()
+    for name, entries in records.items():
+        merged = {}
+        for raw in entries:
+            item = canonical(adapters[name](raw))
+            key = tuple(str(item.get(k, '')).strip() for k in keys[name])
+            if key in merged:
+                replaced[name] += 1
+            merged[key] = item
+        deduplicated[name] = list(merged.values())
+    products, sales, purchases, stock = (deduplicated[k] for k in ('productos','ventas','compras','stock'))
     known = {p['codigo'] for p in products}
     orphan = set(r['producto'] for r in sales + purchases + stock) - known
     if orphan:
@@ -182,7 +206,7 @@ def convert_api_payloads(payloads, reference_end=None):
         raise APIInventoryError(str(exc)) from exc
     result['source']['integration'] = 'API Administrator'
     result['source']['endpoints'] = list(ENDPOINTS.values())
-    return result, {key: len(rows) for key, rows in records.items()}
+    return result, {key: len(deduplicated[key]) for key in records} | {'reemplazos': dict(replaced)}
 
 
 def fetch_from_api_administrator(env):

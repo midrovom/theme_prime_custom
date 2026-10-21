@@ -41,15 +41,101 @@ class TranscashDashboardController(http.Controller):
         return user.has_group('transcash_inventory.group_transcash_manager') or user.has_group('base.group_system')
 
     def _latest(self):
-        return request.env['transcash.inventory.snapshot'].search(
-            [('company_id', '=', request.env.company.id)], limit=1,
-            order='create_date desc, id desc')
+        return request.env['transcash.inventory.snapshot'].current_for_company()
 
     def _json(self, obj, status=200):
         return request.make_response(json.dumps(obj, ensure_ascii=False),
             headers=[('Content-Type', 'application/json; charset=utf-8'),
                      ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')],
             status=status)
+
+    @http.route('/transcash_inventory/imported', type='http', auth='user', methods=['GET'])
+    def imported_view(self, **kw):
+        if not self._can_view():
+            return request.make_response('Sin permiso para consultar inventario.', status=403)
+        page = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'imported.html'
+        return request.make_response(page.read_text(encoding='utf-8'), headers=[
+            ('Content-Type', 'text/html; charset=utf-8'),
+            ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
+
+    @http.route('/transcash_inventory/imported/rows', type='http', auth='user', methods=['GET'])
+    def imported_rows(self, **kw):
+        """Read-only, paginated records from *Odoo ORM*, never from an Excel blob."""
+        if not self._can_view():
+            return self._json({'error': 'Sin permiso para consultar inventario.'}, 403)
+        kind = str(kw.get('kind') or 'productos')
+        supported = {
+            'productos': 'transcash.inventory.fact.product',
+            'ventas': 'transcash.inventory.fact.sale',
+            'compras': 'transcash.inventory.fact.purchase',
+            'proveedores': 'transcash.inventory.fact.supplier.purchase',
+            'stock': 'transcash.inventory.fact.stock',
+        }
+        if kind not in supported:
+            return self._json({'error': 'Pestaña no válida.'}, 400)
+        try:
+            page = max(1, min(1000000, int(kw.get('page') or '1')))
+            limit = max(10, min(100, int(kw.get('limit') or '50')))
+        except (ValueError, TypeError):
+            return self._json({'error': 'Paginación inválida.'}, 400)
+        snapshot = self._latest()
+        if not snapshot:
+            return self._json({'error': 'No se encontró una importación vigente.'}, 404)
+        if not snapshot.relational_ready:
+            # Legacy versions can be converted only once; do not silently show
+            # the version's compressed JSON as if it were rows from PostgreSQL.
+            return self._json({'error': 'La versión vigente aún no tiene tablas SQL preparadas. Solicite al administrador ejecutar la preparación de datos.'}, 409)
+        domain = [('company_id', '=', request.env.company.id),
+                  ('snapshot_id', '=', snapshot.id)]
+        sku = str(kw.get('sku') or '').strip()[:100]
+        if sku:
+            key = 'sku' if kind == 'productos' else 'product_id.sku'
+            domain.append((key, 'ilike', sku))
+        period_from = str(kw.get('from') or '').strip()
+        period_to = str(kw.get('to') or '').strip()
+        if kind in ('ventas', 'compras', 'proveedores'):
+            import re
+            for period in (period_from, period_to):
+                if period and not re.fullmatch(r'20\d{2}-(?:0[1-9]|1[0-2])', period):
+                    return self._json({'error': 'Período incorrecto. Use YYYY-MM.'}, 400)
+            if period_from:
+                domain.append(('mes', '>=', period_from))
+            if period_to:
+                domain.append(('mes', '<=', period_to))
+            if period_from and period_to and period_from > period_to:
+                return self._json({'error': 'El inicio del período es posterior al fin.'}, 400)
+        model = request.env[supported[kind]]
+        count = model.search_count(domain)
+        order = 'sku asc, id asc' if kind == 'productos' else ('mes desc, id desc' if kind in ('ventas', 'compras', 'proveedores') else 'id desc')
+        entries = model.search(domain, order=order, limit=limit, offset=(page - 1) * limit)
+        rows = []
+        for e in entries:
+            if kind == 'productos':
+                rows.append([e.sku, e.name, e.categoria, e.marca, e.formato,
+                             e.proveedor_ficha, e.costo_unitario, e.precio_venta,
+                             e.stock_unidades, e.stock_valor])
+            elif kind == 'ventas':
+                rows.append([e.mes, e.product_id.sku, e.product_id.name,
+                             e.cantidad_vendida, e.ventas, e.costo_ventas,
+                             e.ventas-e.costo_ventas])
+            elif kind == 'compras':
+                rows.append([e.mes, e.product_id.sku, e.product_id.name,
+                             e.cantidad_comprada, e.compras])
+            elif kind == 'proveedores':
+                rows.append([e.mes, e.product_id.sku, e.product_id.name,
+                             e.proveedor_compra, e.compras])
+            else:
+                rows.append([e.product_id.sku, e.product_id.name,
+                             e.bodega, e.cantidad, e.product_id.costo_unitario,
+                             e.cantidad * max(0, e.product_id.costo_unitario)])
+        stamp = str(snapshot.create_date or '')
+        return self._json({
+            'ok': True, 'kind': kind, 'rows': rows, 'count': count,
+            'page': page, 'page_size': limit, 'snapshot_id': snapshot.id,
+            'source': snapshot.original_filename, 'imported_at': stamp,
+            'period_start': snapshot.period_start, 'period_end': snapshot.period_end,
+            'is_current': True,
+        })
 
     def _narration_secret(self):
         """Stable server-side HMAC secret; never exposed to the browser."""
@@ -91,7 +177,8 @@ class TranscashDashboardController(http.Controller):
                 domain.append(('id', '=', int(snapshot_id)))
             except (TypeError, ValueError):
                 return self._json({'error': 'Versión no válida'}, 400)
-        snapshot = request.env['transcash.inventory.snapshot'].search(domain, limit=1, order='create_date desc, id desc')
+        snapshot = (request.env['transcash.inventory.snapshot'].search(domain, limit=1, order='create_date desc, id desc')
+                    if snapshot_id else self._latest())
         if not snapshot:
             return self._json({'error': 'No hay importaciones. Carga el Excel desde el panel.'}, 404)
         payload = snapshot.get_dashboard_json()

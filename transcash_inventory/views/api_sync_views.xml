@@ -16,7 +16,7 @@
             <field name="endpoint_purchases" readonly="1"/>
             <field name="endpoint_stock" readonly="1"/>
           </group>
-          <div class="alert alert-info" role="alert">Las credenciales, URL y rutas se administran exclusivamente en API Administrator. Esta operación creará una versión nueva, sin eliminar las anteriores. Los cuatro endpoints deben devolver datos consistentes.</div>
+          <div class="alert alert-info" role="alert">Las credenciales, URL y rutas se administran exclusivamente en API Administrator. Los cuatro endpoints deben devolver conjuntos completos y consolidados por mes. La sincronización sustituye la versión vigente, sin sumar los mismos registros dos veces. Si no existen cambios, conserva la versión actual. Las versiones anteriores quedan archivadas para auditoría.</div>
           <group>
             <field name="snapshot_id" readonly="1"/>
             <field name="last_result" readonly="1"/>

@@ -117,7 +117,7 @@
               <field name="linea_ids" readonly="1">
                 <list create="0" delete="0"><field name="external_line_id"/>
                   <field name="codigo"/><field name="producto"/>
-                  <field name="marca_nombre"/><field name="proveedor_producto_nombre"/><field name="cantidad"/>
+                  <field name="marca_nombre" groups="logistica_transcash.group_transcash_product_analytics,base.group_system"/><field name="proveedor_producto_nombre" groups="logistica_transcash.group_transcash_product_analytics,base.group_system"/><field name="cantidad"/>
                   <field name="unidad"/><field name="peso_kg"/><field name="pallets_info"/><field name="cajas_info"/>
                   <field name="cantidad_rota_pendiente"/>
                   <field name="cantidad_rota_aprobada"/><field name="vigente_erp"/>

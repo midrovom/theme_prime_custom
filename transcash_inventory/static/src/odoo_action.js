@@ -37,3 +37,8 @@ export class TranscashAIConfigurationAction extends Component {
     static template = 'transcash_inventory.AIConfigurationAction';
 }
 registry.category('actions').add('transcash_inventory.ai_configuration', TranscashAIConfigurationAction);
+
+export class TranscashImportedAction extends Component {
+    static template = 'transcash_inventory.ImportedAction';
+}
+registry.category('actions').add('transcash_inventory.imported', TranscashImportedAction);

@@ -1,0 +1,17 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Transcash | Datos importados</title><link rel="stylesheet" href="/transcash_inventory/static/src/imported.css?v=18.0.1.22.0"/></head>
+<body><div class="shell"><header><div class="eyebrow">TRANSCASH · Inventario inteligente</div><h1>Datos importados en Odoo</h1>
+<p>Registros normalizados de la versión vigente, consultados directamente desde Odoo PostgreSQL.</p>
+<div id="meta" class="meta">Cargando versión vigente...</div></header>
+<div class="tabs" role="tablist" id="tabs">
+<button class="active" data-kind="productos" role="tab">Productos</button><button data-kind="ventas" role="tab">Ventas</button>
+<button data-kind="compras" role="tab">Compras</button><button data-kind="proveedores" role="tab">Compras por proveedor</button>
+<button data-kind="stock" role="tab">Stock por bodega</button></div>
+<div class="panel"><div class="filters"><label>Buscar SKU<input id="sku" type="search" placeholder="Código o parte del SKU"/></label>
+<label>Desde<input id="from" type="month"/></label><label>Hasta<input id="to" type="month"/></label>
+<button id="apply">Aplicar filtros</button><button id="clear" class="ghost">Limpiar</button></div>
+<div class="info" id="info" role="status" aria-live="polite"></div>
+<div class="tablewrap"><table><thead id="head"></thead><tbody id="body"></tbody></table></div>
+<div class="pagination"><span id="count"></span><div><button class="ghost" id="prev">← Anterior</button><span id="pg"></span><button class="ghost" id="next">Siguiente →</button></div></div>
+</div><div class="note"><b>Regla de sustitución:</b> solo se utiliza la versión vigente para el dashboard. Los datos históricos quedan archivados para auditoría; no se suman entre versiones. El stock es una fotografía del último corte y no cambia con filtros de ventas históricas.</div></div>
+<script src="/transcash_inventory/static/src/imported.js?v=18.0.1.22.0" defer></script></body></html>
