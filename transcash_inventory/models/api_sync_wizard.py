@@ -48,12 +48,18 @@ class TranscashInventoryApiSyncWizard(models.TransientModel):
             'ventas': counts['ventas'], 'compras': counts['compras'],
             'stock': counts['stock'], 'corte': dataset['source']['end']}, ensure_ascii=False),
             'snapshot_id': snapshot.id})
+        # Important Odoo 18 action contract: doAction() preprocesses act_window
+        # with action.views.map(...). Returning only view_mode on an inline
+        # action (especially under display_notification.params.next) crashes
+        # the browser with "Cannot read properties of undefined (reading 'map')".
+        # Reopen the admin wizard using a complete, server-resolved form action.
         return {
-            'type': 'ir.actions.client', 'tag': 'display_notification',
-            'params': {'title': _('Sincronización completada'),
-                       'message': _('Se creó una versión de inventario en Odoo. Consulte el Dashboard.'),
-                       'type': 'success', 'sticky': False,
-                       'next': {'type': 'ir.actions.act_window',
-                                'res_model': 'transcash.inventory.api.sync.wizard',
-                                'res_id': self.id, 'view_mode': 'form', 'target': 'current'}},
+            'type': 'ir.actions.act_window',
+            'name': _('Sincronización de inventario por API'),
+            'res_model': 'transcash.inventory.api.sync.wizard',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'views': [(self.env.ref('transcash_inventory.view_transcash_inventory_api_sync_form').id, 'form')],
+            'target': 'new',
+            'context': {},
         }

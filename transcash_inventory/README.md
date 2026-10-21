@@ -523,3 +523,13 @@ Ejemplo de SQL generado internamente (jamás mostrado al usuario):
 
 El usuario conserva exportación Excel, bitácora administrativa, permisos
 y los filtros anteriores. Esta actualización NO modifica las tablas ni los datos.
+
+
+## v1.21 — Compatibilidad acciones Odoo 18
+
+- Corrige el fallo JavaScript `UncaughtPromiseError TypeError: Cannot read properties of undefined (reading 'map')` al finalizar la sincronización API.
+- `action_sync` devuelve ahora una acción de ventana completa con `views` explícitas, en lugar de encadenar una acción incompleta mediante `display_notification`.
+- El resultado y la versión creada se mantienen en el formulario administrativo de sincronización.
+- No se modifican los cuatro endpoints, el adaptador API, la base, el dashboard, la IA ni las fotografías.
+
+**Prueba en Odoo:** sincronice desde Inventario Inteligente → Sincronización API; el formulario se debe reabrir con el ID de la nueva versión y el resultado de importación. Luego revise los datos en el Dashboard. Si el error ocurre antes de pulsar Sincronizar o en otra pantalla, adjunte el nombre del botón y la traza del servidor para identificar una segunda acción.
