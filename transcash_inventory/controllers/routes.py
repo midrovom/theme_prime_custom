@@ -164,7 +164,7 @@ class TranscashDashboardController(http.Controller):
         source = source.replace('@@CAN_UPLOAD@@', 'true' if self._can_upload() else 'false')
         source = source.replace('@@CAN_AI@@', 'true' if self._can_ai() else 'false')
         return request.make_response(source, headers=[('Content-Type', 'text/html; charset=utf-8'),
-            ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
+            ('Cache-Control', 'no-store, no-cache, must-revalidate'), ('Pragma', 'no-cache'), ('X-Content-Type-Options', 'nosniff')])
 
     @http.route('/transcash_inventory/data', type='http', auth='user', methods=['GET'])
     def current_data(self, **kw):
