@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Portal de operaciones: selección estricta de guías por ruta.
+"""PWA selector de guías, compatible con importaciones ERP parcialmente homologadas.
 
-Amplía las rutas HTTP existentes de Logística Transcash sin modificar su addon.
-El transportista, chofer y destino ya fueron elegidos al crear la hoja de ruta;
-no se permite seleccionar guías de terceros ni reasignarlas desde la PWA.
+Sin afectar v5.32: solo permite coincidencias verificables de transportista,
+chofer y destino. La falta de una relación res.users/res.partner no oculta una
+identidad ERP comprobable, ni autoriza reutilizar una guía ajena.
 """
+import re
+import unicodedata
 from urllib.parse import quote
 
 from odoo import http, _
@@ -13,78 +15,278 @@ from odoo.http import request
 from odoo.osv import expression
 from odoo.addons.logistica_transcash.controllers.operacion import TranscashOperaciones
 
+MAX_SELECTION = 100
+PAGE_SIZE = 250
+MAX_SCAN = 6000
+MAX_DISPLAY = 400
+
+
+def _identity(value):
+    value = re.sub(r'[^A-Z0-9]', '', str(value or '').strip().upper())
+    if value.startswith('EC') and value[2:].isdigit():
+        value = value[2:]
+    return value
+
+
+def _legal_name(value):
+    text = unicodedata.normalize('NFKD', str(value or '').upper())
+    return ''.join(c for c in text if c.isalnum() and not unicodedata.combining(c))
+
+
+def _dest_name(value):
+    text = unicodedata.normalize('NFKD', str(value or '').casefold())
+    return ' '.join(''.join(c for c in text if not unicodedata.combining(c)).split())
+
 
 class TranscashOperacionFiltrada(TranscashOperaciones):
+    """Usa únicamente datos operativos y una homologación privada controlada."""
 
-    @staticmethod
-    def _tc_coincide_con_ruta(ruta, guia):
-        """Verificación final; nunca se basa en los campos de formulario web."""
-        if not (ruta.proveedor_id and ruta.chofer_usuario_id and ruta.destino_id
-                and guia.proveedor_id and guia.chofer_usuario_id):
+    def _source_map(self, guias, company_id):
+        if not guias:
+            return {}
+        Source = request.env['tc.guide'].sudo()
+        records = Source.search([
+            ('company_id', '=', company_id),
+            ('operational_guide_id', 'in', guias.ids),
+        ])
+        result, ambiguous = {}, set()
+        for record in records:
+            key = record.operational_guide_id.id
+            if key in result:
+                ambiguous.add(key)
+            else:
+                result[key] = record
+        # Guías anteriores: el enlace operacional puede faltar, pero el ID
+        # externo único por empresa sigue permitiendo una unión inequívoca.
+        missing = guias.filtered(lambda g: g.id not in result and g.id not in ambiguous
+                                 and bool(g.external_id_erp))
+        if missing:
+            codes = list(set(missing.mapped('external_id_erp')))
+            found = Source.search([
+                ('company_id', '=', company_id), ('external_id', 'in', codes),
+            ])
+            by_external, duplicate_codes = {}, set()
+            for source in found:
+                if source.external_id in by_external:
+                    duplicate_codes.add(source.external_id)
+                else:
+                    by_external[source.external_id] = source
+            for guide in missing:
+                if guide.external_id_erp not in duplicate_codes and guide.external_id_erp in by_external:
+                    candidate = by_external[guide.external_id_erp]
+                    if not candidate.operational_guide_id or candidate.operational_guide_id.id == guide.id:
+                        result[guide.id] = candidate
+        return {key: value for key, value in result.items() if key not in ambiguous}
+
+    def _driver_matches(self, ruta, guia, source):
+        user = ruta.chofer_usuario_id
+        if not user:
             return False
-        if guia.chofer_usuario_id != ruta.chofer_usuario_id:
+        # Contradicciones documentales se rechazan aun cuando el Many2one
+        # estuviera vinculado previamente al usuario de la ruta.
+        if guia.chofer_usuario_id and guia.chofer_usuario_id != user:
             return False
-        if (guia.proveedor_id.commercial_partner_id !=
-                ruta.proveedor_id.commercial_partner_id):
+        if guia.chofer_usuario_id:
+            erp_doc = _identity(source.driver_id.identification) if source and source.driver_id else ''
+            linked_doc = _identity(guia.ruc_chofer)
+            expected = {_identity(user.partner_id.vat), _identity(user.login)} - {''}
+            if (erp_doc and erp_doc not in expected) or (linked_doc and linked_doc not in expected):
+                return False
+            if guia.chofer_contacto_id and guia.chofer_contacto_id != user.partner_id:
+                contact_doc = _identity(guia.chofer_contacto_id.vat)
+                if not contact_doc or contact_doc not in expected:
+                    return False
+            return True
+
+        # En ERP normalmente existe cédula/contacto antes de enlazarse res.users.
+        # Un ID diferente es una contradicción y NO se ignora.
+        erp_contact = guia.chofer_contacto_id or (source.driver_partner_id if source else False)
+        source_doc = (source.driver_id.identification if source and source.driver_id else '')
+        docs = {_identity(v) for v in (
+            guia.ruc_chofer,
+            erp_contact.vat if erp_contact else '',
+            source_doc,
+        ) if _identity(v)}
+        if len(docs) > 1:
             return False
-        return bool(ruta._es_guia_elegible(guia, permitir_reasignacion=False))
+        target_docs = {_identity(v) for v in (user.partner_id.vat, user.login)
+                       if _identity(v) and _identity(v).isdigit()}
+        if docs:
+            return bool(docs.intersection(target_docs))
+        # Contacto idéntico, incluso cuando el ERP no informó documento.
+        return bool(erp_contact and erp_contact.id == user.partner_id.id)
+
+    def _transport_matches(self, ruta, guia, source):
+        chosen = ruta.proveedor_id.commercial_partner_id
+        if not chosen:
+            return False
+        # Si el ERP contiene un RUC explícito incompatible, no confiar en un
+        # contacto vinculando por error en una sincronización anterior.
+        if source:
+            source_vat = _identity(source.transport_tax_raw)
+            linked_erp_vat = _identity(source.transport_partner_id.vat) if source.transport_partner_id else ''
+            for fiscal in (source_vat, linked_erp_vat):
+                if fiscal and fiscal != _identity(chosen.vat):
+                    return False
+        linked = guia.proveedor_id.commercial_partner_id if guia.proveedor_id else False
+        if linked:
+            if linked == chosen:
+                return True
+            # Contactos duplicados con MISMO RUC: equivalencia fiscal verificable.
+            return bool(_identity(linked.vat) and _identity(linked.vat) == _identity(chosen.vat))
+
+        if not source:
+            return False
+        src_partner = source.transport_partner_id.commercial_partner_id if source.transport_partner_id else False
+        if src_partner:
+            if src_partner == chosen:
+                return True
+            if src_partner.vat and chosen.vat and _identity(src_partner.vat) == _identity(chosen.vat):
+                return True
+            return False
+
+        src_tax = _identity(source.transport_tax_raw)
+        if src_tax:
+            return bool(_identity(chosen.vat) == src_tax)
+
+        # ERP sin RUC: solo nombre LEGAL exacto, y ausencia de homónimos con
+        # identificaciones fiscales distintas. No crea ni selecciona contactos.
+        name = _legal_name(source.transport_name)
+        if not name or name != _legal_name(chosen.name):
+            return False
+        words = re.findall(r'[A-Za-zÀ-ÿ0-9]{4,}', source.transport_name or '')
+        anchor = max(words, key=len) if words else source.transport_name
+        Partner = request.env['res.partner'].sudo().with_context(active_test=False)
+        domain = [
+            ('is_company', '=', True), ('name', 'ilike', anchor),
+            '|', ('company_id', '=', False), ('company_id', '=', ruta.company_id.id),
+        ]
+        # Si el prefiltro es demasiado amplio, no afirmar que el nombre es
+        # inequívoco: requerir homologación/RUC en vez de seleccionar a ciegas.
+        if Partner.search_count(domain) > 500:
+            return False
+        partners = Partner.search(domain, limit=500)
+        matching = partners.filtered(lambda p: _legal_name(p.name) == name)
+        # Distintos RUC bajo un mismo nombre requieren homologación administrativa.
+        taxes = {_identity(p.vat) for p in matching if _identity(p.vat)}
+        return bool(chosen in matching and len(taxes) <= 1 and
+                    (not taxes or not chosen.vat or _identity(chosen.vat) in taxes))
+
+    def _destination_matches(self, ruta, guia, source):
+        master = ruta.destino_id
+        erp_code = _identity(source.destination_id.external_code) if source and source.destination_id else ''
+        if erp_code and erp_code != _identity(master.codigo):
+            return False
+        if ruta._coincide_destino(guia):
+            return True
+        # Los destinos ya vinculados a OTRO maestro nunca se reasignan.
+        if guia.destino_id or not source:
+            return False
+        master = ruta.destino_id
+        if not master:
+            return False
+        catalog_code = _identity(master.codigo)
+        erp_code = _identity(source.destination_id.external_code) if source.destination_id else ''
+        if erp_code:
+            return bool(catalog_code and erp_code == catalog_code)
+        # Cuando falta el código, únicamente lugar/ciudad exactos del ERP.
+        valid = {_dest_name(master.name), _dest_name(master.ciudad)} - {''}
+        stated = {_dest_name(source.destination_city), _dest_name(source.destination_address)} - {''}
+        return bool(valid.intersection(stated))
+
+    def _match(self, ruta, guia, source):
+        """Devuelve (válida, motivo), evaluando cada dimensión por separado."""
+        if (not ruta.company_id or not ruta.destino_id or not ruta.chofer_usuario_id or
+                not ruta.proveedor_id or guia.company_id != ruta.company_id or
+                guia.state != 'registrada' or guia.embarque_id or guia.hoja_ruta_id):
+            return False, 'estado'
+        if not self._destination_matches(ruta, guia, source):
+            return False, 'destino'
+        if not self._driver_matches(ruta, guia, source):
+            return False, 'chofer'
+        if not self._transport_matches(ruta, guia, source):
+            return False, 'transporte'
+        return True, 'compatible'
+
+    def _candidates_and_report(self, ruta, search):
+        Guia = request.env['transcash.guia']
+        # NO filtrar por chofer_usuario_id ni proveedor_id en SQL: durante la
+        # importación pueden venir sin enlazar, pero con identidad ERP verificable.
+        # El servidor valida ambos antes de mostrar/guardar.
+        base = ruta._domain_guias_elegibles(validar_filtros=False)
+        if search:
+            base = expression.AND([base, [
+                '|', ('name', 'ilike', search), ('numero_documento', 'ilike', search),
+            ]])
+        report = {'en_compania': Guia.search_count(base), 'analizadas': 0,
+                  'destino': 0, 'chofer': 0, 'transporte': 0,
+                  'compatible': 0, 'limite': False}
+        if not (ruta.proveedor_id and ruta.chofer_usuario_id and ruta.destino_id):
+            return [], report
+        selected = ruta.seleccion_guia_ids
+        selected_map = self._source_map(selected, ruta.company_id.id)
+        entries, seen = [], set()
+        for guide in selected:
+            match, why = self._match(ruta, guide, selected_map.get(guide.id))
+            entries.append({'guia': guide, 'selected': bool(match),
+                            'available': bool(match), 'reassign': False,
+                            'reason': ('Disponible' if match else
+                                       'La selección anterior dejó de coincidir con los filtros')})
+            seen.add(guide.id)
+
+        before = None
+        while report['analizadas'] < MAX_SCAN and report['compatible'] < MAX_DISPLAY:
+            domain = list(base)
+            if before:
+                domain = expression.AND([domain, [('id', '<', before)]])
+            candidates = Guia.search(domain, order='id desc', limit=PAGE_SIZE)
+            if not candidates:
+                break
+            before = min(candidates.ids)
+            source_map = self._source_map(candidates, ruta.company_id.id)
+            report['analizadas'] += len(candidates)
+            for guide in candidates:
+                match, why = self._match(ruta, guide, source_map.get(guide.id))
+                if why == 'destino':
+                    report['destino'] += 1
+                elif why == 'chofer':
+                    report['chofer'] += 1
+                elif why == 'transporte':
+                    report['transporte'] += 1
+                if not match:
+                    continue
+                report['compatible'] += 1
+                if guide.id not in seen:
+                    seen.add(guide.id)
+                    entries.append({'guia': guide, 'selected': guide in selected,
+                                    'available': True, 'reassign': False,
+                                    'reason': 'Compatible con los tres filtros'})
+            if len(candidates) < PAGE_SIZE:
+                break
+        report['limite'] = (report['analizadas'] >= MAX_SCAN or report['compatible'] >= MAX_DISPLAY)
+        return entries[:MAX_DISPLAY + len(selected)], report
 
     def _candidates(self, route, search):
-        """Solo guías coincidentes con transportista + chofer + destino.
+        return self._candidates_and_report(route, search)[0]
 
-        Se añaden las seleccionadas anteriores para permitir desmarcarlas si su
-        relación cambió mientras la ruta estaba en borrador. Las discordantes
-        figuran deshabilitadas; jamás son seleccionables.
-        """
-        Guia = request.env['transcash.guia']
-        if not (route.proveedor_id and route.chofer_usuario_id and route.destino_id):
-            return []
-        # Filtro SQL por chofer y empresa comercial; _coincide_destino valida
-        # el destino contra el maestro, incluso si el ERP solo envió texto.
-        domain = expression.AND([
-            route._domain_guias_elegibles(validar_filtros=True),
-            [('chofer_usuario_id', '=', route.chofer_usuario_id.id),
-             ('proveedor_id.commercial_partner_id', '=',
-              route.proveedor_id.commercial_partner_id.id)],
-        ])
-        if search:
-            domain = expression.AND([
-                domain,
-                ['|', ('name', 'ilike', search),
-                 ('numero_documento', 'ilike', search)],
-            ])
-        # Misma capacidad de la PWA original, sin buscar primero registros
-        # irrelevantes de otros choferes o transportistas.
-        candidatas = Guia.search(domain, order='id desc', limit=400)
-        anteriores = route.seleccion_guia_ids
-        filas = []
-        for guia in (anteriores | candidatas).sorted('id', reverse=True):
-            elegible = self._tc_coincide_con_ruta(route, guia)
-            filas.append({
-                'guia': guia,
-                'selected': elegible and guia in anteriores,
-                'available': elegible,
-                'reassign': False,
-                'reason': ('Coincide con transportista, chofer y destino'
-                           if elegible else
-                           'No coincide con transportista, chofer o destino; '
-                           'retírela de la selección'),
-            })
-        return filas[:450]
-
-    @http.route()
+    @http.route('/transcash/operacion/rutas/<int:route_id>', type='http',
+                auth='user', website=True, methods=['GET'])
     def route_detail(self, route_id, **kw):
-        """Mantener navegación, permisos y plantilla originales."""
-        return super().route_detail(route_id, **kw)
+        if not self._guard():
+            return request.not_found()
+        ruta = self._route(route_id)
+        if not ruta:
+            return request.not_found()
+        search = (kw.get('buscar') or '').strip()[:90]
+        rows, report = self._candidates_and_report(ruta, search) if ruta.state == 'borrador' else ([], {})
+        return self._page('Hoja de ruta ' + ruta.name, section='ruta_detalle', ruta=ruta,
+                          filas=rows, tc_filtro_reporte=report, buscar=search,
+                          ok=kw.get('ok'), error=kw.get('error'),
+                          seleccion_actual=','.join(str(i) for i in sorted(ruta.seleccion_guia_ids.ids)))
 
-    @http.route()
+    @http.route('/transcash/operacion/rutas/<int:route_id>/guias', type='http',
+                auth='user', website=True, methods=['POST'], csrf=True)
     def route_select(self, route_id, **post):
-        """Impedir por servidor las reasignaciones, incluso con POST manipulado.
-
-        La implementación base sigue comprobando CSRF, permisos, estado,
-        token de concurrencia y límite de 100 guías. Aquí bloqueamos antes
-        las guías solicitadas y validamos coincidencia estricta.
-        """
         if not self._guard():
             return request.not_found()
         ruta = self._route(route_id)
@@ -92,54 +294,64 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
             return request.not_found()
         try:
             ruta._check_operator()
-            if ruta.state != 'borrador':
-                raise UserError(_('La hoja de ruta ya no está en borrador.'))
-            form = request.httprequest.form
-            valores = form.getlist('guias')
-            try:
-                ids = list(dict.fromkeys(int(value) for value in valores))
-            except (TypeError, ValueError):
-                raise UserError(_('La selección contiene identificadores inválidos.'))
-            if len(ids) > 100:
-                raise UserError(_('Una hoja de ruta admite hasta 100 guías.'))
-            # Misma transacción: bloquear la ruta y las guías antes de verificar.
-            request.env.cr.execute(
-                'SELECT id FROM transcash_hoja_ruta WHERE id = %s FOR UPDATE',
-                (ruta.id,),
-            )
-            ruta.invalidate_recordset(['state', 'seleccion_guia_ids',
-                                       'proveedor_id', 'chofer_usuario_id',
-                                       'destino_id'])
-            if ruta.state != 'borrador':
-                raise UserError(_('La ruta fue modificada. Recargue la pantalla.'))
-            if ids:
+            with request.env.cr.savepoint():
                 request.env.cr.execute(
-                    'SELECT id FROM transcash_guia WHERE id = ANY(%s) '
-                    'ORDER BY id FOR UPDATE', (ids,),
-                )
-            guias = request.env['transcash.guia'].browse(ids).exists()
-            if len(guias) != len(ids):
-                raise UserError(_('Una o más guías no existen.'))
-            guias.invalidate_recordset([
-                'state', 'company_id', 'hoja_ruta_id', 'embarque_id',
-                'destino_id', 'destino_codigo', 'destino_ciudad', 'destino',
-                'chofer_usuario_id', 'proveedor_id',
-            ])
-            invalidas = guias.filtered(
-                lambda guia: not self._tc_coincide_con_ruta(ruta, guia)
-            )
-            if invalidas:
-                raise UserError(_(
-                    'La guía %s no coincide con la empresa transportista, '
-                    'el chofer o el destino de la ruta. Seleccione solo '
-                    'las guías del resultado filtrado.'
-                ) % invalidas[0].name)
-            # Ignorar cualquier intento de autorización de cambio: esta PWA
-            # siempre utiliza la asociación original de las guías.
-            post.pop('autorizar_reasignacion', None)
-            return super().route_select(route_id, **post)
-        except (UserError, AccessError, ValidationError, ValueError, TypeError) as ex:
-            return request.redirect(
-                '/transcash/operacion/rutas/%d?error=%s' %
-                (ruta.id, quote(str(ex)[:320]))
-            )
+                    'SELECT id FROM transcash_hoja_ruta WHERE id = %s FOR UPDATE', (ruta.id,))
+                ruta.invalidate_recordset(['state', 'seleccion_guia_ids',
+                                           'proveedor_id', 'chofer_usuario_id', 'destino_id'])
+                if ruta.state != 'borrador':
+                    raise UserError(_('La ruta ya fue confirmada.'))
+                previous = ','.join(str(i) for i in sorted(ruta.seleccion_guia_ids.ids))
+                if post.get('seleccion_actual') != previous:
+                    raise UserError(_('Otro operador cambió la selección. Recargue la página.'))
+                raw = request.httprequest.form.getlist('guias')
+                try:
+                    ids = list(dict.fromkeys(int(v) for v in raw))
+                except (ValueError, TypeError):
+                    raise UserError(_('Se recibieron identificadores de guía inválidos.'))
+                if len(ids) > MAX_SELECTION:
+                    raise UserError(_('Solo puede agregar hasta 100 guías a la ruta.'))
+                if any(n <= 0 for n in ids):
+                    raise UserError(_('Se recibió un identificador inválido.'))
+                if ids:
+                    request.env.cr.execute(
+                        'SELECT id FROM transcash_guia WHERE id = ANY(%s) ORDER BY id FOR UPDATE',
+                        (ids,))
+                selected = request.env['transcash.guia'].browse(ids).exists()
+                if len(selected) != len(ids):
+                    raise UserError(_('Una o más guías no existen o no están disponibles.'))
+                selected.invalidate_recordset([
+                    'state', 'company_id', 'hoja_ruta_id', 'embarque_id',
+                    'destino_id', 'destino_codigo', 'destino_ciudad', 'destino',
+                    'chofer_contacto_id', 'chofer_usuario_id', 'ruc_chofer', 'proveedor_id'])
+                source_map = self._source_map(selected, ruta.company_id.id)
+                for guia in selected:
+                    compatible, reason = self._match(ruta, guia, source_map.get(guia.id))
+                    if not compatible:
+                        raise UserError(_('La guía %s no cumple el filtro de %s. '
+                                          'Revise los datos importados.') % (guia.name, reason))
+                # Guardar siempre mediante la acción autorizada de la ruta.
+                ruta.write({'seleccion_guia_ids': [(6, 0, ids)]})
+                # Completar relaciones técnicamente ausentes SOLO en guías
+                # seleccionadas y validadas, antes de confirmar la ruta.
+                for guia in selected:
+                    source = source_map.get(guia.id)
+                    changes = {}
+                    if not guia.chofer_usuario_id:
+                        changes['chofer_usuario_id'] = ruta.chofer_usuario_id.id
+                    if not guia.chofer_contacto_id:
+                        changes['chofer_contacto_id'] = ruta.chofer_usuario_id.partner_id.id
+                    if guia.proveedor_id != ruta.proveedor_id:
+                        changes['proveedor_id'] = ruta.proveedor_id.id
+                    if not guia.destino_id and self._destination_matches(ruta, guia, source):
+                        changes['destino_id'] = ruta.destino_id.id
+                        changes['destino_codigo'] = ruta.destino_id.codigo
+                    if changes:
+                        guia.sudo().write(changes)
+                # Esta PWA jamás autoriza un cambio de chofer/transportista.
+                ruta.sudo().write({'reasignacion_autorizada': False,
+                                   'reasignacion_autorizada_por_id': False})
+            return request.redirect('/transcash/operacion/rutas/%d?ok=guardadas' % ruta.id)
+        except (UserError, AccessError, ValidationError, ValueError, TypeError) as exc:
+            return request.redirect('/transcash/operacion/rutas/%d?error=%s' %
+                                    (ruta.id, quote(str(exc)[:320])))

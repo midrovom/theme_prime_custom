@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="tc_pwa_identity_fix_v27"
+            inherit_id="transcash_guias_api.tc_pwa_filter_guides_v26"
+            priority="90"
+            name="PWA: mostrar guías de chofer y transportista con identidad ERP">
+    <xpath expr="//section[contains(@class,'tc-route-guide-filters')]/p" position="replace">
+      <p>Se revisan las guías libres de esta empresa y se verifican destino,
+        cédula del chofer y RUC del transportista. Si falta un vínculo técnico
+        con Portal, se permite la guía únicamente cuando su identidad ERP es
+        comprobable. No se admiten asignaciones de otros conductores o empresas.</p>
+    </xpath>
+    <xpath expr="//div[contains(@class,'tc-ops-checklist')]" position="before">
+      <div t-if="tc_filtro_reporte" class="tc-route-guide-filters" role="status">
+        <strong>Resultado de filtros para esta ruta</strong>
+        <div class="tc-route-guide-filters__grid">
+          <div><small>Guías libres en la compañía</small>
+            <strong t-esc="tc_filtro_reporte.get('en_compania', 0)"/></div>
+          <div><small>Guías compatibles encontradas</small>
+            <strong t-esc="tc_filtro_reporte.get('compatible', 0)"/></div>
+          <div><small>Guías analizadas</small>
+            <strong t-esc="tc_filtro_reporte.get('analizadas', 0)"/></div>
+        </div>
+        <p t-if="not tc_filtro_reporte.get('compatible')" class="tc-route-guide-filters__notice">
+          No hay coincidencias verificadas. De las guías analizadas:
+          <t t-esc="tc_filtro_reporte.get('destino', 0)"/> no coincidieron con destino,
+          <t t-esc="tc_filtro_reporte.get('chofer', 0)"/> con el chofer y
+          <t t-esc="tc_filtro_reporte.get('transporte', 0)"/> con el transportista.
+          Compruebe los vínculos ERP o busque una guía concreta.
+        </p>
+        <p t-if="tc_filtro_reporte.get('limite')" class="tc-route-guide-filters__notice">
+          Se alcanzó el límite de exploración. Use la búsqueda por número
+          para consultar guías adicionales sin perder los filtros.
+        </p>
+      </div>
+    </xpath>
+    <xpath expr="//script[contains(@src, 'select_all_route_guides.js')]" position="attributes">
+      <attribute name="src">/transcash_guias_api/static/src/js/select_all_route_guides.js?v=27</attribute>
+    </xpath>
+  </template>
+</odoo>
