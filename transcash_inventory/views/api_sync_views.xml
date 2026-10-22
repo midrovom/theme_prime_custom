@@ -5,12 +5,13 @@
     <field name="arch" type="xml">
       <form string="Sincronización de inventario por API">
         <sheet>
+          <div class="alert alert-info" role="status">Actualización automática del inventario de la empresa activa. Solo pulse <b>Sincronizar ahora</b>: el servidor consulta las cuatro fuentes GET de API Administrator, valida los datos y actualiza los indicadores sin intervenir en los endpoints ni en sus credenciales.</div>
           <group>
             <field name="company_id" readonly="1"/>
-            <field name="reference_end" placeholder="2026-09"/>
+            <field name="reference_end" placeholder="2026-09" groups="base.group_system"/>
           </group>
-          <separator string="Endpoints definidos en API Administrator"/>
-          <group col="2">
+          <separator string="Endpoints definidos en API Administrator" groups="base.group_system"/>
+          <group col="2" groups="base.group_system">
             <field name="endpoint_products" readonly="1"/>
             <field name="endpoint_sales" readonly="1"/>
             <field name="endpoint_purchases" readonly="1"/>
@@ -23,7 +24,7 @@
           </group>
         </sheet>
         <footer>
-          <button name="action_sync" type="object" string="Sincronizar desde API Administrator" class="btn-primary"/>
+          <button name="action_sync" type="object" string="Sincronizar ahora" class="btn-primary"/>
           <button special="cancel" string="Cerrar" class="btn-secondary"/>
         </footer>
       </form>
@@ -37,5 +38,5 @@
   </record>
   <menuitem id="menu_transcash_inventory_api_sync" parent="menu_transcash_root"
             name="Sincronización API" action="action_transcash_inventory_api_sync"
-            sequence="16" groups="base.group_system"/>
+            sequence="16" groups="transcash_inventory.group_transcash_user,base.group_system"/>
 </odoo>

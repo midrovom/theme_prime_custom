@@ -1,29 +1,19 @@
-# Inventario Inteligente v1.43 — Consultas naturales más robustas
+# Transcash Inventario Inteligente v1.43 — móvil y sincronización por perfil de consulta
 
-## Origen de la incidencia
-El planificador GPT devolvía SQL válido como intención, pero no siempre ajustado
-al dialecto limitado del analizador. El segundo intento repetía generación SQL libre,
-por lo que solicitudes sencillas terminaban con "SELECT no autorizado".
+**Cambio acotado sobre v1.42:** se conservan el asistente ChatGPT de análisis libre, la compilación SELECT segura, el dashboard, filtros, fotos, tablas y exportaciones.
 
-## Corrección
-1. Mantener ChatGPT como intérprete libre de la pregunta (sin enumerar frases).
-2. Primero generar un SELECT sobre la vista semántica protegida `inventario`.
-3. Si no supera el parser, solicitar a ChatGPT un plan JSON estricto (columnas,
-   agregaciones, filtros, grupos, orden, límite) y compilarlo de nuevo en Odoo.
-4. Volver a analizar ese SELECT en el parser de seguridad antes de ejecutarlo,
-   con valores parametrizados, empresa y versión obligatorias, timeout y límite.
-5. Normalizar opcionalmente los delimitadores Markdown SQL y un único `;` final.
-6. Mejorar el contexto para interpretar "productos más vendidos" como unidades
-   vendidas si el usuario no pide facturación monetaria.
-7. Guardar el diagnóstico de ambos intentos únicamente en la bitácora administrativa.
+## Visualización móvil
+- El iframe del cliente Odoo deja de exigir una altura mínima superior al área real disponible: evita el recorte del pie en vista móvil dentro de Odoo.
+- Barra inferior elevada sobre el área del sistema y botones más legibles, con espacio reservado para el último contenido.
+- Se conserva el menú lateral completo, incluido ABC×XYZ y ChatGPT según perfil.
 
-## Alcance
-La mejora no altera tablas, datos importados, endpoints, menú móvil, dashboard,
-configuración de IA o exportación Excel. Las preguntas que requieren campos no
-existentes siguen sin poder resolverse; ninguna IA puede garantizar literalmente
-todas las consultas de lenguaje natural.
+## Sincronización API de lectura por usuarios de consulta
+- Los miembros de **Acceso al panel de inventarios (consulta)** pueden abrir **Sincronización API** desde el menú o **Sincronizar API** desde el dashboard.
+- El wizard solo requiere un clic del usuario; consulta por el servidor los endpoints GET previamente configurados en API Administrator. No habilita la edición de endpoints, credenciales o inventario.
+- Para los usuarios no administradores se ocultan endpoints y mes de corte; sigue disponible para administradores.
+- La ejecución valida empresa activa, permisos, JSON y datos. Solo la operación validada eleva privilegios para actualizar el snapshot; la ACL de usuario sigue siendo de lectura.
+- Si los datos no cambian, se mantiene la versión vigente; si cambia, se crea un nuevo corte con historial, materialización SQL y transición atómica existente.
+- Al cerrar el wizard abierto desde el dashboard, se recarga su información.
 
-## Actualización
-Reemplazar COMPLETAMENTE el módulo `transcash_inventory`, reiniciar TODOS los
-procesos de Odoo y actualizar Aplicaciones. Comprobar `__manifest__.py` 18.0.1.43.0.
-No desinstalar ni borrar datos, y no reimportar la información por este cambio.
+## Instalación
+Reemplazar la carpeta **transcash_inventory**, reiniciar Odoo y **actualizar** el módulo desde Apps (no desinstalar). Probar primero en entorno de pruebas con usuario de consulta y usuario administrador; aplicar en producción después de validar. La base de datos y las configuraciones de API Administrator se conservan.

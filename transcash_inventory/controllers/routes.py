@@ -204,6 +204,7 @@ class TranscashDashboardController(http.Controller):
         source = _HTML.read_text(encoding='utf-8')
         source = source.replace('@@CSRF@@', html.escape(request.csrf_token(), quote=True))
         source = source.replace('@@CAN_UPLOAD@@', 'true' if self._can_upload() else 'false')
+        source = source.replace('@@CAN_SYNC@@', 'true' if self._can_view() else 'false')
         source = source.replace('@@CAN_AI@@', 'true' if self._can_ai() else 'false')
         source = source.replace('@@COMPANY@@', html.escape(request.env.company.display_name, quote=True))
         source = source.replace('@@COMPANY_ID@@', str(request.env.company.id))

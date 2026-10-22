@@ -65,7 +65,8 @@ class TranscashInventorySnapshot(models.Model):
 
     @api.model
     def create_from_dataset(self, dataset, filename='API', raw_size=0):
-        if not (self.env.user.has_group('transcash_inventory.group_transcash_manager') or self.env.user.has_group('base.group_system')):
+        if not (self.env.su or self.env.user.has_group('transcash_inventory.group_transcash_manager')
+                or self.env.user.has_group('base.group_system')):
             raise ValidationError(_('No tiene permiso para cargar inventarios.'))
         if not isinstance(dataset, dict) or not all(k in dataset for k in ('products', 'sales', 'purchases', 'stockWarehouses', 'months', 'summary', 'source')):
             raise ValidationError(_('La información procesada no cumple el formato del dashboard.'))

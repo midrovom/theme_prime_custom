@@ -28,4 +28,5 @@ access_tc_fact_supplier_purchase_system,transcash.fact.supplier_purchase.system,
 access_tc_fact_stock_user,transcash.fact.stock.user,model_transcash_inventory_fact_stock,transcash_inventory.group_transcash_user,1,0,0,0
 access_tc_fact_stock_manager,transcash.fact.stock.manager,model_transcash_inventory_fact_stock,transcash_inventory.group_transcash_manager,1,0,0,0
 access_tc_fact_stock_system,transcash.fact.stock.system,model_transcash_inventory_fact_stock,base.group_system,1,0,0,0
+access_transcash_api_sync_viewer,transcash.api.sync.viewer,model_transcash_inventory_api_sync_wizard,transcash_inventory.group_transcash_user,1,1,1,1
 access_transcash_api_sync_system,transcash.api.sync.system,model_transcash_inventory_api_sync_wizard,base.group_system,1,1,1,1

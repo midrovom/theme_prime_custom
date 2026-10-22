@@ -21,13 +21,34 @@ class TranscashCompanyAction extends Component {
         });
     }
     get frameSrc() {
-        return `${this.constructor.route}?v=18.0.1.28.0&company_id=${encodeURIComponent(this.scope.id)}`;
+        return `${this.constructor.route}?v=18.0.1.43.0&company_id=${encodeURIComponent(this.scope.id)}`;
     }
 }
 
 export class TranscashDashboardAction extends TranscashCompanyAction {
     static template = 'transcash_inventory.DashboardAction';
     static route = '/transcash_inventory/dashboard';
+    setup() {
+        super.setup();
+        this.action = useService('action');
+        this.dashboardFrame = useRef('dashboardFrame');
+        this.onSyncRequested = (event) => {
+            if (event.origin !== window.location.origin ||
+                    !this.dashboardFrame.el ||
+                    event.source !== this.dashboardFrame.el.contentWindow ||
+                    event.data?.type !== 'transcash_inventory:open_api_sync') return;
+            this.action.doAction('transcash_inventory.action_transcash_inventory_api_sync', {
+                // The wizard itself authorizes each request. Refresh the dashboard
+                // even if dismissed, since a completed sync may change snapshots.
+                onClose: () => {
+                    try { this.dashboardFrame.el?.contentWindow?.location.reload(); }
+                    catch (_) { /* The next dashboard opening will fetch current data. */ }
+                },
+            });
+        };
+        onMounted(() => window.addEventListener('message', this.onSyncRequested));
+        onWillUnmount(() => window.removeEventListener('message', this.onSyncRequested));
+    }
 }
 registry.category('actions').add('transcash_inventory.dashboard', TranscashDashboardAction);
 

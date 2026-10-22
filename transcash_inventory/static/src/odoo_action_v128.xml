@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
   <t t-name="transcash_inventory.DashboardAction">
     <div class="o_transcash_inventory_action">
-      <iframe class="o_transcash_inventory_frame" t-att-src="frameSrc" title="Transcash - Inventario Inteligente"/>
+      <iframe t-ref="dashboardFrame" class="o_transcash_inventory_frame" t-att-src="frameSrc" title="Transcash - Inventario Inteligente"/>
     </div>
   </t>
   <t t-name="transcash_inventory.ImportAction">

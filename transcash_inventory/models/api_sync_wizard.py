@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Admin-only manual API snapshot synchronization using existing API Administrator."""
+"""Controlled, read-only API refresh for inventory viewers using API Administrator."""
 import json
 from odoo import fields, models, _
 from odoo.exceptions import UserError
@@ -23,25 +23,38 @@ class TranscashInventoryApiSyncWizard(models.TransientModel):
 
     def action_sync(self):
         self.ensure_one()
-        if not self.env.user.has_group('base.group_system'):
-            raise UserError(_('La sincronización API está reservada al administrador.'))
+        # Viewers may REQUEST a refresh, but cannot configure the APIs or write
+        # arbitrary inventory data. The server fetches the four fixed GET sources.
+        if not (self.env.user.has_group('transcash_inventory.group_transcash_user')
+                or self.env.user.has_group('base.group_system')):
+            raise UserError(_('No tiene permiso para sincronizar inventarios.'))
         if self.company_id != self.env.company:
             raise UserError(_('Seleccione la empresa autorizada antes de importar.'))
         from datetime import datetime
-        reference_end = (self.reference_end or '').strip()
+        # Viewers always use the freshest source period; only admins can override.
+        reference_end = ((self.reference_end or '').strip()
+                         if self.env.user.has_group('base.group_system') else '')
         if reference_end:
             try:
                 if datetime.strptime(reference_end, '%Y-%m').strftime('%Y-%m') != reference_end:
                     raise ValueError()
             except ValueError:
                 raise UserError(_('El mes de corte debe tener formato YYYY-MM.')) from None
+        # Prevent simultaneous expensive requests for the same company. This
+        # transaction advisory lock is released automatically by PostgreSQL.
+        self.env.cr.execute('SELECT pg_try_advisory_xact_lock(%s, %s)',
+                            (872246, self.env.company.id))
+        if not self.env.cr.fetchone()[0]:
+            raise UserError(_('Ya existe una sincronización API en curso para esta empresa.'))
         try:
             payloads = fetch_from_api_administrator(self.env)
             dataset, counts = convert_api_payloads(payloads, reference_end or None)
         except APIInventoryError as exc:
             raise UserError(str(exc)) from None
         # Create a new atomic version: old dashboard and fact tables remain untouched.
-        inventory = self.env['transcash.inventory.snapshot']
+        # Elevated permission is scoped to the validated server-side import, NOT
+        # granted to the viewer. API Administrator credentials stay server-side.
+        inventory = self.env['transcash.inventory.snapshot'].sudo()
         previous = inventory.current_for_company()
         snapshot = inventory.create_from_dataset(dataset, filename='API Administrator', raw_size=0)
         unchanged = bool(previous and previous.id == snapshot.id)
@@ -56,7 +69,7 @@ class TranscashInventoryApiSyncWizard(models.TransientModel):
         # with action.views.map(...). Returning only view_mode on an inline
         # action (especially under display_notification.params.next) crashes
         # the browser with "Cannot read properties of undefined (reading 'map')".
-        # Reopen the admin wizard using a complete, server-resolved form action.
+        # Reopen the wizard using a complete, server-resolved form action.
         return {
             'type': 'ir.actions.act_window',
             'name': _('Sincronización de inventario por API'),
