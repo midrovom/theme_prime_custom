@@ -125,11 +125,17 @@ class TranscashInventorySnapshot(models.Model):
 
     def get_dashboard_json(self):
         self.ensure_one()
-        # Solo usar desde un usuario que tenga permiso de lectura sobre el registro.
+        # Check model ACLs and record rules as the real user FIRST.
+        # The packed binary field is intentionally restricted to managers in
+        # fields.Binary(groups=...).  Accessing self.dashboard_data here, even
+        # just to test whether it is empty, raises AccessError for dashboard
+        # viewers.  Only after successful record access do we read that one
+        # protected field as sudo, without granting any write permissions.
         self.check_access('read')
-        if not self.dashboard_data:
+        packed = self.sudo().dashboard_data
+        if not packed:
             return b'{}'
-        return zlib.decompress(base64.b64decode(self.sudo().dashboard_data))
+        return zlib.decompress(base64.b64decode(packed))
 
     def action_view_dashboard(self):
         self.ensure_one()
