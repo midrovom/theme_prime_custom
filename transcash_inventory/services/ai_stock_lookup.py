@@ -156,6 +156,10 @@ def detect_stock_lookup(question):
     if not (re.search(r'\b(cuales|que|lista|listado|listar|muestra|mostrar|muestrame|dame|productos|articulos|skus)\b',
                       normalized) or normalized.startswith('stock')):
         return None
+    # Grouped financial requests require the full validated AI/SQL planner.
+    # A physical-stock filter does NOT imply that the user wants rows by SKU.
+    if re.search(r'\b(?:agrupad[oa]s?\s+por|por\s+(?:marca|categoria|formato|proveedor|mes|bodega))\b', normalized):
+        return None
     conditions = parse_stock_conditions(question)
     if not conditions:
         # Do not fall through to the LLM for an explicit stock comparison it
@@ -218,53 +222,152 @@ def resolve_stock_filters(env, snapshot, question, ui, detected):
     return result
 
 
-def execute_stock_lookup(env, snapshot, question, ui, detected, period, max_rows=1000):
-    filters = resolve_stock_filters(env, snapshot, question, ui, detected)
-    stock_conditions = validate_stock_conditions(detected['conditions'])
-    conditions = ['fp.snapshot_id = %s', 'fp.company_id = %s']
-    params = [snapshot.id, snapshot.company_id.id]
-    for predicate in stock_conditions:
-        conditions.append('fp.stock_unidades ' + predicate['operator'] + ' %s')
-        params.append(predicate['value'])
-    for field, column in (('categoria', 'categoria'), ('marca', 'marca'), ('proveedor', 'proveedor_ficha')):
-        if filters[field]:
-            conditions.append('LOWER(TRIM(fp.' + column + ')) = LOWER(TRIM(%s))')
-            params.append(filters[field])
-    if filters['format_aliases']:
-        conditions.append('fp.formato = ANY(%s)')
-        params.append(filters['format_aliases'])
-    where = ' AND '.join(conditions)
-    table = 'transcash_inventory_fact_product'
-    sql = ('SELECT fp.sku, fp.name, fp.categoria, fp.marca, fp.formato, '
-           'fp.proveedor_ficha, fp.stock_unidades, fp.stock_valor '
-           'FROM ' + table + ' fp WHERE ' + where +
-           ' ORDER BY fp.stock_unidades ASC, fp.sku ASC LIMIT %s')
-    env.cr.execute(sql, params + [max_rows])
-    records = env.cr.fetchall()
-    env.cr.execute('SELECT COUNT(*), COALESCE(SUM(fp.stock_unidades),0), COALESCE(SUM(fp.stock_valor),0) FROM ' + table + ' fp WHERE ' + where, params)
-    count, total_units, total_value = env.cr.fetchone()
-    metric_keys = ['descripcion', 'categoria', 'marca', 'formato', 'proveedor_ficha', 'stock_unidades', 'stock_valor']
-    labels = {'descripcion': 'Descripción', 'categoria': 'Categoría', 'marca': 'Marca',
-              'formato': 'Formato', 'proveedor_ficha': 'Proveedor',
-              'stock_unidades': 'Stock · cantidad', 'stock_valor': 'Stock · valor USD'}
-    rows = []
-    for sku, name, cat, brand, fmt, provider, stock, value in records:
-        detail = dict(zip(metric_keys, [name or '', cat or '', brand or '', fmt or '',
-                                      provider or '', round(float(stock or 0), 4),
-                                      round(float(value or 0), 2)]))
-        rows.append({'grupo': sku, 'valor': detail['stock_unidades'], 'metricas': detail})
+def requested_stock_columns(question):
+    """Columnas de listado por SKU dinámicas, sin omitir campos solicitados."""
+    from .ai_requested_metrics import requested_metrics
+    return requested_metrics(question, include_basics=True)
+
+
+def stock_sort(question):
+    """The default is ascending stock; explicit ranking direction overrides it."""
+    text = _norm(question)
+    if re.search(r'\btop\s+\d+\b', text) or re.search(r'\b(?:mayor|mas\s+alto|descendente)\s+a\s+menor\b|\bde\s+mas\s+a\s+menos\b', text):
+        return 'DESC'
+    return 'ASC'
+
+
+def _stock_result(rows, count, total_value, metrics, filters, conditions, period, sql='', params=None):
+    from .ai_requested_metrics import METRIC_LABELS
+    labels = METRIC_LABELS
+    result_rows = []
+    for item in rows:
+        # Keep field insertion order matching the column layout requested.
+        detail = {name: item.get(name) for name in metrics}
+        result_rows.append({'grupo': item['sku'], 'valor': detail['stock_unidades'], 'metricas': detail})
     return {
-        'tipo_resultado': 'listado_stock', 'dimension': 'sku',
-        'metrica': 'stock_unidades', 'metricas': metric_keys, 'etiquetas': labels,
-        # No sum of unit quantities in the UI: catalog may mix m2 / pieces / boxes.
-        'totales': {'stock_unidades': None, 'stock_valor': round(float(total_value), 2)},
+        'tipo_resultado': 'listado_stock', 'dimension': 'sku', 'metrica': 'stock_unidades',
+        'metricas': metrics, 'etiquetas': {name: labels[name] for name in metrics},
+        # Physical quantities can be m², boxes or pieces: never aggregate incompatible UoMs.
+        'totales': {'stock_unidades': None, 'stock_valor': round(float(total_value or 0), 2),
+                    'cantidad_vendida': None, 'cantidad_comprada': None,
+                    'ventas': None, 'compras': None, 'utilidad': None, 'margen': None, 'costo_ventas': None},
         'total': int(count), 'grupos_evaluados': int(count), 'sku_evaluados': int(count),
-        'filas': rows, 'total_filas': int(count), 'filas_mostradas': len(rows),
+        'filas': result_rows, 'total_filas': int(count), 'filas_mostradas': len(result_rows),
         'periodo': {'desde': period[0], 'hasta': period[1]},
         'filtros': dict({k: v for k, v in filters.items() if k != 'format_aliases'},
-                        stock=condition_summary(stock_conditions)),
-        'sql_consulta': sql, 'sql_parametros': params + [max_rows],
+                        stock=condition_summary(conditions)),
+        'sql_consulta': sql, 'sql_parametros': params or [],
     }
+
+
+def execute_stock_lookup(env, snapshot, question, ui, detected, period, max_rows=1000):
+    """Stock-filtered product listing, with independently aggregated sales/purchases.
+
+    Sales and purchases are reduced to one row per product before either join.
+    No MxN multiplication, no arbitrary SQL supplied by the LLM or the user.
+    """
+    filters = resolve_stock_filters(env, snapshot, question, ui, detected)
+    conditions = validate_stock_conditions(detected['conditions'])
+    metrics = requested_stock_columns(question)
+    predicates = ['fp.snapshot_id = %s', 'fp.company_id = %s']
+    params = [snapshot.id, snapshot.company_id.id]
+    for item in conditions:
+        predicates.append('fp.stock_unidades ' + item['operator'] + ' %s')
+        params.append(item['value'])
+    for field, col in (('categoria', 'categoria'), ('marca', 'marca'), ('proveedor', 'proveedor_ficha')):
+        if filters[field]:
+            predicates.append('LOWER(TRIM(fp.' + col + ')) = LOWER(TRIM(%s))')
+            params.append(filters[field])
+    if filters['format_aliases']:
+        predicates.append('fp.formato = ANY(%s)')
+        params.append(filters['format_aliases'])
+    where = ' AND '.join(predicates)
+    table = 'transcash_inventory_fact_product'
+    count_sql = ('SELECT COUNT(*), COALESCE(SUM(fp.stock_valor),0) FROM ' +
+                 table + ' fp WHERE ' + where)
+    env.cr.execute(count_sql, list(params))
+    count, total_value = env.cr.fetchone()
+
+    from .ai_requested_metrics import sort_metric
+    requested_order = sort_metric(question)
+    top_match = re.search(r'\btop\s*(\d{1,3})\b', _norm(question))
+    if top_match:
+        max_rows = max(1, min(100, int(top_match.group(1))))
+    query_params = list(params)
+    ctes = ['filtered AS (SELECT fp.* FROM ' + table + ' fp WHERE ' + where + ')']
+    joins = []
+    extra = []
+    needs_sale = bool(set(metrics) & {
+        'cantidad_vendida', 'ultima_venta', 'ventas', 'costo_ventas',
+        'utilidad', 'margen', 'precio_promedio'}) or requested_order in ('ventas', 'utilidad', 'margen')
+    needs_purchase = bool(set(metrics) & {'cantidad_comprada', 'ultima_compra', 'compras'}) or requested_order == 'compras'
+    if needs_sale:
+        ctes.append("""sales AS (SELECT s.product_id,
+            SUM(CASE WHEN s.mes BETWEEN %s AND %s THEN s.cantidad_vendida ELSE 0 END) AS qty,
+            SUM(CASE WHEN s.mes BETWEEN %s AND %s THEN s.ventas ELSE 0 END) AS amount,
+            SUM(CASE WHEN s.mes BETWEEN %s AND %s THEN s.costo_ventas ELSE 0 END) AS cost,
+            MAX(CASE WHEN s.cantidad_vendida > 0 THEN s.mes END) AS latest
+            FROM transcash_inventory_fact_sale s JOIN filtered f ON f.id=s.product_id
+            WHERE s.snapshot_id=%s AND s.company_id=%s GROUP BY s.product_id)""")
+        query_params.extend([period[0], period[1]] * 3 + [snapshot.id, snapshot.company_id.id])
+        joins.append('LEFT JOIN sales vs ON vs.product_id=fp.id')
+        sale_sql = {
+            'cantidad_vendida': 'COALESCE(vs.qty,0)',
+            'ventas': 'COALESCE(vs.amount,0)',
+            'costo_ventas': 'COALESCE(vs.cost,0)',
+            'utilidad': '(COALESCE(vs.amount,0)-COALESCE(vs.cost,0))',
+            'margen': '(CASE WHEN COALESCE(vs.amount,0) <> 0 THEN '
+                      '100.0*(COALESCE(vs.amount,0)-COALESCE(vs.cost,0))/vs.amount END)',
+            'precio_promedio': '(CASE WHEN COALESCE(vs.qty,0) <> 0 THEN vs.amount/vs.qty END)',
+            'ultima_venta': 'vs.latest',
+        }
+        for key in ('cantidad_vendida', 'ventas', 'costo_ventas', 'utilidad',
+                    'margen', 'precio_promedio', 'ultima_venta'):
+            if key in metrics:
+                extra.append(sale_sql[key] + ' AS ' + key)
+    else:
+        sale_sql = {}
+    if needs_purchase:
+        ctes.append("""purchases AS (SELECT b.product_id,
+            SUM(CASE WHEN b.mes BETWEEN %s AND %s THEN b.cantidad_comprada ELSE 0 END) AS qty,
+            SUM(CASE WHEN b.mes BETWEEN %s AND %s THEN b.compras ELSE 0 END) AS amount,
+            MAX(CASE WHEN b.cantidad_comprada > 0 THEN b.mes END) AS latest
+            FROM transcash_inventory_fact_purchase b JOIN filtered f ON f.id=b.product_id
+            WHERE b.snapshot_id=%s AND b.company_id=%s GROUP BY b.product_id)""")
+        query_params.extend([period[0], period[1]] * 2 + [snapshot.id, snapshot.company_id.id])
+        joins.append('LEFT JOIN purchases ps ON ps.product_id=fp.id')
+        if 'cantidad_comprada' in metrics:
+            extra.append('COALESCE(ps.qty,0) AS cantidad_comprada')
+        if 'compras' in metrics:
+            extra.append('COALESCE(ps.amount,0) AS compras')
+        if 'ultima_compra' in metrics:
+            extra.append('ps.latest AS ultima_compra')
+    base_cols = ['fp.sku', 'fp.name AS descripcion', 'fp.categoria', 'fp.marca',
+                 'fp.formato', 'fp.proveedor_ficha', 'fp.stock_unidades', 'fp.stock_valor']
+    sort_expressions = {'stock_unidades': 'fp.stock_unidades',
+                        'ventas': sale_sql.get('ventas', 'fp.stock_unidades'),
+                        'utilidad': sale_sql.get('utilidad', 'fp.stock_unidades'),
+                        'margen': sale_sql.get('margen', 'fp.stock_unidades'),
+                        'compras': 'COALESCE(ps.amount,0)' if needs_purchase else 'fp.stock_unidades'}
+    sort_expression = sort_expressions[requested_order]
+    sql = ('WITH ' + ', '.join(ctes) + ' SELECT ' + ', '.join(base_cols + extra) +
+           ' FROM filtered fp ' + ' '.join(joins) +
+           ' ORDER BY ' + sort_expression + ' ' + stock_sort(question) +
+           ' NULLS LAST, fp.sku ASC LIMIT %s')
+    env.cr.execute(sql, query_params + [max_rows])
+    columns = ['sku', 'descripcion', 'categoria', 'marca', 'formato', 'proveedor_ficha',
+               'stock_unidades', 'stock_valor'] + [column.split(' AS ')[-1] for column in extra]
+    records = [dict(zip(columns, r)) for r in env.cr.fetchall()]
+    for record in records:
+        for key in set(metrics) & {'stock_unidades', 'stock_valor', 'cantidad_comprada',
+                                   'cantidad_vendida', 'ventas', 'compras', 'utilidad',
+                                   'margen', 'precio_promedio', 'costo_ventas'}:
+            if key in record:
+                record[key] = (None if record[key] is None else
+                               round(float(record[key]), 2 if key in ('stock_valor', 'ventas',
+                               'compras', 'utilidad', 'costo_ventas', 'precio_promedio', 'margen') else 4))
+    return _stock_result(records, count, total_value, metrics, filters, conditions, period,
+                         sql, query_params + [max_rows])
 
 
 def _dataset_filters(dataset, question, ui, detected):
@@ -301,60 +404,92 @@ def _dataset_filters(dataset, question, ui, detected):
 
 
 def execute_stock_lookup_snapshot(snapshot, question, ui, detected, period, max_rows=1000):
-    """Fast DB-resident snapshot fallback; never materializes or calls OpenAI.
-
-    Old imports are already persisted as a compact JSON attachment in Odoo.
-    Reading that attachment is preferable to forcing migration of 100k+ fact
-    rows during a simple stock query. New/API imports use the SQL facts path.
-    """
+    """Legacy snapshot path supports the same requested metrics without OpenAI."""
     import json
     from .ai_analytics import product_format
     dataset = json.loads(snapshot.get_dashboard_json())
     products = dataset.get('products') or []
     filters = _dataset_filters(dataset, question, ui, detected)
-    stock_conditions = validate_stock_conditions(detected['conditions'])
-    labels = {
-        'categoria': dataset.get('categories') or [],
-        'marca': dataset.get('brands') or [],
-        'proveedor': dataset.get('providers') or [],
-    }
-    filtered = []
+    conditions = validate_stock_conditions(detected['conditions'])
+    metrics = requested_stock_columns(question)
+    labels = {'categoria': dataset.get('categories') or [],
+              'marca': dataset.get('brands') or [],
+              'proveedor': dataset.get('providers') or []}
+    selected = []
     total_value = 0.0
-    for p in products:
+    for idx, p in enumerate(products):
         if len(p) < 8:
             continue
-        category = labels['categoria'][p[2]]
-        brand = labels['marca'][p[3]]
-        provider = labels['proveedor'][p[4]]
-        fmt = product_format(p)
-        stock = float(p[7] or 0)
-        if not condition_matches(stock, stock_conditions):
+        cat, brand, provider = (labels['categoria'][p[2]], labels['marca'][p[3]],
+                                labels['proveedor'][p[4]])
+        fmt, stock = product_format(p), float(p[7] or 0)
+        if not condition_matches(stock, conditions):
             continue
-        if (filters['categoria'] and _norm(category) != _norm(filters['categoria']) or
+        if (filters['categoria'] and _norm(cat) != _norm(filters['categoria']) or
             filters['marca'] and _norm(brand) != _norm(filters['marca']) or
             filters['proveedor'] and _norm(provider) != _norm(filters['proveedor']) or
             filters['format_aliases'] and fmt not in filters['format_aliases']):
             continue
-        value = stock * max(0.0, float(p[5] or 0))
-        total_value += value
-        filtered.append((str(p[0]), str(p[1]), category, brand, fmt, provider, stock, value))
-    filtered.sort(key=lambda row: (row[6], row[0]))
-    metrics = ['descripcion', 'categoria', 'marca', 'formato', 'proveedor_ficha', 'stock_unidades', 'stock_valor']
-    column_names = {'descripcion': 'Descripción', 'categoria': 'Categoría', 'marca': 'Marca',
-                    'formato': 'Formato', 'proveedor_ficha': 'Proveedor',
-                    'stock_unidades': 'Stock · cantidad', 'stock_valor': 'Stock · valor USD'}
-    result_rows = []
-    for sku, name, cat, brand, fmt, prov, stock, value in filtered[:max_rows]:
-        fields = dict(zip(metrics, [name, cat, brand, fmt, prov, round(stock, 4), round(value, 2)]))
-        result_rows.append({'grupo': sku, 'valor': fields['stock_unidades'], 'metricas': fields})
-    return {
-        'tipo_resultado': 'listado_stock', 'dimension': 'sku',
-        'metrica': 'stock_unidades', 'metricas': metrics, 'etiquetas': column_names,
-        'totales': {'stock_unidades': None, 'stock_valor': round(total_value, 2)},
-        'total': len(filtered), 'grupos_evaluados': len(filtered), 'sku_evaluados': len(filtered),
-        'filas': result_rows, 'total_filas': len(filtered), 'filas_mostradas': len(result_rows),
-        'periodo': {'desde': period[0], 'hasta': period[1]},
-        'filtros': dict({k: v for k, v in filters.items() if k != 'format_aliases'},
-                        stock=condition_summary(stock_conditions)),
-        'sql_consulta': '', 'sql_parametros': [],
-    }
+        val = stock * max(0.0, float(p[5] or 0))
+        total_value += val
+        selected.append((idx, {'sku': str(p[0]), 'descripcion': str(p[1]),
+                               'categoria': cat, 'marca': brand, 'formato': fmt,
+                               'proveedor_ficha': provider, 'stock_unidades': round(stock, 4),
+                               'stock_valor': round(val, 2)}))
+    selected.sort(key=lambda row: ((-1 if stock_sort(question) == 'DESC' else 1) *
+                                   row[1]['stock_unidades'], row[1]['sku']))
+    visible = selected[:max_rows]
+    visible_ids = {idx for idx, _ in visible}
+    indexed = {idx: entry for idx, entry in visible}
+    months = dataset.get('months') or []
+    if months and (period[0] not in months or period[1] not in months or period[0] > period[1]):
+        raise ValueError('El período solicitado no existe en esta versión del inventario.')
+    want_s = any(key in metrics for key in ('cantidad_vendida', 'ultima_venta', 'ventas',
+                 'costo_ventas', 'utilidad', 'margen', 'precio_promedio'))
+    want_b = any(key in metrics for key in ('cantidad_comprada', 'ultima_compra', 'compras'))
+    if want_s:
+        for sku_i, month_i, qty, *rest in dataset.get('sales') or []:
+            if sku_i not in visible_ids:
+                continue
+            record = indexed[sku_i]
+            if period[0] <= months[month_i] <= period[1]:
+                if 'cantidad_vendida' in metrics or 'precio_promedio' in metrics:
+                    record['cantidad_vendida'] = round(record.get('cantidad_vendida', 0) + float(qty or 0), 4)
+                if any(m in metrics for m in ('ventas', 'utilidad', 'margen', 'precio_promedio')):
+                    record['ventas'] = record.get('ventas', 0) + float(rest[0] if len(rest)>0 else 0)
+                if any(m in metrics for m in ('costo_ventas', 'utilidad', 'margen')):
+                    record['costo_ventas'] = record.get('costo_ventas', 0) + float(rest[1] if len(rest)>1 else 0)
+            if 'ultima_venta' in metrics and float(qty or 0) > 0:
+                record['ultima_venta'] = max(record.get('ultima_venta') or '', months[month_i])
+    if want_b:
+        for sku_i, month_i, qty, *rest in dataset.get('purchases') or []:
+            if sku_i not in visible_ids:
+                continue
+            record = indexed[sku_i]
+            if period[0] <= months[month_i] <= period[1]:
+                if 'cantidad_comprada' in metrics:
+                    record['cantidad_comprada'] = round(record.get('cantidad_comprada', 0) + float(qty or 0), 4)
+                if 'compras' in metrics:
+                    record['compras'] = record.get('compras', 0) + float(rest[0] if rest else 0)
+            if 'ultima_compra' in metrics and float(qty or 0) > 0:
+                record['ultima_compra'] = max(record.get('ultima_compra') or '', months[month_i])
+    for record in indexed.values():
+        for field in ('cantidad_comprada', 'cantidad_vendida'):
+            if field in metrics:
+                record.setdefault(field, 0.0)
+        for field in ('compras', 'ventas', 'costo_ventas'):
+            if field in metrics:
+                record.setdefault(field, 0.0)
+        if 'utilidad' in metrics:
+            record['utilidad'] = round(record.get('ventas', 0.0) - record.get('costo_ventas', 0.0), 2)
+        if 'margen' in metrics:
+            amount = record.get('ventas', 0.0)
+            record['margen'] = round(100 * (amount-record.get('costo_ventas', 0.0)) / amount, 2) if amount else None
+        if 'precio_promedio' in metrics:
+            qty = record.get('cantidad_vendida', 0.0)
+            record['precio_promedio'] = round(record.get('ventas', 0.0) / qty, 2) if qty else None
+        for field in ('ultima_compra', 'ultima_venta'):
+            if field in metrics:
+                record.setdefault(field, None)
+    return _stock_result([item for _, item in visible], len(selected), total_value,
+                         metrics, filters, conditions, period)

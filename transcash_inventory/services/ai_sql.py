@@ -36,7 +36,8 @@ GROUP_COLUMNS = {
 
 SQL_METRIC_COLUMNS = ('ventas', 'costo_ventas', 'cantidad_vendida', 'compras',
                       'cantidad_comprada', 'stock_unidades', 'stock_valor')
-TEXT_METRICS = ('descripcion', 'ultima_compra', 'ultima_venta')
+TEXT_METRICS = ('descripcion', 'categoria', 'marca', 'formato', 'proveedor_ficha',
+                'costo_unitario', 'precio_venta', 'ultima_compra', 'ultima_venta')
 SQL_TOTAL_EXPR = ',\n '.join('COALESCE(SUM({}),0) AS {}'.format(col, col) for col in SQL_METRIC_COLUMNS)
 
 
@@ -60,8 +61,8 @@ def build_select(snapshot_id, company_id, plan, months, default_start=None, defa
     requested_text = [m for m in metrics if m in TEXT_METRICS]
     if requested_text and dim != 'sku':
         raise ValueError('Descripción y fechas de último movimiento solo se consultan por SKU.')
-    if not isinstance(metrics, list) or not 1 <= len(metrics) <= 8 or len(set(metrics)) != len(metrics):
-        raise ValueError('Se requieren entre 1 y 8 métricas diferentes.')
+    if not isinstance(metrics, list) or not 1 <= len(metrics) <= 16 or len(set(metrics)) != len(metrics):
+        raise ValueError('Se requieren entre 1 y 16 columnas diferentes.')
     if metric not in metrics or any(m not in METRICS and m != 'formula' for m in metrics):
         raise ValueError('Métrica de SQL no autorizada.')
     if dim == 'proveedor_compra' and any(m != 'compras' for m in metrics):
@@ -179,17 +180,28 @@ FROM calendar LEFT JOIN s ON s.mes=calendar.mes LEFT JOIN b ON b.mes=calendar.me
         extra_product = ''
         extra_select = ''
         if requested_text:
-            extra_cte = ''',
+            last_requested = bool(set(requested_text) & {'ultima_compra', 'ultima_venta'})
+            if last_requested:
+                extra_cte = """,
 last_s AS (SELECT m.product_id, MAX(m.mes) AS ultima_venta FROM {sales} m
  WHERE m.snapshot_id=%s AND m.company_id=%s AND m.cantidad_vendida > 0
  GROUP BY m.product_id),
 last_b AS (SELECT m.product_id, MAX(m.mes) AS ultima_compra FROM {buys} m
  WHERE m.snapshot_id=%s AND m.company_id=%s AND m.cantidad_comprada > 0
- GROUP BY m.product_id)'''
-            extra_joins = ' LEFT JOIN last_s ls ON ls.product_id=fp.id LEFT JOIN last_b lb ON lb.product_id=fp.id'
-            extra_product = ', fp.name AS descripcion, lb.ultima_compra, ls.ultima_venta'
-            extra_select = ', MAX(descripcion) AS descripcion, MAX(ultima_compra) AS ultima_compra, MAX(ultima_venta) AS ultima_venta'
-            params.extend([int(snapshot_id), int(company_id), int(snapshot_id), int(company_id)])
+ GROUP BY m.product_id)"""
+                extra_joins = ' LEFT JOIN last_s ls ON ls.product_id=fp.id LEFT JOIN last_b lb ON lb.product_id=fp.id'
+                params.extend([int(snapshot_id), int(company_id), int(snapshot_id), int(company_id)])
+            # Only static whitelisted column expressions; this never embeds LLM SQL.
+            allowed_attrs = {
+                'descripcion': 'fp.name', 'categoria': 'fp.categoria',
+                'marca': 'fp.marca', 'formato': 'fp.formato',
+                'proveedor_ficha': 'fp.proveedor_ficha',
+                'costo_unitario': 'fp.costo_unitario', 'precio_venta': 'fp.precio_venta',
+                'ultima_compra': 'lb.ultima_compra', 'ultima_venta': 'ls.ultima_venta',
+            }
+            for field in requested_text:
+                extra_product += ', ' + allowed_attrs[field] + ' AS ' + field
+                extra_select += ', MAX(' + field + ') AS ' + field
         sql = '''WITH {fp_sql},
 s AS (SELECT s.product_id, SUM(s.ventas) AS ventas,
  SUM(s.costo_ventas) AS costo_ventas, SUM(s.cantidad_vendida) AS cantidad_vendida
@@ -251,8 +263,8 @@ def execute_sql_plan(env, snapshot, plan, default_start=None, default_end=None):
         vals = computed(row[1:1+len(SQL_METRIC_COLUMNS)])
         if info['requested_text']:
             # Approved SQL always appends the three text fields in this order.
-            for name, val in zip(TEXT_METRICS, row[1+len(SQL_METRIC_COLUMNS):]):
-                vals[name] = val or None
+            for name, val in zip(info['requested_text'], row[1+len(SQL_METRIC_COLUMNS):]):
+                vals[name] = val if val is not None else None
         for field, value in zip(SQL_METRIC_COLUMNS, row[1:1+len(SQL_METRIC_COLUMNS)]):
             agg[field] += float(value or 0)
         target = vals.get(metric)

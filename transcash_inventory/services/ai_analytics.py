@@ -17,6 +17,10 @@ METRICS = {
     'costo_ventas': 'Costo de ventas (USD)', 'precio_promedio': 'Precio medio por unidad vendida',
     'descripcion': 'Descripción del producto',
     'ultima_compra': 'Última compra (mes)', 'ultima_venta': 'Última venta (mes)',
+    'categoria': 'Categoría', 'marca': 'Marca', 'formato': 'Formato',
+    'proveedor_ficha': 'Proveedor del catálogo',
+    'costo_unitario': 'Costo unitario de catálogo (USD)',
+    'precio_venta': 'Precio de lista (USD)',
 }
 DIMENSIONS = {
     'total', 'sku', 'categoria', 'marca', 'formato', 'proveedor_ficha',

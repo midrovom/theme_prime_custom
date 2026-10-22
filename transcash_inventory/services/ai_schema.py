@@ -41,8 +41,31 @@ def schema_context(env, snapshot):
         examples[field] = [item[0] for item in cr.fetchall() if item[0]]
     cr.execute('SELECT DISTINCT bodega FROM transcash_inventory_fact_stock WHERE snapshot_id=%s AND company_id=%s ORDER BY bodega LIMIT 30', (snapshot.id, snapshot.company_id.id))
     examples['bodegas'] = [r[0] for r in cr.fetchall()]
+    from .ai_analytics import METRICS
+    from .ai_client import PLAN_DIMENSIONS
     return {'origen': 'Tablas SQL PostgreSQL persistidas y administradas por Odoo 18',
-            'version_esquema': '1.35', 'modelos': catalog,
+            'version_esquema': '1.37', 'modelos': catalog,
+            'indicadores_autorizados': dict(METRICS, formula='Operaciones aritméticas controladas'),
+            'dimensiones_autorizadas': PLAN_DIMENSIONS,
+            'reglas_de_calculo': {
+                'ventas': 'SUM(fact.sale.ventas) por producto y periodo',
+                'costo_ventas': 'SUM(fact.sale.costo_ventas) por producto y periodo',
+                'utilidad': 'SUM(ventas)-SUM(costo_ventas), en USD; bruta',
+                'margen': '100*(SUM(ventas)-SUM(costo_ventas))/SUM(ventas), %',
+                'rentabilidad': 'Solicitar columnas utilidad y margen; no rentabilidad neta',
+                'compras': 'SUM(fact.purchase.compras), en USD',
+                'cantidad_comprada': 'SUM(fact.purchase.cantidad_comprada), unidad de origen',
+                'cantidad_vendida': 'SUM(fact.sale.cantidad_vendida), unidad de origen',
+                'stock_unidades': 'fact.product.stock_unidades, ultimo corte; no historico',
+                'stock_valor': 'fact.product.stock_valor, costo de catalogo',
+                'precio_promedio': 'ventas/cantidad_vendida, cuando exista denominador',
+                'ultima_compra': 'MAX(fact.purchase.mes), YYYY-MM',
+                'ultima_venta': 'MAX(fact.sale.mes), YYYY-MM',
+            },
+            'columnas_por_sku': ['descripcion','categoria','marca','formato','proveedor_ficha',
+                                'stock_unidades','stock_valor','cantidad_vendida',
+                                'cantidad_comprada','ventas','costo_ventas','utilidad','margen',
+                                'compras','precio_promedio','ultima_compra','ultima_venta'],
             'relaciones': ['product_id → transcash.inventory.fact.product.id',
                            'snapshot_id → transcash.inventory.snapshot.id',
                            'company_id → res.company.id'],
@@ -67,6 +90,11 @@ def schema_context(env, snapshot):
                 'stock menor a cien y mayor a cero': 'dos filtros acumulativos: stock_unidades < 100 AND stock_unidades > 0',
                 'lista de productos': 'group_by = sku; incluir descripcion, marca, formato, proveedor, stock_unidades',
                 'compra/venta última': 'MAX(mes), YYYY-MM, de tablas de movimiento filtradas por empresa y versión',
+                'cantidad comprada': 'SUM(transcash.inventory.fact.purchase.cantidad_comprada) por SKU y período de la pantalla',
+                'cantidad vendida': 'SUM(transcash.inventory.fact.sale.cantidad_vendida) por SKU y período de la pantalla',
+                'stock y cantidades': 'stock_unidades se filtra al corte; cantidades compradas/vendidas son columnas independientes agregadas por SKU y período; no se mezclan compras con ventas',
+                'rentabilidad de producto': 'ventas netas, costo ventas, utilidad bruta y margen bruto del mismo período',
+                'compras ventas y rentabilidad': 'Se puede solicitar todo en la misma tabla, sin perder columnas',
             },
             'ejemplo_de_plan': {
                 'pregunta': 'Dame una lista de porcelanatos que el stock en unidades sea menor a 100 y mayor a 0',

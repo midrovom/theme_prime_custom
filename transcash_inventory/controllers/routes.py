@@ -405,6 +405,7 @@ class TranscashDashboardController(http.Controller):
             params = data.pop('sql_parametros', [])
             audit.write({
                 'state': 'done', 'row_count': len(data['filas']),
+                'metrics': ', '.join(data.get('metricas') or [])[:255],
                 'duration_ms': int((time.monotonic() - started) * 1000),
                 'finished_at': fields.Datetime.now(), 'sql_query': sql,
                 'sql_parameters': json.dumps(params, ensure_ascii=False),
@@ -521,7 +522,8 @@ class TranscashDashboardController(http.Controller):
                 sql = data.pop('sql_consulta', '')
                 sql_params = data.pop('sql_parametros', [])
                 audit.write({
-                    'state': 'done', 'dimension': 'sku', 'metrics': 'stock_unidades',
+                    'state': 'done', 'dimension': 'sku',
+                    'metrics': ', '.join(data.get('metricas') or [])[:255],
                     'row_count': len(data['filas']),
                     'duration_ms': int((time.monotonic() - started) * 1000),
                     'finished_at': fields.Datetime.now(),

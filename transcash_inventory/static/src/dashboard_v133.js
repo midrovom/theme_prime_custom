@@ -668,7 +668,7 @@ async function aiStatusCheck(){
 }
 function aiMetricVal(metric,value){
  if(value===null||value===undefined)return '—';
- if(['ventas','utilidad','compras','stock_valor','costo_ventas','precio_promedio'].includes(metric))return usd(value,2);
+ if(['ventas','utilidad','compras','stock_valor','costo_ventas','precio_promedio','costo_unitario','precio_venta'].includes(metric))return usd(value,2);
  if(metric==='margen')return fmt(value,2)+' %';
  if(typeof value==='string')return value;
  return fmt(value,3);
@@ -720,7 +720,7 @@ function aiShowCalculated(data){
   const tableRows=r.filas.map(row=>[row.grupo,...measures.map(m=>aiMetricVal(m,row.metricas?.[m]??null))]);
   const totalsHtml=r.tipo_resultado==='listado_stock'?
    '<b>Productos encontrados:</b> '+fmt(r.total_filas)+' · <b>Mostrados:</b> '+fmt(r.filas_mostradas):
-   measures.filter(m=>!['descripcion','ultima_compra','ultima_venta'].includes(m)).map(m=>'<span style="display:inline-block;margin:4px 17px 4px 0"><b>'+escapeHtml(labels[m]||m)+':</b> '+escapeHtml(aiMetricVal(m,totals[m]))+'</span>').join('');
+   measures.filter(m=>!['descripcion','categoria','marca','formato','proveedor_ficha','ultima_compra','ultima_venta','costo_unitario','precio_venta'].includes(m)).map(m=>'<span style="display:inline-block;margin:4px 17px 4px 0"><b>'+escapeHtml(labels[m]||m)+':</b> '+escapeHtml(aiMetricVal(m,totals[m]))+'</span>').join('');
   const filtered=Object.entries(r.filtros||{}).filter(([key,val])=>val&&['categoria','marca','formato','proveedor','stock'].includes(key));
   const filterText=filtered.length?'<div class="boxsub">'+filtered.map(([key,val])=>escapeHtml(key)+': <b>'+escapeHtml(val)+'</b>').join(' · ')+'</div>':'';
   $('aiResults').innerHTML=filterText+'<div class="boxsub">'+totalsHtml+'</div>'+simpleTable(hd,tableRows);
