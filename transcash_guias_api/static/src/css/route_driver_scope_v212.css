@@ -1,18 +1,39 @@
+/* PWA: resumen compacto. Sin tablas ni listados de diagnóstico del chofer. */
 .tc-driver-scope {
-  margin:16px 0; padding:16px; border:1px solid #dbe5ed; border-radius:14px;
-  background:#fff; color:#283b4b;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid #dbe5ed;
+  border-radius: 14px;
+  background: #fff;
+  color: #283b4b;
 }
-.tc-driver-scope h3 { margin:0 0 7px; font-size:19px; }
-.tc-driver-scope p { margin:4px 0 12px; font-size:13px; line-height:1.5; }
-.tc-driver-scope__summary { display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 14px; }
-.tc-driver-scope__summary > div { background:#eff5f9; padding:10px 14px; border-radius:10px; min-width:180px; }
-.tc-driver-scope__summary small { display:block; color:#52677c; font-size:11px; }
-.tc-driver-scope__summary strong { display:block; font-size:20px; }
-.tc-driver-scope__scroll { overflow:auto; max-width:100%; -webkit-overflow-scrolling:touch; margin-bottom:12px; }
-.tc-driver-scope__table { width:100%; border-collapse:collapse; min-width:720px; font-size:12px; }
-.tc-driver-scope__table th,.tc-driver-scope__table td { padding:9px 11px; border-bottom:1px solid #e5edf3; text-align:left; vertical-align:top; }
-.tc-driver-scope__table th { position:sticky; top:0; background:#f2f6fa; color:#425d72; font-weight:700; }
-.tc-driver-scope__table td small { display:block; color:#68798a; }
-.tc-driver-scope__ok { color:#086a4c; font-weight:700; }
-.tc-driver-scope__hold { color:#92510b; font-weight:600; }
-@media (max-width:620px) { .tc-driver-scope { padding:12px; } .tc-driver-scope__summary > div { min-width:135px; flex:1; } }
+.tc-driver-scope h3 { margin: 0 0 10px; font-size: 17px; }
+.tc-driver-scope__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.tc-driver-scope__summary > div {
+  background: #eff5f9;
+  padding: 12px 14px;
+  border-radius: 10px;
+  min-width: 0;
+}
+.tc-driver-scope__summary small {
+  display: block;
+  margin-bottom: 4px;
+  color: #52677c;
+  font-size: 12px;
+}
+.tc-driver-scope__summary strong {
+  display: block;
+  font-size: 23px;
+  line-height: 1.2;
+}
+@media (max-width: 440px) {
+  .tc-driver-scope { padding: 12px; }
+  .tc-driver-scope__summary { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tc-driver-scope__summary > div { padding: 10px; }
+  .tc-driver-scope__summary small { font-size: 11px; }
+  .tc-driver-scope__summary strong { font-size: 21px; }
+}

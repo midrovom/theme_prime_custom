@@ -3,60 +3,27 @@
   <template id="tc_pwa_driver_scope_v212"
             inherit_id="transcash_guias_api.tc_pwa_identity_fix_v27"
             priority="170"
-            name="PWA: guías solo del chofer seleccionado, con proveedor, destino y trazabilidad">
-    <!-- Sustituye la tabla antigua de otros choferes por información EXCLUSIVA
-         del conductor de esta hoja. No expone maestros privados de productos. -->
+            name="PWA: resumen compacto de guías del chofer seleccionado">
+    <!-- Mantener exclusivamente dos indicadores para el operador.
+         No cambiar los filtros estrictos ni la selección efectiva de guías. -->
     <xpath expr="//div[contains(concat(' ', normalize-space(@class), ' '), ' tc-route-guide-breakdown ')]" position="replace">
       <section t-if="tc_guias_chofer and tc_guias_chofer.get('tiene_criterio')"
-               class="tc-driver-scope" aria-label="Guías del chofer elegido">
+               class="tc-driver-scope" aria-label="Resumen de guías del chofer seleccionado">
         <h3>Guías del chofer seleccionado</h3>
-        <p>Chofer: <strong t-esc="tc_guias_chofer['chofer']"/>.
-          Aquí aparecen sus guías disponibles y ya asignadas, con el proveedor
-          de transporte y destino registrados en cada una. No se listan otros choferes.
-          Esta tabla es de consulta, no modifica asignaciones.</p>
-        <div class="tc-driver-scope__summary">
-          <div><small>Guías del chofer encontradas</small>
-            <strong t-esc="tc_guias_chofer.get('total_mostradas', 0)"/></div>
-          <div><small>Combinaciones transporte/destino</small>
-            <strong t-esc="len(tc_guias_chofer.get('totales', []))"/></div>
+        <div class="tc-driver-scope__summary" role="group" aria-label="Indicadores del chofer">
+          <div>
+            <small>Total de guías del chofer</small>
+            <strong t-esc="tc_guias_chofer.get('total_mostradas', 0)"/>
+          </div>
+          <div>
+            <small>Combinaciones transporte/destino</small>
+            <strong t-esc="len(tc_guias_chofer.get('totales', []))"/>
+          </div>
         </div>
-        <div class="tc-driver-scope__scroll" t-if="tc_guias_chofer.get('totales')">
-          <table class="tc-driver-scope__table">
-            <thead><tr><th>Proveedor de transporte</th><th>Destino</th>
-              <th>Total</th><th>Disponibles para esta ruta</th></tr></thead>
-            <tbody><tr t-foreach="tc_guias_chofer['totales']" t-as="item">
-              <td t-esc="item['proveedor']"/><td t-esc="item['destino']"/>
-              <td t-esc="item['cantidad']"/><td t-esc="item['disponibles']"/>
-            </tr></tbody>
-          </table>
-        </div>
-        <div class="tc-driver-scope__scroll" t-if="tc_guias_chofer.get('guias')">
-          <table class="tc-driver-scope__table">
-            <thead><tr><th>Guía</th><th>Proveedor de transporte</th>
-              <th>Destino</th><th>Estado</th><th>Hoja de ruta</th>
-              <th>Embarque</th><th>Motivo / disponibilidad</th></tr></thead>
-            <tbody><tr t-foreach="tc_guias_chofer['guias']" t-as="item">
-              <td><strong t-esc="item['numero']"/><small t-esc="item['documento']"/></td>
-              <td t-esc="item['proveedor']"/><td t-esc="item['destino']"/>
-              <td t-esc="item['estado']"/><td t-esc="item['ruta']"/>
-              <td t-esc="item['embarque']"/>
-              <td><span t-att-class="'tc-driver-scope__ok' if item['compatible'] else 'tc-driver-scope__hold'"
-                        t-esc="item['observacion']"/></td>
-            </tr></tbody>
-          </table>
-        </div>
-        <p t-if="not tc_guias_chofer.get('guias')" class="tc-route-guide-filters__notice">
-          No se encontraron guías asociadas a la cédula, contacto o usuario de este chofer.
-          Revise el campo «RUC / identificación del chofer» y el vínculo Portal en la guía.
-        </p>
-        <p t-if="tc_guias_chofer.get('mas_resultados')" class="tc-route-guide-filters__notice">
-          Se muestra una muestra acotada para mantener rápida la PWA.
-          Use la búsqueda por número de guía o consulte «Guías del chofer» desde el backend.
-        </p>
       </section>
     </xpath>
     <xpath expr="//html/head" position="inside">
-      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/route_driver_scope_v212.css?v=212"/>
+      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/route_driver_scope_v212.css?v=217"/>
     </xpath>
   </template>
 </odoo>
