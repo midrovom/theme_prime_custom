@@ -546,9 +546,13 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
             return request.not_found()
         search = (kw.get('buscar') or '').strip()[:90]
         rows, report = self._candidates_and_report(ruta, search) if ruta.state == 'borrador' else ([], {})
+        # Los números de las tarjetas corresponden al filtro general de la ruta,
+        # independientemente del número que el operador escriba en el buscador.
+        card_report = (self._candidates_and_report(ruta, '')[1]
+                       if search and ruta.state == 'borrador' else report)
         return self._page('Hoja de ruta ' + ruta.name, section='ruta_detalle', ruta=ruta,
-                          filas=rows, tc_filtro_reporte=report,
-                          tc_guias_chofer=self._driver_guide_overview(ruta, search),
+                          filas=rows, tc_filtro_reporte=card_report,
+                          tc_guias_chofer=self._driver_guide_overview(ruta),
                           buscar=search, ok=kw.get('ok'), error=kw.get('error'),
                           seleccion_actual=','.join(str(i) for i in sorted(ruta.seleccion_guia_ids.ids)))
 

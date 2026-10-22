@@ -1,28 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <odoo>
-  <template id="tc_pwa_filter_guides_v26"
-            inherit_id="transcash_guias_api.tc_portal_select_all_guides_v25"
-            priority="80"
-            name="PWA: guías filtradas estrictamente por ruta">
-    <xpath expr="//form[contains(@class,'tc-ops-search')]" position="before">
-      <section class="tc-route-guide-filters" aria-label="Filtros obligatorios de la ruta">
-        <div class="tc-route-guide-filters__heading">
-          <strong>Guías disponibles según esta hoja de ruta</strong>
-          <small>Los tres filtros se fijaron al crear la hoja de ruta.</small>
-        </div>
-        <div class="tc-route-guide-filters__grid">
-          <div><small>Empresa de transporte</small>
-            <strong t-esc="ruta.proveedor_id.display_name"/></div>
-          <div><small>Chofer</small>
-            <strong t-esc="ruta.chofer_usuario_id.name"/></div>
-          <div><small>Destino</small>
-            <strong t-esc="ruta.destino_id.name"/></div>
-        </div>
-        <p>Solo se muestran guías registradas, sin otra ruta ni embarque, cuyo
-          transportista, chofer y destino coinciden. Las guías sin chofer
-          asignado no podrán marcarse desde esta PWA.</p>
-      </section>
-    </xpath>
+  <template id="tc_pwa_filter_guides_v26" inherit_id="transcash_guias_api.tc_portal_select_all_guides_v25" priority="80" name="PWA: guías filtradas estrictamente por ruta">
     <xpath expr="//div[@data-tc-guide-bulk='1']//strong" position="replace">
       <strong>Seleccionar todas las guías filtradas</strong>
     </xpath>

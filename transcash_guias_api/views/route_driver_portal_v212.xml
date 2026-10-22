@@ -3,27 +3,32 @@
   <template id="tc_pwa_driver_scope_v212"
             inherit_id="transcash_guias_api.tc_pwa_identity_fix_v27"
             priority="170"
-            name="PWA: resumen compacto de guías del chofer seleccionado">
-    <!-- Mantener exclusivamente dos indicadores para el operador.
-         No cambiar los filtros estrictos ni la selección efectiva de guías. -->
-    <xpath expr="//div[contains(concat(' ', normalize-space(@class), ' '), ' tc-route-guide-breakdown ')]" position="replace">
-      <section t-if="tc_guias_chofer and tc_guias_chofer.get('tiene_criterio')"
-               class="tc-driver-scope" aria-label="Resumen de guías del chofer seleccionado">
-        <h3>Guías del chofer seleccionado</h3>
-        <div class="tc-driver-scope__summary" role="group" aria-label="Indicadores del chofer">
-          <div>
-            <small>Total de guías del chofer</small>
-            <strong t-esc="tc_guias_chofer.get('total_mostradas', 0)"/>
-          </div>
-          <div>
-            <small>Combinaciones transporte/destino</small>
-            <strong t-esc="len(tc_guias_chofer.get('totales', []))"/>
-          </div>
-        </div>
-      </section>
+            name="PWA: contadores dentro de las tarjetas del chofer, destino y transporte">
+    <!-- Mismos tres recuadros originales; sin paneles nuevos ni tablas. -->
+    <xpath expr="//t[contains(@t-if, 'ruta_detalle')]//div[contains(concat(' ', normalize-space(@class), ' '), ' tc-ops-summary ')]/span[b[normalize-space(.)='Chofer']]" position="inside">
+      <small t-if="tc_guias_chofer and tc_guias_chofer.get('tiene_criterio')"
+             class="tc-ops-kpi-inline">
+        <t t-if="tc_guias_chofer.get('mas_resultados')">Al menos </t>
+        <strong t-esc="tc_guias_chofer.get('total_mostradas', 0)"/>
+        <t> guías del chofer</t>
+      </small>
+    </xpath>
+    <xpath expr="//t[contains(@t-if, 'ruta_detalle')]//div[contains(concat(' ', normalize-space(@class), ' '), ' tc-ops-summary ')]/span[b[normalize-space(.)='Destino']]" position="inside">
+      <small t-if="tc_filtro_reporte" class="tc-ops-kpi-inline">
+        <t t-if="tc_filtro_reporte.get('limite')">Al menos </t>
+        <strong t-esc="tc_filtro_reporte.get('coincide_destino', 0)"/>
+        <t> guías libres de este destino</t>
+      </small>
+    </xpath>
+    <xpath expr="//t[contains(@t-if, 'ruta_detalle')]//div[contains(concat(' ', normalize-space(@class), ' '), ' tc-ops-summary ')]/span[b[normalize-space(.)='Transportista']]" position="inside">
+      <small t-if="tc_filtro_reporte" class="tc-ops-kpi-inline">
+        <t t-if="tc_filtro_reporte.get('limite')">Al menos </t>
+        <strong t-esc="tc_filtro_reporte.get('coincide_transporte', 0)"/>
+        <t> guías libres del transportista</t>
+      </small>
     </xpath>
     <xpath expr="//html/head" position="inside">
-      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/route_driver_scope_v212.css?v=217"/>
+      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/route_driver_scope_v212.css?v=218"/>
     </xpath>
   </template>
 </odoo>

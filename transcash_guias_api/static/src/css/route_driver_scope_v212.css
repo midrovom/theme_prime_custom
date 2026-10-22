@@ -1,39 +1,20 @@
-/* PWA: resumen compacto. Sin tablas ni listados de diagnóstico del chofer. */
-.tc-driver-scope {
-  margin: 12px 0;
-  padding: 14px;
-  border: 1px solid #dbe5ed;
-  border-radius: 14px;
-  background: #fff;
-  color: #283b4b;
+/* v2.18: tres totales integrados en las tarjetas originales de la ruta. */
+.tc-ops-summary > span > .tc-ops-kpi-inline {
+    display: block;
+    margin-top: 8px;
+    padding-top: 7px;
+    border-top: 1px solid #e5edf1;
+    color: #527084;
+    font-size: 12px;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
 }
-.tc-driver-scope h3 { margin: 0 0 10px; font-size: 17px; }
-.tc-driver-scope__summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+.tc-ops-summary > span > .tc-ops-kpi-inline strong {
+    font-weight: 750;
+    color: #16796e;
+    font-size: 14px;
 }
-.tc-driver-scope__summary > div {
-  background: #eff5f9;
-  padding: 12px 14px;
-  border-radius: 10px;
-  min-width: 0;
-}
-.tc-driver-scope__summary small {
-  display: block;
-  margin-bottom: 4px;
-  color: #52677c;
-  font-size: 12px;
-}
-.tc-driver-scope__summary strong {
-  display: block;
-  font-size: 23px;
-  line-height: 1.2;
-}
-@media (max-width: 440px) {
-  .tc-driver-scope { padding: 12px; }
-  .tc-driver-scope__summary { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .tc-driver-scope__summary > div { padding: 10px; }
-  .tc-driver-scope__summary small { font-size: 11px; }
-  .tc-driver-scope__summary strong { font-size: 21px; }
+@media (max-width: 650px) {
+  .tc-ops-summary > span > .tc-ops-kpi-inline { font-size: 12px; }
 }
