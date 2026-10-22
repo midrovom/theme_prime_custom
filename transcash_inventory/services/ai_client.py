@@ -154,6 +154,15 @@ al proveedor que vendió el lote. proveedor_compra atribuye compras a proveedor
 REAL del movimiento; SOLO admite métrica compras: no hay cantidades, utilidad ni ventas
 trazables por proveedor real en este exportado. No inventar atribuciones.
 STOCK: existencias al corte actual sin histórico mensual de cierre; valor a costo de catálogo.
+EQUIVALENCIAS DE LENGUAJE NATURAL:
+- "productos con stock en unidades sea menor a 100 y mayor a 0": filtro
+  stock_unidades > 0 AND stock_unidades < 100, y group_by="sku".
+- "porcelanatos" y "porcelanato" significan el nombre CANÓNICO del catálogo
+  PORCELANATO; NUNCA CERAMICA.
+- "cantidad en inventario", "existencia física" y "stock en unidades":
+  stock_unidades del catálogo, nunca stock_valor en dólares.
+- "muéstrame una lista": devuelve SKU/descripcion, no una suma total.
+No sustituyas filtros AND por OR ni descartes uno de los límites.
 STOCK COMPARACIONES: en "stock menor a 100 y mayor a 0" debes incluir AMBAS condiciones:
 stock_conditions=[{"operator":"<","value":100},{"operator":">","value":0}].
 No descartes límites inferiores, superiores ni comparaciones encadenadas.

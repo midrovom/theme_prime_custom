@@ -9,20 +9,26 @@ from .ai_catalog_filters import _norm, _canonical, catalog_values
 
 # Comparison tokens are only interpreted in the explicit physical-stock clause.
 # A list of predicates (rather than a single one) preserves "stock < 100 y > 0".
+# Stock is a physical quantity, not an amount in dollars.  Natural language
+# frequently inserts a unit phrase between "stock" and "menor/mayor":
+#   "el stock en unidades sea menor a 100 y mayor a 0".
+# The v1.34 parser silently missed that pattern, causing an OpenAI fallback.
 _STOCK_WORD = r'(?:stock|existencias?|inventario\s+(?:actual|disponible))'
+_STOCK_QUALIFIER = (r'(?:\s+(?:en\s+)?(?:unidades|unidad(?:es)?|cantidad|fisico|f[ií]sico|disponible|actual))?'
+                    r'(?:\s+(?:es|sea|sean|este|est[eé]|esta|est[aá]|que\s+(?:es|sea|este|est[eé])))?')
 _CMP = (r'(?:menor(?:es)?\s+(?:a|de|que)|inferior(?:es)?\s+a|'
         r'menos\s+de|por\s+debajo\s+de|debajo\s+de|<=?|'
         r'mayor(?:es)?\s+(?:a|de|que)|superior(?:es)?\s+a|'
         r'm[aá]s\s+de|por\s+encima\s+de|>=?|igual(?:es)?\s+a|=)')
 _NUM = r'(-?\d+(?:[.,]\d+)?)'
-_STOCK_START = re.compile(r'\b' + _STOCK_WORD +
-    r'\b\s*(?:de\s*)?(?:es\s*)?(?P<cmp>' + _CMP + r')\s*(?P<num>' + _NUM + r')', re.IGNORECASE)
+_STOCK_START = re.compile(r'\b' + _STOCK_WORD + r'\b' + _STOCK_QUALIFIER +
+    r'\s*(?P<cmp>' + _CMP + r')\s*(?P<num>' + _NUM + r')', re.IGNORECASE)
 _STOCK_NEXT = re.compile(r'\s*(?:,|y|e)\s*(?:(?:con\s+)?' + _STOCK_WORD +
-    r'\s*)?(?P<cmp>' + _CMP + r')\s*(?P<num>' + _NUM + r')', re.IGNORECASE)
-_STOCK_REPEAT = re.compile(r'\b' + _STOCK_WORD + r'\s*(?:de\s*)?(?:es\s*)?(?P<cmp>' +
+    _STOCK_QUALIFIER + r'\s*)?(?P<cmp>' + _CMP + r')\s*(?P<num>' + _NUM + r')', re.IGNORECASE)
+_STOCK_REPEAT = re.compile(r'\b' + _STOCK_WORD + _STOCK_QUALIFIER + r'\s*(?P<cmp>' +
     _CMP + r')\s*(?P<num>' + _NUM + r')', re.IGNORECASE)
-_STOCK_BETWEEN = re.compile(r'\b' + _STOCK_WORD +
-    r'\b\s+entre\s+(?P<low>' + _NUM + r')\s+y\s+(?P<high>' + _NUM + r')', re.IGNORECASE)
+_STOCK_BETWEEN = re.compile(r'\b' + _STOCK_WORD + _STOCK_QUALIFIER +
+    r'\s+entre\s+(?P<low>' + _NUM + r')\s+y\s+(?P<high>' + _NUM + r')', re.IGNORECASE)
 FORMAT_IN_TEXT = re.compile(r'(?<!\d)(\d{1,3}(?:[.,]\d{1,2})?)\s*[x×*]\s*'
                             r'(\d{1,3}(?:[.,]\d{1,2})?)(?!\d)', re.IGNORECASE)
 
@@ -147,11 +153,18 @@ def canonical_format(value):
 def detect_stock_lookup(question):
     """Direct path for physical-stock SKU listings; never drop extra bounds."""
     normalized = _norm(question)
-    if not (re.search(r'\b(cuales|que|lista|listado|muestrame|dame|productos|articulos|skus)\b',
+    if not (re.search(r'\b(cuales|que|lista|listado|listar|muestra|mostrar|muestrame|dame|productos|articulos|skus)\b',
                       normalized) or normalized.startswith('stock')):
         return None
     conditions = parse_stock_conditions(question)
     if not conditions:
+        # Do not fall through to the LLM for an explicit stock comparison it
+        # cannot read.  A wrong (unfiltered) result would be worse than a clear
+        # validation error.  Restrict this guard to list-style stock questions.
+        if re.search(r'\b' + _STOCK_WORD + r'\b', normalized) and re.search(
+                r'\b(?:menor|mayor|inferior|superior|menos|mas|entre)\b|[<>]=?',
+                normalized):
+            raise ValueError('No se pudo interpretar el rango de stock físico. Use, por ejemplo, "stock mayor a 0 y menor a 100".')
         return None
     fmt = FORMAT_IN_TEXT.search(question)
     return {'conditions': conditions, 'formato': fmt.group(0) if fmt else ''}

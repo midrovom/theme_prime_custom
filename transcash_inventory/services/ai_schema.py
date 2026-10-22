@@ -42,7 +42,7 @@ def schema_context(env, snapshot):
     cr.execute('SELECT DISTINCT bodega FROM transcash_inventory_fact_stock WHERE snapshot_id=%s AND company_id=%s ORDER BY bodega LIMIT 30', (snapshot.id, snapshot.company_id.id))
     examples['bodegas'] = [r[0] for r in cr.fetchall()]
     return {'origen': 'Tablas SQL PostgreSQL persistidas y administradas por Odoo 18',
-            'version_esquema': '1.20', 'modelos': catalog,
+            'version_esquema': '1.35', 'modelos': catalog,
             'relaciones': ['product_id → transcash.inventory.fact.product.id',
                            'snapshot_id → transcash.inventory.snapshot.id',
                            'company_id → res.company.id'],
@@ -59,6 +59,22 @@ def schema_context(env, snapshot):
                 'ultima_venta': 'MAX(transcash.inventory.fact.sale.mes) por SKU en todo el historial de la versión',
                 'granularidad': 'YYYY-MM, no día ni número de factura',
             },
-            'filtros_numericos': {'stock_unidades': 'Cantidad física en el catálogo de la versión activa; soporta AND con <, <=, >, >=, =; ejemplo stock < 100 AND stock > 0.'},
+            'filtros_numericos': {'stock_unidades': 'Cantidad física de cada SKU al corte actual; NO valor monetario de stock. Las comparaciones <, <=, >, >=, = se combinan con AND y se aplican antes de LIMIT y ORDER BY.'},
+            'glosario_de_consultas': {
+                'porcelanatos': 'categoria = PORCELANATO, valor canónico resuelto contra catálogo',
+                'ceramicas': 'categoria = CERAMICA; nunca sustituye PORCELANATO',
+                'stock en unidades': 'transcash.inventory.fact.product.stock_unidades (cantidad física, no USD)',
+                'stock menor a cien y mayor a cero': 'dos filtros acumulativos: stock_unidades < 100 AND stock_unidades > 0',
+                'lista de productos': 'group_by = sku; incluir descripcion, marca, formato, proveedor, stock_unidades',
+                'compra/venta última': 'MAX(mes), YYYY-MM, de tablas de movimiento filtradas por empresa y versión',
+            },
+            'ejemplo_de_plan': {
+                'pregunta': 'Dame una lista de porcelanatos que el stock en unidades sea menor a 100 y mayor a 0',
+                'dimension': 'sku', 'categoria': 'PORCELANATO',
+                'metrica': 'stock_unidades',
+                'stock_conditions': [{'operator': '<', 'value': 100},
+                                     {'operator': '>', 'value': 0}],
+                'resultado': 'SKU y descripción, con filtros AND estrictos sobre stock físico',
+            },
             'regla': 'Los datos de Odoo son fuente de verdad. Devuelve un plan tipado; '
                      'el servidor genera SQL SELECT parametrizado y ejecuta los agregados.'}
