@@ -916,7 +916,7 @@ class TranscashDashboardController(http.Controller):
                                          status=404, headers=[('Cache-Control', 'no-store')])
         try:
             return request.make_response(binary, headers=[
-                ('Content-Type', 'image/jpeg'), ('Cache-Control', 'private, max-age=900'),
+                ('Content-Type', 'image/jpeg'), ('Cache-Control', 'private, no-cache, max-age=0, must-revalidate'),
                 ('Vary', 'Cookie'), ('X-Transcash-Company-ID', str(request.env.company.id)),
                 ('X-Content-Type-Options', 'nosniff')])
         except (ValueError, TypeError):

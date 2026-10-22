@@ -179,6 +179,15 @@ class TranscashInventoryPhoto(models.Model):
     website_url = fields.Char('Ficha de la tienda')
     image_url = fields.Char('Imagen principal verificada')
     image_thumbnail = fields.Binary('Miniatura almacenada', attachment=True, readonly=True)
+    # Form/list preview uses our authenticated JPEG endpoint rather than
+    # Odoo's generic /web/image/<model>/<id>/<field> attachment route.  Some
+    # deployments can write/read the attachment with sudo while ordinary users
+    # cannot stream the attachment through /web/image (invisible placeholder).
+    # These transient fields add no new table columns or duplicate image data.
+    image_preview_small_html = fields.Html('Vista previa',
+        compute='_compute_image_previews', sanitize=False, readonly=True)
+    image_preview_large_html = fields.Html('Miniatura almacenada',
+        compute='_compute_image_previews', sanitize=False, readonly=True)
     template_id_remote = fields.Integer('ID ficha web', readonly=True)
     match_type = fields.Selection([
         ('sku', 'SKU exacto en URL'), ('manual', 'Validado manualmente'),
@@ -199,6 +208,38 @@ class TranscashInventoryPhoto(models.Model):
         ('sku_company_unique', 'unique(company_id,sku)',
          'Ya existe una imagen asociada a este SKU en esta empresa.'),
     ]
+
+    @api.depends('sku', 'company_id', 'status', 'enabled', 'write_date')
+    def _compute_image_previews(self):
+        """Show the image that /photos/thumb can actually serve.
+
+        Avoid the generic image widget's attachment stream and its stale
+        placeholder. The endpoint checks the selected company and user group
+        on every image request and reads only that company's verified JPEG.
+        """
+        for rec in self:
+            missing = '<span class="text-muted">Miniatura no disponible</span>'
+            small, large = missing, missing
+            if rec.id and rec.enabled and rec.status == 'verified' and rec.company_id and rec.sku:
+                # Authentication already controls which photo records may be
+                # read; sudo is used only to inspect the same record's binary,
+                # not to choose any other company's data.
+                jpeg = _stored_thumbnail_jpeg(rec.sudo())
+                if jpeg:
+                    url = ('/transcash_inventory/photos/thumb?sku=%s&amp;company_id=%d'
+                           % (quote(rec.sku, safe=''), rec.company_id.id))
+                    if rec.write_date:
+                        url += '&amp;v=%s' % rec.write_date.strftime('%Y%m%d%H%M%S%f')
+                    # SKU is percent-encoded; the fixed URL is safe even with
+                    # sanitize=False (HTML here never includes raw user data).
+                    small = ('<img src="%s" width="76" height="76" '
+                             'alt="Fotografía SKU" loading="lazy" '
+                             'style="max-width:76px;object-fit:contain"/>') % url
+                    large = ('<img src="%s" width="240" height="240" '
+                             'alt="Fotografía SKU" loading="lazy" '
+                             'style="max-width:100%%;object-fit:contain"/>') % url
+            rec.image_preview_small_html = small
+            rec.image_preview_large_html = large
 
     @api.constrains('image_url', 'website_url')
     def _check_public_urls(self):
@@ -223,6 +264,9 @@ class TranscashInventoryPhoto(models.Model):
             'title': _('Fotografía recuperada') if ok else _('No se pudo recuperar la fotografía'),
             'message': _('Imagen guardada correctamente') if ok else (result.last_error or _('La tienda no devolvió la fotografía.')),
             'type': 'success' if ok else 'warning', 'sticky': not ok,
+            # display_notification by itself leaves the old Binary widget in
+            # memory; refresh the form after the toast so the new preview loads.
+            'next': {'type': 'ir.actions.client', 'tag': 'reload'},
         }}
 
     def write(self, vals):
