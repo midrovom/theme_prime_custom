@@ -903,13 +903,18 @@ class TranscashDashboardController(http.Controller):
         if not self._can_view():
             return request.make_response('Sin permisos', status=403)
         sku = str(kw.get('sku') or '').strip()[:120]
-        photo = request.env['transcash.inventory.photo'].search([
+        # Company and permissions are checked before sudo. Sudo is limited to
+        # reading the current company's attachment; many read-only users lack
+        # direct ir.attachment permissions, even for their own photo record.
+        photo = request.env['transcash.inventory.photo'].sudo().with_context(bin_size=False).search([
             ('company_id', '=', request.env.company.id), ('sku', '=', sku),
             ('enabled', '=', True), ('status', '=', 'verified')], limit=1)
-        if not photo or not photo.image_thumbnail:
-            return request.make_response('Sin imagen verificada', status=404)
+        from ..models.product_photo import _stored_thumbnail_jpeg
+        binary = _stored_thumbnail_jpeg(photo) if photo else None
+        if not binary:
+            return request.make_response('Miniatura ausente o dañada; pendiente de reparación',
+                                         status=404, headers=[('Cache-Control', 'no-store')])
         try:
-            binary = base64.b64decode(photo.image_thumbnail)
             return request.make_response(binary, headers=[
                 ('Content-Type', 'image/jpeg'), ('Cache-Control', 'private, max-age=900'),
                 ('Vary', 'Cookie'), ('X-Transcash-Company-ID', str(request.env.company.id)),

@@ -7,6 +7,7 @@ link is read from its public HTML and validated as a real image response.
 import json
 import logging
 import base64
+import binascii
 from io import BytesIO
 from PIL import Image, UnidentifiedImageError
 from datetime import timedelta
@@ -19,7 +20,7 @@ from urllib.request import Request, urlopen, build_opener, HTTPRedirectHandler
 from urllib.error import HTTPError, URLError
 
 from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError, UserError
+from odoo.exceptions import ValidationError, UserError, AccessError
 
 from ..services.photo_matcher import (
     DEFAULT_SITE_ROOT, allowed_hosts, extract_catalog_links, extract_product_image_candidates,
@@ -134,6 +135,37 @@ def _verified_photo_with_thumbnail(url, site_root):
 
 
 
+def _stored_thumbnail_jpeg(record):
+    """Return a *real* stored JPEG, not a truthy Odoo bin_size placeholder.
+
+    A status of ``verified`` is historical metadata and does not prove that
+    its attachment still exists (for example, a database restored without its
+    Odoo filestore). Never copy invalid bytes between companies.
+    """
+    try:
+        # ``bin_size`` context can give values such as '18.3 Kb'. Binary
+        # fields backed by ir.attachment must be fetched as full base64.
+        encoded = record.with_context(bin_size=False).image_thumbnail
+        if not encoded:
+            return None
+        if isinstance(encoded, str):
+            encoded = encoded.encode('ascii')
+        if not isinstance(encoded, bytes) or len(encoded) > 1024 * 1024:
+            return None
+        raw = base64.b64decode(encoded, validate=True)
+        if not (100 <= len(raw) <= 700 * 1024 and
+                raw.startswith(b'\xff\xd8\xff') and raw.endswith(b'\xff\xd9')):
+            return None
+        with Image.open(BytesIO(raw)) as pic:
+            if pic.format != 'JPEG' or not (20 <= pic.width <= 300 and 20 <= pic.height <= 300):
+                return None
+            pic.verify()
+        return raw
+    except (ValueError, TypeError, UnicodeError, OSError, SyntaxError,
+            Image.DecompressionBombError, binascii.Error):
+        return None
+
+
 class TranscashInventoryPhoto(models.Model):
     _name = 'transcash.inventory.photo'
     _description = 'Fotografía comercial SKU Transcash'
@@ -176,6 +208,23 @@ class TranscashInventoryPhoto(models.Model):
             if rec.website_url and not is_safe_shop_url(rec.website_url, rec.company_id.transcash_photo_site_url or DEFAULT_SITE_ROOT):
                 raise ValidationError(_('La ficha debe pertenecer a /shop/ en el dominio configurado para esta empresa.'))
 
+    def action_repair_thumbnail(self):
+        # Explicit one-SKU recovery from the Odoo form; no mass import and no
+        # change to the linked inventory dataset or other companies.
+        self.ensure_one()
+        if not (self.env.user.has_group('transcash_inventory.group_transcash_manager') or
+                self.env.user.has_group('base.group_system')):
+            raise UserError(_('No tiene permisos para reparar fotografías manualmente.'))
+        rec = self.sudo().with_company(self.company_id)
+        sync = self.env['transcash.inventory.photo.sync'].sudo().with_company(self.company_id).get_current()
+        result = sync.resolve_single_sku(rec.sku, force=True)
+        ok = result.status == 'verified' and bool(_stored_thumbnail_jpeg(result))
+        return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
+            'title': _('Fotografía recuperada') if ok else _('No se pudo recuperar la fotografía'),
+            'message': _('Imagen guardada correctamente') if ok else (result.last_error or _('La tienda no devolvió la fotografía.')),
+            'type': 'success' if ok else 'warning', 'sticky': not ok,
+        }}
+
     def write(self, vals):
         # If a URL is modified by hand in Odoo's list/form, its old cached
         # photograph is no longer reliable until verified again.
@@ -186,25 +235,34 @@ class TranscashInventoryPhoto(models.Model):
 
     @api.model
     def images_for_skus(self, skus):
+        if not (self.env.user.has_group('transcash_inventory.group_transcash_user') or
+                self.env.user.has_group('base.group_system')):
+            raise AccessError(_('No tiene permiso de consulta de fotografías.'))
         codes = list(dict.fromkeys([str(s).strip()[:120] for s in skus if str(s).strip()]))[:80]
         if not codes:
             return {}
-        rows = self.search([('company_id', '=', self.env.company.id),
-                            ('sku', 'in', codes), ('enabled', '=', True)])
-        return {rec.sku: {'image_url': ('/transcash_inventory/photos/thumb?sku=' + quote(rec.sku, safe='') + '&company_id=' + str(self.env.company.id))
-                                       if rec.status == 'verified' and rec.image_thumbnail else
-                                       '',
-                          'source_url': rec.image_url or '',
-                          'website_url': rec.website_url or '',
-                          'match_type': rec.match_type,
-                          # A verified row without its attachment is not usable.
-                          # Report it as broken so the browser can request a
-                          # new server-side link, rather than suppressing retry.
-                          'status': 'broken' if rec.status == 'verified' and not rec.image_thumbnail else rec.status,
-                          'error': (rec.last_error or 'Miniatura faltante; vuelva a vincular la fotografía')
-                                   if rec.status == 'verified' and not rec.image_thumbnail else
-                                   (rec.last_error or '')}
-                for rec in rows}
+        # The caller checks user access and restricts the company. Use sudo
+        # only to fetch attachments from that explicitly authorized company:
+        # read-only staff cannot necessarily read ir.attachment directly.
+        rows = self.sudo().with_context(bin_size=False).search([
+            ('company_id', '=', self.env.company.id),
+            ('sku', 'in', codes), ('enabled', '=', True)])
+        result = {}
+        for rec in rows:
+            healthy = bool(_stored_thumbnail_jpeg(rec)) if rec.status == 'verified' else False
+            broken = rec.status == 'verified' and not healthy
+            result[rec.sku] = {
+                'image_url': ('/transcash_inventory/photos/thumb?sku=' +
+                              quote(rec.sku, safe='') + '&company_id=' + str(self.env.company.id))
+                             if healthy else '',
+                'source_url': rec.image_url or '',
+                'website_url': rec.website_url or '',
+                'match_type': rec.match_type,
+                'status': 'broken' if broken else rec.status,
+                'error': ('Miniatura ausente o dañada. El sistema la recuperará desde la tienda.')
+                         if broken else (rec.last_error or ''),
+            }
+        return result
 
 
 class TranscashInventoryPhotoSync(models.Model):
@@ -264,7 +322,8 @@ class TranscashInventoryPhotoSync(models.Model):
             if not canonical:
                 continue
             rec = self._photo_record(canonical, names[canonical])
-            if rec.status == 'verified' and rec.image_thumbnail and not force:
+            healthy = bool(_stored_thumbnail_jpeg(rec)) if rec.status == 'verified' else False
+            if rec.status == 'verified' and healthy and not force:
                 continue
             # Reuse a verified PUBLIC photo from the same store immediately,
             # even if a previous remote search left a long retry backoff.
@@ -272,7 +331,7 @@ class TranscashInventoryPhotoSync(models.Model):
                     canonical, sku_index, rec):
                 found += 1
                 continue
-            missing_attachment = rec.status == 'verified' and not rec.image_thumbnail
+            missing_attachment = rec.status == 'verified' and not healthy
             if not force and not missing_attachment and rec.next_retry and rec.next_retry > now:
                 continue
             if force or missing_attachment or rec.status not in ('queued', 'verified'):
@@ -333,7 +392,8 @@ class TranscashInventoryPhotoSync(models.Model):
             ('status', '=', 'verified'),
         ], limit=25)
         for source in candidates:
-            if not source.image_thumbnail:
+            valid_jpeg = _stored_thumbnail_jpeg(source)
+            if not valid_jpeg:
                 continue
             try:
                 source_root = source.company_id.sudo().transcash_photo_site_url
@@ -345,7 +405,7 @@ class TranscashInventoryPhotoSync(models.Model):
                 record.write({
                     'website_url': link['url'],
                     'image_url': source.image_url,
-                    'image_thumbnail': source.image_thumbnail,
+                    'image_thumbnail': base64.b64encode(valid_jpeg),
                     'template_id_remote': source.template_id_remote,
                     'match_type': 'sku',
                     'status': 'verified',
@@ -371,9 +431,11 @@ class TranscashInventoryPhotoSync(models.Model):
                 raise UserError(_('La dirección web no corresponde al SKU indicado.'))
         rec = self._photo_record(canonical, names[canonical])
         now = fields.Datetime.now()
-        if not force and rec.next_retry and rec.next_retry > now:
+        verified_jpeg = _stored_thumbnail_jpeg(rec) if rec.status == 'verified' else None
+        requires_repair = rec.status == 'verified' and not verified_jpeg
+        if not force and not requires_repair and rec.next_retry and rec.next_retry > now:
             return rec
-        if rec.status == 'verified' and not force:
+        if rec.status == 'verified' and verified_jpeg and not force:
             return rec
         # Exact SKU + same HTTPS shop permits public-photo reuse between
         # companies without any additional network request or cross-company
@@ -381,10 +443,26 @@ class TranscashInventoryPhotoSync(models.Model):
         if (not supplied_url and rec.status != 'verified' and
                 self._reuse_public_photo_from_another_company(canonical, sku_index, rec)):
             return rec
-        preserved_verified = rec.status == 'verified' and bool(rec.image_thumbnail)
+        preserved_verified = bool(verified_jpeg)
         vals = {'checked_on': now, 'attempt_count': rec.attempt_count + 1,
                 'last_error': False, 'next_retry': False}
         try:
+            # Restore a missing filestore attachment using the *already
+            # verified* URL first. No catalogue search and no SKU reassignment.
+            # If that URL is stale, fall through to the existing shop logic.
+            stored_link = product_from_url(rec.website_url, self._site_root())
+            valid_record_link = (stored_link and
+                                 match_slug_prefix(stored_link['slug'], sku_index) == canonical)
+            # A damaged previously-verified photo is marked queued by the
+            # browser/cron. Its URL remains valid for repair after that status
+            # change, so don't limit this fast path to status='verified'.
+            if (not supplied_url and not verified_jpeg and valid_record_link and
+                    is_safe_photo_url(rec.image_url, self._site_root())):
+                restored = _verified_photo_with_thumbnail(rec.image_url, self._site_root())
+                if restored:
+                    rec.write(dict(vals, status='verified', image_thumbnail=restored,
+                                   next_retry=now + timedelta(days=30)))
+                    return rec
             shop_link = product_from_url(supplied_url or rec.website_url, self._site_root())
             if shop_link and match_slug_prefix(shop_link['slug'], sku_index) != canonical:
                 shop_link = None
@@ -414,6 +492,11 @@ class TranscashInventoryPhotoSync(models.Model):
                          'next_retry': now + timedelta(hours=12)})
             if supplied_url and product_from_url(supplied_url, self._site_root()):
                 vals['website_url'] = product_from_url(supplied_url, self._site_root())['url']
+        if not supplied_url and rec.image_url and vals.get('status') != 'verified':
+            # The cached file may be gone while its validated source link is
+            # still correct. Keep the link for the next repair attempt.
+            vals.pop('image_url', None)
+            vals.pop('website_url', None)
         if preserved_verified and not supplied_url and vals.get('status') != 'verified':
             # A timeout, rate-limit or changed public search page is not proof
             # that the previously checked JPEG is invalid. Leave it visible.
@@ -454,6 +537,29 @@ class TranscashInventoryPhotoSync(models.Model):
                     Photo = self.env['transcash.inventory.photo'].sudo().with_company(company)
                     base = [('company_id', '=', cid), ('enabled', '=', True),
                             '|', ('next_retry', '=', False), ('next_retry', '<=', now)]
+                    # Read a bounded rotating window of verified records;
+                    # older deployments can have a green badge but an absent
+                    # ir.attachment/filestore object. Recover in the background.
+                    cursor_key = 'transcash_inventory.photo_cron.check_id.%d' % cid
+                    try:
+                        cursor = int(params.get_param(cursor_key) or 0)
+                    except (TypeError, ValueError):
+                        cursor = 0
+                    inspect_rows = Photo.search([
+                        ('company_id', '=', cid), ('enabled', '=', True),
+                        ('status', '=', 'verified'), ('id', '>', cursor),
+                    ], order='id', limit=35)
+                    if not inspect_rows:
+                        inspect_rows = Photo.search([
+                            ('company_id', '=', cid), ('enabled', '=', True),
+                            ('status', '=', 'verified'),
+                        ], order='id', limit=35)
+                    if inspect_rows:
+                        params.set_param(cursor_key, str(inspect_rows[-1].id))
+                    for check in inspect_rows:
+                        if not _stored_thumbnail_jpeg(check):
+                            check.write({'status': 'queued', 'next_retry': False,
+                                         'last_error': 'Recuperando miniatura ausente o dañada'})
                     to_retry = (Photo.search(base + [('status', '=', 'queued')], limit=3) |
                                 Photo.search(base + [('status', 'in',
                                     ['unchecked', 'broken', 'error', 'not_found'])], limit=1))

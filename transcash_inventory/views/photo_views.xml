@@ -23,6 +23,10 @@
     <field name="model">transcash.inventory.photo</field>
     <field name="arch" type="xml">
       <form string="Imagen vinculada al SKU">
+        <header>
+          <button name="action_repair_thumbnail" type="object" string="Reparar miniatura"
+                  class="btn-primary" groups="transcash_inventory.group_transcash_manager,base.group_system"/>
+        </header>
         <sheet>
           <group>
             <group>
