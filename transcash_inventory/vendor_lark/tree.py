@@ -100,7 +100,7 @@ class Tree(Generic[_Leaf_T]):
         Example:
             ::
                 from rich import print
-                from transcash_inventory.vendor_lark import Tree
+                from . import Tree
 
                 tree = Tree('root', ['node1', 'node2'])
                 print(tree)

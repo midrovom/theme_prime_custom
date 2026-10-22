@@ -28,6 +28,12 @@ def _identity(value):
     return value
 
 
+def _fiscal_id(value):
+    """Solo documentos fiscales identificables, sin tratar códigos ERP como RUC."""
+    normalized = _identity(value)
+    return normalized if normalized.isdigit() and len(normalized) in (10, 13) else ''
+
+
 def _legal_name(value):
     text = unicodedata.normalize('NFKD', str(value or '').upper())
     return ''.join(c for c in text if c.isalnum() and not unicodedata.combining(c))
@@ -117,40 +123,49 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         return bool(erp_contact and erp_contact.id == user.partner_id.id)
 
     def _transport_matches(self, ruta, guia, source):
+        """La empresa asignada en la GUÍA OPERATIVA tiene prioridad.
+
+        El selector de rutas trabaja con `transcash.guia.proveedor_id`, no con
+        `tc.guide.transport_partner_id`. Este último solo sirve para rescatar
+        guías antiguas SIN proveedor_id. Un vínculo ERP desactualizado nunca
+        debe ocultar una guía ya homologada en la operación.
+        """
+        if not ruta.proveedor_id:
+            return False
         chosen = ruta.proveedor_id.commercial_partner_id
         if not chosen:
             return False
-        # Si el ERP contiene un RUC explícito incompatible, no confiar en un
-        # contacto vinculando por error en una sincronización anterior.
-        if source:
-            source_vat = _identity(source.transport_tax_raw)
-            linked_erp_vat = _identity(source.transport_partner_id.vat) if source.transport_partner_id else ''
-            for fiscal in (source_vat, linked_erp_vat):
-                if fiscal and fiscal != _identity(chosen.vat):
-                    return False
         linked = guia.proveedor_id.commercial_partner_id if guia.proveedor_id else False
         if linked:
-            if linked == chosen:
+            # Verificación por registro: incluye contactos hijos de la empresa.
+            if linked.id == chosen.id:
                 return True
-            # Contactos duplicados con MISMO RUC: equivalencia fiscal verificable.
-            return bool(_identity(linked.vat) and _identity(linked.vat) == _identity(chosen.vat))
+            # Resuelve duplicados históricos de res.partner con el mismo RUC.
+            linked_vat, chosen_vat = _fiscal_id(linked.vat), _fiscal_id(chosen.vat)
+            return bool(linked_vat and chosen_vat and linked_vat == chosen_vat)
 
+        # Solo si la guía NO tiene proveedor operativo, intentar homologación
+        # desde la API; jamás sustituir otro proveedor asignado por nombre.
         if not source:
             return False
-        src_partner = source.transport_partner_id.commercial_partner_id if source.transport_partner_id else False
+        src_partner = (source.transport_partner_id.commercial_partner_id
+                       if source.transport_partner_id else False)
         if src_partner:
-            if src_partner == chosen:
+            if src_partner.id == chosen.id:
                 return True
-            if src_partner.vat and chosen.vat and _identity(src_partner.vat) == _identity(chosen.vat):
-                return True
+            src_vat, chosen_vat = _fiscal_id(src_partner.vat), _fiscal_id(chosen.vat)
+            if src_vat and chosen_vat:
+                return src_vat == chosen_vat
+            # Si existe un contacto fuente no homologado, seguir únicamente
+            # con un RUC explícito o solicitar conciliación administrativa.
             return False
 
-        src_tax = _identity(source.transport_tax_raw)
+        src_tax = _fiscal_id(source.transport_tax_raw)
         if src_tax:
-            return bool(_identity(chosen.vat) == src_tax)
+            return bool(_fiscal_id(chosen.vat) == src_tax)
 
-        # ERP sin RUC: solo nombre LEGAL exacto, y ausencia de homónimos con
-        # identificaciones fiscales distintas. No crea ni selecciona contactos.
+        # Sin identificación fiscal, únicamente nombre LEGAL exacto, único,
+        # sin RUC contradictorios. Nunca seleccionar por coincidencia parcial.
         name = _legal_name(source.transport_name)
         if not name or name != _legal_name(chosen.name):
             return False
@@ -161,16 +176,13 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
             ('is_company', '=', True), ('name', 'ilike', anchor),
             '|', ('company_id', '=', False), ('company_id', '=', ruta.company_id.id),
         ]
-        # Si el prefiltro es demasiado amplio, no afirmar que el nombre es
-        # inequívoco: requerir homologación/RUC en vez de seleccionar a ciegas.
         if Partner.search_count(domain) > 500:
             return False
         partners = Partner.search(domain, limit=500)
         matching = partners.filtered(lambda p: _legal_name(p.name) == name)
-        # Distintos RUC bajo un mismo nombre requieren homologación administrativa.
-        taxes = {_identity(p.vat) for p in matching if _identity(p.vat)}
+        taxes = {_fiscal_id(p.vat) for p in matching if _fiscal_id(p.vat)}
         return bool(chosen in matching and len(taxes) <= 1 and
-                    (not taxes or not chosen.vat or _identity(chosen.vat) in taxes))
+                    (not taxes or not chosen.vat or _fiscal_id(chosen.vat) in taxes))
 
     def _destination_matches(self, ruta, guia, source):
         master = ruta.destino_id
@@ -220,7 +232,8 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
             ]])
         report = {'en_compania': Guia.search_count(base), 'analizadas': 0,
                   'destino': 0, 'chofer': 0, 'transporte': 0,
-                  'compatible': 0, 'limite': False}
+                  'compatible': 0, 'coincide_destino': 0, 'coincide_chofer': 0,
+                  'coincide_transporte': 0, 'limite': False}
         if not (ruta.proveedor_id and ruta.chofer_usuario_id and ruta.destino_id):
             return [], report
         selected = ruta.seleccion_guia_ids
@@ -246,7 +259,16 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
             source_map = self._source_map(candidates, ruta.company_id.id)
             report['analizadas'] += len(candidates)
             for guide in candidates:
-                match, why = self._match(ruta, guide, source_map.get(guide.id))
+                source = source_map.get(guide.id)
+                # Indicadores INDEPENDIENTES: 0 en 'descartadas' no significa
+                # que haya 0 guías que coinciden con el transportista.
+                if self._destination_matches(ruta, guide, source):
+                    report['coincide_destino'] += 1
+                if self._driver_matches(ruta, guide, source):
+                    report['coincide_chofer'] += 1
+                if self._transport_matches(ruta, guide, source):
+                    report['coincide_transporte'] += 1
+                match, why = self._match(ruta, guide, source)
                 if why == 'destino':
                     report['destino'] += 1
                 elif why == 'chofer':
@@ -341,7 +363,10 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                         changes['chofer_usuario_id'] = ruta.chofer_usuario_id.id
                     if not guia.chofer_contacto_id:
                         changes['chofer_contacto_id'] = ruta.chofer_usuario_id.partner_id.id
-                    if guia.proveedor_id != ruta.proveedor_id:
+                    # No sustituir un proveedor ya vinculado: aunque existan
+                    # contactos duplicados con el mismo RUC, su relación puede
+                    # estar referenciada por otros documentos comerciales.
+                    if not guia.proveedor_id:
                         changes['proveedor_id'] = ruta.proveedor_id.id
                     if not guia.destino_id and self._destination_matches(ruta, guia, source):
                         changes['destino_id'] = ruta.destino_id.id

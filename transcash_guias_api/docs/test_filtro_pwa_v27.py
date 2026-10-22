@@ -12,7 +12,7 @@ from types import SimpleNamespace
 path = Path(__file__).resolve().parents[1] / 'controllers' / 'route_pwa_strict.py'
 module = ast.parse(path.read_text())
 selected = [node for node in module.body if isinstance(node, ast.FunctionDef) and
-            node.name in ('_identity', '_legal_name', '_dest_name')]
+            node.name in ('_identity', '_fiscal_id', '_legal_name', '_dest_name')]
 klass = next(n for n in module.body if isinstance(n, ast.ClassDef) and n.name == 'TranscashOperacionFiltrada')
 methods = [node for node in klass.body if isinstance(node, ast.FunctionDef) and
            node.name in ('_driver_matches', '_transport_matches', '_destination_matches', '_match')]
@@ -93,5 +93,5 @@ source.driver_id.identification = '0922222222'
 assert S._match(route, guide, source) == (False, 'chofer'), 'Rechazar choque ERP aunque usuario ya esté asignado'
 source.driver_id.identification = '0913586442'
 source.transport_tax_raw = '0999999999001'
-assert S._match(route, guide, source) == (False, 'transporte'), 'Rechazar RUC ERP contradictorio aun si el vínculo existe'
+assert S._match(route, guide, source) == (True, 'compatible'), 'Proveedor operativo homologado prevalece sobre fuente ERP antigua'
 print('OK: 11 escenarios de identidad, destino, estado y homologación ERP')

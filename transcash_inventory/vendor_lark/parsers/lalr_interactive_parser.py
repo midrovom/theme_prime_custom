@@ -4,8 +4,8 @@ from typing import Iterator, List
 from copy import copy
 import warnings
 
-from transcash_inventory.vendor_lark.exceptions import UnexpectedToken
-from transcash_inventory.vendor_lark.lexer import Token, LexerThread
+from ..exceptions import UnexpectedToken
+from ..lexer import Token, LexerThread
 from .lalr_parser_state import ParserState
 
 ###{standalone

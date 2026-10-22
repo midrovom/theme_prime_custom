@@ -6,7 +6,7 @@ import inspect, re
 import types
 from typing import Optional, Callable
 
-from transcash_inventory.vendor_lark import Transformer, v_args
+from . import Transformer, v_args
 
 class Ast:
     """Abstract class

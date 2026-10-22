@@ -20,13 +20,21 @@
             <strong t-esc="tc_filtro_reporte.get('compatible', 0)"/></div>
           <div><small>Guías analizadas</small>
             <strong t-esc="tc_filtro_reporte.get('analizadas', 0)"/></div>
+          <div><small>Coinciden con destino</small>
+            <strong t-esc="tc_filtro_reporte.get('coincide_destino', 0)"/></div>
+          <div><small>Coinciden con chofer</small>
+            <strong t-esc="tc_filtro_reporte.get('coincide_chofer', 0)"/></div>
+          <div><small>Coinciden con proveedor de transporte</small>
+            <strong t-esc="tc_filtro_reporte.get('coincide_transporte', 0)"/></div>
         </div>
         <p t-if="not tc_filtro_reporte.get('compatible')" class="tc-route-guide-filters__notice">
-          No hay coincidencias verificadas. De las guías analizadas:
-          <t t-esc="tc_filtro_reporte.get('destino', 0)"/> no coincidieron con destino,
-          <t t-esc="tc_filtro_reporte.get('chofer', 0)"/> con el chofer y
-          <t t-esc="tc_filtro_reporte.get('transporte', 0)"/> con el transportista.
-          Compruebe los vínculos ERP o busque una guía concreta.
+          Ninguna guía cumplió los tres filtros simultáneamente. Los contadores
+          anteriores muestran las coincidencias de cada filtro por separado.
+          Rechazadas por primera causa: destino
+          <t t-esc="tc_filtro_reporte.get('destino', 0)"/>, chofer
+          <t t-esc="tc_filtro_reporte.get('chofer', 0)"/>, transportista
+          <t t-esc="tc_filtro_reporte.get('transporte', 0)"/>.
+          Se compara el transportista con el campo «Proveedor» de la guía operativa.
         </p>
         <p t-if="tc_filtro_reporte.get('limite')" class="tc-route-guide-filters__notice">
           Se alcanzó el límite de exploración. Use la búsqueda por número

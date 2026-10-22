@@ -10,7 +10,7 @@ import json
 import re
 from decimal import Decimal
 
-from transcash_inventory.vendor_lark import Lark, Tree, Token
+from ..vendor_lark import Lark, Tree, Token
 
 from .ai_analytics import METRICS
 
