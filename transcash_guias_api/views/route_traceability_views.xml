@@ -31,7 +31,7 @@
         <filter name="tc_con_embarque_v212" string="Con embarque"
           domain="['|',('embarque_id','!=',False),('hoja_ruta_id.embarque_id','!=',False)]"/>
       </xpath>
-      <xpath expr="//group[@string='Agrupar por']" position="inside">
+      <xpath expr="//search/group[filter[@name='por_estado']]" position="inside">
         <filter name="tc_por_destino_v212" string="Destino" context="{'group_by':'destino_id'}"/>
         <filter name="tc_por_ruta_v212" string="Hoja de ruta" context="{'group_by':'hoja_ruta_id'}"/>
       </xpath>
@@ -107,7 +107,7 @@
           </button>
         </div>
       </xpath>
-      <xpath expr="//group[@string='Guía y ruta']/field[@name='hoja_ruta_id']" position="after">
+      <xpath expr="//group[field[@name='external_id_erp']]/field[@name='hoja_ruta_id']" position="after">
         <field name="tc_traza_situacion" readonly="1"/>
         <field name="tc_traza_ruta_estado" readonly="1" invisible="not hoja_ruta_id"/>
       </xpath>
@@ -131,7 +131,7 @@
           </button>
         </div>
       </xpath>
-      <xpath expr="//page[@string='Guías de la ruta']/group[1]" position="before">
+      <xpath expr="//page[field[@name='seleccion_guia_ids']]/group[1]" position="before">
         <div class="alert alert-info" role="note">
           La opción «Guías del chofer» muestra su proveedor de transporte, destino,
           estado y asignaciones actuales, incluso cuando la guía ya pertenece a otra ruta.
