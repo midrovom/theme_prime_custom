@@ -204,6 +204,7 @@ class TranscashDashboardController(http.Controller):
         source = _HTML.read_text(encoding='utf-8')
         source = source.replace('@@CSRF@@', html.escape(request.csrf_token(), quote=True))
         source = source.replace('@@CAN_UPLOAD@@', 'true' if self._can_upload() else 'false')
+        source = source.replace('@@CAN_PHOTO_QUEUE@@', 'true' if self._can_view() else 'false')
         source = source.replace('@@CAN_SYNC@@', 'true' if self._can_view() else 'false')
         source = source.replace('@@CAN_AI@@', 'true' if self._can_ai() else 'false')
         source = source.replace('@@COMPANY@@', html.escape(request.env.company.display_name, quote=True))
@@ -975,13 +976,13 @@ class TranscashDashboardController(http.Controller):
     @http.route('/transcash_inventory/photos/queue', type='http', auth='user', methods=['POST'], csrf=True)
     def photo_queue_visible(self, **kw):
         """Enqueue visible, exact snapshot SKUs without blocking dashboard rendering."""
-        if not self._can_upload():
-            return self._json({'error': 'Sin permisos para buscar fotografías'}, 403)
+        if not self._can_view():
+            return self._json({'error': 'Sin permisos para solicitar fotografías'}, 403)
         try:
             codes = json.loads(kw.get('skus', '[]'))
             if not isinstance(codes, list) or len(codes) > 40 or any(not isinstance(x, str) for x in codes):
                 return self._json({'error': 'Lista de códigos no válida; máximo 40'}, 400)
-            sync = request.env['transcash.inventory.photo.sync'].get_current()
+            sync = request.env['transcash.inventory.photo.sync'].sudo().with_company(request.env.company).get_current()
             queued = sync.enqueue_skus(codes)
             return self._json({'ok': True, 'queued': queued})
         except (ValueError, TypeError, json.JSONDecodeError) as exc:

@@ -197,8 +197,13 @@ class TranscashInventoryPhoto(models.Model):
                           'source_url': rec.image_url or '',
                           'website_url': rec.website_url or '',
                           'match_type': rec.match_type,
-                          'status': rec.status,
-                          'error': rec.last_error or ''}
+                          # A verified row without its attachment is not usable.
+                          # Report it as broken so the browser can request a
+                          # new server-side link, rather than suppressing retry.
+                          'status': 'broken' if rec.status == 'verified' and not rec.image_thumbnail else rec.status,
+                          'error': (rec.last_error or 'Miniatura faltante; vuelva a vincular la fotografía')
+                                   if rec.status == 'verified' and not rec.image_thumbnail else
+                                   (rec.last_error or '')}
                 for rec in rows}
 
 
@@ -249,7 +254,7 @@ class TranscashInventoryPhotoSync(models.Model):
     def enqueue_skus(self, skus, force=False):
         """Queue only known, exact snapshot SKUs; no blocking network call."""
         self.ensure_one()
-        _, names = self._get_latest_sku_map()
+        sku_index, names = self._get_latest_sku_map()
         lookup = {s.casefold(): s for s in names}
         now = fields.Datetime.now()
         found = 0
@@ -259,11 +264,18 @@ class TranscashInventoryPhotoSync(models.Model):
             if not canonical:
                 continue
             rec = self._photo_record(canonical, names[canonical])
-            if rec.status == 'verified' and not force:
+            if rec.status == 'verified' and rec.image_thumbnail and not force:
                 continue
-            if not force and rec.next_retry and rec.next_retry > now:
+            # Reuse a verified PUBLIC photo from the same store immediately,
+            # even if a previous remote search left a long retry backoff.
+            if not force and rec.status != 'verified' and self._reuse_public_photo_from_another_company(
+                    canonical, sku_index, rec):
+                found += 1
                 continue
-            if force or rec.status not in ('queued', 'verified'):
+            missing_attachment = rec.status == 'verified' and not rec.image_thumbnail
+            if not force and not missing_attachment and rec.next_retry and rec.next_retry > now:
+                continue
+            if force or missing_attachment or rec.status not in ('queued', 'verified'):
                 rec.write({'status': 'queued', 'next_retry': False, 'last_error': False})
                 found += 1
         return found
@@ -306,6 +318,46 @@ class TranscashInventoryPhotoSync(models.Model):
                 return url, thumbnail
         raise ValueError('La ficha existe, pero ninguna URL devuelve una imagen JPEG, PNG, GIF o WebP válida')
 
+    def _reuse_public_photo_from_another_company(self, sku, sku_index, record):
+        """Replicate only public images verified for the same SKU and storefront.
+
+        The record is always created/updated in the current company. Do not
+        reuse assets from a different shop, or expose another company's data.
+        This deliberately runs only after the exact SKU was validated against
+        the current company's latest inventory snapshot.
+        """
+        site_root = self._site_root()
+        candidates = self.env['transcash.inventory.photo'].sudo().search([
+            ('company_id', '!=', self.env.company.id),
+            ('sku', '=', sku), ('enabled', '=', True),
+            ('status', '=', 'verified'),
+        ], limit=25)
+        for source in candidates:
+            if not source.image_thumbnail:
+                continue
+            try:
+                source_root = source.company_id.sudo().transcash_photo_site_url
+                link = product_from_url(source.website_url, site_root)
+                if (source_root != site_root or not link or
+                        match_slug_prefix(link['slug'], sku_index) != sku or
+                        not is_safe_photo_url(source.image_url, site_root)):
+                    continue
+                record.write({
+                    'website_url': link['url'],
+                    'image_url': source.image_url,
+                    'image_thumbnail': source.image_thumbnail,
+                    'template_id_remote': source.template_id_remote,
+                    'match_type': 'sku',
+                    'status': 'verified',
+                    'checked_on': fields.Datetime.now(),
+                    'next_retry': fields.Datetime.now() + timedelta(days=30),
+                    'last_error': False,
+                })
+                return True
+            except (ValueError, ValidationError):
+                continue
+        return False
+
     def resolve_single_sku(self, sku, supplied_url=None, manual=False, force=True):
         self.ensure_one()
         sku_index, names = self._get_latest_sku_map()
@@ -323,6 +375,13 @@ class TranscashInventoryPhotoSync(models.Model):
             return rec
         if rec.status == 'verified' and not force:
             return rec
+        # Exact SKU + same HTTPS shop permits public-photo reuse between
+        # companies without any additional network request or cross-company
+        # inventory access. Explicit manual linking always takes precedence.
+        if (not supplied_url and rec.status != 'verified' and
+                self._reuse_public_photo_from_another_company(canonical, sku_index, rec)):
+            return rec
+        preserved_verified = rec.status == 'verified' and bool(rec.image_thumbnail)
         vals = {'checked_on': now, 'attempt_count': rec.attempt_count + 1,
                 'last_error': False, 'next_retry': False}
         try:
@@ -355,38 +414,67 @@ class TranscashInventoryPhotoSync(models.Model):
                          'next_retry': now + timedelta(hours=12)})
             if supplied_url and product_from_url(supplied_url, self._site_root()):
                 vals['website_url'] = product_from_url(supplied_url, self._site_root())['url']
+        if preserved_verified and not supplied_url and vals.get('status') != 'verified':
+            # A timeout, rate-limit or changed public search page is not proof
+            # that the previously checked JPEG is invalid. Leave it visible.
+            vals.pop('image_url', None)
+            vals.pop('image_thumbnail', None)
+            vals['status'] = 'verified'
         rec.write(vals)
         return rec
 
     @api.model
     def cron_index_public_catalog(self):
-        """Prioritise visible SKUs; also discover catalogue pages in bounded batches."""
-        snapshots = self.env['transcash.inventory.snapshot'].sudo().search(
-            [], order='create_date desc,id desc', limit=250)
-        done = set()
+        """Round-robin across companies with current inventories.
+
+        Earlier code stopped after the newest company (a trailing ``break``),
+        so other companies could starve indefinitely when snapshots refreshed.
+        A bounded number of companies per run avoids hammering the shop.
+        """
+        Snapshot = self.env['transcash.inventory.snapshot'].sudo()
+        grouped = Snapshot.read_group([], ['company_id'], ['company_id'], lazy=False)
+        company_ids = sorted(int(group['company_id'][0]) for group in grouped
+                             if group.get('company_id'))
+        if not company_ids:
+            return
+        params = self.env['ir.config_parameter'].sudo()
+        key = 'transcash_inventory.photo_cron.last_company_id'
+        try:
+            last_company_id = int(params.get_param(key) or 0)
+        except (TypeError, ValueError):
+            last_company_id = 0
+        rotated = ([cid for cid in company_ids if cid > last_company_id] +
+                   [cid for cid in company_ids if cid <= last_company_id])
         now = fields.Datetime.now()
-        for snap in snapshots:
-            if snap.company_id.id in done:
-                continue
-            done.add(snap.company_id.id)
-            sync = self.sudo().with_company(snap.company_id).get_current()
-            Photo = self.env['transcash.inventory.photo'].sudo().with_company(snap.company_id)
-            base = [('company_id', '=', snap.company_id.id), ('enabled', '=', True),
-                    '|', ('next_retry', '=', False), ('next_retry', '<=', now)]
-            to_retry = (Photo.search(base + [('status', '=', 'queued')], limit=4) |
-                        Photo.search(base + [('status', 'in', ['unchecked', 'broken', 'error', 'not_found'])], limit=1))
-            for rec in to_retry:
-                try:
-                    sync.resolve_single_sku(rec.sku, force=False)
-                except Exception:
-                    _logger.exception('Transcash: error con foto SKU %s', rec.sku)
-            if not sync.finished and (not sync.last_error or not sync.last_run or
-                                     (now - sync.last_run) >= timedelta(hours=6)):
-                try:
-                    sync.scan_pages(1)
-                except Exception:
-                    _logger.exception('Transcash: no se pudo recorrer catálogo de %s', snap.company_id.name)
-            break
+        for cid in rotated[:4]:
+            try:
+                with self.env.cr.savepoint():
+                    company = self.env['res.company'].sudo().browse(cid)
+                    sync = self.sudo().with_company(company).get_current()
+                    Photo = self.env['transcash.inventory.photo'].sudo().with_company(company)
+                    base = [('company_id', '=', cid), ('enabled', '=', True),
+                            '|', ('next_retry', '=', False), ('next_retry', '<=', now)]
+                    to_retry = (Photo.search(base + [('status', '=', 'queued')], limit=3) |
+                                Photo.search(base + [('status', 'in',
+                                    ['unchecked', 'broken', 'error', 'not_found'])], limit=1))
+                    for rec in to_retry:
+                        try:
+                            with self.env.cr.savepoint():
+                                sync.resolve_single_sku(rec.sku, force=False)
+                        except Exception:
+                            _logger.exception('Transcash: error con foto SKU %s en empresa %s',
+                                              rec.sku, cid)
+                    if not sync.finished and (not sync.last_error or not sync.last_run or
+                                              (now - sync.last_run) >= timedelta(hours=6)):
+                        try:
+                            with self.env.cr.savepoint():
+                                sync.scan_pages(1)
+                        except Exception:
+                            _logger.exception('Transcash: fallo indexando catálogo de empresa %s', cid)
+            except Exception:
+                _logger.exception('Transcash: fallo aislado en fotos de empresa %s', cid)
+            # Always advance, even after a single-company error.
+            params.set_param(key, str(cid))
 
     def _download_listing(self, page):
         path = '/shop' if page == 1 else '/shop/page/%s' % page
