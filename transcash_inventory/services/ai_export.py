@@ -47,7 +47,9 @@ def build_result_xlsx(result, question, created=None):
         raise ValueError('No hay indicadores para exportar.')
     period = result.get('periodo') or {}
     when = created or datetime.now()
-    headers = ['SKU' if result.get('tipo_resultado') == 'listado_stock' else 'Grupo'] + [labels.get(m) or m for m in measures]
+    semantic = result.get('tipo_resultado') == 'sql_semantico'
+    headers = ([labels.get(m) or m for m in measures] if semantic else
+               ['SKU' if result.get('tipo_resultado') == 'listado_stock' else 'Grupo'] + [labels.get(m) or m for m in measures])
     end_col = _col(len(headers))
     sheet_rows = []
     def add_row(number, values, styles=None):
@@ -61,13 +63,16 @@ def build_result_xlsx(result, question, created=None):
     add_row(3, ['Período: %s a %s' % (period.get('desde') or '-', period.get('hasta') or '-')], [2])
     add_row(4, ['Generado: %s' % when.strftime('%Y-%m-%d %H:%M')], [2])
     add_row(6, headers, [3] * len(headers))
-    values = [('PRODUCTOS ENCONTRADOS: %s' % result.get('total_filas', len(rows))) if result.get('tipo_resultado') == 'listado_stock' else 'TOTAL'] + [totals.get(m) for m in measures]
-    styles = [7] + [5 if m == 'margen' else 4 if m in ('ventas', 'costo_ventas', 'compras', 'utilidad', 'stock_valor', 'precio_promedio') else 6 for m in measures]
+    values = ([None for _ in measures] if semantic else
+              [('PRODUCTOS ENCONTRADOS: %s' % result.get('total_filas', len(rows))) if result.get('tipo_resultado') == 'listado_stock' else 'TOTAL'] + [totals.get(m) for m in measures])
+    styles = ([5 if m == 'margen' else 4 if m in ('ventas', 'costo_ventas', 'compras', 'utilidad', 'stock_valor', 'precio_promedio') else 6 for m in measures]
+              if semantic else [7] + [5 if m == 'margen' else 4 if m in ('ventas', 'costo_ventas', 'compras', 'utilidad', 'stock_valor', 'precio_promedio') else 6 for m in measures])
     add_row(7, values, styles)
     for j, item in enumerate(rows, start=8):
         item_values = (item.get('metricas') or {}) if isinstance(item, dict) else {}
-        vals = [item.get('grupo', '')] + [item_values.get(m) for m in measures]
-        add_row(j, vals, [0] + styles[1:])
+        vals = ([item_values.get(m) for m in measures] if semantic else
+                [item.get('grupo', '')] + [item_values.get(m) for m in measures])
+        add_row(j, vals, styles if semantic else [0] + styles[1:])
 
     last = max(7, 7 + len(rows))
     columns = '<col min="1" max="1" width="43" customWidth="1"/>' + ''.join(

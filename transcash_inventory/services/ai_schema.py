@@ -44,7 +44,9 @@ def schema_context(env, snapshot):
     from .ai_analytics import METRICS
     from .ai_client import PLAN_DIMENSIONS
     return {'origen': 'Tablas SQL PostgreSQL persistidas y administradas por Odoo 18',
-            'version_esquema': '1.38', 'modelos': catalog,
+            'relacion_sql_autorizada': 'inventario',
+            'dialecto_semantico': 'SELECT columnas, SUM/COUNT/AVG/MIN/MAX/MARGEN; FROM inventario; WHERE, GROUP BY, ORDER BY, LIMIT',
+            'version_esquema': '1.39', 'modelos': catalog,
             'indicadores_autorizados': dict(METRICS, formula='Operaciones aritméticas controladas'),
             'dimensiones_autorizadas': PLAN_DIMENSIONS,
             'agrupaciones_multiples': ['categoria','marca','formato','proveedor_ficha'],

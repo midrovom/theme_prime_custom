@@ -716,8 +716,9 @@ function aiShowCalculated(data){
  const measures=Array.isArray(r.metricas)&&r.metricas.length?r.metricas:[r.metrica];
  if(Array.isArray(r.metricas)&&r.metricas.length){
   const labels=r.etiquetas||{}, totals=r.totales||{};
-  const hd=[r.tipo_resultado==='listado_stock'||r.dimension==='sku'?'SKU':'Grupo',...measures.map(m=>labels[m]||m)];
-  const tableRows=r.filas.map(row=>[row.grupo,...measures.map(m=>aiMetricVal(m,row.metricas?.[m]??null))]);
+  const semantic=r.tipo_resultado==='sql_semantico';
+  const hd=semantic?measures.map(m=>labels[m]||m):[r.tipo_resultado==='listado_stock'||r.dimension==='sku'?'SKU':'Grupo',...measures.map(m=>labels[m]||m)];
+  const tableRows=r.filas.map(row=>semantic?measures.map(m=>aiMetricVal(m,row.metricas?.[m]??null)):[row.grupo,...measures.map(m=>aiMetricVal(m,row.metricas?.[m]??null))]);
   const totalsHtml=r.tipo_resultado==='listado_stock'?
    '<b>Productos encontrados:</b> '+fmt(r.total_filas)+' · <b>Mostrados:</b> '+fmt(r.filas_mostradas):
    measures.filter(m=>!['descripcion','categoria','marca','formato','proveedor_ficha','ultima_compra','ultima_venta','costo_unitario','precio_venta'].includes(m)).map(m=>'<span style="display:inline-block;margin:4px 17px 4px 0"><b>'+escapeHtml(labels[m]||m)+':</b> '+escapeHtml(aiMetricVal(m,totals[m]))+'</span>').join('');
@@ -766,26 +767,11 @@ async function aiAsk(){
  }
  try{
   $('aiAsk').textContent='Consultando...';
-  // Comparaciones físicas de stock se resuelven directamente en Odoo,
-  // sin reconstruir tablas históricas ni consumir OpenAI.
-  const directStock = /\b(?:stock|existencias?|inventario)\b/i.test(question) &&
-      /(?:\b(?:menor(?:es)?|mayor(?:es)?|inferior(?:es)?|superior(?:es)?|igual(?:es)?|menos de|m[aá]s de)\b|[<>]=?|=)\s*(?:(?:a|de|que)\s*)?\d+/i.test(question);
-  let data;
-  if(directStock){
-   aiProgress('Consultando existencias en Odoo...');
-   data=await aiFetch('/transcash_inventory/ai/stock',form,35000,
-      'La consulta de stock tardó demasiado en Odoo. Contacte al administrador para revisar el servidor.');
-  }else{
-   aiProgress('Preparando análisis...');
-   const prepare=new FormData();prepare.append('csrf_token',csrf);
-   if(sid&&/^\d+$/.test(sid))prepare.append('snapshot_id',sid);
-   await aiFetch('/transcash_inventory/ai/prepare',prepare,120000,
-      'La preparación de indicadores en Odoo superó el tiempo permitido. Solicite al administrador ejecutar la preparación de datos.');
-   if(aiCancelled)throw Error('Consulta cancelada.');
-   aiProgress('Analizando información...');
-   data=await aiFetch('/transcash_inventory/ai/ask',form,60000,
-      'La consulta con ChatGPT tardó demasiado. Revise la conexión y el modelo configurado.');
-  }
+  // Natural-language SQL planner: one path for rankings, aggregates and filters.
+  // No legacy stock-range heuristic and no duplicate browser-side preparation.
+  aiProgress('Analizando consulta en Odoo...');
+  const data=await aiFetch('/transcash_inventory/ai/ask',form,90000,
+     'La consulta excedió el tiempo de respuesta. El administrador puede revisar la bitácora.');
   if(aiCancelled)throw Error('Consulta cancelada.');
   aiLastResultFingerprint=filterFingerprint();
   aiShowCalculated(data);

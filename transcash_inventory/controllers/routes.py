@@ -13,8 +13,9 @@ from urllib.parse import quote
 from odoo import http, fields
 from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
-from ..services.ai_client import plan_question, planner_context, narrate_result, AIServiceError
+from ..services.ai_client import plan_question, planner_context, narrate_result, plan_semantic_sql, AIServiceError
 from ..services.ai_sql import execute_sql_plan
+from ..services.ai_semantic_sql import execute_semantic_sql, InvalidSemanticSQL
 from ..services.ai_stock_lookup import detect_stock_lookup, execute_stock_lookup, execute_stock_lookup_snapshot, parse_stock_conditions
 from ..services.ai_catalog_filters import resolve_catalog_filters
 from ..services.ai_schema import schema_context
@@ -450,13 +451,9 @@ class TranscashDashboardController(http.Controller):
         question = str(kw.get('question') or '').strip()
         if not 6 <= len(question) <= 700:
             return self._json({'error': 'Escriba una pregunta de entre 6 y 700 caracteres.'}, 400)
-        # Consultas deterministas de stock no consumen OpenAI ni su límite horario.
-        try:
-            stock_lookup = detect_stock_lookup(question)
-        except ValueError as exc:
-            return self._json({'error': str(exc)[:220]}, 400)
-        if stock_lookup:
-            return self._stock_fast_response(kw, question, stock_lookup)
+        # v1.39: TODAS las preguntas pasan por el planificador de SQL semántico.
+        # No usar el parser de umbrales para 'más stock' o agrupaciones abiertas.
+        stock_lookup = None
         config = read_ai_settings(request.env)
         if not stock_lookup and (not config['enabled'] or not config['key'] or not config['model']):
             return self._json({'error': 'El asistente no está disponible. Solicite al administrador revisar la configuración.'}, 503)
@@ -491,8 +488,9 @@ class TranscashDashboardController(http.Controller):
             if not snapshot:
                 return self._json({'error': 'No hay información disponible para consultar.'}, 404)
             # The browser never sees a SQL statement or database diagnostics.
-            with request.env.cr.savepoint():
-                snapshot.ensure_relational_data()
+            if not snapshot.relational_ready:
+                with request.env.cr.savepoint():
+                    snapshot.ensure_relational_data()
             available = json.loads(snapshot.relational_months or '[]')
             if not available:
                 return self._json({'error': 'No se encontraron períodos disponibles.'}, 400)
@@ -534,31 +532,33 @@ class TranscashDashboardController(http.Controller):
                 })
                 return self._json({'ok': True, 'available': True,
                                    'result': data, 'request_id': audit.id})
-            with request.env.cr.savepoint():
-                plan = plan_question(config['key'], config['model'], question,
-                    available, default_start, default_end, ui,
-                    schema_context(request.env, snapshot))
-                plan = resolve_catalog_filters(request.env, snapshot, plan, question, ui)
-                # The user's literal stock bounds override an AI omission or guess.
-                # Every explicit bound must reach the resulting SQL WHERE clause.
-                predicates = parse_stock_conditions(question)
-                plan['stock_conditions'] = predicates
-                if plan.get('metric') == 'no_disponible':
-                    audit.write({
-                        'state': 'unavailable', 'plan_json': json.dumps(plan, ensure_ascii=False),
-                        'error_detail': str(plan.get('razon') or '')[:2000],
-                        'duration_ms': int((time.monotonic()-started)*1000),
-                        'finished_at': fields.Datetime.now(),
-                    })
-                    return self._json({'ok': True, 'available': False,
-                        'message': 'No es posible calcular ese indicador con la información disponible.'})
-                data = execute_sql_plan(request.env, snapshot, plan,
-                                        default_start, default_end)
+            # OpenAI proposes a SELECT on the restricted semantic inventory view;
+            # the SQL grammar rejects any other statement, function, or table.
+            # Odoo reconstructs the query with fixed scoped SQL and bound values.
+            data_context = schema_context(request.env, snapshot)
+            period = {'desde': default_start, 'hasta': default_end}
+            proposed = plan_semantic_sql(config['key'], config['model'], question,
+                                         data_context, ui, period)
+            if not proposed['sql'].strip():
+                audit.write({'state':'unavailable', 'error_detail':str(proposed.get('intencion') or '')[:700],
+                             'finished_at':fields.Datetime.now()})
+                return self._json({'ok':True, 'available':False,
+                                   'message':'Este indicador requiere información que no está disponible.'})
+            try:
+                data = execute_semantic_sql(request.env, snapshot, proposed['sql'],
+                                            default_start, default_end, ui)
+            except InvalidSemanticSQL as validation_error:
+                # One safe, bounded repair attempt. Never execute invalid model SQL.
+                proposed = plan_semantic_sql(config['key'], config['model'], question,
+                    data_context, ui, period, repair=str(validation_error))
+                data = execute_semantic_sql(request.env, snapshot, proposed['sql'],
+                                            default_start, default_end, ui)
             # Technical details persist exclusively in the administrator log.
             sql = str(data.pop('sql_consulta', '') or '')
             sql_params = data.pop('sql_parametros', [])
             data.pop('fuente', None)
             data.pop('observaciones', None)
+            data.pop('plan_sql', None)
             record_data = {
                 'state': 'done', 'dimension': str(data.get('dimension') or '')[:100],
                 'metrics': ', '.join(data.get('metricas') or [])[:255],
@@ -567,12 +567,18 @@ class TranscashDashboardController(http.Controller):
                 'finished_at': fields.Datetime.now(),
                 'sql_query': sql,
                 'sql_parameters': json.dumps(sql_params, ensure_ascii=False, default=str),
-                'plan_json': json.dumps(plan, ensure_ascii=False, default=str),
+                'plan_json': json.dumps(proposed, ensure_ascii=False, default=str),
                 'result_json': json.dumps(data, ensure_ascii=False, allow_nan=False),
             }
             audit.write(record_data)
             return self._json({'ok': True, 'available': True,
                                'result': data, 'request_id': audit.id})
+        except InvalidSemanticSQL as exc:
+            if audit:
+                audit.write({'state': 'failed', 'error_detail': str(exc)[:1800],
+                    'duration_ms': int((time.monotonic()-started)*1000),
+                    'finished_at': fields.Datetime.now()})
+            return self._json({'error': str(exc)[:180]}, 400)
         except (AIServiceError, ValueError, KeyError, TypeError) as exc:
             if audit:
                 audit.write({'state': 'failed', 'error_detail': str(exc)[:2000],

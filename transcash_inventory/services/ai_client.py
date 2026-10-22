@@ -488,3 +488,80 @@ def narrate_result(api_key, model, question, result):
         compact['filas_mostradas_para_explicacion'] = rows[:6]
         body = json.dumps({'pregunta': question, 'resultado': compact}, ensure_ascii=False)
     return call_responses(api_key, model, NARRATOR_PROMPT, body, max_tokens=1400)
+
+# v1.39: SQL-semantico generado por el modelo, compilado exclusivamente
+# por el servidor a partir de una gramatica limitada y listas blancas.
+SEMANTIC_SQL_SCHEMA = {
+    'type':'object', 'additionalProperties':False,
+    'properties':{'sql':{'type':'string'}, 'intencion':{'type':'string'}},
+    'required':['sql','intencion'],
+}
+SEMANTIC_SQL_PROMPT = """Eres un traductor de lenguaje natural a SQL de SOLO LECTURA para inventarios Odoo.
+Devuelve un único objeto JSON: {sql: SELECT..., intencion: descripcion breve}.
+No calcules datos ni respondas la pregunta. Odoo ejecutará el SELECT compilado.
+
+FUENTE PERMITIDA: SOLO una relación VIRTUAL llamada inventario.
+NO uses tablas físicas, joins, subconsultas, CTEs, UNION, INSERT, UPDATE, DELETE,
+funciones libres, SQL arbitrario, parámetros de empresa o snapshot. Odoo aplica
+empresa, versión y período en origen; el SQL NUNCA debe incluir company_id.
+
+COLUMNAS por SKU: sku, descripcion, categoria, marca, formato, proveedor,
+stock_unidades, stock_valor, cantidad_vendida, cantidad_comprada,
+ventas, costo_ventas, utilidad, margen, compras, costo_unitario,
+precio_venta, ultima_compra, ultima_venta.
+stock_unidades es cantidad FÍSICA actual; stock_valor es USD estimado;
+ventas y compras son USD; cantidad_comprada y cantidad_vendida son cantidades
+mensuales sumadas sobre el período que Odoo aplicará.
+ultima_compra y ultima_venta son meses YYYY-MM y no días.
+
+SQL permitido: SELECT columnas [AS alias], SUM(columna), COUNT(*),
+AVG(columna), MIN(columna), MAX(columna), MARGEN() (margen ponderado).
+FROM inventario [WHERE condiciones AND/OR con =, <, >, <=, >=, !=,
+LIKE, ILIKE, BETWEEN, IN] [GROUP BY columnas] [ORDER BY columna_o_alias ASC/DESC]
+[LIMIT numero]. NUNCA SELECT *, ni funciones libres. Solo identificadores
+presentes en el catálogo y alias simples (letras, números y guion bajo).
+En agrupaciones usar SUM(stock_unidades), SUM(ventas), SUM(utilidad), etc.
+MARGEN() devuelve utilidad agregada/ventas agregadas*100, nunca SUM(margen).
+En listados por SKU, devolver columnas individuales sin funciones agregadas.
+Si el usuario no indicó tope usa LIMIT 1000; si pide Top N, usa LIMIT N.
+Usa ORDER BY ... DESC al pedir más alto, mayor, mejores, top.
+No confundas 'más stock' con 'stock > algún valor'; es ordenar DESC.
+No inventes filtros: solo WHERE cuando el usuario pide condiciones reales.
+No uses punto y coma al final, alias de tabla ni prefijos inv.; escribe los nombres de columnas directamente.
+Los filtros de interfaz que se reciban por separado se aplicarán siempre en Odoo.
+
+Ejemplos de intención (no memorices frases, deduce la semántica):
+- 'dame el top 10 de los productos con mas stock en unidades' =>
+  SELECT sku, descripcion, stock_unidades FROM inventario ORDER BY stock_unidades DESC LIMIT 10
+- 'stock físico por formato' =>
+  SELECT formato, SUM(stock_unidades) AS stock_total FROM inventario GROUP BY formato ORDER BY stock_total DESC LIMIT 1000
+- 'porcelanatos con stock mayor a 0 y menor a 100' =>
+  SELECT sku, descripcion, stock_unidades FROM inventario WHERE categoria ILIKE 'PORCELANATO' AND stock_unidades > 0 AND stock_unidades < 100 ORDER BY stock_unidades ASC LIMIT 1000
+- 'rentabilidad por proveedor y formato' =>
+  SELECT proveedor, formato, SUM(ventas) AS ventas, SUM(utilidad) AS utilidad, MARGEN() AS margen FROM inventario GROUP BY proveedor, formato ORDER BY utilidad DESC LIMIT 1000
+- 'top 10 más stock con cantidades compradas y vendidas, últimas fechas' =>
+  SELECT sku, descripcion, stock_unidades, cantidad_comprada, cantidad_vendida, ultima_compra, ultima_venta FROM inventario ORDER BY stock_unidades DESC LIMIT 10
+
+El diccionario contextual contiene los modelos Odoo reales y valores del catálogo,
+pero SOLAMENTE puedes consultar el origen autorizado 'inventario'.
+Los SQL que no puedan expresarse en este dialecto deben devolverse como sql='' y
+explicar brevemente la limitación en intencion.
+"""
+
+
+def plan_semantic_sql(api_key, model, question, data_context, filters, period, repair=None):
+    payload = {'pregunta':question, 'filtros_pantalla':filters or {},
+               'periodo':period, 'diccionario_odoo':data_context}
+    if repair:
+        payload['error_validacion_previo'] = str(repair)[:180]
+        payload['instruccion_reintento'] = 'Corrige la sintaxis sin alterar la intención del usuario.'
+    raw = call_responses(api_key, model, SEMANTIC_SQL_PROMPT,
+                         json.dumps(payload, ensure_ascii=False),
+                         json_schema=SEMANTIC_SQL_SCHEMA, max_tokens=1900)
+    try:
+        result = json.loads(raw)
+    except (TypeError, ValueError):
+        raise AIServiceError('La respuesta SQL de la IA no tuvo un formato válido.') from None
+    if not isinstance(result,dict) or not isinstance(result.get('sql'),str):
+        raise AIServiceError('La IA no pudo generar un SELECT válido.')
+    return result

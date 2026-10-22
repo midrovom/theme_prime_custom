@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Mejora progresiva: sin JavaScript permanecen los selects nativos. -->
+  <template id="tc_pwa_searchable_selects_v28"
+            inherit_id="logistica_transcash.portal_operacion"
+            priority="115"
+            name="PWA operaciones: búsqueda en selectores de transportista, chofer y destino">
+    <xpath expr="//html/head" position="inside">
+      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/pwa_searchable_selects.css?v=28"/>
+      <script defer="defer" src="/transcash_guias_api/static/src/js/pwa_searchable_selects.js?v=28"/>
+    </xpath>
+    <!-- Se indexan las identificaciones para buscar sin modificar el valor enviado al servidor. -->
+    <xpath expr="//select[@id='tc-ops-provider']/t/option" position="attributes">
+      <attribute name="t-att-data-tc-search">'%s %s %s' % (p.display_name or '', p.vat or '', p.ref or '')</attribute>
+    </xpath>
+    <xpath expr="//select[@id='tc-ops-driver']/t/option" position="attributes">
+      <attribute name="t-att-data-tc-search">'%s %s %s' % (c.name or '', c.login or '', c.partner_id.vat or '')</attribute>
+    </xpath>
+    <xpath expr="//select[@id='tc-ops-dest']/t/option" position="attributes">
+      <attribute name="t-att-data-tc-search">'%s %s' % (d.name or '', d.codigo or '')</attribute>
+    </xpath>
+  </template>
+</odoo>
