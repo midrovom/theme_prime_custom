@@ -3,6 +3,12 @@
   <template id="tc_pwa_identity_fix_v27" inherit_id="transcash_guias_api.tc_pwa_filter_guides_v26" priority="90" name="PWA: mostrar guías de chofer y transportista con identidad ERP">
     <xpath expr="//p[contains(@class,'tc-empty-inline') and contains(text(),'No hay guías disponibles')]" position="replace">
       <p t-if="not filas" class="tc-empty-inline">No hay guías disponibles que coincidan con el transportista, el chofer y el destino de esta ruta.</p></xpath>
+    <!-- Compatibilidad de actualización: la vista antigua tc_pwa_driver_scope_v212
+         busca tc-route-guide-breakdown antes de que se cargue su nueva versión.
+         La caja está oculta y NO contiene ni expone datos al operador. -->
+    <xpath expr="//div[contains(@class,'tc-ops-checklist')]" position="before">
+      <div class="tc-route-guide-breakdown tc-legacy-update-anchor" t-if="False"/>
+    </xpath>
     <xpath expr="//script[contains(@src, 'select_all_route_guides.js')]" position="attributes">
       <attribute name="src">/transcash_guias_api/static/src/js/select_all_route_guides.js?v=211</attribute>
     </xpath>

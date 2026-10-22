@@ -1,6 +1,14 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <odoo>
   <template id="tc_pwa_filter_guides_v26" inherit_id="transcash_guias_api.tc_portal_select_all_guides_v25" priority="80" name="PWA: guías filtradas estrictamente por ruta">
+    <!-- Compatibilidad de actualización: la vista v2.17 tc_pwa_identity_fix_v27
+         sigue buscando este párrafo cuando Odoo valida las vistas hijas
+         antes de reescribirlas. Se mantiene fuera de la interfaz. -->
+    <xpath expr="//form[contains(@class,'tc-ops-search')]" position="before">
+      <section class="tc-route-guide-filters tc-legacy-update-anchor" t-if="False">
+        <p>Marcador interno de compatibilidad durante la actualización.</p>
+      </section>
+    </xpath>
     <xpath expr="//div[@data-tc-guide-bulk='1']//strong" position="replace">
       <strong>Seleccionar todas las guías filtradas</strong>
     </xpath>
