@@ -81,6 +81,36 @@
         </p>
       </div>
     </xpath>
+    <xpath expr="//div[contains(@class,'tc-ops-checklist')]" position="before">
+      <section t-if="tc_filtro_reporte and tc_filtro_reporte.get('detalle_busqueda')"
+               class="tc-route-guide-filters" aria-label="Diagnóstico de guía buscada">
+        <h3>Diagnóstico de la guía buscada</h3>
+        <p>Los nombres visibles pueden coincidir aunque los registros internos de Odoo sean diferentes.
+           Esta tabla identifica el bloqueo exacto sin permitir asignaciones equivocadas.</p>
+        <div class="tc-route-guide-breakdown-scroll">
+          <table class="tc-route-guide-breakdown-table">
+            <thead><tr>
+              <th>Guía / documento</th><th>Resultado</th><th>Destino: guía / ruta</th>
+              <th>Chofer: guía / ruta</th><th>Transportista: guía / ruta</th>
+            </tr></thead>
+            <tbody>
+              <tr t-foreach="tc_filtro_reporte.get('detalle_busqueda')" t-as="d">
+                <td><strong t-esc="d['guia']"/><small t-esc="d['documento']"/></td>
+                <td><span t-if="d['compatible']">Compatible</span>
+                  <span t-else="" t-esc="d['motivo']"/></td>
+                <td><small t-esc="d['guia_destino']"/><small> / </small><small t-esc="d['ruta_destino']"/></td>
+                <td><small t-esc="d['guia_chofer']"/><small> / </small><small t-esc="d['ruta_chofer']"/>
+                  <small>Cédula guía: <t t-esc="d['cedula_guia']"/>; contacto: <t t-esc="d['cedula_contacto']"/>; ruta: <t t-esc="d['cedula_ruta']"/></small></td>
+                <td><small t-esc="d['guia_proveedor']"/><small> / </small><small t-esc="d['ruta_proveedor']"/>
+                  <small>RUC guía: <t t-esc="d['ruc_guia']"/>; ruta: <t t-esc="d['ruc_ruta']"/></small></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <small>Los IDs entre paréntesis identifican fichas de Odoo, no códigos fiscales.
+          Los datos de marcas y proveedores de productos no se muestran aquí.</small>
+      </section>
+    </xpath>
     <xpath expr="//p[contains(@class,'tc-empty-inline') and contains(text(),'No hay guías disponibles')]" position="replace">
       <p t-if="not filas" class="tc-empty-inline">
         No hay guías que cumplan simultáneamente los filtros de esta hoja de ruta.
@@ -88,7 +118,7 @@
       </p>
     </xpath>
     <xpath expr="//script[contains(@src, 'select_all_route_guides.js')]" position="attributes">
-      <attribute name="src">/transcash_guias_api/static/src/js/select_all_route_guides.js?v=210</attribute>
+      <attribute name="src">/transcash_guias_api/static/src/js/select_all_route_guides.js?v=211</attribute>
     </xpath>
   </template>
 </odoo>

@@ -84,19 +84,36 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                         result[guide.id] = candidate
         return {key: value for key, value in result.items() if key not in ambiguous}
 
-    def _driver_matches(self, ruta, guia, source):
-        """Prioriza asignación operativa inequívoca, sin reasignar otro usuario.
+    def _same_driver_identity(self, first, second, guia):
+        """Same human, even if Odoo has duplicate users. Never match by name.
 
-        `res.users` de la guía prevalece sobre una referencia auxiliar ERP
-        antigua. Si el documento registrado en la guía contradice el del
-        usuario seleccionado, se rechaza para revisión. La identidad ERP
-        solo se consulta cuando todavía falta el usuario operativo.
+        A shared partner ID is authoritative only when its fiscal document does
+        not contradict the document already recorded on the guide.
+        Distinct partner records require equal nonempty, normalized documents.
+        """
+        if not first or not second:
+            return False
+        first_partner, second_partner = first.partner_id, second.partner_id
+        guide_doc = _fiscal_id(guia.ruc_chofer)
+        first_doc = _fiscal_id(first_partner.vat) or _fiscal_id(first.login)
+        second_doc = _fiscal_id(second_partner.vat) or _fiscal_id(second.login)
+        if first_partner.id == second_partner.id:
+            return bool(not guide_doc or not first_doc or guide_doc == first_doc) and bool(
+                not guide_doc or not second_doc or guide_doc == second_doc)
+        return bool(first_doc and second_doc and first_doc == second_doc and
+                    (not guide_doc or guide_doc == first_doc))
+
+    def _driver_matches(self, ruta, guia, source):
+        """Compare user identity, then national ID if two user records exist.
+
+        Merely equal display names never suffice to treat drivers as identical.
         """
         user = ruta.chofer_usuario_id
         if not user:
             return False
         if guia.chofer_usuario_id:
-            if guia.chofer_usuario_id.id != user.id:
+            if (guia.chofer_usuario_id != user and
+                    not self._same_driver_identity(guia.chofer_usuario_id, user, guia)):
                 return False
             target = {_fiscal_id(v) for v in (user.partner_id.vat, user.login)} - {''}
             guide_docs = {_fiscal_id(v) for v in (
@@ -113,8 +130,6 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         source_doc = _fiscal_id(source.driver_id.identification) if source and source.driver_id else ''
         guide_doc = _fiscal_id(guia.ruc_chofer)
         contact_doc = _fiscal_id(erp_contact.vat) if erp_contact else ''
-        # Una contradicción EN LA GUÍA operativa no se puede resolver por
-        # coincidencias de nombre ni por registros de origen anteriores.
         if guide_doc and contact_doc and guide_doc != contact_doc:
             return False
         expected = {_fiscal_id(v) for v in (user.partner_id.vat, user.login)} - {''}
@@ -189,22 +204,36 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         return bool(chosen in matching and len(taxes) <= 1 and
                     (not taxes or not chosen.vat or _fiscal_id(chosen.vat) in taxes))
 
+    def _same_destination_code(self, first, second):
+        """ERP codes '-NAJ' and 'NAJ' denote the same controlled code.
+
+        An empty code or a matching display name is not sufficient. This does
+        not rewrite the destination catalogue, used by historical routes.
+        """
+        if not first or not second or first.company_id != second.company_id:
+            return False
+        left, right = _identity(first.codigo), _identity(second.codigo)
+        return bool(left and right and left == right)
+
     def _destination_matches(self, ruta, guia, source):
         master = ruta.destino_id
         if not master:
             return False
-        # El destino ya homologado de la guía operativa es autoritativo.
-        # No bloquearlo por un código auxiliar ERP que pudo cambiar.
         if guia.destino_id:
-            return guia.destino_id.id == master.id
-        # Mantener la comparación estricta del módulo principal.
+            return (guia.destino_id.id == master.id or
+                    self._same_destination_code(guia.destino_id, master))
         if ruta._coincide_destino(guia):
             return True
+        erp_code = (_identity(source.destination_id.external_code)
+                    if source and source.destination_id else '')
+        route_code = _identity(master.codigo)
+        if erp_code and route_code:
+            return erp_code == route_code
+        guide_code = _identity(guia.destino_codigo)
+        if guide_code and route_code:
+            return guide_code == route_code
         if not source:
             return False
-        erp_code = _identity(source.destination_id.external_code) if source.destination_id else ''
-        if erp_code:
-            return bool(_identity(master.codigo) and erp_code == _identity(master.codigo))
         valid = {_dest_name(master.name), _dest_name(master.ciudad)} - {''}
         stated = {_dest_name(source.destination_city), _dest_name(source.destination_address)} - {''}
         return bool(valid.intersection(stated))
@@ -223,6 +252,74 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
             return False, 'transporte'
         return True, 'compatible'
 
+    def _guide_diagnostic(self, ruta, guia, source):
+        """Factual reason a specific guide does not appear in the PWA."""
+        dest_ok = self._destination_matches(ruta, guia, source)
+        driver_ok = self._driver_matches(ruta, guia, source)
+        provider_ok = self._transport_matches(ruta, guia, source)
+        matched, reason = self._match(ruta, guia, source)
+        reasons = []
+        if guia.company_id != ruta.company_id:
+            reasons.append('Otra empresa')
+        if guia.state != 'registrada':
+            reasons.append('Estado ' + str(guia.state))
+        if guia.hoja_ruta_id:
+            reasons.append('Asignada a ' + (guia.hoja_ruta_id.name or 'otra ruta'))
+        if guia.embarque_id:
+            reasons.append('Asignada a un embarque')
+        if not dest_ok:
+            reasons.append('Destino no equivalente')
+        if not driver_ok:
+            reasons.append('Cédula o usuario del chofer diferente')
+        if not provider_ok:
+            reasons.append('Proveedor distinto o RUC sin homologar')
+        return {
+            'guia': guia.name,
+            'documento': guia.numero_documento or '',
+            'erp': guia.external_id_erp or '',
+            'compatible': matched,
+            'motivo': '; '.join(reasons) if reasons else 'Compatible',
+            'guia_destino': '%s (#%s, %s)' % (
+                guia.destino_id.name or guia.destino or 'Sin destino',
+                guia.destino_id.id if guia.destino_id else '-',
+                guia.destino_id.codigo if guia.destino_id else guia.destino_codigo or '-'),
+            'ruta_destino': '%s (#%s, %s)' % (
+                ruta.destino_id.name, ruta.destino_id.id, ruta.destino_id.codigo),
+            'guia_chofer': '%s (#%s)' % (
+                guia.chofer_usuario_id.name if guia.chofer_usuario_id else
+                guia.chofer_contacto_id.name if guia.chofer_contacto_id else 'Sin usuario',
+                guia.chofer_usuario_id.id if guia.chofer_usuario_id else '-'),
+            'ruta_chofer': '%s (#%s)' % (ruta.chofer_usuario_id.name,
+                                            ruta.chofer_usuario_id.id),
+            'cedula_guia': _fiscal_id(guia.ruc_chofer) or '(vacía)',
+            'cedula_contacto': (_fiscal_id(guia.chofer_contacto_id.vat)
+                                if guia.chofer_contacto_id else '') or '(vacía)',
+            'cedula_ruta': (_fiscal_id(ruta.chofer_usuario_id.partner_id.vat) or
+                            _fiscal_id(ruta.chofer_usuario_id.login) or '(vacía)'),
+            'guia_proveedor': '%s (#%s)' % (
+                guia.proveedor_id.name if guia.proveedor_id else 'Sin proveedor',
+                guia.proveedor_id.id if guia.proveedor_id else '-'),
+            'ruta_proveedor': '%s (#%s)' % (ruta.proveedor_id.name,
+                                               ruta.proveedor_id.id),
+            'ruc_guia': (_fiscal_id(guia.proveedor_id.commercial_partner_id.vat)
+                         if guia.proveedor_id else '') or '(vacío)',
+            'ruc_ruta': _fiscal_id(ruta.proveedor_id.commercial_partner_id.vat) or '(vacío)',
+        }
+
+    def _diagnostic_for_search(self, ruta, search):
+        """Diagnose an exact/partial guide ID, including state/routing blockers."""
+        if not search or len(search) < 3:
+            return []
+        Guide = request.env['transcash.guia']
+        guides = Guide.search([
+            ('company_id', '=', ruta.company_id.id),
+            '|', '|', ('name', 'ilike', search),
+            ('numero_documento', 'ilike', search),
+            ('external_id_erp', 'ilike', search),
+        ], limit=8, order='id desc')
+        sources = self._source_map(guides, ruta.company_id.id)
+        return [self._guide_diagnostic(ruta, g, sources.get(g.id)) for g in guides]
+
     def _candidates_and_report(self, ruta, search):
         Guia = request.env['transcash.guia']
         # NO filtrar por chofer_usuario_id ni proveedor_id en SQL: durante la
@@ -231,7 +328,8 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         base = ruta._domain_guias_elegibles(validar_filtros=False)
         if search:
             base = expression.AND([base, [
-                '|', ('name', 'ilike', search), ('numero_documento', 'ilike', search),
+                '|', '|', ('name', 'ilike', search), ('numero_documento', 'ilike', search),
+                ('external_id_erp', 'ilike', search),
             ]])
         report = {'en_compania': Guia.search_count(base), 'analizadas': 0,
                   'destino': 0, 'chofer': 0, 'transporte': 0,
@@ -239,7 +337,8 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                   'coincide_transporte': 0, 'destino_chofer': 0,
                   'destino_transporte': 0, 'chofer_transporte': 0,
                   'destino_chofer_transporte': 0, 'resumen_destino': [],
-                  'sin_chofer_en_destino': 0, 'limite': False}
+                  'sin_chofer_en_destino': 0, 'limite': False,
+                  'detalle_busqueda': self._diagnostic_for_search(ruta, search)}
         if not (ruta.proveedor_id and ruta.chofer_usuario_id and ruta.destino_id):
             return [], report
         selected = ruta.seleccion_guia_ids
@@ -390,18 +489,42 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                     changes = {}
                     if not guia.chofer_usuario_id:
                         changes['chofer_usuario_id'] = ruta.chofer_usuario_id.id
+                    elif guia.chofer_usuario_id != ruta.chofer_usuario_id:
+                        # Only normalize duplicate accounts verified as the
+                        # SAME individual (partner or fiscal identification).
+                        if not self._same_driver_identity(
+                                guia.chofer_usuario_id, ruta.chofer_usuario_id, guia):
+                            raise UserError(_('La guía %s pertenece a otro chofer.') % guia.name)
+                        changes['chofer_usuario_id'] = ruta.chofer_usuario_id.id
                     if not guia.chofer_contacto_id:
                         changes['chofer_contacto_id'] = ruta.chofer_usuario_id.partner_id.id
-                    # No sustituir un proveedor ya vinculado: aunque existan
-                    # contactos duplicados con el mismo RUC, su relación puede
-                    # estar referenciada por otros documentos comerciales.
                     if not guia.proveedor_id:
                         changes['proveedor_id'] = ruta.proveedor_id.id
-                    if not guia.destino_id and self._destination_matches(ruta, guia, source):
+                    elif (guia.proveedor_id.commercial_partner_id.id !=
+                          ruta.proveedor_id.commercial_partner_id.id):
+                        # Odoo's core confirmation compares partner record IDs.
+                        # Only canonicalize duplicates if both VATs are verified.
+                        guide_vat = _fiscal_id(guia.proveedor_id.commercial_partner_id.vat)
+                        route_vat = _fiscal_id(ruta.proveedor_id.commercial_partner_id.vat)
+                        if not guide_vat or guide_vat != route_vat:
+                            raise UserError(_('La guía %s pertenece a otro transportista.') % guia.name)
+                        changes['proveedor_id'] = ruta.proveedor_id.id
+                    if guia.destino_id != ruta.destino_id:
+                        if not self._destination_matches(ruta, guia, source):
+                            raise UserError(_('La guía %s tiene otro destino.') % guia.name)
+                        # Change ONLY the guide's alias to the chosen canonical
+                        # destination; never mutate its catalog or historical docs.
                         changes['destino_id'] = ruta.destino_id.id
                         changes['destino_codigo'] = ruta.destino_id.codigo
                     if changes:
                         guia.sudo().write(changes)
+                        if ('destino_id' in changes or
+                                ('chofer_usuario_id' in changes and source) or
+                                'proveedor_id' in changes):
+                            guia.sudo().message_post(body=(
+                                'PWA: homologación de identidad comprobada al seleccionar '
+                                'guía para hoja de ruta %s. Campos: %s.' %
+                                (ruta.name, ', '.join(sorted(changes)))))
                 # Esta PWA jamás autoriza un cambio de chofer/transportista.
                 ruta.sudo().write({'reasignacion_autorizada': False,
                                    'reasignacion_autorizada_por_id': False})
