@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_tc_partner_duplicate_review_transport_buttons" model="ir.ui.view">
+    <field name="name">tc.partner.duplicates.review.transport.buttons</field>
+    <field name="model">tc.partner.duplicates.review</field>
+    <field name="inherit_id" ref="transcash_guias_api.view_tc_partner_duplicate_review_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//footer/button[@name='action_analyze']" position="after">
+        <button name="action_analyze_transport" type="object"
+                string="Analizar transportistas por RUC" class="btn-primary"/>
+        <button name="action_cleanup_transport" type="object"
+                string="Depurar transportistas sin uso" class="btn-secondary"
+                confirm="Solo se archivarán contactos transportistas duplicados SIN referencias y se eliminarán maestros tc.transport repetidos y SIN referencias. No se modifican viajes, usuarios, pagos ni guías. ¿Confirmar?"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="action_tc_transport_cleanup" model="ir.actions.act_window">
+    <field name="name">Depurar transportistas (RUC)</field>
+    <field name="res_model">tc.partner.duplicates.review</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+  <menuitem id="menu_tc_transport_cleanup" name="Depurar transportistas (RUC)"
+            parent="logistica_transcash.menu_tc_logistics_v530"
+            action="action_tc_transport_cleanup" sequence="11"
+            groups="transcash_guias_api.group_tc_sync_admin,logistica_transcash.group_logistica_manager"/>
+</odoo>

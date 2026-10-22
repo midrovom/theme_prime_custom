@@ -8,6 +8,7 @@ import re
 
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError
+from .transport_identity import normalize_transport_ruc
 
 _logger = logging.getLogger(__name__)
 
@@ -100,19 +101,92 @@ class TCGuidePartnerLink(models.Model):
                                 (code, matches[0].id))
         return matches, ''
 
-    def _partner_by_unique_transport_name(self, name):
-        """No-create fallback for API without transport RUC; unique exact name only."""
+    def _resolve_transport_partner(self, name, raw_tax):
+        """Transportistas: RUC único, nunca crear por solo el nombre.
+
+        Compara identificaciones normalizadas globalmente, incluyendo contactos
+        archivados; si el contacto está reservado para otra compañía, informa
+        el conflicto y no genera una segunda empresa con el mismo RUC.
+        """
         self.ensure_one()
-        name = _clean(name)
-        if not name:
-            return False, ''
-        matches = self.env['res.partner'].sudo().with_context(active_test=False).search([
-            ('is_company', '=', True), ('name', '=ilike', name),
-            '|', ('company_id', '=', False), ('company_id', '=', self.company_id.id),
-        ])
-        if len(matches) == 1:
-            return matches[0], _('Transportista enlazado solo por nombre; el ERP aún no informa su RUC.')
-        return False, _('Falta RUC del transportista %s; no se crea otro contacto sin identificación.') % name
+        name, raw_tax = _clean(name), _clean(raw_tax)
+        vat = normalize_transport_ruc(raw_tax)
+        if raw_tax and not vat:
+            return False, _('RUC inválido de transportista: %s. No se creó contacto.') % raw_tax
+
+        Partner = self.env['res.partner'].sudo().with_context(active_test=False)
+        if vat:
+            # Bloqueo global por identidad: también protege sincronizaciones
+            # concurrentes de distintas compañías.
+            self.env.cr.execute(
+                'SELECT pg_advisory_xact_lock(hashtext(%s), hashtext(%s))',
+                ('tc.transporter', vat))
+            self.env.cr.execute('''
+                SELECT id FROM res_partner
+                WHERE UPPER(REGEXP_REPLACE(COALESCE(vat, ''),
+                      '[^A-Za-z0-9]', '', 'g')) IN (%s, %s)
+                ORDER BY id
+            ''', (vat, 'EC' + vat))
+            matches = Partner.browse([row[0] for row in self.env.cr.fetchall()])
+            matches = matches.filtered(lambda p: p.is_company or not p.parent_id)
+            eligible = matches.filtered(lambda p:
+                not p.company_id or p.company_id.id == self.company_id.id)
+            if matches and not eligible:
+                return False, _('El RUC %s ya existe en una compañía privada ajena. '
+                                'No se creó un duplicado; requiere homologación.') % vat
+            if eligible:
+                linked_users = set(self.env['res.users'].sudo().with_context(
+                    active_test=False).search([
+                        ('partner_id', 'in', eligible.ids)]).mapped('partner_id').ids)
+                linked_guides = set(self.env['transcash.guia'].sudo().search([
+                    ('proveedor_id', 'in', eligible.ids)]).mapped('proveedor_id').ids)
+                used = linked_users | linked_guides
+                ordered = eligible.sorted(key=lambda p: (
+                    not p.active, p.id not in used, bool(p.company_id), p.id))
+                primary = ordered[0]
+                if not primary.active:
+                    return False, _('RUC %s solo tiene contactos archivados. '
+                                    'Debe reactivarse uno manualmente; no se crea otro.') % vat
+                note = (_('RUC %s: existen %s contactos duplicados; se reutiliza %s. '
+                          'Revise Depurar transportistas.') % (vat, len(ordered), primary.id)
+                        if len(ordered) > 1 else '')
+                return primary, note
+
+        # Un nombre solo sirve para localizar contactos preexistentes.
+        # Si tiene RUC, podemos completar UN único contacto con el nombre
+        # exacto y VAT vacío; jamás reemplazar el VAT de otro transportista.
+        key = ' '.join(name.upper().split())
+        matches = (Partner.search([('is_company', '=', True),
+                                   ('name', '=ilike', name)])
+                   if name else Partner.browse())
+        matches = matches.filtered(
+            lambda p: ' '.join((p.name or '').upper().split()) == key)
+        allowed = matches.filtered(lambda p:
+            not p.company_id or p.company_id.id == self.company_id.id)
+        if matches and not allowed:
+            return False, _('Transportista %s ya existe en otra compañía privada.') % name
+        if allowed and not allowed.filtered('active'):
+            return False, _('Transportista %s existe archivado; requiere reactivación manual.') % name
+        if vat:
+            blank = allowed.filtered(lambda p: p.active and not _identifier(p.vat))
+            conflict = allowed - blank
+            if len(blank) == 1 and not conflict:
+                blank.sudo().write({'vat': vat})
+                return blank, _('Se completó el RUC %s de un transportista existente.') % vat
+            if allowed:
+                return False, _('Nombre %s ya existe con RUC distinto o ambiguo. '
+                                'No se crea una empresa adicional.') % name
+            if not name:
+                return False, _('RUC %s sin nombre del transportista.') % vat
+            return Partner.create({'name': name, 'vat': vat,
+                                   'is_company': True, 'company_id': False}), ''
+        if len(allowed) == 1 and allowed.active:
+            return allowed, _('Transportista vinculado temporalmente por nombre; '
+                              'el ERP todavía no envía su RUC.')
+        if len(allowed) > 1:
+            return False, _('Transportista %s sin RUC y con %s coincidencias. '
+                            'No se crea ni se selecciona automáticamente.') % (name, len(allowed))
+        return False, _('Falta RUC del transportista %s; no se crea empresa por nombre.') % (name or '-')
 
     def _upsert_contact(self, kind, name, tax='', code='', street='', company=False):
         """Reuse fiscal identity first; code is an ERP reference, never an inferred VAT."""
@@ -130,8 +204,6 @@ class TCGuidePartnerLink(models.Model):
             partner = found
             if note:
                 message = (message + '\n' + note).strip()
-        if not partner and kind == 'transport' and not tax:
-            return self._partner_by_unique_transport_name(name)
         if not partner:
             if not tax and not code:
                 return False, _('Falta documento o código ERP de %s: %s.') % (kind, name or '-')
@@ -242,9 +314,16 @@ class TCGuidePartnerLink(models.Model):
         notes = []
         transport_name = self.transport_name or (self.transport_id.name if self.transport_id else '')
         transport_tax = self.transport_tax_raw or (self.transport_id.ruc if self.transport_id else '')
-        transport, message = self._upsert_contact('transport', transport_name, tax=transport_tax, company=True)
+        transport, message = self._resolve_transport_partner(transport_name, transport_tax)
         if message:
             notes.append(message)
+        # Si el ERP no informa RUC, no borrar un vínculo ya confirmado
+        # cuando la identificación por nombre sigue siendo inequívoca.
+        if not transport and not transport_tax and self.transport_partner_id:
+            previous = self.transport_partner_id
+            if ' '.join((previous.name or '').upper().split()) == ' '.join(transport_name.upper().split()):
+                transport = previous
+                notes.append(_('Vínculo existente conservado; falta RUC en ERP.'))
         if transport and not self._has_role_portal(transport, 'transport'):
             notes.append(_('Transportista sin perfil Portal de proveedor habilitado en esta empresa.'))
         driver_tax = self.driver_id.identification if self.driver_id else ''

@@ -3,6 +3,7 @@ import re
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 from .commercial_parser import extract_commercial, guide_lines
+from .transport_identity import normalize_transport_ruc
 
 _logger = logging.getLogger(__name__)
 
@@ -208,14 +209,16 @@ class TCGuideSync(models.Model):
         if len(line_ids) != len(lines) or not all(line_ids) or len(set(line_ids)) != len(line_ids):
             raise ValidationError('Líneas sin id_linea o id_linea duplicados.')
 
+        # Bloqueo transaccional para evitar creación simultánea de maestros.
+        self.env.cr.execute('SELECT id FROM res_company WHERE id = %s FOR UPDATE', (company_id,))
         transport_id = False
-        if clean(transport.get('ruc')):
+        ruc = normalize_transport_ruc(transport.get('ruc'))
+        if ruc:
             # Normalizar el RUC ANTES de buscar el maestro; no duplicar por
             # guiones/espacios o por registros históricos sin normalizar.
-            ruc = re.sub(r'[^A-Za-z0-9]', '', clean(transport['ruc']).upper())
             Transport = self.env['tc.transport'].sudo()
             matches = Transport.search(common).filtered(
-                lambda x: re.sub(r'[^A-Za-z0-9]', '', (x.ruc or '').upper()) == ruc)
+                lambda x: normalize_transport_ruc(x.ruc) == ruc)
             if matches:
                 transport_record = matches.sorted('id')[0]
                 if len(matches) > 1:
@@ -228,6 +231,8 @@ class TCGuideSync(models.Model):
                     'company_id': company_id,
                 })
             transport_id = transport_record.id
+        elif clean(transport.get('ruc')):
+            _logger.warning('RUC transportista no válido; sin alta de tc.transport. Guía %s', external)
         driver_id = False
         if clean(driver.get('identificacion')):
             ident = clean(driver['identificacion'])
