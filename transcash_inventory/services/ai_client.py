@@ -526,6 +526,14 @@ En listados por SKU, devolver columnas individuales sin funciones agregadas.
 Si el usuario no indicó tope usa LIMIT 1000; si pide Top N, usa LIMIT N.
 Usa ORDER BY ... DESC al pedir más alto, mayor, mejores, top.
 No confundas 'más stock' con 'stock > algún valor'; es ordenar DESC.
+'Los productos más vendidos' o 'mejores vendidos' se refiere al ranking por
+cantidad_vendida DESC si no se pide expresamente facturación en dólares.
+Un ranking por producto se hace SIN GROUP BY: en la relación inventario ya
+existe una única fila por SKU con la cantidad vendida acumulada. Ejemplo
+válido: SELECT sku, descripcion, cantidad_vendida FROM inventario
+ORDER BY cantidad_vendida DESC LIMIT 10.
+NO uses ORDER BY SUM(columna), HAVING, funciones COALESCE ni alias de tabla. En
+caso de agregación ordena por el alias AS que hayas declarado.
 No inventes filtros: solo WHERE cuando el usuario pide condiciones reales.
 No uses punto y coma al final, alias de tabla ni prefijos inv.; escribe los nombres de columnas directamente.
 Los filtros de interfaz que se reciban por separado se aplicarán siempre en Odoo.
@@ -565,3 +573,75 @@ def plan_semantic_sql(api_key, model, question, data_context, filters, period, r
     if not isinstance(result,dict) or not isinstance(result.get('sql'),str):
         raise AIServiceError('La IA no pudo generar un SELECT válido.')
     return result
+
+
+# v1.43: typified fallback when the model produces SQL incompatible with the
+# restricted grammar. Dynamic columns and filters, not hard-coded questions.
+SEMANTIC_PLAN_SCHEMA = {
+ 'type': 'object', 'additionalProperties': False,
+ 'properties': {
+  'available': {'type':'boolean'},
+  'columns': {'type':'array','items':{'type':'object','additionalProperties':False,
+   'properties':{'field':{'type':'string'},
+                 'aggregation':{'type':'string','enum':['none','sum','avg','min','max','count','margin']},
+                 'alias':{'type':'string'}},
+   'required':['field','aggregation','alias']}},
+  'filters':{'type':'array','items':{'type':'object','additionalProperties':False,
+   'properties':{'field':{'type':'string'},'operator':{'type':'string','enum':['=','!=','>','<','>=','<=','ILIKE','LIKE','BETWEEN','IN']},
+                 'value':{'type':'string'},'second_value':{'type':'string'},
+                 'values':{'type':'array','items':{'type':'string'}}},
+   'required':['field','operator','value','second_value','values']}},
+  'group_by':{'type':'array','items':{'type':'string'}},
+  'order_by':{'type':'object','additionalProperties':False,
+   'properties':{'field':{'type':'string'},'direction':{'type':'string','enum':['ASC','DESC']}},
+   'required':['field','direction']},
+  'limit':{'type':'integer'}, 'explanation':{'type':'string'},
+ },
+ 'required':['available','columns','filters','group_by','order_by','limit','explanation']
+}
+
+SEMANTIC_PLAN_PROMPT = """Eres un planificador de consultas analíticas en Odoo.
+Recibirás la pregunta original, el diccionario real del inventario y, si existe,
+una propuesta SQL que no pudo validarse. Interpreta LA INTENCIÓN original y devuelve
+EXCLUSIVAMENTE un plan JSON tipado. NO redactes SQL ni datos inventados.
+
+Relación disponible: inventario. Campos: sku, descripcion, categoria, marca,
+formato, proveedor, stock_unidades, stock_valor, cantidad_vendida,
+cantidad_comprada, ventas, costo_ventas, utilidad, margen, compras,
+costo_unitario, precio_venta, ultima_compra, ultima_venta.
+
+columns: lista de las columnas solicitadas en orden. Cada elemento usa field,
+aggregation ('none', 'sum', 'avg', 'min', 'max', 'count', 'margin') y alias
+(vacío si no hace falta). Para count usa field='*'; para margin usa field='*'.
+El margen sobre grupos debe usarse con aggregation='margin', que calcula
+un margen PONDERADO por ventas, no AVG(margen).
+filters: SOLO condiciones pedidas; todos se combinan con AND. Valores numéricos
+en forma de string (por ejemplo '10'). BETWEEN usa value y second_value;
+IN usa values; campos irrelevantes deben llevar '' y []. Nunca agregues filtros
+sin que el usuario los pida. group_by: las dimensiones de las columnas no agregadas.
+order_by: field de una columna o alias seleccionado, con direction ASC/DESC;
+si no se pide ordenar, deja field=''. limit: 10 si piden top 10, 1000 si no
+hay tope; máximo 3000. TOP mejores productos vendidos => orden descendente
+por cantidad_vendida (unidades), salvo que el usuario pida facturación o USD.
+Stock actual no se suma por meses; compras y ventas son del período de pantalla.
+No inventes tablas ni relaciones, Odoo aplica empresa/versión/período.
+Si falta un indicador en el diccionario, available=false y explanation indica la causa.
+No hay reglas de frase fija: deduce el significado de la pregunta.
+"""
+
+
+def plan_semantic_fallback(api_key, model, question, data_context, filters, period, bad_sql='', validation_error=''):
+    payload = {'pregunta':question, 'filtros_pantalla':filters or {},
+               'periodo':period, 'diccionario_odoo':data_context,
+               'sql_no_validado':str(bad_sql or '')[:1500],
+               'error_sintaxis':str(validation_error or '')[:240]}
+    raw = call_responses(api_key, model, SEMANTIC_PLAN_PROMPT,
+                         json.dumps(payload, ensure_ascii=False),
+                         json_schema=SEMANTIC_PLAN_SCHEMA, max_tokens=2300)
+    try:
+        plan = json.loads(raw)
+    except (TypeError,ValueError):
+        raise AIServiceError('La IA no devolvió el plan de análisis esperado.') from None
+    if not isinstance(plan,dict):
+        raise AIServiceError('La IA no pudo construir un plan válido.')
+    return plan

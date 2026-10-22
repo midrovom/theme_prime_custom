@@ -176,8 +176,16 @@ def parse_compile(proposed_sql, scope_filters=None):
     """Return a newly compiled SELECT clause, bounded value params and column names."""
     if not isinstance(proposed_sql, str) or not 10 < len(proposed_sql) < 4000:
         raise InvalidSemanticSQL('El SQL no tiene un formato válido.')
+    # The model sometimes wraps otherwise valid SQL in markdown code fences
+    # or appends a final semicolon. Normalize ONLY those harmless wrappers.
+    candidate = proposed_sql.strip()
+    if candidate.startswith('```') and candidate.endswith('```'):
+        candidate = re.sub(r'^```(?:sql)?\s*', '', candidate, flags=re.I)
+        candidate = re.sub(r'\s*```$', '', candidate).strip()
+    if candidate.endswith(';') and candidate.count(';') == 1:
+        candidate = candidate[:-1].strip()
     try:
-        tree = PARSER.parse(proposed_sql.strip())
+        tree = PARSER.parse(candidate)
     except Exception:
         raise InvalidSemanticSQL('La consulta propuesta no respeta el formato SELECT autorizado.') from None
     select_exprs=[]; names=[]; aliases={}; aggregated=False; direct_fields=[]

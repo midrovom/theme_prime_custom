@@ -13,9 +13,10 @@ from urllib.parse import quote
 from odoo import http, fields
 from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
-from ..services.ai_client import plan_question, planner_context, narrate_result, plan_semantic_sql, AIServiceError
+from ..services.ai_client import plan_question, planner_context, narrate_result, plan_semantic_sql, plan_semantic_fallback, AIServiceError
 from ..services.ai_sql import execute_sql_plan
 from ..services.ai_semantic_sql import execute_semantic_sql, InvalidSemanticSQL
+from ..services.ai_semantic_plan import build_semantic_select
 from ..services.ai_stock_lookup import detect_stock_lookup, execute_stock_lookup, execute_stock_lookup_snapshot, parse_stock_conditions
 from ..services.ai_catalog_filters import resolve_catalog_filters
 from ..services.ai_schema import schema_context
@@ -539,19 +540,31 @@ class TranscashDashboardController(http.Controller):
             period = {'desde': default_start, 'hasta': default_end}
             proposed = plan_semantic_sql(config['key'], config['model'], question,
                                          data_context, ui, period)
-            if not proposed['sql'].strip():
-                audit.write({'state':'unavailable', 'error_detail':str(proposed.get('intencion') or '')[:700],
-                             'finished_at':fields.Datetime.now()})
-                return self._json({'ok':True, 'available':False,
-                                   'message':'Este indicador requiere información que no está disponible.'})
             try:
+                # An empty SQL suggestion is not proof the data are unavailable.
+                # Ask for a typed plan before declining a legitimate question.
+                if not proposed['sql'].strip():
+                    raise InvalidSemanticSQL('El primer plan no devolvió una consulta.')
                 data = execute_semantic_sql(request.env, snapshot, proposed['sql'],
                                             default_start, default_end, ui)
             except InvalidSemanticSQL as validation_error:
-                # One safe, bounded repair attempt. Never execute invalid model SQL.
-                proposed = plan_semantic_sql(config['key'], config['model'], question,
-                    data_context, ui, period, repair=str(validation_error))
-                data = execute_semantic_sql(request.env, snapshot, proposed['sql'],
+                # If free-form SQL does not match the strict grammar, ask the
+                # model for its intended fields/aggregates/filters instead of
+                # another free-form SQL. Odoo builds a fresh, constrained SELECT.
+                structured_plan = plan_semantic_fallback(
+                    config['key'], config['model'], question, data_context, ui,
+                    period, bad_sql=proposed['sql'], validation_error=str(validation_error))
+                if structured_plan.get('available') is False:
+                    audit.write({'state': 'unavailable',
+                        'error_detail':str(structured_plan.get('explanation') or '')[:700],
+                        'finished_at':fields.Datetime.now()})
+                    return self._json({'ok':True, 'available':False,
+                                       'message':'Este indicador requiere información que no está disponible.'})
+                corrected_sql = build_semantic_select(structured_plan)
+                proposed = {'sql':corrected_sql,'intencion':str(structured_plan.get('explanation') or '')[:200],
+                            'metodo':'plan_estructurado','plan':structured_plan,
+                            'primer_sql_rechazado':proposed['sql'][:1300]}
+                data = execute_semantic_sql(request.env, snapshot, corrected_sql,
                                             default_start, default_end, ui)
             # Technical details persist exclusively in the administrator log.
             sql = str(data.pop('sql_consulta', '') or '')
@@ -578,7 +591,7 @@ class TranscashDashboardController(http.Controller):
                 audit.write({'state': 'failed', 'error_detail': str(exc)[:1800],
                     'duration_ms': int((time.monotonic()-started)*1000),
                     'finished_at': fields.Datetime.now()})
-            return self._json({'error': str(exc)[:180]}, 400)
+            return self._json({'error': 'No se pudo construir una consulta con los indicadores disponibles. Revise los filtros o consulte con el administrador.'}, 400)
         except (AIServiceError, ValueError, KeyError, TypeError) as exc:
             if audit:
                 audit.write({'state': 'failed', 'error_detail': str(exc)[:2000],
