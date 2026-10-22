@@ -13,10 +13,10 @@ from urllib.parse import quote
 from odoo import http, fields
 from odoo.http import request
 from ..services.processor import read_xlsx, InventoryImportError, MAX_FILE
-from ..services.ai_client import plan_question, planner_context, narrate_result, plan_semantic_sql, plan_semantic_fallback, AIServiceError
+from ..services.ai_client import plan_question, planner_context, narrate_result, plan_semantic_sql, plan_dynamic_query, AIServiceError
 from ..services.ai_sql import execute_sql_plan
 from ..services.ai_semantic_sql import execute_semantic_sql, InvalidSemanticSQL
-from ..services.ai_semantic_plan import build_semantic_select
+from ..services.ai_semantic_plan import execute_semantic_plan
 from ..services.ai_stock_lookup import detect_stock_lookup, execute_stock_lookup, execute_stock_lookup_snapshot, parse_stock_conditions
 from ..services.ai_catalog_filters import resolve_catalog_filters
 from ..services.ai_schema import schema_context
@@ -25,6 +25,8 @@ from ..services.table_export import build_table_xlsx, MAX_ROWS
 from ..services.ai_config_store import read_ai_settings, public_ai_settings, save_ai_settings
 from odoo.exceptions import UserError, AccessError
 import logging
+import re
+import unicodedata
 from datetime import datetime
 
 _HTML = Path(__file__).resolve().parents[1] / 'static' / 'src' / 'dashboard.html'
@@ -533,39 +535,36 @@ class TranscashDashboardController(http.Controller):
                 })
                 return self._json({'ok': True, 'available': True,
                                    'result': data, 'request_id': audit.id})
-            # OpenAI proposes a SELECT on the restricted semantic inventory view;
-            # the SQL grammar rejects any other statement, function, or table.
-            # Odoo reconstructs the query with fixed scoped SQL and bound values.
+            # The model describes arbitrary SELECT semantics as a structured
+            # query AST. Odoo compiles a fresh safe, scoped, read-only SELECT;
+            # no model-supplied SQL is ever executed or required to parse.
             data_context = schema_context(request.env, snapshot)
             period = {'desde': default_start, 'hasta': default_end}
-            proposed = plan_semantic_sql(config['key'], config['model'], question,
-                                         data_context, ui, period)
+            proposed = plan_dynamic_query(config['key'], config['model'], question,
+                                          data_context, ui, period)
             try:
-                # An empty SQL suggestion is not proof the data are unavailable.
-                # Ask for a typed plan before declining a legitimate question.
-                if not proposed['sql'].strip():
-                    raise InvalidSemanticSQL('El primer plan no devolvió una consulta.')
-                data = execute_semantic_sql(request.env, snapshot, proposed['sql'],
-                                            default_start, default_end, ui)
+                data = execute_semantic_plan(request.env, snapshot, proposed,
+                                             default_start, default_end, ui)
             except InvalidSemanticSQL as validation_error:
-                # If free-form SQL does not match the strict grammar, ask the
-                # model for its intended fields/aggregates/filters instead of
-                # another free-form SQL. Odoo builds a fresh, constrained SELECT.
-                structured_plan = plan_semantic_fallback(
-                    config['key'], config['model'], question, data_context, ui,
-                    period, bad_sql=proposed['sql'], validation_error=str(validation_error))
-                if structured_plan.get('available') is False:
-                    audit.write({'state': 'unavailable',
-                        'error_detail':str(structured_plan.get('explanation') or '')[:700],
-                        'finished_at':fields.Datetime.now()})
-                    return self._json({'ok':True, 'available':False,
-                                       'message':'Este indicador requiere información que no está disponible.'})
-                corrected_sql = build_semantic_select(structured_plan)
-                proposed = {'sql':corrected_sql,'intencion':str(structured_plan.get('explanation') or '')[:200],
-                            'metodo':'plan_estructurado','plan':structured_plan,
-                            'primer_sql_rechazado':proposed['sql'][:1300]}
-                data = execute_semantic_sql(request.env, snapshot, corrected_sql,
-                                            default_start, default_end, ui)
+                # One corrective turn, based on the concrete validation failure.
+                proposed = plan_dynamic_query(config['key'], config['model'], question,
+                    data_context, ui, period, repair=str(validation_error))
+                data = execute_semantic_plan(request.env, snapshot, proposed,
+                                             default_start, default_end, ui)
+            # Answer analytical questions from real PostgreSQL results, never
+            # from a made-up dataset. Narration failure cannot discard the table.
+            if proposed.get('analysis_requested') or re.search(
+                    r'\b(?:analiza|analisis|explica|interpretacion|interpreta|recomienda|recomendaciones|conclusiones|evalua)\b',
+                    ''.join(ch for ch in unicodedata.normalize('NFKD', question.casefold())
+                            if not unicodedata.combining(ch))):
+                try:
+                    data['analisis'] = narrate_result(config['key'], config['model'],
+                                                      question, data)
+                except AIServiceError:
+                    data['analisis'] = ('El resultado contiene %s filas para el período %s a %s. '
+                        'Revise la clasificación, sus cantidades y los indicadores del listado; '
+                        'los importes históricos se limitan al período seleccionado.' %
+                        (len(data.get('filas') or []), default_start, default_end))
             # Technical details persist exclusively in the administrator log.
             sql = str(data.pop('sql_consulta', '') or '')
             sql_params = data.pop('sql_parametros', [])
@@ -591,7 +590,7 @@ class TranscashDashboardController(http.Controller):
                 audit.write({'state': 'failed', 'error_detail': str(exc)[:1800],
                     'duration_ms': int((time.monotonic()-started)*1000),
                     'finished_at': fields.Datetime.now()})
-            return self._json({'error': 'No se pudo construir una consulta con los indicadores disponibles. Revise los filtros o consulte con el administrador.'}, 400)
+            return self._json({'error': str(exc)[:180]}, 400)
         except (AIServiceError, ValueError, KeyError, TypeError) as exc:
             if audit:
                 audit.write({'state': 'failed', 'error_detail': str(exc)[:2000],

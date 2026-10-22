@@ -48,6 +48,7 @@ def build_result_xlsx(result, question, created=None):
     period = result.get('periodo') or {}
     when = created or datetime.now()
     semantic = result.get('tipo_resultado') == 'sql_semantico'
+    column_types = result.get('formatos_columnas') or {}
     headers = ([labels.get(m) or m for m in measures] if semantic else
                ['SKU' if result.get('tipo_resultado') == 'listado_stock' else 'Grupo'] + [labels.get(m) or m for m in measures])
     end_col = _col(len(headers))
@@ -65,7 +66,7 @@ def build_result_xlsx(result, question, created=None):
     add_row(6, headers, [3] * len(headers))
     values = ([None for _ in measures] if semantic else
               [('PRODUCTOS ENCONTRADOS: %s' % result.get('total_filas', len(rows))) if result.get('tipo_resultado') == 'listado_stock' else 'TOTAL'] + [totals.get(m) for m in measures])
-    styles = ([5 if m == 'margen' else 4 if m in ('ventas', 'costo_ventas', 'compras', 'utilidad', 'stock_valor', 'precio_promedio') else 6 for m in measures]
+    styles = ([5 if column_types.get(m) == 'percent' else 4 if column_types.get(m) == 'currency' else 6 if column_types.get(m)=='number' else 0 for m in measures]
               if semantic else [7] + [5 if m == 'margen' else 4 if m in ('ventas', 'costo_ventas', 'compras', 'utilidad', 'stock_valor', 'precio_promedio') else 6 for m in measures])
     add_row(7, values, styles)
     for j, item in enumerate(rows, start=8):

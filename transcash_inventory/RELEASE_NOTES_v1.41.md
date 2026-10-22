@@ -1,7 +1,7 @@
 # TRANSCASH Inventario Inteligente v1.41 — Corrección de importaciones en Odoo
 
 ## Causa
-La versión v1.40 importaba Lark mediante `from transcash_inventory.vendor_lark ...`. Cuando Odoo carga la carpeta como subpaquete (por ejemplo `odoo.addons.theme_prime_custom.transcash_inventory`), el nombre absoluto `transcash_inventory` no existe en `sys.path`. La importación detiene el inicio de Odoo.
+La versión v1.40 importaba Lark mediante `from transcash_inventory.vendor_lark ...`. Cuando Odoo carga la carpeta como subpaquete (como submódulo de un paquete de addons), el nombre absoluto `transcash_inventory` no existe en `sys.path`. La importación detiene el inicio de Odoo.
 
 ## Corrección
 - Cambia a importaciones relativas al paquete del módulo: `from ..vendor_lark import Lark, Tree, Token`.
