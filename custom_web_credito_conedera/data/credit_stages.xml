@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+    <record id="stage_credit_received" model="conedera.credit.stage">
+        <field name="name">Recibida</field><field name="sequence">10</field><field name="is_initial">True</field><field name="description">La solicitud ingresó desde el portal y está en cola de revisión.</field>
+    </record>
+    <record id="stage_credit_review" model="conedera.credit.stage">
+        <field name="name">En revisión</field><field name="sequence">20</field><field name="description">Validación de la información ingresada.</field>
+    </record>
+    <record id="stage_credit_approved" model="conedera.credit.stage">
+        <field name="name">Aprobada</field><field name="sequence">30</field><field name="is_approved">True</field><field name="description">Al entrar en esta etapa se habilita el ingreso de documentos solicitados.</field>
+    </record>
+    <record id="stage_credit_documents_received" model="conedera.credit.stage">
+        <field name="name">Documentación recibida</field><field name="sequence">40</field><field name="description">Documentos cargados por el solicitante, pendientes de revisión.</field>
+    </record>
+    <record id="stage_credit_verification" model="conedera.credit.stage">
+        <field name="name">Verificación</field><field name="sequence">50</field><field name="description">Verificación interna de los datos y ubicación del negocio.</field>
+    </record>
+    <record id="stage_credit_completed" model="conedera.credit.stage">
+        <field name="name">Finalizada</field><field name="sequence">60</field><field name="fold">True</field><field name="description">La gestión de la solicitud terminó.</field>
+    </record>
+    <record id="stage_credit_rejected" model="conedera.credit.stage">
+        <field name="name">Denegada</field><field name="sequence">70</field><field name="fold">True</field><field name="is_rejected">True</field><field name="description">Solicitud denegada.</field>
+    </record>
+</odoo>
