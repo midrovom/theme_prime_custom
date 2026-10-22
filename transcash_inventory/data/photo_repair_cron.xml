@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Isolated automatic repair: no per-product button required. -->
+    <record id="cron_transcash_reparar_miniaturas_auto" model="ir.cron">
+        <field name="name">TRANSCASH: Recuperar miniaturas faltantes automáticamente</field>
+        <field name="model_id" ref="model_transcash_inventory_photo_sync"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_repair_missing_thumbnails()</field>
+        <field name="interval_number">2</field>
+        <field name="interval_type">minutes</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

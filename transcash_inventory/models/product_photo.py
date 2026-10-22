@@ -462,9 +462,11 @@ class TranscashInventoryPhotoSync(models.Model):
                 continue
         return False
 
-    def resolve_single_sku(self, sku, supplied_url=None, manual=False, force=True):
+    def resolve_single_sku(self, sku, supplied_url=None, manual=False, force=True, sku_map=None):
         self.ensure_one()
-        sku_index, names = self._get_latest_sku_map()
+        # Cron processes multiple SKUs from one snapshot. An optional already
+        # validated map prevents repeatedly reading/decoding the full dataset.
+        sku_index, names = sku_map if sku_map is not None else self._get_latest_sku_map()
         canonical = next((s for s in names if s.casefold() == str(sku).strip().casefold()), None)
         if not canonical:
             raise UserError(_('El SKU no existe en el último inventario importado.'))
@@ -551,12 +553,129 @@ class TranscashInventoryPhotoSync(models.Model):
         return rec
 
     @api.model
-    def cron_index_public_catalog(self):
-        """Round-robin across companies with current inventories.
+    def cron_repair_missing_thumbnails(self):
+        """Repair verified links whose local JPEG was lost, automatically.
 
-        Earlier code stopped after the newest company (a trailing ``break``),
-        so other companies could starve indefinitely when snapshots refreshed.
-        A bounded number of companies per run avoids hammering the shop.
+        A previous scheduled job only inspected 35 verified photos every 15 min
+        and repaired up to 3 per company. That made large production databases
+        appear stuck. This dedicated worker audits a rotating window and
+        repairs already-linked SKUs first, in a short, bounded transaction.
+
+        No writes to imported inventory/snapshots, and never blindly forces
+        re-downloads of healthy thumbnails. Each company is handled separately.
+        """
+        # Cron can run on multiple Odoo workers. Prevent simultaneous runs of
+        # this repair worker inside the same PostgreSQL database.
+        self.env.cr.execute('SELECT pg_try_advisory_xact_lock(%s)', [18480148])
+        if not self.env.cr.fetchone()[0]:
+            return
+        Snapshot = self.env['transcash.inventory.snapshot'].sudo()
+        grouped = Snapshot.read_group([], ['company_id'], ['company_id'], lazy=False)
+        company_ids = sorted(int(row['company_id'][0]) for row in grouped
+                             if row.get('company_id'))
+        if not company_ids:
+            return
+        params = self.env['ir.config_parameter'].sudo()
+        key = 'transcash_inventory.photo_repair.last_company_id'
+        try:
+            last_cid = int(params.get_param(key) or 0)
+        except (ValueError, TypeError):
+            last_cid = 0
+        rotated = ([cid for cid in company_ids if cid > last_cid] +
+                   [cid for cid in company_ids if cid <= last_cid])[:4]
+        # More companies means a smaller batch for each, so the scheduled job
+        # will not block Odoo while the remote site is slow or rate-limited.
+        per_company_limit = min(12, max(4, 16 // len(rotated)))
+        max_runtime_seconds = 45
+        started = time.monotonic()
+        inspected = repaired = attempted = 0
+        for cid in rotated:
+            if time.monotonic() - started >= max_runtime_seconds:
+                break
+            try:
+                with self.env.cr.savepoint():
+                    company = self.env['res.company'].sudo().browse(cid)
+                    Photo = self.env['transcash.inventory.photo'].sudo().with_company(company)
+                    sync = self.sudo().with_company(company).get_current()
+                    now = fields.Datetime.now()
+                    cursor_key = 'transcash_inventory.photo_repair.check_id.%d' % cid
+                    try:
+                        cursor = int(params.get_param(cursor_key) or 0)
+                    except (TypeError, ValueError):
+                        cursor = 0
+                    verified_domain = [('company_id', '=', cid), ('enabled', '=', True),
+                                       ('status', '=', 'verified')]
+                    check_rows = Photo.search(verified_domain + [('id', '>', cursor)],
+                                              order='id', limit=180)
+                    if not check_rows:
+                        check_rows = Photo.search(verified_domain, order='id', limit=180)
+                    if check_rows:
+                        params.set_param(cursor_key, str(check_rows[-1].id))
+                    for rec in check_rows:
+                        inspected += 1
+                        if not _stored_thumbnail_jpeg(rec):
+                            # URL/SKU links remain intact; only the state is
+                            # queued for the existing single-SKU repair path.
+                            rec.write({'status': 'queued', 'next_retry': False,
+                                       'last_error': 'Recuperación automática de miniatura'})
+                    due = ['|', ('next_retry', '=', False), ('next_retry', '<=', now)]
+                    base = [('company_id', '=', cid), ('enabled', '=', True)]
+                    # 1. Recover broken historical photo links first: one HTTPS
+                    # download using the already verified and stored URL.
+                    prioritized = Photo.search(base + [('status', '=', 'queued'),
+                        ('image_url', '!=', False)] + due, order='id', limit=per_company_limit)
+                    remaining = per_company_limit - len(prioritized)
+                    others = Photo.browse()
+                    if remaining:
+                        others = Photo.search(base + [('status', '=', 'queued'),
+                            ('image_url', '=', False)] + due, order='id', limit=remaining)
+                    remaining -= len(others)
+                    # Preserve previous behavior for older failed/unverified
+                    # records without starving repair of stored image URLs.
+                    fallback = Photo.browse()
+                    if remaining:
+                        fallback = Photo.search(base + [('status', 'in',
+                            ['unchecked', 'broken', 'error', 'not_found'])] + due,
+                            order='id', limit=min(remaining, 2))
+                    batch = prioritized | others | fallback
+                    if batch:
+                        # Build the SKU map only once per company/batch (not
+                        # once for every photo). Crucial for large inventories.
+                        sku_map = sync._get_latest_sku_map()
+                    for rec in batch:
+                        if time.monotonic() - started >= max_runtime_seconds:
+                            break
+                        attempted += 1
+                        try:
+                            with self.env.cr.savepoint():
+                                outcome = sync.resolve_single_sku(
+                                    rec.sku, force=False, sku_map=sku_map)
+                                if outcome.status == 'verified' and _stored_thumbnail_jpeg(outcome):
+                                    repaired += 1
+                        except Exception as exc:
+                            _logger.exception('Transcash: reparación automática SKU %s / empresa %s',
+                                              rec.sku, cid)
+                            # Keep source URL and SKU even when a transient
+                            # exception occurs; retry with backoff, not every
+                            # 2 minutes forever on the first broken item.
+                            with self.env.cr.savepoint():
+                                rec.write({'status': 'error',
+                                           'next_retry': fields.Datetime.now() + timedelta(hours=2),
+                                           'last_error': ('Reparación automática: %s' % exc)[:250]})
+            except Exception:
+                _logger.exception('Transcash: recuperación automática fallida en empresa %s', cid)
+            # Advance cursor even if one company has no photos or errors.
+            params.set_param(key, str(cid))
+        _logger.info('Transcash: fotos recuperadas %d de %d intentos; verificadas %d miniaturas',
+                     repaired, attempted, inspected)
+
+    @api.model
+    def cron_index_public_catalog(self):
+        """Keep public-shop discovery running, separately from repair.
+
+        A lightweight round-robin crawler locates NEW SKU links. The dedicated
+        two-minute cron above restores MISSING saved miniatures without waiting
+        for public shop pagination or re-scanning whole catalog pages.
         """
         Snapshot = self.env['transcash.inventory.snapshot'].sudo()
         grouped = Snapshot.read_group([], ['company_id'], ['company_id'], lazy=False)
@@ -578,42 +697,6 @@ class TranscashInventoryPhotoSync(models.Model):
                 with self.env.cr.savepoint():
                     company = self.env['res.company'].sudo().browse(cid)
                     sync = self.sudo().with_company(company).get_current()
-                    Photo = self.env['transcash.inventory.photo'].sudo().with_company(company)
-                    base = [('company_id', '=', cid), ('enabled', '=', True),
-                            '|', ('next_retry', '=', False), ('next_retry', '<=', now)]
-                    # Read a bounded rotating window of verified records;
-                    # older deployments can have a green badge but an absent
-                    # ir.attachment/filestore object. Recover in the background.
-                    cursor_key = 'transcash_inventory.photo_cron.check_id.%d' % cid
-                    try:
-                        cursor = int(params.get_param(cursor_key) or 0)
-                    except (TypeError, ValueError):
-                        cursor = 0
-                    inspect_rows = Photo.search([
-                        ('company_id', '=', cid), ('enabled', '=', True),
-                        ('status', '=', 'verified'), ('id', '>', cursor),
-                    ], order='id', limit=35)
-                    if not inspect_rows:
-                        inspect_rows = Photo.search([
-                            ('company_id', '=', cid), ('enabled', '=', True),
-                            ('status', '=', 'verified'),
-                        ], order='id', limit=35)
-                    if inspect_rows:
-                        params.set_param(cursor_key, str(inspect_rows[-1].id))
-                    for check in inspect_rows:
-                        if not _stored_thumbnail_jpeg(check):
-                            check.write({'status': 'queued', 'next_retry': False,
-                                         'last_error': 'Recuperando miniatura ausente o dañada'})
-                    to_retry = (Photo.search(base + [('status', '=', 'queued')], limit=3) |
-                                Photo.search(base + [('status', 'in',
-                                    ['unchecked', 'broken', 'error', 'not_found'])], limit=1))
-                    for rec in to_retry:
-                        try:
-                            with self.env.cr.savepoint():
-                                sync.resolve_single_sku(rec.sku, force=False)
-                        except Exception:
-                            _logger.exception('Transcash: error con foto SKU %s en empresa %s',
-                                              rec.sku, cid)
                     if not sync.finished and (not sync.last_error or not sync.last_run or
                                               (now - sync.last_run) >= timedelta(hours=6)):
                         try:
@@ -623,7 +706,6 @@ class TranscashInventoryPhotoSync(models.Model):
                             _logger.exception('Transcash: fallo indexando catálogo de empresa %s', cid)
             except Exception:
                 _logger.exception('Transcash: fallo aislado en fotos de empresa %s', cid)
-            # Always advance, even after a single-company error.
             params.set_param(key, str(cid))
 
     def _download_listing(self, page):
