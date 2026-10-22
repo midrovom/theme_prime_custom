@@ -211,31 +211,29 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         raw = ''.join(c for c in raw if not unicodedata.combining(c))
         return re.sub(r'[^A-Z0-9]', '', raw)
 
-    def _erp_destination_code(self, guia, source):
-        """Código original del ERP; NUNCA el nombre ni el ID de un maestro.
+    @staticmethod
+    def _guide_destination_value(guia):
+        """Leer exclusivamente transcash.guia.destino para seleccionar rutas.
 
-        Si hay una guía de staging, su código es la única fuente confiable.
-        Para las guías históricas sin staging utilizamos el campo ERP del
-        modelo operativo, siempre que esté informado.
+        No utilizar tc.guide, destino_codigo, destino_id ni el nombre del
+        catálogo para decidir si el destino de la guía coincide.
         """
-        if source:
-            return (source.destination_id.external_code
-                    if source.destination_id else '') or ''
-        return guia.destino_codigo or ''
+        return guia.destino or ''
 
     def _destination_matches(self, ruta, guia, source):
-        """Código de destino ERP == código del destino seleccionado en la ruta.
+        """transcash.guia.destino == transcash.hoja.ruta.destino_id.codigo.
 
-        Sin alias, equivalencias manuales, comparación por nombre, o prioridad
-        de IDs distintos. Solo se ignoran separadores y espacios accidentales.
-        Un código ERP ausente NUNCA constituye una coincidencia.
+        Normaliza únicamente formato del código (espacios, puntuación,
+        caracteres invisibles y mayúsculas). Si falta un código, rechazar.
+        Nunca usar fichas M2O ni equivalencias manuales para permitir guías.
         """
         if not ruta.destino_id or guia.company_id != ruta.company_id:
             return False
-        erp_code = self._normalized_destination_code(
-            self._erp_destination_code(guia, source))
-        route_code = self._normalized_destination_code(ruta.destino_id.codigo)
-        return bool(erp_code and route_code and erp_code == route_code)
+        code_guide = self._normalized_destination_code(
+            self._guide_destination_value(guia))
+        code_route = self._normalized_destination_code(
+            ruta.destino_id.codigo)
+        return bool(code_guide and code_route and code_guide == code_route)
 
     def _match(self, ruta, guia, source):
         """Devuelve (válida, motivo), evaluando cada dimensión por separado."""
@@ -267,7 +265,7 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         if guia.embarque_id:
             reasons.append('Asignada a un embarque')
         if not dest_ok:
-            reasons.append('Código de destino ERP distinto o ausente')
+            reasons.append('Destino de guía distinto del código ERP de ruta, o vacío')
         if not driver_ok:
             reasons.append('Cédula o usuario del chofer diferente')
         if not provider_ok:
@@ -279,14 +277,14 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
             'compatible': matched,
             'motivo': '; '.join(reasons) if reasons else 'Compatible',
             'guia_destino': '%s (#%s, %s)' % (
-                guia.destino_id.name or guia.destino or 'Sin destino',
+                guia.destino or 'Sin destino',
                 guia.destino_id.id if guia.destino_id else '-',
-                guia.destino_id.codigo if guia.destino_id else guia.destino_codigo or '-'),
+                self._guide_destination_value(guia) or '-'),
             'ruta_destino': '%s (#%s, %s)' % (
                 ruta.destino_id.name, ruta.destino_id.id, ruta.destino_id.codigo),
             'codigo_guia_normalizado': self._normalized_destination_code(
-                self._erp_destination_code(guia, source)) or '(sin código ERP)',
-            'codigo_guia_erp': self._erp_destination_code(guia, source) or '(sin código ERP)',
+                self._guide_destination_value(guia)) or '(sin código ERP)',
+            'codigo_guia_erp': self._guide_destination_value(guia) or '(sin destino en guía)',
             'codigo_ruta_normalizado': self._normalized_destination_code(
                 ruta.destino_id.codigo) or '(sin código de ruta)',
             'codigos_aceptados': self._normalized_destination_code(
@@ -499,8 +497,7 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                 status = 'Disponible para esta ruta' if valid else 'Requiere revisión'
             provider = guia.proveedor_id.display_name if guia.proveedor_id else (
                 source.transport_name if source else 'Sin transportista vinculado')
-            destination = guia.destino_id.name if guia.destino_id else (
-                guia.destino or guia.destino_ciudad or 'Sin destino vinculado')
+            destination = guia.destino or 'Sin destino en la guía'
             row = {
                 'numero': guia.name,
                 'documento': guia.numero_documento or '',
@@ -636,7 +633,8 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                         # Change ONLY the guide's alias to the chosen canonical
                         # destination; never mutate its catalog or historical docs.
                         changes['destino_id'] = ruta.destino_id.id
-                        changes['destino_codigo'] = self._erp_destination_code(guia, source) or ruta.destino_id.codigo
+                        # Conserva destino_codigo histórico; la comparación se hace con guia.destino.
+                        # No reescribir el valor original ni inventar códigos.
                     if changes:
                         guia.sudo().write(changes)
                         if ('destino_id' in changes or

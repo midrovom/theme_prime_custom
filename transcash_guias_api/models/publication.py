@@ -188,7 +188,14 @@ class TCGuidePublication(models.Model):
             'placa': self.vehicle_id.plate if self.vehicle_id else False,
             'ruc_chofer': self.driver_id.identification if self.driver_id else False,
             'origen': self.origin_address or False,
-            'destino': self.destination_address or False,
+            # En transcash.guia.destino conservamos el código que se compara
+            # contra transcash.hoja.ruta.destino_id.codigo en la PWA.
+            # Si una nueva respuesta no envía código, no reemplazar el destino
+            # existente de una guía con una dirección/nombre de otra columna.
+            'destino': (self.destination_id.external_code
+                        if self.destination_id and self.destination_id.external_code
+                        else (existing.destino if existing and existing.destino
+                              else (self.destination_address or False))),
             'destino_ciudad': self.destination_city or False,
             'descripcion_carga': self.cargo_description or False,
             'ultima_sync': fields.Datetime.now(),
