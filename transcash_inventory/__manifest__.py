@@ -1,11 +1,11 @@
 {
     'name': 'TRANSCASH | Inventario Inteligente',
     'summary': 'Dashboard HTML de compras, stock, ABC, rentabilidad y reposición con sincronización de inventario mediante API Administrator, fotografías por SKU con tienda configurable por empresa, filtros buscables, ABC × XYZ, rentabilidad por proveedor y consulta SQL segura con ChatGPT sobre tablas Odoo',
-    'version': '18.0.1.33.0',
+    'version': '18.0.1.34.0',
     'category': 'Inventory/Reporting',
     'author': 'RADIS / Solución personalizada',
     'license': 'LGPL-3',
-    'depends': ['base', 'web'],
+    'depends': ['base', 'web', 'api_administrator'],
     'data': [
         'security/groups.xml',
         'security/ir.model.access.csv',
@@ -30,6 +30,7 @@
             'transcash_inventory/static/src/odoo_action.css',
         ],
     },
+    'external_dependencies': {'python': ['requests']},
     'application': True,
     'installable': True,
 }

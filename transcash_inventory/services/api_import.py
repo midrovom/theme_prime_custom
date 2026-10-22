@@ -210,22 +210,43 @@ def convert_api_payloads(payloads, reference_end=None):
 
 
 def fetch_from_api_administrator(env):
-    """Invoke preconfigured endpoints; never configure URLs or credentials here.
+    """Find each configured GET endpoint in API Administrator for the active company.
 
-    Compatible with the previously integrated API Administrator contract:
-    env['api.administrator'].call_api('endpoint', method='get', company_id=id).
+    The provided core api_administrator addon has no call_api method. Inventory
+    extends its record with call_inventory_api, like the working commission bridge.
+    Never select API records belonging to other companies.
     """
     if 'api.administrator' not in env.registry:
-        raise APIInventoryError('No está instalado el módulo API Administrator (api.administrator).')
-    admin = env['api.administrator']
-    callable_api = getattr(admin, 'call_api', None)
-    if not callable(callable_api):
-        raise APIInventoryError('API Administrator no dispone del método call_api requerido.')
+        raise APIInventoryError('Debe instalar API Administrator para sincronizar inventario.')
+
+    admin = env['api.administrator'].sudo().with_company(env.company)
     payloads = {}
     for name, endpoint in ENDPOINTS.items():
+        domain = [
+            ('name', '=', endpoint),
+            ('type', '=', 'get'),
+            ('status', '=', 'A'),
+            ('company_id', '=', env.company.id),
+        ]
+        matches = admin.search(domain, limit=2)
+        if not matches:
+            raise APIInventoryError(
+                'No existe la configuración GET activa "%s" para la empresa seleccionada en API Administrator.' % endpoint
+            )
+        if len(matches) > 1:
+            raise APIInventoryError(
+                'Existen varias configuraciones GET activas "%s" para esta empresa. Mantenga solamente una.' % endpoint
+            )
+        api_record = matches[0]
         try:
-            payloads[name] = callable_api(endpoint, method='get', company_id=env.company.id)
-        except Exception:
-            # Avoid exposing tokens, passwords, URLs or server response bodies to clients.
-            raise APIInventoryError('No se pudo consultar %s. Revise API Administrator y su registro de errores.' % endpoint) from None
+            payloads[name] = api_record.call_inventory_api()
+        except Exception as exc:
+            # Keep URLs, credentials and raw API response bodies out of the UI.
+            import logging
+            logging.getLogger(__name__).exception(
+                'Fallo al consultar endpoint de inventario %s para empresa %s', endpoint, env.company.id
+            )
+            raise APIInventoryError(
+                'No se pudo consultar "%s". Verifique su estado, URL, credenciales y respuesta JSON en API Administrator.' % endpoint
+            ) from None
     return payloads
