@@ -19,3 +19,12 @@
 .tc-route-guide-filters p,.tc-route-guide-filters__notice{font-size:.85rem;color:#475569;line-height:1.5}
 .tc-route-guide-filters__notice{margin:10px 0 14px;border-left:3px solid #64748b;padding:8px 12px;background:#f1f5f9}
 @media(max-width:720px){.tc-route-guide-filters__grid{grid-template-columns:1fr}.tc-route-guide-filters__heading{display:block}}
+
+/* Diagnóstico de combinaciones con desplazamiento horizontal en móvil. */
+.tc-route-guide-breakdown{margin:14px 0;padding:14px;border:1px solid #dbe4ed;border-radius:12px;background:#fff;color:#0f172a}
+.tc-route-guide-breakdown p{font-size:.86rem;color:#475569;margin:7px 0}
+.tc-route-guide-breakdown small{color:#64748b}
+.tc-route-guide-breakdown-scroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+.tc-route-guide-breakdown-table{border-collapse:collapse;width:100%;min-width:560px;font-size:.83rem}
+.tc-route-guide-breakdown-table th,.tc-route-guide-breakdown-table td{padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}
+.tc-route-guide-breakdown-table th{background:#f8fafc;color:#334155;position:sticky;top:0}

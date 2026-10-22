@@ -71,6 +71,9 @@ assert S._match(route, guide, source) == (False, 'chofer'), 'Bloquear otro usuar
 guide.chofer_usuario_id = False
 source.driver_id.identification = '0922222222'
 assert S._match(route, guide, source) == (False, 'chofer'), 'Bloquear documentos ERP contradictorios'
+guide.ruc_chofer = '0911111111'
+assert S._match(route, guide, source) == (False, 'chofer'), 'Documento operativo contradictorio se rechaza'
+guide.ruc_chofer = '0913586442'
 source.driver_id.identification = '0913586442'
 source.transport_tax_raw = '0999999999001'
 assert S._match(route, guide, source) == (False, 'transporte'), 'Bloquear otro RUC'
@@ -90,7 +93,10 @@ guide.proveedor_id = partner
 guide.destino_id = destination
 assert S._match(route, guide, None) == (True, 'compatible'), 'Relaciones completas'
 source.driver_id.identification = '0922222222'
-assert S._match(route, guide, source) == (False, 'chofer'), 'Rechazar choque ERP aunque usuario ya esté asignado'
+assert S._match(route, guide, source) == (True, 'compatible'), 'Referencia ERP antigua no prevalece sobre usuario operativo asignado'
+guide.ruc_chofer = '0911111111'
+assert S._match(route, guide, source) == (False, 'chofer'), 'Documento operativo contradictorio se rechaza'
+guide.ruc_chofer = '0913586442'
 source.driver_id.identification = '0913586442'
 source.transport_tax_raw = '0999999999001'
 assert S._match(route, guide, source) == (True, 'compatible'), 'Proveedor operativo homologado prevalece sobre fuente ERP antigua'

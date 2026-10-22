@@ -85,41 +85,46 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         return {key: value for key, value in result.items() if key not in ambiguous}
 
     def _driver_matches(self, ruta, guia, source):
+        """Prioriza asignación operativa inequívoca, sin reasignar otro usuario.
+
+        `res.users` de la guía prevalece sobre una referencia auxiliar ERP
+        antigua. Si el documento registrado en la guía contradice el del
+        usuario seleccionado, se rechaza para revisión. La identidad ERP
+        solo se consulta cuando todavía falta el usuario operativo.
+        """
         user = ruta.chofer_usuario_id
         if not user:
             return False
-        # Contradicciones documentales se rechazan aun cuando el Many2one
-        # estuviera vinculado previamente al usuario de la ruta.
-        if guia.chofer_usuario_id and guia.chofer_usuario_id != user:
-            return False
         if guia.chofer_usuario_id:
-            erp_doc = _identity(source.driver_id.identification) if source and source.driver_id else ''
-            linked_doc = _identity(guia.ruc_chofer)
-            expected = {_identity(user.partner_id.vat), _identity(user.login)} - {''}
-            if (erp_doc and erp_doc not in expected) or (linked_doc and linked_doc not in expected):
+            if guia.chofer_usuario_id.id != user.id:
                 return False
-            if guia.chofer_contacto_id and guia.chofer_contacto_id != user.partner_id:
-                contact_doc = _identity(guia.chofer_contacto_id.vat)
-                if not contact_doc or contact_doc not in expected:
-                    return False
+            target = {_fiscal_id(v) for v in (user.partner_id.vat, user.login)} - {''}
+            guide_docs = {_fiscal_id(v) for v in (
+                guia.ruc_chofer,
+                guia.chofer_contacto_id.vat if guia.chofer_contacto_id else '',
+            )} - {''}
+            if len(guide_docs) > 1:
+                return False
+            if target and guide_docs and not guide_docs.intersection(target):
+                return False
             return True
 
-        # En ERP normalmente existe cédula/contacto antes de enlazarse res.users.
-        # Un ID diferente es una contradicción y NO se ignora.
         erp_contact = guia.chofer_contacto_id or (source.driver_partner_id if source else False)
-        source_doc = (source.driver_id.identification if source and source.driver_id else '')
-        docs = {_identity(v) for v in (
-            guia.ruc_chofer,
-            erp_contact.vat if erp_contact else '',
-            source_doc,
-        ) if _identity(v)}
-        if len(docs) > 1:
+        source_doc = _fiscal_id(source.driver_id.identification) if source and source.driver_id else ''
+        guide_doc = _fiscal_id(guia.ruc_chofer)
+        contact_doc = _fiscal_id(erp_contact.vat) if erp_contact else ''
+        # Una contradicción EN LA GUÍA operativa no se puede resolver por
+        # coincidencias de nombre ni por registros de origen anteriores.
+        if guide_doc and contact_doc and guide_doc != contact_doc:
             return False
-        target_docs = {_identity(v) for v in (user.partner_id.vat, user.login)
-                       if _identity(v) and _identity(v).isdigit()}
-        if docs:
-            return bool(docs.intersection(target_docs))
-        # Contacto idéntico, incluso cuando el ERP no informó documento.
+        expected = {_fiscal_id(v) for v in (user.partner_id.vat, user.login)} - {''}
+        strong = guide_doc or contact_doc
+        if strong and source_doc and source_doc != strong:
+            return False
+        if strong:
+            return strong in expected
+        if source_doc:
+            return source_doc in expected
         return bool(erp_contact and erp_contact.id == user.partner_id.id)
 
     def _transport_matches(self, ruta, guia, source):
@@ -186,22 +191,20 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
 
     def _destination_matches(self, ruta, guia, source):
         master = ruta.destino_id
-        erp_code = _identity(source.destination_id.external_code) if source and source.destination_id else ''
-        if erp_code and erp_code != _identity(master.codigo):
-            return False
-        if ruta._coincide_destino(guia):
-            return True
-        # Los destinos ya vinculados a OTRO maestro nunca se reasignan.
-        if guia.destino_id or not source:
-            return False
-        master = ruta.destino_id
         if not master:
             return False
-        catalog_code = _identity(master.codigo)
+        # El destino ya homologado de la guía operativa es autoritativo.
+        # No bloquearlo por un código auxiliar ERP que pudo cambiar.
+        if guia.destino_id:
+            return guia.destino_id.id == master.id
+        # Mantener la comparación estricta del módulo principal.
+        if ruta._coincide_destino(guia):
+            return True
+        if not source:
+            return False
         erp_code = _identity(source.destination_id.external_code) if source.destination_id else ''
         if erp_code:
-            return bool(catalog_code and erp_code == catalog_code)
-        # Cuando falta el código, únicamente lugar/ciudad exactos del ERP.
+            return bool(_identity(master.codigo) and erp_code == _identity(master.codigo))
         valid = {_dest_name(master.name), _dest_name(master.ciudad)} - {''}
         stated = {_dest_name(source.destination_city), _dest_name(source.destination_address)} - {''}
         return bool(valid.intersection(stated))
@@ -233,12 +236,16 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         report = {'en_compania': Guia.search_count(base), 'analizadas': 0,
                   'destino': 0, 'chofer': 0, 'transporte': 0,
                   'compatible': 0, 'coincide_destino': 0, 'coincide_chofer': 0,
-                  'coincide_transporte': 0, 'limite': False}
+                  'coincide_transporte': 0, 'destino_chofer': 0,
+                  'destino_transporte': 0, 'chofer_transporte': 0,
+                  'destino_chofer_transporte': 0, 'resumen_destino': [],
+                  'sin_chofer_en_destino': 0, 'limite': False}
         if not (ruta.proveedor_id and ruta.chofer_usuario_id and ruta.destino_id):
             return [], report
         selected = ruta.seleccion_guia_ids
         selected_map = self._source_map(selected, ruta.company_id.id)
         entries, seen = [], set()
+        destination_breakdown = {}
         for guide in selected:
             match, why = self._match(ruta, guide, selected_map.get(guide.id))
             entries.append({'guia': guide, 'selected': bool(match),
@@ -260,14 +267,34 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
             report['analizadas'] += len(candidates)
             for guide in candidates:
                 source = source_map.get(guide.id)
-                # Indicadores INDEPENDIENTES: 0 en 'descartadas' no significa
-                # que haya 0 guías que coinciden con el transportista.
-                if self._destination_matches(ruta, guide, source):
-                    report['coincide_destino'] += 1
-                if self._driver_matches(ruta, guide, source):
-                    report['coincide_chofer'] += 1
-                if self._transport_matches(ruta, guide, source):
-                    report['coincide_transporte'] += 1
+                # Registrar coincidencias por separado Y sus intersecciones.
+                destino_ok = self._destination_matches(ruta, guide, source)
+                chofer_ok = self._driver_matches(ruta, guide, source)
+                transporte_ok = self._transport_matches(ruta, guide, source)
+                report['coincide_destino'] += int(destino_ok)
+                report['coincide_chofer'] += int(chofer_ok)
+                report['coincide_transporte'] += int(transporte_ok)
+                report['destino_chofer'] += int(destino_ok and chofer_ok)
+                report['destino_transporte'] += int(destino_ok and transporte_ok)
+                report['chofer_transporte'] += int(chofer_ok and transporte_ok)
+                report['destino_chofer_transporte'] += int(
+                    destino_ok and chofer_ok and transporte_ok)
+                if destino_ok and not chofer_ok:
+                    report['sin_chofer_en_destino'] += 1
+                    driver = (guide.chofer_usuario_id.name if guide.chofer_usuario_id else
+                              guide.chofer_contacto_id.name if guide.chofer_contacto_id else
+                              source.driver_id.name if source and source.driver_id else
+                              'Chofer sin identificar')
+                    transporter = (guide.proveedor_id.display_name if guide.proveedor_id else
+                                   source.transport_name if source else 'Transporte sin identificar')
+                    key = (driver, transporter)
+                    current = destination_breakdown.setdefault(key, {
+                        'chofer': driver, 'transportista': transporter,
+                        'cantidad': 0, 'guias': [],
+                    })
+                    current['cantidad'] += 1
+                    if len(current['guias']) < 3:
+                        current['guias'].append(guide.name)
                 match, why = self._match(ruta, guide, source)
                 if why == 'destino':
                     report['destino'] += 1
@@ -285,6 +312,8 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                                     'reason': 'Compatible con los tres filtros'})
             if len(candidates) < PAGE_SIZE:
                 break
+        report['resumen_destino'] = sorted(destination_breakdown.values(),
+            key=lambda item: (-item['cantidad'], item['chofer'], item['transportista']))[:10]
         report['limite'] = (report['analizadas'] >= MAX_SCAN or report['compatible'] >= MAX_DISPLAY)
         return entries[:MAX_DISPLAY + len(selected)], report
 

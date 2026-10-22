@@ -50,7 +50,7 @@
       <attribute name="src">/transcash_guias_api/static/src/js/select_all_route_guides.js?v=26</attribute>
     </xpath>
     <xpath expr="//link[contains(@href, 'select_all_route_guides.css')]" position="attributes">
-      <attribute name="href">/transcash_guias_api/static/src/css/select_all_route_guides.css?v=26</attribute>
+      <attribute name="href">/transcash_guias_api/static/src/css/select_all_route_guides.css?v=210</attribute>
     </xpath>
   </template>
 </odoo>

@@ -26,24 +26,69 @@
             <strong t-esc="tc_filtro_reporte.get('coincide_chofer', 0)"/></div>
           <div><small>Coinciden con proveedor de transporte</small>
             <strong t-esc="tc_filtro_reporte.get('coincide_transporte', 0)"/></div>
+          <div><small>Destino + chofer</small>
+            <strong t-esc="tc_filtro_reporte.get('destino_chofer', 0)"/></div>
+          <div><small>Destino + transportista</small>
+            <strong t-esc="tc_filtro_reporte.get('destino_transporte', 0)"/></div>
+          <div><small>Chofer + transportista</small>
+            <strong t-esc="tc_filtro_reporte.get('chofer_transporte', 0)"/></div>
         </div>
-        <p t-if="not tc_filtro_reporte.get('compatible')" class="tc-route-guide-filters__notice">
-          Ninguna guía cumplió los tres filtros simultáneamente. Los contadores
-          anteriores muestran las coincidencias de cada filtro por separado.
-          Rechazadas por primera causa: destino
-          <t t-esc="tc_filtro_reporte.get('destino', 0)"/>, chofer
-          <t t-esc="tc_filtro_reporte.get('chofer', 0)"/>, transportista
-          <t t-esc="tc_filtro_reporte.get('transporte', 0)"/>.
-          Se compara el transportista con el campo «Proveedor» de la guía operativa.
-        </p>
+        <div t-if="not tc_filtro_reporte.get('compatible')" class="tc-route-guide-filters__notice">
+          <strong>Sin guías para esta combinación de filtros</strong>
+          <p t-if="tc_filtro_reporte.get('coincide_destino') and not tc_filtro_reporte.get('destino_chofer')">
+            Hay <t t-esc="tc_filtro_reporte.get('coincide_destino', 0)"/>
+            guías libres del destino, pero ninguna coincide con el chofer de esta ruta.
+            Las coincidencias individuales de chofer o transportista pueden ser de otros destinos.
+            Revise el chofer indicado en la hoja de ruta y en las guías del ERP.
+          </p>
+          <p t-elif="tc_filtro_reporte.get('destino_chofer') and not tc_filtro_reporte.get('destino_chofer_transporte')">
+            Hay guías del destino y chofer, pero el proveedor de transporte es distinto.
+            Compare el campo «Proveedor» de esas guías antes de seleccionar.
+          </p>
+          <p t-else="">
+            No se encontraron guías que cumplan simultáneamente estado disponible,
+            compañía, destino, chofer y proveedor de transporte.
+          </p>
+          <p>Rechazos por primera condición fallida:
+            destino <t t-esc="tc_filtro_reporte.get('destino', 0)"/>,
+            chofer <t t-esc="tc_filtro_reporte.get('chofer', 0)"/>,
+            transportista <t t-esc="tc_filtro_reporte.get('transporte', 0)"/>.
+            Nunca se permite mezclar guías de otros choferes o transportistas.
+          </p>
+        </div>
+        <div t-if="tc_filtro_reporte.get('resumen_destino')" class="tc-route-guide-breakdown">
+          <strong>Guías del destino asignadas a otros choferes</strong>
+          <p>Resumen para comprobar la combinación correcta. Estos registros no están seleccionables en la ruta actual.</p>
+          <div class="tc-route-guide-breakdown-scroll">
+            <table class="tc-route-guide-breakdown-table">
+              <thead><tr><th>Chofer de la guía</th><th>Proveedor de transporte</th><th>Guías</th><th>Ejemplos</th></tr></thead>
+              <tbody>
+                <tr t-foreach="tc_filtro_reporte.get('resumen_destino')" t-as="item">
+                  <td t-esc="item['chofer']"/>
+                  <td t-esc="item['transportista']"/>
+                  <td t-esc="item['cantidad']"/>
+                  <td t-esc="', '.join(item['guias'])"/>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <small>Si la ruta debe utilizar otro chofer, modifique la planificación desde el flujo autorizado;
+            no se reasignan guías automáticamente.</small>
+        </div>
         <p t-if="tc_filtro_reporte.get('limite')" class="tc-route-guide-filters__notice">
           Se alcanzó el límite de exploración. Use la búsqueda por número
           para consultar guías adicionales sin perder los filtros.
         </p>
       </div>
     </xpath>
+    <xpath expr="//p[contains(@class,'tc-empty-inline') and contains(text(),'No hay guías disponibles')]" position="replace">
+      <p t-if="not filas" class="tc-empty-inline">
+        No hay guías que cumplan simultáneamente los filtros de esta hoja de ruta.
+        Revise el diagnóstico superior para identificar cuál asignación difiere.
+      </p>
+    </xpath>
     <xpath expr="//script[contains(@src, 'select_all_route_guides.js')]" position="attributes">
-      <attribute name="src">/transcash_guias_api/static/src/js/select_all_route_guides.js?v=27</attribute>
+      <attribute name="src">/transcash_guias_api/static/src/js/select_all_route_guides.js?v=210</attribute>
     </xpath>
   </template>
 </odoo>
