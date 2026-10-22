@@ -11,7 +11,7 @@ from datetime import datetime
 from xml.sax.saxutils import escape
 from zipfile import ZipFile, ZIP_DEFLATED
 
-MAX_EXPORT_ROWS = 1000
+MAX_EXPORT_ROWS = 3000
 
 
 def _col(n):

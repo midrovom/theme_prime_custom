@@ -44,9 +44,15 @@ def schema_context(env, snapshot):
     from .ai_analytics import METRICS
     from .ai_client import PLAN_DIMENSIONS
     return {'origen': 'Tablas SQL PostgreSQL persistidas y administradas por Odoo 18',
-            'version_esquema': '1.37', 'modelos': catalog,
+            'version_esquema': '1.38', 'modelos': catalog,
             'indicadores_autorizados': dict(METRICS, formula='Operaciones aritméticas controladas'),
             'dimensiones_autorizadas': PLAN_DIMENSIONS,
+            'agrupaciones_multiples': ['categoria','marca','formato','proveedor_ficha'],
+            'ejemplo_agrupacion': {
+              'pregunta': 'Dame el stock en unidades agrupado por formato',
+              'group_by': 'formato', 'group_fields': [],
+              'metric': 'stock_unidades', 'metrics': ['stock_unidades'],
+              'formato': '', 'top_n': 0},
             'reglas_de_calculo': {
                 'ventas': 'SUM(fact.sale.ventas) por producto y periodo',
                 'costo_ventas': 'SUM(fact.sale.costo_ventas) por producto y periodo',

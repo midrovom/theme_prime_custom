@@ -21,11 +21,12 @@ STOCK_TABLE = 'transcash_inventory_fact_stock'
 
 GROUP_COLUMNS = {
     'total': "'TOTAL'",
+    'custom': None,
     'sku': "fp.sku || ' · ' || LEFT(fp.name, 100)",
-    'categoria': 'fp.categoria',
-    'marca': 'fp.marca',
-    'formato': 'fp.formato',
-    'proveedor_ficha': 'fp.proveedor_ficha',
+    'categoria': "COALESCE(NULLIF(TRIM(fp.categoria), ''), 'SIN CATEGORIA')",
+    'marca': "COALESCE(NULLIF(TRIM(fp.marca), ''), 'SIN MARCA')",
+    'formato': "COALESCE(NULLIF(TRIM(fp.formato), ''), 'SIN FORMATO')",
+    'proveedor_ficha': "COALESCE(NULLIF(TRIM(fp.proveedor_ficha), ''), 'SIN PROVEEDOR')",
     'marca_formato': "CONCAT_WS(' / ', fp.marca, fp.formato)",
     'categoria_formato': "CONCAT_WS(' / ', fp.categoria, fp.formato)",
     'categoria_marca': "CONCAT_WS(' / ', fp.categoria, fp.marca)",
@@ -59,6 +60,15 @@ def build_select(snapshot_id, company_id, plan, months, default_start=None, defa
     if metric in TEXT_METRICS:
         raise ValueError('Ordene por una métrica numérica, como stock_unidades.')
     requested_text = [m for m in metrics if m in TEXT_METRICS]
+    custom_fields = []
+    if dim == 'custom':
+        allowed_custom = {'categoria': "COALESCE(NULLIF(TRIM(fp.categoria), ''), 'SIN CATEGORIA')", 'marca': "COALESCE(NULLIF(TRIM(fp.marca), ''), 'SIN MARCA')",
+                          'formato': "COALESCE(NULLIF(TRIM(fp.formato), ''), 'SIN FORMATO')", 'proveedor_ficha': 'fp.proveedor_ficha'}
+        custom_fields = plan.get('group_fields') or []
+        if (not isinstance(custom_fields, list) or not 2 <= len(custom_fields) <= 4
+                or len(set(custom_fields)) != len(custom_fields)
+                or any(f not in allowed_custom for f in custom_fields)):
+            raise ValueError('Agrupación múltiple no autorizada.')
     if requested_text and dim != 'sku':
         raise ValueError('Descripción y fechas de último movimiento solo se consultan por SKU.')
     if not isinstance(metrics, list) or not 1 <= len(metrics) <= 16 or len(set(metrics)) != len(metrics):
@@ -77,7 +87,12 @@ def build_select(snapshot_id, company_id, plan, months, default_start=None, defa
     end = str(plan.get('hasta') or default_end or months[-1])
     if start not in months or end not in months or months.index(start) > months.index(end):
         raise ValueError('El intervalo solicitado no existe en la versión de Odoo.')
-    top_n = min(50, max(1, int(plan.get('top_n') or 15)))
+    # top_n=0 means all results, with a fixed server-side ceiling.
+    limit_raw = plan.get('top_n', 0)
+    if limit_raw is None: limit_raw = 0
+    limit_raw = int(limit_raw)
+    if limit_raw < 0: raise ValueError('Límite de resultados no válido.')
+    top_n = min(3000, limit_raw) if limit_raw else 3000
     filters = {key: str(plan.get(key) or '').strip()[:120] for key in
                ('categoria', 'marca', 'formato', 'proveedor', 'sku')}
     params = [int(snapshot_id), int(company_id)]
@@ -172,7 +187,15 @@ FROM calendar LEFT JOIN s ON s.mes=calendar.mes LEFT JOIN b ON b.mes=calendar.me
     else:
         params.extend([int(snapshot_id), int(company_id), start, end,
                        int(snapshot_id), int(company_id), start, end])
-        group_expr = 'fp.sku' if requested_text and dim == 'sku' else GROUP_COLUMNS[dim]
+        if dim == 'custom':
+            # Identifiers are server-side constants only, never generated SQL.
+            group_expr = "CONCAT_WS(' | ', " + ", ".join(
+                "'%s: ' || COALESCE(NULLIF(TRIM(%s), ''), 'SIN DATO')" %
+                (f.upper(), {'categoria':'fp.categoria','marca':'fp.marca',
+                             'formato':'fp.formato','proveedor_ficha':'fp.proveedor_ficha'}[f])
+                for f in custom_fields) + ')'
+        else:
+            group_expr = 'fp.sku' if requested_text and dim == 'sku' else GROUP_COLUMNS[dim]
         # For text columns, join distinct per-SKU last movement months without
         # restricting them to the sales period. Never join detail rows together.
         extra_cte = ''
@@ -193,9 +216,9 @@ last_b AS (SELECT m.product_id, MAX(m.mes) AS ultima_compra FROM {buys} m
                 params.extend([int(snapshot_id), int(company_id), int(snapshot_id), int(company_id)])
             # Only static whitelisted column expressions; this never embeds LLM SQL.
             allowed_attrs = {
-                'descripcion': 'fp.name', 'categoria': 'fp.categoria',
-                'marca': 'fp.marca', 'formato': 'fp.formato',
-                'proveedor_ficha': 'fp.proveedor_ficha',
+                'descripcion': 'fp.name', 'categoria': "COALESCE(NULLIF(TRIM(fp.categoria), ''), 'SIN CATEGORIA')",
+                'marca': "COALESCE(NULLIF(TRIM(fp.marca), ''), 'SIN MARCA')", 'formato': "COALESCE(NULLIF(TRIM(fp.formato), ''), 'SIN FORMATO')",
+                'proveedor_ficha': "COALESCE(NULLIF(TRIM(fp.proveedor_ficha), ''), 'SIN PROVEEDOR')",
                 'costo_unitario': 'fp.costo_unitario', 'precio_venta': 'fp.precio_venta',
                 'ultima_compra': 'lb.ultima_compra', 'ultima_venta': 'ls.ultima_venta',
             }
@@ -230,7 +253,7 @@ SELECT grupo, {totals}{extra_select} FROM per_product GROUP BY grupo'''.format(
                           'top_n': top_n, 'descending': plan.get('orden') != 'asc',
                           'formula': str(plan.get('formula') or '').strip(),
                           'count_sql': count_sql, 'count_params': count_params,
-                          'stock_conditions': stock_conditions, 'requested_text': requested_text}
+                          'stock_conditions': stock_conditions, 'requested_text': requested_text, 'group_fields': custom_fields}
 
 
 def execute_sql_plan(env, snapshot, plan, default_start=None, default_end=None):
@@ -304,5 +327,6 @@ def execute_sql_plan(env, snapshot, plan, default_start=None, default_end=None):
             'filas': evaluated[:info['top_n']],
             'total': round(total_vals[metric],4) if total_vals[metric] is not None else None,
             'grupos_evaluados': len(evaluated), 'sku_evaluados': selected_products,
+            'atributos_agrupacion': info.get('group_fields') or [],
             'observaciones': notes,
             'fuente': 'odoo_sql', 'sql_consulta': sql, 'sql_parametros': params}

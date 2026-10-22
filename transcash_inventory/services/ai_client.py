@@ -75,7 +75,7 @@ PLAN_METRICS = ['ventas', 'utilidad', 'margen', 'compras', 'cantidad_vendida',
                 'descripcion', 'ultima_compra', 'ultima_venta',
                 'categoria', 'marca', 'formato', 'proveedor_ficha',
                 'costo_unitario', 'precio_venta']
-PLAN_DIMENSIONS = ['total', 'sku', 'categoria', 'marca', 'formato',
+PLAN_DIMENSIONS = ['total', 'sku', 'custom', 'categoria', 'marca', 'formato',
                    'proveedor_ficha', 'proveedor_compra', 'bodega', 'mes',
                    'marca_formato', 'categoria_formato', 'categoria_marca',
                    'categoria_marca_formato', 'proveedor_formato', 'proveedor_categoria_marca_formato']
@@ -86,6 +86,9 @@ PLAN_SCHEMA = {
         'metric': {'type': 'string', 'enum': PLAN_METRICS + ['no_disponible']},
         'metrics': {'type': 'array', 'items': {'type': 'string', 'enum': PLAN_METRICS}},
         'group_by': {'type': 'string', 'enum': PLAN_DIMENSIONS},
+        'group_fields': {'type': 'array', 'items': {'type': 'string', 'enum':
+                         ['categoria','marca','formato','proveedor_ficha']},
+                         'maxItems': 4},
         'desde': {'type': 'string'}, 'hasta': {'type': 'string'},
         'categoria': {'type': 'string'}, 'marca': {'type': 'string'},
         'formato': {'type': 'string'}, 'proveedor': {'type': 'string'}, 'sku': {'type': 'string'},
@@ -97,7 +100,7 @@ PLAN_SCHEMA = {
                            'value': {'type': 'number'}},
             'required': ['operator', 'value']}},
     },
-    'required': ['metric', 'metrics', 'group_by', 'desde', 'hasta', 'categoria',
+    'required': ['metric', 'metrics', 'group_by', 'group_fields', 'desde', 'hasta', 'categoria',
                  'marca', 'formato', 'proveedor', 'sku', 'top_n', 'orden', 'formula', 'razon',
                  'stock_conditions'],
 }
@@ -114,6 +117,21 @@ IMPORTANTE: una pregunta puede pedir VARIAS métricas y debe resolverse en UN SO
 - "metrics": lista de TODAS las métricas solicitadas (máximo 16, sin repetir).
 - "metric": métrica PRINCIPAL usada para ordenar el ranking, incluida en "metrics".
 - "group_by": dimensión por la que se muestran filas.
+- "group_fields": [] para agrupación simple; para combinaciones libres por categorías
+  de catálogo usar group_by="custom" y group_fields en el orden solicitado.
+  Valores permitidos: categoria, marca, formato, proveedor_ficha.
+- NUNCA confundir el atributo "formato" que se usa para AGRUPAR con el filtro
+  "formato" que solo se usa cuando el usuario pide una medida concreta.
+- Consulta "dame el stock en unidades agrupado por formato" =>
+  group_by="formato", group_fields=[], metric="stock_unidades",
+  metrics=["stock_unidades"], formato="", stock_conditions=[], top_n=0.
+- Consulta "stock por marca y formato" => group_by="custom",
+  group_fields=["marca","formato"], metric="stock_unidades",
+  metrics=["stock_unidades"], top_n=0. Para una solicitud sin TOP
+  explícito utilizar top_n=0 (todos los grupos hasta un máximo seguro), no 15.
+- "stock en unidades" siempre es stock_unidades, no valor monetario.
+- Si piden agrupar, NO usar group_by="total" ni "sku" salvo solicitud explícita
+  de listado de SKU. Nunca responder no_disponible para stock por formato.
 - Si piden ventas, utilidad y margen, usa metrics=["ventas","utilidad","margen"],
   metric="ventas", NUNCA no_disponible por pedir varias métricas.
 - Si piden crear una razón o retorno simple, agrega "formula" a metrics, completa formula
@@ -153,7 +171,7 @@ cantidad vendida, cantidad comprada, stock actual positivo, valor stock a costo 
 costo de ventas, precio promedio ponderado por cantidad vendida, formula.
 FORMULAS permitidas: ventas, utilidad, compras, cantidad_vendida, cantidad_comprada,
 stock_unidades, stock_valor, costo_ventas, constantes y + - * /. No SQL, funciones, Python.
-DIMENSIONES: total, sku, categoria, marca, formato, proveedor_ficha, proveedor_compra,
+DIMENSIONES: total, sku, custom (combinación de group_fields), categoria, marca, formato, proveedor_ficha, proveedor_compra,
 mes, bodega, marca_formato, categoria_formato, categoria_marca, categoria_marca_formato,
 proveedor_formato, proveedor_categoria_marca_formato.
 "formato 45x45": aplicar filtro formato="45x45", agrupar por formato SOLO si solicitado.
@@ -205,7 +223,8 @@ MARGEN es BRUTO, no neto: no hay gastos de operación.
 Nunca uses no_disponible porque el usuario solicite múltiples columnas conocidas.
 Úsalo SOLO si la pregunta DEPENDE de un campo inexistente; escribe cuál en razon.
 Conserva filtros textuales del usuario, fechas válidas del contexto y top_n entre 1 y 50.
-Si el usuario no indica top, usa 15. Si no pide filtro, escribe cadena vacía.
+Si el usuario no indica top, usa top_n=0: mostrar todos los grupos con
+un límite de seguridad del servidor. Si no pide filtro, escribe cadena vacía.
 Selecciona el periodo indicado por el usuario o el del contexto de interfaz.
 Los importes los leerá Odoo exclusivamente de sus tablas relacionales normalizadas.
 El contexto contiene esquema real del módulo; úsalo para mapear la consulta.
@@ -258,6 +277,89 @@ def planner_context(dataset, max_names=30):
     }
 
 
+GROUPABLE_CATALOG_FIELDS = ('categoria', 'marca', 'formato', 'proveedor_ficha')
+
+
+def explicit_grouping(question):
+    """Detect literal requested grouping, independently from model interpretation.
+
+    E.g. 'stock agrupado por formato', 'stock por categoría, marca y formato'.
+    Only recognizes dimension names; never returns SQL identifiers.
+    """
+    text = unicodedata.normalize('NFKD', str(question or ''))
+    text = ''.join(ch for ch in text if not unicodedata.combining(ch)).casefold()
+    match = re.search(
+        r'\b(?:agrupad[oa]s?\s+por|agrupar\s+por|agrupa(?:me)?\s+por|'
+        r'desglosad[oa]s?\s+por|desglosa\s+por|resumid[oa]s?\s+por|'
+        r'separad[oa]s?\s+por|segun|por\s+cada|de\s+cada|por)\s+', text)
+    if not match:
+        return []
+    tail = text[match.end():][:120]
+    # Only an initial list of dimensions, not any subsequent incidental words.
+    parts = re.match(r'(?:(?:categoria|categorias|marca|marcas|formato|formatos|proveedor(?:es)?|y|e|,|/|\s)+)', tail)
+    if not parts:
+        return []
+    phrase = parts.group(0)
+    # 'por formato 60x120' is often a FILTER request rather than an
+    # aggregation. Keep that distinction for the validated catalog resolver.
+    if re.match(r'^formatos?\b', phrase) and re.match(r'\s*\d', tail[len(phrase):]):
+        return []
+    fields = []
+    for token in re.findall(r'\b(?:categoria|categorias|marca|marcas|formato|formatos|proveedor|proveedores)\b', phrase):
+        key = {'categorias':'categoria','marcas':'marca','formatos':'formato',
+               'proveedor':'proveedor_ficha','proveedores':'proveedor_ficha'}.get(token,token)
+        if key not in fields:
+            fields.append(key)
+    return fields
+
+
+def harmonize_plan(question, plan):
+    """Enforce explicitly stated grouping & stock quantity despite LLM omissions."""
+    plan = dict(plan)
+    fields = explicit_grouping(question)
+    proposed = plan.get('group_fields') or []
+    if not isinstance(proposed,list) or any(f not in GROUPABLE_CATALOG_FIELDS for f in proposed):
+        raise AIServiceError('La agrupación propuesta contiene campos no autorizados.')
+    if fields:
+        if len(fields) == 1:
+            plan['group_by'] = fields[0]
+            plan['group_fields'] = []
+        else:
+            plan['group_by'] = 'custom'
+            plan['group_fields'] = fields
+    elif plan.get('group_by') == 'custom':
+        if not proposed or len(proposed) > 4 or len(set(proposed)) != len(proposed):
+            raise AIServiceError('Seleccione atributos válidos para la agrupación.')
+    else:
+        plan['group_fields'] = []
+    normalized = unicodedata.normalize('NFKD', str(question or ''))
+    normalized = ''.join(ch for ch in normalized if not unicodedata.combining(ch)).lower()
+    physical_stock = bool(re.search(r'\b(stock|existencias?|inventario)\b', normalized)) and bool(
+        re.search(r'\b(unidades?|cantidad(?:es)?|fisic[oa]s?)\b', normalized) or
+        not re.search(r'\b(valor(?:izad[oa])?|\$|usd|dolares|monetari[oa])\b', normalized))
+    if physical_stock and fields:
+        if plan.get('metric') in ('no_disponible','ventas','stock_valor','formula') and not re.search(
+                r'\b(?:ventas?|facturacion|utilidad|margen|compras?)\b', normalized):
+            plan['metric'] = 'stock_unidades'
+        metrics = plan.get('metrics') if isinstance(plan.get('metrics'),list) else []
+        if 'stock_unidades' not in metrics:
+            metrics.insert(0, 'stock_unidades')
+        if plan.get('metric') not in metrics:
+            metrics.insert(0, plan.get('metric'))
+        # An LLM can hallucinate an extra financial column for a plain stock
+        # grouping. Preserve every explicitly requested metric, not guesses.
+        asks_financials = bool(re.search(
+            r'\b(?:ventas?|vendid[oa]s?|facturacion|utilidad|margen|rentabilidad|'
+            r'compras?|comprad[oa]s?|costos?|valor|usd|dolares|precio)\b', normalized))
+        if not asks_financials:
+            metrics = ['stock_unidades']
+        plan['metrics'] = list(dict.fromkeys(metrics))
+    # For non-ranked aggregate requests retain all groups, not an arbitrary top 15.
+    if fields and not re.search(r'\btop\s*\d+|\bprimer[oa]s?\s+\d+|\b\d+\s+(?:mejores|principales)\b',normalized):
+        plan['top_n'] = 0
+    return plan
+
+
 def plan_question(api_key, model, question, available_months, default_start, default_end,
                   ui_filters=None, data_context=None):
     context = {'question': question, 'available_months': available_months,
@@ -272,6 +374,7 @@ def plan_question(api_key, model, question, available_months, default_start, def
         raise AIServiceError('No se pudo interpretar el plan del modelo.') from None
     if not isinstance(plan, dict):
         raise AIServiceError('El plan recibido no tiene la estructura esperada.')
+    plan = harmonize_plan(question, plan)
     # Deterministic safety net for common top-stock ranking questions. Model
     # output cannot discard requested columns or switch quantities to USD.
     normalized = unicodedata.normalize('NFKD', question or '')
@@ -305,6 +408,23 @@ def plan_question(api_key, model, question, available_months, default_start, def
         if len(cols) > 16:
             raise AIServiceError('La consulta supera el máximo de columnas autorizadas.')
         plan['metrics'] = cols
+    # A grouped field already appears in the "Grupo" column. Structured output
+    # models sometimes duplicate it under metrics (e.g. formato + stock_unidades),
+    # which used to trigger a false "only SKU" error. Remove only redundant
+    # catalogue attributes; do NOT silently discard requested movement dates.
+    if plan.get('group_by') != 'sku' and plan.get('metric') != 'no_disponible':
+        redundant = {'descripcion', 'categoria', 'marca', 'formato',
+                     'proveedor_ficha', 'costo_unitario', 'precio_venta'}
+        selected = plan.get('metrics')
+        if isinstance(selected, list):
+            plan['metrics'] = [m for m in selected if m not in redundant]
+            if plan.get('metric') in redundant:
+                numeric = next((m for m in plan['metrics'] if m in PLAN_METRICS
+                                and m not in redundant and m not in
+                                ('ultima_compra', 'ultima_venta')), None)
+                plan['metric'] = numeric or 'stock_unidades'
+            if plan['metric'] not in plan['metrics']:
+                plan['metrics'].insert(0, plan['metric'])
     # The model may choose a valid grouping yet omit one of the requested columns.
     # Complete the plan deterministically from the user's literal words.
     if plan.get('metric') != 'no_disponible':
