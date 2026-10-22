@@ -47,9 +47,11 @@ limit: "LIMIT"i INT
 COMP: "<=" | ">=" | "<>" | "!=" | "=" | "<" | ">"
 NAME: /[A-Za-z_][A-Za-z_0-9]*/
 STRING: /'(?:''|[^'])*'/
-%import common.SIGNED_NUMBER
-%import common.INT
-%import common.WS
+// Terminales definidos localmente para no depender de gramáticas externas
+// de la librería Lark incorporada en este módulo.
+SIGNED_NUMBER: /[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?/
+INT: /[0-9]+/
+WS: /[ \t\f\r\n]+/
 %ignore WS
 '''
 PARSER = Lark(GRAMMAR, parser='lalr', maybe_placeholders=False)
