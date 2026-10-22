@@ -3,7 +3,7 @@
 
 Sin afectar v5.32: solo permite coincidencias verificables de transportista,
 chofer y destino. La falta de una relación res.users/res.partner no oculta una
-identidad ERP comprobable, ni autoriza reutilizar una guía ajena.
+identidad ERP comprobable, ni autoriza reutilizar una guía ajena. Destino: solo código ERP.
 """
 import re
 import unicodedata
@@ -39,13 +39,9 @@ def _legal_name(value):
     return ''.join(c for c in text if c.isalnum() and not unicodedata.combining(c))
 
 
-def _dest_name(value):
-    text = unicodedata.normalize('NFKD', str(value or '').casefold())
-    return ' '.join(''.join(c for c in text if not unicodedata.combining(c)).split())
-
 
 class TranscashOperacionFiltrada(TranscashOperaciones):
-    """Usa únicamente datos operativos y una homologación privada controlada."""
+    """Aplica comparación directa por código ERP, chofer y transportista."""
 
     def _source_map(self, guias, company_id):
         if not guias:
@@ -204,39 +200,42 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         return bool(chosen in matching and len(taxes) <= 1 and
                     (not taxes or not chosen.vat or _fiscal_id(chosen.vat) in taxes))
 
-    def _same_destination_code(self, first, second):
-        """ERP codes '-NAJ' and 'NAJ' denote the same controlled code.
+    @staticmethod
+    def _normalized_destination_code(value):
+        """Normalización canónica de un CÓDIGO, nunca comparación aproximada.
 
-        An empty code or a matching display name is not sufficient. This does
-        not rewrite the destination catalogue, used by historical routes.
+        Suprime NBSP, espacios, guiones, puntos, marcas Unicode invisibles y
+        diferencias de mayúsculas: ' - N A J ' y 'NAJ' resultan equivalentes.
         """
-        if not first or not second or first.company_id != second.company_id:
-            return False
-        left, right = _identity(first.codigo), _identity(second.codigo)
-        return bool(left and right and left == right)
+        raw = unicodedata.normalize('NFKD', str(value or '').strip().upper())
+        raw = ''.join(c for c in raw if not unicodedata.combining(c))
+        return re.sub(r'[^A-Z0-9]', '', raw)
+
+    def _erp_destination_code(self, guia, source):
+        """Código original del ERP; NUNCA el nombre ni el ID de un maestro.
+
+        Si hay una guía de staging, su código es la única fuente confiable.
+        Para las guías históricas sin staging utilizamos el campo ERP del
+        modelo operativo, siempre que esté informado.
+        """
+        if source:
+            return (source.destination_id.external_code
+                    if source.destination_id else '') or ''
+        return guia.destino_codigo or ''
 
     def _destination_matches(self, ruta, guia, source):
-        master = ruta.destino_id
-        if not master:
+        """Código de destino ERP == código del destino seleccionado en la ruta.
+
+        Sin alias, equivalencias manuales, comparación por nombre, o prioridad
+        de IDs distintos. Solo se ignoran separadores y espacios accidentales.
+        Un código ERP ausente NUNCA constituye una coincidencia.
+        """
+        if not ruta.destino_id or guia.company_id != ruta.company_id:
             return False
-        if guia.destino_id:
-            return (guia.destino_id.id == master.id or
-                    self._same_destination_code(guia.destino_id, master))
-        if ruta._coincide_destino(guia):
-            return True
-        erp_code = (_identity(source.destination_id.external_code)
-                    if source and source.destination_id else '')
-        route_code = _identity(master.codigo)
-        if erp_code and route_code:
-            return erp_code == route_code
-        guide_code = _identity(guia.destino_codigo)
-        if guide_code and route_code:
-            return guide_code == route_code
-        if not source:
-            return False
-        valid = {_dest_name(master.name), _dest_name(master.ciudad)} - {''}
-        stated = {_dest_name(source.destination_city), _dest_name(source.destination_address)} - {''}
-        return bool(valid.intersection(stated))
+        erp_code = self._normalized_destination_code(
+            self._erp_destination_code(guia, source))
+        route_code = self._normalized_destination_code(ruta.destino_id.codigo)
+        return bool(erp_code and route_code and erp_code == route_code)
 
     def _match(self, ruta, guia, source):
         """Devuelve (válida, motivo), evaluando cada dimensión por separado."""
@@ -268,7 +267,7 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         if guia.embarque_id:
             reasons.append('Asignada a un embarque')
         if not dest_ok:
-            reasons.append('Destino no equivalente')
+            reasons.append('Código de destino ERP distinto o ausente')
         if not driver_ok:
             reasons.append('Cédula o usuario del chofer diferente')
         if not provider_ok:
@@ -285,6 +284,13 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                 guia.destino_id.codigo if guia.destino_id else guia.destino_codigo or '-'),
             'ruta_destino': '%s (#%s, %s)' % (
                 ruta.destino_id.name, ruta.destino_id.id, ruta.destino_id.codigo),
+            'codigo_guia_normalizado': self._normalized_destination_code(
+                self._erp_destination_code(guia, source)) or '(sin código ERP)',
+            'codigo_guia_erp': self._erp_destination_code(guia, source) or '(sin código ERP)',
+            'codigo_ruta_normalizado': self._normalized_destination_code(
+                ruta.destino_id.codigo) or '(sin código de ruta)',
+            'codigos_aceptados': self._normalized_destination_code(
+                ruta.destino_id.codigo) or '(sin código de ruta)',
             'guia_chofer': '%s (#%s)' % (
                 guia.chofer_usuario_id.name if guia.chofer_usuario_id else
                 guia.chofer_contacto_id.name if guia.chofer_contacto_id else 'Sin usuario',
@@ -630,7 +636,7 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                         # Change ONLY the guide's alias to the chosen canonical
                         # destination; never mutate its catalog or historical docs.
                         changes['destino_id'] = ruta.destino_id.id
-                        changes['destino_codigo'] = ruta.destino_id.codigo
+                        changes['destino_codigo'] = self._erp_destination_code(guia, source) or ruta.destino_id.codigo
                     if changes:
                         guia.sudo().write(changes)
                         if ('destino_id' in changes or

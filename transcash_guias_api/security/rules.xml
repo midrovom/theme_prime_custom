@@ -11,4 +11,9 @@
   <record id="rule_tc_supplier_company" model="ir.rule"><field name="name">TC Supplier companies</field><field name="model_id" ref="model_tc_product_supplier"/><field name="domain_force">[('company_id', 'in', company_ids)]</field></record>
   <record id="rule_tc_private_company" model="ir.rule"><field name="name">TC Private companies</field><field name="model_id" ref="model_tc_guide_line_private"/><field name="domain_force">[('company_id', 'in', company_ids)]</field></record>
   <record id="rule_tc_log_company" model="ir.rule"><field name="name">TC Sync log companies</field><field name="model_id" ref="model_tc_guide_sync_log"/><field name="domain_force">[('company_id', 'in', company_ids)]</field></record>
+  <record id="rule_tc_destination_alias_company" model="ir.rule">
+    <field name="name">Equivalencias de destino: compañías autorizadas</field>
+    <field name="model_id" ref="model_tc_destination_alias"/>
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+  </record>
 </odoo>

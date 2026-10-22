@@ -39,28 +39,30 @@ class TCGuidePublication(models.Model):
     operational_guide_id = fields.Many2one('transcash.guia', string='Guía operativa', readonly=True, copy=False)
 
     def _destination_for_operation(self):
+        """Encontrar destino por el CÓDIGO del ERP, nunca por nombre ni alias.
+
+        Reutiliza una ficha con código idéntico tras quitar separadores de
+        formato; si hay varias no se adivina el registro correcto.
+        """
         self.ensure_one()
         Destination = self.env['transcash.destino'].sudo()
-        route = self.destination_id
-        if route and route.external_code:
-            found = Destination.search([('company_id', '=', self.company_id.id),
-                                        ('codigo', '=', route.external_code.strip().upper())], limit=1)
-            if found:
-                return found, ''
-            # El código del ERP es inequívoco y tiene prioridad al crear el maestro.
-            return Destination.obtener_desde_erp(route.external_code, route.city or route.name,
-                                                  company_id=self.company_id.id), ''
-        # Sin código: comparar exactamente por nombre de destino o ciudad; jamás inventar códigos.
-        terms = [x for x in (self.destination_city, self.destination_address) if (x or '').strip()]
-        catalog = Destination.search([('company_id', '=', self.company_id.id), ('active', '=', True)])
-        for term in terms:
-            matches = catalog.filtered(lambda d: normalized(d.name) == normalized(term) or
-                                       (d.ciudad and normalized(d.ciudad) == normalized(term)))
-            if len(matches) == 1:
-                return matches, ''
-            if len(matches) > 1:
-                return False, _('Destino ambiguo: %s coincide con varios destinos.') % term
-        return False, _('No existe código de destino y no hay coincidencia exacta en el catálogo: %s') % (', '.join(terms) or '(vacío)')
+        raw = self.destination_id.external_code if self.destination_id else ''
+        code = re.sub(r'[^A-Z0-9]', '', unicodedata.normalize(
+            'NFKD', str(raw or '').upper()))
+        if not code:
+            return False, _('La API ERP no envió destino_codigo. No se asigna destino por nombre.')
+        catalog = Destination.search([('company_id', '=', self.company_id.id)])
+        matching = catalog.filtered(
+            lambda d: re.sub(r'[^A-Z0-9]', '', unicodedata.normalize(
+                'NFKD', str(d.codigo or '').upper())) == code)
+        if len(matching) == 1:
+            return matching, ''
+        if len(matching) > 1:
+            return False, _('Existen varios destinos con el mismo código normalizado %s.') % code
+        # Código ERP nuevo: lo crea el flujo normal del módulo operativo.
+        return Destination.obtener_desde_erp(
+            raw, self.destination_city or self.destination_address or raw,
+            company_id=self.company_id.id), ''
 
     def _erp_dates_for_operation(self, operational=None, only_missing=False):
         """Map ERP calendar dates to the EXISTING operational fields.
@@ -194,7 +196,8 @@ class TCGuidePublication(models.Model):
         }
         values.update(self._erp_dates_for_operation(existing, only_missing=False))
         if destination:
-            values.update({'destino_id': destination.id, 'destino_codigo': destination.codigo})
+            values.update({'destino_id': destination.id, 'destino_codigo': (
+                self.destination_id.external_code if self.destination_id else False)})
         else:
             # Evitar datos de destino obsoletos si guía permanece sin ruta.
             values.update({'destino_id': False, 'destino_codigo': False})

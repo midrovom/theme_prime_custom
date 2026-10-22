@@ -15,13 +15,14 @@ selected = [node for node in module.body if isinstance(node, ast.FunctionDef) an
             node.name in ('_identity', '_fiscal_id', '_legal_name', '_dest_name')]
 klass = next(n for n in module.body if isinstance(n, ast.ClassDef) and n.name == 'TranscashOperacionFiltrada')
 methods = [node for node in klass.body if isinstance(node, ast.FunctionDef) and
-           node.name in ('_driver_matches', '_transport_matches', '_destination_matches', '_match')]
+           node.name in ('_driver_matches', '_transport_matches', '_destination_matches', '_match', '_route_destination_codes', '_normalized_destination_code', '_same_driver_identity')]
 for method in methods:
     method.decorator_list = []
 mock_class = ast.ClassDef(name='TestSelector', bases=[], keywords=[], body=methods, decorator_list=[])
 code = ast.fix_missing_locations(ast.Module(body=selected + [mock_class], type_ignores=[]))
 namespace = {'re': re, 'unicodedata': unicodedata}
 exec(compile(code, str(path), 'exec'), namespace)
+namespace['TestSelector']._normalized_destination_code = staticmethod(namespace['TestSelector']._normalized_destination_code)
 
 class Record(SimpleNamespace):
     def __bool__(self): return bool(self.__dict__.get('id'))
@@ -38,8 +39,14 @@ class FakePartnerTable:
     def search(self, domain, limit=None): return ListRecords(partners)
     def search_count(self, domain): return len(partners)
 
+class FakeDestinationAliasTable:
+    def sudo(self): return self
+    def search(self, domain): return []
+
 class FakeEnv:
     def __getitem__(self, key):
+        if key == 'tc.destination.alias':
+            return FakeDestinationAliasTable()
         assert key == 'res.partner'
         return FakePartnerTable()
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Desactivar el menú heredado de v2.14; ya no se usan homologaciones. -->
+  <record id="menu_tc_destination_aliases" model="ir.ui.menu">
+    <field name="name">Equivalencias de destinos ERP (retirado)</field>
+    <field name="parent_id" ref="logistica_transcash.menu_transcash_root"/>
+    <field name="active" eval="False"/>
+  </record>
+</odoo>

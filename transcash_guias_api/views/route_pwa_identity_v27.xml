@@ -98,7 +98,12 @@
                 <td><strong t-esc="d['guia']"/><small t-esc="d['documento']"/></td>
                 <td><span t-if="d['compatible']">Compatible</span>
                   <span t-else="" t-esc="d['motivo']"/></td>
-                <td><small t-esc="d['guia_destino']"/><small> / </small><small t-esc="d['ruta_destino']"/></td>
+                <td><small t-esc="d['guia_destino']"/><small> / </small><small t-esc="d['ruta_destino']"/>
+                  <div><small>Código ERP normalizado: <t t-esc="d['codigo_guia_normalizado']"/>;
+                    código ERP guía: <t t-esc="d['codigo_guia_erp']"/>;
+                    código de ruta: <t t-esc="d['codigo_ruta_normalizado']"/>;
+                    código requerido: <t t-esc="d['codigos_aceptados']"/></small></div>
+                </td>
                 <td><small t-esc="d['guia_chofer']"/><small> / </small><small t-esc="d['ruta_chofer']"/>
                   <small>Cédula guía: <t t-esc="d['cedula_guia']"/>; contacto: <t t-esc="d['cedula_contacto']"/>; ruta: <t t-esc="d['cedula_ruta']"/></small></td>
                 <td><small t-esc="d['guia_proveedor']"/><small> / </small><small t-esc="d['ruta_proveedor']"/>

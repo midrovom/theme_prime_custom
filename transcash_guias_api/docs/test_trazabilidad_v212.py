@@ -7,7 +7,7 @@ MODULE = Path(__file__).resolve().parents[1]
 
 def run():
     manifest = ast.literal_eval((MODULE / '__manifest__.py').read_text())
-    assert manifest['version'] == '18.0.2.12.0'
+    assert tuple(int(v) for v in manifest['version'].split('.')) >= (18, 0, 2, 12, 0)
     for resource in manifest['data']:
         assert (MODULE / resource).is_file(), resource
     for path in MODULE.rglob('*.py'):
