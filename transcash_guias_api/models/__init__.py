@@ -20,3 +20,5 @@ from . import dashboard_bi
 from . import operational_commercial
 
 from . import transport_cleanup
+
+from . import route_bulk_selection

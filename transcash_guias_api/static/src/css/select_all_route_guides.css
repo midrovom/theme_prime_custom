@@ -1,0 +1,21 @@
+/* Complemento visual del selector existente de Logística Transcash. */
+.tc-ops-bulk-select { display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:10px; padding:12px 14px; margin:12px 0 8px;
+  border:1px solid #cbd5e1; border-radius:12px; background:#f1f5f9;
+  color:#17263b; }
+.tc-ops-bulk-select__label { display:flex; align-items:center; gap:10px;
+  cursor:pointer; font-size:0.95rem; }
+.tc-ops-bulk-select__label input { width:20px; height:20px; accent-color:#2563eb; }
+.tc-ops-bulk-select small { color:#475569; font-size:0.79rem; }
+@media(max-width:720px) {.tc-ops-bulk-select {align-items:flex-start; flex-direction:column;}}
+
+.tc-route-guide-filters{margin:14px 0;padding:16px;border:1px solid #cbd5e1;border-radius:14px;background:#f8fafc;color:#0f172a}
+.tc-route-guide-filters__heading{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-bottom:13px}
+.tc-route-guide-filters__heading small{color:#64748b}
+.tc-route-guide-filters__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tc-route-guide-filters__grid>div{border:1px solid #dbe4ed;background:#fff;border-radius:10px;padding:10px 12px;min-width:0}
+.tc-route-guide-filters__grid small{display:block;font-size:.73rem;color:#64748b;margin-bottom:6px}
+.tc-route-guide-filters__grid strong{display:block;overflow-wrap:anywhere;font-size:.9rem}
+.tc-route-guide-filters p,.tc-route-guide-filters__notice{font-size:.85rem;color:#475569;line-height:1.5}
+.tc-route-guide-filters__notice{margin:10px 0 14px;border-left:3px solid #64748b;padding:8px 12px;background:#f1f5f9}
+@media(max-width:720px){.tc-route-guide-filters__grid{grid-template-columns:1fr}.tc-route-guide-filters__heading{display:block}}

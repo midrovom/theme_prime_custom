@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Misma pantalla de Logística v5.32; solo añadimos controles. -->
+  <record id="view_tc_ruta_wizard_select_all_v25" model="ir.ui.view">
+    <field name="name">transcash.seleccionar.guias.ruta.wizard.select.all.v25</field>
+    <field name="model">transcash.seleccionar.guias.ruta.wizard</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_seleccionar_guias_wizard"/>
+    <field name="priority">50</field>
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='linea_ids']" position="before">
+        <group string="Selección rápida" col="4">
+          <field name="tc_seleccionar_todas" widget="boolean_toggle"/>
+          <field name="tc_total_marcadas" readonly="1"/>
+          <field name="tc_total_elegibles" readonly="1"/>
+        </group>
+        <div class="alert alert-info" role="note">
+          La selección masiva incluye las guías habilitadas de esta lista
+          (hasta 100 por embarque). Las guías de otro destino, compañía,
+          estado o ya asignadas no se marcarán. Para incluir las que
+          requieren cambio de chofer o transportista, active primero
+          la autorización de reasignación. Puede ajustar cada casilla
+          antes de pulsar «Guardar selección».
+        </div>
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Operador WebApp: casilla maestra en la vista existente. -->
+  <template id="tc_portal_select_all_guides_v25"
+            inherit_id="logistica_transcash.portal_operacion"
+            name="Logística: selección múltiple de guías (portal)">
+    <xpath expr="//form[.//input[@name='guias']]/div[contains(@class, 'tc-ops-checklist')]" position="before">
+      <div class="tc-ops-bulk-select" data-tc-guide-bulk="1">
+        <label class="tc-ops-bulk-select__label">
+          <input type="checkbox" data-tc-select-all="1" aria-label="Seleccionar todas las guías disponibles"/>
+          <strong>Seleccionar todas las guías disponibles</strong>
+        </label>
+        <small data-tc-select-all-count="1" aria-live="polite">
+          Máximo 100 guías por embarque. Solo las habilitadas para esta ruta.
+        </small>
+      </div>
+    </xpath>
+    <xpath expr="//form[.//input[@name='guias']]" position="attributes">
+      <attribute name="data-tc-guide-bulk-form">1</attribute>
+    </xpath>
+    <xpath expr="//html/head" position="inside">
+      <script defer="defer" src="/transcash_guias_api/static/src/js/select_all_route_guides.js?v=25"/>
+      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/select_all_route_guides.css?v=25"/>
+    </xpath>
+  </template>
+</odoo>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="tc_pwa_filter_guides_v26"
+            inherit_id="transcash_guias_api.tc_portal_select_all_guides_v25"
+            priority="80"
+            name="PWA: guías filtradas estrictamente por ruta">
+    <xpath expr="//form[contains(@class,'tc-ops-search')]" position="before">
+      <section class="tc-route-guide-filters" aria-label="Filtros obligatorios de la ruta">
+        <div class="tc-route-guide-filters__heading">
+          <strong>Guías disponibles según esta hoja de ruta</strong>
+          <small>Los tres filtros se fijaron al crear la hoja de ruta.</small>
+        </div>
+        <div class="tc-route-guide-filters__grid">
+          <div><small>Empresa de transporte</small>
+            <strong t-esc="ruta.proveedor_id.display_name"/></div>
+          <div><small>Chofer</small>
+            <strong t-esc="ruta.chofer_usuario_id.name"/></div>
+          <div><small>Destino</small>
+            <strong t-esc="ruta.destino_id.name"/></div>
+        </div>
+        <p>Solo se muestran guías registradas, sin otra ruta ni embarque, cuyo
+          transportista, chofer y destino coinciden. Las guías sin chofer
+          asignado no podrán marcarse desde esta PWA.</p>
+      </section>
+    </xpath>
+    <xpath expr="//div[@data-tc-guide-bulk='1']//strong" position="replace">
+      <strong>Seleccionar todas las guías filtradas</strong>
+    </xpath>
+    <xpath expr="//div[@data-tc-guide-bulk='1']//small[@data-tc-select-all-count='1']" position="replace">
+      <small data-tc-select-all-count="1" aria-live="polite">
+        Selección limitada al resultado visible que coincide con los tres filtros.
+      </small>
+    </xpath>
+    <xpath expr="//label[contains(@class,'tc-ops-authorize')]" position="replace">
+      <p class="tc-route-guide-filters__notice">
+        No se permite reasignar guías de otro chofer o transportista en esta pantalla.
+        Corrija la asignación desde el flujo autorizado antes de agregarlas.
+      </p>
+    </xpath>
+    <xpath expr="//div[contains(@class,'tc-next-card')][.//strong[contains(text(),'Selecciona las guías pendientes')]]" position="replace">
+      <div class="tc-next-card">
+        <div class="tc-next-icon">✓</div>
+        <div><strong>Guías compatibles con esta ruta</strong>
+          <p>El resultado se filtra por transportista, chofer y destino. Selecciona
+            las guías necesarias o usa «Seleccionar todas las guías filtradas».</p>
+        </div>
+      </div>
+    </xpath>
+    <xpath expr="//script[contains(@src, 'select_all_route_guides.js')]" position="attributes">
+      <attribute name="src">/transcash_guias_api/static/src/js/select_all_route_guides.js?v=26</attribute>
+    </xpath>
+    <xpath expr="//link[contains(@href, 'select_all_route_guides.css')]" position="attributes">
+      <attribute name="href">/transcash_guias_api/static/src/css/select_all_route_guides.css?v=26</attribute>
+    </xpath>
+  </template>
+</odoo>
