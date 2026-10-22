@@ -135,7 +135,15 @@ class TranscashDashboardV22 extends Component {
                 n("roturas_pendientes","Pendientes","number"),n("roturas_aprobadas","Aprobadas","number"),
                 n("cantidad_rota_m2","m² dañados","number"),n("cantidad_rota_unidades","Unid. dañadas","number"),n("fecha","Fecha")];
             case "liquidaciones":return [n("nombre","Liquidación"),n("estado","Estado"),n("transportista","Transporte"),n("moneda","Moneda"),n("total","Acordado","currency"),n("pagado","Pagado","currency"),n("pendiente","Saldo","currency")];
-            case "marcas":case "proveedores_producto":return [n("codigo","Código"),n("nombre","Nombre"),n("guias","Guías","number"),n("reportes","Reportes","number")];
+            case "marcas":case "proveedores_producto":return [
+                n("codigo","Código"),n("nombre","Nombre"),n("guias","Guías","number"),
+                n("incidencias","Guías con rotura de producto","number"),
+                n("reportes","Reportes rotura","number"),
+                n("pendientes","Pendientes","number"),n("aprobadas","Aprobadas","number"),
+                n("cantidad_m2","m² transportados","number"),n("cantidad_unidades","Unid. transportadas","number"),
+                n("peso_kg","Kg transportados","number"),
+                n("cantidad_rota_m2","m² dañados","number"),
+                n("cantidad_rota_unidades","Unid. dañadas","number")];
             case "auditoria":return [n("nombre","Menú"),n("accion","Acción"),n("modelo","Modelo"),n("estado","Diagnóstico")];
             default:return [];
         }

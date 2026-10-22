@@ -350,34 +350,108 @@ class TranscashDashboardBI(models.AbstractModel):
                 'fecha':label_date(l.create_date)} for l in liqu[:300]]
             data['estados_liquidaciones'] = [{'clave':k,'nombre':dict(liqu._fields['estado'].selection).get(k,k),'cantidad':n} for k,n in sorted(estados.items())]
         if commercial:
-            # Los datos de marcas/proveedores solo pueden consultarse con rol
-            # comercial explícito. Preferimos la tabla PRIVADA del conector ERP.
+            # Relaciones 1:1 entre fichas PRIVADAS y líneas operativas; no se
+            # necesita ni se permite almacenar marca/proveedor en el modelo
+            # público transcash.guia.linea.
+            Private = self.env['tc.guide.line.private'].sudo()
             details = {}
-            if 'tc.guide.line.private' in self.env.registry.models and guias:
-                extids = [g.external_id_erp for g in guias if g.external_id_erp]
-                tc_guides = self.env['tc.guide'].sudo().search([('company_id','in',companies),('external_id','in',extids)]) if extids else self.env['tc.guide']
-                private_lines = self.env['tc.guide.line.private'].sudo().search([('line_id.guide_id','in',tc_guides.ids)]) if tc_guides else self.env['tc.guide.line.private']
-                for p in private_lines:
-                    details[(p.line_id.guide_id.external_id,p.line_id.external_line_id)] = p
-            brands = defaultdict(lambda:{'nombre':'','guias':set(),'reportes':0, 'kg':0.0})
-            suppliers = defaultdict(lambda:{'nombre':'','guias':set(),'reportes':0, 'kg':0.0})
+            if lineas:
+                linked = Private.search([('company_id', 'in', companies),
+                                         ('operational_line_id', 'in', lineas.ids)])
+                details.update({private.operational_line_id.id: private for private in linked})
+
+                # Compatibilidad con guías previas a v2.3 que aún no han pasado
+                # por la conciliación; unir por ID externo + ID de línea.
+                missing = lineas.filtered(lambda ln: ln.id not in details and ln.guia_id.external_id_erp)
+                if missing:
+                    extids = list(set(missing.mapped('guia_id.external_id_erp')))
+                    staged = self.env['tc.guide'].sudo().search([
+                        ('company_id', 'in', companies), ('external_id', 'in', extids)])
+                    private_rows = Private.search([('line_id.guide_id', 'in', staged.ids)]) if staged else Private.browse()
+                    fallback = {(pr.line_id.guide_id.company_id.id,
+                                 pr.line_id.guide_id.external_id,
+                                 pr.line_id.external_line_id): pr for pr in private_rows}
+                    for line in missing:
+                        key = (line.guia_id.company_id.id,
+                               line.guia_id.external_id_erp, line.external_line_id)
+                        if key in fallback:
+                            details[line.id] = fallback[key]
+
+            damages_by_line = defaultdict(list)
+            for damage in roturas:
+                damages_by_line[damage.linea_id.id].append(damage)
+
+            brands = defaultdict(lambda: {
+                'nombre': '', 'codigo': '', 'guias': set(), 'guias_incidencia': set(),
+                'reportes': 0, 'pendientes': 0, 'aprobadas': 0,
+                'cantidad_m2': 0.0, 'cantidad_unidades': 0.0,
+                'cantidad_rota_m2': 0.0, 'cantidad_rota_unidades': 0.0,
+                'peso_kg': 0.0,
+            })
+            suppliers = defaultdict(lambda: {
+                'nombre': '', 'codigo': '', 'guias': set(), 'guias_incidencia': set(),
+                'reportes': 0, 'pendientes': 0, 'aprobadas': 0,
+                'cantidad_m2': 0.0, 'cantidad_unidades': 0.0,
+                'cantidad_rota_m2': 0.0, 'cantidad_rota_unidades': 0.0,
+                'peso_kg': 0.0,
+            })
             for line in lineas:
-                g = line.guia_id
-                p = details.get((g.external_id_erp, line.external_line_id))
-                bc = (p.brand_code_raw if p else line.marca_codigo) or 'SIN-CODIGO'
-                bn = (p.brand_name_raw if p else line.marca_nombre) or 'Marca sin informar'
-                sc = (p.supplier_code_raw if p else line.proveedor_producto_codigo) or 'SIN-CODIGO'
-                sn = (p.supplier_name_raw if p else line.proveedor_producto_nombre) or 'Proveedor sin informar'
-                for agg,key,nm in ((brands,bc,bn),(suppliers,sc,sn)):
-                    row = agg[key]; row['nombre'] = nm; row['guias'].add(g.id)
-                count = len([r for r in rotura_por_guia[g.id] if r.linea_id.id == line.id])
-                brands[bc]['reportes']+=count
-                suppliers[sc]['reportes']+=count
-            def private_rows(agg):
-                return sorted(({'clave':str(k),'codigo':k,'nombre':v['nombre'],'guias':len(v['guias']),
-                                'reportes':v['reportes']} for k,v in agg.items()),key=lambda a:(-a['reportes'],-a['guias'],a['nombre']))
+                guide = line.guia_id
+                private = details.get(line.id)
+                # Los maestros privados son la referencia estructurada;
+                # los valores originales sirven de respaldo auditable.
+                brand_code = (private.brand_id.code or private.brand_code_raw) if private else ''
+                brand_name = (private.brand_id.name or private.brand_name_raw) if private else ''
+                supplier_code = (private.supplier_id.external_code or private.supplier_code_raw) if private else ''
+                supplier_name = (private.supplier_id.name or private.supplier_name_raw) if private else ''
+                for bucket, code, name in (
+                    (brands, brand_code or 'SIN-CODIGO', brand_name or 'Marca sin informar'),
+                    (suppliers, supplier_code or 'SIN-CODIGO', supplier_name or 'Proveedor sin informar'),
+                ):
+                    # No mezclar accidentalmente maestros de diferentes empresas.
+                    row = bucket[(guide.company_id.id, code)]
+                    row['codigo'] = code
+                    row['nombre'] = name
+                    row['guias'].add(guide.id)
+                    # Solo atribuir al fabricante/Marca el daño documentado
+                    # sobre SU línea. Novedades generales del viaje no prueban
+                    # que todos los fabricantes de esa guía tengan una falla.
+                    if damages_by_line[line.id]:
+                        row['guias_incidencia'].add(guide.id)
+                    row['peso_kg'] += max(0.0, line.peso_kg or 0.0)
+                    if line.unidad == 'm2':
+                        row['cantidad_m2'] += line.cantidad or 0.0
+                    elif line.unidad == 'unidad':
+                        row['cantidad_unidades'] += line.cantidad or 0.0
+                    for damage in damages_by_line[line.id]:
+                        row['reportes'] += 1
+                        row['pendientes'] += int(damage.estado == 'pendiente')
+                        row['aprobadas'] += int(damage.estado == 'aprobada')
+                        if line.unidad == 'm2':
+                            row['cantidad_rota_m2'] += damage.cantidad
+                        elif line.unidad == 'unidad':
+                            row['cantidad_rota_unidades'] += damage.cantidad
+
+            def private_rows(bucket):
+                return sorted(({
+                    'clave': '%s:%s' % key,
+                    'codigo': value['codigo'], 'nombre': value['nombre'],
+                    'guias': len(value['guias']),
+                    'incidencias': len(value['guias_incidencia']),
+                    'reportes': value['reportes'],
+                    'pendientes': value['pendientes'],
+                    'aprobadas': value['aprobadas'],
+                    'cantidad_m2': round(value['cantidad_m2'], 3),
+                    'cantidad_unidades': round(value['cantidad_unidades'], 3),
+                    'cantidad_rota_m2': round(value['cantidad_rota_m2'], 3),
+                    'cantidad_rota_unidades': round(value['cantidad_rota_unidades'], 3),
+                    'peso_kg': round(value['peso_kg'], 3),
+                } for key, value in bucket.items()),
+                    key=lambda row: (-row['reportes'], -row['incidencias'], -row['guias'], row['nombre']))
+
             data['marcas'] = private_rows(brands)
             data['proveedores_producto'] = private_rows(suppliers)
+            data['notas'].append('Análisis comercial: solo daños registrados en la línea del producto se atribuyen a su marca/proveedor. Las incidencias generales de viaje no se imputan a todos sus fabricantes. Roturas rechazadas excluidas.')
         return data
 
     @api.model

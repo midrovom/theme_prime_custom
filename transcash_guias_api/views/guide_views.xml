@@ -129,7 +129,7 @@
         <field name="name"/><field name="state"/><field name="numero_documento"/><field name="tipo_documento"/>
         <field name="origen"/><field name="destino"/><field name="destino_ciudad"/>
         <field name="proveedor_id"/><field name="chofer_usuario_id"/><field name="chofer_contacto_id"/><field name="tc_estado_portal_chofer"/><field name="placa"/>
-        <field name="fecha_prevista"/><field name="hoja_ruta_id"/><field name="embarque_id"/>
+        <field name="fecha_prevista"/><field name="tc_erp_date_start"/><field name="tc_erp_date_end"/><field name="tc_erp_date_planned"/><field name="hoja_ruta_id"/><field name="embarque_id"/>
         <field name="incidencia_estado"/><field name="total_productos"/><field name="numero_bultos"/>
         <field name="peso_kg"/><field name="destinatario_id"/>
         <field name="tc_line_count"/><field name="tc_total_kg"/><field name="tc_total_m2"/><field name="tc_total_unidades"/><field name="tc_total_pallets"/><field name="tc_total_cajas"/><templates>
@@ -171,10 +171,13 @@
               </div>
               <div class="tcg-card__metrics tcg-card__metrics--six">
                 <div><span>Productos</span><strong><field name="tc_line_count"/></strong></div><div><span>Peso kg</span><strong><field name="tc_total_kg"/></strong></div><div><span>m²</span><strong><field name="tc_total_m2"/></strong></div><div><span>Unidades</span><strong><field name="tc_total_unidades"/></strong></div><div><span>Pallets</span><strong><field name="tc_total_pallets"/></strong></div><div><span>Cajas</span><strong><field name="tc_total_cajas"/></strong></div></div>
+              <div class="tcg-operational-dates" aria-label="Fechas informadas por el ERP">
+                <div><small>Inicio ERP</small><strong t-if="record.tc_erp_date_start.raw_value"><field name="tc_erp_date_start"/></strong><span t-else="">No informada</span></div>
+                <div><small>Fin ERP</small><strong t-if="record.tc_erp_date_end.raw_value"><field name="tc_erp_date_end"/></strong><span t-else="">No informada</span></div>
+                <div><small>Prevista ERP</small><strong t-if="record.tc_erp_date_planned.raw_value"><field name="tc_erp_date_planned"/></strong><span t-else="">No informada</span></div>
+              </div>
               <div class="tcg-card__footer">
-                <span class="tcg-card__date"><i class="fa fa-calendar-o" aria-hidden="true"/>
-                  <span t-if="record.fecha_prevista.raw_value"><field name="fecha_prevista"/></span><span t-else="">Sin fecha prevista</span>
-                </span>
+                <span class="tcg-card__date"><i class="fa fa-calendar-o" aria-hidden="true"/> Planificación ERP (solo fechas)</span>
                 <a type="open" class="tcg-card__open">Ver guía <i class="fa fa-arrow-right" aria-hidden="true"/></a>
               </div>
             </div>

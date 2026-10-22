@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Operational guide: date-only display for EVERY operator, no false time. -->
+    <record id="view_tc_guide_operational_erp_dates" model="ir.ui.view">
+        <field name="name">transcash.guia.form.erp.calendar.dates.v23</field>
+        <field name="model">transcash.guia</field>
+        <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='fecha_inicio_traslado']" position="replace">
+                <field name="tc_erp_date_start" readonly="1"/>
+            </xpath>
+            <xpath expr="//field[@name='fecha_fin_traslado']" position="replace">
+                <field name="tc_erp_date_end" readonly="1"/>
+            </xpath>
+            <xpath expr="//field[@name='fecha_prevista']" position="replace">
+                <field name="tc_erp_date_planned" readonly="1"/>
+            </xpath>
+            <!-- Historical empty commercial base fields are not public operational information. -->
+            <xpath expr="//field[@name='linea_ids']/list/field[@name='marca_nombre']" position="replace"/>
+            <xpath expr="//field[@name='linea_ids']/list/field[@name='proveedor_producto_nombre']" position="replace"/>
+        </field>
+    </record>
+
+    <record id="view_tc_guide_list_dates_v23" model="ir.ui.view">
+        <field name="name">transcash.guia.list.calendar.dates.v23</field>
+        <field name="model">transcash.guia</field>
+        <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='fecha_prevista']" position="replace">
+                <field name="tc_erp_date_start" optional="show"/>
+                <field name="tc_erp_date_end" optional="show"/>
+                <field name="tc_erp_date_planned" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Commercial data is available INSIDE the operational guide, for admins only. -->
+    <record id="view_tc_guide_operational_commercial_tab" model="ir.ui.view">
+        <field name="name">transcash.guia.form.private.commercial.v23</field>
+        <field name="model">transcash.guia</field>
+        <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/header" position="inside">
+                <button name="action_tc_view_commercial" type="object"
+                        string="Marcas y proveedores (privado)" class="btn-secondary"
+                        groups="transcash_guias_api.group_tc_sync_admin,base.group_system"/>
+            </xpath>
+            <xpath expr="//form/sheet/notebook" position="inside">
+                <page string="Marcas y proveedores (privado)"
+                      groups="transcash_guias_api.group_tc_sync_admin,base.group_system">
+                    <field name="tc_private_commercial_line_ids" nolabel="1" readonly="1">
+                        <list create="false" edit="false" delete="false">
+                            <field name="operational_line_id" string="Línea operativa"/>
+                            <field name="sku"/>
+                            <field name="brand_code_raw" string="Código marca"/>
+                            <field name="brand_name_raw" string="Marca"/>
+                            <field name="brand_id" string="Maestro marca" optional="hide"/>
+                            <field name="supplier_code_raw" string="Código proveedor de producto"/>
+                            <field name="supplier_name_raw" string="Proveedor de producto"/>
+                            <field name="supplier_id" string="Maestro proveedor" optional="show"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_tc_private_link_list_v23" model="ir.ui.view">
+        <field name="name">tc.guide.line.private.list.operational.link</field>
+        <field name="model">tc.guide.line.private</field>
+        <field name="inherit_id" ref="view_tc_private_line_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='sku']" position="before">
+                <field name="operational_guide_id" optional="show"/>
+                <field name="operational_line_id" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="server_tc_repair_operational_erp_v23" model="ir.actions.server">
+        <field name="name">Reparar fechas y vínculos comerciales de guías existentes</field>
+        <field name="model_id" ref="model_tc_guide_sync"/>
+        <field name="state">code</field>
+        <field name="groups_id" eval="[(4, ref('transcash_guias_api.group_tc_sync_admin')), (4, ref('base.group_system'))]"/>
+        <field name="code"><![CDATA[
+action = env['tc.guide.sync'].repair_operational_dates_commercial(env.company.id)
+        ]]></field>
+    </record>
+    <menuitem id="menu_tc_repair_dates_links_v23"
+              name="Reparar fechas y relaciones comerciales"
+              parent="logistica_transcash.menu_tc_logistics_v530"
+              action="server_tc_repair_operational_erp_v23"
+              sequence="78"
+              groups="transcash_guias_api.group_tc_sync_admin,base.group_system"/>
+</odoo>

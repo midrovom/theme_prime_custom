@@ -4,6 +4,7 @@ import re
 import unicodedata
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, ValidationError
+from .date_bridge import date_as_odoo_utc
 
 _logger = logging.getLogger(__name__)
 
@@ -61,6 +62,77 @@ class TCGuidePublication(models.Model):
                 return False, _('Destino ambiguo: %s coincide con varios destinos.') % term
         return False, _('No existe código de destino y no hay coincidencia exacta en el catálogo: %s') % (', '.join(terms) or '(vacío)')
 
+    def _erp_dates_for_operation(self, operational=None, only_missing=False):
+        """Map ERP calendar dates to the EXISTING operational fields.
+
+        Odoo fields are Datetime; the ERP only sends dates. Store midnight in
+        company local time as UTC for consistent calendar display in Ecuador.
+        In assigned/delivered trips do not rewrite any existing value.
+        """
+        self.ensure_one()
+        timezone_name = self.company_id.partner_id.tz or 'America/Guayaquil'
+        bindings = (
+            ('erp_start_date', 'fecha_inicio_traslado'),
+            ('erp_end_date', 'fecha_fin_traslado'),
+            ('erp_planned_date', 'fecha_prevista'),
+        )
+        result = {}
+        for source, target in bindings:
+            raw = self[source]
+            if raw and (not only_missing or not operational or not operational[target]):
+                result[target] = date_as_odoo_utc(raw, timezone_name)
+        return result
+
+    def _link_private_operational_lines(self, operational):
+        """Join each restricted ERP commercial row to its exact operational line.
+
+        No commercial value is written to the public operational line model.
+        This link lets private KPI queries aggregate by brand/product supplier
+        without exposing those fields to drivers, customers or transporters.
+        """
+        self.ensure_one()
+        Private = self.env['tc.guide.line.private'].sudo().with_company(self.company_id)
+        OpLine = self.env['transcash.guia.linea'].sudo().with_company(self.company_id)
+        operational_lines = OpLine.search([('guia_id', '=', operational.id)])
+        by_external = {ln.external_line_id: ln for ln in operational_lines if ln.external_line_id}
+        private_rows = Private.search([('line_id.guide_id', '=', self.id)])
+        result = {'linked': 0, 'missing_line': 0}
+        for private in private_rows:
+            operational_line = by_external.get(private.line_id.external_line_id)
+            if not operational_line:
+                result['missing_line'] += 1
+                continue
+            if private.operational_line_id != operational_line:
+                # Un enlace nunca debe apuntar a otra guía/compañía.
+                private.write({'operational_line_id': operational_line.id})
+            result['linked'] += 1
+        return result
+
+    def _repair_dates_and_links(self):
+        """Backfill historical guides without republishing their operational data."""
+        self.ensure_one()
+        Guide = self.env['transcash.guia'].sudo().with_company(self.company_id)
+        operational = self.operational_guide_id
+        if (not operational or operational.company_id != self.company_id or
+                operational.external_id_erp != self.external_id):
+            operational = Guide.search([
+                ('company_id', '=', self.company_id.id),
+                ('external_id_erp', '=', self.external_id)], limit=1)
+        if not operational:
+            return {'guides': 0, 'dates': 0, 'linked': 0, 'missing_line': 0}
+        # Only pending/free guides may have their planned dates refreshed.
+        assigned = (operational.state != 'registrada' or operational.hoja_ruta_id or
+                    operational.embarque_id or operational.aprobacion_global == 'aprobada')
+        date_values = self._erp_dates_for_operation(operational, only_missing=bool(assigned))
+        updates = {name: value for name, value in date_values.items()
+                   if operational[name] != value}
+        if updates:
+            operational.write(updates)
+        links = self._link_private_operational_lines(operational)
+        if self.operational_guide_id != operational:
+            self.write({'operational_guide_id': operational.id})
+        return {'guides': 1, 'dates': len(updates), **links}
+
     def _publish_one(self):
         self.ensure_one()
         Guide = self.env['transcash.guia'].sudo().with_company(self.company_id)
@@ -93,8 +165,12 @@ class TCGuidePublication(models.Model):
                 if (not existing.chofer_usuario_id and self.driver_user_id and
                         plan.chofer_usuario_id == self.driver_user_id):
                     additions['chofer_usuario_id'] = self.driver_user_id.id
+            # Guías en operación: completar solamente fechas ERP faltantes.
+            # Nunca se cambia una fecha que ya está registrada en el viaje.
+            additions.update(self._erp_dates_for_operation(existing, only_missing=True))
             if additions:
                 existing.write(additions)
+            self._link_private_operational_lines(existing)
             self.sudo().write({'operational_guide_id': existing.id,
                                'publication_state': 'assigned',
                                'publication_note': '\n'.join(filter(None, (
@@ -116,6 +192,7 @@ class TCGuidePublication(models.Model):
             'ultima_sync': fields.Datetime.now(),
             'peso_kg': sum(self.line_ids.mapped('weight_kg')),
         }
+        values.update(self._erp_dates_for_operation(existing, only_missing=False))
         if destination:
             values.update({'destino_id': destination.id, 'destino_codigo': destination.codigo})
         else:
@@ -178,6 +255,7 @@ class TCGuidePublication(models.Model):
                 old.write(vals)
             else:
                 Line.create(vals)
+        self._link_private_operational_lines(operational)
         self.sudo().write({'operational_guide_id': operational.id,
                            'publication_state': 'published' if destination else 'destination',
                            'publication_note': '\n'.join(filter(None, (note, self.master_link_note))) or False})
