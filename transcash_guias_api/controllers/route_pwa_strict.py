@@ -416,6 +416,120 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         report['limite'] = (report['analizadas'] >= MAX_SCAN or report['compatible'] >= MAX_DISPLAY)
         return entries[:MAX_DISPLAY + len(selected)], report
 
+    def _driver_guide_overview(self, ruta, search=''):
+        """Diagnóstico SOLO del chofer de la hoja, no de todos los conductores.
+
+        Recupera guías libres Y ya asignadas. El resultado es de consulta:
+        para seleccionar se sigue aplicando _match() + route_select().
+        Nunca considera el mismo nombre como prueba de identidad.
+        """
+        user = ruta.chofer_usuario_id
+        if not user:
+            return {'guias': [], 'total_mostradas': 0, 'mas_resultados': False,
+                    'totales': [], 'tiene_criterio': False}
+        partner = user.partner_id
+        docs = {_fiscal_id(value) for value in (user.login, partner.vat)} - {''}
+        # Las coincidencias por cédula se verifican nuevamente con _driver_matches.
+        # También contempla usuarios y contactos duplicados con el mismo documento.
+        partner_ids = [partner.id]
+        user_ids = [user.id]
+        if docs:
+            Partner = request.env['res.partner'].sudo().with_context(active_test=False)
+            # Puede haber RUC/cédulas con puntuación. Revisar un conjunto acotado.
+            known = Partner.search([('vat', '!=', False),
+                                    '|', ('vat', 'in', sorted(docs)),
+                                         ('vat', 'ilike', sorted(docs)[0])], limit=250)
+            partner_ids += [p.id for p in known if _fiscal_id(p.vat) in docs]
+            User = request.env['res.users'].sudo().with_context(active_test=False)
+            accounts = User.search([('partner_id', 'in', partner_ids)], limit=250)
+            user_ids += [a.id for a in accounts if a.id == user.id or
+                         _fiscal_id(a.login) in docs or
+                         _fiscal_id(a.partner_id.vat) in docs]
+        criteria = [[('chofer_usuario_id', 'in', list(set(user_ids)))],
+                    [('chofer_contacto_id', 'in', list(set(partner_ids)))]]
+        if docs:
+            criteria.append([('ruc_chofer', 'in', sorted(docs))])
+        domain = expression.AND([
+            [('company_id', '=', ruta.company_id.id)], expression.OR(criteria)])
+        if search:
+            domain = expression.AND([domain, [
+                '|', '|', ('name', 'ilike', search),
+                ('numero_documento', 'ilike', search),
+                ('external_id_erp', 'ilike', search)]])
+        Guide = request.env['transcash.guia']  # sin sudo: respetar permisos internos
+        candidates = Guide.search(domain, order='id desc', limit=201)
+        source_map = self._source_map(candidates, ruta.company_id.id)
+        rows, breakdown = [], {}
+        for guia in candidates:
+            source = source_map.get(guia.id)
+            # Mostrar también los conflictos de identidad ya vinculados al
+            # usuario/contacto elegido o con la misma cédula: la tabla sirve
+            # precisamente para diagnosticarlos, NO para seleccionarlos.
+            driver_ok = self._driver_matches(ruta, guia, source)
+            same_record = (guia.chofer_usuario_id.id == user.id or
+                           guia.chofer_contacto_id.id == partner.id)
+            same_document = bool(docs and _fiscal_id(guia.ruc_chofer) in docs)
+            if not (driver_ok or same_record or same_document):
+                continue
+            destiny_ok = self._destination_matches(ruta, guia, source)
+            transport_ok = self._transport_matches(ruta, guia, source)
+            valid, reason = self._match(ruta, guia, source)
+            trip = guia.embarque_id or (guia.hoja_ruta_id.embarque_id
+                                         if guia.hoja_ruta_id else False)
+            if not driver_ok:
+                status = 'Revisar: cédula y usuario de chofer no coinciden'
+            elif guia.hoja_ruta_id:
+                status = 'En hoja: %s' % guia.hoja_ruta_id.name
+            elif trip:
+                status = 'En embarque: %s' % trip.name
+            elif guia.state != 'registrada':
+                status = 'Estado: %s' % dict(guia._fields['state'].selection).get(
+                    guia.state, guia.state)
+            elif not destiny_ok:
+                status = 'Destino diferente'
+            elif not transport_ok:
+                status = 'Transportista diferente'
+            else:
+                status = 'Disponible para esta ruta' if valid else 'Requiere revisión'
+            provider = guia.proveedor_id.display_name if guia.proveedor_id else (
+                source.transport_name if source else 'Sin transportista vinculado')
+            destination = guia.destino_id.name if guia.destino_id else (
+                guia.destino or guia.destino_ciudad or 'Sin destino vinculado')
+            row = {
+                'numero': guia.name,
+                'documento': guia.numero_documento or '',
+                'proveedor': provider,
+                'destino': destination,
+                'estado': dict(guia._fields['state'].selection).get(
+                    guia.state, guia.state),
+                'ruta': guia.hoja_ruta_id.name or 'Sin ruta',
+                'embarque': trip.name if trip else 'Sin embarque',
+                'estado_ruta': (guia.hoja_ruta_id.estado_operativo
+                                if guia.hoja_ruta_id else ''),
+                'compatible': valid,
+                'chofer_ok': driver_ok,
+                'destino_ok': destiny_ok,
+                'transporte_ok': transport_ok,
+                'observacion': status,
+            }
+            rows.append(row)
+            key = (provider, destination)
+            summary = breakdown.setdefault(key, {
+                'proveedor': provider, 'destino': destination,
+                'cantidad': 0, 'disponibles': 0, 'asignadas': 0})
+            summary['cantidad'] += 1
+            summary['disponibles' if valid else 'asignadas'] += 1
+        limited = len(candidates) >= 201
+        return {
+            'guias': rows[:100],
+            'total_mostradas': len(rows),
+            'mas_resultados': limited or len(rows) > 100,
+            'totales': sorted(breakdown.values(),
+                              key=lambda r: (-r['cantidad'], r['proveedor'], r['destino']))[:30],
+            'tiene_criterio': True,
+            'chofer': user.name,
+        }
+
     def _candidates(self, route, search):
         return self._candidates_and_report(route, search)[0]
 
@@ -430,8 +544,9 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         search = (kw.get('buscar') or '').strip()[:90]
         rows, report = self._candidates_and_report(ruta, search) if ruta.state == 'borrador' else ([], {})
         return self._page('Hoja de ruta ' + ruta.name, section='ruta_detalle', ruta=ruta,
-                          filas=rows, tc_filtro_reporte=report, buscar=search,
-                          ok=kw.get('ok'), error=kw.get('error'),
+                          filas=rows, tc_filtro_reporte=report,
+                          tc_guias_chofer=self._driver_guide_overview(ruta, search),
+                          buscar=search, ok=kw.get('ok'), error=kw.get('error'),
                           seleccion_actual=','.join(str(i) for i in sorted(ruta.seleccion_guia_ids.ids)))
 
     @http.route('/transcash/operacion/rutas/<int:route_id>/guias', type='http',

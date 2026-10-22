@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- No restringir a guías libres: se necesita ver también las asignadas.
+       La selección REAL dentro de la PWA conserva sus restricciones. -->
+  <record id="action_tc_available_route_guides" model="ir.actions.act_window">
+    <field name="name">Guías para rutas · seguimiento</field>
+    <field name="domain">[]</field>
+    <field name="context">{'create': False, 'edit': False, 'delete': False}</field>
+  </record>
+  <record id="menu_tc_available_route_guides" model="ir.ui.menu">
+    <field name="name">Guías para rutas y seguimiento</field>
+  </record>
+
+  <record id="view_tc_guia_search_trazabilidad_v212" model="ir.ui.view">
+    <field name="name">transcash.guia.search.trazabilidad.v212</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_search"/>
+    <field name="arch" type="xml">
+      <xpath expr="//search/field[@name='chofer_usuario_id']" position="after">
+        <field name="chofer_contacto_id"/>
+        <field name="proveedor_id"/>
+        <field name="destino_id"/>
+        <field name="hoja_ruta_id"/>
+      </xpath>
+      <xpath expr="//search/filter[@name='embarque']" position="before">
+        <separator/>
+        <filter name="tc_disponibles_v212" string="Disponibles para ruta"
+          domain="[('state','=','registrada'),('hoja_ruta_id','=',False),('embarque_id','=',False)]"/>
+        <filter name="tc_asignadas_v212" string="Con hoja de ruta"
+          domain="[('hoja_ruta_id','!=',False)]"/>
+        <filter name="tc_con_embarque_v212" string="Con embarque"
+          domain="['|',('embarque_id','!=',False),('hoja_ruta_id.embarque_id','!=',False)]"/>
+      </xpath>
+      <xpath expr="//group[@string='Agrupar por']" position="inside">
+        <filter name="tc_por_destino_v212" string="Destino" context="{'group_by':'destino_id'}"/>
+        <filter name="tc_por_ruta_v212" string="Hoja de ruta" context="{'group_by':'hoja_ruta_id'}"/>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="view_tc_guia_list_trazabilidad_v212" model="ir.ui.view">
+    <field name="name">transcash.guia.list.trazabilidad.v212</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_list"/>
+    <field name="arch" type="xml">
+      <xpath expr="//list/field[@name='hoja_ruta_id']" position="after">
+        <field name="tc_traza_situacion" widget="badge" optional="show"/>
+        <field name="tc_traza_ruta_estado" optional="show"/>
+        <field name="tc_traza_embarque_id" optional="show"/>
+        <field name="tc_traza_embarque_estado" optional="show"/>
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Registro operativo: misma familia de tarjetas, ahora trazabilidad. -->
+  <record id="view_tc_guia_kanban_trazabilidad_v212" model="ir.ui.view">
+    <field name="name">transcash.guia.kanban.trazabilidad.v212</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="view_tc_operational_guide_kanban"/>
+    <field name="arch" type="xml">
+      <xpath expr="//kanban/field[@name='embarque_id']" position="after">
+        <field name="tc_traza_embarque_id"/>
+        <field name="tc_traza_embarque_estado"/>
+        <field name="tc_traza_ruta_estado"/>
+        <field name="tc_traza_situacion"/>
+      </xpath>
+      <xpath expr="//kanban[contains(@class,'tc-operational-kanban')]//div[contains(@class,'tcg-card__document')]" position="after">
+        <div class="tcg-traza">
+          <div class="tcg-traza__head">
+            <span>TRAZABILIDAD</span>
+            <span t-attf-class="tcg-traza__flag #{record.tc_traza_situacion.raw_value === 'disponible' ? 'is-free' : 'is-assigned'}">
+              <field name="tc_traza_situacion"/>
+            </span>
+          </div>
+          <div class="tcg-traza__item" t-if="record.hoja_ruta_id.raw_value">
+            <div><small>HOJA DE RUTA</small><strong><field name="hoja_ruta_id"/></strong>
+              <small t-if="record.tc_traza_ruta_estado.raw_value">Estado: <field name="tc_traza_ruta_estado"/></small></div>
+            <a type="object" name="action_tc_ver_hoja_ruta" class="tcg-traza__link">Ver ruta <i class="fa fa-arrow-right"/></a>
+          </div>
+          <div class="tcg-traza__item" t-if="record.tc_traza_embarque_id.raw_value">
+            <div><small>EMBARQUE</small><strong><field name="tc_traza_embarque_id"/></strong>
+              <small>Estado: <field name="tc_traza_embarque_estado"/></small></div>
+            <a type="object" name="action_tc_ver_embarque" class="tcg-traza__link">Ver viaje <i class="fa fa-arrow-right"/></a>
+          </div>
+          <div t-if="!record.hoja_ruta_id.raw_value &amp;&amp; !record.tc_traza_embarque_id.raw_value"
+               class="tcg-traza__empty">Sin hoja de ruta ni embarque asignados</div>
+        </div>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="view_tc_guia_form_trazabilidad_v212" model="ir.ui.view">
+    <field name="name">transcash.guia.form.trazabilidad.v212</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet/div[contains(@class,'oe_title')]" position="before">
+        <div class="oe_button_box" name="button_box">
+          <field name="tc_traza_embarque_id" invisible="1"/>
+          <button name="action_tc_ver_hoja_ruta" type="object" class="oe_stat_button"
+                  icon="fa-sitemap" invisible="not hoja_ruta_id">
+            <div class="o_stat_info"><span class="o_stat_text">Abrir hoja</span><span class="o_stat_text">de ruta</span></div>
+          </button>
+          <button name="action_tc_ver_embarque" type="object" class="oe_stat_button"
+                  icon="fa-truck" invisible="not tc_traza_embarque_id">
+            <div class="o_stat_info"><span class="o_stat_text">Abrir</span><span class="o_stat_text">embarque</span></div>
+          </button>
+        </div>
+      </xpath>
+      <xpath expr="//group[@string='Guía y ruta']/field[@name='hoja_ruta_id']" position="after">
+        <field name="tc_traza_situacion" readonly="1"/>
+        <field name="tc_traza_ruta_estado" readonly="1" invisible="not hoja_ruta_id"/>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="view_tc_ruta_form_trazabilidad_v212" model="ir.ui.view">
+    <field name="name">transcash.hoja.ruta.form.trazabilidad.v212</field>
+    <field name="model">transcash.hoja.ruta</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_ruta_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet/div[contains(@class,'oe_title')]" position="before">
+        <div class="oe_button_box" name="tc_traza_button_box">
+          <button name="action_tc_guias_del_chofer" type="object" class="oe_stat_button"
+                  icon="fa-id-card" invisible="not chofer_usuario_id">
+            <div class="o_stat_info"><span class="o_stat_text">Guías del</span><span class="o_stat_text">chofer</span></div>
+          </button>
+          <button name="action_tc_ver_embarque" type="object" class="oe_stat_button"
+                  icon="fa-truck" invisible="not embarque_id">
+            <div class="o_stat_info"><span class="o_stat_text">Ver</span><span class="o_stat_text">embarque</span></div>
+          </button>
+        </div>
+      </xpath>
+      <xpath expr="//page[@string='Guías de la ruta']/group[1]" position="before">
+        <div class="alert alert-info" role="note">
+          La opción «Guías del chofer» muestra su proveedor de transporte, destino,
+          estado y asignaciones actuales, incluso cuando la guía ya pertenece a otra ruta.
+          Esta consulta no reasigna ni selecciona guías.
+        </div>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="view_tc_ruta_kanban_trazabilidad_v212" model="ir.ui.view">
+    <field name="name">transcash.hoja.ruta.kanban.trazabilidad.v212</field>
+    <field name="model">transcash.hoja.ruta</field>
+    <field name="inherit_id" ref="view_tc_route_kanban_v15"/>
+    <field name="arch" type="xml">
+      <xpath expr="//div[contains(@class,'tcg-card__footer')]" position="before">
+        <div class="tcg-traza__actions">
+          <a type="object" name="action_tc_guias_del_chofer">Guías de este chofer</a>
+          <a t-if="record.embarque_id.raw_value" type="object" name="action_tc_ver_embarque">Ver embarque</a>
+        </div>
+      </xpath>
+    </field>
+  </record>
+</odoo>
