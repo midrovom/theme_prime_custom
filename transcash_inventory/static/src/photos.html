@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="transcash-csrf" content="@@CSRF@@"/>
 <title>Transcash — Buscar fotos de productos</title>
-<link rel="stylesheet" href="/transcash_inventory/static/src/photos.css?v=1.29"/>
+<link rel="stylesheet" href="/transcash_inventory/static/src/photos.css?v=1.51"/>
 </head><body>
 <header><a href="/transcash_inventory/dashboard" class="brand">◈ TRANSCASH</a><span>Imágenes de catálogo</span></header>
 <main>
@@ -13,22 +13,22 @@
   </div>
   <section class="metrics">
     <article><span>Productos en inventario</span><strong id="totalProducts">—</strong></article>
-    <article><span>Enlaces revisados</span><strong id="examined">—</strong></article>
+    <article><span>Enlaces del sitio revisados</span><strong id="examined">—</strong></article>
     <article><span>Fotografías verificadas</span><strong id="matched">—</strong></article>
-    <article><span>Siguiente página de tienda</span><strong id="nextPage">—</strong></article>
+    <article><span>SKU preparados para búsqueda</span><strong id="seededSku">—</strong></article>
   </section>
   <section class="panel">
-    <h2>Sincronización del catálogo público</h2><p>Tienda de la empresa activa: <strong id="shopRoot">Consultando…</strong></p>
-    <p>Se consultan pocas páginas por solicitud para evitar sobrecargar el sitio. Solo se registran coincidencias exactas de SKU; cada fotografía se valida antes de marcarse como disponible. Si la tienda limita el acceso automático, aparecerá el motivo y podrás utilizar la asociación manual.</p>
+    <h2>Sincronización del catálogo público y cobertura total de SKU</h2><p>Tienda de la empresa activa: <strong id="shopRoot">Consultando…</strong></p>
+    <p>El sistema revisa las páginas de la tienda y prepara automáticamente todos los SKU del inventario. Después del recorrido público, intenta buscar individualmente los SKU que siguen sin fotografía. La tarea automática trabaja por lotes, respeta cada empresa y conserva las fotografías válidas. Tener un SKU en el ERP no garantiza que exista publicado en la tienda.</p>
     <div class="controls">
-      <button id="start" class="primary">Buscar fotografías</button>
+      <button id="start" class="primary">Recorrer catálogo público</button>
       <button id="stop" disabled>Detener</button>
       <button id="reset">Reiniciar búsqueda</button>
       <button id="reload">Actualizar estado</button>
     </div>
     <div class="progress"><div id="bar"></div></div>
-    <div class="status" id="status" role="status">Listo para iniciar.</div><div class="status" id="details" aria-live="polite"></div>
-    <div class="caution">La tienda pública muestra solo una parte de los SKU del ERP. Los productos que no estén publicados o no incluyan el código en la URL permanecerán sin fotografía automática.</div>
+    <div class="status" id="status" role="status">Listo para iniciar.</div><div class="status" id="details" aria-live="polite"></div><div class="status" id="coverage" aria-live="polite"></div>
+    <div class="caution">La cifra de productos publicada por la tienda puede ser menor que la del ERP. Se intentará buscar cada SKU, pero solo se vincularán imágenes que correspondan al código exacto. Los SKU sin ficha pública se identificarán como «No encontrado», no se les inventará una foto.</div>
   </section>
   <section class="panel">
     <h2>Comprobación y asociación directa de un producto</h2>
@@ -39,5 +39,5 @@
     <p class="footnote">Puedes corregir o vincular manualmente las URL desde el menú <b>Inventario Inteligente → Imágenes vinculadas</b>. Las fotografías se extraen de la propia ficha y se verifica que el enlace sirva una imagen real. Si la tienda bloquea la consulta, se registra el error y se permite reintentar.</p>
   </section>
 </main>
-<script src="/transcash_inventory/static/src/photos.js?v=1.29" defer></script>
+<script src="/transcash_inventory/static/src/photos.js?v=1.51" defer></script>
 </body></html>

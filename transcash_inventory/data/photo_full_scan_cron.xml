@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Resumable, bounded sweep of the complete ERP SKU inventory. -->
+    <record id="cron_transcash_fotos_todos_los_sku" model="ir.cron">
+        <field name="name">TRANSCASH: Buscar fotografías para todos los SKU del inventario</field>
+        <field name="model_id" ref="model_transcash_inventory_photo_sync"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_cover_full_inventory_photos()</field>
+        <field name="interval_number">2</field>
+        <field name="interval_type">minutes</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

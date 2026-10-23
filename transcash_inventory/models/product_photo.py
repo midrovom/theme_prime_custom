@@ -30,6 +30,8 @@ from ..services.photo_matcher import (
 
 _logger = logging.getLogger(__name__)
 MAX_HTML = 3 * 1024 * 1024
+# Safety ceiling only, not the former arbitrary 90-page catalogue limit.
+MAX_CATALOG_PAGES = 1500
 AGENT = 'TranscashInventoryPhoto/1.5 (+catalog-image-validation)'
 
 
@@ -467,7 +469,11 @@ class TranscashInventoryPhotoSync(models.Model):
         # Cron processes multiple SKUs from one snapshot. An optional already
         # validated map prevents repeatedly reading/decoding the full dataset.
         sku_index, names = sku_map if sku_map is not None else self._get_latest_sku_map()
-        canonical = next((s for s in names if s.casefold() == str(sku).strip().casefold()), None)
+        input_sku = str(sku).strip()
+        # The normal batch path passes canonical snapshot codes: O(1), not a
+        # fresh 16,000-SKU linear lookup for every photograph.
+        canonical = input_sku if input_sku in names else next(
+            (s for s in names if s.casefold() == input_sku.casefold()), None)
         if not canonical:
             raise UserError(_('El SKU no existe en el último inventario importado.'))
         # Reject mismatched manual links without mutating any existing photo.
@@ -669,6 +675,162 @@ class TranscashInventoryPhotoSync(models.Model):
         _logger.info('Transcash: fotos recuperadas %d de %d intentos; verificadas %d miniaturas',
                      repaired, attempted, inspected)
 
+    def seed_inventory_photo_queue(self, limit=400):
+        """Persist *every* current inventory SKU, in small resumable batches.
+
+        The public website can advertise far fewer products than the ERP.
+        Creating an `unchecked` row does not pretend the product is published
+        or that its picture exists.  The crawler first links actual catalogue
+        entries; the separate worker later tries each still-unmatched SKU.
+        """
+        self.ensure_one()
+        limit = max(1, min(int(limit), 600))
+        company_id = self.env.company.id
+        Snapshot = self.env['transcash.inventory.snapshot'].sudo()
+        snapshot = Snapshot.current_for_company(self.env.company)
+        if not snapshot:
+            return {'seeded': 0, 'cursor': 0, 'complete': True, 'total': 0}
+        params = self.env['ir.config_parameter'].sudo()
+        pointer_key = 'transcash_inventory.photo_full_scan.cursor.%d' % company_id
+        version_key = 'transcash_inventory.photo_full_scan.snapshot.%d' % company_id
+        snapshot_key = str(snapshot.id)
+        try:
+            cursor = int(params.get_param(pointer_key) or 0) if params.get_param(version_key) == snapshot_key else 0
+        except (ValueError, TypeError):
+            cursor = 0
+        sku_map = self._get_latest_sku_map()
+        names = sku_map[1]
+        codes = [sku for sku in names if sku and len(sku) <= 120]
+        total = len(codes)
+        if cursor >= total:
+            return {'seeded': 0, 'cursor': total, 'complete': True, 'total': total}
+        chunk = codes[cursor:cursor + limit]
+        Photo = self.env['transcash.inventory.photo'].sudo().with_company(self.env.company)
+        existing = set(Photo.search([
+            ('company_id', '=', company_id), ('sku', 'in', chunk)
+        ]).mapped('sku'))
+        to_create = [{'company_id': company_id, 'sku': code,
+                      'description': names[code], 'status': 'unchecked'}
+                     for code in chunk if code not in existing]
+        # Each create receives a savepoint so a concurrent public catalogue
+        # scanner adding the same SKU cannot permanently interrupt the sweep.
+        created = 0
+        for start in range(0, len(to_create), 100):
+            block = to_create[start:start + 100]
+            try:
+                # One ORM batch is materially cheaper for 16k records than
+                # one insert for every product; existing records are untouched.
+                with self.env.cr.savepoint():
+                    Photo.create(block)
+                    created += len(block)
+            except Exception:
+                # A parallel catalogue indexer might have just inserted a SKU.
+                # In that rare case retry individually with savepoints.
+                for values in block:
+                    try:
+                        with self.env.cr.savepoint():
+                            Photo.create(values)
+                            created += 1
+                    except Exception:
+                        if not Photo.search([('company_id', '=', company_id),
+                                             ('sku', '=', values['sku'])], limit=1):
+                            raise
+        cursor = min(total, cursor + len(chunk))
+        params.set_param(version_key, snapshot_key)
+        params.set_param(pointer_key, str(cursor))
+        return {'seeded': created, 'cursor': cursor,
+                'complete': cursor >= total, 'total': total}
+
+    @api.model
+    def cron_cover_full_inventory_photos(self):
+        """Eventually search every ERP SKU against the configured public shop.
+
+        The public-shop pagination covers published items quickly.  Any SKU
+        missing after a complete crawl gets a direct search attempt. Every
+        attempt is finite, checkpointed and per-company; a missing public
+        product is not equated with an application error.
+        """
+        self.env.cr.execute('SELECT pg_try_advisory_xact_lock(%s)', [18510151])
+        if not self.env.cr.fetchone()[0]:
+            return
+        started = time.monotonic()
+        max_seconds = 45
+        Snapshot = self.env['transcash.inventory.snapshot'].sudo()
+        groups = Snapshot.read_group([], ['company_id'], ['company_id'], lazy=False)
+        company_ids = sorted(int(g['company_id'][0]) for g in groups if g.get('company_id'))
+        if not company_ids:
+            return
+        params = self.env['ir.config_parameter'].sudo()
+        pause_key = 'transcash_inventory.photo_full_scan.remote_pause_until'
+        pause_value = params.get_param(pause_key)
+        if pause_value:
+            try:
+                if fields.Datetime.to_datetime(pause_value) > fields.Datetime.now():
+                    return
+            except (TypeError, ValueError):
+                pass
+        key = 'transcash_inventory.photo_full_scan.last_company_id'
+        try:
+            last_company = int(params.get_param(key) or 0)
+        except (ValueError, TypeError):
+            last_company = 0
+        rotated = ([cid for cid in company_ids if cid > last_company] +
+                   [cid for cid in company_ids if cid <= last_company])[:4]
+        searched = linked = seeded = 0
+        for cid in rotated:
+            if time.monotonic() - started > max_seconds:
+                break
+            try:
+                with self.env.cr.savepoint():
+                    company = self.env['res.company'].sudo().browse(cid)
+                    sync = self.sudo().with_company(company).get_current()
+                    progress = sync.seed_inventory_photo_queue(limit=400)
+                    seeded += progress['seeded']
+                    # Catalogue-first approach avoids needless individual
+                    # requests for the publicly listed products.
+                    if progress['complete'] and sync.finished and not sync.last_error:
+                        Photo = self.env['transcash.inventory.photo'].sudo().with_company(company)
+                        # A few direct searches per turn. A 10-second HTTPS
+                        # timeout and 45-second cron ceiling guard production.
+                        remaining = Photo.search([
+                            ('company_id', '=', cid), ('enabled', '=', True),
+                            ('status', '=', 'unchecked')], order='id', limit=8)
+                        if remaining:
+                            sku_map = sync._get_latest_sku_map()
+                            for rec in remaining:
+                                if time.monotonic() - started > max_seconds:
+                                    break
+                                try:
+                                    with self.env.cr.savepoint():
+                                        result = sync.resolve_single_sku(
+                                            rec.sku, force=False, sku_map=sku_map)
+                                        searched += 1
+                                        if result.status == 'verified':
+                                            linked += 1
+                                        # Honour remote access limits across
+                                        # companies: stop hammering the shared
+                                        # public storefront after 403/429/503.
+                                        if (result.status == 'error' and
+                                                any(token in (result.last_error or '')
+                                                    for token in ('HTTP Error 403', 'HTTP Error 429',
+                                                                  'HTTP Error 503'))):
+                                            params.set_param(pause_key, fields.Datetime.to_string(
+                                                fields.Datetime.now() + timedelta(minutes=30)))
+                                            return
+                                except Exception as exc:
+                                    _logger.exception('Transcash: búsqueda global SKU %s empresa %s',
+                                                      rec.sku, cid)
+                                    with self.env.cr.savepoint():
+                                        rec.write({'status': 'error',
+                                            'next_retry': fields.Datetime.now() + timedelta(hours=12),
+                                            'checked_on': fields.Datetime.now(),
+                                            'last_error': ('Búsqueda global: %s' % exc)[:250]})
+            except Exception:
+                _logger.exception('Transcash: cobertura integral fallida empresa %s', cid)
+            params.set_param(key, str(cid))
+        _logger.info('Transcash: cobertura global %d nuevos registros, %d SKU buscados, %d fotos verificadas',
+                     seeded, searched, linked)
+
     @api.model
     def cron_index_public_catalog(self):
         """Keep public-shop discovery running, separately from repair.
@@ -692,16 +854,23 @@ class TranscashInventoryPhotoSync(models.Model):
         rotated = ([cid for cid in company_ids if cid > last_company_id] +
                    [cid for cid in company_ids if cid <= last_company_id])
         now = fields.Datetime.now()
+        started = time.monotonic()
         for cid in rotated[:4]:
+            if time.monotonic() - started >= 45:
+                break
             try:
                 with self.env.cr.savepoint():
                     company = self.env['res.company'].sudo().browse(cid)
                     sync = self.sudo().with_company(company).get_current()
+                    if (sync.finished and sync.last_error and
+                            'límite de 90 páginas' in sync.last_error):
+                        # Resume scans stopped by the old artificial cap.
+                        sync.write({'finished': False, 'last_error': False})
                     if not sync.finished and (not sync.last_error or not sync.last_run or
                                               (now - sync.last_run) >= timedelta(hours=6)):
                         try:
                             with self.env.cr.savepoint():
-                                sync.scan_pages(1)
+                                sync.scan_pages(2)
                         except Exception:
                             _logger.exception('Transcash: fallo indexando catálogo de empresa %s', cid)
             except Exception:
@@ -722,8 +891,8 @@ class TranscashInventoryPhotoSync(models.Model):
         Photo = self.env['transcash.inventory.photo']
         for _ in range(max(1, min(int(amount), 4))):
             page = self.next_page
-            if page > 90:
-                self.write({'finished': True, 'last_error': 'Se alcanzó el límite de 90 páginas.'})
+            if page > MAX_CATALOG_PAGES:
+                self.write({'finished': True, 'last_error': ('Límite de protección de %d páginas alcanzado.' % MAX_CATALOG_PAGES)})
                 break
             try:
                 links = extract_catalog_links(self._download_listing(page), self._site_root())
@@ -779,5 +948,11 @@ class TranscashInventoryPhotoSync(models.Model):
                 'photos_linked': Photo.search_count(domain + [('status', '=', 'verified')]),
                 'photos_pending': Photo.search_count(domain + [('status', 'in', ['queued', 'unchecked'])]),
                 'photos_failed': Photo.search_count(domain + [('status', 'in', ['broken', 'error', 'not_found'])]),
+                'photos_registered': Photo.search_count([('company_id', '=', self.env.company.id)]),
+                'photos_unchecked': Photo.search_count(domain + [('status', '=', 'unchecked')]),
+                'photos_not_found': Photo.search_count(domain + [('status', '=', 'not_found')]),
+                'photos_indexed': Photo.search_count(domain + [('status', 'not in', ['unchecked', 'queued'])]),
+                'snapshot_queue_cursor': int(self.env['ir.config_parameter'].sudo().get_param(
+                    'transcash_inventory.photo_full_scan.cursor.%d' % self.env.company.id) or 0),
                 'finished': self.finished, 'last_error': self.last_error or '',
                 'last_run': str(self.last_run or '')}

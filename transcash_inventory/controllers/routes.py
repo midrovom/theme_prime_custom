@@ -946,7 +946,7 @@ class TranscashDashboardController(http.Controller):
         sync = request.env['transcash.inventory.photo.sync'].get_current()
         snap = self._latest()
         return self._json(dict(sync.public_stats(), total_products=snap.product_count if snap else 0,
-                               pages_limit=90))
+                               pages_limit=1500))
 
     @http.route('/transcash_inventory/photos/scan', type='http', auth='user', methods=['POST'], csrf=True)
     def photos_scan(self, **kw):
@@ -957,7 +957,7 @@ class TranscashDashboardController(http.Controller):
             sync = request.env['transcash.inventory.photo.sync'].get_current()
             result = sync.scan_pages(amount)
             snap = self._latest()
-            return self._json(dict(result, total_products=snap.product_count if snap else 0, pages_limit=90))
+            return self._json(dict(result, total_products=snap.product_count if snap else 0, pages_limit=1500))
         except Exception as exc:
             from odoo.exceptions import UserError
             if isinstance(exc, UserError):
@@ -976,7 +976,7 @@ class TranscashDashboardController(http.Controller):
         sync.reset_scan()
         snap = self._latest()
         return self._json(dict(sync.public_stats(), total_products=snap.product_count if snap else 0,
-                               pages_limit=90))
+                               pages_limit=1500))
 
     @http.route('/transcash_inventory/photos/queue', type='http', auth='user', methods=['POST'], csrf=True)
     def photo_queue_visible(self, **kw):
