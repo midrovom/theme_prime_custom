@@ -105,6 +105,53 @@ def _numeric(row, endpoint, label, *names, required=True):
         raise APIInventoryError('%s: %s debe ser numérico.' % (endpoint, label)) from None
 
 
+def _date_of_last_transaction(value):
+    """Only accept real day-level dates. A YYYY-MM monthly bucket is NOT a date."""
+    if value is None or str(value).strip() == '':
+        return ''
+    raw = str(value).strip()
+    iso = re.match(r'^(20\d\d)-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$', raw)
+    local = re.match(r'^(\d{1,2})/(\d{1,2})/(20\d\d)(?:[T\s].*)?$', raw)
+    dotted = re.match(r'^(20\d\d)\.(\d{1,2})\.(\d{1,2})(?:[T\s].*)?$', raw)
+    if iso:
+        y, m, d = map(int, iso.groups())
+    elif dotted:
+        y, m, d = map(int, dotted.groups())
+    elif local:
+        d, m, y = map(int, local.groups())
+    else:
+        return ''
+    try:
+        return datetime.date(y, m, d).isoformat()
+    except ValueError:
+        return ''
+
+
+def _optional_last_quantity(row, *names):
+    raw = _field(row, *names)
+    if raw is None or str(raw).strip() == '':
+        return None
+    try:
+        quantity = float(raw)
+    except (TypeError, ValueError) as exc:
+        raise APIInventoryError('La cantidad del último movimiento debe ser numérica.') from exc
+    if not (-1e12 < quantity < 1e12):
+        raise APIInventoryError('Cantidad del último movimiento fuera del rango permitido.')
+    return quantity
+
+
+def _last_movement_fields(row, kind):
+    """Optional exact movement fields, never fabricated from monthly aggregates."""
+    if kind == 'compra':
+        date_fields = ('fecha_ultima_compra', 'ultima_fecha_compra', 'last_purchase_date', 'fecha_ult_compra')
+        qty_fields = ('cantidad_ultima_compra', 'ultima_cantidad_compra', 'last_purchase_qty', 'cantidad_ult_compra')
+    else:
+        date_fields = ('fecha_ultima_venta', 'ultima_fecha_venta', 'last_sale_date', 'fecha_ult_venta')
+        qty_fields = ('cantidad_ultima_venta', 'ultima_cantidad_venta', 'last_sale_qty', 'cantidad_ult_venta')
+    return (_date_of_last_transaction(_field(row, *date_fields)),
+            _optional_last_quantity(row, *qty_fields))
+
+
 def _map_product(row):
     return {
         'codigo': _sku(row, ENDPOINTS['productos']),
@@ -200,10 +247,38 @@ def convert_api_payloads(payloads, reference_end=None):
     if orphan:
         raise APIInventoryError('%s SKU de movimientos no existen en getproductosinvt; ejemplo: %s.' %
                                 (len(orphan), ', '.join(sorted(orphan)[:4])))
+    # Exact last-document metadata is OPTIONAL. The four standard feeds contain
+    # consolidated MONTHLY purchases/sales; never infer a fictitious day or a
+    # document quantity from those monthly totals.  Accept exact fields when
+    # ERP supplies them on products, sales or purchase feed rows.
+    exact = {}
+    for kind, feed in (('productos', records['productos']),
+                       ('ventas', records['ventas']), ('compras', records['compras'])):
+        for raw in feed:
+            sku = str(_field(raw, 'codigo', 'sku', 'producto', 'default_code',
+                             'product_code', 'codproducto', 'producto_codigo') or '').strip()
+            if sku not in known:
+                continue
+            slot = exact.setdefault(sku, {'compra': ('', None), 'venta': ('', None)})
+            for operation in ('compra', 'venta'):
+                if kind not in ('productos', 'compras' if operation == 'compra' else 'ventas'):
+                    continue
+                observed = _last_movement_fields(raw, operation)
+                if observed[0] and (observed[0] > slot[operation][0] or
+                                    (observed[0] == slot[operation][0] and
+                                     slot[operation][1] is None and observed[1] is not None)):
+                    slot[operation] = observed
     try:
         result = build_dataset(products, stock, sales, purchases, reference_end=reference_end)
     except InventoryImportError as exc:
         raise APIInventoryError(str(exc)) from exc
+    sku_positions = {p[0]: i for i, p in enumerate(result['products'])}
+    result['recentMovements'] = [
+        [sku_positions[sku], row['compra'][0], row['compra'][1],
+         row['venta'][0], row['venta'][1]]
+        for sku, row in sorted(exact.items())
+        if sku in sku_positions and (row['compra'][0] or row['venta'][0])
+    ]
     result['source']['integration'] = 'API Administrator'
     result['source']['endpoints'] = list(ENDPOINTS.values())
     return result, {key: len(deduplicated[key]) for key in records} | {'reemplazos': dict(replaced)}

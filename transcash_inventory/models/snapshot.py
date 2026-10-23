@@ -40,6 +40,7 @@ class TranscashInventorySnapshot(models.Model):
         """
         contents = {
             'products': sorted(dataset['products'], key=lambda p: str(p[0])),
+            'recent_movements': sorted(dataset.get('recentMovements') or []),
             'sales': sorted(dataset['sales']),
             'purchases': sorted(dataset['purchases']),
             'stock': sorted(dataset['stockWarehouses']),
