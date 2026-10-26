@@ -16,3 +16,16 @@
 @media(max-width:1250px){.tc-bi-v22 .tc-bi-v22-rank-grid{grid-template-columns:1fr 1fr;}}
 @media(max-width:850px){.tc-bi-v22 .tc-bi-v22-rank-grid{grid-template-columns:1fr;}}
 @media(max-width:600px){.tc-bi-v22{height:calc(100dvh - 55px);overflow-y:auto;}.tc-bi-v22>.tc-bi-nav{position:relative;top:auto;min-height:auto;height:auto;max-height:none;overflow-x:auto;}.tc-bi-v22>.tc-bi-main{width:100%;}.tc-bi-v22 .tc-bi-head{position:relative;}}
+
+/* BI v2.20 — capacidad de transporte por clase de vehículo */
+.tc-bi-v22 .tc-bi-vehicle-panel{margin:0 0 22px;}
+.tc-bi-v22 .tc-bi-vehicle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;min-width:0;}
+.tc-bi-v22 .tc-bi-vehicle-card{border:1px solid #e6ebf1;border-radius:12px;background:#fbfcfd;padding:14px;min-width:0;}
+.tc-bi-v22 .tc-bi-vehicle-card>strong{display:block;font-size:14px;line-height:1.35;margin-bottom:12px;overflow-wrap:anywhere;}
+.tc-bi-v22 .tc-bi-vehicle-numbers{display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;}
+.tc-bi-v22 .tc-bi-vehicle-numbers span{display:flex;flex-direction:column;gap:3px;}
+.tc-bi-v22 .tc-bi-vehicle-numbers b{font-size:17px;font-weight:750;font-variant-numeric:tabular-nums;}
+.tc-bi-v22 .tc-bi-vehicle-numbers small{color:#607589;font-size:11px;}
+.tc-bi-v22 .tc-bi-vehicle-bar{height:7px;background:#e8f0f4;border-radius:9px;overflow:hidden;margin-top:13px;}
+.tc-bi-v22 .tc-bi-vehicle-bar>div{height:100%;background:#0b8f86;border-radius:9px;min-width:0;}
+@media(max-width:600px){.tc-bi-v22 .tc-bi-vehicle-grid{grid-template-columns:1fr;}.tc-bi-v22 .tc-bi-vehicle-card{padding:12px;}}

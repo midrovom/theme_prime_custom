@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- La aprobación y el precio pertenecen a jefe de logística, no al operador. -->
+  <record id="view_tc_embarque_finanzas_restringidas_v221" model="ir.ui.view">
+    <field name="name">transcash.embarque.form.rol.financiero.v221</field>
+    <field name="model">transcash.embarque</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_embarque_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form/sheet/group[contains(concat(' ', normalize-space(@class), ' '), ' tc-valor-embarque ')]" position="attributes">
+        <attribute name="groups">logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad</attribute>
+      </xpath>
+      <!-- No mostrar bitácora que podría tener importes de negociaciones pasadas. -->
+      <xpath expr="//form/chatter" position="attributes">
+        <attribute name="groups">logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad</attribute>
+      </xpath>
+    </field>
+  </record>
+  <record id="view_tc_embarque_list_finanzas_v221" model="ir.ui.view">
+    <field name="name">transcash.embarque.list.sin.precio.operador.v221</field>
+    <field name="model">transcash.embarque</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_embarque_list"/>
+    <field name="arch" type="xml">
+      <xpath expr="//list/field[@name='tarifa_referencial_total']" position="attributes">
+        <attribute name="groups">logistica_transcash.group_logistica_manager,logistica_transcash.group_transcash_contabilidad</attribute>
+      </xpath>
+    </field>
+  </record>
+  <record id="view_tc_armar_wizard_sin_finanzas_v221" model="ir.ui.view">
+    <field name="name">transcash.armar.embarque.wizard.sin.finanzas.operador.v221</field>
+    <field name="model">transcash.armar.embarque.wizard</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_armar_wizard"/>
+    <field name="arch" type="xml">
+      <xpath expr="//group[contains(concat(' ', normalize-space(@class), ' '), ' tc-valor-embarque ')]" position="attributes">
+        <attribute name="groups">logistica_transcash.group_logistica_manager</attribute>
+      </xpath>
+      <xpath expr="//form/div[contains(@class, 'alert') and contains(@role, 'status')]" position="replace">
+        <div class="alert alert-info" role="status">El operador registra la carga; el importe y su aprobación corresponden al jefe de Logística.</div>
+      </xpath>
+    </field>
+  </record>
+  <!-- Sólo jefe puede leer catálogo de tarifas; contabilidad conserva
+       el acceso a fletes negociados y liquidaciones. -->
+  <record id="logistica_transcash.access_tarifa_operador" model="ir.model.access">
+    <field name="perm_read" eval="False"/>
+  </record>
+  <template id="tc_pwa_operacion_privacidad_economica_v221"
+            inherit_id="logistica_transcash.portal_operacion"
+            name="PWA operaciones: precios sólo para jefe">
+    <xpath expr="//span[t[@t-esc='embarque.tarifa_referencial_total']]" position="replace"/>
+    <xpath expr="//label[@for='tc-ops-charge']" position="attributes">
+      <attribute name="t-if">request.env.user.has_group('logistica_transcash.group_logistica_manager')</attribute>
+    </xpath>
+    <xpath expr="//select[@id='tc-ops-charge']" position="attributes">
+      <attribute name="t-if">request.env.user.has_group('logistica_transcash.group_logistica_manager')</attribute>
+    </xpath>
+    <xpath expr="//a[@href='/transcash/operacion/embarques/nuevo']/small" position="replace">
+      <small>Reunir hojas de ruta y registrar la carga; el jefe de Logística define el flete</small>
+    </xpath>
+  </template>
+</odoo>

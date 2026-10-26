@@ -18,10 +18,11 @@ function paint(d){
  state=d;
  $('shopRoot').textContent=d.site_root||'No configurada';
  $('totalProducts').textContent=fmt(d.total_products);$('examined').textContent=fmt(d.examined);
- $('matched').textContent=fmt(d.photos_linked);$('nextPage').textContent=String(d.next_page||1);
- $('bar').style.width=Math.min(100,(Math.max(1,d.next_page)-1)/Math.max(1,d.pages_limit||90)*100)+'%';
- $('details').textContent=`Fotografías verificadas: ${fmt(d.photos_linked)} · Pendientes: ${fmt(d.photos_pending)} · Para revisar: ${fmt(d.photos_failed)}`;
- if(d.finished){message('Recorrido del catálogo terminado. La búsqueda por SKU individual sigue disponible.');running=false;buttons();}
+ $('matched').textContent=fmt(d.photos_linked);$('seededSku').textContent=fmt(Math.min(Number(d.snapshot_queue_cursor)||0,Number(d.total_products)||0))+' / '+fmt(d.total_products);
+ $('bar').style.width=Math.min(100,(Number(d.snapshot_queue_cursor)||0)/Math.max(1,Number(d.total_products)||1)*100)+'%';
+ $('details').textContent=`Catálogo público: ${d.finished?'recorrido terminado':'página '+fmt(d.next_page||1)} · Fotografías verificadas: ${fmt(d.photos_linked)} · En cola: ${fmt(d.photos_pending)}`;
+ $('coverage').textContent=`Cobertura total: ${fmt(d.photos_indexed)} con resultado · ${fmt(d.photos_unchecked)} sin consultar · ${fmt(d.photos_not_found)} SKU sin coincidencia pública · ${fmt(d.photos_failed)} con incidencia. El barrido integral continúa automáticamente en tareas programadas.`;
+ if(d.finished){message('Catálogo recorrido. La búsqueda automática del resto de SKU continuará en segundo plano.');running=false;buttons();}
  else if(d.last_error)message(d.last_error,true);
 }
 function buttons(){$('start').disabled=running||state.finished;$('stop').disabled=!running;$('reset').disabled=running}
@@ -30,7 +31,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function start(){
  if(running)return;running=true;buttons();message('Consultando enlaces del catálogo…');
  while(running){try{let d=await req('/transcash_inventory/photos/scan',{limit:'2'});paint(d);
-   if(d.finished||d.last_error||d.next_page>90){running=false;break;}
+   if(d.finished||d.last_error||d.next_page>(d.pages_limit||1500)){running=false;break;}
    message('Indexando enlaces… página '+d.next_page);await sleep(1000);
  }catch(e){running=false;message(e.message,true);break;}}
  buttons();
@@ -71,4 +72,6 @@ $('resolve').addEventListener('click',()=>resolve(false));
 $('link').addEventListener('click',()=>resolve(true));
 $('sku').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookup()}});
 refresh();
+// Mostrar el avance del cron sin requerir recargar la página.
+setInterval(()=>{if(!running)refresh()}, 15000);
 })();

@@ -85,6 +85,21 @@ class TranscashDashboardBI(models.AbstractModel):
             ('guia_id','in',guias_ids), ('vigente_erp','=',True)], limit=MAX_LINES+1) if guias_ids else self.env['transcash.guia.linea']
         if len(lineas) > MAX_LINES:
             raise UserError(_('Demasiados productos en el periodo. Acorte las fechas.'))
+        # Las guías de un embarque pueden haber sido creadas ANTES del rango
+        # seleccionado. Cargamos sus líneas para calcular peso por viaje sin
+        # depender del filtro de fecha aplicado a las guías del resumen.
+        shipment_guides = embarques.mapped('guia_ids')
+        missing_guide_ids = list(set(shipment_guides.ids) - set(guias_ids))
+        if missing_guide_ids:
+            extra_lines = self.env['transcash.guia.linea'].sudo().search([
+                ('guia_id', 'in', missing_guide_ids),
+                ('vigente_erp', '=', True),
+            ], limit=MAX_LINES - len(lineas) + 1)
+            if len(lineas) + len(extra_lines) > MAX_LINES:
+                raise UserError(_('Demasiados productos en guías de los viajes del periodo. Acorte las fechas.'))
+        else:
+            extra_lines = self.env['transcash.guia.linea'].browse()
+
         roturas = self.env['transcash.rotura'].sudo().search([
             ('guia_id','in',guias_ids), ('estado','!=','rechazada')]) if guias_ids else self.env['transcash.rotura']
         rotura_por_guia = defaultdict(list)
@@ -92,6 +107,8 @@ class TranscashDashboardBI(models.AbstractModel):
             rotura_por_guia[r.guia_id.id].append(r)
         por_guia = defaultdict(list)
         for lin in lineas:
+            por_guia[lin.guia_id.id].append(lin)
+        for lin in extra_lines:
             por_guia[lin.guia_id.id].append(lin)
 
         def metricas(g):
@@ -260,6 +277,69 @@ class TranscashDashboardBI(models.AbstractModel):
                 'pct_rotura':round(100*v['guias_rotura']/v['guias'],1) if v['guias'] else 0,
             } for key,v in aggregation.items()), key=lambda a:(-a['guias'],a['nombre']))
 
+        # KPI de flota: el VIAJE es el embarque, no cada ruta ni cada guía.
+        # Se excluyen cancelados del contratado. Con fecha_salida representa
+        # una salida real, no pesaje físico certificado.
+        vehicle_labels = dict(self.env['transcash.embarque']._fields['tipo_vehiculo'].selection)
+        vehicles = defaultdict(lambda: {
+            'viajes_contratados': 0, 'viajes_realizados': 0,
+            'kg_programados': 0.0, 'kg_transportados': 0.0,
+            'm2_transportados': 0.0, 'unidades_transportadas': 0.0,
+            'guias_transportadas': 0, 'embarques': set(),
+        })
+        # Una guía se calcula una sola vez y se utiliza únicamente dentro del
+        # embarque que la contiene. No se suman rutas del mismo embarque.
+        metricas_cache = {}
+        for e in embarques:
+            if e.state == 'cancelado':
+                continue
+            vehicle_code = e.tipo_vehiculo or 'sin_tipo'
+            stat = vehicles[vehicle_code]
+            stat['viajes_contratados'] += 1
+            stat['embarques'].add(e.id)
+            depart = bool(e.fecha_salida)
+            if depart:
+                stat['viajes_realizados'] += 1
+            guide_ids_seen = set()
+            for guide in e.guia_ids:
+                if guide.id in guide_ids_seen:
+                    continue
+                guide_ids_seen.add(guide.id)
+                if guide.id not in metricas_cache:
+                    metricas_cache[guide.id] = metricas(guide)
+                cargo = metricas_cache[guide.id]
+                stat['kg_programados'] += cargo['kg']
+                if depart:
+                    stat['kg_transportados'] += cargo['kg']
+                    stat['m2_transportados'] += cargo['m2']
+                    stat['unidades_transportadas'] += cargo['unidades']
+                    stat['guias_transportadas'] += 1
+
+        total_vehicle_departures = sum(v['viajes_realizados'] for v in vehicles.values())
+        vehicle_rows = sorted(({
+            'clave': code, 'nombre': vehicle_labels.get(code, 'Sin tipo registrado'),
+            'viajes_contratados': v['viajes_contratados'],
+            'viajes_realizados': v['viajes_realizados'],
+            'kg_programados': round(v['kg_programados'], 2),
+            'kg_transportados': round(v['kg_transportados'], 2),
+            'toneladas_transportadas': round(v['kg_transportados'] / 1000, 3),
+            'kg_promedio_viaje': round(v['kg_transportados'] / v['viajes_realizados'], 2)
+                                 if v['viajes_realizados'] else 0.0,
+            'm2_transportados': round(v['m2_transportados'], 3),
+            'unidades_transportadas': round(v['unidades_transportadas'], 3),
+            'guias_transportadas': v['guias_transportadas'],
+            'participacion_viajes_pct': round(100 * v['viajes_realizados'] / total_vehicle_departures, 1)
+                                         if total_vehicle_departures else 0.0,
+        } for code, v in vehicles.items()),
+            key=lambda row: (-row['viajes_realizados'], -row['viajes_contratados'], row['nombre']))
+        kpis.update({
+            'tipos_vehiculo_contratados': len([v for v in vehicles.values() if v['viajes_contratados']]),
+            'vehiculos_viajes_contratados': sum(v['viajes_contratados'] for v in vehicles.values()),
+            'vehiculos_viajes_realizados': total_vehicle_departures,
+            'vehiculos_kg_transportados': round(sum(v['kg_transportados'] for v in vehicles.values()), 2),
+            'vehiculos_kg_programados': round(sum(v['kg_programados'] for v in vehicles.values()), 2),
+        })
+
         route_rows = []
         for r in rutas[:300]:
             rg = r.seleccion_guia_ids if r.state == 'borrador' else r.guia_ids
@@ -270,7 +350,8 @@ class TranscashDashboardBI(models.AbstractModel):
                 'destino':r.destino_nombre or r.destino_id.name or '',
                 'transportista':r.proveedor_id.display_name or '',
                 'chofer':r.chofer_usuario_id.name or '', 'guias':len(rg),
-                'viaje':r.embarque_id.name or 'Por embarcar', 'fecha':label_date(r.create_date), **m})
+                'viaje':r.embarque_id.name or 'Por embarcar', 'fecha':label_date(r.create_date),
+                'tipo_vehiculo': vehicle_labels.get(r.tipo_vehiculo, 'Sin tipo registrado'), **m})
         shipment_rows = []
         for e in embarques[:300]:
             m = sum_metrics(e.guia_ids)
@@ -280,7 +361,8 @@ class TranscashDashboardBI(models.AbstractModel):
                 'transportista':e.proveedor_id.display_name or '',
                 'chofer':e.chofer_usuario_id.name or '',
                 'guias':len(e.guia_ids), 'rutas':len(e.ruta_ids),
-                'fecha':label_date(e.fecha_salida or e.create_date), **m})
+                'fecha':label_date(e.fecha_salida or e.create_date),
+                'tipo_vehiculo':vehicle_labels.get(e.tipo_vehiculo, 'Sin tipo registrado'), **m})
         incident_rows = []
         for g in guias:
             if g.id not in guias_incidencia: continue
@@ -300,7 +382,7 @@ class TranscashDashboardBI(models.AbstractModel):
             'permisos':{'finanzas':finance,'comercial':commercial,'auditoria_menus':self.env.user.has_group('base.group_system'),
                         'operacion': self.env.user.has_group('logistica_transcash.group_logistica_manager') or self.env.user.has_group('logistica_transcash.group_transcash_consulta') or self.env.user.has_group('logistica_transcash.group_transcash_operador_rutas') or self.env.user.has_group('logistica_transcash.group_logistica_bodega') or self.env.user.has_group('base.group_system')},
             'kpis':kpis,'guias':guide_rows,'rutas':route_rows,'embarques':shipment_rows,
-            'incidencias':incident_rows, 'destinos':grouped(destinations),
+            'incidencias':incident_rows, 'vehiculos':vehicle_rows, 'destinos':grouped(destinations),
             'transportistas':grouped(carriers), 'choferes':grouped(drivers),
             'tendencia':[{'periodo':key, **values} for key,values in sorted(trend.items())],
             'estados_guias':[{'clave':key,'nombre':dict(guias._fields['state'].selection).get(key,key),'cantidad':val} for key,val in sorted(status_guia.items())],
@@ -318,6 +400,12 @@ class TranscashDashboardBI(models.AbstractModel):
                 'Novedades = guías con incidencia o recepción con novedades. Roturas = reportes de daño no rechazados; una guía puede registrar varios.',
                 'Las cantidades dañadas en m² y unidades se reportan por separado. No sumamos unidades incompatibles.',
                 'La clasificación por proveedor corresponde al TRANSPORTISTA, no al fabricante/proveedor del producto.',
+                'Flota: cada embarque no cancelado es un viaje contratado, independientemente de las rutas y guías que contiene.',
+                'Viajes realizados: embarques con fecha real de salida. Kg transportados: peso documental de sus guías, no medición en báscula.',
+                'Kg programados: peso documental de guías de embarques no cancelados, incluidos los que aún no han salido.',
+                'El tipo de vehículo procede de transcash.embarque.tipo_vehiculo; los históricos sin tipo permanecen identificados como Sin tipo registrado.',
+                'Con base Registro, las salidas corresponden a embarques creados en el intervalo que ya tienen fecha de salida; para medir las salidas ocurridas DENTRO del intervalo, elija Salida real.',
+                'Si un embarque tiene guías creadas antes del rango, su peso se incluye en el análisis de flota cuando el embarque cumple el filtro de fechas.',
             ],
         }
         if finance:

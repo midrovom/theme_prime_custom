@@ -55,6 +55,28 @@
                   <p>Los viajes en preparación se cuentan como programados, no como realizados.</p>
                 </section>
               </div>
+              <section class="tc-bi-card tc-bi-vehicle-panel" aria-label="Distribución de viajes y carga por tipo de vehículo">
+                <div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">GESTIÓN DE FLOTA</span><h2>Vehículos contratados · viajes y peso</h2>
+                  <small>Un viaje = un embarque. Peso transportado = peso de guías con salida real.</small></div>
+                  <button type="button" class="tc-bi-smallbtn" data-page="vehiculos" t-on-click="goPage">Ver análisis completo ↗</button></div>
+                <div class="tc-bi-vehicle-grid">
+                  <t t-foreach="state.data.vehiculos" t-as="veh" t-key="veh.clave">
+                    <div class="tc-bi-vehicle-card">
+                      <strong t-esc="veh.nombre"/>
+                      <div class="tc-bi-vehicle-numbers">
+                        <span><b t-esc="number(veh.viajes_contratados)"/><small>Contratados</small></span>
+                        <span><b t-esc="number(veh.viajes_realizados)"/><small>Salidas reales</small></span>
+                        <span><b t-esc="number(veh.kg_transportados)"/><small>Kg con salida</small></span>
+                        <span><b t-esc="number(veh.kg_promedio_viaje)"/><small>Kg / salida</small></span>
+                      </div>
+                      <div class="tc-bi-vehicle-bar" role="img" t-att-aria-label="veh.nombre + ': ' + number(veh.viajes_realizados) + ' viajes realizados'">
+                        <div t-att-style="'width:' + qualityWidth('vehiculos', 'viajes_realizados', veh.viajes_realizados) + '%'"/>
+                      </div>
+                    </div>
+                  </t>
+                  <div t-if="!state.data.vehiculos.length" class="tc-bi-empty">No hay embarques no cancelados en el periodo elegido.</div>
+                </div>
+              </section>
               <div class="tc-bi-layout tc-bi-v533-shortcuts">
                 <section t-if="state.data.permisos.operacion" class="tc-bi-card"><div class="tc-bi-cardhead"><div><span class="tc-bi-cardtag">OPERACIÓN</span><h2>Accesos directos</h2></div></div>
                   <button type="button" class="tc-bi-v533-link" data-xmlid="logistica_transcash.action_transcash_guia" t-on-click="quickOpen">Guías operativas →</button>

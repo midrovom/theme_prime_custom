@@ -187,18 +187,27 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
             return False
         words = re.findall(r'[A-Za-zÀ-ÿ0-9]{4,}', source.transport_name or '')
         anchor = max(words, key=len) if words else source.transport_name
-        Partner = request.env['res.partner'].sudo().with_context(active_test=False)
-        domain = [
-            ('is_company', '=', True), ('name', 'ilike', anchor),
-            '|', ('company_id', '=', False), ('company_id', '=', ruta.company_id.id),
-        ]
-        if Partner.search_count(domain) > 500:
-            return False
-        partners = Partner.search(domain, limit=500)
-        matching = partners.filtered(lambda p: _legal_name(p.name) == name)
-        taxes = {_fiscal_id(p.vat) for p in matching if _fiscal_id(p.vat)}
-        return bool(chosen in matching and len(taxes) <= 1 and
+        # Varios centenares de guías suelen referirse al MISMO transportista.
+        # Evitar búsquedas idénticas de res.partner por cada guía del lote.
+        cache = getattr(self, '_tc_transport_names_cache', None)
+        if cache is None:
+            cache = self._tc_transport_names_cache = {}
+        cache_key = (ruta.company_id.id, chosen.id, name)
+        if cache_key not in cache:
+            Partner = request.env['res.partner'].sudo().with_context(active_test=False)
+            domain = [
+                ('is_company', '=', True), ('name', 'ilike', anchor),
+                '|', ('company_id', '=', False), ('company_id', '=', ruta.company_id.id),
+            ]
+            if Partner.search_count(domain) > 500:
+                cache[cache_key] = False
+            else:
+                partners = Partner.search(domain, limit=500)
+                matching = partners.filtered(lambda p: _legal_name(p.name) == name)
+                taxes = {_fiscal_id(p.vat) for p in matching if _fiscal_id(p.vat)}
+                cache[cache_key] = bool(chosen in matching and len(taxes) <= 1 and
                     (not taxes or not chosen.vat or _fiscal_id(chosen.vat) in taxes))
+        return cache[cache_key]
 
     @staticmethod
     def _normalized_destination_code(value):
@@ -348,7 +357,6 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         selected = ruta.seleccion_guia_ids
         selected_map = self._source_map(selected, ruta.company_id.id)
         entries, seen = [], set()
-        destination_breakdown = {}
         for guide in selected:
             match, why = self._match(ruta, guide, selected_map.get(guide.id))
             entries.append({'guia': guide, 'selected': bool(match),
@@ -384,28 +392,17 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                     destino_ok and chofer_ok and transporte_ok)
                 if destino_ok and not chofer_ok:
                     report['sin_chofer_en_destino'] += 1
-                    driver = (guide.chofer_usuario_id.name if guide.chofer_usuario_id else
-                              guide.chofer_contacto_id.name if guide.chofer_contacto_id else
-                              source.driver_id.name if source and source.driver_id else
-                              'Chofer sin identificar')
-                    transporter = (guide.proveedor_id.display_name if guide.proveedor_id else
-                                   source.transport_name if source else 'Transporte sin identificar')
-                    key = (driver, transporter)
-                    current = destination_breakdown.setdefault(key, {
-                        'chofer': driver, 'transportista': transporter,
-                        'cantidad': 0, 'guias': [],
-                    })
-                    current['cantidad'] += 1
-                    if len(current['guias']) < 3:
-                        current['guias'].append(guide.name)
-                match, why = self._match(ruta, guide, source)
-                if why == 'destino':
+                # Estos tres criterios ya se calcularon arriba. Volver a llamar
+                # _match() duplicaba consultas ORM/ERP para cada una de las
+                # hasta 6.000 guías examinadas al cargar la pantalla.
+                if not destino_ok:
                     report['destino'] += 1
-                elif why == 'chofer':
+                    continue
+                if not chofer_ok:
                     report['chofer'] += 1
-                elif why == 'transporte':
+                    continue
+                if not transporte_ok:
                     report['transporte'] += 1
-                if not match:
                     continue
                 report['compatible'] += 1
                 if guide.id not in seen:
@@ -415,8 +412,8 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                                     'reason': 'Compatible con los tres filtros'})
             if len(candidates) < PAGE_SIZE:
                 break
-        report['resumen_destino'] = sorted(destination_breakdown.values(),
-            key=lambda item: (-item['cantidad'], item['chofer'], item['transportista']))[:10]
+        # La tabla de diagnóstico de otros choferes dejó de mostrarse en v2.17.
+        report['resumen_destino'] = []
         report['limite'] = (report['analizadas'] >= MAX_SCAN or report['compatible'] >= MAX_DISPLAY)
         return entries[:MAX_DISPLAY + len(selected)], report
 
@@ -463,73 +460,20 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
         Guide = request.env['transcash.guia']  # sin sudo: respetar permisos internos
         candidates = Guide.search(domain, order='id desc', limit=201)
         source_map = self._source_map(candidates, ruta.company_id.id)
-        rows, breakdown = [], {}
+        # Desde v2.18 se retiraron las tablas de diagnóstico: la PWA consume
+        # únicamente el total del chofer. Evitar cargar proveedores, destinos,
+        # embarques, productos y 200 evaluaciones de compatibilidad innecesarias.
+        total = 0
         for guia in candidates:
-            source = source_map.get(guia.id)
-            # Mostrar también los conflictos de identidad ya vinculados al
-            # usuario/contacto elegido o con la misma cédula: la tabla sirve
-            # precisamente para diagnosticarlos, NO para seleccionarlos.
-            driver_ok = self._driver_matches(ruta, guia, source)
             same_record = (guia.chofer_usuario_id.id == user.id or
                            guia.chofer_contacto_id.id == partner.id)
             same_document = bool(docs and _fiscal_id(guia.ruc_chofer) in docs)
-            if not (driver_ok or same_record or same_document):
-                continue
-            destiny_ok = self._destination_matches(ruta, guia, source)
-            transport_ok = self._transport_matches(ruta, guia, source)
-            valid, reason = self._match(ruta, guia, source)
-            trip = guia.embarque_id or (guia.hoja_ruta_id.embarque_id
-                                         if guia.hoja_ruta_id else False)
-            if not driver_ok:
-                status = 'Revisar: cédula y usuario de chofer no coinciden'
-            elif guia.hoja_ruta_id:
-                status = 'En hoja: %s' % guia.hoja_ruta_id.name
-            elif trip:
-                status = 'En embarque: %s' % trip.name
-            elif guia.state != 'registrada':
-                status = 'Estado: %s' % dict(guia._fields['state'].selection).get(
-                    guia.state, guia.state)
-            elif not destiny_ok:
-                status = 'Destino diferente'
-            elif not transport_ok:
-                status = 'Transportista diferente'
-            else:
-                status = 'Disponible para esta ruta' if valid else 'Requiere revisión'
-            provider = guia.proveedor_id.display_name if guia.proveedor_id else (
-                source.transport_name if source else 'Sin transportista vinculado')
-            destination = guia.destino or 'Sin destino en la guía'
-            row = {
-                'numero': guia.name,
-                'documento': guia.numero_documento or '',
-                'proveedor': provider,
-                'destino': destination,
-                'estado': dict(guia._fields['state'].selection).get(
-                    guia.state, guia.state),
-                'ruta': guia.hoja_ruta_id.name or 'Sin ruta',
-                'embarque': trip.name if trip else 'Sin embarque',
-                'estado_ruta': (guia.hoja_ruta_id.estado_operativo
-                                if guia.hoja_ruta_id else ''),
-                'compatible': valid,
-                'chofer_ok': driver_ok,
-                'destino_ok': destiny_ok,
-                'transporte_ok': transport_ok,
-                'observacion': status,
-            }
-            rows.append(row)
-            key = (provider, destination)
-            summary = breakdown.setdefault(key, {
-                'proveedor': provider, 'destino': destination,
-                'cantidad': 0, 'disponibles': 0, 'asignadas': 0})
-            summary['cantidad'] += 1
-            summary['disponibles' if valid else 'asignadas'] += 1
-        limited = len(candidates) >= 201
+            if same_record or same_document or self._driver_matches(ruta, guia, None):
+                total += 1
         return {
-            'guias': rows[:100],
-            'total_mostradas': len(rows),
-            'mas_resultados': limited or len(rows) > 100,
-            'totales': sorted(breakdown.values(),
-                              key=lambda r: (-r['cantidad'], r['proveedor'], r['destino']))[:30],
-            'tiene_criterio': True,
+            'guias': [], 'total_mostradas': total,
+            'mas_resultados': len(candidates) >= 201,
+            'totales': [], 'tiene_criterio': True,
             'chofer': user.name,
         }
 
@@ -602,10 +546,14 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                     if not compatible:
                         raise UserError(_('La guía %s no cumple el filtro de %s. '
                                           'Revise los datos importados.') % (guia.name, reason))
-                # Guardar siempre mediante la acción autorizada de la ruta.
-                ruta.write({'seleccion_guia_ids': [(6, 0, ids)]})
+                # No volver a escribir la misma relación M2M si el operador
+                # repite la petición (móvil/red lenta). Evita trabajo ORM y
+                # hace idempotente el guardado cuando no cambió la selección.
+                if set(ids) != set(ruta.seleccion_guia_ids.ids):
+                    ruta.write({'seleccion_guia_ids': [(6, 0, ids)]})
                 # Completar relaciones técnicamente ausentes SOLO en guías
                 # seleccionadas y validadas, antes de confirmar la ruta.
+                cambios_por_guia = []
                 for guia in selected:
                     source = source_map.get(guia.id)
                     changes = {}
@@ -640,17 +588,33 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                         # Conserva destino_codigo histórico; la comparación se hace con guia.destino.
                         # No reescribir el valor original ni inventar códigos.
                     if changes:
-                        guia.sudo().write(changes)
-                        if ('destino_id' in changes or
-                                ('chofer_usuario_id' in changes and source) or
-                                'proveedor_id' in changes):
-                            guia.sudo().message_post(body=(
-                                'PWA: homologación de identidad comprobada al seleccionar '
-                                'guía para hoja de ruta %s. Campos: %s.' %
-                                (ruta.name, ', '.join(sorted(changes)))))
+                        cambios_por_guia.append((guia.id, changes, bool(source)))
+                # Actualizaciones idénticas se escriben juntas en el ORM.
+                # Sigue habiendo una comprobación estricta por cada guía ANTES
+                # de escribir; no se toca la lógica de permisos ni estados.
+                grupos = {}
+                for guia_id, changes, has_source in cambios_por_guia:
+                    key = tuple(sorted(changes.items()))
+                    if key not in grupos:
+                        grupos[key] = []
+                    grupos[key].append((guia_id, has_source))
+                for key, items in grupos.items():
+                    values = dict(key)
+                    request.env['transcash.guia'].sudo().browse(
+                        [item[0] for item in items]).write(values)
+                # Mantener la trazabilidad individual previamente existente.
+                for guia_id, changes, has_source in cambios_por_guia:
+                    if ('destino_id' in changes or
+                            ('chofer_usuario_id' in changes and has_source) or
+                            'proveedor_id' in changes):
+                        request.env['transcash.guia'].sudo().browse(guia_id).message_post(body=(
+                            'PWA: homologación de identidad comprobada al seleccionar '
+                            'guía para hoja de ruta %s. Campos: %s.' %
+                            (ruta.name, ', '.join(sorted(changes)))))
                 # Esta PWA jamás autoriza un cambio de chofer/transportista.
-                ruta.sudo().write({'reasignacion_autorizada': False,
-                                   'reasignacion_autorizada_por_id': False})
+                if ruta.reasignacion_autorizada or ruta.reasignacion_autorizada_por_id:
+                    ruta.sudo().write({'reasignacion_autorizada': False,
+                                       'reasignacion_autorizada_por_id': False})
             return request.redirect('/transcash/operacion/rutas/%d?ok=guardadas' % ruta.id)
         except (UserError, AccessError, ValidationError, ValueError, TypeError) as exc:
             return request.redirect('/transcash/operacion/rutas/%d?error=%s' %
