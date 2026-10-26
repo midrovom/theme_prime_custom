@@ -28,3 +28,5 @@ from . import test_inventory_api
 
 from . import test_regression_1477
 from . import test_regression_1479
+
+from . import test_regression_1480

@@ -108,6 +108,24 @@ class ExpenseBudgetCategory(models.Model):
          'El código del rubro ya existe para esta empresa.'),
     ]
 
+    @api.constrains('company_id', 'code')
+    def _check_code_unique_case_insensitive(self):
+        # El código (no el nombre del rubro) es su identificador funcional.
+        # La UNIQUE SQL mantiene el bloqueo para inserciones concurrentes
+        # con código idéntico; esta validación también evita códigos que
+        # solo cambian en mayúsculas o espacios.
+        for rec in self:
+            code = (rec.code or '').strip().casefold()
+            if not code:
+                raise ValidationError(_('El código del rubro no puede estar vacío.'))
+            others = self.sudo().with_context(active_test=False).search([
+                ('company_id', '=', rec.company_id.id), ('id', '!=', rec.id),
+            ])
+            if any((other.code or '').strip().casefold() == code for other in others):
+                raise ValidationError(_(
+                    'Ya existe un rubro con el código "%(code)s" en la empresa "%(company)s".'
+                ) % {'code': rec.code, 'company': rec.company_id.display_name})
+
     def name_get(self):
         return [(rec.id, '%s - %s' % (rec.code, rec.name)) for rec in self]
 
@@ -197,25 +215,44 @@ class ExpenseBudget(models.Model):
     # Distintos rubros de un año se pueden registrar simultáneamente,
     # sin esperar a que los anteriores sean aprobados.
 
+    @api.model
+    def _find_duplicate_rubro_code(self, company_id, year, category, exclude_id=False):
+        """Buscar por CÓDIGO del rubro de cabecera y no por nombre o estado.
+
+        Dos rubros con el mismo código normalizado pertenecen al mismo
+        presupuesto anual, incluso si fueran IDs diferentes legados.
+        No ejecutar llamadas al ERP ni examinar las líneas de proyección.
+        """
+        if not category or not category.code:
+            return self.browse()
+        domain = [
+            ('company_id', '=', company_id), ('year', '=', year),
+            ('category_id', '!=', False),
+        ]
+        if exclude_id:
+            domain.append(('id', '!=', exclude_id))
+        other_budgets = self.sudo().with_context(active_test=False).search(domain)
+        code = category.code.strip().casefold()
+        return other_budgets.filtered(
+            lambda budget: (budget.category_id.code or '').strip().casefold() == code
+        )[:1]
+
     @api.constrains('company_id', 'year', 'category_id')
     def _check_unique_budget_per_rubro(self):
         for rec in self:
             if not rec.category_id:
                 # Presupuesto legado sin rubro único: no alterar ni borrar.
                 continue
-            duplicate = self.sudo().search([
-                ('id', '!=', rec.id),
-                ('company_id', '=', rec.company_id.id),
-                ('year', '=', rec.year),
-                ('category_id', '=', rec.category_id.id),
-            ], limit=1)
+            duplicate = rec._find_duplicate_rubro_code(
+                rec.company_id.id, rec.year, rec.category_id, exclude_id=rec.id,
+            )
             if duplicate:
                 raise ValidationError(_(
                     'Ya existe el presupuesto "%(budget)s" para el rubro "%(rubro)s" '
                     'en el año %(year)s y la empresa "%(company)s". '
                     'Solo se permite un presupuesto por rubro y año.'
                 ) % {
-                    'budget': duplicate.name, 'rubro': rec.category_id.display_name,
+                    'budget': duplicate.name, 'rubro': '%s (%s)' % (rec.category_id.name, rec.category_id.code),
                     'year': rec.year, 'company': rec.company_id.display_name,
                 })
 
@@ -287,17 +324,16 @@ class ExpenseBudget(models.Model):
             year = vals.get('year') or fields.Date.context_today(self).year
             if category.company_id.id != company_id:
                 raise ValidationError(_('El rubro debe pertenecer a la empresa del presupuesto.'))
-            key = (company_id, year, category.id)
-            if key in new_keys or self.sudo().search([
-                ('company_id', '=', company_id), ('year', '=', year),
-                ('category_id', '=', category.id),
-            ], limit=1):
+            key = (company_id, year, (category.code or '').strip().casefold())
+            if key in new_keys or self._find_duplicate_rubro_code(
+                company_id, year, category,
+            ):
                 raise ValidationError(_(
                     'Ya existe un presupuesto para el rubro "%(rubro)s" en el '
                     'año %(year)s y la empresa "%(company)s". '
                     'Seleccione otro rubro o abra el presupuesto existente.'
                 ) % {
-                    'rubro': category.display_name, 'year': year,
+                    'rubro': '%s (%s)' % (category.name, category.code), 'year': year,
                     'company': category.company_id.display_name,
                 })
             legacy_budget = self._legacy_budget_containing_rubro(company_id, year, category.id)
@@ -335,7 +371,10 @@ class ExpenseBudget(models.Model):
         if 'category_id' in vals:
             if not vals['category_id']:
                 raise ValidationError(_('Debe seleccionar el rubro del presupuesto.'))
-            if any(rec.state != 'draft' or rec.line_ids for rec in self):
+            # Al guardar/imprimir, algunos clientes reenvían el mismo valor.
+            # No interpretarlo como un cambio real del rubro en cabecera.
+            if any(rec.category_id.id != vals['category_id'] and
+                   (rec.state != 'draft' or rec.line_ids) for rec in self):
                 raise UserError(_('No puede cambiar el rubro de un presupuesto con líneas o enviado.'))
             vals = dict(vals)
             category = self.env['expense.budget.category'].browse(vals['category_id']).exists()
@@ -366,8 +405,10 @@ class ExpenseBudget(models.Model):
                 if not (just_actual and self.env.user.has_group(
                         'expense_budget_control.group_expense_budget_registrar')):
                     raise UserError(_('Solo puede editar el consumido de presupuestos enviados o aprobados.'))
-        if ('year' in vals or 'company_id' in vals) and any(
-            rec.state != 'draft' or rec.line_ids for rec in self
+        if any(
+            (('year' in vals and vals['year'] != rec.year) or
+             ('company_id' in vals and vals['company_id'] != rec.company_id.id))
+            and (rec.state != 'draft' or rec.line_ids) for rec in self
         ):
             raise UserError(_('No puede cambiar el año o la empresa de un presupuesto con líneas o aprobado.'))
         # Validación anticipada al editar rubro/año/empresa, para devolver un
@@ -380,16 +421,19 @@ class ExpenseBudget(models.Model):
                 category_id = vals.get('category_id', rec.category_id.id)
                 if not category_id:
                     raise ValidationError(_('Debe seleccionar el rubro del presupuesto.'))
-                key = (company_id, year, category_id)
-                if key in changed_keys or self.sudo().search([
-                    ('id', '!=', rec.id),
-                    ('company_id', '=', company_id), ('year', '=', year),
-                    ('category_id', '=', category_id),
-                ], limit=1):
+                category = self.env['expense.budget.category'].browse(category_id).exists()
+                if not category:
+                    raise ValidationError(_('El rubro seleccionado no existe.'))
+                key = (company_id, year, (category.code or '').strip().casefold())
+                duplicate = self._find_duplicate_rubro_code(
+                    company_id, year, category, exclude_id=rec.id,
+                )
+                if key in changed_keys or duplicate:
                     raise ValidationError(_(
-                        'Ya existe un presupuesto para el rubro elegido en '
-                        'esa empresa y año. Abra el existente o seleccione otro rubro.'
-                    ))
+                        'Ya existe un presupuesto para el código de rubro "%(code)s" '
+                        'en la empresa "%(company)s" y el año %(year)s. '
+                        'Abra el existente o seleccione otro rubro.'
+                    ) % {'code': category.code, 'company': category.company_id.name, 'year': year})
                 legacy_budget = self._legacy_budget_containing_rubro(
                     company_id, year, category_id, exclude_id=rec.id,
                 )
@@ -494,10 +538,9 @@ class ExpenseBudget(models.Model):
             'expense_budget_control.group_expense_budget_manager')):
             raise AccessError(_('Solo el administrador puede volver el presupuesto a borrador.'))
         for rec in self:
-            if self.search_count([
-                ('id', '!=', rec.id), ('company_id', '=', rec.company_id.id),
-                ('year', '=', rec.year), ('category_id', '=', rec.category_id.id),
-            ]):
+            if rec.category_id and rec._find_duplicate_rubro_code(
+                rec.company_id.id, rec.year, rec.category_id, exclude_id=rec.id,
+            ):
                 raise UserError(_(
                     'Ya existe otro presupuesto para este rubro, empresa y año.'
                 ))
@@ -643,19 +686,19 @@ class ExpenseBudgetLine(models.Model):
              'de los gastos vinculados a esta cuenta, centro, año y mes. '
              'Si el ERP devuelve varios subcentros, se muestran separados por comas.',
     )
-    # El rubro se elige primero en la línea, para filtrar las cuentas controladas.
-    # El dato persistente sigue reflejando el rubro real de la cuenta. No hacer
-    # writable el antiguo related: eso cambiaría el rubro de la cuenta completa.
+    # El rubro se define en la CABECERA del presupuesto. La línea conserva
+    # category_id almacenado por compatibilidad con reportes y búsqueda.
+    # En presupuestos históricos sin rubro de cabecera se usa el de la cuenta.
     category_id = fields.Many2one(
         'expense.budget.category', string='Rubro',
         compute='_compute_category_id', inverse='_inverse_category_id',
         store=True, readonly=False, index=True, check_company=True,
     )
 
-    @api.depends('account_id', 'account_id.category_id')
+    @api.depends('budget_id.category_id', 'account_id', 'account_id.category_id')
     def _compute_category_id(self):
         for line in self:
-            line.category_id = line.account_id.category_id if line.account_id else False
+            line.category_id = (line.budget_id.category_id or line.account_id.category_id)
 
     def _inverse_category_id(self):
         # Elegir un rubro en una línea NO reasigna la cuenta a otro rubro.

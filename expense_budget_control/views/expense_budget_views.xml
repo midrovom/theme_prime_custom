@@ -136,7 +136,6 @@
                                 <list editable="bottom">
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="currency_id" column_invisible="True"/>
-                                    <field name="category_id" string="Rubro" readonly="1"/>
                                     <field name="account_id" readonly="parent.state != 'draft'"
                                            domain="[('company_id', '=', parent.company_id), ('category_id', '=', parent.category_id)]"/>
                                     <field name="erp_account_code" string="Código" readonly="True"/>

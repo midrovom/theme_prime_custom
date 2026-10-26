@@ -104,10 +104,8 @@ class TestExpenseBudget(TransactionCase):
         arch = etree.fromstring(view.arch_db.encode())
         fields_in_line = arch.xpath("//field[@name='line_ids']/list/field")
         names = [field.get('name') for field in fields_in_line]
-        self.assertLess(names.index('category_id'), names.index('account_id'))
-        category_field = fields_in_line[names.index('category_id')]
+        self.assertNotIn('category_id', names)
         account_field = fields_in_line[names.index('account_id')]
-        self.assertEqual(category_field.get('readonly'), '1')
         self.assertIn("('category_id', '=', parent.category_id)", account_field.get('domain'))
 
         # La creación de rubro vincula cuentas de la misma empresa sin
@@ -139,7 +137,7 @@ class TestExpenseBudget(TransactionCase):
         self.assertTrue(arch.xpath("//form/sheet/group/group/field[@name='category_id']"))
         lines = arch.xpath("//field[@name='line_ids']/list")
         self.assertEqual(len(lines), 1)
-        self.assertTrue(lines[0].xpath("./field[@name='category_id']"))
+        self.assertFalse(lines[0].xpath("./field[@name='category_id']"))
         self.assertIn('parent.category_id', lines[0].xpath("./field[@name='account_id']")[0].get('domain'))
 
         other = self.env['expense.budget.category'].create({
