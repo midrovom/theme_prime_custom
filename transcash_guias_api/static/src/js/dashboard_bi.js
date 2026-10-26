@@ -39,6 +39,7 @@ class TranscashDashboardV22 extends Component {
             {id:"guias",label:"Guías y estados",icon:"▤"},
             {id:"rutas",label:"Hojas de ruta",icon:"⌁"},
             {id:"embarques",label:"Embarques y viajes",icon:"▣"},
+            {id:"vehiculos",label:"Tipos de vehículo",icon:"▥"},
             {id:"destinos",label:"Destinos",icon:"⌾"},
             {id:"transportistas",label:"Transportistas",icon:"⛟"},
             {id:"choferes",label:"Choferes",icon:"♧"},
@@ -94,6 +95,8 @@ class TranscashDashboardV22 extends Component {
             {label:"Hojas de ruta",value:k.rutas,detail:"Incluye borradores"},
             {label:"Embarques programados",value:k.viajes,detail:"Incluye preparación"},
             {label:"Salidas reales",value:k.salidas_reales,detail:"Con fecha real de salida"},
+            {label:"Tipos de vehículo",value:k.tipos_vehiculo_contratados,detail:"Con embarques no cancelados"},
+            {label:"Peso con salida (kg)",value:k.vehiculos_kg_transportados,detail:"Peso documental por tipo de vehículo"},
             {label:"Entregas de chofer",value:k.guias_entregadas,detail:"Guías cerradas o posteriores"},
             {label:"Peso (kg)",value:k.kg,detail:"Toneladas: " + this.number(k.toneladas)},
             {label:"Superficie (m²)",value:k.m2,detail:"Sin mezclar con unidades"},
@@ -116,7 +119,7 @@ class TranscashDashboardV22 extends Component {
     }
     pageTitle() {
         return ({resumen:"Centro de control logístico",guias:"Guías y estados",rutas:"Hojas de ruta",
-            embarques:"Embarques y viajes",destinos:"Movimiento por destino",transportistas:"Análisis por transportista",
+            embarques:"Embarques y viajes",vehiculos:"Tipos de vehículo contratado",destinos:"Movimiento por destino",transportistas:"Análisis por transportista",
             choferes:"Análisis por chofer",incidencias:"Novedades y roturas",liquidaciones:"Liquidaciones y pagos",
             marcas:"Roturas y exposición por marca",proveedores_producto:"Proveedores de productos",auditoria:"Revisión de menús y acciones"})[this.state.page] || "Logística";
     }
@@ -125,8 +128,9 @@ class TranscashDashboardV22 extends Component {
         const load = [n("kg","Kg","number"),n("m2","m²","number"),n("metros_lineales","m lin.","number"),n("unidades","Unid.","number")];
         switch (this.state.page) {
             case "guias":return [n("nombre","Guía"),n("estado","Estado"),n("documento","Documento"),n("destino","Destino"),n("transportista","Transporte"),n("ruta","Ruta"), ...load];
-            case "rutas":return [n("nombre","Ruta"),n("estado","Estado"),n("destino","Destino"),n("transportista","Transporte"),n("guias","Guías","number"), ...load];
-            case "embarques":return [n("nombre","Viaje"),n("estado","Estado"),n("transportista","Transporte"),n("guias","Guías","number"),n("rutas","Rutas","number"),...load];
+            case "rutas":return [n("nombre","Ruta"),n("estado","Estado"),n("destino","Destino"),n("tipo_vehiculo","Tipo vehículo"),n("transportista","Transporte"),n("guias","Guías","number"), ...load];
+            case "embarques":return [n("nombre","Viaje"),n("estado","Estado"),n("tipo_vehiculo","Tipo vehículo"),n("transportista","Transporte"),n("guias","Guías","number"),n("rutas","Rutas","number"),...load];
+            case "vehiculos":return [n("nombre","Tipo de vehículo"),n("viajes_contratados","Viajes contratados","number"),n("viajes_realizados","Viajes realizados","number"),n("kg_programados","Kg programados","number"),n("kg_transportados","Kg con salida","number"),n("toneladas_transportadas","Toneladas","number"),n("kg_promedio_viaje","Kg/viaje realizado","number"),n("guias_transportadas","Guías con salida","number"),n("participacion_viajes_pct","% de salidas","percentage"),n("m2_transportados","m² con salida","number"),n("unidades_transportadas","Unidades con salida","number")];
             case "destinos":case "transportistas":case "choferes":return [n("nombre","Nombre"),n("guias","Guías","number"),n("viajes","Viajes","number"),...load,n("novedades","Guías con incidencia","number"),n("pct_novedad","% incidencia","percentage"),
                 n("guias_rotura","Guías con daños","number"),n("roturas","Reportes de rotura","number"),
                 n("roturas_pendientes","Pendientes","number"),n("roturas_aprobadas","Aprobadas","number"),
