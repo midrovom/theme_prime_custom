@@ -22,7 +22,7 @@ class TestExpenseBudgetDashboard(TransactionCase):
         })
         budget = self.env['expense.budget'].create({
             'name': 'Análisis dashboard 2048', 'company_id': self.company.id,
-            'year': 2048,
+            'year': 2048, 'category_id': self.category.id,
         })
         Line = self.env['expense.budget.line']
         Line.create({

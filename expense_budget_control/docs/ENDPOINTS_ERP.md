@@ -1,3 +1,5 @@
+> **Actualización v18.0.1.4.76 (prevalece sobre las secciones históricas de este documento):** el cron cada 5 horas y el botón «Sincronizar» importan **todos los años** sin filtro; las tres APIs utilizan un transporte GET directo cuando `api.administrator` no incluye `call_api`. Ver `CONEXION_API_SIN_CALL_API_1476.md`.
+
 # Integración ERP única — v1.4.61
 
 ## Una sola configuración

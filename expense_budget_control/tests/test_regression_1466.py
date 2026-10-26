@@ -15,6 +15,10 @@ class TestSubcentroERP1466(TransactionCase):
             'company_id': self.company.id, 'code': '601010102002-66', 'name': 'Gasto',
         })
         self.sync = self.env['expense.budget.inventory.sync']
+        self.category = self.env['expense.budget.category'].create({
+            'company_id': self.company.id, 'name': 'Rubro pruebas 1466',
+        })
+        self.account.write({'category_id': self.category.id})
 
     def test_subcenter_codes_arrive_from_all_years_and_can_be_selected(self):
         rows = [
@@ -35,7 +39,7 @@ class TestSubcentroERP1466(TransactionCase):
         self.assertTrue(sub)
         budget = self.env['expense.budget'].with_context(
             skip_expense_budget_consumption_on_save=True).create({
-                'company_id': self.company.id, 'name': 'Prueba ERP v1466', 'year': 2026,
+                'company_id': self.company.id, 'name': 'Prueba ERP v1466', 'year': 2026, 'category_id': self.category.id,
             })
         line = self.env['expense.budget.line'].with_context(
             skip_expense_budget_consumption_on_save=True).create({

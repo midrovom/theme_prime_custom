@@ -18,6 +18,11 @@ class TestExpenseBudget(TransactionCase):
         })
         self.budget = self.env['expense.budget'].create({
             'name': 'Test presupuestario', 'year': 2026, 'company_id': self.company.id,
+            'category_id': self.category.id,
+        })
+        self.cost_center = self.env['expense.budget.cost.center'].create({
+            'code': 'CC-TEST-WIZARD', 'name': 'Centro de costo pruebas',
+            'company_id': self.company.id,
         })
 
 
@@ -92,7 +97,7 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(self.account.category_id, self.category)
 
     def test_monthly_line_rubro_before_account_with_create_edit(self):
-        """El rubro se escoge primero, se puede crear y filtra las cuentas de la línea."""
+        """Las líneas muestran el rubro y las cuentas se filtran por la cabecera."""
         from lxml import etree
 
         view = self.env.ref('expense_budget_control.view_expense_budget_form')
@@ -102,9 +107,8 @@ class TestExpenseBudget(TransactionCase):
         self.assertLess(names.index('category_id'), names.index('account_id'))
         category_field = fields_in_line[names.index('category_id')]
         account_field = fields_in_line[names.index('account_id')]
-        self.assertIn('default_company_id', category_field.get('context'))
-        self.assertNotIn('no_create', category_field.get('options').replace('no_quick_create', ''))
-        self.assertIn("('category_id', '=', category_id)", account_field.get('domain'))
+        self.assertEqual(category_field.get('readonly'), '1')
+        self.assertIn("('category_id', '=', parent.category_id)", account_field.get('domain'))
 
         # La creación de rubro vincula cuentas de la misma empresa sin
         # escribir el rubro desde las propias líneas mensuales.
@@ -117,23 +121,26 @@ class TestExpenseBudget(TransactionCase):
             'account_selection_ids': [(6, 0, [available.id])],
         })
         self.assertEqual(available.category_id, category)
+        second_budget = self.env['expense.budget'].create({
+            'year': 2026, 'company_id': self.company.id,
+            'category_id': category.id, 'name': 'Segundo rubro',
+        })
         line = self.env['expense.budget.line'].create({
-            'budget_id': self.budget.id, 'account_id': available.id,
+            'budget_id': second_budget.id, 'account_id': available.id,
             'month': '12', 'planned_amount': 120,
         })
         self.assertEqual(line.category_id, category)
 
-    def test_budget_lines_show_rubro_per_account_without_header_selector(self):
-        """El rubro se muestra en cada línea, sin restringirse a la cabecera histórica."""
+    def test_budget_header_rubro_restricts_lines_to_its_own_accounts(self):
+        """El rubro se elige en cabecera y restringe todas sus líneas."""
         from lxml import etree
         view = self.env.ref('expense_budget_control.view_expense_budget_form')
         arch = etree.fromstring(view.arch_db.encode())
-        # No hay selector de rubro en la cabecera del presupuesto.
-        self.assertFalse(arch.xpath("//form/sheet/group/group/field[@name='category_id']"))
+        self.assertTrue(arch.xpath("//form/sheet/group/group/field[@name='category_id']"))
         lines = arch.xpath("//field[@name='line_ids']/list")
         self.assertEqual(len(lines), 1)
         self.assertTrue(lines[0].xpath("./field[@name='category_id']"))
-        self.assertNotIn('parent.category_id', lines[0].xpath("./field[@name='account_id']")[0].get('domain'))
+        self.assertIn('parent.category_id', lines[0].xpath("./field[@name='account_id']")[0].get('domain'))
 
         other = self.env['expense.budget.category'].create({
             'code': 'OTRO-RUBRO-1437', 'name': 'Otros gastos', 'company_id': self.company.id,
@@ -142,21 +149,20 @@ class TestExpenseBudget(TransactionCase):
             'code': 'OTRA-CUENTA-1437', 'name': 'Alquiler',
             'category_id': other.id, 'company_id': self.company.id,
         })
-        # Presupuesto creado previamente con un rubro en cabecera: las líneas
-        # nuevas deben admitir cualquier cuenta de su empresa.
         budget = self.env['expense.budget'].create({
             'category_id': self.category.id, 'year': 2039, 'company_id': self.company.id,
         })
-        line1 = self.env['expense.budget.line'].create({
+        line = self.env['expense.budget.line'].create({
             'budget_id': budget.id, 'account_id': self.account.id,
             'month': '1', 'planned_amount': 100,
         })
-        line2 = self.env['expense.budget.line'].create({
-            'budget_id': budget.id, 'account_id': other_account.id,
-            'month': '2', 'planned_amount': 100,
-        })
-        self.assertEqual(line1.category_id, self.category)
-        self.assertEqual(line2.category_id, other)
+        self.assertEqual(line.category_id, self.category)
+        with self.assertRaises(ValidationError):
+            with self.env.cr.savepoint():
+                self.env['expense.budget.line'].create({
+                    'budget_id': budget.id, 'account_id': other_account.id,
+                    'month': '2', 'planned_amount': 100,
+                })
         with self.assertRaises(UserError):
             budget.write({'category_id': other.id})
 
@@ -241,16 +247,19 @@ class TestExpenseBudget(TransactionCase):
             'company_ids': [(6, 0, [self.company.id])],
         })
         Budget = self.env['expense.budget']
+        category_b = self.env['expense.budget.category'].sudo().create({
+            'name': 'Rubro empresa secundaria', 'company_id': company_b.id,
+        })
         created = Budget.with_user(manager).create({
             'name': 'Presupuesto empresa secundaria', 'year': 2035,
-            'company_id': company_b.id,
+            'company_id': company_b.id, 'category_id': category_b.id,
         })
         self.assertIn(created.id, Budget.with_user(manager).search([]).ids)
         self.assertNotIn(created.id, Budget.with_user(registrar).search([]).ids)
         with self.assertRaises(AccessError):
             Budget.with_user(registrar).create({
                 'name': 'Registro en empresa no autorizada', 'year': 2036,
-                'company_id': company_b.id,
+                'company_id': company_b.id, 'category_id': category_b.id,
             })
 
     def test_planned_vs_actual(self):
@@ -400,7 +409,7 @@ class TestExpenseBudget(TransactionCase):
         })
         budget = self.env['expense.budget'].with_user(registrar).create({
             'name': 'Presupuesto para aprobar', 'year': 2029,
-            'company_id': self.company.id,
+            'company_id': self.company.id, 'category_id': self.category.id,
         })
         line = self.env['expense.budget.line'].with_user(registrar).create({
             'budget_id': budget.id, 'account_id': self.account.id,
@@ -417,6 +426,7 @@ class TestExpenseBudget(TransactionCase):
             self.env['expense.budget'].with_user(registrar).create({
                 'name': 'Alta directa aprobada', 'year': 2031,
                 'company_id': self.company.id, 'state': 'approved',
+                'category_id': self.category.id,
             })
         with self.assertRaises(AccessError):
             budget.with_user(approver).write({'name': 'Alteración no permitida'})
@@ -425,7 +435,7 @@ class TestExpenseBudget(TransactionCase):
         with self.assertRaises(AccessError):
             budget.with_user(approver).create({
                 'name': 'No debe crear', 'year': 2030,
-                'company_id': self.company.id,
+                'company_id': self.company.id, 'category_id': self.category.id,
             })
 
         # El aprobador no puede ver borradores ni sus líneas, ni siquiera
@@ -583,47 +593,36 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(line.actual_amount, 280)
         self.assertEqual(self.budget.actual_amount, 280)
 
-    def test_only_three_states_and_new_rubro_after_approval(self):
-        """Se habilita el siguiente rubro cuando el anterior se aprueba."""
+    def test_can_create_second_rubro_before_first_is_approved(self):
+        """Presupuestos de rubros diferentes pueden coexistir en borrador."""
         Budget = self.env['expense.budget']
         Line = self.env['expense.budget.line']
         states = [value for value, _name in Budget._fields['state'].selection]
         self.assertEqual(states, ['draft', 'to_approve', 'approved', 'rejected'])
-
-        original_line = Line.create({
+        Line.create({
             'budget_id': self.budget.id, 'account_id': self.account.id,
             'month': '1', 'planned_amount': 500,
         })
-        with self.assertRaises(UserError):
-            Budget.create({
-                'name': 'Otro rubro prematuro', 'year': 2026,
-                'company_id': self.company.id,
-            })
-        self.budget.action_submit()
-        self.assertEqual(self.budget.state, 'to_approve')
-        with self.assertRaises(UserError):
-            Budget.create({
-                'name': 'Otro rubro pendiente', 'year': 2026,
-                'company_id': self.company.id,
-            })
-        self.budget.action_approve()
-        self.assertEqual(self.budget.state, 'approved')
-
+        with self.assertRaises(ValidationError):
+            with self.env.cr.savepoint():
+                Budget.create({
+                    'name': 'Duplicado del mismo rubro', 'year': 2026,
+                    'company_id': self.company.id, 'category_id': self.category.id,
+                })
         new_category = self.env['expense.budget.category'].create({
-            'code': 'NEW-TEST', 'name': 'Nuevo rubro',
-            'company_id': self.company.id,
+            'code': 'NEW-TEST', 'name': 'Nuevo rubro', 'company_id': self.company.id,
         })
         new_account = self.env['expense.budget.account'].create({
             'code': '6002-TEST', 'name': 'Nueva cuenta',
             'category_id': new_category.id, 'company_id': self.company.id,
         })
-        second_budget = Budget.create({
+        second = Budget.create({
             'name': 'Presupuesto nuevo rubro', 'year': 2026,
-            'company_id': self.company.id,
+            'company_id': self.company.id, 'category_id': new_category.id,
         })
-        self.assertEqual(second_budget.state, 'draft')
+        self.assertEqual((self.budget.state, second.state), ('draft', 'draft'))
         second_line = Line.create({
-            'budget_id': second_budget.id, 'account_id': new_account.id,
+            'budget_id': second.id, 'account_id': new_account.id,
             'month': '1', 'planned_amount': 300,
         })
         expense = self.env['expense.budget.expense'].create({
@@ -633,13 +632,9 @@ class TestExpenseBudget(TransactionCase):
         })
         self.assertEqual(expense.budget_line_id, second_line)
         self.assertEqual(second_line.actual_amount, 75)
-        self.assertEqual(original_line.actual_amount, 0)
-
-        with self.assertRaises(ValidationError):
-            Line.create({
-                'budget_id': second_budget.id, 'account_id': self.account.id,
-                'month': '1', 'planned_amount': 100,
-            })
+        self.budget.action_submit()
+        self.budget.action_approve()
+        self.assertEqual(second.state, 'draft')
 
     def test_comparison_no_account_filter_lists_every_budgeted_account(self):
         """Con cuentas vacías incluir cuentas presupuestadas de todos los rubros.
@@ -666,12 +661,16 @@ class TestExpenseBudget(TransactionCase):
             'code': 'PDF-AUTO-TRAVEL', 'name': 'Pasajes',
             'category_id': other_category.id, 'company_id': self.company.id,
         })
+        travel_budget = self.env['expense.budget'].create({
+            'name': 'Presupuesto transporte', 'year': 2026,
+            'company_id': self.company.id, 'category_id': other_category.id,
+        })
         for account, month, planned in (
                 (self.account, '1', 100),
                 (water, '2', 200),
                 (travel, '3', 300)):
             Line.create({
-                'budget_id': self.budget.id,
+                'budget_id': travel_budget.id if account == travel else self.budget.id,
                 'account_id': account.id,
                 'month': month,
                 'planned_amount': planned,
@@ -718,15 +717,17 @@ class TestExpenseBudget(TransactionCase):
         })
         self.env['expense.budget.line'].create({
             'budget_id': self.budget.id, 'account_id': self.account.id,
-            'month': '1', 'planned_amount': 100,
+            'month': '1', 'planned_amount': 100, 'cost_center_id': self.cost_center.id,
         }).write({'actual_amount': 50})
         self.env['expense.budget.line'].create({
             'budget_id': self.budget.id, 'account_id': water.id,
-            'month': '2', 'planned_amount': 300,
+            'month': '2', 'planned_amount': 300, 'cost_center_id': self.cost_center.id,
         }).write({'actual_amount': 75})
 
         wizard = self.env['expense.budget.comparison.report.wizard'].create({
             'company_id': self.company.id, 'year': 2026,
+            'category_id': self.category.id,
+            'cost_center_id': self.cost_center.id,
             'month_ids': [(6, 0, self.env['expense.budget.comparison.month'].search([]).ids)],
         })
         report = self.env['report.expense_budget_control.report_comparison_document']
@@ -758,6 +759,7 @@ class TestExpenseBudget(TransactionCase):
         filtered = self.env['expense.budget.comparison.report.wizard'].create({
             'company_id': self.company.id, 'year': 2026,
             'category_id': self.category.id, 'account_id': water.id,
+            'cost_center_id': self.cost_center.id,
             'month_ids': [(6, 0, self.env['expense.budget.comparison.month'].search([]).ids)],
         })
         data = report._get_report_values([filtered.id])['reports'][0]
@@ -777,7 +779,7 @@ class TestExpenseBudget(TransactionCase):
         result = report._prepare_comparison(wizard)
         self.assertEqual(result['wizard'].year, '2026')
 
-    def test_comparison_pdf_category_only_includes_all_accounts_and_budgets(self):
+    def test_comparison_pdf_category_only_includes_all_accounts_same_budget(self):
         """Solo Rubro: todas las cuentas y presupuestos del año, sin filtrar cuenta."""
         Account = self.env['expense.budget.account']
         Line = self.env['expense.budget.line']
@@ -796,24 +798,18 @@ class TestExpenseBudget(TransactionCase):
             'month': '1', 'planned_amount': 100,
         })
         agua_enero.write({'actual_amount': 10})
-        self.budget.action_submit()
-        self.budget.action_approve()
-
-        # Segundo presupuesto aprobado o en borrador: debe aparecer también
-        # cuando el administrador imprime todo el rubro.
-        second = self.env['expense.budget'].create({
-            'name': 'Segundo presupuesto del rubro', 'year': 2026,
-            'company_id': self.company.id,
-        })
+        # Todas las cuentas y meses del mismo rubro pertenecen al presupuesto único.
         for account, month, planned, actual in (
                 (self.account, '4', 100, 40),
                 (self.account, '9', 50, 0),
                 (agua, '6', 70, 30)):
             line = Line.create({
-                'budget_id': second.id, 'account_id': account.id,
+                'budget_id': self.budget.id, 'account_id': account.id,
                 'month': month, 'planned_amount': planned,
             })
             line.write({'actual_amount': actual})
+        self.budget.action_submit()
+        self.budget.action_approve()
 
         wizard = self.env['expense.budget.comparison.report.wizard'].create({
             'company_id': self.company.id, 'year': 2026,
@@ -838,7 +834,7 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(
             {detail['line'].budget_id.id for acc in group['accounts']
              for detail in acc['lines']},
-            {self.budget.id, second.id},
+            {self.budget.id},
         )
 
         # Cambiar el rubro no puede conservar el filtro por una cuenta anterior.
@@ -971,11 +967,40 @@ class TestExpenseBudget(TransactionCase):
         self.assertEqual(report._prepare_comparison(wizard)['line_count'], 1)
 
 
+    def test_comparison_pdf_requires_year_category_and_cost_center(self):
+        """Botón de impresión: exige los tres filtros e indica los faltantes."""
+        Wizard = self.env['expense.budget.comparison.report.wizard']
+        wizard = Wizard.create({'company_id': self.company.id})
+        self.assertFalse(wizard.year)
+        with self.assertRaisesRegex(UserError, 'Año.*Rubro.*Centro de costo'):
+            wizard.action_print_pdf()
+        wizard.write({'year': '2026'})
+        with self.assertRaisesRegex(UserError, 'Rubro.*Centro de costo'):
+            wizard.action_print_pdf()
+        wizard.write({'category_id': self.category.id})
+        with self.assertRaisesRegex(UserError, 'Centro de costo'):
+            wizard.action_print_pdf()
+        wizard.write({'cost_center_id': self.cost_center.id})
+        self.assertEqual(wizard.action_print_pdf()['type'], 'ir.actions.report')
+        # Proteger también el renderizado de un PDF desde una URL directa.
+        wizard.cost_center_id = False
+        with self.assertRaisesRegex(UserError, 'Centro de costo'):
+            self.env['report.expense_budget_control.report_comparison_document']._get_report_values([wizard.id])
+
+    def test_comparison_pdf_requires_fields_in_wizard_view(self):
+        """Los tres campos obligatorios se marcan también en el formulario."""
+        from lxml import etree
+        view = self.env.ref('expense_budget_control.view_expense_budget_comparison_report_wizard_form')
+        arch = etree.fromstring(view.arch_db.encode())
+        for name in ('year', 'category_id', 'cost_center_id'):
+            self.assertEqual(arch.xpath("//field[@name='%s']" % name)[0].get('required'), '1')
+
     def test_report_months_start_unselected(self):
         """El usuario elige los meses; no se precargan los doce."""
         wizard = self.env['expense.budget.comparison.report.wizard'].create({
             'company_id': self.company.id,
-            'year': 2026,
+            'year': 2026, 'category_id': self.category.id,
+            'cost_center_id': self.cost_center.id,
         })
         self.assertFalse(wizard.month_ids)
         action = wizard.action_print_pdf()
@@ -1232,11 +1257,16 @@ class TestExpenseBudgetReportPeriod(TransactionCase):
         })
         self.budget = self.env['expense.budget'].create({
             'name': 'Presupuesto de prueba por períodos',
-            'company_id': self.company.id, 'year': 2049,
+            'company_id': self.company.id, 'year': 2049, 'category_id': self.category.id,
+        })
+        self.cost_center = self.env['expense.budget.cost.center'].create({
+            'code': 'CC-TEST-PERIODO', 'name': 'Centro de pruebas periodos',
+            'company_id': self.company.id,
         })
         self.env['expense.budget.line'].create({
             'budget_id': self.budget.id, 'account_id': self.account.id,
             'month': '2', 'planned_amount': 200, 'actual_amount': 50,
+            'cost_center_id': self.cost_center.id,
         })
 
     def test_annual_report_restored_to_budget(self):
@@ -1254,6 +1284,8 @@ class TestExpenseBudgetReportPeriod(TransactionCase):
     def test_monthly_report_empty_months_prints_all_twelve(self):
         wizard = self.env['expense.budget.comparison.report.wizard'].create({
             'company_id': self.company.id, 'year': '2049',
+            'category_id': self.category.id,
+            'cost_center_id': self.cost_center.id,
         })
         self.assertFalse(wizard.month_ids)
         action = wizard.action_print_pdf()
@@ -1272,6 +1304,8 @@ class TestExpenseBudgetReportPeriod(TransactionCase):
     def test_monthly_report_selected_month_only(self):
         wizard = self.env['expense.budget.comparison.report.wizard'].create({
             'company_id': self.company.id, 'year': '2049',
+            'category_id': self.category.id,
+            'cost_center_id': self.cost_center.id,
         })
         month = self.env['expense.budget.comparison.month'].search([('number', '=', 2)], limit=1)
         self.assertTrue(month)

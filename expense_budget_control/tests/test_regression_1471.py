@@ -21,8 +21,12 @@ class TestBudgetERPMatching1471(TransactionCase):
         salary = Account.create({'company_id': company.id,
                                  'code': '601010101002-MATCH71',
                                  'name': 'Décimo Tercer Sueldo'})
+        category = self.env['expense.budget.category'].create({
+            'company_id': company.id, 'name': 'Rubro pruebas 1471',
+        })
+        (water | salary).write({'category_id': category.id})
         budget = Budget.with_context(skip_expense_budget_consumption_on_save=True).create({
-            'company_id': company.id, 'year': 2026, 'name': 'Regresión ERP código de cuenta',
+            'company_id': company.id, 'year': 2026, 'name': 'Regresión ERP código de cuenta', 'category_id': category.id,
         })
         vals = {'budget_id': budget.id, 'cost_center_id': center.id,
                 'month': '6', 'subcenter_code': 'GDE',

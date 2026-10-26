@@ -13,13 +13,17 @@ class TestBudgetMonthlyAfterDate1469(TransactionCase):
             'company_id': self.company.id, 'code': 'DATE69-601010101001',
             'name': 'Sueldos y Salarios',
         })
+        self.category = self.env['expense.budget.category'].create({
+            'company_id': self.company.id, 'name': 'Rubro pruebas 1469',
+        })
+        self.account.write({'category_id': self.category.id})
         self.center = self.env['expense.budget.cost.center'].create({
             'company_id': self.company.id, 'code': 'DATE69-ADM', 'name': 'Centro de costo',
         })
         self.budget = self.env['expense.budget'].with_context(
             skip_expense_budget_consumption_on_save=True,
         ).create({'company_id': self.company.id, 'year': 2023,
-                  'name': 'Pruebas consumos mensuales'})
+                  'name': 'Pruebas consumos mensuales', 'category_id': self.category.id})
         self.Line = self.env['expense.budget.line'].with_context(
             skip_expense_budget_consumption_on_save=True,
         )

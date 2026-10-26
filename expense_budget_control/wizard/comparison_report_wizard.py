@@ -2,7 +2,7 @@
 """Parámetros para imprimir Proyectado vs. real, sin cambiar presupuestos."""
 
 from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 
 
 class ExpenseBudgetComparisonMonth(models.Model):
@@ -36,8 +36,8 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
                 if 1900 <= year <= 2100]
 
     year = fields.Selection(
-        selection='_selection_years', string='Año', required=True,
-        default=lambda self: str(fields.Date.context_today(self).year),
+        selection='_selection_years', string='Año',
+        help='Seleccione el año del reporte antes de imprimir.',
     )
 
     month_ids = fields.Many2many(
@@ -98,7 +98,7 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
     @api.constrains('year', 'company_id', 'category_id', 'cost_center_id', 'account_id', 'account_ids', 'month_ids')
     def _check_filters(self):
         for wizard in self:
-            if not 1900 <= int(wizard.year) <= 2100:
+            if wizard.year and not 1900 <= int(wizard.year) <= 2100:
                 raise ValidationError(_('Seleccione un año válido entre 1900 y 2100.'))
             if wizard.cost_center_id and wizard.cost_center_id.company_id != wizard.company_id:
                 raise ValidationError(_('El centro de costo debe pertenecer a la empresa seleccionada.'))
@@ -113,9 +113,30 @@ class ExpenseBudgetComparisonReportWizard(models.TransientModel):
                     account.category_id != wizard.category_id for account in selected_accounts):
                 raise ValidationError(_('Todas las cuentas deben pertenecer al rubro seleccionado.'))
 
+    def _validate_required_print_filters(self):
+        """Impedir imprimir si falta alguno de los tres filtros obligatorios.
+
+        Mantener esta validación en el servidor además de los campos
+        requeridos en el formulario evita imprimir por llamadas RPC directas.
+        """
+        for wizard in self:
+            missing = []
+            if not wizard.year:
+                missing.append(_('Año'))
+            if not wizard.category_id:
+                missing.append(_('Rubro'))
+            if not wizard.cost_center_id:
+                missing.append(_('Centro de costo'))
+            if missing:
+                raise UserError(_(
+                    'No se puede imprimir Proyectado vs. Real. '
+                    'Seleccione los siguientes campos obligatorios: %s.'
+                ) % ', '.join(missing))
+
     def action_print_pdf(self):
         self.ensure_one()
         self.check_access('read')
+        self._validate_required_print_filters()
         # Un asistente mensual exclusivamente. Sin meses marcados = año completo.
         # La selección efectiva se resuelve en el modelo del reporte, sin
         # modificar la selección visible ni grabar los 12 meses en el wizard.

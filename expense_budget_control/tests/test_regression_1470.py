@@ -24,9 +24,13 @@ class TestBudgetDateAndEmptySave1470(TransactionCase):
     def test_presupuesto_sin_lineas_no_consulta_erp(self):
         with patch.object(type(self.Sync), '_sync_saved_lines', side_effect=AssertionError(
             'Un presupuesto vacío no puede consultar consumos ERP')):
+            category = self.env['expense.budget.category'].create({
+                'name': 'Presupuesto vacío prueba', 'company_id': self.company.id,
+            })
             budget = self.Budget.create({
                 'name': 'Presupuesto vacío, prueba sin ERP',
                 'year': 2096, 'company_id': self.company.id,
+                'category_id': category.id,
             })
             budget.write({'note': 'Edición de cabecera sin proyecciones'})
         self.assertFalse(budget.line_ids)
@@ -36,13 +40,17 @@ class TestBudgetDateAndEmptySave1470(TransactionCase):
             'name': 'Agua', 'code': 'T1470-601010102001',
             'company_id': self.company.id,
         })
+        category = self.env['expense.budget.category'].create({
+            'name': 'Rubro consumo octubre 1470', 'company_id': self.company.id,
+        })
+        account.write({'category_id': category.id})
         center = self.Center.create({
             'name': 'Quito', 'code': 'T1470-QUITO',
             'company_id': self.company.id,
         })
         budget = self.Budget.with_context(
             skip_expense_budget_consumption_on_save=True,
-        ).create({'name': 'Consumo octubre', 'year': 2026, 'company_id': self.company.id})
+        ).create({'name': 'Consumo octubre', 'year': 2026, 'company_id': self.company.id, 'category_id': category.id})
         Line = self.env['expense.budget.line'].with_context(
             skip_expense_budget_consumption_on_save=True,
         )

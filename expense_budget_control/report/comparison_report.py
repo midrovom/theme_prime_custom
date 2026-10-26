@@ -207,6 +207,7 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
     def _get_report_values(self, docids, data=None):
         wizards = self.env['expense.budget.comparison.report.wizard'].browse(docids).exists()
         wizards.check_access('read')
+        wizards._validate_required_print_filters()
         return {
             'doc_ids': wizards.ids,
             'doc_model': 'expense.budget.comparison.report.wizard',

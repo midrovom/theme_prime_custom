@@ -17,6 +17,11 @@ class TestMonthlyConsumption1473(TransactionCase):
         self.other_account = Account.create({
             'company_id': company.id, 'code': '601010101002-TEST1473', 'name': 'Otra cuenta',
         })
+        category = self.env['expense.budget.category'].create({
+            'company_id': company.id, 'name': 'Rubro pruebas 1473',
+        })
+        (self.water | self.other_account).write({'category_id': category.id})
+        self.category = category
         self.quito = Center.create({
             'company_id': company.id, 'code': 'QUITO-TEST1473', 'name': 'Quito',
         })
@@ -25,7 +30,7 @@ class TestMonthlyConsumption1473(TransactionCase):
         })
         self.budget = self.env['expense.budget'].with_context(
             skip_expense_budget_consumption_on_save=True,
-        ).create({'company_id': company.id, 'year': 2026, 'name': 'Presupuesto mensual 1473'})
+        ).create({'company_id': company.id, 'year': 2026, 'name': 'Presupuesto mensual 1473', 'category_id': self.category.id})
         self.Line = self.env['expense.budget.line'].with_context(
             skip_expense_budget_consumption_on_save=True,
         )

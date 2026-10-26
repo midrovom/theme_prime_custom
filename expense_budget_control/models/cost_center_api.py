@@ -78,8 +78,8 @@ class ExpenseBudgetCostCenterSync(models.AbstractModel):
         totals['apis'] = 1
         try:
             with self.env.cr.savepoint():
-                response = self.env['api.administrator'].sudo().call_api(
-                    selected.name, method='get', company_id=company.id,
+                response = self.env['expense.budget.api.transport'].get_json(
+                    selected, company,
                 )
                 centers = self._extract_rows(response)
                 Center = self.env['expense.budget.cost.center'].sudo().with_company(company)

@@ -11,7 +11,7 @@
         <field name="interval_type">days</field>
         <field name="active" eval="False"/>
     </record>
-    <!-- Tarea activa; solo consulta las empresas con las tres APIs ERP seleccionadas. -->
+    <!-- Tarea activa: conserva y actualiza movimientos de todos los años por empresa. -->
     <record id="ir_cron_expense_budget_erp_five_hours" model="ir.cron">
         <field name="name">Presupuestos: cuentas, centros y consumos ERP (5 horas)</field>
         <field name="model_id" ref="model_expense_budget"/>

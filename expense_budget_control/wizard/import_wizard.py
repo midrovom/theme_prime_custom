@@ -178,6 +178,13 @@ class ExpenseBudgetImportWizard(models.TransientModel):
         ], limit=1)
         if not account:
             raise ValueError('La cuenta %s no existe: importe antes el catálogo.' % code)
+        if not self.budget_id.category_id:
+            raise ValueError('Seleccione el rubro del presupuesto antes de importar proyecciones.')
+        if account.category_id != self.budget_id.category_id:
+            raise ValueError(
+                'La cuenta %s no pertenece al rubro %s de este presupuesto.' % (
+                    code, self.budget_id.category_id.display_name)
+            )
         Line = self.env['expense.budget.line']
         line = Line.search([
             ('budget_id', '=', self.budget_id.id), ('month', '=', month),
