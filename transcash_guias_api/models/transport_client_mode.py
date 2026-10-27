@@ -27,7 +27,7 @@ class EmbarqueModalidad(models.Model):
     estado_aprobacion = fields.Selection(selection_add=[('no_aplica', 'No aplica · transporte del cliente')],
                                         ondelete={'no_aplica': 'set default'})
     estado_financiero = fields.Selection(selection_add=[('no_aplica', 'Sin flete · transporte del cliente')],
-                                        ondelete={'no_aplica': 'set default'})
+                                        ondelete={'no_aplica': 'set null'})
 
     def _check_operator_client(self):
         user = self.env.user
