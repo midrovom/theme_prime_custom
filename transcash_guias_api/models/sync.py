@@ -4,6 +4,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 from .commercial_parser import extract_commercial, guide_lines
 from .transport_identity import normalize_transport_ruc
+from .fiscal_identity import fiscal_document
 
 _logger = logging.getLogger(__name__)
 
@@ -235,10 +236,25 @@ class TCGuideSync(models.Model):
             _logger.warning('RUC transportista no válido; sin alta de tc.transport. Guía %s', external)
         driver_id = False
         if clean(driver.get('identificacion')):
-            ident = clean(driver['identificacion'])
-            driver_id = self._master('tc.driver', common + [('identification', '=', ident)], {
-                'identification': ident, 'name': clean(driver.get('nombre')) or ident, 'company_id': company_id,
-            }).id
+            # También normalizar el maestro auxiliar: una cédula con guiones
+            # o espacios no debe crear otro chofer en sincronizaciones futuras.
+            ident = fiscal_document(driver['identificacion'])
+            Driver = self.env['tc.driver'].sudo()
+            matches = Driver.search(common).filtered(
+                lambda rec: fiscal_document(rec.identification) == ident)
+            if matches:
+                master_driver = matches.sorted('id')[0]
+                if len(matches) > 1:
+                    _logger.warning('Chofer auxiliar duplicado con documento %s: IDs %s',
+                                    ident, matches.ids)
+                if clean(driver.get('nombre')) and master_driver.name != clean(driver.get('nombre')):
+                    master_driver.write({'name': clean(driver.get('nombre'))})
+            else:
+                master_driver = Driver.create({
+                    'identification': ident, 'name': clean(driver.get('nombre')) or ident,
+                    'company_id': company_id,
+                })
+            driver_id = master_driver.id
         vehicle_id = False
         if clean(vehicle.get('placa')):
             plate = clean(vehicle['placa']).upper()

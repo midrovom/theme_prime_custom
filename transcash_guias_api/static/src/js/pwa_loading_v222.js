@@ -43,6 +43,10 @@
 
     function messageFor(form) {
         var target = (form.getAttribute('action') || window.location.pathname).toLowerCase();
+        if (/\/operacion\/guias\/sincronizar(?:\?|$)/.test(target)) {
+            return ['Sincronizando guías ERP',
+                    'Consultando API Administrator e importando los registros…'];
+        }
         if (/\/rutas\/\d+\/guias(?:\?|$)/.test(target)) {
             return ['Guardando selección de guías', 'Validando guías, chofer, transportista y destino…'];
         }

@@ -8,7 +8,7 @@
             name="Transcash PWA: feedback de carga y anti doble envío">
     <xpath expr="//link[@rel='manifest']" position="after">
       <link rel="stylesheet" href="/transcash_guias_api/static/src/css/pwa_loading_v222.css?v=222"/>
-      <script defer="defer" src="/transcash_guias_api/static/src/js/pwa_loading_v222.js?v=222"/>
+      <script defer="defer" src="/transcash_guias_api/static/src/js/pwa_loading_v222.js?v=223"/>
     </xpath>
   </template>
 </odoo>

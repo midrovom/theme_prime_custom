@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="tc_pwa_sync_guias_fast_v223" inherit_id="logistica_transcash.portal_operacion"
+            priority="140" name="PWA: botón seguro para sincronizar guías ERP">
+    <xpath expr="//t[@t-if=&quot;section == 'nueva'&quot;]/div[contains(@class,'tc-next-card')]" position="before">
+      <form method="post" action="/transcash/operacion/guias/sincronizar" class="tc-erp-sync-compact">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <input type="hidden" name="volver" value="/transcash/operacion/rutas/nueva"/>
+        <button type="submit" class="tc-button tc-button-outline tc-refresh-guides">
+          ↻ Sincronizar guías ERP
+        </button>
+        <small>Actualiza desde API Administrator antes de crear la ruta.</small>
+      </form>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'rutas'&quot;]/a[contains(@href,'/rutas/nueva')]" position="before">
+      <form method="post" action="/transcash/operacion/guias/sincronizar" class="tc-erp-sync-compact">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <input type="hidden" name="volver" value="/transcash/operacion/rutas"/>
+        <button type="submit" class="tc-button tc-button-outline tc-refresh-guides">
+          ↻ Sincronizar guías ERP
+        </button>
+      </form>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'ruta_detalle'&quot;]/div[contains(@class,'tc-ops-summary')]" position="after">
+      <form t-if="ruta.state == 'borrador'" method="post" action="/transcash/operacion/guias/sincronizar" class="tc-erp-sync-compact">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <input type="hidden" name="volver" t-att-value="'/transcash/operacion/rutas/%d' % ruta.id"/>
+        <button type="submit" class="tc-button tc-button-outline tc-refresh-guides">
+          ↻ Sincronizar guías ERP
+        </button>
+        <small>Refrescar guías disponibles sin cambiar las guías seleccionadas.</small>
+      </form>
+    </xpath>
+    <xpath expr="//div[@t-if='ok' and contains(@class,'tc-alert-ok')]" position="replace">
+      <div t-if="ok" class="tc-alert tc-alert-ok" role="status">
+        ✓ <t t-if="ok.startswith('Guías ERP') or ok.startswith('Guías creadas')" t-esc="ok"/>
+        <t t-else="">Operación realizada correctamente</t>
+      </div>
+    </xpath>
+    <xpath expr="//html/head" position="inside">
+      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/pwa_sync_v223.css?v=223"/>
+    </xpath>
+  </template>
+</odoo>

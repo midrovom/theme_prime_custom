@@ -9,6 +9,8 @@ import re
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError
 from .transport_identity import normalize_transport_ruc
+from .fiscal_identity import (fiscal_document, fiscal_variants, fiscal_key,
+                              create_fiscal_partner)
 
 _logger = logging.getLogger(__name__)
 
@@ -46,36 +48,38 @@ class TCGuidePartnerLink(models.Model):
     master_link_note = fields.Text(string='Pendientes / observaciones de accesos', readonly=True, copy=False)
 
     def _partner_by_tax(self, tax):
-        """Resolve VAT deterministically, including legacy duplicate contacts."""
+        """Búsqueda global por identificación normalizada, incluidos archivados.
+
+        No crea duplicados en otras compañías y no confunde VAT con ref ERP.
+        """
         self.ensure_one()
-        normalized = _identifier(tax)
-        if not normalized:
+        variants = fiscal_variants(tax)
+        if not variants:
             return False, ''
-        variants = {normalized}
-        if normalized.startswith('EC') and normalized[2:].isdigit():
-            variants.add(normalized[2:])
-        if normalized.isdigit():
-            variants.add('EC' + normalized)
         self.env.cr.execute('''
             SELECT id FROM res_partner
-             WHERE (company_id IS NULL OR company_id = %s)
-               AND UPPER(REGEXP_REPLACE(COALESCE(vat, ''), '[^A-Za-z0-9]', '', 'g')) = ANY(%s)
+             WHERE UPPER(REGEXP_REPLACE(COALESCE(vat, ''), '[^A-Za-z0-9]', '', 'g')) = ANY(%s)
              ORDER BY id
-        ''', (self.company_id.id, list(variants)))
-        ids = [r[0] for r in self.env.cr.fetchall()]
+        ''', (list(variants),))
+        ids = [row[0] for row in self.env.cr.fetchall()]
         if not ids:
             return False, ''
         Partner = self.env['res.partner'].sudo().with_context(active_test=False)
-        candidates = Partner.browse(ids)
+        matches = Partner.browse(ids)
+        allowed = matches.filtered(lambda p: not p.company_id or p.company_id.id == self.company_id.id)
+        if not allowed:
+            return False, _('La identificación %s pertenece a un contacto privado de otra compañía. No se duplica.') % tax
         linked = set(self.env['res.users'].sudo().with_context(active_test=False).search([
-            ('partner_id', 'in', ids)]).mapped('partner_id').ids)
-        candidates = candidates.sorted(key=lambda p: (
-            p.id not in linked, not p.active, bool(p.company_id), p.id,
+            ('partner_id', 'in', allowed.ids)]).mapped('partner_id').ids)
+        ordered = allowed.sorted(key=lambda p: (
+            not p.active, p.id not in linked, bool(p.company_id), p.id,
         ))
-        chosen = candidates[0]
-        note = (_('Identificación %s: %s contactos duplicados; se reutiliza el contacto %s. '
-                  'Revisar Consolidación de terceros.') % (tax, len(candidates), chosen.id)
-                if len(candidates) > 1 else '')
+        chosen = ordered[0]
+        if not chosen.active:
+            return False, _('La identificación %s corresponde a un contacto archivado. Reactive el contacto existente.') % tax
+        note = (_('Identificación %s: existen %s contactos duplicados; se reutiliza el contacto %s. '
+                  'Revise Consolidación de terceros.') % (tax, len(matches), chosen.id)
+                if len(matches) > 1 else '')
         return chosen, note
 
     def _partner_by_ref(self, code):
@@ -102,133 +106,153 @@ class TCGuidePartnerLink(models.Model):
         return matches, ''
 
     def _resolve_transport_partner(self, name, raw_tax):
-        """Transportistas: RUC único, nunca crear por solo el nombre.
+        """Contacto del transportista a pagar: búsqueda por documento antes de crear.
 
-        Compara identificaciones normalizadas globalmente, incluyendo contactos
-        archivados; si el contacto está reservado para otra compañía, informa
-        el conflicto y no genera una segunda empresa con el mismo RUC.
+        RUC ecuatoriano (13 dígitos) se intenta como RUC. Si la validación
+        falla, identificación extranjera. Nunca se recrea el mismo documento.
         """
         self.ensure_one()
-        name, raw_tax = _clean(name), _clean(raw_tax)
-        vat = normalize_transport_ruc(raw_tax)
-        if raw_tax and not vat:
-            return False, _('RUC inválido de transportista: %s. No se creó contacto.') % raw_tax
-
+        name = _clean(name)
+        raw_tax = _clean(raw_tax)
+        document = fiscal_document(raw_tax)
         Partner = self.env['res.partner'].sudo().with_context(active_test=False)
-        if vat:
-            # Bloqueo global por identidad: también protege sincronizaciones
-            # concurrentes de distintas compañías.
+
+        if document and len(document) < 5:
+            return False, _('Documento del transportista demasiado corto; no se creó contacto.')
+        if document:
+            # Bloqueo global: mismo documento, independientemente de compañía.
             self.env.cr.execute(
                 'SELECT pg_advisory_xact_lock(hashtext(%s), hashtext(%s))',
-                ('tc.transporter', vat))
-            self.env.cr.execute('''
-                SELECT id FROM res_partner
-                WHERE UPPER(REGEXP_REPLACE(COALESCE(vat, ''),
-                      '[^A-Za-z0-9]', '', 'g')) IN (%s, %s)
-                ORDER BY id
-            ''', (vat, 'EC' + vat))
-            matches = Partner.browse([row[0] for row in self.env.cr.fetchall()])
-            matches = matches.filtered(lambda p: p.is_company or not p.parent_id)
-            eligible = matches.filtered(lambda p:
-                not p.company_id or p.company_id.id == self.company_id.id)
-            if matches and not eligible:
-                return False, _('El RUC %s ya existe en una compañía privada ajena. '
-                                'No se creó un duplicado; requiere homologación.') % vat
-            if eligible:
-                linked_users = set(self.env['res.users'].sudo().with_context(
-                    active_test=False).search([
-                        ('partner_id', 'in', eligible.ids)]).mapped('partner_id').ids)
-                linked_guides = set(self.env['transcash.guia'].sudo().search([
-                    ('proveedor_id', 'in', eligible.ids)]).mapped('proveedor_id').ids)
-                used = linked_users | linked_guides
-                ordered = eligible.sorted(key=lambda p: (
-                    not p.active, p.id not in used, bool(p.company_id), p.id))
-                primary = ordered[0]
-                if not primary.active:
-                    return False, _('RUC %s solo tiene contactos archivados. '
-                                    'Debe reactivarse uno manualmente; no se crea otro.') % vat
-                note = (_('RUC %s: existen %s contactos duplicados; se reutiliza %s. '
-                          'Revise Depurar transportistas.') % (vat, len(ordered), primary.id)
-                        if len(ordered) > 1 else '')
-                return primary, note
+                ('tc.party.identity', document))
+            existing, note = self._partner_by_tax(document)
+            if existing:
+                # No modificar el VAT/tipo fiscal de contactos con historia.
+                if 'supplier_rank' in Partner._fields and existing.supplier_rank < 1:
+                    existing.write({'supplier_rank': 1})
+                return existing, note
+            if note:
+                return False, note
 
-        # Un nombre solo sirve para localizar contactos preexistentes.
-        # Si tiene RUC, podemos completar UN único contacto con el nombre
-        # exacto y VAT vacío; jamás reemplazar el VAT de otro transportista.
+        # Con nombre solo NO se crea una empresa: se busca un registro único
+        # existente, y nunca se sobreescribe un VAT distinto.
         key = ' '.join(name.upper().split())
-        matches = (Partner.search([('is_company', '=', True),
-                                   ('name', '=ilike', name)])
+        matches = (Partner.search([('is_company', '=', True), ('name', '=ilike', name)])
                    if name else Partner.browse())
-        matches = matches.filtered(
-            lambda p: ' '.join((p.name or '').upper().split()) == key)
-        allowed = matches.filtered(lambda p:
-            not p.company_id or p.company_id.id == self.company_id.id)
+        matches = matches.filtered(lambda p: ' '.join((p.name or '').upper().split()) == key)
+        allowed = matches.filtered(lambda p: not p.company_id or p.company_id.id == self.company_id.id)
         if matches and not allowed:
-            return False, _('Transportista %s ya existe en otra compañía privada.') % name
+            return False, _('El transportista ya existe en otra compañía privada; no se duplicó.')
         if allowed and not allowed.filtered('active'):
-            return False, _('Transportista %s existe archivado; requiere reactivación manual.') % name
-        if vat:
-            blank = allowed.filtered(lambda p: p.active and not _identifier(p.vat))
-            conflict = allowed - blank
-            if len(blank) == 1 and not conflict:
-                blank.sudo().write({'vat': vat})
-                return blank, _('Se completó el RUC %s de un transportista existente.') % vat
-            if allowed:
-                return False, _('Nombre %s ya existe con RUC distinto o ambiguo. '
-                                'No se crea una empresa adicional.') % name
-            if not name:
-                return False, _('RUC %s sin nombre del transportista.') % vat
-            return Partner.create({'name': name, 'vat': vat,
-                                   'is_company': True, 'company_id': False}), ''
-        if len(allowed) == 1 and allowed.active:
-            return allowed, _('Transportista vinculado temporalmente por nombre; '
-                              'el ERP todavía no envía su RUC.')
-        if len(allowed) > 1:
-            return False, _('Transportista %s sin RUC y con %s coincidencias. '
-                            'No se crea ni se selecciona automáticamente.') % (name, len(allowed))
-        return False, _('Falta RUC del transportista %s; no se crea empresa por nombre.') % (name or '-')
+            return False, _('Transportista archivado; reactive el registro existente.')
+        if document and allowed:
+            blank = allowed.filtered(lambda p: p.active and not fiscal_key(p.vat))
+            conflicting = allowed - blank
+            if len(blank) == 1 and not conflicting:
+                # No fabricar un segundo contacto: agregar identificación al
+                # existente, con el mismo manejo fiscal seguro que en creación.
+                values = {'vat': document}
+                from .fiscal_identity import _type_values, first_kind
+                preferred = first_kind(document, 'transport')
+                try:
+                    values.update(_type_values(
+                        self.env, preferred,
+                        require=(preferred == 'foreign' or
+                                 'l10n_latam_identification_type_id' in Partner._fields)))
+                    with self.env.cr.savepoint():
+                        blank.sudo().write(values)
+                except (ValidationError, UserError):
+                    values = {'vat': document}
+                    values.update(_type_values(self.env, 'foreign', require=True))
+                    with self.env.cr.savepoint():
+                        blank.sudo().write(values)
+                if 'supplier_rank' in Partner._fields and blank.supplier_rank < 1:
+                    blank.sudo().write({'supplier_rank': 1})
+                return blank, _('Se completó la identificación de un transportista existente.')
+            return False, _('Nombre de transportista con documentos distintos o múltiples contactos. '
+                            'Revise duplicados antes de importar.')
+        if not document:
+            if len(allowed) == 1 and allowed.active:
+                return allowed, _('Vínculo provisional por nombre; falta identificación ERP.')
+            return False, _('Transportista sin identificación; no se crea empresa por nombre.')
+        if not name:
+            return False, _('Transportista con documento %s pero sin razón social.') % document
+
+        vals = {'name': name, 'is_company': True, 'company_id': False}
+        if 'supplier_rank' in Partner._fields:
+            vals['supplier_rank'] = 1
+        partner, kind, note = create_fiscal_partner(self.env, vals, document, 'transport')
+        return partner, note
 
     def _upsert_contact(self, kind, name, tax='', code='', street='', company=False):
-        """Reuse fiscal identity first; code is an ERP reference, never an inferred VAT."""
+        """Reutilizar por cédula/RUC (incluso extranjeros) y luego código ERP."""
         self.ensure_one()
-        name, tax, code = _clean(name), _clean(tax), _clean(code)
-        if tax and not _is_tax(tax):
-            return False, _('Identificación de %s inválida: %s.') % (kind, tax)
-        partner, message = False, ''
-        if tax:
-            partner, message = self._partner_by_tax(tax)
+        name, code = _clean(name), _clean(code)
+        document = fiscal_document(tax)
+        if document and len(document) < 5:
+            return False, _('Documento demasiado corto de %s: %s.') % (kind, document)
+        if document:
+            self.env.cr.execute('SELECT pg_advisory_xact_lock(hashtext(%s), hashtext(%s))',
+                                ('tc.party.identity', document))
+        partner, message = self._partner_by_tax(document) if document else (False, '')
+        if message and not partner:
+            return False, message
         if not partner and code:
             found, note = self._partner_by_ref(code)
-            if found and tax and found.vat and _identifier(found.vat) != _identifier(tax):
-                return False, _('Referencia %s corresponde a otra identificación (%s).') % (code, kind)
+            if found and document and found.vat and not (fiscal_variants(found.vat) & fiscal_variants(document)):
+                return False, _('Código ERP %s asociado a una identificación diferente; no se duplica.') % code
             partner = found
             if note:
                 message = (message + '\n' + note).strip()
         if not partner:
-            if not tax and not code:
+            if not document and not code:
                 return False, _('Falta documento o código ERP de %s: %s.') % (kind, name or '-')
             if not name:
                 return False, _('Falta nombre de %s para crear contacto.') % kind
             values = {'name': name, 'is_company': company, 'company_id': False}
-            if tax:
-                values['vat'] = _identifier(tax)
             if code:
                 values['ref'] = code
             if street:
                 values['street'] = street
-            partner = self.env['res.partner'].sudo().create(values)
+            if document:
+                partner, kind_created, note = create_fiscal_partner(
+                    self.env, values, document, 'driver' if kind == 'driver' else kind)
+                if note:
+                    message = (message + '\n' + note).strip()
+            else:
+                partner = self.env['res.partner'].sudo().create(values)
         else:
-            if tax and partner.vat and _identifier(partner.vat) != _identifier(tax):
-                return False, _('RUC incompatible con contacto %s (%s).') % (partner.id, kind)
+            if document and partner.vat and not (fiscal_variants(partner.vat) & fiscal_variants(document)):
+                return False, _('Identificación incompatible con contacto %s (%s).') % (partner.id, kind)
             updates = {}
-            if tax and not partner.vat:
-                updates['vat'] = _identifier(tax)
+            if document and not partner.vat:
+                # Evitar actualizar un contacto con información fiscal inválida.
+                from .fiscal_identity import _type_values, first_kind
+                preferred = first_kind(document, 'driver' if kind == 'driver' else kind)
+                updates['vat'] = document
+                # Tipo se establece dentro del savepoint para poder reintentar
+                # un documento fiscal inválido como identificación extranjera.
             if code and not partner.ref:
                 updates['ref'] = code
             if street and not partner.street:
                 updates['street'] = street
             if updates:
-                partner.sudo().write(updates)
+                try:
+                    if document and not partner.vat:
+                        from .fiscal_identity import _type_values, first_kind
+                        preferred = first_kind(document, 'driver' if kind == 'driver' else kind)
+                        updates.update(_type_values(
+                            self.env, preferred,
+                            require=(preferred == 'foreign' or
+                                     'l10n_latam_identification_type_id' in self.env['res.partner']._fields)))
+                    with self.env.cr.savepoint():
+                        partner.sudo().write(updates)
+                except (ValidationError, UserError):
+                    if not document or partner.vat:
+                        raise
+                    from .fiscal_identity import _type_values
+                    updates.update(_type_values(self.env, 'foreign', require=True))
+                    with self.env.cr.savepoint():
+                        partner.sudo().write(updates)
         return partner, message
 
     def _resolve_driver_user(self, partner, transport=False):
