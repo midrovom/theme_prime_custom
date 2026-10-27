@@ -13,6 +13,11 @@ class TestBudgetSubcentroAutomatico1465(TransactionCase):
             'company_id': self.company.id, 'code': '601010101001-AUTO65',
             'name': 'Sueldos y Salarios',
         })
+        category = self.env['expense.budget.category'].create({
+            'company_id': self.company.id, 'name': 'Rubro pruebas 1465',
+        })
+        self.account.write({'category_id': category.id})
+        self.category = category
         self.center = self.env['expense.budget.cost.center'].create({
             'company_id': self.company.id, 'code': 'ADM-AUTO65',
             'name': 'Administración',
@@ -23,7 +28,7 @@ class TestBudgetSubcentroAutomatico1465(TransactionCase):
         })
         self.budget = self.env['expense.budget'].with_context(
             skip_expense_budget_consumption_on_save=True,
-        ).create({'company_id': self.company.id, 'name': 'Prueba mes ERP', 'year': 2026})
+        ).create({'company_id': self.company.id, 'name': 'Prueba mes ERP', 'year': 2026, 'category_id': self.category.id})
         self.Line = self.env['expense.budget.line'].with_context(
             skip_expense_budget_consumption_on_save=True,
         )

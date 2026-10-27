@@ -1,11 +1,11 @@
 # Control de Presupuesto de Gastos — Odoo 18
 
-Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.11`.
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.79`.
 
 ## Funciones
 
 - Catálogo de **rubros** y **cuentas controladas**, separado por empresa.
-- Un presupuesto anual por empresa, con importe **proyectado por cuenta y mes**.
+- Un presupuesto por **empresa, año y rubro**, con importes **proyectados por cuenta y mes**. En el mismo año se admiten varios rubros distintos.
 - Gastos reales manuales, importados desde **Excel/CSV** o recibidos de **API Administrator**.
 - Comparación de presupuesto frente al real: consumido, disponible y porcentaje de ejecución.
 - Vistas tipo lista, gráfica de barras y tabla dinámica, con filtros por rubro, cuenta, mes y presupuesto.
@@ -16,7 +16,7 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.11`.
 ## Instalación
 
 1. Copie la carpeta `expense_budget_control` a un directorio dentro de `addons_path` de Odoo 18.
-2. Confirme que su módulo personalizado se llama **exactamente `api_administrator`**. Debe instalarse y definir el modelo **`api.administrator`**, con método `call_api(api_name, method, company_id, ...)` y `button_run_sync` como en el código de referencia. La dependencia en el manifiesto ya apunta a `api_administrator`.
+2. Confirme que `api_administrator` está instalado y tiene configuradas las APIs GET activas. La integración soporta instalaciones **sin** método `call_api`: realiza GET con la URL y las credenciales ya guardadas en `api.administrator`.
 3. Instale `openpyxl` en el **Python que ejecuta Odoo**: `pip install openpyxl`.
 4. Reinicie Odoo, actualice la lista de aplicaciones e instale **Control de Presupuesto de Gastos**.
 5. En Ajustes → Usuarios, asigne el rol adecuado: **Consulta de presupuestos** (solo lectura), **Registro de presupuestos** (crear y editar borradores, importar proyecciones y registrar/corregir gastos reales manualmente), **Aprobador de presupuestos** (aprobar presupuestos pendientes sin editar valores) o **Administrador de presupuestos** (gestión completa, incluyendo API). Los permisos para gestionar `api.administrator` se configuran en el módulo externo `api_administrator`.
@@ -28,11 +28,11 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.11`.
 ## Primer uso
 
 1. Vaya a **Control de Gastos → Importar Excel/CSV**, elija **Cuentas y rubros**, seleccione la empresa e importe la hoja **Cuentas** del libro de ejemplo.
-2. Vaya a **Presupuestos** y cree, por ejemplo, `Presupuesto 2026`, para la misma empresa y año.
+2. Vaya a **Presupuestos** y cree, por ejemplo, `Servicios básicos 2026`, seleccionando **empresa, año y rubro**. Para otro rubro puede crear otro presupuesto del mismo año, aunque el primero siga en borrador.
 3. En **Importar Excel/CSV**, seleccione **Proyecciones mensuales**, el presupuesto y la hoja **Proyecciones**. También puede editar las doce proyecciones por cuenta en el propio formulario.
 4. Registre gastos reales a mano o importe la hoja **Gastos** con tipo **Gastos reales**.
 5. En **Proyectado vs. real** vea las desviaciones por rubro, cuenta y mes. Un saldo negativo identifica exceso presupuestario.
-6. Envíe el presupuesto a aprobación y apruébelo para bloquear los valores proyectados (los gastos reales siguen registrándose). Después puede registrar otro presupuesto para nuevos rubros de la misma empresa y año.
+6. Envíe cada presupuesto a aprobación cuando esté listo. Puede registrar en paralelo presupuestos de otros rubros para la misma empresa y año, pero nunca un segundo presupuesto del mismo rubro (incluso si el primero está aprobado o rechazado).
 
 ### Columnas de Excel
 
@@ -73,7 +73,7 @@ Al actualizar una instalación anterior, copie la nueva carpeta y ejecute la act
 
 ## Integración API Administrator
 
-El módulo **no sustituye** la autenticación ni el transporte HTTP de `api_administrator`. En **Configuración API de gastos** solo se selecciona una API existente del modelo `api.administrator` mediante el campo **API existente**. No se crean ni se editan URL, usuario o contraseña desde Control de Gastos. La sincronización sigue llamando el método `call_api` existente.
+El módulo **reutiliza las APIs existentes** del modelo `api.administrator`; no crea ni cambia URL, usuario o contraseña. Si `api_administrator` expone `call_api`, se utiliza. Si no lo tiene, Control de Gastos hace GET directamente con `url`, `end_point`, `user_id` y `password` de la API seleccionada, enviando las cabeceras `userid/password` del ERP. Consulte `docs/CONEXION_API_SIN_CALL_API_1476.md`.
 
 **Configuración:**
 
@@ -109,7 +109,7 @@ También se admite una lista directa, o el arreglo `items` en lugar de `data`. V
 - La tarea programada `Presupuestos: importar gastos desde API` está **desactivada por defecto**. Active en Ajustes → Técnico → Automatización → Acciones planificadas una vez comprobado el endpoint.
 - El endpoint debe entregar importes en la **moneda base de la empresa**. El módulo **no realiza conversión** de moneda ni deduce impuestos.
 - El módulo registra movimientos externos como gastos de control presupuestario; **no crea facturas ni asientos contables** y no sincroniza automáticamente `account.move.line`. La carga desde la contabilidad Odoo sería una extensión posterior.
-- Las llamadas API utilizan la implementación de `call_api` presente en `api_administrator` (en el ejemplo, autenticación por cabeceras `userid/password`). No se almacena una copia de esas credenciales en el módulo presupuestario.
+- Las llamadas API admiten `call_api` si existe y tienen un transporte GET propio como alternativa; ambos utilizan la API elegida en `api_administrator`. No se guardan duplicados de credenciales en el módulo presupuestario.
 
 ## Verificación y pruebas
 
@@ -137,7 +137,7 @@ expense_budget_control/
 └── docs/plantilla_importacion.xlsx
 ```
 
-**Estados de presupuestos:** Borrador → Pendiente de aprobación → Aprobado. No hay estado Cerrado. Una vez aprobado un presupuesto, puede crearse otro para nuevos rubros de la misma empresa y año; no se admiten dos presupuestos en preparación a la vez para esa empresa y año ni la duplicación de cuenta/mes entre presupuestos. Al actualizar desde una versión anterior, los presupuestos cerrados se conservan como aprobados.
+**Estados de presupuestos:** Borrador → Pendiente de aprobación → Aprobado o Rechazado. Una misma empresa y año pueden tener varios presupuestos de rubros **diferentes**, en cualquier estado, pero solo uno por rubro. Las líneas deben usar cuentas del rubro seleccionado en la cabecera. Los presupuestos históricos con varios rubros conservan sus líneas para revisión. Véase `docs/UN_PRESUPUESTO_POR_RUBRO_1479.md`.
 
 ## Navegación por roles (v1.4.5)
 
@@ -155,7 +155,7 @@ La visibilidad de menús no cambia el cálculo presupuestario ni la API. Al actu
 ## Imprimir PDF desde Proyectado vs. real (v1.4.11)
 
 1. Abra **Control de Gastos → Proyectado vs. real** (vista de lista).
-2. Pulse **Imprimir PDF**. No necesita seleccionar filas: el asistente permite indicar **Empresa**, **Año** y opcionalmente **Rubro** y **Cuenta controlada**.
+2. Pulse **Imprimir PDF**. No necesita seleccionar filas: el asistente requiere **Empresa**, **Año**, **Rubro** y **Centro de costo**; la selección de **Meses** y **Cuentas controladas** es opcional.
 3. Pulse **Imprimir PDF** en el asistente. El reporte A4 horizontal muestra los rubros, sus cuentas y las columnas **Proyectado**, **Gasto real**, **Disponible** y **Ejecución (%)**, con subtotales y total general.
 
 El porcentaje se calcula como consumido total / proyectado total x 100, no como promedio de porcentajes mensuales. No se duplican gastos de API o Excel: se utilizan exclusivamente los totales de las líneas mensuales. Los usuarios Aprobador solo podrán imprimir las líneas de presupuestos pendientes de aprobación o aprobados que ya pueden consultar; los demás roles conservan sus permisos. El PDF anual existente (12 meses) no se altera.
@@ -219,3 +219,16 @@ Consumo actual. **Consumo corte** y los saldos no modifican sus fórmulas.
   el error como tres endpoints fallidos: se deja que el manejador de transacciones
   de Odoo reintente toda la operación. Después de los reintentos fallidos,
   el administrador debe consultar el registro del servidor.
+
+
+## Requisito de filtros para imprimir comparativo (v18.0.1.4.79)
+
+Para imprimir el PDF **Proyectado vs. real** deben seleccionarse **Año, Rubro y Centro de costo**.
+El asistente ya no establece automáticamente el año actual, para que el operador seleccione el período explícitamente.
+El formulario marca los tres campos como obligatorios y el servidor valida los valores tanto desde el botón
+**Imprimir PDF** como al renderizar el reporte directamente; el mensaje detalla los campos pendientes.
+
+**Meses** y **Cuentas controladas** siguen siendo filtros opcionales. Si no se seleccionan meses,
+se imprimen los 12 meses; si no se seleccionan cuentas, se consideran todas las cuentas del rubro
+con líneas presupuestarias para ese centro de costo.
+Las operaciones de cron, conexión ERP y cálculos del reporte no se modifican con este cambio.

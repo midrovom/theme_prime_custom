@@ -22,9 +22,8 @@ class ExpenseBudgetAPIConfig(models.Model):
     sync_year = fields.Integer(
         string='Año de los consumos (legado)', required=True,
         default=lambda self: fields.Date.context_today(self).year,
-        help='Campo anterior conservado por compatibilidad; la sincronización manual usa el año actual. '
-             'Desde un presupuesto se utiliza el año del presupuesto. '
-             'El cron automático siempre usa el año actual.',
+        help='Campo legado conservado por compatibilidad. La sincronización manual y el cron '
+             'ERP importan todos los años que devuelva la API.',
     )
     api_administrator_id = fields.Many2one(
         'api.administrator', string='API anterior (opcional)',
@@ -76,7 +75,7 @@ class ExpenseBudgetAPIConfig(models.Model):
             raise AccessError(_('Requiere el grupo Administrador de presupuestos de gastos.'))
         self.ensure_one()
         result = self.env['expense.budget.inventory.sync']._sync_company(
-            self.company_id, year=fields.Date.context_today(self).year,
+            self.company_id,  # sincroniza también los años anteriores
         )
         return self.env['expense.budget.inventory.sync']._notification(result, show_year=False)
 
@@ -96,10 +95,10 @@ class ExpenseBudgetSyncLog(models.Model):
     unchanged_count = fields.Integer(string='Sin cambios')
     message = fields.Text(string='Detalle')
     received_count = fields.Integer(string='Filas recibidas')
-    skipped_count = fields.Integer(string='Omitidas por año')
+    skipped_count = fields.Integer(string='Omitidas por filtro')
     matched_count = fields.Integer(string='Vinculadas al presupuesto')
     unmatched_count = fields.Integer(string='Sin línea presupuestaria')
-    year = fields.Integer(string='Año consultado')
+    year = fields.Integer(string='Año consultado (vacío = todos)')
 
 
 class ExpenseBudgetAPISync(models.AbstractModel):
@@ -128,7 +127,6 @@ class ExpenseBudgetAPISync(models.AbstractModel):
     def _sync_company(self, company, api_records=None):
         """Interno: convocado desde botones protegidos o la tarea programada."""
         company.ensure_one()
-        Admin = self.env['api.administrator'].sudo()
         # La API se define en API Administrator: aquí solo se selecciona su registro.
         selected = api_records if api_records is not None else self.env[
             'expense.budget.api.config'
@@ -148,7 +146,9 @@ class ExpenseBudgetAPISync(models.AbstractModel):
             try:
                 # Un savepoint por API asegura que un lote con errores no quede a medias.
                 with self.env.cr.savepoint():
-                    result = Admin.call_api(config.name, method='get', company_id=company.id)
+                    result = self.env['expense.budget.api.transport'].get_json(
+                        config, company,
+                    )
                     data = self._extract_rows(result)
                     Expense = self.env['expense.budget.expense'].sudo().with_company(company)
                     for number, item in enumerate(data, start=1):

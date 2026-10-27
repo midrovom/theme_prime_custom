@@ -16,6 +16,16 @@ class TestBudgetERPIntegration(TransactionCase):
         self.account_model = self.env['expense.budget.account']
         self.center_model = self.env['expense.budget.cost.center']
 
+    def _category_for_account(self, account):
+        if account.category_id:
+            return account.category_id.id
+        category = self.env['expense.budget.category'].create({
+            'company_id': self.company.id,
+            'name': 'Rubro de pruebas ERP %s' % account.code,
+        })
+        account.write({'category_id': category.id})
+        return category.id
+
     def test_spanish_dates(self):
         self.assertEqual(str(parse_erp_date('abr 25 2026 12:00:00:000')), '2026-04-25')
         self.assertEqual(str(parse_erp_date('ago 25 2026 12:00:00:000')), '2026-08-25')
@@ -74,9 +84,11 @@ class TestBudgetERPIntegration(TransactionCase):
         })
         budget_2022 = self.env['expense.budget'].create({
             'company_id': self.company.id, 'name': 'Personal 2022', 'year': 2022,
+            'category_id': self._category_for_account(account),
         })
         budget_2026 = self.env['expense.budget'].create({
             'company_id': self.company.id, 'name': 'Personal 2026', 'year': 2026,
+            'category_id': self._category_for_account(account),
         })
         line_model = self.env['expense.budget.line']
         line_2022 = line_model.create({
@@ -112,6 +124,7 @@ class TestBudgetERPIntegration(TransactionCase):
         })
         budget = self.env['expense.budget'].create({
             'company_id': self.company.id, 'name': 'Prueba subcentros', 'year': 2091,
+            'category_id': self._category_for_account(account),
         })
         Line = self.env['expense.budget.line']
         generic = Line.create({
@@ -171,6 +184,7 @@ class TestBudgetERPIntegration(TransactionCase):
         budget = self.env['expense.budget'].create({
             'company_id': self.company.id, 'name': 'Año del consumo 2022',
             'year': 2022,
+            'category_id': category.id,
         })
         line = self.env['expense.budget.line'].create({
             'budget_id': budget.id, 'account_id': account.id,
@@ -246,6 +260,7 @@ class TestBudgetERPIntegration(TransactionCase):
         budget = self.env['expense.budget'].create({
             'company_id': self.company.id, 'name': 'Regresión duplicados 2022',
             'year': 2022,
+            'category_id': self._category_for_account(account),
         })
         line = self.env['expense.budget.line'].create({
             'budget_id': budget.id, 'account_id': account.id,
@@ -292,6 +307,7 @@ class TestBudgetERPIntegration(TransactionCase):
         opts = {'skip_expense_budget_consumption_on_save': True}
         budget = self.env['expense.budget'].with_context(**opts).create({
             'company_id': self.company.id, 'name': 'Presupuesto ejemplo abril', 'year': 2020,
+            'category_id': self._category_for_account(account),
         })
         line = self.env['expense.budget.line'].with_context(**opts).create({
             'budget_id': budget.id, 'account_id': account.id,
@@ -341,3 +357,100 @@ class TestBudgetERPIntegration(TransactionCase):
         self.assertTrue(center.active)
         self.assertEqual(account.name, 'Sueldos y Salarios')
         self.assertEqual(center.name, 'MAT- ALB - NEXUS')
+
+    def test_historico_completo_upsert_sin_duplicados_y_anio_correcto(self):
+        """Cron: importa varios años y actualiza importes con ID ERP estable."""
+        config_api = self.env['api.administrator'].sudo().search([
+            ('company_id', '=', self.company.id),
+        ], limit=1)
+        if not config_api:
+            self.skipTest('Se requiere registro api.administrator para identificar el origen.')
+        account = self.account_model.create({
+            'company_id': self.company.id, 'code': 'HIST-1475-ACCOUNT',
+            'name': 'Cuenta de pruebas históricas',
+        })
+        center = self.center_model.create({
+            'company_id': self.company.id, 'code': 'HIST-1475-CENTER',
+            'name': 'Centro de pruebas históricas',
+        })
+        context = {'skip_expense_budget_consumption_on_save': True}
+        Budget = self.env['expense.budget'].with_context(**context)
+        Line = self.env['expense.budget.line'].with_context(**context)
+        budget_2024 = Budget.create({
+            'company_id': self.company.id, 'name': 'Histórico 2024 prueba', 'year': 2024,
+            'category_id': self._category_for_account(account),
+        })
+        budget_2026 = Budget.create({
+            'company_id': self.company.id, 'name': 'Histórico 2026 prueba', 'year': 2026,
+            'category_id': self._category_for_account(account),
+        })
+        line_2024 = Line.create({
+            'budget_id': budget_2024.id, 'account_id': account.id,
+            'cost_center_id': center.id, 'month': '3', 'planned_amount': 200,
+        })
+        line_2026 = Line.create({
+            'budget_id': budget_2026.id, 'account_id': account.id,
+            'cost_center_id': center.id, 'month': '3', 'planned_amount': 400,
+        })
+        rows = [
+            {'id': 'hist-1475-2024', 'Codigo': account.code, 'Centro': center.code,
+             'Fecha': 'mar 15 2024 12:00:00:000', 'Valor': '20.00'},
+            {'id': 'hist-1475-2026', 'Codigo': account.code, 'Centro': center.code,
+             'Fecha': 'mar 15 2026 12:00:00:000', 'Valor': '60.00'},
+        ]
+        first = self.sync._sync_consumptions(self.company, rows, config_api)
+        self.assertEqual(first['created'], 2)
+        self.assertEqual(first['skipped'], 0)
+        self.assertEqual(first['years'], [2024, 2026])
+        self.assertEqual(first['linked'], 2)
+        Expense = self.env['expense.budget.expense']
+        source_prefix = 'api:%s:erp:hist-1475-' % config_api.id
+        domain = [('company_id', '=', self.company.id),
+                  ('source_key', 'like', source_prefix + '%')]
+        expenses = Expense.search(domain)
+        self.assertEqual(len(expenses), 2)
+        self.assertAlmostEqual(line_2024.actual_amount, 20)
+        self.assertAlmostEqual(line_2026.actual_amount, 60)
+
+        repeated = self.sync._sync_consumptions(self.company, rows, config_api)
+        self.assertEqual(repeated['created'], 0)
+        self.assertEqual(repeated['updated'], 0)
+        self.assertEqual(repeated['unchanged'], 2)
+        self.assertEqual(Expense.search_count(domain), 2)
+
+        rows[0] = dict(rows[0], Valor='45.00')
+        changed = self.sync._sync_consumptions(self.company, rows, config_api)
+        self.assertEqual(changed['created'], 0)
+        self.assertEqual(changed['updated'], 1)
+        self.assertEqual(changed['unchanged'], 1)
+        self.assertEqual(Expense.search_count(domain), 2)
+        self.assertAlmostEqual(line_2024.actual_amount, 45)
+        self.assertAlmostEqual(line_2026.actual_amount, 60)
+
+    def test_mismo_id_erp_repetido_en_respuesta_no_duplica(self):
+        """Dos versiones de una misma transacción en un JSON -> un registro."""
+        api_record = self.env['api.administrator'].sudo().search([
+            ('company_id', '=', self.company.id),
+        ], limit=1)
+        if not api_record:
+            self.skipTest('Se requiere registro api.administrator.')
+        rows = [
+            {'id': 'hist-1475-repeated', 'Codigo': 'HIST-1475-DUPLICATE',
+             'Fecha': '2023-11-04', 'Valor': '15.00'},
+            {'id': 'hist-1475-repeated', 'Codigo': 'HIST-1475-DUPLICATE',
+             'Fecha': '2023-11-04', 'Valor': '18.00'},
+        ]
+        first = self.sync._sync_consumptions(self.company, rows, api_record)
+        self.assertEqual(first['created'], 1)
+        self.assertEqual(first['duplicate_api_ids'], 1)
+        domain = [
+            ('company_id', '=', self.company.id),
+            ('source_key', '=', 'api:%s:erp:hist-1475-repeated' % api_record.id),
+        ]
+        Expense = self.env['expense.budget.expense']
+        self.assertEqual(Expense.search_count(domain), 1)
+        self.assertAlmostEqual(Expense.search(domain, limit=1).amount, 18.0)
+        second = self.sync._sync_consumptions(self.company, rows, api_record)
+        self.assertEqual(second['created'], 0)
+        self.assertEqual(second['unchanged'], 1)
+        self.assertEqual(Expense.search_count(domain), 1)

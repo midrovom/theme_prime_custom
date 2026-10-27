@@ -21,8 +21,9 @@
     <template id="report_comparison_monthly_row">
         <tr t-att-class="row_class">
             <td class="row-name" t-esc="row_name"/>
-            <!-- El rubro identifica el grupo: sus importes se muestran solo en TOTAL GENERAL. -->
-            <t t-if="row_class == 'category-row'">
+            <!-- Las filas agrupadoras (rubro y cuenta controlada) solo muestran el nombre.
+                 Sus importes aparecen exclusivamente en las líneas de detalle y TOTAL GENERAL. -->
+            <t t-if="row_class in ('category-row', 'account-row')">
                 <!-- Celdas vacías individuales: conservar toda la cuadrícula del PDF. -->
                 <t t-if="page_data['opening']">
                     <td class="amount opening"/>

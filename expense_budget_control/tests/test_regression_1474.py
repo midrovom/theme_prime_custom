@@ -27,7 +27,7 @@ class TestConsumoSinSubcentro1474(TransactionCase):
         account.write({'category_id': category.id})
         budget = self.env['expense.budget'].with_context(
             skip_expense_budget_consumption_on_save=True,
-        ).create({'company_id': company.id, 'year': 2026, 'name': 'Consumo 1474'})
+        ).create({'company_id': company.id, 'year': 2026, 'name': 'Consumo 1474', 'category_id': category.id})
         line = AccountLine.create({
             'budget_id': budget.id, 'account_id': account.id,
             'cost_center_id': center.id, 'month': '1', 'planned_amount': 500,

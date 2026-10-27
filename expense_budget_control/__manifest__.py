@@ -2,12 +2,12 @@
 {
     'name': 'Control de Presupuesto de Gastos',
     'summary': 'Presupuesto mensual por rubro y cuenta, Excel y sincronización API',
-    'version': '18.0.1.4.74',
+    'version': '18.0.1.4.80',
     'category': 'Accounting/Accounting',
     'author': 'Conedera Desarrollo',
     'license': 'LGPL-3',
     'depends': ['base', 'web', 'api_administrator'],
-    'external_dependencies': {'python': ['openpyxl']},
+    'external_dependencies': {'python': ['openpyxl', 'requests']},
     'data': [
         'security/expense_budget_security.xml',
         'security/ir.model.access.csv',

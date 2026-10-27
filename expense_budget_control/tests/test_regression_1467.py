@@ -15,13 +15,17 @@ class TestGuardarPresupuestoRapido1467(TransactionCase):
         self.account = self.env['expense.budget.account'].create({
             'company_id': self.company.id, 'code': 'FAST67-A', 'name': 'Luz ERP',
         })
+        self.category = self.env['expense.budget.category'].create({
+            'company_id': self.company.id, 'name': 'Rubro pruebas 1467',
+        })
+        self.account.write({'category_id': self.category.id})
         self.center = self.env['expense.budget.cost.center'].create({
             'company_id': self.company.id, 'code': 'FAST67-C', 'name': 'Administración',
         })
         self.budget = self.env['expense.budget'].with_context(
             skip_expense_budget_consumption_on_save=True,
         ).create({'name': 'Presupuesto rápido ERP', 'year': 2026,
-                  'company_id': self.company.id})
+                  'company_id': self.company.id, 'category_id': self.category.id})
         self.line = self.env['expense.budget.line'].with_context(
             skip_expense_budget_consumption_on_save=True,
         ).create({'budget_id': self.budget.id, 'account_id': self.account.id,

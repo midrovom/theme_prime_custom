@@ -137,9 +137,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             ENDPOINTS[kind], company.id, record.id,
         )
         started = monotonic()
-        response = self.env['api.administrator'].sudo().call_api(
-            record.name, method='get', company_id=company.id,
-        )
+        response = self.env['expense.budget.api.transport'].get_json(record, company)
         received = monotonic()
         rows = self._rows(response)
         _logger.info('[PRESUPUESTOS ERP] Respuesta endpoint=%s filas=%s empresa_id=%s '
@@ -358,9 +356,8 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
     def _sync_subcenters(self, company, rows):
         """Catálogo seleccionable desde TODOS los años devueltos por el ERP.
 
-        No mezcla centros con el mismo subcentro. Al sincronizar un presupuesto
-        antiguo se incluyen sus códigos en el selector, aunque el cron habitual
-        importe los consumos monetarios del año vigente.
+        No mezcla centros con el mismo subcentro. El cron importa y conserva
+        también los consumos de años anteriores.
         """
         combinations = set()
         for item in rows:
@@ -418,26 +415,31 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         return code, center, subcenter, date, amount, external_id
 
     @api.model
-    def _sync_consumptions(self, company, rows, api_record, year):
-        """Importa solo el año pedido. Vincula por empresa/cuenta/centro/mes.
+    def _sync_consumptions(self, company, rows, api_record, year=None):
+        """Importa TODO el histórico si year=None, o un año concreto si se indica.
 
-        La huella no es un ID contable: sin ID del ERP no se pueden detectar
-        rectificaciones en importe/fecha. Nunca mezcla años o empresas.
+        Conserva las claves de la versión anterior, de modo que al ejecutar el
+        cron tras actualizar el módulo se reutilizan los gastos ya importados.
+        Si la API aporta un identificador estable, actualiza fechas e importes
+        modificados sobre el mismo registro. Sin ID del ERP la huella depende
+        del importe y fecha; no permite reconocer rectificaciones de esos datos.
         """
         Expense = self.env['expense.budget.expense'].sudo().with_company(company)
         Account = self.env['expense.budget.account'].sudo().with_company(company).with_context(active_test=False)
         Center = self.env['expense.budget.cost.center'].sudo().with_company(company).with_context(active_test=False)
-        # La API devuelve todos los años. No convertir importes, generar hashes
-        # ni validar cuentas de movimientos fuera del año seleccionado.
+        # El endpoint devuelve todos los años. En el cron y en la sincronización
+        # manual NO aplicar filtro; el argumento year se conserva únicamente
+        # para las consultas puntuales que realiza el formulario.
         relevant = []
         for row in rows:
             when = parse_erp_date(get_value(row, 'Fecha', required=True))
-            if when.year == year:
+            if year is None or when.year == int(year):
                 relevant.append(self._normalize_consumption(row, known_date=when))
+        years = sorted({record[3].year for record in relevant})
         counts = {'created': 0, 'updated': 0, 'unchanged': 0,
                   'received': len(rows), 'skipped': len(rows)-len(relevant),
                   'linked': 0, 'unmatched': 0, 'reused_conflicts': 0, 'placeholder_accounts': 0,
-                  'placeholder_centers': 0}
+                  'placeholder_centers': 0, 'years': years, 'duplicate_api_ids': 0}
         if not relevant:
             return counts
         account_codes = {row[0] for row in relevant}
@@ -492,19 +494,29 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                 ).hexdigest()
             prepared.append((code, center_code, subcenter, when, amount, key,
                              'api:%s:%s' % (api_record.id, key)))
-        # Una búsqueda de proyecciones para todo el año evita una consulta SQL
-        # por cada cuenta/centro/mes detectado en la respuesta.
+        # Una sola búsqueda para TODOS los años devueltos; incluir el año en
+        # la clave para que 2024/enero nunca se enlace al presupuesto 2026/enero.
         Line = self.env['expense.budget.line'].sudo()
         budget_lines = Line.search([
             ('budget_id.company_id', '=', company.id),
-            ('budget_id.year', '=', year),
+            ('budget_id.year', 'in', years),
             ('account_id', 'in', [rec.id for rec in accounts.values()]),
         ], order='id')
         line_index = {}
         for line in budget_lines:
-            key = (line.account_id.id, line.cost_center_id.id or False,
-                   int(line.month))
+            key = (int(line.budget_id.year), line.account_id.id,
+                   line.cost_center_id.id or False, int(line.month))
             line_index.setdefault(key, line.id)
+
+        # Si el ERP devolvió dos veces el mismo ID explícito, conservar la
+        # última versión de esa transacción en esta respuesta. Para filas sin
+        # ID ya se generaron fingerprints ordinales: nunca se fusionan dos
+        # movimientos legítimos con los mismos campos.
+        unique_prepared = {}
+        for prepared_row in prepared:
+            unique_prepared[prepared_row[6]] = prepared_row
+        counts['duplicate_api_ids'] = len(prepared) - len(unique_prepared)
+        prepared = list(unique_prepared.values())
 
         # Leer los campos de gastos existentes en bloques con SQL, sin
         # construir un recordset ni ejecutar write() si el gasto no cambió.
@@ -521,13 +533,10 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
             existing.update({rec[1]: rec for rec in self.env.cr.fetchall()})
 
         pending_creates = {}
-        # keys duplicadas con el mismo id explícito en una sola respuesta:
-        # conservar el último valor, sin crear varias filas con la misma clave.
-        duplicate_keys = 0
         for code, center_code, subcenter, when, amount, key, source_key in prepared:
             account = accounts[code]
             center = centers[center_code] if center_code else Center.browse()
-            line_id = line_index.get((account.id, center.id or False, when.month), False)
+            line_id = line_index.get((when.year, account.id, center.id or False, when.month), False)
             description = 'Consumo ERP %s / %s / %s' % (
                 code, center_code or 'Sin centro', subcenter or 'Sin subcentro')
             values = {
@@ -544,10 +553,6 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                 counts['linked'] += 1
             else:
                 counts['unmatched'] += 1
-            if source_key in pending_creates:
-                pending_creates[source_key] = values
-                duplicate_keys += 1
-                continue
             old = existing.get(source_key)
             if not old:
                 pending_creates[source_key] = values
@@ -586,7 +591,6 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         for pos in range(0, len(all_new), 200):
             Expense.create(all_new[pos:pos + 200])
         counts['created'] += len(all_new)
-        counts['unchanged'] += duplicate_keys
         return counts
 
     @api.model
@@ -727,13 +731,14 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                 if not api_rec:
                     _logger.info('[PRESUPUESTOS ERP] No hay API de consumo para empresa=%s', company.id)
                     continue
-                # La sincronización completa manual o programada trae TODOS los
-                # registros del año. Si está fresca, ya están en Gastos reales.
+                # La sincronización global se registra con year=False. También
+                # cubre los años antiguos y evita consultar otra vez toda la
+                # respuesta HTTP al guardar una línea presupuestaria.
                 full_sync = self.env['expense.budget.sync.log'].sudo().search([
                     ('company_id', '=', company.id),
                     ('api_administrator_id', '=', api_rec.id),
                     ('status', '=', 'success'),
-                    ('year', '=', year),
+                    '|', ('year', '=', year), ('year', '=', False),
                     ('create_date', '>=', fields.Datetime.to_string(now - timedelta(hours=5))),
                     ('message', 'ilike', 'OK:'),
                 ], limit=1)
@@ -805,7 +810,9 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
 
     @api.model
     def _sync_company(self, company, year=None):
-        """Una ejecución por empresa/año; cuentas -> centros -> consumos.
+        """Una ejecución por empresa; year=None importa TODOS los años.
+
+        Catálogos -> centros -> consumos con una llamada por endpoint.
 
         Cada endpoint tiene su savepoint y log. Los errores no se ocultan
         tras una notificación 'sincronización completada'.
@@ -816,14 +823,16 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         # terminar, incluso si la importación falla. No requiere migración.
         self.env.cr.execute('SELECT pg_advisory_xact_lock(%s, %s)', (484700, company.id))
         _logger.info('[PRESUPUESTOS ERP] Bloqueo de sincronización adquirido empresa=%s', company.id)
-        year = int(year or fields.Date.context_today(self).year)
-        if not 2000 <= year <= 2100:
-            raise UserError(_('El año de sincronización debe estar entre 2000 y 2100.'))
+        if year is not None:
+            year = int(year)
+            if not 2000 <= year <= 2100:
+                raise UserError(_('El año de sincronización debe estar entre 2000 y 2100.'))
+        scope_label = str(year) if year is not None else 'todos los años'
         config = self.env['expense.budget.api.config'].sudo().search([
             ('company_id', '=', company.id),
         ], limit=1)
         result = {'created': 0, 'updated': 0, 'unchanged': 0,
-                  'errors': 0, 'apis': 0, 'year': year, 'details': []}
+                  'errors': 0, 'apis': 0, 'year': scope_label, 'details': []}
         total_started = monotonic()
         for kind in ('accounts', 'centers', 'consumptions'):
             phase_started = monotonic()
@@ -857,14 +866,16 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                 for name in ('created', 'updated', 'unchanged'):
                     result[name] += counts.get(name, 0)
                 message = ('OK: %s filas; creados=%s actualizados=%s sin_cambios=%s '
-                           'omitidos_por_año=%s vinculados=%s sin_proyeccion=%s '
-                           'cuentas_pendientes=%s centros_pendientes=%s subcentros_nuevos=%s duplicados_recuperados=%s' % (
+                           'omitidos_por_filtro=%s vinculados=%s sin_proyeccion=%s '
+                           'cuentas_pendientes=%s centros_pendientes=%s subcentros_nuevos=%s '
+                           'duplicados_recuperados=%s ids_erp_repetidos=%s años=%s' % (
                                counts.get('received', 0), counts.get('created', 0),
                                counts.get('updated', 0), counts.get('unchanged', 0),
                                counts.get('skipped', 0), counts.get('linked', 0),
                                counts.get('unmatched', 0), counts.get('placeholder_accounts', 0),
                                counts.get('placeholder_centers', 0), counts.get('subcenters_created', 0),
-                               counts.get('reused_conflicts', 0)))
+                               counts.get('reused_conflicts', 0), counts.get('duplicate_api_ids', 0),
+                               ','.join(map(str, counts.get('years', []))) or '-'))
                 api_seconds = api_finished - phase_started
                 import_seconds = monotonic() - api_finished
                 message += ' tiempo_api=%.2fs tiempo_guardado=%.2fs' % (api_seconds, import_seconds)
@@ -905,7 +916,9 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                    'Actualizados: %(updated)s · Ya existentes: %(unchanged)s · '
                    'Errores: %(errors)s' % result)
         if show_year:
-            message = ('Año %s · ' % result['year']) + message
+            prefix = ('Todos los años' if result['year'] == 'todos los años'
+                      else 'Año %s' % result['year'])
+            message = prefix + ' · ' + message
         if details:
             message += '\n' + details
         return {
@@ -920,7 +933,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
 
     @api.model
     def cron_sync_every_5h(self):
-        """Cada cinco horas: año actual, empresas con configuración o endpoints ERP.
+        """Cada cinco horas: sincronizar TODOS los años para cada empresa ERP.
 
         Descubrir endpoints GET activos evita que un cron silenciosamente no
         trabaje por no haberse creado aún la fila de configuración unificada.
@@ -933,6 +946,5 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
         for record in candidates:
             if any(self._matches_endpoint(record, kind) for kind in ENDPOINTS):
                 companies |= record.company_id
-        year = fields.Date.context_today(self).year
         for company in companies:
-            self._sync_company(company, year=year)
+            self._sync_company(company)  # year=None: histórico completo

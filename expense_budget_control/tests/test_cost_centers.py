@@ -13,6 +13,11 @@ class TestExpenseBudgetCostCenter(TransactionCase):
         self.account = self.env['expense.budget.account'].create({
             'code': 'CC-ACC-459', 'name': 'Luz', 'company_id': self.company.id,
         })
+        category = self.env['expense.budget.category'].create({
+            'company_id': self.company.id, 'name': 'Servicios por centro',
+        })
+        self.account.write({'category_id': category.id})
+        self.category = category
         self.center_a = self.env['expense.budget.cost.center'].create({
             'code': 'CC-ADM-459', 'name': 'Administración', 'company_id': self.company.id,
         })
@@ -20,7 +25,7 @@ class TestExpenseBudgetCostCenter(TransactionCase):
             'code': 'CC-OPS-459', 'name': 'Operaciones', 'company_id': self.company.id,
         })
         self.budget = self.env['expense.budget'].create({
-            'name': 'Presupuesto por centros', 'company_id': self.company.id, 'year': 2085,
+            'name': 'Presupuesto por centros', 'company_id': self.company.id, 'year': 2085, 'category_id': self.category.id,
         })
 
     def test_same_account_and_month_in_separate_centers(self):

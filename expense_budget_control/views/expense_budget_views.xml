@@ -86,7 +86,7 @@
         <field name="name">expense.budget.list</field><field name="model">expense.budget</field>
         <field name="arch" type="xml">
             <list string="Presupuestos anuales" decoration-success="state == 'approved'">
-                <field name="name" string="Presupuesto"/><field name="year"/>
+                <field name="name" string="Presupuesto"/><field name="year"/><field name="category_id" string="Rubro"/>
                 <field name="company_id"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Total proyectado"/>
@@ -116,6 +116,11 @@
                             <field name="company_id" readonly="state != 'draft'"/>
                             <field name="name" string="Presupuesto" readonly="state != 'draft'"/>
                             <field name="year" readonly="state != 'draft'"/>
+                            <field name="category_id" string="Rubro" required="state == 'draft'"
+                                   readonly="state != 'draft'"
+                                   domain="[('company_id', '=', company_id)]"
+                                   context="{'default_company_id': company_id, 'form_view_ref': 'expense_budget_control.view_expense_budget_category_form'}"
+                                   options="{'no_quick_create': True, 'no_create_edit': False}"/>
                         </group>
                         <group>
                             <field name="currency_id" invisible="1"/>
@@ -131,13 +136,8 @@
                                 <list editable="bottom">
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="currency_id" column_invisible="True"/>
-                                    <field name="category_id" string="Rubro"
-                                           readonly="parent.state != 'draft'"
-                                           domain="[('company_id', '=', parent.company_id)]"
-                                           context="{'default_company_id': parent.company_id, 'form_view_ref': 'expense_budget_control.view_expense_budget_category_form'}"
-                                           options="{'no_quick_create': True, 'no_open': False, 'no_create_edit': False}"/>
                                     <field name="account_id" readonly="parent.state != 'draft'"
-                                           domain="[('company_id', '=', parent.company_id), ('category_id', '=', category_id)]"/>
+                                           domain="[('company_id', '=', parent.company_id), ('category_id', '=', parent.category_id)]"/>
                                     <field name="erp_account_code" string="Código" readonly="True"/>
                                     <field name="cost_center_id" string="Centro de costo"
                                            readonly="parent.state != 'draft'"
@@ -163,12 +163,13 @@
         <field name="name">expense.budget.search</field><field name="model">expense.budget</field>
         <field name="arch" type="xml">
             <search string="Buscar presupuestos">
-                <field name="name"/><field name="year"/><field name="company_id"/>
+                <field name="name"/><field name="year"/><field name="category_id"/><field name="company_id"/>
                 <filter string="Por aprobar" name="to_approve" domain="[('state', '=', 'to_approve')]"/>
                 <filter string="Aprobados" name="approved" domain="[('state', '=', 'approved')]"/>
                 <filter string="Rechazados" name="rejected" domain="[('state', '=', 'rejected')]"/>
                 <group expand="0" string="Agrupar por">
                     <filter string="Año" name="year_group" context="{'group_by': 'year'}"/>
+                    <filter string="Rubro" name="rubro_group" context="{'group_by': 'category_id'}"/>
                     <filter string="Empresa" name="company_group" context="{'group_by': 'company_id'}"/>
                 </group>
             </search>
