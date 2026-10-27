@@ -21,3 +21,5 @@ access_tc_guide_system,tc.guide system,model_tc_guide,base.group_system,1,0,0,0
 access_tc_line_system,tc.guide.line system,model_tc_guide_line,base.group_system,1,0,0,0
 access_tc_destination_alias_manager,tc.destination.alias manager,model_tc_destination_alias,logistica_transcash.group_logistica_manager,1,1,1,1
 access_tc_destination_alias_admin,tc.destination.alias admin,model_tc_destination_alias,base.group_system,1,1,1,1
+access_tc_client_cierre_operator,tc.transporte.cliente.cierre.wizard.operator,model_tc_transporte_cliente_cierre_wizard,logistica_transcash.group_transcash_operador_rutas,1,1,1,1
+access_tc_client_cierre_manager,tc.transporte.cliente.cierre.wizard.manager,model_tc_transporte_cliente_cierre_wizard,logistica_transcash.group_logistica_manager,1,1,1,1

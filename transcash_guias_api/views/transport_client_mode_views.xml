@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Opciones en el asistente existente: no crear una tercera aplicación. -->
+  <record id="view_tc_modalidad_wizard_v226" model="ir.ui.view">
+    <field name="name">transcash.armar.embarque.modalidad.v226</field>
+    <field name="model">transcash.armar.embarque.wizard</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_armar_wizard"/>
+    <field name="arch" type="xml">
+      <xpath expr="(//form/group/field[@name='embarque_id'])[1]" position="after">
+        <field name="modalidad_transporte" widget="radio" readonly="embarque_id"/>
+        <div class="alert alert-info" role="note" invisible="modalidad_transporte != 'cliente'">
+          Transporte enviado por el cliente: requiere evidencias de carga y cierre por Logística.
+          No interviene el chofer y no genera flete ni liquidación.
+        </div>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="view_tc_modalidad_embarque_v226" model="ir.ui.view">
+    <field name="name">transcash.embarque.modalidad.v226</field>
+    <field name="model">transcash.embarque</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_embarque_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form/header/field[@name='state']" position="before">
+        <button name="action_set_client_transport" type="object" string="Marcar transporte del cliente"
+          invisible="state != 'preparacion' or modalidad_transporte == 'cliente'"
+          groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
+        <button name="action_set_contracted_transport" type="object" string="Cambiar a transporte contratado"
+          invisible="state != 'preparacion' or modalidad_transporte != 'cliente'"
+          groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
+        <button name="action_open_client_delivery_wizard" type="object" string="Cerrar entrega por Logística" class="btn-primary"
+          invisible="modalidad_transporte != 'cliente' or state != 'ruta'"
+          groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
+        <field name="modalidad_transporte" invisible="1"/>
+      </xpath>
+      <xpath expr="//form/header/button[@name='action_ready_for_driver']" position="attributes">
+        <attribute name="string">Liberar carga / despachar</attribute>
+      </xpath>
+      <xpath expr="//form/header/button[@name='action_approve_transport']" position="attributes">
+        <attribute name="invisible">state != 'entregado' or estado_aprobacion != 'pendiente' or modalidad_transporte == 'cliente'</attribute>
+      </xpath>
+      <xpath expr="//form/header/button[@name='action_configure_liquidation']" position="attributes">
+        <attribute name="invisible">estado_aprobacion != 'pendiente' or modalidad_transporte == 'cliente'</attribute>
+      </xpath>
+      <xpath expr="//form/sheet/group/group/field[@name='chofer_usuario_id']" position="before">
+        <field name="modalidad_transporte" readonly="1"/>
+      </xpath>
+      <xpath expr="//form/sheet/notebook" position="before">
+        <group string="Transporte enviado por el cliente" invisible="modalidad_transporte != 'cliente'">
+          <field name="fecha_cierre_logistica" readonly="1"/>
+          <field name="entregado_por_logistica_id" readonly="1"/>
+          <field name="motivo_cierre_logistica" readonly="1"/>
+          <div class="alert alert-info" role="note">Sin liquidación ni cuenta por pagar. El cliente puede seguir consultando las evidencias de carga de sus guías.</div>
+        </group>
+      </xpath>
+    </field>
+  </record>
+  <record id="view_tc_modalidad_embarque_list_v226" model="ir.ui.view">
+    <field name="name">transcash.embarque.list.modalidad.v226</field>
+    <field name="model">transcash.embarque</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_embarque_list"/>
+    <field name="arch" type="xml">
+      <xpath expr="(//list/field[@name='state'])[1]" position="after">
+        <field name="modalidad_transporte" optional="show"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="view_tc_modalidad_guia_v226" model="ir.ui.view">
+    <field name="name">transcash.guia.modalidad.cierre.v226</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form/sheet" position="inside">
+        <group string="Entrega por Logística (transporte del cliente)"
+               invisible="not fecha_cierre_logistica">
+          <field name="fecha_cierre_logistica" readonly="1"/>
+          <field name="cierre_logistica_usuario_id" readonly="1"/>
+          <field name="observacion_cierre_logistica" readonly="1"/>
+        </group>
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Centro de operaciones móvil: select y dos etapas claras. -->
+  <template id="tc_pwa_modalidad_v226" inherit_id="logistica_transcash.portal_operacion"
+            name="PWA: transporte contratado o enviado por el cliente">
+    <xpath expr="//t[@t-if=&quot;section == 'nuevo_embarque'&quot;]//form[@method='post']/input[@name='csrf_token']" position="after">
+      <label for="tc-modalidad">¿Quién proporciona el transporte?</label>
+      <select id="tc-modalidad" name="modalidad_transporte" required="required">
+        <option value="contratado" t-att-selected="'selected' if form_values.get('modalidad_transporte', 'contratado') == 'contratado' else None">Contratado por Transcash · chofer confirma y entrega</option>
+        <option value="cliente" t-att-selected="'selected' if form_values.get('modalidad_transporte') == 'cliente' else None">Enviado por el cliente · entrega registrada por Logística</option>
+      </select>
+      <small class="tc-muted">El transporte del cliente no genera flete, factura ni liquidación del transportista.</small>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'embarque_detalle'&quot;]" position="inside">
+      <div class="tc-next-card" style="margin:12px 0">
+        <div class="tc-next-icon">🚚</div>
+        <div>
+          <strong t-esc="'TRANSPORTE DEL CLIENTE · sin flete' if embarque.modalidad_transporte == 'cliente' else 'TRANSPORTE CONTRATADO · con chofer'"/>
+          <p t-if="embarque.modalidad_transporte == 'cliente'">Se conserva la evidencia de carga, pero Logística registra la entrega. Este viaje no pasa a liquidación ni genera cuentas por pagar.</p>
+          <p t-else="">El chofer acepta la carga y registra su entrega desde su Portal; el jefe de Logística gestiona el flete.</p>
+        </div>
+      </div>
+      <form t-if="embarque.state == 'preparacion' and embarque.modalidad_transporte != 'cliente' "
+            method="post" t-att-action="'/transcash/operacion/embarques/%d/cliente-marcar' % embarque.id">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <button type="submit" class="tc-button tc-button-outline">Marcar este viaje como transporte del cliente</button>
+      </form>
+      <form t-if="embarque.state == 'preparacion' and embarque.modalidad_transporte == 'cliente'"
+            method="post" t-att-action="'/transcash/operacion/embarques/%d/contratado-marcar' % embarque.id">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <button type="submit" class="tc-button tc-button-outline">Corregir: será transporte contratado</button>
+      </form>
+      <form t-if="embarque.modalidad_transporte == 'cliente' and embarque.state == 'ruta'"
+            method="post" class="tc-ops-form" t-att-action="'/transcash/operacion/embarques/%d/cliente-entregado' % embarque.id">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <label for="tc-constancia-entrega">Constancia de entrega registrada por Logística</label>
+        <textarea id="tc-constancia-entrega" class="tc-textarea" name="constancia" required="required"
+                  minlength="12" maxlength="2000" rows="3"
+                  placeholder="Indique quién informó la entrega y cómo se verificó; no es una firma del chofer."/>
+        <button type="submit" class="tc-button tc-button-primary">✓ Registrar viaje entregado · transporte del cliente</button>
+      </form>
+      <div t-if="embarque.modalidad_transporte == 'cliente' and embarque.state == 'entregado'"
+           class="tc-alert tc-alert-ok">✓ Entrega registrada por Logística. Sin flete ni liquidación.</div>
+    </xpath>
+    <xpath expr="//form[contains(@t-att-action, '/liberar')]/button" position="replace">
+      <button class="tc-button tc-button-primary" type="submit"
+              t-att-disabled="'disabled' if embarque.objecion_pendiente or embarque.observacion_rechazo or not embarque.ruta_ids or any(not r._has_carga_evidence() for r in embarque.ruta_ids) else None">
+        <t t-if="embarque.modalidad_transporte == 'cliente'">✓ Despachar transporte del cliente · con evidencias</t>
+        <t t-else="">✓ Enviar embarque al chofer para aceptación</t>
+      </button>
+    </xpath>
+    <xpath expr="//div[contains(@class, 'tc-next-card') and contains(text(), 'El chofer deberá aceptar')]" position="attributes">
+      <attribute name="t-if">embarque.state == 'embarcado' and embarque.modalidad_transporte != 'cliente' and not (embarque.objecion_pendiente or embarque.observacion_rechazo)</attribute>
+    </xpath>
+  </template>
+
+  <!-- Los portales del chofer y transportista nunca publican viajes del cliente. -->
+  <template id="tc_pwa_mis_viajes_sin_cliente_v226" inherit_id="logistica_transcash.portal_embarques">
+    <xpath expr="//t[@t-foreach='embarques']" position="attributes">
+      <attribute name="t-foreach">embarques.filtered(lambda e: e.modalidad_transporte != 'cliente') if request.env.user.share else embarques</attribute>
+    </xpath>
+    <xpath expr="//span[@t-esc='len(embarques)']" position="attributes">
+      <attribute name="t-esc">len(embarques.filtered(lambda e: e.modalidad_transporte != 'cliente')) if request.env.user.share else len(embarques)</attribute>
+    </xpath>
+    <xpath expr="//div[@t-if='es_chofer and embarque_activo']" position="attributes">
+      <attribute name="t-if">es_chofer and embarque_activo and embarque_activo.modalidad_transporte != 'cliente'</attribute>
+    </xpath>
+  </template>
+  <template id="tc_pwa_proveedor_sin_cliente_v226" inherit_id="logistica_transcash.portal_proveedor_inicio">
+    <xpath expr="//t[@t-foreach='trips']" position="attributes">
+      <attribute name="t-foreach">trips.filtered(lambda e: e.modalidad_transporte != 'cliente')</attribute>
+    </xpath>
+  </template>
+  <template id="tc_pwa_finanzas_sin_cliente_v226" inherit_id="logistica_transcash.portal_finanzas_transcash">
+    <xpath expr="//t[@t-if=&quot;section == 'trip'&quot;]/t[@t-if='can_manage']" position="attributes">
+      <attribute name="t-if">can_manage and (section != 'trip' or trip.modalidad_transporte != 'cliente')</attribute>
+    </xpath>
+  </template>
+  <template id="tc_pwa_fechas_cierre_cliente_v226" inherit_id="logistica_transcash.trip_dates_card">
+    <xpath expr="//div[contains(@class, 'tc-trip-date')][2]/small" position="attributes">
+      <attribute name="t-esc">'Cierre de Logística' if e.fecha_entrega and e.modalidad_transporte == 'cliente' else 'Cierre del chofer' if e.fecha_entrega else 'Prevista · ERP' if e.fecha_entrega_prevista else 'Sin fecha registrada'</attribute>
+    </xpath>
+  </template>
+
+  <template id="tc_cliente_carga_segura_v226" name="Evidencias de embarque · transporte del cliente">
+    <html lang="es">
+      <head><title>Evidencia de embarque</title><t t-call="logistica_transcash.mobile_head"/></head>
+      <body class="tc-app"><div class="tc-shell">
+        <t t-call="logistica_transcash.portal_desktop_sidebar"/>
+        <main class="tc-main tc-detail" style="padding:16px">
+          <a class="tc-button tc-button-outline" t-att-href="'/transcash/guias/%d' % guia.id">← Volver a mi guía</a>
+          <h1 class="tc-heading">Evidencia de embarque <t t-esc="guia.name"/></h1>
+          <p class="tc-muted">Transporte enviado por el cliente · constancias de carga vinculadas a tu guía.</p>
+          <t t-foreach="route_files" t-as="e">
+            <article class="tc-evidence-card" style="padding:12px;margin:12px 0">
+              <strong t-esc="e.nombre"/>
+              <img t-if="e.mime.startswith('image/')" style="max-width:100%;height:auto" loading="lazy"
+                   t-att-src="'/transcash/cliente/guias/%d/carga/ruta/%d' % (guia.id, e.id)" alt="Evidencia de carga"/>
+              <video t-else="" controls="controls" playsinline="playsinline" preload="metadata" style="max-width:100%"
+                     t-att-src="'/transcash/cliente/guias/%d/carga/ruta/%d' % (guia.id, e.id)"/>
+              <p t-esc="e.observacion or ''"/>
+            </article>
+          </t>
+          <t t-if="has_legacy_video"><article class="tc-evidence-card" style="padding:12px;margin:12px 0">
+            <strong>Video histórico de carga</strong>
+            <video controls="controls" playsinline="playsinline" preload="metadata" style="max-width:100%"
+                   t-att-src="'/transcash/cliente/guias/%d/carga/video' % guia.id"/>
+          </article></t>
+          <t t-foreach="own_files" t-as="e"><article class="tc-evidence-card" style="padding:12px;margin:12px 0">
+            <strong t-esc="e.archivo_nombre or 'Evidencia específica de la guía'"/>
+            <img t-if="e.archivo_mime.startswith('image/')" style="max-width:100%" loading="lazy"
+                 t-att-src="'/transcash/evidencia/%d/archivo' % e.id" alt="Carga de mi guía"/>
+            <video t-else="" controls="controls" playsinline="playsinline" preload="metadata" style="max-width:100%"
+                   t-att-src="'/transcash/evidencia/%d/archivo' % e.id"/>
+          </article></t>
+          <p t-if="not route_files and not own_files and not has_legacy_video" class="tc-muted">
+            No hay fotografías de carga individualmente compartibles para esta guía.
+            Las evidencias de rutas compartidas con otros clientes permanecen privadas.
+          </p>
+        </main>
+      </div></body>
+    </html>
+  </template>
+  <template id="tc_cliente_enlace_carga_v226" inherit_id="logistica_transcash.portal_guia_detalle"
+            name="Cliente: enlace seguro a evidencia de embarque">
+    <xpath expr="//a[@href='#tc-galeria-viaje']" position="after">
+      <a t-if="es_receptor and guia.embarque_id and guia.embarque_id.modalidad_transporte == 'cliente'"
+         class="tc-button tc-button-outline"
+         t-att-href="'/transcash/cliente/guias/%d/carga' % guia.id">📷 Ver evidencia de mi embarque →</a>
+    </xpath>
+  </template>
+  <record id="view_tc_cliente_cierre_wizard_v226" model="ir.ui.view">
+    <field name="name">tc.transporte.cliente.cierre.wizard.form</field>
+    <field name="model">tc.transporte.cliente.cierre.wizard</field>
+    <field name="arch" type="xml"><form string="Registrar entrega por Logística">
+      <group><field name="embarque_id" readonly="1"/>
+        <field name="constancia" placeholder="Indique cómo se verificó la entrega y quién la comunicó (12 caracteres como mínimo)"/>
+      </group>
+      <footer><button name="action_confirm" type="object" class="btn-primary" string="Confirmar entrega sin intervención del chofer"/>
+        <button special="cancel" string="Cancelar"/></footer>
+    </form></field>
+  </record>
+</odoo>
