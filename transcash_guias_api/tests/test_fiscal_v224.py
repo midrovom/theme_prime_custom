@@ -105,6 +105,16 @@ class FiscalTests(unittest.TestCase):
                                                           '20101026001', 'transport')
         self.assertEqual(kind, 'foreign')
         self.assertEqual(item.l10n_latam_identification_type_id, 3)
+    def test_foreign_supplier_9_digits_client_transport(self):
+        env = FakeEnv()
+        item, kind, warning = fiscal.create_fiscal_partner(
+            env, {'name': 'TRANSPORTE PROPORCIONADO POR CLIENTE'},
+            '123456789', 'transport')
+        self.assertEqual(kind, 'foreign')
+        self.assertEqual(item.vat, '123456789')
+        self.assertEqual(item.l10n_latam_identification_type_id, 3)
+        self.assertEqual(len(env.partners.records), 1)
+
     def test_driver_cedula(self):
         env = FakeEnv()
         item, kind, warning = fiscal.create_fiscal_partner(env, {'name': 'Chofer'},

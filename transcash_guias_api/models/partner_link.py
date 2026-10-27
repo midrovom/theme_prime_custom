@@ -7,7 +7,7 @@ import logging
 import re
 
 from odoo import api, fields, models, _
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from .transport_identity import normalize_transport_ruc
 from .fiscal_identity import (fiscal_document, fiscal_variants, fiscal_key,
                               create_fiscal_partner)
@@ -145,11 +145,20 @@ class TCGuidePartnerLink(models.Model):
         if allowed and not allowed.filtered('active'):
             return False, _('Transportista archivado; reactive el registro existente.')
         if document and allowed:
+            # Un nombre NO es una identidad. Es habitual que el ERP envíe
+            # etiquetas genéricas (p. ej. TRANSPORTE PROPORCIONADO POR CLIENTE)
+            # con identificaciones extranjeras distintas. No bloquear ni
+            # vincular documentos diferentes porque comparten razón social.
+            # El cotejo por VAT normalizado ya se realizó bajo advisory lock.
             blank = allowed.filtered(lambda p: p.active and not fiscal_key(p.vat))
-            conflicting = allowed - blank
-            if len(blank) == 1 and not conflicting:
-                # No fabricar un segundo contacto: agregar identificación al
-                # existente, con el mismo manejo fiscal seguro que en creación.
+            generic = key in {
+                'TRANSPORTE PROPORCIONADO POR CLIENTE',
+                'TRANSPORTE PROPORCIONADO POR EL CLIENTE',
+            }
+            if not generic and len(allowed) == 1 and len(blank) == 1:
+                # Solo se puede completar el documento en una ficha activa,
+                # inequívoca y sin identificación. Intentar tipo fiscal
+                # preferente, y extranjera si no corresponde.
                 values = {'vat': document}
                 from .fiscal_identity import _type_values, first_kind
                 preferred = first_kind(document, 'transport')
@@ -168,8 +177,13 @@ class TCGuidePartnerLink(models.Model):
                 if 'supplier_rank' in Partner._fields and blank.supplier_rank < 1:
                     blank.sudo().write({'supplier_rank': 1})
                 return blank, _('Se completó la identificación de un transportista existente.')
-            return False, _('Nombre de transportista con documentos distintos o múltiples contactos. '
-                            'Revise duplicados antes de importar.')
+            # Existen fichas con ese nombre, pero con documentos distintos,
+            # sin documento o con un nombre genérico: se crea una sola ficha
+            # por el NUEVO documento. Reimportar reutiliza esa ficha por VAT.
+            _logger.info(
+                'Transportista ERP: nombre repetido, identificación diferente; '
+                'se resolverá por documento normalizado. nombre=%s documento=%s',
+                name, document)
         if not document:
             if len(allowed) == 1 and allowed.active:
                 return allowed, _('Vínculo provisional por nombre; falta identificación ERP.')
