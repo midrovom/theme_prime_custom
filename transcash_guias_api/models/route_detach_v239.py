@@ -22,13 +22,16 @@ class EmbarqueRetirarRuta(models.Model):
                 self.aceptado_chofer or self.fecha_aceptacion_chofer or
                 self.fecha_salida or self.fecha_entrega or self.fecha_cierre_logistica):
             raise UserError(_('El viaje ya fue aceptado, despachado o entregado. No se puede quitar la ruta.'))
+        # La existencia de liquidaciones es una verificación INTERNA, no un
+        # permiso de lectura que deba recibir el operario. Conservar el chequeo
+        # de grupo/compañía arriba y elevar solo la lectura financiera.
+        fiscal = self.sudo()
         if (self.estado_aprobacion not in ('pendiente', 'no_aplica') or
-                self.liquidacion_linea_id or self.legado_liquidacion_bloqueada or
+                fiscal.liquidacion_linea_id or self.legado_liquidacion_bloqueada or
                 self.aprobado_fecha):
             raise UserError(_('El viaje ya tiene una gestión financiera que impide cambiar sus rutas.'))
         # El valor negociado es del VIAJE completo, no de una ruta. No dejarlo
         # vigente para una composición distinta sin nueva revisión del jefe.
-        fiscal = self.sudo()  # Los importes están protegidos para el operador.
         if fiscal.valor_acordado or fiscal.tarifa_referencial_total or fiscal.tarifa_id:
             raise UserError(_('El viaje tiene un valor de flete definido. El jefe de Logística debe revisarlo antes de retirar rutas.'))
         if (route.state == 'aceptada' or route.fecha_cierre_operativo or

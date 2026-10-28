@@ -62,7 +62,7 @@ class EmbarqueEditable(models.Model):
                     trip.fecha_cierre_logistica):
                 raise UserError(_('El viaje %s ya fue aceptado, despachado o cerrado; no se puede eliminar.') % trip.name)
             if (trip.estado_aprobacion not in ('pendiente', 'no_aplica') or
-                    trip.liquidacion_linea_id or trip.legado_liquidacion_bloqueada or
+                    trip.sudo().liquidacion_linea_id or trip.legado_liquidacion_bloqueada or
                     trip.aprobado_fecha):
                 raise UserError(_('El viaje %s tiene trámites económicos; no se puede eliminar.') % trip.name)
             if trip.objecion_ids or trip.objecion_pendiente or trip.observacion_rechazo:

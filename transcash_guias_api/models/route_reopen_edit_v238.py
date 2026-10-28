@@ -98,7 +98,11 @@ class TranscashTripReopenV238(models.Model):
                 raise UserError(_('Solo puede devolverse un viaje enviado al chofer que aún no haya aceptado.'))
             if trip.fecha_salida or trip.fecha_entrega or trip.fecha_cierre_logistica:
                 raise UserError(_('El viaje ya registra salida o entrega y no puede volver a preparación.'))
-            if trip.estado_aprobacion not in ('pendiente', 'no_aplica') or trip.liquidacion_linea_id or trip.aprobado_fecha:
+            # La inspección de documentos contables no concede acceso al operador.
+            # Solo esta relación se lee bajo sudo; los controles de usuario y
+            # compañía, estado y aceptación siguen con el usuario original.
+            if (trip.estado_aprobacion not in ('pendiente', 'no_aplica') or
+                    trip.sudo().liquidacion_linea_id or trip.aprobado_fecha):
                 raise UserError(_('El viaje tiene gestiones financieras; no puede volver a preparación.'))
             if self.env['transcash.pago.liquidacion.linea'].sudo().search_count([('embarque_id', '=', trip.id)]):
                 raise UserError(_('El viaje ya está relacionado con una liquidación.'))
