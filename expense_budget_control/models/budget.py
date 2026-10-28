@@ -844,6 +844,18 @@ class ExpenseBudgetLine(models.Model):
                 centers = line.account_id.cost_center_ids
                 if not line.cost_center_id and len(centers) == 1:
                     line.cost_center_id = centers.id
+                # Si el mes actual ya está ocupado para la cuenta recién elegida,
+                # limpiar el mes para obligar a seleccionar uno que esté libre.
+                used_months = line._get_used_month_numbers_for_account()
+                approved_through = line.budget_id.approved_through_month if line.budget_id else False
+                month_is_already_approved = (
+                    approved_through and line.budget_id.line_ids.filtered(
+                        lambda item: item.approval_state == 'approved'
+                    ) and line.month and int(line.month) <= int(approved_through)
+                )
+                if (line.month and str(line.month) in used_months) or month_is_already_approved:
+                    line.month = False
+                    line.month_option_id = False
     year = fields.Integer(string='Año', related='budget_id.year', store=True, index=True,
                           aggregator='max')
     # Campo legado: conservar las fechas de versiones anteriores sin eliminarlas.
@@ -854,13 +866,78 @@ class ExpenseBudgetLine(models.Model):
         help='Dato histórico de versiones anteriores. El consumo actual se calcula '
              'por el mes completo y el año del presupuesto.',
     )
+    # El almacenamiento histórico sigue siendo `month` (Selection) para no
+    # romper informes, importaciones ni integraciones existentes. En el formulario
+    # usamos un Many2one contra el catálogo de meses para filtrar las opciones.
     month = fields.Selection(MONTHS, string='Mes', required=True, index=True)
+    month_option_id = fields.Many2one(
+        'expense.budget.comparison.month', string='Mes',
+        compute='_compute_month_option_id', inverse='_inverse_month_option_id',
+        readonly=False,
+    )
+    available_month_option_ids = fields.Many2many(
+        'expense.budget.comparison.month', string='Meses disponibles',
+        compute='_compute_available_month_option_ids',
+    )
     approval_state = fields.Selection([
         ('draft', 'Pendiente de envío'),
         ('to_approve', 'Pendiente de aprobación'),
         ('approved', 'Aprobado'),
         ('rejected', 'Rechazado'),
     ], string='Estado de aprobación', default='draft', required=True, index=True, copy=False)
+    @api.depends('month')
+    def _compute_month_option_id(self):
+        month_model = self.env['expense.budget.comparison.month'].sudo()
+        options = month_model.search([])
+        options_by_number = {str(option.number): option for option in options}
+        for line in self:
+            line.month_option_id = options_by_number.get(str(line.month)) if line.month else False
+
+    def _inverse_month_option_id(self):
+        for line in self:
+            line.month = str(line.month_option_id.number) if line.month_option_id else False
+
+    def _get_used_month_numbers_for_account(self):
+        """Meses ya utilizados por esta cuenta dentro del mismo presupuesto."""
+        self.ensure_one()
+        if not self.budget_id or not self.account_id:
+            return set()
+        return {
+            str(other.month)
+            for other in self.budget_id.line_ids
+            if other != self and other.account_id == self.account_id and other.month
+        }
+
+    @api.depends(
+        'account_id', 'budget_id', 'month', 'budget_id.approved_through_month',
+        'budget_id.line_ids.account_id', 'budget_id.line_ids.month',
+        'budget_id.line_ids.approval_state',
+    )
+    def _compute_available_month_option_ids(self):
+        MonthOption = self.env['expense.budget.comparison.month'].sudo()
+        all_months = MonthOption.search([])
+        for line in self:
+            available = all_months
+            if line.account_id and line.budget_id:
+                used_months = line._get_used_month_numbers_for_account()
+                available = available.filtered(lambda option: str(option.number) not in used_months)
+            # En un presupuesto con líneas ya aprobadas, las nuevas líneas solo
+            # pueden usar meses posteriores al último mes aprobado.
+            if line.budget_id and line.budget_id.approved_through_month and line.budget_id.line_ids.filtered(
+                    lambda item: item.approval_state == 'approved'):
+                approved_through = int(line.budget_id.approved_through_month)
+                available = available.filtered(lambda option: option.number > approved_through)
+            # Mantener visible el mes actual de una línea existente, incluso
+            # en datos históricos duplicados; las nuevas selecciones no verán
+            # meses ocupados y la validación del servidor impide duplicados.
+            current = all_months.filtered(lambda option: str(option.number) == str(line.month))
+            line.available_month_option_ids = available | current
+
+    @api.onchange('month_option_id')
+    def _onchange_month_option_id(self):
+        for line in self:
+            line.month = str(line.month_option_id.number) if line.month_option_id else False
+
     consultation_date_label = fields.Char(
         string='Fecha interpretada', compute='_compute_consultation_date_label',
         help='Texto informativo del mes y año usado para sumar gastos del ERP.',
@@ -1020,13 +1097,12 @@ class ExpenseBudgetLine(models.Model):
                 duplicate = self.sudo().search([
                     ('id', '!=', rec.id), ('budget_id', '=', rec.budget_id.id),
                     ('account_id', '=', rec.account_id.id), ('month', '=', rec.month),
-                    ('cost_center_id', '=', rec.cost_center_id.id or False),
                 ], limit=1)
                 if duplicate:
                     raise ValidationError(_(
-                        'Ya existe una proyección para esta cuenta, centro y mes. '
-                        'El consumo mensual se consolida en una única línea.'
-                    ))
+                        'La cuenta controlada "%s" ya tiene una proyección para %s en este presupuesto. '
+                        'Seleccione uno de los meses que todavía no se han presupuestado para esa cuenta.'
+                    ) % (rec.account_id.display_name, MONTH_NAMES.get(str(rec.month), rec.month)))
 
     @api.constrains('account_id', 'budget_id', 'category_id')
     def _check_account_company(self):
@@ -1070,7 +1146,13 @@ class ExpenseBudgetLine(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         budgets = self.env['expense.budget']
+        MonthOption = self.env['expense.budget.comparison.month'].sudo()
         for vals in vals_list:
+            # El selector visual many2one se traduce al valor Selection histórico.
+            if 'month_option_id' in vals:
+                option_id = vals.pop('month_option_id')
+                option = MonthOption.browse(option_id).exists() if option_id else MonthOption.browse()
+                vals['month'] = str(option.number) if option else False
             # Fecha heredada solo se permite desde integraciones antiguas:
             # no impone el mes cuando el usuario proporciona uno explícito.
             if vals.get('consumption_date') and not vals.get('month'):
@@ -1105,6 +1187,14 @@ class ExpenseBudgetLine(models.Model):
         return records
 
     def write(self, vals):
+        vals = dict(vals)
+        if 'month_option_id' in vals:
+            option_id = vals.pop('month_option_id')
+            option = (
+                self.env['expense.budget.comparison.month'].sudo().browse(option_id).exists()
+                if option_id else self.env['expense.budget.comparison.month']
+            )
+            vals['month'] = str(option.number) if option else False
         # El estado solo se cambia desde los botones del flujo, que escriben
         # con sudo() después de validar el grupo del usuario.
         if 'approval_state' in vals and not self.env.su:

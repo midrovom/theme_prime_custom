@@ -152,9 +152,13 @@
                                            readonly="approval_state in ['approved', 'to_approve']"
                                            domain="[('company_id', '=', parent.company_id)]"
                                            options="{'no_create': True}"/>
-                                    <field name="month" string="Mes"
+                                    <field name="available_month_option_ids" column_invisible="True"/>
+                                    <field name="month" column_invisible="True"/>
+                                    <field name="month_option_id" string="Mes" required="1"
+                                           domain="[('id', 'in', available_month_option_ids)]"
                                            readonly="approval_state in ['approved', 'to_approve']"
-                                           help="Suma los consumos de esta cuenta y centro de costo durante el mes seleccionado y el año del presupuesto, sin filtrar por subcentro."/>
+                                           options="{'no_create': True, 'no_open': True}"
+                                           help="Solo muestra los meses que todavía no se han presupuestado para la cuenta seleccionada. Cada cuenta puede tener una sola proyección por mes dentro de este presupuesto."/>
                                     <field name="planned_amount" readonly="approval_state in ['approved', 'to_approve']" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="variance_amount" readonly="True" sum="Disponible"/>
