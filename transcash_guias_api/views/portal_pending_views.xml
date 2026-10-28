@@ -30,9 +30,12 @@
     <field name="arch" type="xml">
       <xpath expr="//sheet/div[contains(@class,'alert-info')]" position="replace">
         <div class="alert alert-info" role="alert">
-          <strong>Habilitación por Contabilidad:</strong> la sincronización ERP prepara la cuenta Portal
-          y registra su acceso como pendiente. Compruebe el documento y la empresa transportista antes
-          de pulsar <strong>Habilitar acceso Proveedor</strong>. No necesita crear otro usuario.
+          <strong>Habilitación por Contabilidad:</strong> la sincronización ERP prepara el usuario Portal
+          y lo muestra aquí como <strong>Sin acceso</strong>. Revise identificación y empresa;
+          cuando el transportista cambie su contraseña inicial, pulse
+          <strong>Habilitar acceso Proveedor</strong>. Si el usuario ya creado no aparece,
+          utilice <strong>Actualizar proveedores Portal pendientes</strong> desde Contabilidad.
+          No necesita crear otra cuenta.
         </div>
       </xpath>
     </field>

@@ -52,6 +52,7 @@ class InMemoryModel:
     def __init__(self, records=None):
         self.rows = records or []
         self._id = len(self.rows) + 1
+    def sudo(self, *args): return self
     def with_user(self, *args): return self
     def with_company(self, *args): return self
     def with_context(self, **kwargs): return self

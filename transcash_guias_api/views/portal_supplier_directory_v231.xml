@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Se mantiene el directorio original: filas inactivas y habilitadas. -->
+  <record id="tc_supplier_rebuild_pending_action_v231" model="ir.actions.server">
+    <field name="name">Actualizar proveedores Portal pendientes</field>
+    <field name="model_id" ref="logistica_transcash.model_transcash_acceso_proveedor"/>
+    <field name="state">code</field>
+    <field name="code">action = model.action_tc_refresh_supplier_accesses()</field>
+    <field name="groups_id" eval="[(4, ref('logistica_transcash.group_transcash_contabilidad'))]"/>
+  </record>
+  <menuitem id="tc_supplier_rebuild_pending_menu_v231"
+      name="Actualizar proveedores Portal pendientes"
+      parent="logistica_transcash.menu_tc_accounting_v530"
+      sequence="26" action="tc_supplier_rebuild_pending_action_v231"
+      groups="logistica_transcash.group_transcash_contabilidad"/>
+</odoo>

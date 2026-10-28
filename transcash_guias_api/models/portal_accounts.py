@@ -104,7 +104,15 @@ class TcGuidePortalAccounts(models.Model):
         if not user:
             return False, ''
         model = 'transcash.acceso.proveedor' if role == 'supplier' else 'transcash.acceso.cliente'
-        Directory = self.env[model].with_user(SUPERUSER_ID).with_company(company)
+        # El alta AUTOMATICA no debe pasar por el permiso interactivo de
+        # Contabilidad, que solo se exige para habilitar o revocar acceso.
+        # Esta autorización técnica se limita al contexto + sudo y a fichas
+        # pendientes: jamás se añade un grupo de proveedor aquí.
+        Directory = (self.env[model].sudo().with_company(company)
+                     .with_context(tc_portal_prepare_pending=True))
+        self.env.cr.execute(
+            'SELECT pg_advisory_xact_lock(hashtext(%s), hashtext(%s))',
+            ('tc.portal.pending.access', '%s:%s:%s' % (model, user.id, company.id)))
         # El directorio base requiere usuario Portal y contiene unique(usuario_id, company_id).
         entries = Directory.search([('usuario_id', '=', user.id), ('company_id', '=', company.id)])
         if len(entries) > 1:
@@ -171,6 +179,104 @@ class TcGuidePortalAccounts(models.Model):
 
 class TranscashSupplierActivatePassword(models.Model):
     _inherit = 'transcash.acceso.proveedor'
+    _order = 'activo asc, id desc'  # Pendientes primero; no se ocultan los habilitados.
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if self.env.su and self.env.context.get('tc_portal_prepare_pending'):
+            # El create() original exige pertenecer al grupo de Contabilidad Y
+            # a la compañía. El importador técnico no debe necesitar esos
+            # permisos: salta solo esa capa interactiva al crear solicitudes
+            # pendientes. La validación del usuario Portal se conserva.
+            allowed = {'usuario_id', 'company_id', 'activo', 'observaciones'}
+            for vals in vals_list:
+                if set(vals) - allowed or vals.get('activo') is not False or (
+                        not vals.get('usuario_id') or not vals.get('company_id')):
+                    raise AccessError(_('El importador solo puede preparar accesos Portal inactivos.'))
+            records = models.Model.create(self, vals_list)
+            records._check_portal_user()
+            return records
+        return super().create(vals_list)
+
+    @api.model
+    def _tc_reconcile_existing_supplier_accounts(self):
+        """Reconstruye solicitudes ausentes para cuentas Portal ya creadas.
+
+        Solo cruza transportistas de guías ERP y usuarios Portal vinculados
+        al MISMO contacto; no añade todos los portales de la compañía ni
+        reclasifica choferes, destinatarios o transportes del propio cliente.
+        """
+        operator = self.env.user
+        if not self.env.su and (operator.share or not operator.has_group(
+                'logistica_transcash.group_transcash_contabilidad')):
+            raise AccessError(_('Solo Contabilidad puede actualizar los accesos de proveedores.'))
+        company_ids = (self.env['res.company'].sudo().search([]).ids if self.env.su
+                       else operator.company_ids.ids)
+        if not company_ids:
+            return {'reviewed': 0, 'created': 0, 'skipped': 0}
+        grouped = self.env['tc.guide'].sudo().read_group(
+            [('transport_partner_id', '!=', False), ('company_id', 'in', company_ids)],
+            ['transport_partner_id', 'company_id'],
+            ['transport_partner_id', 'company_id'], lazy=False)
+        pairs = set()
+        for item in grouped:
+            partner = item.get('transport_partner_id')
+            company = item.get('company_id')
+            if partner and company:
+                pairs.add((partner[0], company[0]))
+        if not pairs:
+            return {'reviewed': 0, 'created': 0, 'skipped': 0}
+        partner_ids = list({partner_id for partner_id, _ in pairs})
+        partners = {p.id: p for p in self.env['res.partner'].sudo().with_context(
+            active_test=False).browse(partner_ids)}
+        users = self.env['res.users'].sudo().with_context(active_test=False).search([
+            ('partner_id', 'in', partner_ids), ('share', '=', True)])
+        by_partner = {}
+        for user in users:
+            by_partner.setdefault(user.partner_id.id, []).append(user)
+        created = reviewed = skipped = 0
+        for partner_id, company_id in sorted(pairs):
+            partner = partners.get(partner_id)
+            linked = by_partner.get(partner_id) or []
+            if not partner or not partner.active or len(linked) != 1:
+                skipped += 1
+                continue
+            name = ' '.join((partner.name or '').upper().split())
+            if name in ('TRANSPORTE PROPORCIONADO POR CLIENTE',
+                        'TRANSPORTE PROPORCIONADO POR EL CLIENTE'):
+                skipped += 1
+                continue
+            user = linked[0]
+            if not user.active or not user.has_group('base.group_portal') or any(
+                    user.has_group('logistica_transcash.%s' % g)
+                    for g in ('group_transcash_chofer', 'group_transcash_cliente')):
+                skipped += 1
+                continue
+            company = self.env['res.company'].sudo().browse(company_id)
+            with self.env.cr.savepoint():
+                directory = self.sudo().with_company(company)
+                existing = directory.search([
+                    ('usuario_id', '=', user.id), ('company_id', '=', company.id)], limit=1)
+                entry, reason = self.env['tc.guide'].sudo()._tc_register_pending_access(
+                    user, company, 'supplier')
+                if reason:
+                    _logger.warning('Pendiente proveedor no creado para uid=%s: %s',
+                                    user.id, reason)
+                    skipped += 1
+                elif entry:
+                    reviewed += 1
+                    if not existing:
+                        created += 1
+        return {'reviewed': reviewed, 'created': created, 'skipped': skipped}
+
+    @api.model
+    def action_tc_refresh_supplier_accesses(self):
+        # Ejecutable por Contabilidad desde el menú de la misma bandeja.
+        result = self._tc_reconcile_existing_supplier_accounts()
+        _logger.info('Revisión de proveedores Portal: %s', result)
+        action = self.env.ref('logistica_transcash.action_transcash_acceso_proveedores').read()[0]
+        action['context'] = {'search_default_tc_pendientes_proveedor_v230': 1}
+        return action
 
     def action_activar_acceso(self):
         for rec in self:
@@ -182,6 +288,19 @@ class TranscashSupplierActivatePassword(models.Model):
 
 class TranscashRecipientActivatePassword(models.Model):
     _inherit = 'transcash.acceso.cliente'
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if self.env.su and self.env.context.get('tc_portal_prepare_pending'):
+            allowed = {'usuario_id', 'company_id', 'activo', 'observaciones'}
+            for vals in vals_list:
+                if set(vals) - allowed or vals.get('activo') is not False or (
+                        not vals.get('usuario_id') or not vals.get('company_id')):
+                    raise AccessError(_('El importador solo puede preparar accesos Portal inactivos.'))
+            records = models.Model.create(self, vals_list)
+            records._check_portal_user()
+            return records
+        return super().create(vals_list)
 
     def action_activar_acceso(self):
         for rec in self:
