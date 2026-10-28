@@ -158,7 +158,7 @@
                                            domain="[('id', 'in', available_month_option_ids)]"
                                            readonly="approval_state in ['approved', 'to_approve']"
                                            options="{'no_create': True, 'no_open': True}"
-                                           help="Solo muestra los meses que todavía no se han presupuestado para la cuenta seleccionada. Cada cuenta puede tener una sola proyección por mes dentro de este presupuesto."/>
+                                           help="Filtra por cuenta controlada y centro de costo: una combinación puede tener una sola proyección por mes. Si Agua/Quito está aprobado hasta mayo, muestra desde junio; Agua de otro centro puede comenzar en enero si aún no tiene proyección."/>
                                     <field name="planned_amount" readonly="approval_state in ['approved', 'to_approve']" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="variance_amount" readonly="True" sum="Disponible"/>

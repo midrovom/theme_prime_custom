@@ -797,6 +797,7 @@ class ExpenseBudgetLine(models.Model):
         for line in self:
             line.subcenter_id = False
             line.subcenter_code = False
+            line._clear_month_if_unavailable_for_pair()
 
     erp_subcenter_codes = fields.Char(
         string='Subcentro', compute='_compute_erp_subcenter_codes', readonly=True,
@@ -844,18 +845,23 @@ class ExpenseBudgetLine(models.Model):
                 centers = line.account_id.cost_center_ids
                 if not line.cost_center_id and len(centers) == 1:
                     line.cost_center_id = centers.id
-                # Si el mes actual ya está ocupado para la cuenta recién elegida,
-                # limpiar el mes para obligar a seleccionar uno que esté libre.
-                used_months = line._get_used_month_numbers_for_account()
-                approved_through = line.budget_id.approved_through_month if line.budget_id else False
-                month_is_already_approved = (
-                    approved_through and line.budget_id.line_ids.filtered(
-                        lambda item: item.approval_state == 'approved'
-                    ) and line.month and int(line.month) <= int(approved_through)
-                )
-                if (line.month and str(line.month) in used_months) or month_is_already_approved:
-                    line.month = False
-                    line.month_option_id = False
+            line._clear_month_if_unavailable_for_pair()
+
+    def _clear_month_if_unavailable_for_pair(self):
+        """Clear a selected month when it is used for this account + center pair.
+
+        Approval progression is scoped to the selected account and cost center,
+        never to the whole budget. This lets another center start in January.
+        """
+        for line in self:
+            if not line.account_id or not line.month or not line.budget_id:
+                continue
+            used_months = line._get_used_month_numbers_for_account_center()
+            approved_through = line._get_approved_through_month_for_pair()
+            month_num = int(line.month)
+            if str(month_num) in used_months or (approved_through and month_num <= approved_through):
+                line.month = False
+                line.month_option_id = False
     year = fields.Integer(string='Año', related='budget_id.year', store=True, index=True,
                           aggregator='max')
     # Campo legado: conservar las fechas de versiones anteriores sin eliminarlas.
@@ -897,21 +903,80 @@ class ExpenseBudgetLine(models.Model):
         for line in self:
             line.month = str(line.month_option_id.number) if line.month_option_id else False
 
-    def _get_used_month_numbers_for_account(self):
-        """Meses ya utilizados por esta cuenta dentro del mismo presupuesto."""
+    @api.model
+    def _get_approved_through_month_for_pair_values(self, company_id, year, account_id, cost_center_id=False):
+        """Server-side equivalent for create(), before the new line exists."""
+        if not (company_id and year and account_id):
+            return False
+        lines = self.sudo().search([
+            ('company_id', '=', company_id),
+            ('year', '=', year),
+            ('account_id', '=', account_id),
+            ('cost_center_id', '=', cost_center_id or False),
+            ('approval_state', '=', 'approved'),
+            ('month', '!=', False),
+        ])
+        months = [int(month) for month in lines.mapped('month') if month]
+        return max(months) if months else False
+
+    def _get_approved_through_month_for_pair(self):
+        """Latest approved month for this account + cost center + company + year.
+
+        The header-level ``approved_through_month`` is only a budget summary;
+        it must not block a different center from starting at January.
+        """
+        self.ensure_one()
+        if not self.budget_id or not self.account_id:
+            return False
+        lines = self.env['expense.budget.line'].sudo().search([
+            ('company_id', '=', self.budget_id.company_id.id),
+            ('year', '=', self.budget_id.year),
+            ('account_id', '=', self.account_id.id),
+            ('cost_center_id', '=', self.cost_center_id.id or False),
+            ('approval_state', '=', 'approved'),
+            ('month', '!=', False),
+        ])
+        months = [int(month) for month in lines.mapped('month') if month]
+        return max(months) if months else False
+
+    def _get_used_month_numbers_for_account_center(self):
+        """Months used by this account + cost center for this company and year.
+
+        Includes persisted lines from other budgets and unsaved lines currently
+        being edited in this budget. A month used by another center does not
+        block this combination.
+        """
         self.ensure_one()
         if not self.budget_id or not self.account_id:
             return set()
-        return {
-            str(other.month)
-            for other in self.budget_id.line_ids
-            if other != self and other.account_id == self.account_id and other.month
-        }
+
+        domain = [
+            ('company_id', '=', self.budget_id.company_id.id),
+            ('year', '=', self.budget_id.year),
+            ('account_id', '=', self.account_id.id),
+            ('cost_center_id', '=', self.cost_center_id.id or False),
+            ('month', '!=', False),
+        ]
+        record_id = self.id if isinstance(self.id, int) else False
+        if not record_id and self._origin and isinstance(self._origin.id, int):
+            record_id = self._origin.id
+        if record_id:
+            domain.append(('id', '!=', record_id))
+
+        used_lines = self.env['expense.budget.line'].sudo().search(domain)
+        used_months = {str(other.month) for other in used_lines if other.month}
+
+        # Include not-yet-saved One2many rows in the form editor.
+        for other in self.budget_id.line_ids:
+            if (other != self and other.account_id == self.account_id
+                    and other.cost_center_id == self.cost_center_id and other.month):
+                used_months.add(str(other.month))
+        return used_months
 
     @api.depends(
-        'account_id', 'budget_id', 'month', 'budget_id.approved_through_month',
-        'budget_id.line_ids.account_id', 'budget_id.line_ids.month',
-        'budget_id.line_ids.approval_state',
+        'account_id', 'cost_center_id', 'budget_id', 'budget_id.company_id', 'budget_id.year',
+        'month', 'budget_id.line_ids.account_id', 'budget_id.line_ids.cost_center_id',
+        'budget_id.line_ids.month', 'budget_id.line_ids.approval_state',
     )
     def _compute_available_month_option_ids(self):
         MonthOption = self.env['expense.budget.comparison.month'].sudo()
@@ -919,17 +984,16 @@ class ExpenseBudgetLine(models.Model):
         for line in self:
             available = all_months
             if line.account_id and line.budget_id:
-                used_months = line._get_used_month_numbers_for_account()
+                used_months = line._get_used_month_numbers_for_account_center()
                 available = available.filtered(lambda option: str(option.number) not in used_months)
-            # En un presupuesto con líneas ya aprobadas, las nuevas líneas solo
-            # pueden usar meses posteriores al último mes aprobado.
-            if line.budget_id and line.budget_id.approved_through_month and line.budget_id.line_ids.filtered(
-                    lambda item: item.approval_state == 'approved'):
-                approved_through = int(line.budget_id.approved_through_month)
-                available = available.filtered(lambda option: option.number > approved_through)
-            # Mantener visible el mes actual de una línea existente, incluso
-            # en datos históricos duplicados; las nuevas selecciones no verán
-            # meses ocupados y la validación del servidor impide duplicados.
+                # Approval progression is specific to account + cost center.
+                # For an approved Agua/Quito line through May, Quito starts in
+                # June; Agua/Guayaquil can still start in January if unused.
+                approved_through = line._get_approved_through_month_for_pair()
+                if approved_through:
+                    available = available.filtered(lambda option: option.number > approved_through)
+            # Keep the current month visible on existing lines so records can
+            # be displayed, while onchange/server validations protect edits.
             current = all_months.filtered(lambda option: str(option.number) == str(line.month))
             line.available_month_option_ids = available | current
 
@@ -1097,12 +1161,17 @@ class ExpenseBudgetLine(models.Model):
                 duplicate = self.sudo().search([
                     ('id', '!=', rec.id), ('budget_id', '=', rec.budget_id.id),
                     ('account_id', '=', rec.account_id.id), ('month', '=', rec.month),
+                    ('cost_center_id', '=', rec.cost_center_id.id or False),
                 ], limit=1)
                 if duplicate:
                     raise ValidationError(_(
-                        'La cuenta controlada "%s" ya tiene una proyección para %s en este presupuesto. '
-                        'Seleccione uno de los meses que todavía no se han presupuestado para esa cuenta.'
-                    ) % (rec.account_id.display_name, MONTH_NAMES.get(str(rec.month), rec.month)))
+                        'La cuenta controlada "%s" ya tiene una proyección para %s en el centro de costo "%s". '
+                        'Seleccione un mes libre para esa combinación de cuenta y centro.'
+                    ) % (
+                        rec.account_id.display_name,
+                        MONTH_NAMES.get(str(rec.month), rec.month),
+                        rec.cost_center_id.display_name or _('Sin centro de costo'),
+                    ))
 
     @api.constrains('account_id', 'budget_id', 'category_id')
     def _check_account_company(self):
@@ -1125,8 +1194,8 @@ class ExpenseBudgetLine(models.Model):
 
     @api.constrains('budget_id', 'account_id', 'month', 'consumption_date', 'cost_center_id', 'subcenter_code')
     def _check_unique_account_month_across_budgets(self):
-        # Una cuenta/mes no debe duplicarse en distintos presupuestos del
-        # mismo año, para no imputar un consumo en dos rubros diferentes.
+        # Una cuenta + centro + mes no debe duplicarse en distintos presupuestos
+        # del mismo año, para no imputar un consumo dos veces.
         for rec in self:
             existing = self.sudo().search([
                 ('id', '!=', rec.id),
@@ -1170,14 +1239,16 @@ class ExpenseBudgetLine(models.Model):
                     self.env.user.has_group('expense_budget_control.group_expense_budget_registrar') or
                     self.env.user.has_group('expense_budget_control.group_expense_budget_manager')):
                 raise AccessError(_('Solo Registro de presupuestos puede agregar nuevos meses a un presupuesto aprobado.'))
-            if (budget and vals.get('month') and
-                    budget.line_ids.filtered(lambda line: line.approval_state == 'approved')):
-                approved_through = budget.approved_through_month
-                if approved_through and int(vals['month']) <= int(approved_through):
+            if budget and vals.get('month') and vals.get('account_id'):
+                approved_through = self._get_approved_through_month_for_pair_values(
+                    budget.company_id.id, budget.year, vals.get('account_id'),
+                    vals.get('cost_center_id') or False,
+                )
+                if approved_through and int(vals['month']) <= approved_through:
                     raise UserError(_(
-                        'Solo puede agregar proyecciones posteriores al último mes aprobado (%s). '
-                        'Las líneas de períodos anteriores no se pueden ampliar ni modificar.'
-                    ) % MONTH_NAMES[approved_through])
+                        'Para la cuenta y centro seleccionados, solo puede agregar meses posteriores a %s. '
+                        'Otro centro de costo puede iniciar desde enero si todavía no tiene proyección.'
+                    ) % MONTH_NAMES[str(approved_through)])
             # Las líneas nuevas siempre empiezan pendientes; no se acepta un estado de aprobación aportado por RPC.
             vals['approval_state'] = 'draft'
         records = super().create(vals_list)
@@ -1227,15 +1298,23 @@ class ExpenseBudgetLine(models.Model):
                         'No puede modificar una línea aprobada o enviada a aprobación. '
                         'Las líneas nuevas de meses futuros se pueden editar antes de enviarlas.'
                     ))
-                has_approved_history = any(
-                    line.approval_state == 'approved' for line in rec.budget_id.line_ids
-                )
-                if has_approved_history and vals.get('month'):
-                    approved_through = rec.budget_id.approved_through_month
-                    if approved_through and int(vals['month']) <= int(approved_through):
-                        raise UserError(_(
-                            'El mes de una línea pendiente debe ser posterior al último mes aprobado (%s).'
-                        ) % MONTH_NAMES[approved_through])
+                if {'account_id', 'cost_center_id', 'budget_id', 'month'}.intersection(vals):
+                    target_budget = self.env['expense.budget'].browse(
+                        vals.get('budget_id', rec.budget_id.id)
+                    ).exists()
+                    target_account_id = vals.get('account_id', rec.account_id.id)
+                    target_center_id = vals.get('cost_center_id', rec.cost_center_id.id) or False
+                    target_month = vals.get('month', rec.month)
+                    if target_budget and target_month and target_account_id:
+                        approved_through = self._get_approved_through_month_for_pair_values(
+                            target_budget.company_id.id, target_budget.year,
+                            target_account_id, target_center_id,
+                        )
+                        if approved_through and int(target_month) <= approved_through:
+                            raise UserError(_(
+                                'El mes debe ser posterior a %s para esta cuenta y centro de costo. '
+                                'Los demás centros mantienen su propio calendario de proyección.'
+                            ) % MONTH_NAMES[str(approved_through)])
         # Cambiar solo la fecha de una proyección existente es seguro: la
         # reconciliación reasigna o desvincula movimientos de otros días.
         # Los cambios de cuenta/centro/subcentro siguen protegidos.
