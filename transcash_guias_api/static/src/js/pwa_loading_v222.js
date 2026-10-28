@@ -47,6 +47,12 @@
             return ['Sincronizando guías ERP',
                     'Consultando API Administrator e importando los registros…'];
         }
+        if (/\/embarques\/\d+\/rutas\/agregar(?:\?|$)/.test(target)) {
+            return ['Agregando hoja de ruta', 'Comprobando compatibilidad y guardando el viaje…'];
+        }
+        if (/\/(?:embarques|rutas)\/\d+\/eliminar(?:\?|$)/.test(target)) {
+            return ['Eliminando planificación', 'Liberando las guías sin borrar su información…'];
+        }
         if (/\/rutas\/\d+\/guias(?:\?|$)/.test(target)) {
             return ['Guardando selección de guías', 'Validando guías, chofer, transportista y destino…'];
         }

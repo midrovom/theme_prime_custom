@@ -35,3 +35,5 @@ from . import transport_client_mode
 from . import portal_accounts
 
 from . import pwa_internal_notes
+
+from . import route_trip_editing_v235

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Acciones visibles en el PWA, con validación idéntica en el modelo ORM. -->
+  <template id="tc_pwa_planificacion_editable_v235" inherit_id="logistica_transcash.portal_operacion"
+            priority="185" name="PWA: corregir rutas/viajes y agregar rutas en el viaje">
+    <xpath expr="//t[@t-if=&quot;section == 'ruta_detalle'&quot;]/div[contains(@class,'tc-ops-summary')]" position="after">
+      <section t-if="not ruta.embarque_id and ruta.state in ('borrador', 'planificada')"
+               class="tc-edit-actions tc-edit-actions--route" aria-label="Acciones de planificación">
+        <t t-set="tc_return_trip" t-value="request.params.get('embarque_id')"/>
+        <t t-if="ruta.state == 'planificada' and tc_return_trip">
+          <form method="post" t-att-action="'/transcash/operacion/embarques/%s/rutas/agregar' % tc_return_trip">
+            <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+            <input type="hidden" name="ruta_id" t-att-value="ruta.id"/>
+            <button type="submit" class="tc-button tc-button-primary">＋ Añadir esta ruta al viaje en preparación</button>
+          </form>
+        </t>
+        <form method="post" t-att-action="'/transcash/operacion/rutas/%d/eliminar' % ruta.id"
+              onsubmit="return confirm('¿Eliminar esta hoja de ruta? Las guías quedarán libres para otra ruta. Esta acción no se puede deshacer.')">
+          <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+          <button type="submit" class="tc-button tc-button-outline tc-edit-danger">Eliminar hoja de ruta</button>
+        </form>
+      </section>
+    </xpath>
+    <!-- Mantener el vínculo con el embarque al crear/guardar/confirmar una ruta nueva. -->
+    <xpath expr="//t[@t-if=&quot;section == 'nueva'&quot;]/form[@action='/transcash/operacion/rutas/nueva']/input[@name='csrf_token']" position="after">
+      <input t-if="tc_viaje_retorno" type="hidden" name="embarque_id" t-att-value="tc_viaje_retorno.id"/>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'nueva'&quot;]/div[contains(@class,'tc-next-card')]" position="before">
+      <div t-if="tc_viaje_retorno" class="tc-next-card">
+        <div class="tc-next-icon">🚚</div>
+        <div><strong>Nueva ruta para <t t-esc="tc_viaje_retorno.name"/></strong>
+          <p>El chofer, el transporte y la placa ya están seleccionados. Elige el destino, añade guías y confirma la ruta para incorporarla al mismo viaje.</p>
+          <a t-att-href="'/transcash/operacion/embarques/%d' % tc_viaje_retorno.id">← Volver al viaje</a>
+        </div>
+      </div>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'ruta_detalle'&quot;]/t[@t-if=&quot;ruta.state == 'borrador'&quot;]/form[contains(@class,'tc-ops-search')]/input[@name='buscar']" position="after">
+      <input t-if="request.params.get('embarque_id')" type="hidden" name="embarque_id" t-att-value="request.params.get('embarque_id')"/>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'ruta_detalle'&quot;]/t[@t-if=&quot;ruta.state == 'borrador'&quot;]/form[.//input[@name='seleccion_actual']]/input[@name='csrf_token']" position="after">
+      <input t-if="request.params.get('embarque_id')" type="hidden" name="tc_viaje_regreso" t-att-value="request.params.get('embarque_id')"/>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'ruta_detalle'&quot;]/t[@t-if=&quot;ruta.state == 'borrador'&quot;]/form[contains(@t-att-action, '/confirmar')]/input[@name='csrf_token']" position="after">
+      <input t-if="request.params.get('embarque_id')" type="hidden" name="tc_viaje_regreso" t-att-value="request.params.get('embarque_id')"/>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'embarque_detalle'&quot;]/div[contains(@class,'tc-ops-summary')]" position="after">
+      <section t-if="embarque.state == 'preparacion'" class="tc-edit-actions tc-edit-actions--trip"
+               aria-label="Agregar hojas de ruta al viaje">
+        <div class="tc-section-heading"><h2>Agregar otra hoja de ruta a este viaje</h2></div>
+        <p class="tc-muted">Se muestran únicamente rutas del mismo chofer, transportista, vehículo y placa. El precio del viaje no cambia.</p>
+        <form t-if="tc_rutas_compatibles" method="post" class="tc-ops-form"
+              t-att-action="'/transcash/operacion/embarques/%d/rutas/agregar' % embarque.id">
+          <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+          <label for="tc-route-add-v235">Ruta confirmada disponible</label>
+          <select id="tc-route-add-v235" name="ruta_id" required="required">
+            <option value="">Selecciona la hoja de ruta</option>
+            <t t-foreach="tc_rutas_compatibles" t-as="r">
+              <option t-att-value="r.id"><t t-esc="r.name"/> · <t t-esc="r.destino_nombre"/> · <t t-esc="len(r.guia_ids)"/> guías</option>
+            </t>
+          </select>
+          <button type="submit" class="tc-button tc-button-primary">＋ Agregar al viaje actual</button>
+        </form>
+        <p t-if="not tc_rutas_compatibles" class="tc-muted">Todavía no hay otras rutas confirmadas compatibles.</p>
+        <a class="tc-button tc-button-outline" t-att-href="'/transcash/operacion/rutas/nueva?embarque_id=%d' % embarque.id">＋ Crear hoja de ruta para este viaje</a>
+      </section>
+      <section t-if="embarque.state in ('preparacion', 'embarcado') and not embarque.aceptado_chofer and not embarque.fecha_aceptacion_chofer"
+               class="tc-edit-actions tc-edit-actions--delete" aria-label="Eliminar viaje no aceptado">
+        <form method="post" t-att-action="'/transcash/operacion/embarques/%d/eliminar' % embarque.id"
+              onsubmit="return confirm('¿Eliminar este viaje sin aceptación? Las guías y rutas quedarán disponibles para planificar de nuevo. Esta acción no se puede deshacer.')">
+          <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+          <button type="submit" class="tc-button tc-button-outline tc-edit-danger">Eliminar viaje no aceptado</button>
+        </form>
+        <small>Solo es posible antes de la aceptación o salida del chofer, sin liquidación ni objeciones registradas.</small>
+      </section>
+    </xpath>
+    <xpath expr="//html/head" position="inside">
+      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/route_trip_editing_v235.css?v=235"/>
+    </xpath>
+  </template>
+
+  <!-- Backend: conservar delete=0 general; permitir solo acciones controladas. -->
+  <record id="tc_ruta_delete_button_v235" model="ir.ui.view">
+    <field name="name">transcash.hoja.ruta.form.delete-before-trip.v235</field>
+    <field name="model">transcash.hoja.ruta</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_ruta_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form/header/button[@name='action_confirm_route']" position="before">
+        <button name="action_tc_delete_unassigned_route" type="object" string="Eliminar ruta sin viaje"
+                confirm="¿Eliminar la hoja de ruta y liberar sus guías?"
+                invisible="embarque_id or state not in ('borrador','planificada')"
+                groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="tc_embarque_delete_button_v235" model="ir.ui.view">
+    <field name="name">transcash.embarque.form.delete-unaccepted.v235</field>
+    <field name="model">transcash.embarque</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_embarque_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form/header/button[@name='action_open_add_routes']" position="before">
+        <button name="action_tc_delete_unaccepted_trip" type="object" string="Eliminar viaje no aceptado"
+                confirm="¿Eliminar el viaje sin aceptación? Las rutas y guías seguirán disponibles."
+                invisible="state not in ('preparacion','embarcado') or aceptado_chofer or fecha_aceptacion_chofer"
+                groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
+      </xpath>
+      <xpath expr="//form/sheet/group/group/field[@name='fecha_embarcado']" position="after">
+        <field name="fecha_aceptacion_chofer" readonly="1" invisible="1"/>
+        <field name="aceptado_chofer" readonly="1" invisible="1"/>
+      </xpath>
+    </field>
+  </record>
+</odoo>
