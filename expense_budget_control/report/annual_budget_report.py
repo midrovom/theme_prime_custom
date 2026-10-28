@@ -113,6 +113,7 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
                 ],
             })
         return {
+            'decimal_digits': self.env['decimal.precision'].precision_get('Presupuesto de Gastos'),
             'budget': source,
             'budget_name': budget_name,
             'categories': result_categories,

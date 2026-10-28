@@ -6,7 +6,7 @@ import logging
 
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
-from odoo.tools.float_utils import float_compare
+from odoo.tools.float_utils import float_compare, float_round
 
 
 _logger = logging.getLogger(__name__)
@@ -16,6 +16,14 @@ MONTHS = [(str(index), name) for index, name in enumerate((
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ), start=1)]
 MONTH_NAMES = dict(MONTHS)
+
+BUDGET_DECIMAL_PRECISION = 'Presupuesto de Gastos'
+
+
+def budget_amount_digits(env):
+    """Independent budget precision; never change res.currency for other modules."""
+    return env['decimal.precision'].precision_get(BUDGET_DECIMAL_PRECISION)
+
 
 
 class ExpenseBudgetCategory(models.Model):
@@ -253,12 +261,12 @@ class ExpenseBudget(models.Model):
         'expense.budget.comparison.month',
         compute='_compute_quick_available_month_ids', string='Meses disponibles',
     )
-    quick_annual_amount = fields.Monetary(
-        string='Presupuesto anual', currency_field='currency_id',
+    quick_annual_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, 
+        string='Presupuesto anual', default=0.0,
         help='Importe a distribuir por partes iguales entre los meses seleccionados.',
     )
 
-    @api.depends('quick_account_id', 'quick_cost_center_id', 'company_id', 'year',
+    @api.depends('state', 'quick_account_id', 'quick_cost_center_id', 'company_id', 'year',
                  'line_ids.month', 'line_ids.account_id', 'line_ids.cost_center_id',
                  'line_ids.approval_state')
     def _compute_quick_available_month_ids(self):
@@ -266,6 +274,12 @@ class ExpenseBudget(models.Model):
         Line = self.env['expense.budget.line'].sudo()
         months = Month.search([])
         for budget in self:
+            # El mismo filtro sirve para crear y eliminar proyecciones. En borrador
+            # mostrar todos los meses para poder seleccionar los ya registrados
+            # al usar Eliminar (Agregar sigue validando duplicados en el servidor).
+            if budget.state == 'draft':
+                budget.quick_available_month_ids = months
+                continue
             if not (budget.quick_account_id and budget.quick_cost_center_id and
                     budget.company_id and budget.year):
                 budget.quick_available_month_ids = months
@@ -296,14 +310,6 @@ class ExpenseBudget(models.Model):
             if not (budget.quick_account_id and budget.quick_cost_center_id
                     and budget.company_id and budget.year):
                 continue
-            target = self.env['expense.budget.annual.target'].sudo().search([
-                ('company_id', '=', budget.company_id.id),
-                ('year', '=', budget.year),
-                ('account_id', '=', budget.quick_account_id.id),
-                ('cost_center_id', '=', budget.quick_cost_center_id.id),
-            ], limit=1)
-            if target:
-                budget.quick_annual_amount = target.annual_amount
 
     def action_add_quick_monthly_lines(self):
         """Usar el asistente existente para no alterar las reglas de aprobación.
@@ -311,8 +317,8 @@ class ExpenseBudget(models.Model):
         El botón crea inmediatamente las proyecciones y deja limpia la fila.
         """
         self.ensure_one()
-        if self.state not in ('draft', 'approved'):
-            raise UserError(_('Solo puede agregar proyecciones en borrador o aprobado.'))
+        if self.state != 'draft':
+            raise UserError(_('Solo puede agregar proyecciones a un presupuesto en borrador. Los aprobados están bloqueados.'))
         if not (self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')
                 or self.env.user.has_group('expense_budget_control.group_expense_budget_manager')):
             raise AccessError(_('No tiene permisos para agregar proyecciones.'))
@@ -357,12 +363,87 @@ class ExpenseBudget(models.Model):
         })
         return action
 
-    planned_amount = fields.Monetary(string='Total proyectado', compute='_compute_totals',
-                                     store=True, currency_field='currency_id')
-    actual_amount = fields.Monetary(string='Total consumido', compute='_compute_totals',
-                                    store=True, currency_field='currency_id')
-    variance_amount = fields.Monetary(string='Saldo disponible', compute='_compute_totals',
-                                      store=True, currency_field='currency_id')
+    def action_delete_quick_monthly_lines(self):
+        """Eliminar por el mismo filtro de captura, únicamente en borrador.
+
+        Sin meses seleccionados se eliminan todas las proyecciones de la
+        cuenta y centro elegidos. Con meses se borran solo esos períodos.
+        Recalcula el objetivo anual del par según los meses restantes, sin
+        tocar gastos reales ni proyecciones de otras cuentas o centros.
+        """
+        self.ensure_one()
+        if self.state != 'draft':
+            raise UserError(_('Solo puede eliminar proyecciones de un presupuesto en borrador.'))
+        if not (self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')
+                or self.env.user.has_group('expense_budget_control.group_expense_budget_manager')):
+            raise AccessError(_('No tiene permisos para eliminar proyecciones.'))
+        self.check_access('write')
+        if not self.quick_account_id or not self.quick_cost_center_id:
+            raise UserError(_('Seleccione la cuenta controlada y el centro de costo para eliminar.'))
+        Line = self.env['expense.budget.line']
+        domain = [
+            ('budget_id', '=', self.id),
+            ('account_id', '=', self.quick_account_id.id),
+            ('cost_center_id', '=', self.quick_cost_center_id.id),
+        ]
+        if self.quick_month_ids:
+            domain.append(('month', 'in', [str(number) for number in self.quick_month_ids.mapped('number')]))
+        selected = Line.search(domain)
+        if not selected:
+            raise UserError(_('No existen proyecciones para la cuenta, centro y meses seleccionados.'))
+        if any(line.approval_state != 'draft' for line in selected):
+            raise UserError(_('No puede eliminar líneas que ya fueron enviadas o aprobadas.'))
+        pair_domain = [
+            ('budget_id', '=', self.id),
+            ('account_id', '=', self.quick_account_id.id),
+            ('cost_center_id', '=', self.quick_cost_center_id.id),
+        ]
+        protected = Line.search_count(pair_domain + [
+            ('approval_state', 'in', ('approved', 'to_approve')),
+        ])
+        if protected:
+            raise UserError(_('La cuenta y el centro tienen meses protegidos por aprobación; no se puede modificar esa distribución.'))
+        count = len(selected)
+        selected.unlink()
+        remaining = Line.search(pair_domain)
+        Target = self.env['expense.budget.annual.target']
+        targets = Target.search(pair_domain)
+        if targets:
+            if remaining:
+                # Mantener intacto el valor de los meses no eliminados.
+                # El anual pasa a ser su suma y el divisor, su cantidad.
+                new_total = sum(remaining.mapped('planned_amount'))
+                if len(remaining) > 12:
+                    raise UserError(_('La distribución no puede tener más de 12 meses.'))
+                targets[:1].write({
+                    'annual_amount': new_total,
+                    'distribution_month_count': len(remaining),
+                })
+                (targets - targets[:1]).unlink()
+            else:
+                targets.unlink()
+        self.write({
+            'quick_account_id': False,
+            'quick_cost_center_id': False,
+            'quick_month_ids': [(5, 0, 0)],
+            'quick_annual_amount': 0.0,
+        })
+        return {
+            'type': 'ir.actions.act_window',
+            'name': self.display_name,
+            'res_model': 'expense.budget',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'views': [(self.env.ref('expense_budget_control.view_expense_budget_form').id, 'form')],
+            'target': 'current',
+        }
+
+    planned_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Total proyectado', compute='_compute_totals',
+                                     store=True)
+    actual_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Total consumido', compute='_compute_totals',
+                                    store=True)
+    variance_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Saldo disponible', compute='_compute_totals',
+                                      store=True)
     execution_percentage = fields.Float(string='Ejecución (%)', compute='_compute_totals',
                                         store=True, digits=(16, 2))
     note = fields.Text(string='Observaciones')
@@ -632,6 +713,18 @@ class ExpenseBudget(models.Model):
 
     def write(self, vals):
         started = monotonic()
+        if any(rec.state == 'approved' for rec in self):
+            # El presupuesto aprobado es definitivo. Los importes reales se
+            # recalculan desde los movimientos de gastos, sin reabrir ni editar
+            # las proyecciones y sin bloquear el cron de sincronización.
+            technical_totals = {
+                'actual_amount', 'variance_amount', 'execution_percentage',
+            }
+            if set(vals) - technical_totals:
+                raise UserError(_(
+                    'El presupuesto está aprobado y no puede modificarse. '
+                    'Solo se actualiza el consumo real mediante la sincronización.'
+                ))
         if 'category_id' in vals:
             if not vals['category_id']:
                 raise ValidationError(_('Debe seleccionar el rubro del presupuesto.'))
@@ -763,6 +856,13 @@ class ExpenseBudget(models.Model):
         )
         return result
 
+    def unlink(self):
+        if any(rec.state != 'draft' or any(
+                line.approval_state in ('approved', 'to_approve')
+                for line in rec.line_ids) for rec in self):
+            raise UserError(_('No puede eliminar un presupuesto que no esté en borrador o que tenga líneas protegidas por aprobación.'))
+        return super().unlink()
+
     def action_submit(self):
         # Enviar el borrador inicial o las nuevas líneas de un presupuesto aprobado.
         if not (self.env.su or self.env.user.has_group(
@@ -771,10 +871,8 @@ class ExpenseBudget(models.Model):
             raise AccessError(_('Solo Registro de presupuestos o Administrador pueden enviar a aprobar.'))
         self.check_access('write')
         for rec in self:
-            if rec.state not in ('draft', 'approved'):
-                raise UserError(_(
-                    'Solo se puede enviar un presupuesto en borrador o las nuevas líneas de uno aprobado.'
-                ))
+            if rec.state != 'draft':
+                raise UserError(_('Solo se puede enviar a aprobación un presupuesto en borrador.'))
             if not rec.category_id:
                 raise UserError(_('Seleccione el rubro del presupuesto antes de enviarlo a aprobación.'))
             lines_to_submit = rec.line_ids.filtered(
@@ -854,6 +952,8 @@ class ExpenseBudget(models.Model):
         return True
 
     def action_reopen(self):
+        if any(rec.state == 'approved' for rec in self):
+            raise UserError(_('No puede reabrir un presupuesto aprobado.'))
         if not (self.env.su or self.env.user.has_group(
             'expense_budget_control.group_expense_budget_manager')):
             raise AccessError(_('Solo el administrador puede volver el presupuesto a borrador.'))
@@ -908,8 +1008,8 @@ class ExpenseBudget(models.Model):
     def action_open_quick_add_wizard(self):
         """Open the guided multi-month projection creator for this budget."""
         self.ensure_one()
-        if self.state not in ('draft', 'approved'):
-            raise UserError(_('Solo puede agregar líneas cuando el presupuesto está en borrador o aprobado.'))
+        if self.state != 'draft':
+            raise UserError(_('Solo puede agregar líneas a un presupuesto en borrador.'))
         if not (self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')
                 or self.env.user.has_group('expense_budget_control.group_expense_budget_manager')):
             raise AccessError(_('No tiene permisos para agregar líneas al presupuesto.'))
@@ -970,18 +1070,16 @@ class ExpenseBudgetAnnualTarget(models.Model):
         ondelete='restrict', check_company=True, index=True,
         help='Cada combinación de cuenta y centro puede tener su propio presupuesto anual.',
     )
-    annual_amount = fields.Monetary(
+    annual_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, 
         string='Presupuesto anual', required=True, default=0.0,
-        currency_field='currency_id',
         help='Monto total de referencia para la cuenta y centro de costo. El asistente lo distribuye entre los meses seleccionados.',
     )
     distribution_month_count = fields.Integer(
         string='Meses para distribuir', required=True, default=12,
         help='Cantidad de meses entre los que se distribuye el monto anual. Los presupuestos existentes conservan 12 como valor predeterminado.',
     )
-    monthly_amount = fields.Monetary(
+    monthly_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, 
         string='Proyectado mensual', compute='_compute_monthly_amount',
-        currency_field='currency_id',
     )
     locked = fields.Boolean(
         string='Bloqueado por aprobación', compute='_compute_locked',
@@ -1127,7 +1225,7 @@ class ExpenseBudgetAnnualTarget(models.Model):
                 ], order='id desc', limit=1)
                 if legacy_approved and float_compare(
                         legacy_approved.annual_amount, amount,
-                        precision_rounding=budget.currency_id.rounding) != 0:
+                        precision_digits=budget_amount_digits(self.env)) != 0:
                     raise UserError(_(
                         'El monto anual no puede diferir del objetivo que ya fue aprobado para esta cuenta y centro de costo.'
                     ))
@@ -1159,8 +1257,18 @@ class ExpenseBudgetAnnualTarget(models.Model):
                     'planned_amount': target.monthly_amount,
                 })
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            budget = self.env['expense.budget'].browse(vals.get('budget_id')).exists()
+            if budget and budget.state != 'draft':
+                raise UserError(_('No puede agregar distribuciones a un presupuesto aprobado o enviado.'))
+        return super().create(vals_list)
+
     def write(self, vals):
         vals = dict(vals)
+        if any(target.budget_id.state == 'approved' for target in self):
+            raise UserError(_('No puede modificar distribuciones de un presupuesto aprobado.'))
         protected_identity = {'budget_id', 'account_id', 'cost_center_id'}
         for target in self:
             if target.budget_id.state not in ('draft', 'approved'):
@@ -1181,7 +1289,7 @@ class ExpenseBudgetAnnualTarget(models.Model):
                 new_count = int(vals.get('distribution_month_count', target.distribution_month_count) or 12)
                 amount_changed = float_compare(
                     new_amount, target.annual_amount,
-                    precision_rounding=target.currency_id.rounding,
+                    precision_digits=budget_amount_digits(self.env),
                 ) != 0
                 count_changed = new_count != target.distribution_month_count
                 if amount_changed or count_changed:
@@ -1196,6 +1304,8 @@ class ExpenseBudgetAnnualTarget(models.Model):
 
     def unlink(self):
         for target in self:
+            if target.budget_id.state == 'approved':
+                raise UserError(_('No puede eliminar distribuciones de un presupuesto aprobado.'))
             if target._has_protected_months():
                 raise UserError(_('No puede eliminar un presupuesto anual con meses aprobados o pendientes de aprobación.'))
             lines = self.env['expense.budget.line'].sudo().search([
@@ -1217,7 +1327,9 @@ class ExpenseBudgetAnnualTarget(models.Model):
 class ExpenseBudgetLine(models.Model):
     _name = 'expense.budget.line'
     _description = 'Presupuesto mensual por cuenta'
-    _order = 'budget_id, month, account_id'
+    # 'month' is a Selection backed by text: textual ordering produces
+    # 1, 10, 11, 12, 2 ... . Always sort by its numeric calendar position.
+    _order = 'budget_id, month_number, account_id, cost_center_id, id'
     _check_company_auto = True
 
     budget_id = fields.Many2one('expense.budget', string='Presupuesto', required=True,
@@ -1333,8 +1445,7 @@ class ExpenseBudgetLine(models.Model):
         if not 1 <= divisor <= 12:
             divisor = 12
         value = (annual_amount or 0.0) / float(divisor)
-        currency = currency or self.env.company.currency_id
-        return currency.round(value) if currency else round(value, 2)
+        return float_round(value, precision_digits=budget_amount_digits(self.env))
 
     @api.model
     def _annual_pair_identity_domain(self, company_id, year, account_id, cost_center_id=False):
@@ -1519,6 +1630,17 @@ class ExpenseBudgetLine(models.Model):
     # romper informes, importaciones ni integraciones existentes. En el formulario
     # usamos un Many2one contra el catálogo de meses para filtrar las opciones.
     month = fields.Selection(MONTHS, string='Mes', required=True, index=True)
+    month_number = fields.Integer(
+        string='Número de mes (orden cronológico)',
+        compute='_compute_month_number', store=True, index=True,
+        help='Campo técnico para ordenar de enero a diciembre, sin alterar el mes guardado.',
+    )
+
+    @api.depends('month')
+    def _compute_month_number(self):
+        for line in self:
+            line.month_number = int(line.month) if line.month else 0
+
     month_option_id = fields.Many2one(
         'expense.budget.comparison.month', string='Mes',
         compute='_compute_month_option_id', inverse='_inverse_month_option_id',
@@ -1671,8 +1793,8 @@ class ExpenseBudgetLine(models.Model):
                 raise ValidationError(_(
                     'La fecha histórica debe corresponder al año del presupuesto (%s).'
                 ) % line.budget_id.year)
-    annual_amount = fields.Monetary(
-        string='Presupuesto anual', default=0.0, currency_field='currency_id',
+    annual_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, 
+        string='Presupuesto anual', default=0.0,
         help='Importe total de referencia para esta cuenta y centro de costo. El asistente lo distribuye entre los meses seleccionados; los presupuestos históricos conservan su distribución original.',
     )
     allocation_month_count = fields.Integer(
@@ -1682,22 +1804,20 @@ class ExpenseBudgetLine(models.Model):
     annual_amount_readonly = fields.Boolean(
         string='Presupuesto anual bloqueado', compute='_compute_annual_amount_readonly',
     )
-    planned_amount = fields.Monetary(string='Proyectado', required=True, default=0,
-                                     currency_field='currency_id')
+    planned_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Proyectado', required=True, default=0)
     expense_ids = fields.One2many('expense.budget.expense', 'budget_line_id', string='Gastos reales')
     erp_checked_at = fields.Datetime(
         string='Última consulta de consumo ERP', readonly=True, copy=False,
         help='Evita consultar todo el historial ERP repetidamente al guardar la misma proyección.',
     )
     # El ajuste manual conserva el cálculo automático de gastos Excel/API.
-    manual_actual_amount = fields.Monetary(
-        string='Ajuste manual del consumido', default=0.0,
-        currency_field='currency_id', copy=False)
-    actual_amount = fields.Monetary(string='Consumido', compute='_compute_actual_amount',
+    manual_actual_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, 
+        string='Ajuste manual del consumido', default=0.0, copy=False)
+    actual_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Consumido', compute='_compute_actual_amount',
                                     inverse='_inverse_actual_amount',
-                                    store=True, currency_field='currency_id')
-    variance_amount = fields.Monetary(string='Disponible', compute='_compute_variance_execution',
-                                      store=True, currency_field='currency_id')
+                                    store=True)
+    variance_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Disponible', compute='_compute_variance_execution',
+                                      store=True)
     execution_percentage = fields.Float(string='Ejecución (%)', compute='_compute_variance_execution',
                                         store=True, digits=(16, 2))
 
@@ -1889,7 +2009,7 @@ class ExpenseBudgetLine(models.Model):
             count = int(vals.get('allocation_month_count') or self._get_distribution_month_count_for_pair(*key))
             prior = batch_targets.get(key)
             if prior is not None and (
-                    float_compare(prior[0], amount, precision_rounding=budget.currency_id.rounding) != 0
+                    float_compare(prior[0], amount, precision_digits=budget_amount_digits(self.env)) != 0
                     or prior[1] != count):
                 raise ValidationError(_(
                     'El presupuesto anual y la cantidad de meses de distribución deben ser iguales para todas las líneas de la misma cuenta y centro de costo.'
@@ -1928,7 +2048,7 @@ class ExpenseBudgetLine(models.Model):
                     )
                     if approved_target and float_compare(
                             approved_target.annual_amount, amount,
-                            precision_rounding=budget.currency_id.rounding) != 0:
+                            precision_digits=budget_amount_digits(self.env)) != 0:
                         raise UserError(_(
                             'El presupuesto anual de esta cuenta y centro ya fue aprobado. '
                             'No puede cambiarlo al agregar meses futuros.'
@@ -1943,11 +2063,8 @@ class ExpenseBudgetLine(models.Model):
                     vals['planned_amount'] = self._monthly_amount_from_annual(
                         amount, budget.currency_id, count,
                     )
-            if budget and budget.state not in ('draft', 'approved'):
-                raise UserError(_(
-                    'Solo puede agregar proyecciones cuando el presupuesto está en borrador '
-                    'o aprobado y no tiene una ronda de aprobación abierta.'
-                ))
+            if budget and budget.state != 'draft':
+                raise UserError(_('Solo puede agregar proyecciones a un presupuesto en borrador.'))
             if budget and budget.state == 'approved' and not (
                     self.env.su or
                     self.env.user.has_group('expense_budget_control.group_expense_budget_registrar') or
@@ -1980,7 +2097,7 @@ class ExpenseBudgetLine(models.Model):
                 )
                 if approved_target and float_compare(
                         approved_target.annual_amount, amount,
-                        precision_rounding=currency.rounding) != 0:
+                        precision_digits=budget_amount_digits(self.env)) != 0:
                     raise UserError(_(
                         'El presupuesto anual de esta cuenta y centro ya fue aprobado. '
                         'No puede cambiarlo al agregar meses futuros.'
@@ -2006,6 +2123,14 @@ class ExpenseBudgetLine(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
+        if any(rec.budget_id.state == 'approved' for rec in self):
+            # Aprobado: sin edición de proyecciones ni ajuste manual. Permitir
+            # solamente la marca técnica de consulta de gastos del ERP.
+            if set(vals) - {'erp_checked_at'}:
+                raise UserError(_(
+                    'Este presupuesto está aprobado: las proyecciones están '
+                    'bloqueadas. Actualice el consumo desde el ERP.'
+                ))
         if 'month_option_id' in vals:
             option_id = vals.pop('month_option_id')
             option = (
@@ -2073,7 +2198,7 @@ class ExpenseBudgetLine(models.Model):
                     )
                     if float_compare(
                             float(vals['planned_amount']), expected_monthly,
-                            precision_rounding=rec.currency_id.rounding) != 0:
+                            precision_digits=budget_amount_digits(self.env)) != 0:
                         raise UserError(_(
                             'El campo Proyectado se calcula desde el presupuesto anual y la cantidad de meses de distribución configurada en cabecera. '
                             'Modifique el objetivo anual en la cabecera si necesita cambiar el importe.'
@@ -2092,7 +2217,7 @@ class ExpenseBudgetLine(models.Model):
                     approved_target = self.sudo().search(pair_domain, order='id desc', limit=1)
                     if approved_target and float_compare(
                             approved_target.annual_amount, annual_target,
-                            precision_rounding=rec.currency_id.rounding) != 0:
+                            precision_digits=budget_amount_digits(self.env)) != 0:
                         raise UserError(_(
                             'El presupuesto anual de esta cuenta y centro ya fue aprobado. '
                             'No puede cambiarlo; los meses anteriores deben conservarse.'
@@ -2164,7 +2289,7 @@ class ExpenseBudgetLine(models.Model):
                 )
                 if approved_target and annual_target is not None and float_compare(
                         approved_target.annual_amount, annual_target,
-                        precision_rounding=rec.currency_id.rounding) != 0:
+                        precision_digits=budget_amount_digits(self.env)) != 0:
                     raise UserError(_(
                         'El presupuesto anual de esta cuenta y centro ya fue aprobado. '
                         'No puede cambiarlo; los meses anteriores deben conservarse.'
@@ -2208,8 +2333,8 @@ class ExpenseBudgetLine(models.Model):
         for rec in self:
             if rec.approval_state in ('approved', 'to_approve'):
                 raise UserError(_('No puede eliminar líneas aprobadas o pendientes de aprobación.'))
-            if rec.budget_id.state not in ('draft', 'approved'):
-                raise UserError(_('Solo puede eliminar líneas en borrador o nuevas líneas aún no aprobadas.'))
+            if rec.budget_id.state != 'draft':
+                raise UserError(_('Solo puede eliminar líneas de un presupuesto en borrador.'))
         return super().unlink()
 
     def _assign_unmatched_expenses(self):

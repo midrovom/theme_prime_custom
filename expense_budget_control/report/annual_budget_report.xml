@@ -105,9 +105,9 @@
                                                     <span t-if="account_data['account'].code" class="category-code"> (<span t-esc="account_data['account'].code"/>)</span>
                                                 </td>
                                                 <td t-esc="account_data['cost_center'].display_name if account_data.get('cost_center') else 'Sin centro'"/>
-                                                <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['planned'])"/>
-                                                <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['actual'])"/>
-                                                <td class="number" t-esc="'{:,.2f}'.format(account_data['annual']['available'])"/>
+                                                <td class="number" t-esc="'{:,.{}f}'.format(account_data['annual']['planned'], report_data['decimal_digits'])"/>
+                                                <td class="number" t-esc="'{:,.{}f}'.format(account_data['annual']['actual'], report_data['decimal_digits'])"/>
+                                                <td class="number" t-esc="'{:,.{}f}'.format(account_data['annual']['available'], report_data['decimal_digits'])"/>
                                                 <td class="number" t-esc="'{:,.2f}%'.format(account_data['annual']['execution'])"/>
                                             </tr>
                                         </t>
@@ -117,9 +117,9 @@
                                     <tr class="total-row">
                                         <td>TOTAL GENERAL</td>
                                         <td></td>
-                                        <td class="number" t-esc="'{:,.2f}'.format(report_data['annual_total']['planned'])"/>
-                                        <td class="number" t-esc="'{:,.2f}'.format(report_data['annual_total']['actual'])"/>
-                                        <td class="number" t-esc="'{:,.2f}'.format(report_data['annual_total']['available'])"/>
+                                        <td class="number" t-esc="'{:,.{}f}'.format(report_data['annual_total']['planned'], report_data['decimal_digits'])"/>
+                                        <td class="number" t-esc="'{:,.{}f}'.format(report_data['annual_total']['actual'], report_data['decimal_digits'])"/>
+                                        <td class="number" t-esc="'{:,.{}f}'.format(report_data['annual_total']['available'], report_data['decimal_digits'])"/>
                                         <td class="number" t-esc="'{:,.2f}%'.format(report_data['annual_total']['execution'])"/>
                                     </tr>
                                 </tbody>

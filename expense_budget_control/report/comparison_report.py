@@ -190,6 +190,7 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         }]
 
         return {
+            'decimal_digits': self.env['decimal.precision'].precision_get('Presupuesto de Gastos'),
             'wizard': wizard,
             'selected_accounts': selected_accounts,
             # Se conserva el indicador legado; el PDF ahora detalla las cuentas

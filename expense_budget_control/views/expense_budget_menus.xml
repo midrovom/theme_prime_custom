@@ -16,6 +16,7 @@
     <menuitem id="menu_expense_budget_expense" name="Gastos reales" parent="menu_expense_budget_config" action="action_expense_budget_expense" sequence="35"/>
     <menuitem id="menu_expense_budget_category" name="Rubros" parent="menu_expense_budget_config" action="action_expense_budget_category" sequence="10"/>
     <menuitem id="menu_expense_budget_account" name="Cuentas controladas" parent="menu_expense_budget_config" action="action_expense_budget_account" sequence="20"/>
+    <menuitem id="menu_expense_budget_decimal_precision" name="Precisión decimal" parent="menu_expense_budget_config" action="action_expense_budget_decimal_settings" sequence="27" groups="expense_budget_control.group_expense_budget_manager"/>
     <menuitem id="menu_expense_budget_cost_center" name="Centros de costo"
               parent="menu_expense_budget_config" action="action_expense_budget_cost_center" sequence="25"
               groups="expense_budget_control.group_expense_budget_manager"/>

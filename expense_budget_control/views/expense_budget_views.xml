@@ -102,7 +102,6 @@
             <form string="Presupuesto anual" class="o_ebc_budget_form">
                 <header>
                     <button name="action_submit" string="Enviar a aprobar" type="object" class="btn-primary" invisible="state != 'draft'" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
-                    <button name="action_submit" string="Enviar nuevas líneas a aprobar" type="object" class="btn-primary" invisible="state != 'approved' or not has_lines_to_submit" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_reject" string="Rechazar" type="object" class="btn-secondary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_sync_api" string="Actualizar costos" type="object" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
@@ -133,7 +132,7 @@
                     </group>
                     <!-- Fila única de captura. annual_target_ids sigue existiendo
                          internamente para histórico y el prorrateo protegido. -->
-                    <div class="o_ebc_quick_budget_capture" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager" invisible="state not in ['draft', 'approved']">
+                    <div class="o_ebc_quick_budget_capture" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager" invisible="state != 'draft'">
     <div class="o_ebc_quick_budget_title">AGREGAR PROYECCIONES POR MESES</div>
     <field name="quick_available_month_ids" invisible="1"/>
     <div class="o_ebc_quick_budget_row">
@@ -147,21 +146,24 @@
         </div>
         <div class="o_ebc_quick_budget_item o_ebc_quick_budget_months">
             <label for="quick_month_ids" string="Meses"/>
-            <field name="quick_month_ids" nolabel="1" widget="many2many_tags" domain="[('id', 'in', quick_available_month_ids)]" options="{'no_create': True, 'no_open': True}" placeholder="Vacío = los 12 meses"/>
+            <field name="quick_month_ids" nolabel="1" widget="many2many_tags" domain="[('id', 'in', quick_available_month_ids)]" options="{'no_create': True, 'no_open': True}" />
         </div>
         <div class="o_ebc_quick_budget_item">
             <label for="quick_annual_amount" string="Presupuesto anual"/>
             <field name="quick_annual_amount" nolabel="1"/>
         </div>
         <div class="o_ebc_quick_budget_item o_ebc_quick_budget_action">
-            <button name="action_add_quick_monthly_lines" string="Agregar" type="object" icon="fa-plus" class="btn-primary o_ebc_quick_budget_add" title="Crear las líneas mensuales y limpiar esta fila"/>
+            <div class="o_ebc_quick_budget_actions">
+                <button name="action_add_quick_monthly_lines" string="Agregar" type="object" icon="fa-plus" class="btn-primary o_ebc_quick_budget_add" title="Crear las líneas mensuales y limpiar esta fila"/>
+                <button name="action_delete_quick_monthly_lines" string="Eliminar" type="object" icon="fa-trash" class="btn-danger o_ebc_quick_budget_delete" title="Eliminar las líneas de la cuenta y centro seleccionados, únicamente de los meses elegidos" confirm="Se eliminarán las proyecciones de esta cuenta y centro. Si no seleccionó meses, se eliminarán todos sus meses. ¿Desea continuar?"/>
+            </div>
         </div>
     </div>
-    <div class="o_ebc_quick_budget_help text-muted small">Deje Meses vacío para generar enero a diciembre (12 líneas), o seleccione solo los meses que desea presupuestar. El importe se distribuye entre los meses elegidos. Después de Agregar, la fila se limpia.</div>
+    <div class="o_ebc_quick_budget_help text-muted small">Agregar distribuye el importe entre los meses elegidos (sin elegir meses, usa los 12). Eliminar borra las líneas de la cuenta y centro seleccionados (sin meses, borra todos sus meses). Solo en borrador.</div>
 </div><notebook>
                         <page string="Proyecciones mensuales">
-                            <field name="line_ids" class="o_ebc_lines" readonly="state not in ['draft', 'approved']">
-                                <list create="false" editable="bottom" decoration-success="approval_state == 'approved'" decoration-warning="approval_state in ['draft', 'to_approve']" decoration-danger="approval_state == 'rejected'">
+                            <field name="line_ids" class="o_ebc_lines" readonly="state != 'draft'">
+                                <list create="false" editable="bottom" default_order="month_number,account_id,cost_center_id,id" decoration-success="approval_state == 'approved'" decoration-warning="approval_state in ['draft', 'to_approve']" decoration-danger="approval_state == 'rejected'">
                                     <field name="approval_state" string="Estado de aprobación" widget="badge" readonly="True"/>
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="currency_id" column_invisible="True"/>
@@ -173,6 +175,7 @@
                                     <field name="annual_amount" column_invisible="True"/>
                                     <field name="allocation_month_count" column_invisible="True"/>
                                     <field name="month" column_invisible="True"/>
+                                    <field name="month_number" column_invisible="True"/>
                                     <field name="month_option_id" string="Mes" required="1" domain="[('id', 'in', available_month_option_ids)]" readonly="approval_state in ['approved', 'to_approve']" options="{'no_create': True, 'no_open': True}" help="Filtra por cuenta controlada y centro de costo: una combinación puede tener una sola proyección por mes. Si Agua/Quito está aprobado hasta mayo, muestra desde junio; Agua de otro centro puede comenzar en enero si aún no tiene proyección."/>
                                     <field name="planned_amount" readonly="approval_state in ['approved', 'to_approve'] or annual_amount &gt; 0" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
@@ -181,24 +184,10 @@
                                 </list>
                             </field>
                         </page>
-                        <!-- Gestión de objetivos anteriores: fuera de la fila de
-                             captura. Conserva la posibilidad de corregir un
-                             importe no aprobado sin duplicar las proyecciones. -->
-                        <page string="Distribuciones registradas">
-                            <div class="text-muted small">Consulte los importes anuales ya distribuidos. Puede ajustar los no aprobados; los que tengan meses aprobados están protegidos.</div>
-                            <field name="annual_target_ids" nolabel="1" readonly="state not in ['draft', 'approved']">
-                                <list create="false" editable="bottom" decoration-muted="locked">
-                                    <field name="currency_id" column_invisible="True"/>
-                                    <field name="locked" column_invisible="True"/>
-                                    <field name="account_id" readonly="1"/>
-                                    <field name="cost_center_id" readonly="1"/>
-                                    <field name="annual_amount" string="Presupuesto anual" readonly="locked" sum="Total anual"/>
-                                    <field name="distribution_month_count" string="Meses distribuidos" readonly="locked"/>
-                                    <field name="monthly_amount" string="Proyectado mensual" readonly="1"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="Observaciones"><field name="note"/></page>
+                        <!-- Los objetivos anuales continúan almacenados en
+                             annual_target_ids para el prorrateo y la protección
+                             de meses aprobados, pero no se muestran en pestañas. -->
+                        <page string="Observaciones"><field name="note" readonly="state != 'draft'"/></page>
                     </notebook>
                 </sheet>
             </form>
@@ -230,13 +219,14 @@
     <record id="view_expense_budget_line_list" model="ir.ui.view">
         <field name="name">expense.budget.line.list</field><field name="model">expense.budget.line</field>
         <field name="arch" type="xml">
-            <list string="Proyectado vs. consumido" create="false" edit="false" delete="false" decoration-danger="variance_amount &lt; 0">
+            <list string="Proyectado vs. consumido" create="false" edit="false" delete="false" default_order="budget_id,month_number,account_id,cost_center_id,id" decoration-danger="variance_amount &lt; 0">
                 <header>
                     <button name="%(expense_budget_control.action_expense_budget_comparison_report_wizard)d" type="action" string="Imprimir PDF" icon="fa-print" display="always" groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                 </header>
                 <field name="budget_id"/><field name="company_id"/>
                 <field name="account_id"/><field name="category_id"/><field name="cost_center_id"/>
                 <field name="year"/><field name="month" string="Mes"/>
+                <field name="month_number" column_invisible="True"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Proyectado"/>
                 <field name="actual_amount" sum="Consumido"/>

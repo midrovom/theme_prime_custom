@@ -40,22 +40,22 @@
             </t>
             <t t-else="">
                 <t t-if="page_data['opening']">
-                    <td class="amount opening" t-esc="'{:,.2f}'.format(row_data['monthly_report']['openings'][page_data['first_month']])"/>
+                    <td class="amount opening" t-esc="'{:,.{}f}'.format(row_data['monthly_report']['openings'][page_data['first_month']], data['decimal_digits'])"/>
                 </t>
                 <t t-foreach="page_data['months']" t-as="month_item">
                     <t t-set="cell" t-value="row_data['monthly_report']['cells'][month_item['number']]"/>
-                    <td class="amount" t-esc="'{:,.2f}'.format(cell['planned'])"/>
-                    <td class="amount" t-esc="'{:,.2f}'.format(cell['actual'])"/>
-                    <td class="amount" t-esc="'{:,.2f}'.format(cell['available'])"/>
+                    <td class="amount" t-esc="'{:,.{}f}'.format(cell['planned'], data['decimal_digits'])"/>
+                    <td class="amount" t-esc="'{:,.{}f}'.format(cell['actual'], data['decimal_digits'])"/>
+                    <td class="amount" t-esc="'{:,.{}f}'.format(cell['available'], data['decimal_digits'])"/>
                 </t>
                 <!-- Consumo corte conserva el cálculo anterior (saldo_actual).
                      Consumo actual suma el consumo inicial y el consumo del corte.
                      Saldo disponible conserva exactamente su fórmula actual. -->
                 <t t-set="closing_balance" t-value="row_data['monthly_report']['period_closings'][page_data['first_month']]"/>
-                <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['saldo_actual'])"/>
-                <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['consumo_actual'] + closing_balance['saldo_disponible'])"/>
-                <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['consumo_actual'])"/>
-                <td class="amount balance" t-esc="'{:,.2f}'.format(closing_balance['saldo_disponible'])"/>
+                <td class="amount" t-esc="'{:,.{}f}'.format(closing_balance['saldo_actual'], data['decimal_digits'])"/>
+                <td class="amount" t-esc="'{:,.{}f}'.format(closing_balance['consumo_actual'] + closing_balance['saldo_disponible'], data['decimal_digits'])"/>
+                <td class="amount" t-esc="'{:,.{}f}'.format(closing_balance['consumo_actual'], data['decimal_digits'])"/>
+                <td class="amount balance" t-esc="'{:,.{}f}'.format(closing_balance['saldo_disponible'], data['decimal_digits'])"/>
             </t>
         </tr>
     </template>

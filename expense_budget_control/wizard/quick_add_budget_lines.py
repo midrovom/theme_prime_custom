@@ -3,7 +3,8 @@
 
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
-from odoo.tools.float_utils import float_compare
+from odoo.tools.float_utils import float_compare, float_round
+from ..models.budget import BUDGET_DECIMAL_PRECISION, budget_amount_digits
 
 
 class ExpenseBudgetQuickAddWizard(models.TransientModel):
@@ -35,16 +36,16 @@ class ExpenseBudgetQuickAddWizard(models.TransientModel):
         'expense.budget.comparison.month', compute='_compute_available_month_ids',
         string='Meses disponibles',
     )
-    annual_amount = fields.Monetary(
-        string='Valor anual a distribuir', currency_field='currency_id', required=True,
+    annual_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, 
+        string='Valor anual a distribuir', required=True,
         help='Importe total que se reparte entre los meses elegidos. Ejemplo: $1.200 entre enero, febrero y marzo = $400 por mes.',
     )
     target_locked = fields.Boolean(compute='_compute_allocation_preview')
     distribution_month_count = fields.Integer(
         string='Meses para distribuir', compute='_compute_allocation_preview',
     )
-    monthly_amount = fields.Monetary(
-        string='Proyectado por mes', currency_field='currency_id',
+    monthly_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, 
+        string='Proyectado por mes',
         compute='_compute_allocation_preview',
     )
     allocation_note = fields.Char(compute='_compute_allocation_preview')
@@ -120,9 +121,8 @@ class ExpenseBudgetQuickAddWizard(models.TransientModel):
             wizard.distribution_month_count = count
             divisor = count if count > 0 else 1
             amount = wizard.annual_amount or 0.0
-            currency = wizard.currency_id or self.env.company.currency_id
             raw_monthly = amount / divisor
-            wizard.monthly_amount = currency.round(raw_monthly) if currency else round(raw_monthly, 2)
+            wizard.monthly_amount = float_round(raw_monthly, precision_digits=budget_amount_digits(self.env))
             if locked:
                 wizard.allocation_note = _(
                     'Esta cuenta y centro ya tiene meses aprobados. Se conservará el importe anual y el prorrateo existente (%s meses); solo se añadirán meses que estén libres.'
@@ -166,8 +166,8 @@ class ExpenseBudgetQuickAddWizard(models.TransientModel):
         if not (self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')
                 or self.env.user.has_group('expense_budget_control.group_expense_budget_manager')):
             raise AccessError(_('No tiene permisos para agregar líneas al presupuesto.'))
-        if budget.state not in ('draft', 'approved'):
-            raise UserError(_('Solo puede agregar líneas cuando el presupuesto está en borrador o aprobado y no hay una aprobación en curso.'))
+        if budget.state != 'draft':
+            raise UserError(_('Solo puede agregar líneas cuando el presupuesto está en borrador.'))
         if not self.account_id:
             raise UserError(_('Seleccione una cuenta controlada.'))
         if not self.month_ids:
@@ -211,7 +211,7 @@ class ExpenseBudgetQuickAddWizard(models.TransientModel):
         locked_target = bool(target and (target._has_protected_months() or protected_lines))
         amount = self.annual_amount
         if locked_target:
-            if float_compare(amount, target.annual_amount, precision_rounding=budget.currency_id.rounding) != 0:
+            if float_compare(amount, target.annual_amount, precision_digits=budget_amount_digits(self.env)) != 0:
                 raise UserError(_(
                     'El presupuesto anual de esta cuenta y centro ya tiene meses aprobados. '
                     'Debe conservar el valor de %s para agregar los meses futuros.'

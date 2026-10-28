@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_expense_budget_decimal_settings_form" model="ir.ui.view">
+        <field name="name">expense.budget.decimal.settings.form</field>
+        <field name="model">expense.budget.decimal.settings</field>
+        <field name="arch" type="xml">
+            <form string="Precisión decimal de presupuestos">
+                <sheet>
+                    <group>
+                        <field name="digits" required="1"/>
+                    </group>
+                    <div class="text-muted">La precisión controla el ingreso, prorrateo y presentación de los importes presupuestarios. No cambia los decimales de la moneda de Odoo ni los movimientos contables del ERP.</div>
+                </sheet>
+                <footer>
+                    <button name="action_save" string="Guardar" type="object" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_expense_budget_decimal_settings" model="ir.actions.act_window">
+        <field name="name">Precisión decimal</field>
+        <field name="res_model">expense.budget.decimal.settings</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_expense_budget_decimal_settings_form"/>
+        <field name="target">new</field>
+    </record>
+</odoo>
