@@ -1,0 +1,105 @@
+/* v2.32 · PWA mobile-first. Solo visual/UX; sin cambios en ACL ni reglas de negocio. */
+.tc-app img,.tc-app video,.tc-app svg{max-width:100%}
+.tc-app .tc-guide-card,.tc-app .tc-embark-section,.tc-app .tc-ops-loading-card,
+.tc-app .tc-ops-tile,.tc-app .tc-form-panel{min-width:0}
+.tc-app .tc-guide-top strong,.tc-app .tc-guide-card small,
+.tc-app .tc-guide-card p,.tc-app .tc-ops-loading-card strong{overflow-wrap:anywhere}
+.tc-app :is(button,a,input,select,textarea,summary):focus-visible,
+.tc-app .tc-evidence-choose:focus-within{outline:3px solid #008f7b;outline-offset:3px}
+
+/* El operador ve un paso claro: elegir -> revisar -> enviar. */
+.tc-app .tc-evidence-uploader{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;
+  padding:15px;border:1px solid #c9e6df;border-radius:18px;background:#f6fbf9;margin:16px 0 20px}
+.tc-evidence-uploader__intro{grid-column:1/-1}
+.tc-evidence-uploader__intro strong{display:block;font-size:16px;color:#183b3c}
+.tc-evidence-uploader__intro p{font-size:13px;line-height:1.45;color:#526a71;margin:6px 0 0}
+.tc-app .tc-evidence-capture-form{display:flex;flex-direction:column;gap:9px;min-width:0;padding:12px;
+  border:1px solid #dbe9e7;border-radius:14px;background:#fff;box-shadow:0 3px 12px #163c3c09}
+.tc-app .tc-evidence-capture-form.is-selected{border-color:#10a48a;box-shadow:0 0 0 2px #d5f4eb}
+.tc-app .tc-evidence-capture-form.is-invalid{border-color:#bc4343;background:#fff9f9}
+.tc-evidence-choose{position:relative;display:flex;align-items:center;gap:12px;cursor:pointer;
+  padding:12px;border-radius:12px;background:#effaf6;min-height:68px;color:#164f46}
+.tc-evidence-choose__icon{display:grid;place-items:center;font-size:26px;flex:none;width:42px;height:42px;
+  border-radius:12px;background:#dcf6ec}
+.tc-evidence-choose__text{min-width:0;display:flex;flex-direction:column;gap:3px}
+.tc-evidence-choose__text strong{font-size:14px;line-height:1.2}
+.tc-evidence-choose__text small{font-size:12px;color:#59776c}
+.tc-evidence-choose__chevron{margin-left:auto;font-size:26px;color:#148977}
+.tc-evidence-choose input[type=file]{position:absolute;inline-size:1px;block-size:1px;opacity:0;
+  overflow:hidden;pointer-events:none;left:50%;bottom:0}
+.tc-evidence-file-status{color:#607782;font-size:12px;line-height:1.4;min-height:38px;
+  padding:7px 9px;border-radius:9px;background:#f5f8f9;overflow-wrap:anywhere}
+.tc-evidence-file-status.is-ready{background:#e6f8ef;color:#11644c}
+.tc-evidence-file-status.is-error{background:#fceceb;color:#9b2525}
+.tc-app .tc-evidence-send{font-size:14px;min-height:48px;margin-top:auto}
+.tc-app .tc-evidence-send:disabled{background:#d9e2e5;color:#647782;opacity:1;cursor:not-allowed}
+.tc-evidence-uploader__limits{grid-column:1/-1;font-size:12px;color:#617783;line-height:1.4}
+
+/* Modales de evidencia del chofer y destinatario. */
+.tc-mobile-evidence-help{color:#245a50;background:#e9f8f3;border-left:4px solid #10a48b;
+  border-radius:10px;padding:11px 12px;font-size:13px;line-height:1.5;margin:14px 0 9px!important}
+.tc-app .tc-upload-option,.tc-app .tc-upload-gallery{min-width:0;min-height:78px;display:flex;
+  align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:12px;
+  text-align:center;font-size:13px;position:relative}
+.tc-app .tc-upload-option strong{font-size:14px}
+.tc-app .tc-upload-option small{font-size:12px}
+.tc-app .tc-upload-gallery{min-height:52px}
+.tc-app .tc-file-preview{min-height:42px;line-height:1.5;font-size:13px}
+.tc-app .tc-file-tag{font-size:12px;line-height:1.45}
+.tc-app .tc-modal-close{width:44px;height:44px;font-size:24px;flex:none}
+.tc-app .tc-form-panel :is(input,select,textarea){max-width:100%}
+
+@media(max-width:767px){
+  html,body.tc-app{max-width:100%;}
+  .tc-app .tc-shell{max-width:100%;width:100%;min-height:100svh}
+  .tc-app .tc-main,.tc-app .tc-detail{min-width:0;max-width:100%;
+    padding-left:clamp(12px,4vw,20px);padding-right:clamp(12px,4vw,20px);
+    padding-bottom:calc(106px + env(safe-area-inset-bottom))}
+  .tc-app .tc-heading{font-size:clamp(26px,7vw,34px);letter-spacing:-1px;line-height:1.2}
+  /* Antes quedaban dos columnas estrechas de embarques en pantallas de 360-580px. */
+  .tc-app .tc-embark-list,.tc-app .tc-embark-guides{grid-template-columns:minmax(0,1fr);gap:12px}
+  .tc-app .tc-ops-loading-card{padding:14px;border-radius:16px;scroll-margin-top:94px}
+  .tc-app .tc-guide-top{align-items:flex-start;flex-wrap:wrap}
+  .tc-app .tc-ops-shortcuts{flex-wrap:nowrap;white-space:nowrap;overflow-x:auto;
+    overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tc-app .tc-ops-shortcuts::-webkit-scrollbar{display:none}
+  .tc-app .tc-ops-shortcut{flex:none;min-height:46px;display:inline-flex;align-items:center}
+  .tc-app .tc-ops-form :is(input,select),.tc-app .tc-ops-search input,
+  .tc-app .tc-form-panel :is(input:not([type=file]),select,textarea){font-size:16px;min-height:48px}
+  .tc-app .tc-ops-guide-check,.tc-app .tc-embark-select{min-height:54px}
+  .tc-app .tc-ops-capture-actions.tc-evidence-uploader{grid-template-columns:minmax(0,1fr);gap:10px;
+    padding:12px;margin:14px 0}
+  .tc-app .tc-evidence-capture-form{padding:10px;gap:8px}
+  .tc-app .tc-evidence-choose{min-height:64px}
+  .tc-evidence-file-status{min-height:auto}
+  .tc-app .tc-ops-evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .tc-app .tc-ops-evidence-card{padding:7px;min-width:0}
+  .tc-app .tc-ops-evidence-card img,.tc-app .tc-ops-evidence-card video{height:130px}
+  /* Hoja inferior en móvil con scroll interno, título y cierre siempre accesibles. */
+  .tc-app .tc-modal{align-items:stretch;justify-content:stretch}
+  .tc-app .tc-modal-sheet{width:100%;max-width:none;max-height:100dvh;height:100dvh;
+    border-radius:0;overflow-y:auto;overscroll-behavior:contain;
+    padding:calc(10px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling:touch;scroll-padding-top:72px}
+  .tc-app .tc-modal-handle{display:none}
+  .tc-app .tc-modal-top{position:sticky;top:calc(-10px - env(safe-area-inset-top));
+    padding:13px 0 12px;background:#fff;z-index:2;border-bottom:1px solid #e4eceb;gap:10px}
+  .tc-app .tc-modal-top h2{font-size:19px}
+  .tc-app .tc-modal-segment{position:sticky;top:54px;z-index:2;background:#eaf1ef;margin:12px 0 16px}
+  .tc-app .tc-modal-segment button{min-height:46px;font-size:13px}
+  .tc-app .tc-form-panel .tc-submit{position:sticky;bottom:0;z-index:2;
+    width:100%;min-height:54px;font-size:15px;margin:12px 0 0;
+    box-shadow:0 -4px 14px rgba(255,255,255,.9),0 6px 18px #0d695827}
+  .tc-app .tc-bottom{width:100%;max-width:100%;justify-content:flex-start;
+    gap:2px;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
+  .tc-app .tc-bottom::-webkit-scrollbar{display:none}
+  .tc-app .tc-bottom-item{flex:1 0 65px;padding:2px 5px;min-height:48px;white-space:normal;text-align:center}
+  .tc-app :is(.tc-action-tile,.tc-ops-tile) {min-width:0}
+}
+@media(max-width:370px){
+  .tc-app .tc-ops-evidence-grid{grid-template-columns:minmax(0,1fr)}
+  .tc-app .tc-ops-evidence-card img,.tc-app .tc-ops-evidence-card video{height:175px}
+  .tc-app .tc-upload-grid{grid-template-columns:minmax(0,1fr)}
+  .tc-app .tc-modal-sheet{padding-left:12px;padding-right:12px}
+}
+@media(prefers-reduced-motion:reduce){.tc-app .tc-modal-sheet{animation:none}}

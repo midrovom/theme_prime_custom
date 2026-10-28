@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Heredamos la plantilla compartida: todas las pantallas PWA usan este head.
+       No modifica controladores ni la persistencia de evidencias. -->
+  <template id="tc_mobile_head_ux_v232" inherit_id="logistica_transcash.mobile_head"
+            name="PWA Transcash · experiencia móvil consistente">
+    <xpath expr="//link[@rel='manifest']" position="after">
+      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/pwa_mobile_ux_v232.css?v=232"/>
+      <script defer="defer" src="/transcash_guias_api/static/src/js/pwa_mobile_ux_v232.js?v=232"/>
+    </xpath>
+  </template>
+
+  <template id="tc_portal_evidence_mobile_v232" inherit_id="logistica_transcash.portal_operacion"
+            priority="165" name="PWA · evidencia de carga con confirmación de archivo">
+    <!-- El cambio evita el POST automático al seleccionar un archivo.
+         Conserva: endpoint, nombre archivo, CSRF y requisitos del servidor. -->
+    <xpath expr="//div[contains(@class,'tc-ops-capture-actions')]" position="replace">
+      <div class="tc-ops-capture-actions tc-evidence-uploader" role="group" aria-label="Subir evidencia de carga">
+        <div class="tc-evidence-uploader__intro">
+          <strong>Agregar evidencia de carga</strong>
+          <p>1. Elige cómo capturar · 2. Revisa el archivo · 3. Pulsa Enviar evidencia.</p>
+        </div>
+        <form class="tc-evidence-capture-form" method="post" enctype="multipart/form-data"
+              t-att-action="'/transcash/operacion/rutas/%d/evidencia' % ruta.id" data-tc-evidence-upload="foto">
+          <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+          <label class="tc-evidence-choose">
+            <span class="tc-evidence-choose__icon" aria-hidden="true">📸</span>
+            <span class="tc-evidence-choose__text"><strong>Tomar foto</strong><small>Abre la cámara</small></span>
+            <span class="tc-evidence-choose__chevron" aria-hidden="true">›</span>
+            <input type="file" name="archivo" accept="image/*" capture="environment" required="required"
+                   aria-label="Tomar una foto de la carga"/>
+          </label>
+          <div class="tc-evidence-file-status" role="status" aria-live="polite">Elige una foto para continuar</div>
+          <button class="tc-button tc-button-primary tc-evidence-send" type="submit">↑ Enviar foto</button>
+        </form>
+        <form class="tc-evidence-capture-form" method="post" enctype="multipart/form-data"
+              t-att-action="'/transcash/operacion/rutas/%d/evidencia' % ruta.id" data-tc-evidence-upload="video">
+          <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+          <label class="tc-evidence-choose">
+            <span class="tc-evidence-choose__icon" aria-hidden="true">🎥</span>
+            <span class="tc-evidence-choose__text"><strong>Grabar video</strong><small>Abre la cámara de video</small></span>
+            <span class="tc-evidence-choose__chevron" aria-hidden="true">›</span>
+            <input type="file" name="archivo" accept="video/*" capture="environment" required="required"
+                   aria-label="Grabar un video de la carga"/>
+          </label>
+          <div class="tc-evidence-file-status" role="status" aria-live="polite">Elige un video para continuar</div>
+          <button class="tc-button tc-button-primary tc-evidence-send" type="submit">↑ Enviar video</button>
+        </form>
+        <form class="tc-evidence-capture-form" method="post" enctype="multipart/form-data"
+              t-att-action="'/transcash/operacion/rutas/%d/evidencia' % ruta.id" data-tc-evidence-upload="galeria">
+          <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+          <label class="tc-evidence-choose">
+            <span class="tc-evidence-choose__icon" aria-hidden="true">🖼️</span>
+            <span class="tc-evidence-choose__text"><strong>Elegir archivo</strong><small>Galería o archivos guardados</small></span>
+            <span class="tc-evidence-choose__chevron" aria-hidden="true">›</span>
+            <input type="file" name="archivo"
+                   accept="image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/webm,video/quicktime"
+                   required="required" aria-label="Elegir una foto o video del teléfono"/>
+          </label>
+          <div class="tc-evidence-file-status" role="status" aria-live="polite">Elige un archivo para continuar</div>
+          <button class="tc-button tc-button-primary tc-evidence-send" type="submit">↑ Enviar archivo</button>
+        </form>
+        <p class="tc-evidence-uploader__limits">Una evidencia por envío · Fotos hasta 20 MB · Videos hasta 75 MB.</p>
+      </div>
+    </xpath>
+  </template>
+
+  <template id="tc_guide_evidence_ux_v232" inherit_id="logistica_transcash.portal_guia_detalle"
+            priority="165" name="PWA · guía de captura en pantalla de evidencias">
+    <xpath expr="//form[@data-form-panel='evidencia']/div[contains(@class,'tc-upload-grid')]" position="before">
+      <p class="tc-mobile-evidence-help">Paso final · Toma una foto, graba un video o elige archivos de la galería. Revisa tu selección antes de guardar.</p>
+    </xpath>
+    <xpath expr="//form[@data-form-panel='rotura']/div[contains(@class,'tc-upload-grid')]" position="before">
+      <p class="tc-mobile-evidence-help">Adjunta la foto o el video del daño. Después confirma el reporte con el botón inferior.</p>
+    </xpath>
+  </template>
+</odoo>
