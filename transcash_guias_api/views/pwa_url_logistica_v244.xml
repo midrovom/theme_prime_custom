@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- En todas las pantallas Portal: el mismo nombre y la misma PWA, ruta pública nueva. -->
+  <template id="tc_pwa_logistica_url_v244" inherit_id="logistica_transcash.mobile_head"
+            name="PWA: navegación en /logistica" priority="290">
+    <xpath expr="//link[@rel='manifest']" position="attributes">
+      <attribute name="href">/logistica/manifest.webmanifest</attribute>
+    </xpath>
+    <xpath expr="//link[@rel='manifest']" position="after">
+      <script defer="defer" src="/transcash_guias_api/static/src/js/pwa_url_logistica_v244.js?v=244"/>
+    </xpath>
+  </template>
+</odoo>

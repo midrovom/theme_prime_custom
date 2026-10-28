@@ -45,3 +45,5 @@ from . import route_detach_v239
 from . import route_evidence_ready_v241
 
 from . import evidence_delete_v242
+
+from . import pwa_url_logistica_v244

@@ -12,7 +12,9 @@
 
     function isPwa() {
         return window.location.pathname.indexOf('/transcash/') === 0 ||
-               window.location.pathname === '/transcash';
+               window.location.pathname === '/transcash' ||
+               window.location.pathname.indexOf('/logistica/') === 0 ||
+               window.location.pathname === '/logistica';
     }
 
     function makeOverlay() {
@@ -132,7 +134,7 @@
         var url;
         try { url = new URL(a.href, window.location.href); } catch (_) { return; }
         if (url.origin !== window.location.origin ||
-                !url.pathname.startsWith('/transcash/') ||
+                !(url.pathname.startsWith('/transcash/') || url.pathname.startsWith('/logistica/')) ||
                 url.pathname === window.location.pathname &&
                 url.search === window.location.search && url.hash) return;
         if (/\.(?:jpg|jpeg|png|webp|gif|pdf|mp4|webm|xlsx|zip)$/i.test(url.pathname)) return;

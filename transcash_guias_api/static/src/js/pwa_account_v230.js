@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var box = document.createElement('div');
     box.className = 'tc-account-dropdown';
     var change = document.createElement('a');
-    change.href = '/transcash/mi-cuenta';
+    change.href = '/logistica/mi-cuenta';
     change.textContent = '🔒 Cambiar contraseña';
     var logout = document.createElement('a');
     logout.href = '/web/session/logout?redirect=/web/login';
