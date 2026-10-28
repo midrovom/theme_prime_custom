@@ -14,6 +14,9 @@ class TranscashRouteReopenV238(models.Model):
     tc_evidence_revision_after = fields.Datetime(
         string='Evidencias anteriores a última revisión', readonly=True, copy=False,
         help='Las evidencias previas son históricas y no autorizan nuevos despachos.')
+    tc_evidence_revision_cutoff_id = fields.Integer(
+        string='Última evidencia existente al reabrir', readonly=True, copy=False,
+        help='Permite distinguir una foto nueva de una antigua aun si se grabaron en el mismo segundo.')
 
     def _tc_check_reopen_for_edit(self):
         self._check_operator()
@@ -37,8 +40,24 @@ class TranscashRouteReopenV238(models.Model):
             return super()._has_carga_evidence()
         # La evidencia permanece accesible en el expediente, pero una nueva
         # composición de carga debe quedar documentada después de la revisión.
-        return bool(self.evidencia_carga_ids.filtered(
-            lambda ev: ev.fecha and ev.fecha > self.tc_evidence_revision_after))
+        if self.tc_evidence_revision_cutoff_id:
+            # El identificador crece de forma monotónica: evita falsos negativos
+            # cuando Odoo almacena ambas fechas en el mismo segundo.
+            newer_photo = any(
+                ev.id > self.tc_evidence_revision_cutoff_id
+                for ev in self.evidencia_carga_ids
+            )
+        else:
+            # Compatibilidad con revisiones guardadas por las versiones 2.38-2.40.
+            newer_photo = any(
+                ev.fecha and ev.fecha > self.tc_evidence_revision_after
+                for ev in self.evidencia_carga_ids
+            )
+        newer_video = bool(
+            self.video_carga and self.fecha_video and
+            self.fecha_video > self.tc_evidence_revision_after
+        )
+        return bool(newer_photo or newer_video)
 
     def action_tc_reopen_route_for_edit(self):
         self.ensure_one()
@@ -66,6 +85,10 @@ class TranscashRouteReopenV238(models.Model):
                 'reasignacion_autorizada': False,
                 'reasignacion_autorizada_por_id': False,
                 'tc_evidence_revision_after': revision,
+                'tc_evidence_revision_cutoff_id': (
+                    max(self.evidencia_carga_ids.ids) if self.evidencia_carga_ids
+                    else self.tc_evidence_revision_cutoff_id
+                ),
             })
         return {'type': 'ir.actions.act_url',
                 'url': '/transcash/operacion/rutas/%d/editar' % self.id,

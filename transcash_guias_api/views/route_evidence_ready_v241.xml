@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Mostrar evidencias VALIDADAS, incluso cuando el estado se dejó planificada
+       después de un retorno a preparación realizado con una versión anterior. -->
+  <template id="tc_trip_evidence_consistency_v241"
+            inherit_id="logistica_transcash.portal_operacion"
+            priority="260" name="PWA: evidencia apta para volver a enviar un viaje">
+    <xpath expr="//div[contains(@class,'tc-ops-trip-progress')]" position="replace">
+      <div class="tc-ops-trip-progress">
+        <b t-esc="len(embarque.ruta_ids.filtered(lambda r: r._has_carga_evidence()))"/>
+        /
+        <b t-esc="len(embarque.ruta_ids)"/>
+        rutas con evidencia válida para esta carga
+      </div>
+    </xpath>
+    <xpath expr="//article[contains(@class,'tc-ops-loading-card')]/div[contains(@class,'tc-guide-top')]/span[@t-att-class]" position="attributes">
+      <attribute name="t-esc">'✓ Evidencia lista' if ruta._has_carga_evidence() else ('● Evidencia histórica · subir una foto nueva' if (ruta.evidencia_carga_ids or ruta.video_carga) else '● Falta evidencia de carga')</attribute>
+    </xpath>
+  </template>
+</odoo>

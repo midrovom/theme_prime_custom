@@ -12,3 +12,5 @@ from . import route_trip_editing_v235
 from . import route_reopen_edit_v238
 
 from . import route_detach_v239
+
+from . import evidence_delete_v242

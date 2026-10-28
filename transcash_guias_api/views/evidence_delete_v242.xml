@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<odoo>
+  <template id="tc_pwa_delete_loading_evidence_v242" inherit_id="logistica_transcash.portal_operacion" priority="265" name="PWA: eliminar evidencia de carga previa a aceptación">
+    <!-- Las dos pantallas, ruta y viaje, usan las tarjetas del mismo modelo. -->
+    <!-- El video antiguo es un campo Binary independiente de la bitácora. -->
+    <xpath expr="//t[@t-if=&quot;section == 'ruta_detalle'&quot;]//t[@t-foreach='ruta.evidencia_carga_ids']/div[contains(@class,'tc-ops-evidence-card')]/small[last()]" position="after">
+      <form t-if="ruta.state in ('planificada','cargada') and not ruta.fecha_cierre_operativo and (not ruta.embarque_id or (ruta.embarque_id.state in ('preparacion','embarcado') and not ruta.embarque_id.aceptado_chofer and not ruta.embarque_id.fecha_aceptacion_chofer and not ruta.embarque_id.fecha_salida and not ruta.embarque_id.fecha_entrega))" method="post" class="tc-delete-evidence-form" t-att-action="'/transcash/operacion/rutas/%d/evidencias/%d/eliminar' % (ruta.id, ev.id)" onsubmit="return confirm('¿Eliminar definitivamente esta foto o video? La acción quedará registrada. Si era la última evidencia válida, deberás subir otra antes de enviar el viaje.');">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <button type="submit" class="tc-delete-evidence-btn">🗑 Eliminar evidencia</button>
+      </form>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'embarque_detalle'&quot;]//t[@t-foreach='ruta.evidencia_carga_ids']/div[contains(@class,'tc-ops-evidence-card')]/small[last()]" position="after">
+      <form t-if="ruta.state in ('planificada','cargada') and not ruta.fecha_cierre_operativo and (not ruta.embarque_id or (ruta.embarque_id.state in ('preparacion','embarcado') and not ruta.embarque_id.aceptado_chofer and not ruta.embarque_id.fecha_aceptacion_chofer and not ruta.embarque_id.fecha_salida and not ruta.embarque_id.fecha_entrega))" method="post" class="tc-delete-evidence-form" t-att-action="'/transcash/operacion/rutas/%d/evidencias/%d/eliminar' % (ruta.id, ev.id)" onsubmit="return confirm('¿Eliminar definitivamente esta foto o video? La acción quedará registrada. Si era la última evidencia válida, deberás subir otra antes de enviar el viaje.');">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <button type="submit" class="tc-delete-evidence-btn">🗑 Eliminar evidencia</button>
+      </form>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'ruta_detalle'&quot;]//div[@t-if='ruta.video_carga' and contains(@class,'tc-ops-evidence-card')]/small[last()]" position="after">
+      <form t-if="ruta.state in ('planificada','cargada') and not ruta.fecha_cierre_operativo and (not ruta.embarque_id or (ruta.embarque_id.state in ('preparacion','embarcado') and not ruta.embarque_id.aceptado_chofer and not ruta.embarque_id.fecha_aceptacion_chofer and not ruta.embarque_id.fecha_salida and not ruta.embarque_id.fecha_entrega))" method="post" class="tc-delete-evidence-form" t-att-action="'/transcash/operacion/rutas/%d/evidencias/video-historico/eliminar' % ruta.id" onsubmit="return confirm('¿Eliminar definitivamente este video histórico de carga? La acción quedará registrada.');">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <button type="submit" class="tc-delete-evidence-btn">🗑 Eliminar video</button>
+      </form>
+    </xpath>
+  <xpath expr="//t[@t-if=&quot;section == 'embarque_detalle'&quot;]//div[@t-if='ruta.video_carga' and contains(@class,'tc-ops-evidence-card')]/small[last()]" position="after">
+      <form t-if="ruta.state in ('planificada','cargada') and not ruta.fecha_cierre_operativo and (not ruta.embarque_id or (ruta.embarque_id.state in ('preparacion','embarcado') and not ruta.embarque_id.aceptado_chofer and not ruta.embarque_id.fecha_aceptacion_chofer and not ruta.embarque_id.fecha_salida and not ruta.embarque_id.fecha_entrega))" method="post" class="tc-delete-evidence-form" t-att-action="'/transcash/operacion/rutas/%d/evidencias/video-historico/eliminar' % ruta.id" onsubmit="return confirm('¿Eliminar definitivamente este video histórico de carga? La acción quedará registrada.');">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <button type="submit" class="tc-delete-evidence-btn">🗑 Eliminar video</button>
+      </form>
+    </xpath>
+  </template>
+  <template id="tc_pwa_evidence_delete_styles_v242" inherit_id="logistica_transcash.mobile_head" name="PWA: estilo de borrado de evidencia" priority="266">
+    <xpath expr="//head" position="inside">
+      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/evidence_delete_v242.css?v=242"/>
+    </xpath>
+  </template>
+</odoo>
