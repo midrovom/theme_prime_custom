@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Edición de rutas en móvil; misma pantalla de filtros y guías del flujo actual. -->
+  <template id="tc_pwa_route_reopen_edit_v238" inherit_id="logistica_transcash.portal_operacion"
+            priority="220" name="PWA: modificar ruta libre y regresar viaje a preparación">
+    <xpath expr="//t[@t-if=&quot;section == 'ruta_detalle'&quot;]/div[contains(@class,'tc-ops-summary')]" position="after">
+      <section t-if="not ruta.embarque_id and ruta.state in ('borrador','planificada','cargada')"
+               class="tc-edit-actions tc-edit-actions--route" aria-label="Modificar hoja de ruta">
+        <div class="tc-section-heading"><h2>Modificar hoja de ruta</h2></div>
+        <p class="tc-muted">Mientras no esté en ningún viaje, puedes ajustar chofer, transporte, destino, placa y guías.</p>
+        <a t-if="ruta.state == 'borrador'" class="tc-button tc-button-primary"
+           t-att-href="'/transcash/operacion/rutas/%d/editar' % ruta.id">✎ Editar datos de esta ruta</a>
+        <form t-if="ruta.state in ('planificada','cargada')" method="post"
+              t-att-action="'/transcash/operacion/rutas/%d/reabrir-edicion' % ruta.id"
+              onsubmit="return confirm('¿Reabrir la ruta para modificarla? Las guías quedarán seleccionadas en borrador hasta que confirmes de nuevo. Las evidencias anteriores se conservarán, pero deberás registrar evidencia nueva cuando cargues este viaje.')">
+          <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+          <button type="submit" class="tc-button tc-button-primary">✎ Reabrir para modificar</button>
+        </form>
+        <small t-if="ruta.state == 'cargada'">Las evidencias anteriores seguirán en el historial. Después de modificar una ruta, vuelve a documentar la carga antes de enviarla al chofer.</small>
+      </section>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'nueva'&quot;]/form[@action='/transcash/operacion/rutas/nueva']" position="attributes">
+      <attribute name="action"/>
+      <attribute name="t-att-action">'/transcash/operacion/rutas/%d/editar' % tc_route_edit.id if tc_route_edit else '/transcash/operacion/rutas/nueva'</attribute>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'nueva'&quot;]/form[contains(@class,'tc-ops-form')]/button[@type='submit']" position="replace">
+      <button type="submit" class="tc-button tc-button-primary">
+        <t t-esc="'Guardar cambios y seleccionar guías →' if tc_route_edit else 'Guardar y seleccionar guías →'"/>
+      </button>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'nueva'&quot;]/div[contains(@class,'tc-next-card')]" position="before">
+      <div t-if="tc_route_edit" class="tc-next-card">
+        <div class="tc-next-icon">✎</div>
+        <div><strong>Estás modificando <t t-esc="tc_route_edit.name"/></strong>
+          <p>Guarda los datos y revisa las guías seleccionadas. Confirma nuevamente la ruta cuando esté lista.</p>
+          <a t-att-href="'/transcash/operacion/rutas/%d' % tc_route_edit.id">← Volver a la ruta</a>
+        </div>
+      </div>
+    </xpath>
+    <!-- La acción ya existía, ahora el retorno tiene explicación explícita. -->
+    <xpath expr="//t[@t-if=&quot;section == 'embarque_detalle'&quot;]/form[contains(@t-att-action, '/reabrir')]" position="before">
+      <div t-if="embarque.state == 'embarcado' and not embarque.aceptado_chofer and not embarque.fecha_aceptacion_chofer"
+           class="tc-next-card">
+        <div class="tc-next-icon">↶</div>
+        <div><strong>¿Necesitas corregir el viaje antes de la aceptación?</strong>
+          <p>Devuelve el embarque a preparación para revisar rutas, carga y evidencias. También puedes hacerlo cuando el chofer haya registrado una objeción. La objeción quedará pendiente de resolución antes de reenviar.</p>
+        </div>
+      </div>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'embarque_detalle'&quot;]/form[contains(@t-att-action, '/reabrir')]/button[@type='submit']" position="attributes">
+      <attribute name="onclick">return confirm('¿Devolver este viaje a preparación? El chofer dejará de tenerlo disponible para aceptar hasta que lo vuelvas a liberar.')</attribute>
+    </xpath>
+  </template>
+  <record id="tc_route_reopen_form_v238" model="ir.ui.view">
+    <field name="name">transcash.hoja.ruta.reopen-edit.v238</field>
+    <field name="model">transcash.hoja.ruta</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_ruta_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form/header/button[@name='action_confirm_route']" position="before">
+        <button name="action_tc_open_route_editor" type="object" string="Modificar datos y guías"
+                invisible="embarque_id or state != 'borrador'"
+                groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
+        <button name="action_tc_reopen_route_for_edit" type="object" string="Reabrir para modificar"
+                confirm="Las guías pasarán a borrador y será necesario confirmar de nuevo la hoja. Las evidencias anteriores quedarán como historial. ¿Continuar?"
+                invisible="embarque_id or state not in ('planificada','cargada')"
+                groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
+      </xpath>
+      <xpath expr="//form/sheet" position="inside">
+        <field name="tc_evidence_revision_after" invisible="1"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="tc_trip_reopen_form_v238" model="ir.ui.view">
+    <field name="name">transcash.embarque.reopen-packing-label.v238</field>
+    <field name="model">transcash.embarque</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_embarque_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form/header/button[@name='action_reopen_packing']" position="attributes">
+        <attribute name="string">Volver a preparación (antes de aceptación)</attribute>
+        <attribute name="confirm">¿Devolver el viaje a preparación? La objeción y las evidencias se conservarán.</attribute>
+        <attribute name="groups">logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager</attribute>
+      </xpath>
+    </field>
+  </record>
+</odoo>
