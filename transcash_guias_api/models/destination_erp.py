@@ -84,6 +84,10 @@ class TCGuideSyncDestinations(models.Model):
                                 changes['destino_id'] = route.destino_id.id
                             if city and not operational.destino_ciudad:
                                 changes['destino_ciudad'] = _clean_city(city)
+                            # Solo completar dirección faltante si ya es el mismo
+                            # destino de la hoja de ruta (no modificar históricos).
+                            if staged.destination_address and not operational.direccion_destino_erp:
+                                changes['direccion_destino_erp'] = staged.destination_address
                             if changes:
                                 operational.write(changes)
                                 guides_repaired += 1
@@ -97,6 +101,11 @@ class TCGuideSyncDestinations(models.Model):
                         vals['destino_id'] = master.id
                     if city and operational.destino_ciudad != _clean_city(city):
                         vals['destino_ciudad'] = _clean_city(city)
+                    # La dirección viene de la guía ERP, no de la ciudad ni del
+                    # catálogo de destinos; puede ser diferente en cada entrega.
+                    if (staged.destination_address and
+                            operational.direccion_destino_erp != staged.destination_address):
+                        vals['direccion_destino_erp'] = staged.destination_address
                     if vals:
                         operational.write(vals)
                         guides_repaired += 1

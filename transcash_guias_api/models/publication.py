@@ -28,6 +28,16 @@ def infer_unit(description, sku=''):
     return 'm2' if (square or (material and not accessory)) else 'unidad'
 
 
+class TCOperationalGuideDeliveryAddress(models.Model):
+    _inherit = 'transcash.guia'
+
+    # La dirección del ERP pertenece a cada guía, NO al maestro transcash.destino.
+    # El campo destino continúa siendo el código ERP usado en los filtros PWA.
+    direccion_destino_erp = fields.Char(
+        string='Dirección de entrega (ERP)', copy=False, index=False,
+        help='Dirección exacta recibida del ERP; independiente del código y ciudad del destino.')
+
+
 class TCGuidePublication(models.Model):
     _inherit = 'tc.guide'
 
@@ -179,6 +189,11 @@ class TCGuidePublication(models.Model):
                     additions['destino_id'] = route.destino_id.id
                 if not existing.destino_ciudad and self.destination_city:
                     additions['destino_ciudad'] = self.destination_city
+                # En viajes ya asignados nunca cambiar la dirección existente.
+                # Solo completar una dirección faltante si el ERP confirma
+                # exactamente el mismo código de destino de esa ruta.
+                if not existing.direccion_destino_erp and self.destination_address:
+                    additions['direccion_destino_erp'] = self.destination_address
             # Guías en operación: completar solamente fechas ERP faltantes.
             # Nunca se cambia una fecha que ya está registrada en el viaje.
             additions.update(self._erp_dates_for_operation(existing, only_missing=True))
@@ -209,6 +224,12 @@ class TCGuidePublication(models.Model):
             # existente de una guía con una dirección/nombre de otra columna.
             'destino': received_code or (existing.destino if existing else False),
             'destino_ciudad': self.destination_city or (existing.destino_ciudad if existing else False),
+            # La dirección de entrega es diferente del código usado para buscar rutas.
+            # Si el ERP omite la dirección en una sincronización parcial, no borrarla.
+            'direccion_destino_erp': self.destination_address or (
+                existing.direccion_destino_erp if existing and
+                erp_destination_key(existing.destino) == erp_destination_key(received_code)
+                else False),
             'descripcion_carga': self.cargo_description or False,
             'ultima_sync': fields.Datetime.now(),
             'peso_kg': sum(self.line_ids.mapped('weight_kg')),

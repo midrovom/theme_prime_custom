@@ -130,6 +130,7 @@
       <kanban class="tc-guide-kanban tc-operational-kanban o_kanban_mobile" create="false" quick_create="false" sample="0" default_order="id desc">
         <field name="name"/><field name="state"/><field name="numero_documento"/><field name="tipo_documento"/>
         <field name="origen"/><field name="destino"/><field name="destino_codigo"/><field name="destino_ciudad"/>
+        <field name="direccion_destino_erp"/>
         <field name="proveedor_id"/><field name="chofer_usuario_id"/><field name="chofer_contacto_id"/><field name="tc_estado_portal_chofer"/><field name="placa"/>
         <field name="fecha_prevista"/><field name="tc_erp_date_start"/><field name="tc_erp_date_end"/><field name="tc_erp_date_planned"/><field name="hoja_ruta_id"/><field name="embarque_id"/>
         <field name="incidencia_estado"/><field name="total_productos"/><field name="numero_bultos"/>
@@ -163,7 +164,10 @@
                 <div class="tcg-card__route-text">
                   <div><small>ORIGEN</small><strong t-if="record.origen.raw_value"><field name="origen"/></strong><strong t-else="">No informado</strong></div>
                   <div><small>DESTINO · CÓDIGO ERP</small><strong t-if="record.destino.raw_value"><field name="destino"/></strong><strong t-else="">Por definir</strong>
-                    <span class="tcg-card__city" t-if="record.destino_ciudad.raw_value"><field name="destino_ciudad"/></span></div>
+                    <span class="tcg-card__city" t-if="record.destino_ciudad.raw_value"><field name="destino_ciudad"/></span>
+                    <span class="tcg-card__city" t-if="record.direccion_destino_erp.raw_value">
+                      <i class="fa fa-map-marker" aria-hidden="true"/> <field name="direccion_destino_erp"/>
+                    </span></div>
                 </div>
               </div>
               <div class="tcg-card__people">

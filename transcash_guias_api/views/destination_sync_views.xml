@@ -21,6 +21,17 @@
       <xpath expr="//field[@name='destino']" position="after">
         <field name="destino_codigo" string="Código destino ERP" readonly="1"/>
         <field name="destino_ciudad" string="Ciudad destino ERP" readonly="1"/>
+        <field name="direccion_destino_erp" string="Dirección de entrega (ERP)" readonly="1"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="view_tc_erp_delivery_address_list_v229" model="ir.ui.view">
+    <field name="name">transcash.guia.list.direccion.entrega.erp.v229</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_list"/>
+    <field name="arch" type="xml">
+      <xpath expr="//list/field[@name='destino_ciudad']" position="after">
+        <field name="direccion_destino_erp" optional="show" readonly="1"/>
       </xpath>
     </field>
   </record>

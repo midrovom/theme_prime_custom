@@ -284,6 +284,13 @@ class TCGuideSync(models.Model):
                       (guide.destination_id.external_code if guide.destination_id else '')) if guide else ''
         effective_code = erp_destination_code(received_code or prior_code)
         effective_city = clean(received_city) or (guide.destination_city if guide else '')
+        received_address = clean(route.get('direccion_destino') or data.get('direccion_destino'))
+        # Si cambió el código, NO heredar la dirección del destino anterior:
+        # cuando el ERP no envía la dirección, debe quedar pendiente de informar.
+        destination_changed = bool(guide and
+            erp_destination_key(prior_code) != erp_destination_key(effective_code))
+        effective_address = (received_address or
+            (guide.destination_address if guide and not destination_changed else ''))
         destination_id = False
         if effective_code:
             Address = self.env['tc.address'].sudo()
@@ -305,6 +312,10 @@ class TCGuideSync(models.Model):
                     changed['name'] = effective_city
                 if effective_city and dest_address.city != effective_city:
                     changed['city'] = effective_city
+                # La dirección del catálogo auxiliar es orientativa. La dirección
+                # exacta se conserva por separado en cada guía importada.
+                if received_address and dest_address.address != received_address:
+                    changed['address'] = received_address
                 if changed:
                     dest_address.write(changed)
             else:
@@ -312,7 +323,7 @@ class TCGuideSync(models.Model):
                     'kind': 'destination', 'external_code': effective_code,
                     'name': effective_city or effective_code,
                     'city': effective_city or False,
-                    'address': clean(route.get('direccion_destino')),
+                    'address': effective_address,
                     'company_id': company_id,
                 })
             destination_id = dest_address.id
@@ -339,7 +350,7 @@ class TCGuideSync(models.Model):
             'sender_id': sender_id, 'recipient_id': recipient_id, 'destination_id': destination_id,
             'destination_code_erp': effective_code or False,
             'origin_address': clean(route.get('direccion_origen')),
-            'destination_address': clean(route.get('direccion_destino')),
+            'destination_address': effective_address or False,
             'destination_city': effective_city or False,
             'erp_start_date': date_value(dates.get('inicio_traslado')),
             'erp_end_date': date_value(dates.get('fin_traslado')),
