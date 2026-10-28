@@ -24,3 +24,5 @@ access_tc_destination_alias_admin,tc.destination.alias admin,model_tc_destinatio
 access_tc_client_cierre_operator,tc.transporte.cliente.cierre.wizard.operator,model_tc_transporte_cliente_cierre_wizard,logistica_transcash.group_transcash_operador_rutas,1,1,1,1
 access_tc_client_cierre_manager,tc.transporte.cliente.cierre.wizard.manager,model_tc_transporte_cliente_cierre_wizard,logistica_transcash.group_logistica_manager,1,1,1,1
 access_tc_portal_password_state_admin,tc.portal.password.state admin,model_tc_portal_password_state,base.group_system,1,1,1,0
+access_tc_route_detach_operator,tc.desvincular.ruta.wizard operador,model_tc_desvincular_ruta_wizard,logistica_transcash.group_transcash_operador_rutas,1,1,1,1
+access_tc_route_detach_manager,tc.desvincular.ruta.wizard jefe,model_tc_desvincular_ruta_wizard,logistica_transcash.group_logistica_manager,1,1,1,1

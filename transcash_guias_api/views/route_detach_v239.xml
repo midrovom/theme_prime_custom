@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Mostrar la acción directamente sobre CADA ruta del viaje actual. -->
+  <template id="tc_pwa_trip_detach_route_v239" inherit_id="logistica_transcash.portal_operacion"
+            priority="245" name="PWA: quitar ruta de un embarque no aceptado">
+    <xpath expr="//t[@t-if=&quot;section == 'embarque_detalle'&quot;]/div[contains(@class,'tc-embark-list')]/t[@t-foreach='embarque.ruta_ids']/article[contains(@class,'tc-ops-loading-card')]/a[contains(@class,'tc-route-evidence-shortcut')]" position="after">
+      <form t-if="embarque.state in ('preparacion','embarcado') and not embarque.aceptado_chofer and not embarque.fecha_aceptacion_chofer"
+            method="post" class="tc-remove-route-form"
+            t-att-action="'/transcash/operacion/embarques/%d/rutas/quitar' % embarque.id"
+            onsubmit="return confirm('¿Quitar esta ruta de este viaje? La ruta, sus guías y evidencias se conservarán para reutilizarlas. Si el viaje ya fue enviado al chofer, regresará a preparación.')">
+        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+        <input type="hidden" name="ruta_id" t-att-value="ruta.id"/>
+        <button type="submit" class="tc-button tc-button-outline tc-edit-danger">− Quitar esta ruta del viaje</button>
+        <small class="tc-muted">No elimina la hoja de ruta ni sus evidencias.</small>
+      </form>
+    </xpath>
+  </template>
+
+  <!-- En Odoo backend se elige qué ruta sacar; no borrar desde el one2many. -->
+  <record id="tc_trip_remove_route_action_v239" model="ir.ui.view">
+    <field name="name">transcash.embarque.form.remove-route.v239</field>
+    <field name="model">transcash.embarque</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_embarque_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form/header/button[@name='action_open_add_routes']" position="after">
+        <button name="action_tc_open_detach_route_wizard" type="object" string="Quitar hoja de ruta"
+                invisible="state not in ('preparacion','embarcado') or aceptado_chofer or fecha_aceptacion_chofer or not ruta_ids"
+                groups="logistica_transcash.group_transcash_operador_rutas,logistica_transcash.group_logistica_manager"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="tc_trip_remove_route_wizard_v239" model="ir.ui.view">
+    <field name="name">tc.desvincular.ruta.wizard.form</field>
+    <field name="model">tc.desvincular.ruta.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Quitar hoja de ruta del viaje">
+        <group>
+          <field name="embarque_id" readonly="1"/>
+          <field name="ruta_id" options="{'no_create': True, 'no_open': True}"/>
+        </group>
+        <div class="alert alert-info" role="alert">
+          Se conserva la ruta, sus guías y sus evidencias. Solo se retira de este viaje.
+          Si el chofer aún no lo ha aceptado, un viaje enviado volverá a preparación.
+        </div>
+        <footer>
+          <button name="action_confirm" type="object" string="Quitar ruta" class="btn-primary"
+                  confirm="¿Desvincular la ruta seleccionada y conservar su historial?"/>
+          <button string="Cancelar" special="cancel" class="btn-secondary"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+</odoo>
