@@ -93,6 +93,7 @@ class TCGuide(models.Model):
     sender_id = fields.Many2one('tc.address', ondelete='restrict')
     recipient_id = fields.Many2one('tc.address', ondelete='restrict')
     destination_id = fields.Many2one('tc.address', ondelete='restrict')
+    destination_code_erp = fields.Char('Código de destino ERP', index=True)
     origin_address = fields.Char()
     destination_address = fields.Char()
     destination_city = fields.Char()

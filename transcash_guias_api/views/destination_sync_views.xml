@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Consulta y reparación de destinos ya importados, sin otra aplicación. -->
+  <record id="action_tc_reconcile_erp_destinations" model="ir.actions.server">
+    <field name="name">Actualizar destinos ERP desde guías importadas</field>
+    <field name="model_id" ref="model_tc_guide"/>
+    <field name="state">code</field>
+    <field name="code">action = env['tc.guide.sync'].action_reconcile_erp_destinations()</field>
+  </record>
+  <menuitem id="menu_tc_reconcile_erp_destinations"
+            name="Actualizar destinos ERP"
+            parent="logistica_transcash.menu_tc_logistics_v530"
+            action="action_tc_reconcile_erp_destinations"
+            sequence="45"
+            groups="transcash_guias_api.group_tc_sync_admin,logistica_transcash.group_logistica_manager"/>
+  <record id="view_tc_erp_destination_operational_form" model="ir.ui.view">
+    <field name="name">transcash.guia.form.destino.erp.v228</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='destino']" position="after">
+        <field name="destino_codigo" string="Código destino ERP" readonly="1"/>
+        <field name="destino_ciudad" string="Ciudad destino ERP" readonly="1"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="view_tc_erp_destination_operational_search" model="ir.ui.view">
+    <field name="name">transcash.guia.search.codigo.erp.v228</field>
+    <field name="model">transcash.guia</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_guia_search"/>
+    <field name="arch" type="xml">
+      <xpath expr="//search/field[@name='numero_documento']" position="after">
+        <field name="destino" string="Código destino ERP (guía)"/>
+        <field name="destino_codigo" string="Destino código ERP"/>
+        <field name="destino_ciudad" string="Ciudad destino ERP"/>
+      </xpath>
+    </field>
+  </record>
+</odoo>

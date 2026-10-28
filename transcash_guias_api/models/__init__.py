@@ -2,6 +2,7 @@ from . import guide
 from . import sync
 from . import api_bridge
 from . import publication
+from . import destination_erp
 
 from . import operational_metrics
 

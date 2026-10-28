@@ -5,6 +5,7 @@ from odoo.exceptions import UserError, ValidationError
 from .commercial_parser import extract_commercial, guide_lines
 from .transport_identity import normalize_transport_ruc
 from .fiscal_identity import fiscal_document
+from .destination_codes import upsert_erp_destination, erp_destination_code, erp_destination_key
 
 _logger = logging.getLogger(__name__)
 
@@ -273,7 +274,57 @@ class TCGuideSync(models.Model):
 
         sender_id = address('sender', sender.get('codigo'), sender.get('nombre'), route.get('direccion_origen'))
         recipient_id = address('recipient', recipient.get('codigo'), recipient.get('nombre'), route.get('direccion_destino'))
-        destination_id = address('destination', route.get('destino_codigo'), route.get('destino_ciudad') or route.get('direccion_destino'), route.get('direccion_destino'), route.get('destino_ciudad'))
+        # El ERP es la fuente de los códigos de destino, NO la dirección de entrega.
+        Guide = self.env['tc.guide'].sudo()
+        guide = Guide.search(common + [('external_id', '=', external)], limit=1)
+        received_code = route.get('destino_codigo') or data.get('destino_codigo')
+        received_city = route.get('destino_ciudad') or data.get('destino_ciudad')
+        # Si una respuesta parcial omite el destino, conservar la referencia existente.
+        prior_code = (guide.destination_code_erp or
+                      (guide.destination_id.external_code if guide.destination_id else '')) if guide else ''
+        effective_code = erp_destination_code(received_code or prior_code)
+        effective_city = clean(received_city) or (guide.destination_city if guide else '')
+        destination_id = False
+        if effective_code:
+            Address = self.env['tc.address'].sudo()
+            self.env.cr.execute('''
+                SELECT id FROM tc_address
+                WHERE company_id = %s AND kind = 'destination'
+                  AND regexp_replace(upper(coalesce(external_code, '')),
+                                     '[^A-Z0-9]', '', 'g') = %s
+                ORDER BY id
+            ''', (company_id, erp_destination_key(effective_code)))
+            matches = [row[0] for row in self.env.cr.fetchall()]
+            if matches:
+                dest_address = Address.browse(matches[0])
+                if len(matches) > 1:
+                    _logger.warning('Destinos auxiliares duplicados para %s: IDs %s',
+                                    effective_code, matches)
+                changed = {}
+                if effective_city and dest_address.name != effective_city:
+                    changed['name'] = effective_city
+                if effective_city and dest_address.city != effective_city:
+                    changed['city'] = effective_city
+                if changed:
+                    dest_address.write(changed)
+            else:
+                dest_address = Address.create({
+                    'kind': 'destination', 'external_code': effective_code,
+                    'name': effective_city or effective_code,
+                    'city': effective_city or False,
+                    'address': clean(route.get('direccion_destino')),
+                    'company_id': company_id,
+                })
+            destination_id = dest_address.id
+            # Sincronización inmediata del catálogo REAL de destinos logísticos.
+            # No bloquear el resto de los datos si existe un catálogo antiguo
+            # ambiguo: la publicación dejará constancia del motivo.
+            try:
+                with self.env.cr.savepoint():
+                    upsert_erp_destination(self.env, company_id, effective_code, effective_city)
+            except ValidationError as exc:
+                _logger.warning('Destino %s pendiente en guía %s: %s',
+                                effective_code, external, exc)
 
         vals = {
             'company_id': company_id, 'external_id': external, 'name': name,
@@ -286,17 +337,16 @@ class TCGuideSync(models.Model):
             'transport_name': clean(transport.get('nombre')),
             'driver_id': driver_id, 'vehicle_id': vehicle_id,
             'sender_id': sender_id, 'recipient_id': recipient_id, 'destination_id': destination_id,
+            'destination_code_erp': effective_code or False,
             'origin_address': clean(route.get('direccion_origen')),
             'destination_address': clean(route.get('direccion_destino')),
-            'destination_city': clean(route.get('destino_ciudad')),
+            'destination_city': effective_city or False,
             'erp_start_date': date_value(dates.get('inicio_traslado')),
             'erp_end_date': date_value(dates.get('fin_traslado')),
             'erp_planned_date': date_value(dates.get('prevista')),
             'cargo_description': clean(data.get('descripcion_carga')),
             'last_sync': fields.Datetime.now(),
         }
-        Guide = self.env['tc.guide'].sudo()
-        guide = Guide.search(common + [('external_id', '=', external)], limit=1)
         created = not bool(guide)
         if guide:
             guide.write(vals)
@@ -352,6 +402,8 @@ class TCGuideSync(models.Model):
         commercial_lines = commercial_brands = commercial_suppliers = 0
         incoming_brands = incoming_suppliers = 0
         unexpected_sample = []
+        destination_codes_received = set()
+        missing_destination_code = 0
         errors = []
         for row in data:
             try:
@@ -367,6 +419,13 @@ class TCGuideSync(models.Model):
                             unexpected_sample.append('%s: línea %s sin claves comerciales; claves recibidas: %s' % (
                                 clean(row.get('id_externo')), clean(payload.get('id_linea')),
                                 ', '.join(sorted(str(k) for k in payload.keys())[:20])))
+                    route = row.get('ruta') or {} if isinstance(row, dict) else {}
+                    raw_destination = ((route.get('destino_codigo') if isinstance(route, dict) else '')
+                                       or (row.get('destino_codigo') if isinstance(row, dict) else ''))
+                    if raw_destination:
+                        destination_codes_received.add(erp_destination_key(raw_destination))
+                    else:
+                        missing_destination_code += 1
                     was_created = self._import_one(row, company_id)
                     staged = self.env['tc.guide'].sudo().search([
                         ('company_id', '=', company_id),
@@ -395,14 +454,18 @@ class TCGuideSync(models.Model):
                 'Líneas ERP con marca: %s; con proveedor de producto: %s\n'
                 'Registros privados en guías procesadas: %s; con marca: %s; con proveedor: %s\n'
                 'Posibles problemas de estructura JSON:\n%s\n'
+                'Códigos únicos de destino ERP recibidos: %s; guías sin código: %s\n'
                 'Errores:\n%s' % (
                     pending_links, incoming_brands, incoming_suppliers,
                     commercial_lines, commercial_brands, commercial_suppliers,
-                    '\n'.join(unexpected_sample), '\n'.join(errors)))[:20000],
+                    '\n'.join(unexpected_sample), len(destination_codes_received),
+                    missing_destination_code, '\n'.join(errors)))[:20000],
         })
         return {'created': created, 'updated': updated, 'pending_links': pending_links,
                 'incoming_brands': incoming_brands, 'incoming_suppliers': incoming_suppliers,
                 'stored_brands': commercial_brands, 'stored_suppliers': commercial_suppliers,
+                'destination_codes_received': len(destination_codes_received),
+                'guides_without_destination_code': missing_destination_code,
                 'errors': errors}
 
 

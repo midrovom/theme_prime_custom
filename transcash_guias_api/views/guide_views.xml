@@ -5,7 +5,7 @@
     <field name="arch" type="xml"><list create="false" edit="false" delete="false" decoration-danger="publication_state == 'error'" decoration-warning="publication_state == 'destination' or master_link_state == 'pending'">
       <field name="name"/><field name="document_number"/><field name="erp_state"/>
       <field name="transport_name"/><field name="driver_id"/><field name="driver_partner_id" optional="show"/><field name="driver_user_id" optional="show"/><field name="vehicle_id"/>
-      <field name="destination_address"/><field name="publication_state" widget="badge"/><field name="master_link_state" widget="badge" optional="show"/><field name="line_count" optional="show"/><field name="total_weight_kg" optional="hide"/><field name="total_boxes" optional="hide"/><field name="erp_planned_date"/><field name="company_id" groups="base.group_multi_company"/>
+      <field name="destination_code_erp" optional="show"/><field name="destination_city" optional="show"/><field name="destination_address" optional="hide"/><field name="publication_state" widget="badge"/><field name="master_link_state" widget="badge" optional="show"/><field name="line_count" optional="show"/><field name="total_weight_kg" optional="hide"/><field name="total_boxes" optional="hide"/><field name="erp_planned_date"/><field name="company_id" groups="base.group_multi_company"/>
     </list></field>
   </record>
   <record id="view_tc_guide_form" model="ir.ui.view">
@@ -15,7 +15,7 @@
       <group string="Relaciones con contactos y Portal Odoo" col="4"><field name="transport_partner_id"/><field name="driver_partner_id"/><field name="driver_user_id"/><field name="sender_partner_id"/><field name="recipient_partner_id"/><field name="transport_tax_raw"/><field name="recipient_tax_raw"/></group>
       <group><group><field name="name"/><field name="external_id"/><field name="document_type"/><field name="document_number"/><field name="erp_state"/></group>
       <group><field name="transport_id"/><field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/></group></group>
-      <group><group><field name="sender_id"/><field name="recipient_id"/><field name="destination_id"/></group>
+      <group><group><field name="sender_id"/><field name="recipient_id"/><field name="destination_id"/><field name="destination_code_erp" readonly="1"/></group>
       <group><field name="origin_address"/><field name="destination_address"/><field name="destination_city"/></group></group>
       <group><field name="erp_start_date"/><field name="erp_end_date"/><field name="erp_planned_date"/><field name="publication_state"/><field name="last_sync"/></group>
       <field name="cargo_description"/>
@@ -44,6 +44,7 @@
         <field name="driver_id"/>
         <field name="recipient_id"/>
         <field name="destination_city"/>
+        <field name="destination_code_erp" string="Código destino ERP"/>
         <filter name="sync_today" string="Sincronizadas hoy" domain="[('last_sync', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
         <separator/>
         <filter name="available_ruta" string="Disponibles para rutas" domain="[('publication_state','=','published')]"/><filter name="assigned_ruta" string="En operación" domain="[('publication_state','=','assigned')]"/><filter name="publishing_errors" string="Errores de publicación" domain="[('publication_state','=','error')]"/><filter name="pending_destination" string="Destinos pendientes" domain="[('publication_state','=','destination')]"/><filter name="pending_portal" string="Vínculos Portal pendientes" domain="[('master_link_state','=','pending')]"/>
@@ -62,7 +63,7 @@
     <field name="name"/><field name="document_number"/><field name="document_type"/>
     <field name="erp_state"/><field name="publication_state"/>
     <field name="transport_name"/><field name="driver_id"/><field name="vehicle_id"/>
-    <field name="origin_address"/><field name="destination_address"/><field name="destination_city"/>
+    <field name="origin_address"/><field name="destination_address"/><field name="destination_city"/><field name="destination_code_erp"/>
     <field name="recipient_id"/><field name="erp_planned_date"/><field name="last_sync"/>
     <field name="line_count"/><field name="total_weight_kg"/><field name="total_pallets"/><field name="total_boxes"/>
     <field name="operational_guide_id"/><field name="master_link_state"/><field name="company_id"/>
@@ -92,8 +93,9 @@
             <div class="tcg-card__route-markers"><span/><span class="tcg-card__route-line"/><i class="fa fa-map-marker" aria-hidden="true"/></div>
             <div class="tcg-card__route-text">
               <div><small>ORIGEN</small><strong t-if="record.origin_address.raw_value"><field name="origin_address"/></strong><strong t-else="">No informado</strong></div>
-              <div><small>DESTINO</small><strong t-if="record.destination_address.raw_value"><field name="destination_address"/></strong><strong t-else="">Por definir</strong>
+              <div><small>DESTINO · CÓDIGO ERP</small><strong t-if="record.destination_code_erp.raw_value"><field name="destination_code_erp"/></strong><strong t-else="">Código ERP pendiente</strong>
                 <span class="tcg-card__city" t-if="record.destination_city.raw_value"><field name="destination_city"/></span>
+                <span class="tcg-card__city" t-if="record.destination_address.raw_value"><field name="destination_address"/></span>
               </div>
             </div>
           </div>
@@ -127,7 +129,7 @@
     <field name="arch" type="xml">
       <kanban class="tc-guide-kanban tc-operational-kanban o_kanban_mobile" create="false" quick_create="false" sample="0" default_order="id desc">
         <field name="name"/><field name="state"/><field name="numero_documento"/><field name="tipo_documento"/>
-        <field name="origen"/><field name="destino"/><field name="destino_ciudad"/>
+        <field name="origen"/><field name="destino"/><field name="destino_codigo"/><field name="destino_ciudad"/>
         <field name="proveedor_id"/><field name="chofer_usuario_id"/><field name="chofer_contacto_id"/><field name="tc_estado_portal_chofer"/><field name="placa"/>
         <field name="fecha_prevista"/><field name="tc_erp_date_start"/><field name="tc_erp_date_end"/><field name="tc_erp_date_planned"/><field name="hoja_ruta_id"/><field name="embarque_id"/>
         <field name="incidencia_estado"/><field name="total_productos"/><field name="numero_bultos"/>
@@ -160,7 +162,7 @@
                 <div class="tcg-card__route-markers"><span/><span class="tcg-card__route-line"/><i class="fa fa-map-marker" aria-hidden="true"/></div>
                 <div class="tcg-card__route-text">
                   <div><small>ORIGEN</small><strong t-if="record.origen.raw_value"><field name="origen"/></strong><strong t-else="">No informado</strong></div>
-                  <div><small>DESTINO</small><strong t-if="record.destino.raw_value"><field name="destino"/></strong><strong t-else="">Por definir</strong>
+                  <div><small>DESTINO · CÓDIGO ERP</small><strong t-if="record.destino.raw_value"><field name="destino"/></strong><strong t-else="">Por definir</strong>
                     <span class="tcg-card__city" t-if="record.destino_ciudad.raw_value"><field name="destino_ciudad"/></span></div>
                 </div>
               </div>

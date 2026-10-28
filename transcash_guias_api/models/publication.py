@@ -5,6 +5,7 @@ import unicodedata
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, ValidationError
 from .date_bridge import date_as_odoo_utc
+from .destination_codes import upsert_erp_destination, erp_destination_code, erp_destination_key
 
 _logger = logging.getLogger(__name__)
 
@@ -39,30 +40,23 @@ class TCGuidePublication(models.Model):
     operational_guide_id = fields.Many2one('transcash.guia', string='Guía operativa', readonly=True, copy=False)
 
     def _destination_for_operation(self):
-        """Encontrar destino por el CÓDIGO del ERP, nunca por nombre ni alias.
+        """Buscar/crear por código ERP y actualizar nombre/ciudad desde ERP.
 
-        Reutiliza una ficha con código idéntico tras quitar separadores de
-        formato; si hay varias no se adivina el registro correcto.
+        Nunca se homologa por nombre, destinatario ni dirección de entrega.
         """
         self.ensure_one()
-        Destination = self.env['transcash.destino'].sudo()
-        raw = self.destination_id.external_code if self.destination_id else ''
-        code = re.sub(r'[^A-Z0-9]', '', unicodedata.normalize(
-            'NFKD', str(raw or '').upper()))
+        code = self.destination_code_erp or (
+            self.destination_id.external_code if self.destination_id else '')
         if not code:
-            return False, _('La API ERP no envió destino_codigo. No se asigna destino por nombre.')
-        catalog = Destination.search([('company_id', '=', self.company_id.id)])
-        matching = catalog.filtered(
-            lambda d: re.sub(r'[^A-Z0-9]', '', unicodedata.normalize(
-                'NFKD', str(d.codigo or '').upper())) == code)
-        if len(matching) == 1:
-            return matching, ''
-        if len(matching) > 1:
-            return False, _('Existen varios destinos con el mismo código normalizado %s.') % code
-        # Código ERP nuevo: lo crea el flujo normal del módulo operativo.
-        return Destination.obtener_desde_erp(
-            raw, self.destination_city or self.destination_address or raw,
-            company_id=self.company_id.id), ''
+            return False, _('El ERP no informó destino_codigo; no se asigna destino por nombre.')
+        try:
+            dest = upsert_erp_destination(
+                self.env, self.company_id.id, code, self.destination_city)
+            if dest and not dest.active:
+                return False, _('El código ERP %s pertenece a un destino inactivo; reactive el catálogo.') % code
+            return dest, ''
+        except ValidationError as exc:
+            return False, str(exc)
 
     def _erp_dates_for_operation(self, operational=None, only_missing=False):
         """Map ERP calendar dates to the EXISTING operational fields.
@@ -167,6 +161,24 @@ class TCGuidePublication(models.Model):
                 if (not existing.chofer_usuario_id and self.driver_user_id and
                         plan.chofer_usuario_id == self.driver_user_id):
                     additions['chofer_usuario_id'] = self.driver_user_id.id
+            # En rutas históricas no se cambia el destino. Únicamente se
+            # completan códigos vacíos cuando el código ERP coincide con la
+            # ficha del destino de la hoja de ruta ya confirmada.
+            received_code = self.destination_code_erp or (
+                self.destination_id.external_code if self.destination_id else '')
+            route = existing.hoja_ruta_id
+            if (received_code and route and route.destino_id and
+                    erp_destination_key(received_code) ==
+                    erp_destination_key(route.destino_id.codigo)):
+                canonical_code = erp_destination_code(received_code)
+                if not existing.destino:
+                    additions['destino'] = canonical_code
+                if not existing.destino_codigo:
+                    additions['destino_codigo'] = canonical_code
+                if not existing.destino_id:
+                    additions['destino_id'] = route.destino_id.id
+                if not existing.destino_ciudad and self.destination_city:
+                    additions['destino_ciudad'] = self.destination_city
             # Guías en operación: completar solamente fechas ERP faltantes.
             # Nunca se cambia una fecha que ya está registrada en el viaje.
             additions.update(self._erp_dates_for_operation(existing, only_missing=True))
@@ -180,6 +192,9 @@ class TCGuidePublication(models.Model):
                                    self.master_link_note)))})
             return
         destination, note = self._destination_for_operation()
+        received_code = self.destination_code_erp or (
+            self.destination_id.external_code if self.destination_id else '')
+        received_code = erp_destination_code(received_code)
         values = {
             'name': self.name, 'external_id_erp': self.external_id,
             'company_id': self.company_id.id, 'tipo_documento': self.document_type or False,
@@ -192,22 +207,23 @@ class TCGuidePublication(models.Model):
             # contra transcash.hoja.ruta.destino_id.codigo en la PWA.
             # Si una nueva respuesta no envía código, no reemplazar el destino
             # existente de una guía con una dirección/nombre de otra columna.
-            'destino': (self.destination_id.external_code
-                        if self.destination_id and self.destination_id.external_code
-                        else (existing.destino if existing and existing.destino
-                              else (self.destination_address or False))),
-            'destino_ciudad': self.destination_city or False,
+            'destino': received_code or (existing.destino if existing else False),
+            'destino_ciudad': self.destination_city or (existing.destino_ciudad if existing else False),
             'descripcion_carga': self.cargo_description or False,
             'ultima_sync': fields.Datetime.now(),
             'peso_kg': sum(self.line_ids.mapped('weight_kg')),
         }
         values.update(self._erp_dates_for_operation(existing, only_missing=False))
         if destination:
-            values.update({'destino_id': destination.id, 'destino_codigo': (
-                self.destination_id.external_code if self.destination_id else False)})
-        else:
-            # Evitar datos de destino obsoletos si guía permanece sin ruta.
-            values.update({'destino_id': False, 'destino_codigo': False})
+            values.update({'destino_id': destination.id,
+                           'destino_codigo': received_code or destination.codigo})
+        elif received_code:
+            # La guía conserva código ERP aun si el catálogo está inactivo
+            # o ambiguo. Se documenta el error sin perder el valor recibido.
+            values.update({'destino_codigo': received_code,
+                           'destino_id': False})
+        # Si el ERP omite código, se conservan los datos previos: no se
+        # sustituyen por direcciones ni se borran códigos de guías históricas.
         # Relaciones operativas res.partner/res.users: resueltas previamente
         # en partner_link.py por VAT/ref o perfil Portal verificado.
         bindings = {
