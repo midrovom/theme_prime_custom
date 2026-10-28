@@ -1,43 +1,50 @@
 # -*- coding: utf-8 -*-
-"""Notas automáticas de la PWA sin dependencia de correo en el usuario.
+"""Registra anotaciones PWA de auditoría sin exigir correo del operador.
 
-Odoo 18 message_post() falla con un UserError si el usuario operador no
-posee email_from. Las bitácoras de carga y homologación son auditoría interna:
-no deben invocar el mecanismo de notificación a seguidores. Odoo ofrece
-_message_log() para ese propósito (con raise_on_email=False).
+Las extensiones de modelos Odoo DEBEN heredar directamente de models.Model.
+La versión 2.33 añadió una clase Python ordinaria como primera base de las
+extensiones, lo que impedía construir el registro (__bases__ layout differs).
+La lógica compartida se implementa como función independiente; todas las
+clases ORM usan exclusivamente models.Model como clase base.
 
-SOLO cuando el controlador interno habilita tc_pwa_audit_note=True y la
-llamada contiene exclusivamente una nota ordinaria, se utiliza este modo.
-Otros mensajes, destinatarios explícitos y comunicaciones financieras siguen
-con el message_post estándar de Odoo.
+Solo las anotaciones implícitas de la PWA, sin destinatarios explícitos,
+se convierten en entradas de bitácora. Los demás mensajes siguen utilizando
+message_post() estándar, sin cambiar notificaciones comerciales ni contables.
 """
 from odoo import models
 
 
-class _PwaAuditNoteMixin:
-    def message_post(self, *args, **kwargs):
-        basic = frozenset(('body', 'message_type', 'subtype_xmlid'))
-        if (self.env.context.get('tc_pwa_audit_note')
-                and not self.env.user.share
-                and not args
-                and 'body' in kwargs
-                and set(kwargs).issubset(basic)
-                and kwargs.get('message_type') in (None, 'notification', 'comment')
-                and kwargs.get('subtype_xmlid') in (None, 'mail.mt_note')):
-            # No se usan sudo ni excepciones tragadas: conservar permisos y
-            # errores de la operación; solo cambiar el medio de auditoría.
-            self.check_access('write')
-            return self._message_log(body=kwargs['body'])
-        return super().message_post(*args, **kwargs)
+def _pwa_message_post(record, args, kwargs, parent_message_post):
+    """Respetar todas las opciones/validaciones de message_post salvo notas PWA."""
+    basic = frozenset(('body', 'message_type', 'subtype_xmlid'))
+    if (record.env.context.get('tc_pwa_audit_note')
+            and not record.env.user.share
+            and not args
+            and 'body' in kwargs
+            and set(kwargs).issubset(basic)
+            and kwargs.get('message_type') in (None, 'notification', 'comment')
+            and kwargs.get('subtype_xmlid') in (None, 'mail.mt_note')):
+        record.check_access('write')
+        return record._message_log(body=kwargs['body'])
+    return parent_message_post(*args, **kwargs)
 
 
-class PwaRutaAuditNote(_PwaAuditNoteMixin, models.Model):
+class PwaRutaAuditNote(models.Model):
     _inherit = 'transcash.hoja.ruta'
 
+    def message_post(self, *args, **kwargs):
+        return _pwa_message_post(self, args, kwargs, super().message_post)
 
-class PwaEmbarqueAuditNote(_PwaAuditNoteMixin, models.Model):
+
+class PwaEmbarqueAuditNote(models.Model):
     _inherit = 'transcash.embarque'
 
+    def message_post(self, *args, **kwargs):
+        return _pwa_message_post(self, args, kwargs, super().message_post)
 
-class PwaGuiaAuditNote(_PwaAuditNoteMixin, models.Model):
+
+class PwaGuiaAuditNote(models.Model):
     _inherit = 'transcash.guia'
+
+    def message_post(self, *args, **kwargs):
+        return _pwa_message_post(self, args, kwargs, super().message_post)
