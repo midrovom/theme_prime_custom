@@ -8,6 +8,7 @@ import logging
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools.float_utils import float_compare, float_round
+from .amount_utils import exact_sum, exact_difference
 
 
 _logger = logging.getLogger(__name__)
@@ -464,9 +465,9 @@ class ExpenseBudget(models.Model):
 
     planned_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Total proyectado', compute='_compute_totals',
                                      store=True)
-    actual_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Total consumido', compute='_compute_totals',
+    actual_amount = fields.Float(min_display_digits=BUDGET_DECIMAL_PRECISION, string='Total consumido', compute='_compute_totals',
                                     store=True)
-    variance_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Saldo disponible', compute='_compute_totals',
+    variance_amount = fields.Float(min_display_digits=BUDGET_DECIMAL_PRECISION, string='Saldo disponible', compute='_compute_totals',
                                       store=True)
     execution_percentage = fields.Float(string='Ejecución (%)', compute='_compute_totals',
                                         store=True, digits=(16, 2))
@@ -554,9 +555,9 @@ class ExpenseBudget(models.Model):
     @api.depends('line_ids.planned_amount', 'line_ids.actual_amount')
     def _compute_totals(self):
         for rec in self:
-            rec.planned_amount = sum(rec.line_ids.mapped('planned_amount'))
-            rec.actual_amount = sum(rec.line_ids.mapped('actual_amount'))
-            rec.variance_amount = rec.planned_amount - rec.actual_amount
+            rec.planned_amount = exact_sum(rec.line_ids.mapped('planned_amount'))
+            rec.actual_amount = exact_sum(rec.line_ids.mapped('actual_amount'))
+            rec.variance_amount = exact_difference(rec.planned_amount, rec.actual_amount)
             rec.execution_percentage = (rec.actual_amount / rec.planned_amount * 100.0
                                         if rec.planned_amount else 0.0)
 
@@ -1875,12 +1876,12 @@ class ExpenseBudgetLine(models.Model):
         help='Evita consultar todo el historial ERP repetidamente al guardar la misma proyección.',
     )
     # El ajuste manual conserva el cálculo automático de gastos Excel/API.
-    manual_actual_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, 
+    manual_actual_amount = fields.Float(min_display_digits=BUDGET_DECIMAL_PRECISION, 
         string='Ajuste manual del consumido', default=0.0, copy=False)
-    actual_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Consumido', compute='_compute_actual_amount',
+    actual_amount = fields.Float(min_display_digits=BUDGET_DECIMAL_PRECISION, string='Consumido', compute='_compute_actual_amount',
                                     inverse='_inverse_actual_amount',
                                     store=True)
-    variance_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Disponible', compute='_compute_variance_execution',
+    variance_amount = fields.Float(min_display_digits=BUDGET_DECIMAL_PRECISION, string='Disponible', compute='_compute_variance_execution',
                                       store=True)
     execution_percentage = fields.Float(string='Ejecución (%)', compute='_compute_variance_execution',
                                         store=True, digits=(16, 2))
@@ -1957,7 +1958,7 @@ class ExpenseBudgetLine(models.Model):
                  'month', 'consumption_date', 'budget_id.year', 'subcenter_code')
     def _compute_actual_amount(self):
         for rec in self:
-            rec.actual_amount = sum(rec._period_expenses().mapped('amount')) + rec.manual_actual_amount
+            rec.actual_amount = exact_sum(list(rec._period_expenses().mapped('amount')) + [rec.manual_actual_amount])
 
     erp_matching_moves = fields.Integer(
         string='Movimientos coincidentes', compute='_compute_erp_matching_moves',
@@ -1981,7 +1982,7 @@ class ExpenseBudgetLine(models.Model):
         esta dependencia separada asegura la recomputación tras guardar.
         """
         for rec in self:
-            rec.variance_amount = rec.planned_amount - rec.actual_amount
+            rec.variance_amount = exact_difference(rec.planned_amount, rec.actual_amount)
             rec.execution_percentage = (rec.actual_amount / rec.planned_amount * 100.0
                                         if rec.planned_amount else 0.0)
 
@@ -1992,7 +1993,7 @@ class ExpenseBudgetLine(models.Model):
         un nuevo total, solo cambia el ajuste; el origen de los gastos se conserva.
         """
         for rec in self:
-            rec.manual_actual_amount = rec.actual_amount - sum(rec._period_expenses().mapped('amount'))
+            rec.manual_actual_amount = exact_difference(rec.actual_amount, exact_sum(rec._period_expenses().mapped('amount')))
 
     @api.constrains('cost_center_id', 'account_id', 'budget_id', 'month', 'consumption_date', 'subcenter_code')
     def _check_cost_center_and_uniqueness(self):

@@ -564,7 +564,7 @@ class ExpenseBudgetInventorySync(models.AbstractModel):
                 (old_center or False) == values['cost_center_id'] and
                 as_text(old_subcenter).upper() == as_text(values['subcenter_code']).upper() and
                 old_date == when and
-                abs(float(old_amount or 0) - float(amount)) < 0.0000001 and
+                Decimal(str(old_amount or 0.0)) == Decimal(str(amount)) and
                 as_text(old_description) == description and
                 (old_reference or False) == values['reference'] and
                 (old_api or False) == api_record.id and

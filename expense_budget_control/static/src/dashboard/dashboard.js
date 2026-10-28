@@ -256,7 +256,8 @@ export class ExpenseBudgetDashboard extends Component {
     }
 
     formatMoney(value) {
-        return new Intl.NumberFormat("es-EC", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        const minDigits = this.state.data?.decimal_digits ?? 2;
+        return new Intl.NumberFormat("es-EC", { minimumFractionDigits: minDigits, maximumFractionDigits: 12 })
             .format(value || 0) + ` ${this.state.data.currency || ""}`;
     }
 }

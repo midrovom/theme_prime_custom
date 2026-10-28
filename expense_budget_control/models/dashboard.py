@@ -3,6 +3,7 @@
 from collections import defaultdict
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, ValidationError
+from .amount_utils import exact_sum
 
 
 MONTH_LABELS = (
@@ -148,7 +149,8 @@ class ExpenseBudgetDashboard(models.AbstractModel):
                 'name': account.name,
                 'category_id': category_id,
             }
-            totals[account.id][int(line.month) - 1] += line.actual_amount
+            month_index = int(line.month) - 1
+            totals[account.id][month_index] = exact_sum((totals[account.id][month_index], line.actual_amount))
 
         return {
             'companies': companies_data,
@@ -156,10 +158,11 @@ class ExpenseBudgetDashboard(models.AbstractModel):
             'years': years,
             'year': selected_year,
             'currency': company.currency_id.symbol or company.currency_id.name,
+            'decimal_digits': self.env['decimal.precision'].precision_get('Presupuesto de Gastos'),
             'month_names': list(MONTH_LABELS),
             'categories': sorted(categories.values(), key=lambda c: (c['name'], c['id'])),
             'cost_centers': [{'id': cc.id, 'name': cc.name} for cc in centers],
             'cost_center_id': chosen_center,
-            'accounts': [dict(account, months=[round(v, 2) for v in totals[account['id']]])
+            'accounts': [dict(account, months=totals[account['id']])
                          for account in sorted(accounts.values(), key=lambda a: (a['name'], a['id']))],
         }

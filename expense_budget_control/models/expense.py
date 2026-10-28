@@ -91,8 +91,12 @@ class ExpenseBudgetExpense(models.Model):
     budget_line_id = fields.Many2one('expense.budget.line', string='Línea presupuestaria',
                                      ondelete='set null', index=True, check_company=True,
                                      readonly=True, copy=False)
-    amount = fields.Monetary(string='Gasto real', required=True, currency_field='currency_id',
-                             help='Positivo = gasto; negativo = reverso/devolución.')
+    # Monetary rounds amounts to currency precision (typically 2 decimals)
+    # even before the budget can aggregate them. Keep the raw API amount.
+    # min_display_digits only defines the MINIMUM visual precision.
+    amount = fields.Float(string='Gasto real', required=True,
+                          min_display_digits='Presupuesto de Gastos',
+                          help='Importe original sin redondeo monetario. Positivo = gasto; negativo = reverso/devolución.')
     description = fields.Char(string='Descripción', required=True)
     reference = fields.Char(string='Referencia')
     source = fields.Selection([('manual', 'Manual'), ('excel', 'Excel'), ('api', 'API')],

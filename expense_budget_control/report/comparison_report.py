@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Comparativo mensual por rubro, cuenta y presupuesto con saldos acumulados."""
 from odoo import api, models
+from ..models.amount_utils import exact_sum, exact_difference, exact_display
 
 
 class ReportExpenseBudgetComparison(models.AbstractModel):
@@ -18,26 +19,26 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
 
     @classmethod
     def _add_line(cls, target, line):
-        target['total']['planned'] += line.planned_amount
-        target['total']['actual'] += line.actual_amount
+        target['total']['planned'] = exact_sum((target['total']['planned'], line.planned_amount))
+        target['total']['actual'] = exact_sum((target['total']['actual'], line.actual_amount))
         # Evitar usar una variación almacenada desactualizada: disponible
         # es siempre presupuesto proyectado de la línea menos su consumo.
-        available = line.planned_amount - line.actual_amount
-        target['total']['available'] += available
+        available = exact_difference(line.planned_amount, line.actual_amount)
+        target['total']['available'] = exact_sum((target['total']['available'], available))
         # Conservar el criterio de ejecución de la vista agrupada existente.
         target['total']['execution'] += line.execution_percentage
         month = target['monthly'][int(line.month)]
-        month['planned'] += line.planned_amount
-        month['actual'] += line.actual_amount
-        month['available'] += available
+        month['planned'] = exact_sum((month['planned'], line.planned_amount))
+        month['actual'] = exact_sum((month['actual'], line.actual_amount))
+        month['available'] = exact_sum((month['available'], available))
 
     @classmethod
     def _add_summary(cls, target, source):
         for key in ('planned', 'actual', 'available', 'execution'):
-            target['total'][key] += source['total'][key]
+            target['total'][key] = exact_sum((target['total'][key], source['total'][key]))
         for m in range(1, 13):
             for key in ('planned', 'actual', 'available'):
-                target['monthly'][m][key] += source['monthly'][m][key]
+                target['monthly'][m][key] = exact_sum((target['monthly'][m][key], source['monthly'][m][key]))
 
     @staticmethod
     def _finish_row(row, month_numbers):
@@ -69,18 +70,18 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         for number in range(1, 13):
             openings[number] = accumulated_available
             consumption_openings[number] = accumulated_consumption
-            accumulated_available += row['monthly'][number]['available']
-            accumulated_consumption += row['monthly'][number]['actual']
+            accumulated_available = exact_sum((accumulated_available, row['monthly'][number]['available']))
+            accumulated_consumption = exact_sum((accumulated_consumption, row['monthly'][number]['actual']))
 
         first_month = selected_months[0]
         opening = openings[first_month]
-        consumed = sum(row['monthly'][month]['actual'] for month in selected_months)
-        period_available = sum(row['monthly'][month]['available'] for month in selected_months)
+        consumed = exact_sum(row['monthly'][month]['actual'] for month in selected_months)
+        period_available = exact_sum(row['monthly'][month]['available'] for month in selected_months)
         period_closings = {
             first_month: {
                 'saldo_actual': consumed,
-                'consumo_actual': consumption_openings[first_month] + consumed,
-                'saldo_disponible': opening + period_available,
+                'consumo_actual': exact_sum((consumption_openings[first_month], consumed)),
+                'saldo_disponible': exact_sum((opening, period_available)),
             },
         }
         row['monthly_report'] = {
@@ -191,6 +192,8 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
 
         return {
             'decimal_digits': self.env['decimal.precision'].precision_get('Presupuesto de Gastos'),
+            'format_real': exact_display,
+            'exact_sum': exact_sum,
             'wizard': wizard,
             'selected_accounts': selected_accounts,
             # Se conserva el indicador legado; el PDF ahora detalla las cuentas
