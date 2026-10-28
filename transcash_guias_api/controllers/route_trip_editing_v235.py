@@ -14,17 +14,33 @@ class TranscashEditarPlanificacion(TranscashOperacionModalidad):
         values.setdefault('tc_rutas_compatibles', request.env['transcash.hoja.ruta'])
         return super()._page(heading, **values)
 
+    @staticmethod
+    def _tc_normalized_plate(value):
+        # Coincidir con la validación del asistente original: ignorar
+        # espacios externos y mayúsculas, sin aceptar otra placa.
+        return (value or '').strip().upper()
+
     def _tc_trip_options(self, trip):
-        return request.env['transcash.hoja.ruta'].search([
+        """Rutas libres y compatibles con el viaje; no crea otro embarque.
+
+        Sin depender del formato superficial de la placa y sin cargar guías
+        ajenas: solo las rutas del mismo proveedor, chofer y tipo de vehículo.
+        """
+        candidates = request.env['transcash.hoja.ruta'].search([
             ('company_id', '=', trip.company_id.id),
             ('embarque_id', '=', False),
             ('state', 'in', ('planificada', 'cargada')),
             ('chofer_usuario_id', '=', trip.chofer_usuario_id.id),
             ('proveedor_id', '=', trip.proveedor_id.id),
             ('tipo_vehiculo', '=', trip.tipo_vehiculo),
-            ('placa', '=ilike', (trip.placa or '').strip()),
-        ], order='id desc', limit=150).filtered(
-            lambda r: (r.placa or '').strip().upper() == (trip.placa or '').strip().upper())
+        ], order='id desc', limit=300)
+        plate = self._tc_normalized_plate(trip.placa)
+        available = candidates.filtered(
+            lambda route: self._tc_normalized_plate(route.placa) == plate
+            and bool(route.guia_ids)
+        )
+        slots = max(0, 100 - len(trip.guia_ids))
+        return available.filtered(lambda route: len(route.guia_ids) <= slots)
 
     @http.route()
     def trip_detail(self, trip_id, **kw):
@@ -152,8 +168,16 @@ class TranscashEditarPlanificacion(TranscashOperacionModalidad):
             trip.env['transcash.hoja.ruta']._check_operator()
             if trip.state != 'preparacion':
                 raise UserError(_('Solo se agregan rutas a viajes en preparación.'))
-            route = self._tc_trip_options(trip).filtered(lambda r: r.id == route_id)
-            if not route:
+            # Validar el ID directamente en el servidor: el listado visual
+            # puede estar limitado y nunca debe ser la fuente de autorización.
+            route = request.env['transcash.hoja.ruta'].browse(route_id).exists()
+            if not (route and route.company_id == trip.company_id and not route.embarque_id
+                    and route.state in ('planificada', 'cargada')
+                    and route.chofer_usuario_id == trip.chofer_usuario_id
+                    and route.proveedor_id == trip.proveedor_id
+                    and route.tipo_vehiculo == trip.tipo_vehiculo
+                    and self._tc_normalized_plate(route.placa) == self._tc_normalized_plate(trip.placa)
+                    and route.guia_ids and len(route.guia_ids) + len(trip.guia_ids) <= 100):
                 raise UserError(_('La ruta ya no está disponible o corresponde a otro transporte.'))
             with request.env.cr.savepoint():
                 wizard = request.env['transcash.armar.embarque.wizard'].create({

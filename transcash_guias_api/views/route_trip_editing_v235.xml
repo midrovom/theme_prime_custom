@@ -44,24 +44,34 @@
       <input t-if="request.params.get('embarque_id')" type="hidden" name="tc_viaje_regreso" t-att-value="request.params.get('embarque_id')"/>
     </xpath>
     <xpath expr="//t[@t-if=&quot;section == 'embarque_detalle'&quot;]/div[contains(@class,'tc-ops-summary')]" position="after">
-      <section t-if="embarque.state == 'preparacion'" class="tc-edit-actions tc-edit-actions--trip"
-               aria-label="Agregar hojas de ruta al viaje">
-        <div class="tc-section-heading"><h2>Agregar otra hoja de ruta a este viaje</h2></div>
-        <p class="tc-muted">Se muestran únicamente rutas del mismo chofer, transportista, vehículo y placa. El precio del viaje no cambia.</p>
-        <form t-if="tc_rutas_compatibles" method="post" class="tc-ops-form"
-              t-att-action="'/transcash/operacion/embarques/%d/rutas/agregar' % embarque.id">
-          <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
-          <label for="tc-route-add-v235">Ruta confirmada disponible</label>
-          <select id="tc-route-add-v235" name="ruta_id" required="required">
-            <option value="">Selecciona la hoja de ruta</option>
-            <t t-foreach="tc_rutas_compatibles" t-as="r">
-              <option t-att-value="r.id"><t t-esc="r.name"/> · <t t-esc="r.destino_nombre"/> · <t t-esc="len(r.guia_ids)"/> guías</option>
-            </t>
-          </select>
-          <button type="submit" class="tc-button tc-button-primary">＋ Agregar al viaje actual</button>
-        </form>
-        <p t-if="not tc_rutas_compatibles" class="tc-muted">Todavía no hay otras rutas confirmadas compatibles.</p>
-        <a class="tc-button tc-button-outline" t-att-href="'/transcash/operacion/rutas/nueva?embarque_id=%d' % embarque.id">＋ Crear hoja de ruta para este viaje</a>
+      <section t-if="embarque.state == 'preparacion'" id="tc-agregar-ruta-existente"
+               class="tc-edit-actions tc-edit-actions--trip" aria-label="Agregar hoja de ruta existente">
+        <div class="tc-section-heading"><h2>Agregar ruta existente al viaje</h2></div>
+        <p class="tc-muted">Si la hoja de ruta ya está creada, agrégala aquí. No tienes que crear otro viaje.</p>
+        <t t-if="tc_rutas_compatibles">
+          <p class="tc-edit-ready"><strong><t t-esc="len(tc_rutas_compatibles)"/> ruta(s) disponible(s)</strong> con el mismo chofer, transportista, vehículo y placa.</p>
+          <div class="tc-edit-route-list">
+            <article class="tc-edit-route-option" t-foreach="tc_rutas_compatibles" t-as="tc_route_option">
+              <div class="tc-edit-route-data">
+                <strong t-esc="tc_route_option.name"/>
+                <span t-esc="tc_route_option.destino_nombre or tc_route_option.destino_codigo"/>
+                <small><t t-esc="len(tc_route_option.guia_ids)"/> guías · <t t-esc="dict(tc_route_option._fields['state'].selection).get(tc_route_option.state)"/></small>
+              </div>
+              <form method="post" t-att-action="'/transcash/operacion/embarques/%d/rutas/agregar' % embarque.id">
+                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                <input type="hidden" name="ruta_id" t-att-value="tc_route_option.id"/>
+                <button type="submit" class="tc-button tc-button-primary">＋ Agregar ruta</button>
+              </form>
+            </article>
+          </div>
+        </t>
+        <div t-else="" class="tc-edit-empty">
+          <strong>No hay rutas libres compatibles en este momento.</strong>
+          <p>Revisa que la ruta esté confirmada, no tenga otro viaje y coincida en chofer, transportista, tipo de vehículo y placa. El viaje admite hasta 100 guías.</p>
+          <a href="/transcash/operacion/rutas" class="tc-button tc-button-outline">Ver hojas de ruta</a>
+        </div>
+        <div class="tc-edit-divider"><span>¿Aún no existe la ruta?</span></div>
+        <a class="tc-button tc-button-outline" t-att-href="'/transcash/operacion/rutas/nueva?embarque_id=%d' % embarque.id">＋ Crear una hoja de ruta nueva</a>
       </section>
       <section t-if="embarque.state in ('preparacion', 'embarcado') and not embarque.aceptado_chofer and not embarque.fecha_aceptacion_chofer"
                class="tc-edit-actions tc-edit-actions--delete" aria-label="Eliminar viaje no aceptado">
@@ -72,6 +82,10 @@
         </form>
         <small>Solo es posible antes de la aceptación o salida del chofer, sin liquidación ni objeciones registradas.</small>
       </section>
+    </xpath>
+    <xpath expr="//t[@t-if=&quot;section == 'embarque_detalle'&quot;]/a[@href='/transcash/operacion/embarques/nuevo']" position="replace">
+      <a t-if="embarque.state == 'preparacion'" class="tc-button tc-button-outline"
+         href="#tc-agregar-ruta-existente">＋ Agregar otra hoja de ruta a este viaje</a>
     </xpath>
     <xpath expr="//html/head" position="inside">
       <link rel="stylesheet" href="/transcash_guias_api/static/src/css/route_trip_editing_v235.css?v=235"/>
