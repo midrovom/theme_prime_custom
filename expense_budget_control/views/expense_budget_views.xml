@@ -88,7 +88,8 @@
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Total proyectado"/>
                 <field name="actual_amount" sum="Total consumido"/>
-                <field name="variance_amount" sum="Disponible"/>
+                <field name="available_to_spend" sum="Disponible"/>
+                <field name="excess_amount" sum="Exceso"/>
                 <field name="execution_percentage"/>
                 <field name="approved_through_month" string="Aprobado hasta"/>
                 <field name="state" widget="badge"/>
@@ -120,7 +121,8 @@
                             <field name="currency_id" invisible="1"/>
                             <field name="planned_amount" readonly="True"/>
                             <field name="actual_amount" readonly="True"/>
-                            <field name="variance_amount" readonly="True"/>
+                            <field name="available_to_spend" readonly="True"/>
+                            <field name="excess_amount" readonly="True"/>
                             <field name="execution_percentage" readonly="True"/>
                         </group>
                         <group string="Seguimiento de aprobación">
@@ -177,7 +179,8 @@
                                     <field name="month_option_id" string="Mes" required="1" domain="[('id', 'in', available_month_option_ids)]" readonly="approval_state in ['approved', 'to_approve']" options="{'no_create': True, 'no_open': True}" help="Filtra por cuenta controlada y centro de costo: una combinación puede tener una sola proyección por mes. Si Agua/Quito está aprobado hasta mayo, muestra desde junio; Agua de otro centro puede comenzar en enero si aún no tiene proyección."/>
                                     <field name="planned_amount" readonly="approval_state in ['approved', 'to_approve'] or annual_amount &gt; 0" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
-                                    <field name="variance_amount" readonly="True" sum="Disponible"/>
+                                    <field name="available_to_spend" readonly="True" sum="Disponible"/>
+                                    <field name="excess_amount" readonly="True" sum="Exceso"/>
                                     <field name="execution_percentage" readonly="True"/>
                                 </list>
                             </field>
@@ -217,7 +220,7 @@
     <record id="view_expense_budget_line_list" model="ir.ui.view">
         <field name="name">expense.budget.line.list</field><field name="model">expense.budget.line</field>
         <field name="arch" type="xml">
-            <list string="Proyectado vs. consumido" create="false" edit="false" delete="false" default_order="budget_id,month_number,account_id,cost_center_id,id" decoration-danger="variance_amount &lt; 0">
+            <list string="Proyectado vs. consumido" create="false" edit="false" delete="false" default_order="budget_id,month_number,account_id,cost_center_id,id" decoration-danger="excess_amount &gt; 0">
                 <header>
                     <button name="%(expense_budget_control.action_expense_budget_comparison_report_wizard)d" type="action" string="Imprimir PDF" icon="fa-print" display="always" groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                 </header>
@@ -228,7 +231,8 @@
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Proyectado"/>
                 <field name="actual_amount" sum="Consumido"/>
-                <field name="variance_amount" sum="Disponible"/>
+                <field name="available_to_spend" sum="Disponible"/>
+                <field name="excess_amount" sum="Exceso"/>
                 <field name="execution_percentage"/>
             </list>
         </field>
@@ -243,7 +247,8 @@
                 <field name="month" type="col"/>
                 <field name="planned_amount" type="measure"/>
                 <field name="actual_amount" type="measure"/>
-                <field name="variance_amount" type="measure"/>
+                <field name="available_to_spend" type="measure"/>
+                <field name="excess_amount" type="measure"/>
             </pivot>
         </field>
     </record>
@@ -254,6 +259,8 @@
                 <field name="month" type="row"/>
                 <field name="planned_amount" type="measure"/>
                 <field name="actual_amount" type="measure"/>
+                <field name="available_to_spend" type="measure"/>
+                <field name="excess_amount" type="measure"/>
             </graph>
         </field>
     </record>
@@ -263,7 +270,7 @@
             <search>
                 <field name="budget_id"/><field name="account_id"/><field name="category_id"/>
                 <field name="month"/><field name="cost_center_id"/>
-                <filter string="Sobregirados" name="over_budget" domain="[('variance_amount', '&lt;', 0)]"/>
+                <filter string="Sobregirados" name="over_budget" domain="[('excess_amount', '&gt;', 0)]"/>
                 <group expand="0" string="Agrupar por">
                     <filter string="Rubro" name="group_category" context="{'group_by': 'category_id'}"/>
                     <filter string="Centro de costo" name="group_cost_center" context="{'group_by': 'cost_center_id'}"/>

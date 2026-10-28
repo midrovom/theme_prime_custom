@@ -10,11 +10,11 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
 
     @staticmethod
     def _empty_totals():
-        return {'planned': 0.0, 'actual': 0.0, 'available': 0.0, 'execution': 0.0}
+        return {'planned': 0.0, 'actual': 0.0, 'available': 0.0, 'spendable': 0.0, 'excess': 0.0, 'execution': 0.0}
 
     @staticmethod
     def _empty_months():
-        return {m: {'planned': 0.0, 'actual': 0.0, 'available': 0.0}
+        return {m: {'planned': 0.0, 'actual': 0.0, 'available': 0.0, 'spendable': 0.0, 'excess': 0.0}
                 for m in range(1, 13)}
 
     @classmethod
@@ -25,19 +25,23 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
         # es siempre presupuesto proyectado de la línea menos su consumo.
         available = exact_difference(line.planned_amount, line.actual_amount)
         target['total']['available'] = exact_sum((target['total']['available'], available))
+        target['total']['spendable'] = exact_sum((target['total']['spendable'], max(0.0, available)))
+        target['total']['excess'] = exact_sum((target['total']['excess'], max(0.0, -available)))
         # Conservar el criterio de ejecución de la vista agrupada existente.
         target['total']['execution'] += line.execution_percentage
         month = target['monthly'][int(line.month)]
         month['planned'] = exact_sum((month['planned'], line.planned_amount))
         month['actual'] = exact_sum((month['actual'], line.actual_amount))
         month['available'] = exact_sum((month['available'], available))
+        month['spendable'] = exact_sum((month['spendable'], max(0.0, available)))
+        month['excess'] = exact_sum((month['excess'], max(0.0, -available)))
 
     @classmethod
     def _add_summary(cls, target, source):
-        for key in ('planned', 'actual', 'available', 'execution'):
+        for key in ('planned', 'actual', 'available', 'spendable', 'excess', 'execution'):
             target['total'][key] = exact_sum((target['total'][key], source['total'][key]))
         for m in range(1, 13):
-            for key in ('planned', 'actual', 'available'):
+            for key in ('planned', 'actual', 'available', 'spendable', 'excess'):
                 target['monthly'][m][key] = exact_sum((target['monthly'][m][key], source['monthly'][m][key]))
 
     @staticmethod
@@ -56,7 +60,8 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             number: {
                 'planned': row['monthly'][number]['planned'],
                 'actual': row['monthly'][number]['actual'],
-                'available': row['monthly'][number]['available'],
+                'available': row['monthly'][number]['spendable'],
+                'excess': row['monthly'][number]['excess'],
             }
             for number in selected_months
         }

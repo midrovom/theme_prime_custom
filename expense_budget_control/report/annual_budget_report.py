@@ -17,7 +17,7 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
 
     @staticmethod
     def _empty_month():
-        return {'planned': 0.0, 'actual': 0.0, 'available': 0.0, 'execution': 0.0, 'has_line': False}
+        return {'planned': 0.0, 'actual': 0.0, 'available': 0.0, 'excess': 0.0, 'execution': 0.0, 'has_line': False}
 
     @classmethod
     def _empty_year(cls):
@@ -32,6 +32,7 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
         target['planned'] = exact_sum((target['planned'], source['planned']))
         target['actual'] = exact_sum((target['actual'], source['actual']))
         target['available'] = exact_sum((target['available'], source['available']))
+        target['excess'] = exact_sum((target['excess'], source['excess']))
         target['has_line'] = target['has_line'] or source['has_line']
         target['execution'] = cls._percentage(target['planned'], target['actual'])
 
@@ -77,7 +78,11 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
             month = group['accounts_by_id'][key]['months'][line.month]
             month['planned'] = exact_sum((month['planned'], line.planned_amount))
             month['actual'] = exact_sum((month['actual'], line.actual_amount))
-            month['available'] = exact_difference(month['planned'], month['actual'])
+            # No compensar excesos de otras líneas al agrupar por cuenta/mes.
+            # Sumar disponible positivo y exceso positivo por separado.
+            delta = exact_difference(line.planned_amount, line.actual_amount)
+            month['available'] = exact_sum((month['available'], max(0.0, delta)))
+            month['excess'] = exact_sum((month['excess'], max(0.0, -delta)))
             month['execution'] = line.execution_percentage
             month['has_line'] = True
 
