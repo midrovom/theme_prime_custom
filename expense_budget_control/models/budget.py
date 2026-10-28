@@ -201,6 +201,120 @@ class ExpenseBudget(models.Model):
         string='Presupuesto anual por cuenta y centro de costo',
     )
     line_ids = fields.One2many('expense.budget.line', 'budget_id', string='Proyecciones mensuales')
+    # Captura temporal de proyecciones: una sola fila en la cabecera.
+    # Se limpia después de Agregar. Los objetivos históricos reales permanecen
+    # almacenados en annual_target_ids; no se borra ni se duplica su información.
+    quick_account_id = fields.Many2one(
+        'expense.budget.account', string='Cuenta controlada',
+        ondelete='set null', check_company=True,
+    )
+    quick_cost_center_id = fields.Many2one(
+        'expense.budget.cost.center', string='Centro de costo',
+        ondelete='set null', check_company=True,
+    )
+    quick_month_ids = fields.Many2many(
+        'expense.budget.comparison.month',
+        'expense_budget_header_quick_month_rel', 'budget_id', 'month_id',
+        string='Meses', help='Seleccione los meses por nombre (Enero, Febrero, etc.).',
+    )
+    quick_available_month_ids = fields.Many2many(
+        'expense.budget.comparison.month',
+        compute='_compute_quick_available_month_ids', string='Meses disponibles',
+    )
+    quick_annual_amount = fields.Monetary(
+        string='Presupuesto anual', currency_field='currency_id',
+        help='Importe a distribuir por partes iguales entre los meses seleccionados.',
+    )
+
+    @api.depends('quick_account_id', 'quick_cost_center_id', 'company_id', 'year',
+                 'line_ids.month', 'line_ids.account_id', 'line_ids.cost_center_id',
+                 'line_ids.approval_state')
+    def _compute_quick_available_month_ids(self):
+        Month = self.env['expense.budget.comparison.month'].sudo()
+        Line = self.env['expense.budget.line'].sudo()
+        months = Month.search([])
+        for budget in self:
+            if not (budget.quick_account_id and budget.quick_cost_center_id and
+                    budget.company_id and budget.year):
+                budget.quick_available_month_ids = months
+                continue
+            domain = [
+                ('company_id', '=', budget.company_id.id),
+                ('year', '=', budget.year),
+                ('account_id', '=', budget.quick_account_id.id),
+                ('cost_center_id', '=', budget.quick_cost_center_id.id),
+            ]
+            lines = Line.search(domain + [('month', '!=', False)])
+            used = {int(line.month) for line in lines if line.month}
+            approved_through = Line._get_approved_through_month_for_pair_values(
+                budget.company_id.id, budget.year, budget.quick_account_id.id,
+                budget.quick_cost_center_id.id,
+            )
+            budget.quick_available_month_ids = months.filtered(
+                lambda month: month.number not in used
+                and (not approved_through or month.number > approved_through)
+            )
+
+    @api.onchange('quick_account_id', 'quick_cost_center_id')
+    def _onchange_quick_budget_filters(self):
+        # Cambio de cuenta/centro: no arrastrar meses ni importes del anterior.
+        for budget in self:
+            budget.quick_month_ids = [(5, 0, 0)]
+            budget.quick_annual_amount = 0.0
+            if not (budget.quick_account_id and budget.quick_cost_center_id
+                    and budget.company_id and budget.year):
+                continue
+            target = self.env['expense.budget.annual.target'].sudo().search([
+                ('company_id', '=', budget.company_id.id),
+                ('year', '=', budget.year),
+                ('account_id', '=', budget.quick_account_id.id),
+                ('cost_center_id', '=', budget.quick_cost_center_id.id),
+            ], limit=1)
+            if target:
+                budget.quick_annual_amount = target.annual_amount
+
+    def action_add_quick_monthly_lines(self):
+        """Usar el asistente existente para no alterar las reglas de aprobación.
+
+        El botón crea inmediatamente las proyecciones y deja limpia la fila.
+        """
+        self.ensure_one()
+        if self.state not in ('draft', 'approved'):
+            raise UserError(_('Solo puede agregar proyecciones en borrador o aprobado.'))
+        if not (self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')
+                or self.env.user.has_group('expense_budget_control.group_expense_budget_manager')):
+            raise AccessError(_('No tiene permisos para agregar proyecciones.'))
+        if not self.quick_account_id:
+            raise UserError(_('Seleccione una cuenta controlada.'))
+        if not self.quick_cost_center_id:
+            raise UserError(_('Seleccione un centro de costo.'))
+        if not self.quick_month_ids:
+            raise UserError(_('Seleccione al menos un mes.'))
+        if self.quick_annual_amount <= 0:
+            raise UserError(_('El presupuesto anual debe ser mayor que cero.'))
+        if (self.quick_account_id.company_id != self.company_id
+                or self.quick_account_id.category_id != self.category_id):
+            raise ValidationError(_('La cuenta debe pertenecer al rubro y a la empresa del presupuesto.'))
+        if self.quick_cost_center_id.company_id != self.company_id:
+            raise ValidationError(_('El centro de costo debe pertenecer a la misma empresa.'))
+        # El asistente existente valida de nuevo los meses disponibles, objetivos
+        # aprobados, duplicados y genera las líneas usando el modelo oficial.
+        wizard = self.env['expense.budget.quick.add.wizard'].create({
+            'budget_id': self.id,
+            'account_id': self.quick_account_id.id,
+            'cost_center_id': self.quick_cost_center_id.id,
+            'month_ids': [(6, 0, self.quick_month_ids.ids)],
+            'annual_amount': self.quick_annual_amount,
+        })
+        action = wizard.action_add_lines()
+        self.write({
+            'quick_account_id': False,
+            'quick_cost_center_id': False,
+            'quick_month_ids': [(5, 0, 0)],
+            'quick_annual_amount': 0.0,
+        })
+        return action
+
     planned_amount = fields.Monetary(string='Total proyectado', compute='_compute_totals',
                                      store=True, currency_field='currency_id')
     actual_amount = fields.Monetary(string='Total consumido', compute='_compute_totals',
@@ -506,6 +620,14 @@ class ExpenseBudget(models.Model):
                     'expense_budget_control.group_expense_budget_registrar'
                 )
                 allowed_fields = {'line_ids', 'annual_target_ids'}
+                quick_fields = {
+                    'quick_account_id', 'quick_cost_center_id',
+                    'quick_month_ids', 'quick_annual_amount',
+                }
+                only_quick_filters = (
+                    bool(vals) and set(vals).issubset(quick_fields)
+                    and all(rec.state == 'approved' for rec in self)
+                )
                 only_budget_lines = bool(vals.get('line_ids')) and set(vals) == {'line_ids'}
                 line_commands_allowed = only_budget_lines and all(
                     self._is_allowed_non_draft_line_command(command)
@@ -524,7 +646,7 @@ class ExpenseBudget(models.Model):
                     and all(self._is_allowed_non_draft_target_command(command)
                             for command in vals.get('annual_target_ids', ()))
                 )
-                if not registrar or not (line_commands_allowed or target_commands_allowed or mixed_commands_allowed):
+                if not registrar or not (only_quick_filters or line_commands_allowed or target_commands_allowed or mixed_commands_allowed):
                     raise UserError(_(
                         'En un presupuesto enviado o aprobado solo puede actualizar el consumido, '
                         'agregar/editar presupuestos anuales aún no bloqueados o gestionar nuevas líneas no aprobadas.'

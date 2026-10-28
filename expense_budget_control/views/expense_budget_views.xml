@@ -108,9 +108,6 @@
                     <button name="action_submit" string="Enviar nuevas líneas a aprobar" type="object" class="btn-primary" invisible="state != 'approved' or not has_lines_to_submit" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_reject" string="Rechazar" type="object" class="btn-secondary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
-                    <button name="action_open_quick_add_wizard" string="Agregar líneas" type="object" icon="fa-plus"
-                            class="oe_highlight" invisible="state not in ['draft', 'approved']"
-                            groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_sync_api" string="Actualizar costos" type="object" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_print_annual_pdf" string="Imprimir PDF" type="object" icon="fa-print"
                             groups="expense_budget_control.group_expense_budget_read"/>
@@ -141,28 +138,49 @@
                             <field name="has_lines_to_submit" invisible="True"/>
                         </group>
                     </group>
-                    <group string="Presupuesto anual por cuenta y centro de costo">
-                        <div class="text-muted">Use “Agregar líneas” para seleccionar una cuenta, un centro de costo y varios meses. El valor anual se distribuye entre los meses elegidos y se utiliza como Proyectado. Si todavía hay líneas sin aprobar, la distribución puede recalcularse para incluirlas; una vez aprobadas, el importe y la distribución quedan bloqueados.</div>
-                        <field name="annual_target_ids" nolabel="1" readonly="state not in ['draft', 'approved']">
-                            <list editable="bottom" decoration-muted="locked">
-                                <field name="currency_id" column_invisible="True"/>
-                                <field name="locked" column_invisible="True"/>
-                                <field name="account_id" required="1" readonly="locked"
-                                       domain="[('company_id', '=', parent.company_id), ('category_id', '=', parent.category_id)]"
+                    <!-- Fila única de captura. annual_target_ids sigue existiendo
+                         internamente para histórico y el prorrateo protegido. -->
+                    <group string="Agregar proyecciones por meses"
+                           groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"
+                           invisible="state not in ['draft', 'approved']">
+                        <field name="quick_available_month_ids" invisible="1"/>
+                        <div class="row g-2 align-items-end o_ebc_quick_budget_row">
+                            <div class="col-12 col-md-6 col-xl-3">
+                                <label for="quick_account_id" string="Cuenta controlada"/>
+                                <field name="quick_account_id" nolabel="1"
+                                       domain="[('company_id', '=', company_id), ('category_id', '=', category_id)]"
                                        options="{'no_create': True, 'no_open': True}"/>
-                                <field name="cost_center_id" readonly="locked"
-                                       domain="[('company_id', '=', parent.company_id)]"
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-2">
+                                <label for="quick_cost_center_id" string="Centro de costo"/>
+                                <field name="quick_cost_center_id" nolabel="1"
+                                       domain="[('company_id', '=', company_id)]"
                                        options="{'no_create': True, 'no_open': True}"/>
-                                <field name="annual_amount" string="Presupuesto anual" required="1" readonly="locked" sum="Total anual"/>
-                                <field name="distribution_month_count" string="Meses para distribuir" readonly="locked"/>
-                                <field name="monthly_amount" string="Proyectado mensual" readonly="1" sum="Total mensual"/>
-                            </list>
-                        </field>
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-3">
+                                <label for="quick_month_ids" string="Meses"/>
+                                <field name="quick_month_ids" nolabel="1"
+                                       widget="many2many_tags"
+                                       domain="[('id', 'in', quick_available_month_ids)]"
+                                       options="{'no_create': True, 'no_open': True}"
+                                       placeholder="Enero, Febrero, Marzo..."/>
+                            </div>
+                            <div class="col-12 col-md-4 col-xl-2">
+                                <label for="quick_annual_amount" string="Presupuesto anual"/>
+                                <field name="quick_annual_amount" nolabel="1"/>
+                            </div>
+                            <div class="col-12 col-md-2 col-xl-2">
+                                <button name="action_add_quick_monthly_lines" string="Agregar"
+                                        type="object" icon="fa-plus" class="btn-primary w-100"
+                                        title="Crear las líneas mensuales y limpiar esta fila"/>
+                            </div>
+                        </div>
+                        <div class="text-muted small">Seleccione una cuenta, un centro, los meses por nombre y el valor total. Al pulsar Agregar se crean las proyecciones debajo y se limpia la fila.</div>
                     </group>
                     <notebook>
                         <page string="Proyecciones mensuales">
                             <field name="line_ids" class="o_ebc_lines" readonly="state not in ['draft', 'approved']">
-                                <list editable="bottom" decoration-success="approval_state == 'approved'" decoration-warning="approval_state in ['draft', 'to_approve']" decoration-danger="approval_state == 'rejected'">
+                                <list create="false" editable="bottom" decoration-success="approval_state == 'approved'" decoration-warning="approval_state in ['draft', 'to_approve']" decoration-danger="approval_state == 'rejected'">
                                     <field name="approval_state" string="Estado de aprobación" widget="badge" readonly="True"/>
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="currency_id" column_invisible="True"/>
@@ -189,6 +207,23 @@
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="variance_amount" readonly="True" sum="Disponible"/>
                                     <field name="execution_percentage" readonly="True"/>
+                                </list>
+                            </field>
+                        </page>
+                        <!-- Gestión de objetivos anteriores: fuera de la fila de
+                             captura. Conserva la posibilidad de corregir un
+                             importe no aprobado sin duplicar las proyecciones. -->
+                        <page string="Distribuciones registradas">
+                            <div class="text-muted small">Consulte los importes anuales ya distribuidos. Puede ajustar los no aprobados; los que tengan meses aprobados están protegidos.</div>
+                            <field name="annual_target_ids" nolabel="1" readonly="state not in ['draft', 'approved']">
+                                <list create="false" editable="bottom" decoration-muted="locked">
+                                    <field name="currency_id" column_invisible="True"/>
+                                    <field name="locked" column_invisible="True"/>
+                                    <field name="account_id" readonly="1"/>
+                                    <field name="cost_center_id" readonly="1"/>
+                                    <field name="annual_amount" string="Presupuesto anual" readonly="locked" sum="Total anual"/>
+                                    <field name="distribution_month_count" string="Meses distribuidos" readonly="locked"/>
+                                    <field name="monthly_amount" string="Proyectado mensual" readonly="1"/>
                                 </list>
                             </field>
                         </page>
