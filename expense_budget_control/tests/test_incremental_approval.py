@@ -152,6 +152,45 @@ class TestIncrementalBudgetApproval(TransactionCase):
         self.assertEqual(june.planned_amount, 200.0)
         self.assertEqual(june.approval_state, 'draft')
 
+    def test_header_annual_target_populates_monthly_projections(self):
+        target = self.env['expense.budget.annual.target'].with_context(
+            skip_expense_budget_consumption_on_save=True,
+        ).create({
+            'budget_id': self.budget.id,
+            'account_id': self.account.id,
+            'annual_amount': 1200.0,
+        })
+        self.assertEqual(target.monthly_amount, 100.0)
+        self.assertTrue(all(line.planned_amount == 100.0 for line in self.initial_lines))
+        self.assertTrue(all(line.annual_amount == 1200.0 for line in self.initial_lines))
+
+        # Any following month inherits the annual target from the budget header.
+        june = self.Line.create({
+            'budget_id': self.budget.id,
+            'account_id': self.account.id,
+            'month': '6',
+        })
+        self.assertEqual(june.annual_amount, 1200.0)
+        self.assertEqual(june.planned_amount, 100.0)
+
+    def test_header_annual_target_does_not_change_approved_months(self):
+        target = self.env['expense.budget.annual.target'].create({
+            'budget_id': self.budget.id,
+            'account_id': self.account.id,
+            'annual_amount': 1200.0,
+        })
+        self._approve_initial_budget()
+        original_amounts = self.initial_lines.mapped('planned_amount')
+        with self.assertRaises(UserError):
+            target.write({'annual_amount': 1800.0})
+        june = self.Line.create({
+            'budget_id': self.budget.id,
+            'account_id': self.account.id,
+            'month': '6',
+        })
+        self.assertEqual(june.planned_amount, 100.0)
+        self.assertEqual(self.initial_lines.mapped('planned_amount'), original_amounts)
+
     def test_annual_amount_cannot_be_changed_after_pair_is_approved(self):
         self._approve_initial_budget()
         annual_account = self.env['expense.budget.account'].create({

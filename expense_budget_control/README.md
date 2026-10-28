@@ -1,6 +1,6 @@
 # Control de Presupuesto de Gastos — Odoo 18
 
-Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.79`.
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.86`.
 
 ## Funciones
 
@@ -10,6 +10,7 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.79`.
 - Comparación de presupuesto frente al real: consumido, disponible y porcentaje de ejecución.
 - Vistas tipo lista, gráfica de barras y tabla dinámica, con filtros por rubro, cuenta, mes y presupuesto.
 - **PDF anual imprimible** desde cada presupuesto, agrupado por rubro y cuenta, con columnas mensuales de presupuesto, gasto y ejecución %.
+- **Agregar líneas por meses**: desde un presupuesto, seleccione cuenta controlada, centro de costo, uno o varios meses y un valor anual. El asistente distribuye el importe entre los meses elegidos y los meses pendientes ya existentes; el prorrateo queda bloqueado cuando hay meses aprobados.
 - Registro de sincronizaciones, idempotencia por clave externa y reconciliación de gastos sin línea presupuestaria.
 - Roles de consulta, registro, aprobación y administrador; reglas de acceso multiempresa.
 
@@ -29,7 +30,7 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.79`.
 
 1. Vaya a **Control de Gastos → Importar Excel/CSV**, elija **Cuentas y rubros**, seleccione la empresa e importe la hoja **Cuentas** del libro de ejemplo.
 2. Vaya a **Presupuestos** y cree, por ejemplo, `Servicios básicos 2026`, seleccionando **empresa, año y rubro**. Para otro rubro puede crear otro presupuesto del mismo año, aunque el primero siga en borrador.
-3. En **Importar Excel/CSV**, seleccione **Proyecciones mensuales**, el presupuesto y la hoja **Proyecciones**. También puede editar las doce proyecciones por cuenta en el propio formulario.
+3. En el presupuesto, use **Agregar líneas** para seleccionar una cuenta, centro de costo, meses y el valor a distribuir; el asistente crea una línea por cada mes seleccionado. También puede seguir usando **Importar Excel/CSV → Proyecciones mensuales**.
 4. Registre gastos reales a mano o importe la hoja **Gastos** con tipo **Gastos reales**.
 5. En **Proyectado vs. real** vea las desviaciones por rubro, cuenta y mes. Un saldo negativo identifica exceso presupuestario.
 6. Envíe cada presupuesto a aprobación cuando esté listo. Puede registrar en paralelo presupuestos de otros rubros para la misma empresa y año, pero nunca un segundo presupuesto del mismo rubro (incluso si el primero está aprobado o rechazado).
@@ -240,3 +241,10 @@ En las líneas de proyección se incorpora el campo **Presupuesto anual**. Al in
 El monto anual se comparte entre los meses pendientes de la misma cuenta controlada, centro de costo, empresa y año. Al añadir un nuevo mes para esa combinación, el módulo reutiliza el monto anual guardado y calcula el proyectado mensual. Otra cuenta o centro de costo mantiene su propio presupuesto anual.
 
 Los importes anuales y mensuales de líneas ya aprobadas no se modifican. Una vez que la combinación cuenta/centro tiene un objetivo anual aprobado, ese objetivo queda bloqueado para las nuevas líneas; los nuevos meses conservan la distribución mensual calculada. Para líneas históricas aprobadas antes de incorporar este campo, el monto anual permanece vacío/cero hasta que se defina para los meses futuros; no se infiere automáticamente para evitar alterar la planificación histórica.
+
+
+## Presupuesto anual definido en cabecera (18.0.1.4.85)
+
+La ficha del presupuesto incluye ahora una tabla **Presupuesto anual por cuenta y centro de costo**. En esa tabla se registra una sola vez el importe anual de cada combinación, por ejemplo Agua/Quito = 1.200 y Luz/Quito = 1.300. El sistema calcula el proyectado mensual dividiendo el valor anual para 12 y lo copia a las líneas mensuales pendientes o nuevas que correspondan a esa cuenta y centro.
+
+Los importes de las líneas aprobadas o enviadas a aprobación no se recalculan ni se sobrescriben. Si ya existe una línea aprobada, el objetivo anual de esa combinación queda bloqueado después de definirlo. Los datos anuales que antes se guardaban en líneas mensuales se migran a la nueva tabla cuando existe un presupuesto compatible; no se cambian los proyectados históricos aprobados.

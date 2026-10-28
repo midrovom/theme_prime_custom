@@ -108,6 +108,9 @@
                     <button name="action_submit" string="Enviar nuevas líneas a aprobar" type="object" class="btn-primary" invisible="state != 'approved' or not has_lines_to_submit" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_reject" string="Rechazar" type="object" class="btn-secondary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
+                    <button name="action_open_quick_add_wizard" string="Agregar líneas" type="object" icon="fa-plus"
+                            class="oe_highlight" invisible="state not in ['draft', 'approved']"
+                            groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_sync_api" string="Actualizar costos" type="object" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_print_annual_pdf" string="Imprimir PDF" type="object" icon="fa-print"
                             groups="expense_budget_control.group_expense_budget_read"/>
@@ -138,6 +141,24 @@
                             <field name="has_lines_to_submit" invisible="True"/>
                         </group>
                     </group>
+                    <group string="Presupuesto anual por cuenta y centro de costo">
+                        <div class="text-muted">Use “Agregar líneas” para seleccionar una cuenta, un centro de costo y varios meses. El valor anual se distribuye entre los meses elegidos y se utiliza como Proyectado. Si todavía hay líneas sin aprobar, la distribución puede recalcularse para incluirlas; una vez aprobadas, el importe y la distribución quedan bloqueados.</div>
+                        <field name="annual_target_ids" nolabel="1" readonly="state not in ['draft', 'approved']">
+                            <list editable="bottom" decoration-muted="locked">
+                                <field name="currency_id" column_invisible="True"/>
+                                <field name="locked" column_invisible="True"/>
+                                <field name="account_id" required="1" readonly="locked"
+                                       domain="[('company_id', '=', parent.company_id), ('category_id', '=', parent.category_id)]"
+                                       options="{'no_create': True, 'no_open': True}"/>
+                                <field name="cost_center_id" readonly="locked"
+                                       domain="[('company_id', '=', parent.company_id)]"
+                                       options="{'no_create': True, 'no_open': True}"/>
+                                <field name="annual_amount" string="Presupuesto anual" required="1" readonly="locked" sum="Total anual"/>
+                                <field name="distribution_month_count" string="Meses para distribuir" readonly="locked"/>
+                                <field name="monthly_amount" string="Proyectado mensual" readonly="1" sum="Total mensual"/>
+                            </list>
+                        </field>
+                    </group>
                     <notebook>
                         <page string="Proyecciones mensuales">
                             <field name="line_ids" class="o_ebc_lines" readonly="state not in ['draft', 'approved']">
@@ -154,15 +175,14 @@
                                            options="{'no_create': True}"/>
                                     <field name="available_month_option_ids" column_invisible="True"/>
                                     <field name="annual_amount_readonly" column_invisible="True"/>
+                                    <field name="annual_amount" column_invisible="True"/>
+                                    <field name="allocation_month_count" column_invisible="True"/>
                                     <field name="month" column_invisible="True"/>
                                     <field name="month_option_id" string="Mes" required="1"
                                            domain="[('id', 'in', available_month_option_ids)]"
                                            readonly="approval_state in ['approved', 'to_approve']"
                                            options="{'no_create': True, 'no_open': True}"
                                            help="Filtra por cuenta controlada y centro de costo: una combinación puede tener una sola proyección por mes. Si Agua/Quito está aprobado hasta mayo, muestra desde junio; Agua de otro centro puede comenzar en enero si aún no tiene proyección."/>
-                                    <field name="annual_amount" string="Presupuesto anual"
-                                           readonly="annual_amount_readonly or approval_state in ['approved', 'to_approve']"
-                                           help="Monto total anual para esta cuenta y centro. El sistema divide este valor para 12 y lo coloca en Proyectado. Se reutiliza en los demás meses del mismo año y combinación."/>
                                     <field name="planned_amount"
                                            readonly="approval_state in ['approved', 'to_approve'] or annual_amount > 0"
                                            sum="Proyectado"/>

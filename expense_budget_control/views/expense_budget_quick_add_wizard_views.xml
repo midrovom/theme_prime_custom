@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_expense_budget_quick_add_wizard_form" model="ir.ui.view">
+        <field name="name">expense.budget.quick.add.wizard.form</field>
+        <field name="model">expense.budget.quick.add.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Agregar líneas por meses">
+                <group>
+                    <field name="budget_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <field name="year" readonly="1"/>
+                    <field name="category_id" readonly="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="account_id" required="1"
+                           domain="[('company_id', '=', company_id), ('category_id', '=', category_id)]"
+                           options="{'no_create': True, 'no_open': True}"/>
+                    <field name="cost_center_id"
+                           domain="[('company_id', '=', company_id)]"
+                           options="{'no_create': True, 'no_open': True}"/>
+                    <field name="available_month_ids" invisible="1"/>
+                    <field name="month_ids" widget="many2many_tags" required="1"
+                           domain="[('id', 'in', available_month_ids)]"
+                           options="{'no_create': True, 'no_open': True}"
+                           placeholder="Seleccione enero, febrero, marzo, etc."/>
+                    <field name="target_locked" invisible="1"/>
+                    <field name="annual_amount" string="Valor anual a distribuir" required="1"
+                           readonly="target_locked"/>
+                    <field name="distribution_month_count" string="Cantidad de meses de distribución" readonly="1"/>
+                    <field name="monthly_amount" string="Proyectado por mes" readonly="1"/>
+                    <field name="allocation_note" readonly="1" nolabel="1"/>
+                </group>
+                <footer>
+                    <button name="action_add_lines" string="Agregar líneas" type="object" class="oe_highlight"/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

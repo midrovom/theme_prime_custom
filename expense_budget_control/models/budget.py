@@ -196,6 +196,10 @@ class ExpenseBudget(models.Model):
         ('draft', 'Borrador'), ('to_approve', 'Pendiente de aprobación'),
         ('approved', 'Aprobado'), ('rejected', 'Rechazado'),
     ], default='draft', required=True, string='Estado')
+    annual_target_ids = fields.One2many(
+        'expense.budget.annual.target', 'budget_id',
+        string='Presupuesto anual por cuenta y centro de costo',
+    )
     line_ids = fields.One2many('expense.budget.line', 'budget_id', string='Proyecciones mensuales')
     planned_amount = fields.Monetary(string='Total proyectado', compute='_compute_totals',
                                      store=True, currency_field='currency_id')
@@ -452,6 +456,24 @@ class ExpenseBudget(models.Model):
         # No permitir borrar/desvincular/reemplazar líneas desde una cabecera no borrador.
         return False
 
+    def _is_allowed_non_draft_target_command(self, command):
+        Target = self.env['expense.budget.annual.target']
+        if not isinstance(command, (tuple, list)) or not command:
+            return False
+        command_type = command[0]
+        if command_type == 0:
+            values = command[2] if len(command) > 2 and isinstance(command[2], dict) else {}
+            if values.get('budget_id') and int(values['budget_id']) not in self.ids:
+                return False
+            return all(budget.state == 'approved' for budget in self)
+        if command_type == 1 and len(command) > 2 and isinstance(command[2], dict):
+            target = Target.browse(command[1]).exists()
+            return bool(target and target.budget_id in self and command[2])
+        if command_type == 2 and len(command) > 1:
+            target = Target.browse(command[1]).exists()
+            return bool(target and target.budget_id in self)
+        return False
+
     def write(self, vals):
         started = monotonic()
         if 'category_id' in vals:
@@ -480,17 +502,32 @@ class ExpenseBudget(models.Model):
             if vals and any(rec.state != 'draft' for rec in self):
                 # Después de aprobar, Registro puede agregar/editar solo líneas
                 # aún no aprobadas. Las líneas aprobadas siguen bloqueadas.
-                commands = vals.get('line_ids', ()) if set(vals) == {'line_ids'} else ()
                 registrar = self.env.user.has_group(
-                    'expense_budget_control.group_expense_budget_registrar')
-                line_commands_allowed = bool(commands) and registrar and all(
-                    self._is_allowed_non_draft_line_command(command)
-                    for command in commands
+                    'expense_budget_control.group_expense_budget_registrar'
                 )
-                if not line_commands_allowed:
+                allowed_fields = {'line_ids', 'annual_target_ids'}
+                only_budget_lines = bool(vals.get('line_ids')) and set(vals) == {'line_ids'}
+                line_commands_allowed = only_budget_lines and all(
+                    self._is_allowed_non_draft_line_command(command)
+                    for command in vals.get('line_ids', ())
+                )
+                target_commands_allowed = (
+                    bool(vals.get('annual_target_ids')) and set(vals) == {'annual_target_ids'}
+                    and all(self._is_allowed_non_draft_target_command(command)
+                            for command in vals.get('annual_target_ids', ()))
+                )
+                mixed_commands_allowed = (
+                    bool(vals.get('line_ids')) and bool(vals.get('annual_target_ids'))
+                    and set(vals) == allowed_fields
+                    and all(self._is_allowed_non_draft_line_command(command)
+                            for command in vals.get('line_ids', ()))
+                    and all(self._is_allowed_non_draft_target_command(command)
+                            for command in vals.get('annual_target_ids', ()))
+                )
+                if not registrar or not (line_commands_allowed or target_commands_allowed or mixed_commands_allowed):
                     raise UserError(_(
-                        'En un presupuesto enviado o aprobado solo puede actualizar el consumido '
-                        'o gestionar nuevas líneas que todavía no estén aprobadas.'
+                        'En un presupuesto enviado o aprobado solo puede actualizar el consumido, '
+                        'agregar/editar presupuestos anuales aún no bloqueados o gestionar nuevas líneas no aprobadas.'
                     ))
         if any(
             (('year' in vals and vals['year'] != rec.year) or
@@ -704,6 +741,26 @@ class ExpenseBudget(models.Model):
             raise AccessError(_('Solo el administrador del sistema puede ejecutar la tarea API.'))
         return self.env['expense.budget.api.sync'].cron_sync_all()
 
+    def action_open_quick_add_wizard(self):
+        """Open the guided multi-month projection creator for this budget."""
+        self.ensure_one()
+        if self.state not in ('draft', 'approved'):
+            raise UserError(_('Solo puede agregar líneas cuando el presupuesto está en borrador o aprobado.'))
+        if not (self.env.user.has_group('expense_budget_control.group_expense_budget_registrar')
+                or self.env.user.has_group('expense_budget_control.group_expense_budget_manager')):
+            raise AccessError(_('No tiene permisos para agregar líneas al presupuesto.'))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Agregar líneas por meses'),
+            'res_model': 'expense.budget.quick.add.wizard',
+            'view_mode': 'form',
+            'view_id': self.env.ref(
+                'expense_budget_control.view_expense_budget_quick_add_wizard_form'
+            ).id,
+            'target': 'new',
+            'context': {'default_budget_id': self.id},
+        }
+
     def action_print_annual_pdf(self):
         """Imprime el presupuesto actual en PDF, por rubro, cuenta y mes."""
         self.ensure_one()
@@ -725,6 +782,272 @@ class ExpenseBudget(models.Model):
             self.company_id,  # importa TODOS los años, también al pulsar Sincronizar
         )
         return self.env['expense.budget.inventory.sync']._notification(result)
+
+
+class ExpenseBudgetAnnualTarget(models.Model):
+    _name = 'expense.budget.annual.target'
+    _description = 'Presupuesto anual por cuenta controlada y centro de costo'
+    _order = 'account_id, cost_center_id'
+    _check_company_auto = True
+
+    budget_id = fields.Many2one(
+        'expense.budget', string='Presupuesto', required=True,
+        ondelete='cascade', check_company=True, index=True,
+    )
+    company_id = fields.Many2one('res.company', related='budget_id.company_id', store=True, index=True)
+    year = fields.Integer(related='budget_id.year', store=True, index=True)
+    currency_id = fields.Many2one('res.currency', related='budget_id.currency_id', store=True)
+    account_id = fields.Many2one(
+        'expense.budget.account', string='Cuenta controlada', required=True,
+        ondelete='restrict', check_company=True, index=True,
+    )
+    cost_center_id = fields.Many2one(
+        'expense.budget.cost.center', string='Centro de costo',
+        ondelete='restrict', check_company=True, index=True,
+        help='Cada combinación de cuenta y centro puede tener su propio presupuesto anual.',
+    )
+    annual_amount = fields.Monetary(
+        string='Presupuesto anual', required=True, default=0.0,
+        currency_field='currency_id',
+        help='Monto total de referencia para la cuenta y centro de costo. El asistente lo distribuye entre los meses seleccionados.',
+    )
+    distribution_month_count = fields.Integer(
+        string='Meses para distribuir', required=True, default=12,
+        help='Cantidad de meses entre los que se distribuye el monto anual. Los presupuestos existentes conservan 12 como valor predeterminado.',
+    )
+    monthly_amount = fields.Monetary(
+        string='Proyectado mensual', compute='_compute_monthly_amount',
+        currency_field='currency_id',
+    )
+    locked = fields.Boolean(
+        string='Bloqueado por aprobación', compute='_compute_locked',
+        help='Se bloquea cuando ya hay meses aprobados o pendientes de aprobación para esta combinación.',
+    )
+
+    @api.depends('annual_amount', 'currency_id', 'distribution_month_count')
+    def _compute_monthly_amount(self):
+        Line = self.env['expense.budget.line']
+        for target in self:
+            target.monthly_amount = Line._monthly_amount_from_annual(
+                target.annual_amount, target.currency_id, target.distribution_month_count,
+            )
+
+    @api.depends('budget_id', 'account_id', 'cost_center_id', 'budget_id.line_ids.approval_state',
+                 'budget_id.line_ids.account_id', 'budget_id.line_ids.cost_center_id')
+    def _compute_locked(self):
+        Line = self.env['expense.budget.line'].sudo()
+        for target in self:
+            # Let the user complete a new target before it is first saved.
+            if not isinstance(target.id, int) or not target.budget_id or not target.account_id:
+                target.locked = False
+                continue
+            target.locked = bool(Line.search([
+                ('company_id', '=', target.company_id.id),
+                ('year', '=', target.year),
+                ('account_id', '=', target.account_id.id),
+                ('cost_center_id', '=', target.cost_center_id.id or False),
+                ('approval_state', 'in', ('approved', 'to_approve')),
+            ], limit=1))
+
+    def _has_protected_months(self):
+        """Check directly in the database so RPC writes cannot rely on a stale compute cache."""
+        self.ensure_one()
+        return bool(self.env['expense.budget.line'].sudo().search_count([
+            ('company_id', '=', self.company_id.id),
+            ('year', '=', self.year),
+            ('account_id', '=', self.account_id.id),
+            ('cost_center_id', '=', self.cost_center_id.id or False),
+            ('approval_state', 'in', ('approved', 'to_approve')),
+        ]))
+
+    @api.onchange('account_id')
+    def _onchange_account_id(self):
+        for target in self:
+            if target.account_id and not target.cost_center_id:
+                centers = target.account_id.cost_center_ids.filtered(
+                    lambda center: center.company_id == target.company_id
+                )
+                if len(centers) == 1:
+                    target.cost_center_id = centers
+
+    @api.onchange('annual_amount', 'distribution_month_count', 'account_id', 'cost_center_id')
+    def _onchange_annual_amount(self):
+        Line = self.env['expense.budget.line']
+        for target in self:
+            if not target.budget_id or not target.account_id:
+                continue
+            amount = target.annual_amount or 0.0
+            monthly = Line._monthly_amount_from_annual(
+                amount, target.currency_id, target.distribution_month_count,
+            )
+            # Reflect the header target immediately in any unapproved lines
+            # already loaded in the form. Approved months remain untouched.
+            for line in target.budget_id.line_ids:
+                if (line.account_id == target.account_id
+                        and (line.cost_center_id.id or False) == (target.cost_center_id.id or False)
+                        and line.approval_state in ('draft', 'rejected')):
+                    line.annual_amount = amount
+                    line.allocation_month_count = target.distribution_month_count
+                    line.planned_amount = monthly
+
+    @api.constrains('budget_id', 'account_id', 'cost_center_id', 'annual_amount', 'distribution_month_count')
+    def _check_target_identity_and_amount(self):
+        for target in self:
+            if not target.budget_id or not target.account_id:
+                continue
+            if target.annual_amount < 0:
+                raise ValidationError(_('El presupuesto anual no puede ser negativo.'))
+            if not 1 <= target.distribution_month_count <= 12:
+                raise ValidationError(_('La cantidad de meses para distribuir debe estar entre 1 y 12.'))
+            if target.account_id.company_id != target.company_id:
+                raise ValidationError(_('La cuenta controlada debe pertenecer a la empresa del presupuesto.'))
+            if target.budget_id.category_id and target.account_id.category_id != target.budget_id.category_id:
+                raise ValidationError(_('La cuenta controlada debe pertenecer al rubro del presupuesto.'))
+            if target.cost_center_id and target.cost_center_id.company_id != target.company_id:
+                raise ValidationError(_('El centro de costo debe pertenecer a la empresa del presupuesto.'))
+            duplicate = self.sudo().search([
+                ('id', '!=', target.id),
+                ('company_id', '=', target.company_id.id),
+                ('year', '=', target.year),
+                ('account_id', '=', target.account_id.id),
+                ('cost_center_id', '=', target.cost_center_id.id or False),
+            ], limit=1)
+            if duplicate:
+                raise ValidationError(_(
+                    'Ya existe un presupuesto anual para la cuenta "%(account)s" y el centro de costo "%(center)s" en %(year)s. '
+                    'Edite el presupuesto anual existente en lugar de crear otro.'
+                ) % {
+                    'account': target.account_id.display_name,
+                    'center': target.cost_center_id.display_name or _('Sin centro de costo'),
+                    'year': target.year,
+                })
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        budgets = self.env['expense.budget']
+        for vals in vals_list:
+            budget = budgets.browse(vals.get('budget_id')).exists()
+            if not budget:
+                raise ValidationError(_('Seleccione el presupuesto antes de definir el monto anual.'))
+            if (budget.state not in ('draft', 'approved')
+                    and not self.env.context.get('allow_annual_target_migration')):
+                raise UserError(_('Solo se pueden definir montos anuales cuando el presupuesto está en borrador o aprobado.'))
+            if vals.get('account_id'):
+                account = self.env['expense.budget.account'].browse(vals['account_id']).exists()
+                if not account:
+                    raise ValidationError(_('La cuenta controlada seleccionada no existe.'))
+                if budget.category_id and account.category_id != budget.category_id:
+                    raise ValidationError(_('La cuenta controlada debe pertenecer al rubro del presupuesto.'))
+                if account.company_id != budget.company_id:
+                    raise ValidationError(_('La cuenta controlada debe pertenecer a la empresa del presupuesto.'))
+            if vals.get('cost_center_id'):
+                center = self.env['expense.budget.cost.center'].browse(vals['cost_center_id']).exists()
+                if center and center.company_id != budget.company_id:
+                    raise ValidationError(_('El centro de costo debe pertenecer a la empresa del presupuesto.'))
+            # If a legacy approved projection already carried an annual target,
+            # the header value must agree with it. Approved projected amounts
+            # themselves are never modified by this migration to the header UI.
+            amount = float(vals.get('annual_amount') or 0.0)
+            count = int(vals.get('distribution_month_count') or 12)
+            if not 1 <= count <= 12:
+                raise ValidationError(_('La cantidad de meses para distribuir debe estar entre 1 y 12.'))
+            vals['distribution_month_count'] = count
+            if vals.get('account_id'):
+                legacy_approved = self.env['expense.budget.line'].sudo().search([
+                    ('company_id', '=', budget.company_id.id),
+                    ('year', '=', budget.year),
+                    ('account_id', '=', vals['account_id']),
+                    ('cost_center_id', '=', vals.get('cost_center_id') or False),
+                    ('approval_state', '=', 'approved'),
+                    ('annual_amount', '>', 0),
+                ], order='id desc', limit=1)
+                if legacy_approved and float_compare(
+                        legacy_approved.annual_amount, amount,
+                        precision_rounding=budget.currency_id.rounding) != 0:
+                    raise UserError(_(
+                        'El monto anual no puede diferir del objetivo que ya fue aprobado para esta cuenta y centro de costo.'
+                    ))
+        targets = super().create(vals_list)
+        if not self.env.context.get('skip_annual_target_sync'):
+            targets._sync_unapproved_monthly_lines()
+        return targets
+
+    def _sync_unapproved_monthly_lines(self):
+        Line = self.env['expense.budget.line'].sudo()
+        for target in self:
+            if not (target.company_id and target.year and target.account_id):
+                continue
+            lines = Line.search([
+                ('company_id', '=', target.company_id.id),
+                ('year', '=', target.year),
+                ('account_id', '=', target.account_id.id),
+                ('cost_center_id', '=', target.cost_center_id.id or False),
+                ('approval_state', 'in', ('draft', 'rejected')),
+                ('budget_id.state', 'in', ('draft', 'approved')),
+            ])
+            if lines:
+                lines.with_context(
+                    skip_annual_amount_propagation=True,
+                    skip_expense_budget_consumption_on_save=True,
+                ).write({
+                    'annual_amount': target.annual_amount,
+                    'allocation_month_count': target.distribution_month_count,
+                    'planned_amount': target.monthly_amount,
+                })
+
+    def write(self, vals):
+        vals = dict(vals)
+        protected_identity = {'budget_id', 'account_id', 'cost_center_id'}
+        for target in self:
+            if target.budget_id.state not in ('draft', 'approved'):
+                raise UserError(_('No puede modificar el presupuesto anual mientras el presupuesto está enviado a aprobación o rechazado.'))
+            if protected_identity.intersection(vals):
+                has_monthly_lines = self.env['expense.budget.line'].sudo().search_count([
+                    ('company_id', '=', target.company_id.id),
+                    ('year', '=', target.year),
+                    ('account_id', '=', target.account_id.id),
+                    ('cost_center_id', '=', target.cost_center_id.id or False),
+                ])
+                if has_monthly_lines:
+                    raise UserError(_('No puede cambiar la cuenta, centro o cabecera de un objetivo anual que ya tiene proyecciones mensuales.'))
+            if 'distribution_month_count' in vals and not 1 <= int(vals['distribution_month_count'] or 0) <= 12:
+                raise ValidationError(_('La cantidad de meses para distribuir debe estar entre 1 y 12.'))
+            if {'annual_amount', 'distribution_month_count'}.intersection(vals) and target._has_protected_months():
+                new_amount = float(vals.get('annual_amount', target.annual_amount) or 0.0)
+                new_count = int(vals.get('distribution_month_count', target.distribution_month_count) or 12)
+                amount_changed = float_compare(
+                    new_amount, target.annual_amount,
+                    precision_rounding=target.currency_id.rounding,
+                ) != 0
+                count_changed = new_count != target.distribution_month_count
+                if amount_changed or count_changed:
+                    raise UserError(_(
+                        'Este presupuesto anual ya tiene meses aprobados o pendientes de aprobación. '
+                        'No puede cambiar el importe ni la distribución; las nuevas proyecciones deben conservarlos.'
+                    ))
+        result = super().write(vals)
+        if {'annual_amount', 'distribution_month_count', 'account_id', 'cost_center_id', 'budget_id'}.intersection(vals):
+            self._sync_unapproved_monthly_lines()
+        return result
+
+    def unlink(self):
+        for target in self:
+            if target._has_protected_months():
+                raise UserError(_('No puede eliminar un presupuesto anual con meses aprobados o pendientes de aprobación.'))
+            lines = self.env['expense.budget.line'].sudo().search([
+                ('company_id', '=', target.company_id.id),
+                ('year', '=', target.year),
+                ('account_id', '=', target.account_id.id),
+                ('cost_center_id', '=', target.cost_center_id.id or False),
+                ('approval_state', 'in', ('draft', 'rejected')),
+                ('budget_id.state', 'in', ('draft', 'approved')),
+            ])
+            if lines:
+                lines.with_context(
+                    skip_annual_amount_propagation=True,
+                    skip_expense_budget_consumption_on_save=True,
+                ).write({'annual_amount': 0.0})
+        return super().unlink()
 
 
 class ExpenseBudgetLine(models.Model):
@@ -840,9 +1163,12 @@ class ExpenseBudgetLine(models.Model):
                 line.category_id = selected_category
 
     @api.model
-    def _monthly_amount_from_annual(self, annual_amount, currency=False):
-        """Return one twelfth of an annual target, rounded to company currency."""
-        value = (annual_amount or 0.0) / 12.0
+    def _monthly_amount_from_annual(self, annual_amount, currency=False, months_count=12):
+        """Distribute an annual amount across the selected month count."""
+        divisor = int(months_count or 12)
+        if not 1 <= divisor <= 12:
+            divisor = 12
+        value = (annual_amount or 0.0) / float(divisor)
         currency = currency or self.env.company.currency_id
         return currency.round(value) if currency else round(value, 2)
 
@@ -862,10 +1188,37 @@ class ExpenseBudgetLine(models.Model):
         ) + [('annual_amount', '>', 0)]
 
     @api.model
+    def _get_distribution_month_count_for_pair(self, company_id, year, account_id, cost_center_id=False):
+        """Return the stored allocation divisor, keeping legacy records at 12."""
+        if not (company_id and year and account_id):
+            return 12
+        target = self.env['expense.budget.annual.target'].sudo().search([
+            ('company_id', '=', company_id),
+            ('year', '=', year),
+            ('account_id', '=', account_id),
+            ('cost_center_id', '=', cost_center_id or False),
+        ], order='id desc', limit=1)
+        if target and target.distribution_month_count:
+            return target.distribution_month_count
+        source = self.sudo().search(
+            self._annual_pair_identity_domain(company_id, year, account_id, cost_center_id),
+            order='id desc', limit=1,
+        )
+        return source.allocation_month_count or 12 if source else 12
+
+    @api.model
     def _get_annual_amount_for_pair(self, company_id, year, account_id, cost_center_id=False):
-        """Find the saved annual target for a company/year/account/cost-center pair."""
+        """Read the annual target from the budget header; fall back to legacy line data."""
         if not (company_id and year and account_id):
             return 0.0
+        target = self.env['expense.budget.annual.target'].sudo().search([
+            ('company_id', '=', company_id),
+            ('year', '=', year),
+            ('account_id', '=', account_id),
+            ('cost_center_id', '=', cost_center_id or False),
+        ], order='id desc', limit=1)
+        if target:
+            return target.annual_amount
         source = self.sudo().search(
             self._annual_pair_domain(company_id, year, account_id, cost_center_id),
             order='id desc', limit=1,
@@ -907,13 +1260,32 @@ class ExpenseBudgetLine(models.Model):
                 and (other.cost_center_id.id or False) == center_id
                 and other.annual_amount > 0
             ))[:1]
-            amount = sibling.annual_amount if sibling else self._get_annual_amount_for_pair(
-                line.budget_id.company_id.id, line.budget_id.year,
-                line.account_id.id, center_id,
+            header_target = line.budget_id.annual_target_ids.filtered(lambda target: (
+                target.account_id == line.account_id
+                and (target.cost_center_id.id or False) == center_id
+            ))[:1]
+            amount = (
+                header_target.annual_amount if header_target else
+                sibling.annual_amount if sibling else
+                self._get_annual_amount_for_pair(
+                    line.budget_id.company_id.id, line.budget_id.year,
+                    line.account_id.id, center_id,
+                )
+            )
+            divisor = (
+                header_target.distribution_month_count if header_target else
+                sibling.allocation_month_count if sibling else
+                self._get_distribution_month_count_for_pair(
+                    line.budget_id.company_id.id, line.budget_id.year,
+                    line.account_id.id, center_id,
+                )
             )
             if amount > 0:
                 line.annual_amount = amount
-                line.planned_amount = line._monthly_amount_from_annual(amount, line.currency_id)
+                line.allocation_month_count = divisor or 12
+                line.planned_amount = line._monthly_amount_from_annual(
+                    amount, line.currency_id, line.allocation_month_count,
+                )
             elif line.annual_amount > 0:
                 # The account/center pair changed and no annual target exists for
                 # the new pair: do not carry the old pair's amount forward.
@@ -925,7 +1297,13 @@ class ExpenseBudgetLine(models.Model):
         for line in self:
             if not line.annual_amount or line.annual_amount <= 0:
                 continue
-            monthly = line._monthly_amount_from_annual(line.annual_amount, line.currency_id)
+            count = line.allocation_month_count or line._get_distribution_month_count_for_pair(
+                line.company_id.id, line.year, line.account_id.id, line.cost_center_id.id or False,
+            )
+            monthly = line._monthly_amount_from_annual(
+                line.annual_amount, line.currency_id, count,
+            )
+            line.allocation_month_count = count
             line.planned_amount = monthly
             # Keep unapproved sibling months aligned to the same annual target.
             # Approved months are deliberately never changed.
@@ -934,6 +1312,7 @@ class ExpenseBudgetLine(models.Model):
                         and sibling.cost_center_id == line.cost_center_id
                         and sibling.approval_state in ('draft', 'rejected')):
                     sibling.annual_amount = line.annual_amount
+                    sibling.allocation_month_count = count
                     sibling.planned_amount = monthly
 
     @api.onchange('account_id')
@@ -1130,9 +1509,11 @@ class ExpenseBudgetLine(models.Model):
                 ) % line.budget_id.year)
     annual_amount = fields.Monetary(
         string='Presupuesto anual', default=0.0, currency_field='currency_id',
-        help='Importe total que se espera gastar durante los 12 meses para esta cuenta y centro de costo. '
-             'Al indicarlo, Proyectado se calcula automáticamente como Presupuesto anual / 12. '
-             'El valor se reutiliza para los demás meses de la misma cuenta y centro.',
+        help='Importe total de referencia para esta cuenta y centro de costo. El asistente lo distribuye entre los meses seleccionados; los presupuestos históricos conservan su distribución original.',
+    )
+    allocation_month_count = fields.Integer(
+        string='Meses para distribuir', default=12, required=True, copy=False,
+        help='Número de meses usado para calcular Proyectado. Los registros anteriores mantienen 12 por compatibilidad.',
     )
     annual_amount_readonly = fields.Boolean(
         string='Presupuesto anual bloqueado', compute='_compute_annual_amount_readonly',
@@ -1161,6 +1542,8 @@ class ExpenseBudgetLine(models.Model):
          'La proyección no puede ser negativa.'),
         ('annual_amount_nonnegative', 'check(annual_amount >= 0)',
          'El presupuesto anual no puede ser negativo.'),
+        ('allocation_month_count_valid', 'check(allocation_month_count >= 1 and allocation_month_count <= 12)',
+         'La cantidad de meses para distribuir debe estar entre 1 y 12.'),
     ]
 
     def init(self):
@@ -1339,13 +1722,15 @@ class ExpenseBudgetLine(models.Model):
             if amount <= 0:
                 continue
             key = (budget.company_id.id, budget.year, account_id, vals.get('cost_center_id') or False)
+            count = int(vals.get('allocation_month_count') or self._get_distribution_month_count_for_pair(*key))
             prior = batch_targets.get(key)
-            if prior is not None and float_compare(
-                    prior, amount, precision_rounding=budget.currency_id.rounding) != 0:
+            if prior is not None and (
+                    float_compare(prior[0], amount, precision_rounding=budget.currency_id.rounding) != 0
+                    or prior[1] != count):
                 raise ValidationError(_(
-                    'El presupuesto anual debe ser el mismo para todos los meses de la misma cuenta y centro de costo.'
+                    'El presupuesto anual y la cantidad de meses de distribución deben ser iguales para todas las líneas de la misma cuenta y centro de costo.'
                 ))
-            batch_targets[key] = amount
+            batch_targets[key] = (amount, count)
         for vals in vals_list:
             # El selector visual many2one se traduce al valor Selection histórico.
             if 'month_option_id' in vals:
@@ -1362,9 +1747,14 @@ class ExpenseBudgetLine(models.Model):
             if budget and vals.get('account_id'):
                 pair_key = (budget.company_id.id, budget.year, vals.get('account_id'),
                             vals.get('cost_center_id') or False)
-                amount = batch_targets.get(pair_key) or float(vals.get('annual_amount') or 0.0)
+                batch_target = batch_targets.get(pair_key)
+                amount = batch_target[0] if batch_target else float(vals.get('annual_amount') or 0.0)
                 if amount <= 0:
                     amount = self._get_annual_amount_for_pair(*pair_key)
+                count = (
+                    batch_target[1] if batch_target else
+                    int(vals.get('allocation_month_count') or self._get_distribution_month_count_for_pair(*pair_key))
+                )
                 if amount > 0:
                     # Do not allow a different annual amount once this pair's
                     # annual target has already been approved.
@@ -1379,8 +1769,16 @@ class ExpenseBudgetLine(models.Model):
                             'El presupuesto anual de esta cuenta y centro ya fue aprobado. '
                             'No puede cambiarlo al agregar meses futuros.'
                         ))
+                    if approved_target and count != (approved_target.allocation_month_count or 12):
+                        raise UserError(_(
+                            'La distribución mensual ya fue aprobada para esta cuenta y centro. '
+                            'Las nuevas líneas deben conservar el mismo proyectado mensual.'
+                        ))
                     vals['annual_amount'] = amount
-                    vals['planned_amount'] = self._monthly_amount_from_annual(amount, budget.currency_id)
+                    vals['allocation_month_count'] = count
+                    vals['planned_amount'] = self._monthly_amount_from_annual(
+                        amount, budget.currency_id, count,
+                    )
             if budget and budget.state not in ('draft', 'approved'):
                 raise UserError(_(
                     'Solo puede agregar proyecciones cuando el presupuesto está en borrador '
@@ -1410,8 +1808,8 @@ class ExpenseBudgetLine(models.Model):
             targets = {}
             for line in records.filtered(lambda row: row.annual_amount > 0 and row.account_id and row.budget_id):
                 key = (line.company_id.id, line.year, line.account_id.id, line.cost_center_id.id or False)
-                targets[key] = (line.annual_amount, line.currency_id)
-            for key, (amount, currency) in targets.items():
+                targets[key] = (line.annual_amount, line.allocation_month_count or 12, line.currency_id)
+            for key, (amount, count, currency) in targets.items():
                 approved_target = self.sudo().search(
                     self._annual_pair_domain(*key) + [('approval_state', '=', 'approved')],
                     order='id desc', limit=1,
@@ -1434,7 +1832,8 @@ class ExpenseBudgetLine(models.Model):
                         skip_expense_budget_consumption_on_save=True,
                     ).write({
                         'annual_amount': amount,
-                        'planned_amount': self._monthly_amount_from_annual(amount, currency),
+                        'allocation_month_count': count,
+                        'planned_amount': self._monthly_amount_from_annual(amount, currency, count),
                     })
         records._assign_unmatched_expenses()
         if not self.env.context.get('skip_expense_budget_consumption_on_save'):
@@ -1462,8 +1861,64 @@ class ExpenseBudgetLine(models.Model):
             vals = dict(vals, month=str(fields.Date.to_date(vals['consumption_date']).month))
         if 'subcenter_code' in vals:
             vals = dict(vals, subcenter_code=(vals['subcenter_code'] or '').strip().upper() or False)
+        if (len(self) == 1 and not self.env.context.get('skip_annual_target_sync')
+                and {'account_id', 'cost_center_id', 'budget_id'}.intersection(vals)
+                and 'annual_amount' not in vals):
+            rec = self
+            target_budget = self.env['expense.budget'].browse(
+                vals.get('budget_id', rec.budget_id.id)
+            ).exists()
+            target_account = vals.get('account_id', rec.account_id.id)
+            target_center = vals.get('cost_center_id', rec.cost_center_id.id) or False
+            if target_budget and target_account:
+                amount = self._get_annual_amount_for_pair(
+                    target_budget.company_id.id, target_budget.year,
+                    target_account, target_center,
+                )
+                count = self._get_distribution_month_count_for_pair(
+                    target_budget.company_id.id, target_budget.year,
+                    target_account, target_center,
+                )
+                if amount > 0:
+                    vals['annual_amount'] = amount
+                    vals['allocation_month_count'] = count
+                    vals['planned_amount'] = self._monthly_amount_from_annual(
+                        amount, target_budget.currency_id, count,
+                    )
         annual_target = float(vals.get('annual_amount') or 0.0) if 'annual_amount' in vals else None
+        if 'planned_amount' in vals and annual_target is None:
+            # If a header annual target exists, the monthly projection is derived,
+            # not a separate manually editable number (including direct RPC calls).
+            for rec in self:
+                if not (rec.budget_id and rec.account_id):
+                    continue
+                header_amount = self._get_annual_amount_for_pair(
+                    rec.company_id.id, rec.year, rec.account_id.id,
+                    rec.cost_center_id.id or False,
+                )
+                if header_amount > 0:
+                    expected_count = int(
+                        vals.get('allocation_month_count')
+                        or self._get_distribution_month_count_for_pair(
+                            rec.company_id.id, rec.year, rec.account_id.id,
+                            rec.cost_center_id.id or False,
+                        )
+                    )
+                    expected_monthly = self._monthly_amount_from_annual(
+                        header_amount, rec.currency_id, expected_count,
+                    )
+                    if float_compare(
+                            float(vals['planned_amount']), expected_monthly,
+                            precision_rounding=rec.currency_id.rounding) != 0:
+                        raise UserError(_(
+                            'El campo Proyectado se calcula desde el presupuesto anual y la cantidad de meses de distribución configurada en cabecera. '
+                            'Modifique el objetivo anual en la cabecera si necesita cambiar el importe.'
+                        ))
         if annual_target is not None:
+            default_count = int(vals.get('allocation_month_count') or (self[:1].allocation_month_count if self else 12) or 12)
+            if not 1 <= default_count <= 12:
+                raise ValidationError(_('La cantidad de meses para distribuir debe estar entre 1 y 12.'))
+            vals['allocation_month_count'] = default_count
             for rec in self:
                 if rec.account_id and rec.budget_id:
                     pair_domain = self._annual_pair_domain(
@@ -1480,7 +1935,7 @@ class ExpenseBudgetLine(models.Model):
                         ))
             if annual_target > 0 and self:
                 vals['planned_amount'] = self._monthly_amount_from_annual(
-                    annual_target, self[:1].currency_id,
+                    annual_target, self[:1].currency_id, default_count,
                 )
         period_fields = {'account_id', 'cost_center_id', 'subcenter_code',
                          'subcenter_id', 'budget_id', 'month', 'consumption_date'}
@@ -1489,7 +1944,7 @@ class ExpenseBudgetLine(models.Model):
         protected = {
             'account_id', 'category_id', 'cost_center_id', 'subcenter_code',
             'subcenter_id', 'budget_id', 'month', 'consumption_date',
-            'planned_amount', 'annual_amount',
+            'planned_amount', 'annual_amount', 'allocation_month_count',
         }
         if protected.intersection(vals):
             for rec in self:
@@ -1543,13 +1998,21 @@ class ExpenseBudgetLine(models.Model):
                     self._annual_pair_domain(*key) + [('approval_state', '=', 'approved')],
                     order='id desc', limit=1,
                 )
-                if approved_target and float_compare(
+                if approved_target and annual_target is not None and float_compare(
                         approved_target.annual_amount, annual_target,
                         precision_rounding=rec.currency_id.rounding) != 0:
                     raise UserError(_(
                         'El presupuesto anual de esta cuenta y centro ya fue aprobado. '
                         'No puede cambiarlo; los meses anteriores deben conservarse.'
                     ))
+                if (approved_target and 'allocation_month_count' in vals
+                        and int(vals.get('allocation_month_count') or 12) != (approved_target.allocation_month_count or 12)):
+                    raise UserError(_(
+                        'La distribución mensual de esta cuenta y centro ya fue aprobada. '
+                        'No puede cambiarla para los meses futuros.'
+                    ))
+                effective_annual = annual_target if annual_target is not None else rec.annual_amount
+                effective_count = int(vals.get('allocation_month_count') or rec.allocation_month_count or 12)
                 sibling_domain = self._annual_pair_identity_domain(*key) + [
                     ('approval_state', 'in', ['draft', 'rejected']),
                     ('id', 'not in', self.ids),
@@ -1560,9 +2023,10 @@ class ExpenseBudgetLine(models.Model):
                         skip_annual_amount_propagation=True,
                         skip_expense_budget_consumption_on_save=True,
                     ).write({
-                        'annual_amount': annual_target,
+                        'annual_amount': effective_annual,
+                        'allocation_month_count': effective_count,
                         'planned_amount': self._monthly_amount_from_annual(
-                            annual_target, rec.currency_id,
+                            effective_annual, rec.currency_id, effective_count,
                         ),
                     })
         if 'month' in vals or 'consumption_date' in vals:
