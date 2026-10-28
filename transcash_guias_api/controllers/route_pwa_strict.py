@@ -43,6 +43,20 @@ def _legal_name(value):
 class TranscashOperacionFiltrada(TranscashOperaciones):
     """Aplica comparación directa por código ERP, chofer y transportista."""
 
+    def _guard(self):
+        """La bitácora PWA no debe intentar enviar correos en el POST.
+
+        Odoo puede publicar una nota de seguimiento y tratar de avisar a sus
+        seguidores inmediatamente. Si el usuario no tiene remitente configurado,
+        la notificación puede fallar y abortar la transacción de carga/ruta.
+        Solo diferimos el envío automático; NO desactivamos auditoría, validaciones,
+        permisos ni correos explícitos del proceso de Contabilidad.
+        """
+        allowed = super()._guard()
+        if allowed and request.httprequest.method == 'POST':
+            request.update_context(mail_notify_force_send=False, tc_pwa_audit_note=True)
+        return allowed
+
     def _source_map(self, guias, company_id):
         if not guias:
             return {}
@@ -607,7 +621,7 @@ class TranscashOperacionFiltrada(TranscashOperaciones):
                     if ('destino_id' in changes or
                             ('chofer_usuario_id' in changes and has_source) or
                             'proveedor_id' in changes):
-                        request.env['transcash.guia'].sudo().browse(guia_id).message_post(body=(
+                        request.env['transcash.guia'].sudo().browse(guia_id)._message_log(body=(
                             'PWA: homologación de identidad comprobada al seleccionar '
                             'guía para hoja de ruta %s. Campos: %s.' %
                             (ruta.name, ', '.join(sorted(changes)))))

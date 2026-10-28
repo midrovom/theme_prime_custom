@@ -33,3 +33,5 @@ from . import role_boundaries
 
 from . import transport_client_mode
 from . import portal_accounts
+
+from . import pwa_internal_notes

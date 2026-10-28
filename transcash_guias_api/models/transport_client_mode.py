@@ -67,7 +67,7 @@ class EmbarqueModalidad(models.Model):
                 'valor_acordado': 0.0, 'tarifa_referencial_total': 0.0,
                 'tarifa_id': False,
             })
-            trip.message_post(body=_('Modalidad: transporte enviado por el cliente. Sin flete ni liquidación. Responsable: %s.') % self.env.user.name)
+            trip._message_log(body=_('Modalidad: transporte enviado por el cliente. Sin flete ni liquidación. Responsable: %s.') % self.env.user.name)
         return True
 
     def action_set_contracted_transport(self):
@@ -82,7 +82,7 @@ class EmbarqueModalidad(models.Model):
             trip.sudo().with_context(tc_modalidad_autorizada=True).write({
                 'modalidad_transporte': 'contratado', 'estado_aprobacion': 'pendiente',
             })
-            trip.message_post(body=_('Modalidad corregida antes del despacho: transporte contratado. Responsable: %s.') % self.env.user.name)
+            trip._message_log(body=_('Modalidad corregida antes del despacho: transporte contratado. Responsable: %s.') % self.env.user.name)
         return True
 
     @api.depends('estado_aprobacion', 'liquidacion_linea_id.liquidacion_id.estado', 'modalidad_transporte')
@@ -127,7 +127,7 @@ class EmbarqueModalidad(models.Model):
             trip.sudo().write({'state': 'ruta', 'fecha_embarcado': now, 'fecha_salida': now})
             for guide in guias:
                 guide._track_event('Carga documentada y despachada por Logística · transporte del cliente', publico_cliente=True)
-            trip.message_post(body=_('Logística despachó el transporte del cliente. No requiere aceptación del chofer ni genera flete.'))
+            trip._message_log(body=_('Logística despachó el transporte del cliente. No requiere aceptación del chofer ni genera flete.'))
         return True
 
     def action_open_client_delivery_wizard(self):
@@ -189,7 +189,7 @@ class EmbarqueModalidad(models.Model):
             guia._track_event('Logística registró entrega · transporte enviado por el cliente',
                               'Responsable: %s. Constancia: %s' % (self.env.user.name, reason[:600]),
                               publico_cliente=True)
-        self.message_post(body=_('Entrega registrada por Logística. Sin firma ni aceptación del chofer. Responsable: %s. Constancia: %s') %
+        self._message_log(body=_('Entrega registrada por Logística. Sin firma ni aceptación del chofer. Responsable: %s. Constancia: %s') %
                           (self.env.user.name, reason))
         return True
 

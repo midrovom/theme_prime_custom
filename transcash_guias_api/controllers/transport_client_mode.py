@@ -10,6 +10,34 @@ from odoo.addons.logistica_transcash.controllers.embarque import EmbarquePortal
 
 
 class TranscashOperacionModalidad(TranscashOperacionRapida):
+    # En v5.32 estas operaciones POST llegan directamente al controlador base.
+    # Mantener sus validaciones y endpoints; solo diferir los avisos automáticos
+    # de la bitácora Odoo, que de otro modo dependen de un remitente de correo.
+    @http.route()
+    def route_media(self, route_id, **post):
+        request.update_context(mail_notify_force_send=False, tc_pwa_audit_note=True)
+        return super().route_media(route_id, **post)
+
+    @http.route()
+    def trip_release(self, trip_id, **post):
+        request.update_context(mail_notify_force_send=False, tc_pwa_audit_note=True)
+        return super().trip_release(trip_id, **post)
+
+    @http.route()
+    def trip_resolve(self, trip_id, **post):
+        request.update_context(mail_notify_force_send=False, tc_pwa_audit_note=True)
+        return super().trip_resolve(trip_id, **post)
+
+    @http.route()
+    def trip_reopen(self, trip_id, **post):
+        request.update_context(mail_notify_force_send=False, tc_pwa_audit_note=True)
+        return super().trip_reopen(trip_id, **post)
+
+    @http.route()
+    def route_confirm(self, route_id, **post):
+        request.update_context(mail_notify_force_send=False, tc_pwa_audit_note=True)
+        return super().route_confirm(route_id, **post)
+
     @http.route()
     def trip_new(self, **post):
         if request.httprequest.method == 'POST':
