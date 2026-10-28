@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
 from time import monotonic
 from uuid import uuid4
 import logging
@@ -23,6 +24,29 @@ BUDGET_DECIMAL_PRECISION = 'Presupuesto de Gastos'
 def budget_amount_digits(env):
     """Independent budget precision; never change res.currency for other modules."""
     return env['decimal.precision'].precision_get(BUDGET_DECIMAL_PRECISION)
+
+
+def exact_budget_allocation(annual_amount, month_count, digits=2):
+    """Split a budget into calendar-ordered periods with no rounding difference.
+
+    Work in integer precision units (cents at 2 digits). Spread the
+    remainder by a single unit over the first months, so the sum of the
+    monthly projections is ALWAYS the original annual target.
+    """
+    month_count = int(month_count)
+    digits = int(digits)
+    if not 1 <= month_count <= 12:
+        raise ValueError('La cantidad de meses debe estar entre 1 y 12.')
+    if not 0 <= digits <= 8:
+        raise ValueError('La precisión decimal debe estar entre 0 y 8.')
+    unit = Decimal(1).scaleb(-digits)
+    target = Decimal(str(annual_amount)).quantize(unit, rounding=ROUND_HALF_UP)
+    if target < 0:
+        raise ValueError('El importe presupuestado no puede ser negativo.')
+    units = int(target / unit)
+    each, remainder = divmod(units, month_count)
+    return [float((each + (index < remainder)) * unit)
+            for index in range(month_count)]
 
 
 
@@ -1234,6 +1258,45 @@ class ExpenseBudgetAnnualTarget(models.Model):
             targets._sync_unapproved_monthly_lines()
         return targets
 
+    def _rebalance_exact_distribution(self):
+        """Correct rounding only for complete, fully editable draft allocations.
+
+        Approved/submitted months and approved budget headers are never
+        modified; partial annual distributions remain untouched until all
+        selected months exist. Reports read the stored monthly values.
+        """
+        Line = self.env['expense.budget.line'].sudo()
+        precision = budget_amount_digits(self.env)
+        for target in self:
+            if (not target.budget_id or target.budget_id.state != 'draft'
+                    or not target.account_id or target.annual_amount <= 0):
+                continue
+            pair = [
+                ('budget_id', '=', target.budget_id.id),
+                ('account_id', '=', target.account_id.id),
+                ('cost_center_id', '=', target.cost_center_id.id or False),
+            ]
+            lines = Line.search(pair, order='month_number, id')
+            count = target.distribution_month_count or 12
+            if (len(lines) != count or any(line.approval_state not in ('draft', 'rejected')
+                                           for line in lines)):
+                continue
+            months = [int(line.month) for line in lines if line.month]
+            if len(months) != count or len(set(months)) != count:
+                continue
+            allocated = exact_budget_allocation(target.annual_amount, count, precision)
+            for line, expected in zip(lines, allocated):
+                if float_compare(line.planned_amount, expected,
+                                 precision_digits=precision) == 0:
+                    continue
+                # Annual amount is already secured by the target. Bypass only
+                # the legacy equal-month guard for this internal adjustment.
+                line.with_context(
+                    _expense_budget_exact_rebalance=True,
+                    skip_annual_amount_propagation=True,
+                    skip_expense_budget_consumption_on_save=True,
+                ).write({'planned_amount': expected})
+
     def _sync_unapproved_monthly_lines(self):
         Line = self.env['expense.budget.line'].sudo()
         for target in self:
@@ -1256,6 +1319,7 @@ class ExpenseBudgetAnnualTarget(models.Model):
                     'allocation_month_count': target.distribution_month_count,
                     'planned_amount': target.monthly_amount,
                 })
+            target._rebalance_exact_distribution()
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -2116,6 +2180,22 @@ class ExpenseBudgetLine(models.Model):
                         'allocation_month_count': count,
                         'planned_amount': self._monthly_amount_from_annual(amount, currency, count),
                     })
+        if not self.env.context.get('_expense_budget_exact_rebalance'):
+            Target = self.env['expense.budget.annual.target'].sudo()
+            targets_to_balance = Target.browse()
+            processed_pairs = set()
+            for record in records.filtered(lambda row: row.account_id and row.budget_id):
+                pair_key = (record.budget_id.id, record.account_id.id,
+                            record.cost_center_id.id or False)
+                if pair_key in processed_pairs:
+                    continue
+                processed_pairs.add(pair_key)
+                targets_to_balance |= Target.search([
+                    ('budget_id', '=', pair_key[0]),
+                    ('account_id', '=', pair_key[1]),
+                    ('cost_center_id', '=', pair_key[2]),
+                ], order='id desc', limit=1)
+            targets_to_balance._rebalance_exact_distribution()
         records._assign_unmatched_expenses()
         if not self.env.context.get('skip_expense_budget_consumption_on_save'):
             self.env['expense.budget.inventory.sync']._sync_saved_lines(records)
@@ -2175,7 +2255,8 @@ class ExpenseBudgetLine(models.Model):
                         amount, target_budget.currency_id, count,
                     )
         annual_target = float(vals.get('annual_amount') or 0.0) if 'annual_amount' in vals else None
-        if 'planned_amount' in vals and annual_target is None:
+        if ('planned_amount' in vals and annual_target is None
+                and not (self.env.su and self.env.context.get('_expense_budget_exact_rebalance'))):
             # If a header annual target exists, the monthly projection is derived,
             # not a separate manually editable number (including direct RPC calls).
             for rec in self:

@@ -91,7 +91,6 @@
                 <field name="variance_amount" sum="Disponible"/>
                 <field name="execution_percentage"/>
                 <field name="approved_through_month" string="Aprobado hasta"/>
-                <field name="months_pending_approval" string="Meses pendientes"/>
                 <field name="state" widget="badge"/>
             </list>
         </field>
@@ -159,7 +158,6 @@
             </div>
         </div>
     </div>
-    <div class="o_ebc_quick_budget_help text-muted small">Agregar distribuye el importe entre los meses elegidos (sin elegir meses, usa los 12). Eliminar borra las líneas de la cuenta y centro seleccionados (sin meses, borra todos sus meses). Solo en borrador.</div>
 </div><notebook>
                         <page string="Proyecciones mensuales">
                             <field name="line_ids" class="o_ebc_lines" readonly="state != 'draft'">
