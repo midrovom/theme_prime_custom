@@ -232,3 +232,11 @@ El formulario marca los tres campos como obligatorios y el servidor valida los v
 se imprimen los 12 meses; si no se seleccionan cuentas, se consideran todas las cuentas del rubro
 con líneas presupuestarias para ese centro de costo.
 Las operaciones de cron, conexión ERP y cálculos del reporte no se modifican con este cambio.
+
+## Presupuesto anual por cuenta y centro de costo (18.0.1.4.84)
+
+En las líneas de proyección se incorpora el campo **Presupuesto anual**. Al ingresar un monto mayor que cero, el sistema calcula **Proyectado = Presupuesto anual / 12**, redondeado a la moneda de la empresa. Por ejemplo, un presupuesto anual de USD 1.200 genera una proyección mensual de USD 100.
+
+El monto anual se comparte entre los meses pendientes de la misma cuenta controlada, centro de costo, empresa y año. Al añadir un nuevo mes para esa combinación, el módulo reutiliza el monto anual guardado y calcula el proyectado mensual. Otra cuenta o centro de costo mantiene su propio presupuesto anual.
+
+Los importes anuales y mensuales de líneas ya aprobadas no se modifican. Una vez que la combinación cuenta/centro tiene un objetivo anual aprobado, ese objetivo queda bloqueado para las nuevas líneas; los nuevos meses conservan la distribución mensual calculada. Para líneas históricas aprobadas antes de incorporar este campo, el monto anual permanece vacío/cero hasta que se defina para los meses futuros; no se infiere automáticamente para evitar alterar la planificación histórica.

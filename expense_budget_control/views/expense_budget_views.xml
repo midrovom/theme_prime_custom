@@ -153,13 +153,19 @@
                                            domain="[('company_id', '=', parent.company_id)]"
                                            options="{'no_create': True}"/>
                                     <field name="available_month_option_ids" column_invisible="True"/>
+                                    <field name="annual_amount_readonly" column_invisible="True"/>
                                     <field name="month" column_invisible="True"/>
                                     <field name="month_option_id" string="Mes" required="1"
                                            domain="[('id', 'in', available_month_option_ids)]"
                                            readonly="approval_state in ['approved', 'to_approve']"
                                            options="{'no_create': True, 'no_open': True}"
                                            help="Filtra por cuenta controlada y centro de costo: una combinación puede tener una sola proyección por mes. Si Agua/Quito está aprobado hasta mayo, muestra desde junio; Agua de otro centro puede comenzar en enero si aún no tiene proyección."/>
-                                    <field name="planned_amount" readonly="approval_state in ['approved', 'to_approve']" sum="Proyectado"/>
+                                    <field name="annual_amount" string="Presupuesto anual"
+                                           readonly="annual_amount_readonly or approval_state in ['approved', 'to_approve']"
+                                           help="Monto total anual para esta cuenta y centro. El sistema divide este valor para 12 y lo coloca en Proyectado. Se reutiliza en los demás meses del mismo año y combinación."/>
+                                    <field name="planned_amount"
+                                           readonly="approval_state in ['approved', 'to_approve'] or annual_amount > 0"
+                                           sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="variance_amount" readonly="True" sum="Disponible"/>
                                     <field name="execution_percentage" readonly="True"/>

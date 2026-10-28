@@ -127,6 +127,51 @@ class TestIncrementalBudgetApproval(TransactionCase):
         self.budget.with_user(self.registrar).action_submit()
         self.assertEqual(june_line.approval_state, 'to_approve')
 
+
+    def test_annual_amount_is_divided_by_twelve_and_reused_for_future_months(self):
+        january = self.initial_lines.filtered(lambda line: line.month == '1')
+        january.write({'annual_amount': 1200.0, 'planned_amount': 999.0})
+        self.assertEqual(january.annual_amount, 1200.0)
+        self.assertEqual(january.planned_amount, 100.0)
+        self.assertTrue(all(line.annual_amount == 1200.0 for line in self.initial_lines))
+        self.assertTrue(all(line.planned_amount == 100.0 for line in self.initial_lines))
+
+        # Before any month is approved, changing the annual target aligns all
+        # unapproved months for the same account and center.
+        january.write({'annual_amount': 2400.0})
+        self.assertTrue(all(line.annual_amount == 2400.0 for line in self.initial_lines))
+        self.assertTrue(all(line.planned_amount == 200.0 for line in self.initial_lines))
+
+        self._approve_initial_budget()
+        june = self.Line.create({
+            'budget_id': self.budget.id,
+            'account_id': self.account.id,
+            'month': '6',
+        })
+        self.assertEqual(june.annual_amount, 2400.0)
+        self.assertEqual(june.planned_amount, 200.0)
+        self.assertEqual(june.approval_state, 'draft')
+
+    def test_annual_amount_cannot_be_changed_after_pair_is_approved(self):
+        self._approve_initial_budget()
+        annual_account = self.env['expense.budget.account'].create({
+            'code': 'TEST-INCR-ANNUAL-AGUA', 'name': 'Agua presupuesto anual',
+            'category_id': self.category.id, 'company_id': self.company.id,
+        })
+        january = self.Line.create({
+            'budget_id': self.budget.id, 'account_id': annual_account.id,
+            'month': '1', 'annual_amount': 1200.0,
+        })
+        self.budget.with_context(skip_expense_budget_consumption_on_save=True).action_submit()
+        self.budget.sudo().action_approve()
+        june = self.Line.create({
+            'budget_id': self.budget.id, 'account_id': annual_account.id,
+            'month': '6', 'annual_amount': 1200.0,
+        })
+        self.assertEqual(june.planned_amount, 100.0)
+        with self.assertRaises(UserError):
+            june.write({'annual_amount': 1800.0})
+
     def test_cannot_add_new_line_in_an_already_approved_month(self):
         self._approve_initial_budget()
         with self.assertRaises(UserError):
