@@ -43,7 +43,7 @@ class TranscashEditarPlanificacion(TranscashOperacionModalidad):
         return response
 
     def _tc_gallery_for_trip(self, trip):
-        from logistica_transcash.controllers.evidence_hub import gallery_for_trip
+        from odoo.addons.logistica_transcash.controllers.evidence_hub import gallery_for_trip
         return gallery_for_trip(trip)
 
     @http.route()
