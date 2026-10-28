@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Reutilizar los directorios oficiales y sus permisos originales. -->
+  <record id="tc_portal_supplier_search_v230" model="ir.ui.view">
+    <field name="name">transcash.acceso.proveedor.search.pending.v230</field>
+    <field name="model">transcash.acceso.proveedor</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_acceso_proveedor_search"/>
+    <field name="arch" type="xml">
+      <xpath expr="//filter[@name='habilitados']" position="before">
+        <filter name="tc_pendientes_proveedor_v230" string="Por habilitar" domain="[('activo','=',False)]"/>
+      </xpath>
+    </field>
+  </record>
+  <record id="tc_portal_client_search_v230" model="ir.ui.view">
+    <field name="name">transcash.acceso.cliente.search.pending.v230</field>
+    <field name="model">transcash.acceso.cliente</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_acceso_cliente_search"/>
+    <field name="arch" type="xml">
+      <xpath expr="//filter[@name='habilitados']" position="before">
+        <filter name="tc_pendientes_cliente_v230" string="Por habilitar" domain="[('activo','=',False)]"/>
+      </xpath>
+    </field>
+  </record>
+  <!-- Las instrucciones originales de invitar Portal ya no corresponden a las
+       cuentas preparadas por API; se sustituyen sin tocar la funcionalidad. -->
+  <record id="tc_portal_supplier_help_v230" model="ir.ui.view">
+    <field name="name">transcash.acceso.proveedor.form.help.v230</field>
+    <field name="model">transcash.acceso.proveedor</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_acceso_proveedor_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet/div[contains(@class,'alert-info')]" position="replace">
+        <div class="alert alert-info" role="alert">
+          <strong>Habilitación por Contabilidad:</strong> la sincronización ERP prepara la cuenta Portal
+          y registra su acceso como pendiente. Compruebe el documento y la empresa transportista antes
+          de pulsar <strong>Habilitar acceso Proveedor</strong>. No necesita crear otro usuario.
+        </div>
+      </xpath>
+    </field>
+  </record>
+  <record id="tc_portal_client_help_v230" model="ir.ui.view">
+    <field name="name">transcash.acceso.cliente.form.help.v230</field>
+    <field name="model">transcash.acceso.cliente</field>
+    <field name="inherit_id" ref="logistica_transcash.view_transcash_acceso_cliente_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet/div[contains(@class,'alert-info')]" position="replace">
+        <div class="alert alert-info" role="alert">
+          <strong>Habilitación por el jefe de Logística:</strong> las cuentas de destinatarios con
+          identificación válida se preparan durante la sincronización. Verifique identidad y contacto
+          antes de pulsar <strong>Habilitar acceso Cliente</strong>. No vuelva a crear el usuario.
+        </div>
+      </xpath>
+    </field>
+  </record>
+</odoo>

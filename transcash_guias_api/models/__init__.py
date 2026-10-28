@@ -32,3 +32,4 @@ from . import destination_alias
 from . import role_boundaries
 
 from . import transport_client_mode
+from . import portal_accounts

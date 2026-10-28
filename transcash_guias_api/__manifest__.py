@@ -1,6 +1,6 @@
 {
     'name': 'Transcash - Importación de Guías ERP',
-    'version': '18.0.2.29.0',
+    'version': '18.0.2.30.0',
     'category': 'Inventory/Delivery',
     'summary': 'Sincroniza guías desde api.administrator con maestros y privacidad comercial',
     'license': 'LGPL-3',
@@ -31,6 +31,8 @@
         'views/pwa_fast_sync_v223.xml',
         'views/transport_client_mode_views.xml',
         'views/destination_sync_views.xml',
+        'views/portal_pending_views.xml',
+        'views/pwa_account_views.xml',
     ],
     'assets': {
         'web.assets_backend': [

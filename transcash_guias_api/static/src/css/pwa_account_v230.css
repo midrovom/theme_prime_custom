@@ -1,0 +1,31 @@
+/* Página de cuenta y menú transversal: adaptable a PWA móvil y escritorio. */
+.tc-account-menu{position:relative;margin-left:auto;font-size:12px;z-index:40;flex-shrink:0}
+.tc-account-menu summary{display:flex;gap:5px;align-items:center;list-style:none;cursor:pointer;font-weight:750;
+ background:#e9f2f1;color:#153d3a;border-radius:11px;padding:10px 11px;min-height:39px;white-space:nowrap}
+.tc-account-menu summary::-webkit-details-marker{display:none}
+.tc-account-dropdown{position:absolute;right:0;top:calc(100% + 6px);min-width:210px;max-width:85vw;z-index:100;
+ display:flex;flex-direction:column;background:white;border:1px solid #dce6ea;box-shadow:0 14px 36px #1829392e;
+ border-radius:14px;padding:7px;color:#152b36}
+.tc-account-dropdown .tc-account-user{padding:10px 12px;font-size:12px;color:#657583;overflow-wrap:anywhere}
+.tc-account-dropdown a{display:block;padding:12px;color:#193c46;font-size:13px;text-decoration:none;border-radius:8px}
+.tc-account-dropdown a:hover,.tc-account-dropdown a:focus{background:#edf5f3}
+.tc-account-dropdown .tc-account-logout{color:#9b2525;border-top:1px solid #edf0f2}
+.tc-sidebar-brand .tc-account-menu{margin:15px 0 0}
+.tc-sidebar-brand .tc-account-dropdown{left:0;right:auto}
+.tc-account-main{padding:18px 14px 70px;display:flex;justify-content:center;align-items:flex-start;min-height:65vh;width:100%}
+.tc-account-card{width:100%;max-width:470px;background:white;border:1px solid #e6eced;box-shadow:0 8px 30px #26384b13;
+ padding:25px 22px;border-radius:20px}
+.tc-account-icon{font-size:28px}.tc-account-card h1{margin:12px 0 4px;font-size:25px}
+.tc-account-subtitle,.tc-account-login{color:#506273;font-size:13px;line-height:1.5}
+.tc-account-warning,.tc-account-error,.tc-account-success{padding:12px;border-radius:10px;margin:12px 0;font-size:13px}
+.tc-account-warning{background:#fff6d9;color:#695213}.tc-account-error{background:#fff0f0;color:#8d2020}
+.tc-account-success{background:#e6f8ee;color:#156440}
+.tc-account-form{display:flex;flex-direction:column;gap:9px;margin-top:20px}
+.tc-account-form label{font-weight:700;font-size:13px;color:#263e4c;margin-top:6px}
+.tc-account-form input{width:100%;padding:13px 12px;border:1px solid #bfcbd0;border-radius:10px;font-size:16px;background:#fff}
+.tc-account-form input:focus{outline:2px solid #168c86;outline-offset:1px}
+.tc-account-form small{color:#63737d;line-height:1.4}
+.tc-account-submit{margin-top:13px;min-height:46px;background:#146b63;color:#fff;border:0;border-radius:11px;font-size:14px;font-weight:800;cursor:pointer}
+.tc-account-links{display:flex;justify-content:space-between;gap:16px;margin-top:26px;font-size:13px}
+.tc-account-links a{color:#135d62;text-decoration:underline}
+@media(max-width:420px){.tc-top{padding-left:10px;padding-right:10px}.tc-account-menu summary{padding:9px 8px;font-size:11px}.tc-brand strong{font-size:12px}.tc-brand small{font-size:7px}}

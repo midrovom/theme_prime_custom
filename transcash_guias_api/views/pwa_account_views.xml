@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- El mismo menú se dibuja con el branding compartido en todas las PWA. -->
+  <template id="tc_portal_brand_account_v230" inherit_id="logistica_transcash.mobile_brand"
+            name="Transcash PWA · Mi cuenta y cerrar sesión">
+    <xpath expr="//div[contains(concat(' ', normalize-space(@class), ' '), ' tc-brand ')]" position="after">
+      <details class="tc-account-menu">
+        <summary aria-label="Opciones de mi cuenta">
+          <t t-if="request.env['tc.portal.password.state'].sudo().search_count([('user_id', '=', request.env.user.id), ('pending', '=', True)])">⚠ Cambia tu clave</t>
+          <t t-else="">Mi cuenta</t>
+          <span aria-hidden="true">▾</span>
+        </summary>
+        <div class="tc-account-dropdown">
+          <span class="tc-account-user" t-esc="request.env.user.name"/>
+          <a href="/transcash/mi-cuenta">🔒 Cambiar contraseña</a>
+          <a href="/web/session/logout?redirect=/web/login" class="tc-account-logout">↪ Cerrar sesión</a>
+        </div>
+      </details>
+    </xpath>
+  </template>
+
+  <template id="tc_portal_head_account_v230" inherit_id="logistica_transcash.mobile_head"
+            name="Transcash PWA · Estilos de Mi cuenta">
+    <xpath expr="//link[@rel='manifest']" position="after">
+      <link rel="stylesheet" href="/transcash_guias_api/static/src/css/pwa_account_v230.css?v=230"/>
+      <script defer="defer" src="/transcash_guias_api/static/src/js/pwa_account_v230.js?v=230"/>
+    </xpath>
+  </template>
+
+  <template id="tc_portal_my_account" name="Transcash · Cambiar contraseña">
+    <html lang="es">
+      <head>
+        <title>Mi cuenta · Logística Transcash</title>
+        <t t-call="logistica_transcash.mobile_head"/>
+      </head>
+      <body class="tc-app">
+        <div class="tc-shell">
+          <t t-call="logistica_transcash.portal_desktop_sidebar"/>
+          <header class="tc-top"><t t-call="logistica_transcash.mobile_brand"/></header>
+          <main class="tc-main tc-account-main">
+            <section class="tc-account-card">
+              <div class="tc-account-icon">🔐</div>
+              <h1>Mi cuenta</h1>
+              <p class="tc-account-subtitle">Actualiza tu contraseña de acceso a Logística Transcash.</p>
+              <p class="tc-account-login">Usuario: <strong t-esc="account_user.login"/></p>
+              <div t-if="must_change" class="tc-account-warning" role="status">
+                Estás utilizando una contraseña inicial. Cámbiala antes de continuar tus operaciones.
+              </div>
+              <div t-if="message_error" class="tc-account-error" role="alert" t-esc="message_error"/>
+              <div t-if="message_success" class="tc-account-success" role="status" t-esc="message_success"/>
+              <form action="/transcash/mi-cuenta/contrasena" method="post" class="tc-account-form">
+                <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                <label for="tc-old">Contraseña actual</label>
+                <input id="tc-old" name="password_actual" type="password" required="required" autocomplete="current-password"/>
+                <label for="tc-new">Nueva contraseña</label>
+                <input id="tc-new" name="password_nueva" type="password" required="required" minlength="12" autocomplete="new-password"/>
+                <label for="tc-confirm">Confirmar nueva contraseña</label>
+                <input id="tc-confirm" name="password_confirmacion" type="password" required="required" minlength="12" autocomplete="new-password"/>
+                <small>Al menos 12 caracteres; no reutilices tu cédula ni la clave anterior.</small>
+                <button class="tc-account-submit" type="submit">Guardar nueva contraseña</button>
+              </form>
+              <div class="tc-account-links">
+                <a href="/transcash">Volver a Transcash</a>
+                <a href="/web/session/logout?redirect=/web/login">Cerrar sesión</a>
+              </div>
+            </section>
+          </main>
+        </div>
+      </body>
+    </html>
+  </template>
+</odoo>
