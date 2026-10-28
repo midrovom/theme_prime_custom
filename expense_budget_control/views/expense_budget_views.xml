@@ -93,6 +93,8 @@
                 <field name="actual_amount" sum="Total consumido"/>
                 <field name="variance_amount" sum="Disponible"/>
                 <field name="execution_percentage"/>
+                <field name="approved_through_month" string="Aprobado hasta"/>
+                <field name="months_pending_approval" string="Meses pendientes"/>
                 <field name="state" widget="badge"/>
             </list>
         </field>
@@ -103,6 +105,7 @@
             <form string="Presupuesto anual" class="o_ebc_budget_form">
                 <header>
                     <button name="action_submit" string="Enviar a aprobar" type="object" class="btn-primary" invisible="state != 'draft'" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
+                    <button name="action_submit" string="Enviar nuevas líneas a aprobar" type="object" class="btn-primary" invisible="state != 'approved' or not has_lines_to_submit" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_reject" string="Rechazar" type="object" class="btn-secondary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_sync_api" string="Actualizar costos" type="object" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
@@ -129,24 +132,30 @@
                             <field name="variance_amount" readonly="True"/>
                             <field name="execution_percentage" readonly="True"/>
                         </group>
+                        <group string="Seguimiento de aprobación">
+                            <field name="approved_through_month" readonly="True"/>
+                            <field name="months_pending_approval" readonly="True" placeholder="Sin líneas pendientes"/>
+                            <field name="has_lines_to_submit" invisible="True"/>
+                        </group>
                     </group>
                     <notebook>
                         <page string="Proyecciones mensuales">
-                            <field name="line_ids" class="o_ebc_lines">
-                                <list editable="bottom">
+                            <field name="line_ids" class="o_ebc_lines" readonly="state not in ['draft', 'approved']">
+                                <list editable="bottom" decoration-success="approval_state == 'approved'" decoration-warning="approval_state in ['draft', 'to_approve']" decoration-danger="approval_state == 'rejected'">
+                                    <field name="approval_state" string="Estado de aprobación" widget="badge" readonly="True"/>
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="currency_id" column_invisible="True"/>
-                                    <field name="account_id" readonly="parent.state != 'draft'"
+                                    <field name="account_id" readonly="approval_state in ['approved', 'to_approve']"
                                            domain="[('company_id', '=', parent.company_id), ('category_id', '=', parent.category_id)]"/>
                                     <field name="erp_account_code" string="Código" readonly="True"/>
                                     <field name="cost_center_id" string="Centro de costo"
-                                           readonly="parent.state != 'draft'"
+                                           readonly="approval_state in ['approved', 'to_approve']"
                                            domain="[('company_id', '=', parent.company_id)]"
                                            options="{'no_create': True}"/>
                                     <field name="month" string="Mes"
-                                           readonly="parent.state != 'draft'"
+                                           readonly="approval_state in ['approved', 'to_approve']"
                                            help="Suma los consumos de esta cuenta y centro de costo durante el mes seleccionado y el año del presupuesto, sin filtrar por subcentro."/>
-                                    <field name="planned_amount" readonly="parent.state != 'draft'" sum="Proyectado"/>
+                                    <field name="planned_amount" readonly="approval_state in ['approved', 'to_approve']" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="variance_amount" readonly="True" sum="Disponible"/>
                                     <field name="execution_percentage" readonly="True"/>

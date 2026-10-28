@@ -206,6 +206,18 @@ class ExpenseBudget(models.Model):
                                         store=True, digits=(16, 2))
     note = fields.Text(string='Observaciones')
 
+    approved_through_month = fields.Selection(
+        MONTHS, string='Aprobado hasta', compute='_compute_approval_progress',
+        help='Último mes representado cuyas líneas están aprobadas, antes de encontrar líneas sin aprobar.',
+    )
+    months_pending_approval = fields.Char(
+        string='Meses pendientes', compute='_compute_approval_progress',
+        help='Meses que contienen líneas en borrador, pendientes de aprobación o rechazadas.',
+    )
+    has_lines_to_submit = fields.Boolean(
+        string='Tiene líneas para enviar', compute='_compute_approval_progress',
+    )
+
     _sql_constraints = [
         ('budget_company_year_category_unique',
          'unique(company_id, year, category_id)',
@@ -281,6 +293,43 @@ class ExpenseBudget(models.Model):
             rec.variance_amount = rec.planned_amount - rec.actual_amount
             rec.execution_percentage = (rec.actual_amount / rec.planned_amount * 100.0
                                         if rec.planned_amount else 0.0)
+
+    @api.depends('line_ids.month', 'line_ids.approval_state')
+    def _compute_approval_progress(self):
+        # Resume el avance de aprobación por mes y por línea. Si hay un mes
+        # pendiente, el indicador se detiene antes de ese primer mes.
+        for rec in self:
+            by_month = {}
+            pending_months = set()
+            for line in rec.line_ids:
+                month_number = int(line.month) if line.month else 0
+                if not month_number:
+                    continue
+                by_month.setdefault(month_number, []).append(line.approval_state)
+                if line.approval_state != 'approved':
+                    pending_months.add(month_number)
+
+            approved_through = False
+            if by_month:
+                first_pending = min(pending_months) if pending_months else None
+                approved_months = [
+                    month_number for month_number, states in by_month.items()
+                    if all(state == 'approved' for state in states)
+                    and (first_pending is None or month_number < first_pending)
+                ]
+                if approved_months:
+                    approved_through = str(max(approved_months))
+                elif not pending_months:
+                    approved_through = str(max(by_month))
+
+            rec.approved_through_month = approved_through
+            rec.months_pending_approval = ', '.join(
+                MONTH_NAMES[str(month_number)]
+                for month_number in sorted(pending_months)
+            ) or False
+            rec.has_lines_to_submit = any(
+                line.approval_state in ('draft', 'rejected') for line in rec.line_ids
+            )
 
     @api.onchange('company_id')
     def _onchange_budget_company(self):
@@ -366,6 +415,42 @@ class ExpenseBudget(models.Model):
         )
         return budgets
 
+    def _is_allowed_non_draft_line_command(self, command):
+        # Validar comandos One2many permitidos en presupuestos no borrador.
+        Line = self.env['expense.budget.line']
+        if not isinstance(command, (tuple, list)) or not command:
+            return False
+        command_type = command[0]
+        if command_type == 0:
+            # Crear una línea nueva en un presupuesto aprobado; create() la
+            # fuerza a borrador, nunca permite que nazca aprobada.
+            values = command[2] if len(command) > 2 and isinstance(command[2], dict) else {}
+            if values.get('approval_state') not in (None, False, 'draft'):
+                return False
+            if values.get('budget_id') and int(values['budget_id']) not in self.ids:
+                return False
+            return all(budget.state == 'approved' for budget in self)
+        if command_type == 1 and len(command) > 2 and isinstance(command[2], dict):
+            line = Line.browse(command[1]).exists()
+            if not line or line.budget_id not in self:
+                return False
+            values = command[2]
+            if set(values) == {'actual_amount'}:
+                # Se conserva la función existente de ajuste manual de consumo.
+                return True
+            editable_fields = {
+                'account_id', 'category_id', 'cost_center_id', 'subcenter_id',
+                'subcenter_code', 'month', 'consumption_date', 'planned_amount',
+            }
+            return (
+                line.budget_id.state == 'approved'
+                and line.approval_state in ('draft', 'rejected')
+                and bool(values)
+                and set(values).issubset(editable_fields)
+            )
+        # No permitir borrar/desvincular/reemplazar líneas desde una cabecera no borrador.
+        return False
+
     def write(self, vals):
         started = monotonic()
         if 'category_id' in vals:
@@ -392,19 +477,20 @@ class ExpenseBudget(models.Model):
         if not self.env.su and not self.env.user.has_group(
             'expense_budget_control.group_expense_budget_manager'):
             if vals and any(rec.state != 'draft' for rec in self):
-                # Permitir al registrador editar únicamente el consumo de líneas
-                # existentes, incluso si el presupuesto está enviado/aprobado.
+                # Después de aprobar, Registro puede agregar/editar solo líneas
+                # aún no aprobadas. Las líneas aprobadas siguen bloqueadas.
                 commands = vals.get('line_ids', ()) if set(vals) == {'line_ids'} else ()
-                just_actual = bool(commands) and all(
-                    isinstance(command, (tuple, list)) and len(command) >= 3 and
-                    command[0] == 1 and isinstance(command[2], dict) and
-                    set(command[2]) == {'actual_amount'} and
-                    all(command[1] in rec.line_ids.ids for rec in self)
+                registrar = self.env.user.has_group(
+                    'expense_budget_control.group_expense_budget_registrar')
+                line_commands_allowed = bool(commands) and registrar and all(
+                    self._is_allowed_non_draft_line_command(command)
                     for command in commands
                 )
-                if not (just_actual and self.env.user.has_group(
-                        'expense_budget_control.group_expense_budget_registrar')):
-                    raise UserError(_('Solo puede editar el consumido de presupuestos enviados o aprobados.'))
+                if not line_commands_allowed:
+                    raise UserError(_(
+                        'En un presupuesto enviado o aprobado solo puede actualizar el consumido '
+                        'o gestionar nuevas líneas que todavía no estén aprobadas.'
+                    ))
         if any(
             (('year' in vals and vals['year'] != rec.year) or
              ('company_id' in vals and vals['company_id'] != rec.company_id.id))
@@ -476,48 +562,67 @@ class ExpenseBudget(models.Model):
         return result
 
     def action_submit(self):
-        """El registrador envía el borrador a revisión, sin poder aprobarlo."""
+        # Enviar el borrador inicial o las nuevas líneas de un presupuesto aprobado.
         if not (self.env.su or self.env.user.has_group(
                 'expense_budget_control.group_expense_budget_registrar') or
                 self.env.user.has_group('expense_budget_control.group_expense_budget_manager')):
             raise AccessError(_('Solo Registro de presupuestos o Administrador pueden enviar a aprobar.'))
         self.check_access('write')
         for rec in self:
-            if rec.state != 'draft':
-                raise UserError(_('Solo se pueden enviar a aprobación presupuestos en borrador.'))
+            if rec.state not in ('draft', 'approved'):
+                raise UserError(_(
+                    'Solo se puede enviar un presupuesto en borrador o las nuevas líneas de uno aprobado.'
+                ))
             if not rec.category_id:
                 raise UserError(_('Seleccione el rubro del presupuesto antes de enviarlo a aprobación.'))
-            if not rec.line_ids:
-                raise UserError(_('Debe cargar al menos una línea presupuestaria.'))
-        # Única elevación de privilegios: transición controlada de estado.
-        self.sudo().write({'state': 'to_approve'})
+            lines_to_submit = rec.line_ids.filtered(
+                lambda line: line.approval_state in ('draft', 'rejected')
+            )
+            if not lines_to_submit:
+                raise UserError(_('No hay líneas nuevas o pendientes para enviar a aprobación.'))
+            if any(not line.account_id or not line.month for line in lines_to_submit):
+                raise UserError(_('Complete la cuenta y el mes de todas las nuevas líneas antes de enviar.'))
+        # Solo cambia el estado del lote actual; las líneas aprobadas no se tocan.
+        for rec in self.sudo():
+            rec.line_ids.filtered(
+                lambda line: line.approval_state in ('draft', 'rejected')
+            ).with_context(allow_budget_line_approval_state=True).write({
+                'approval_state': 'to_approve',
+            })
+            rec.write({'state': 'to_approve'})
         return True
 
     def action_approve(self):
-        # Los botones no constituyen una barrera de seguridad: validar el grupo
-        # también en Python antes de elevar privilegios para el cambio de estado.
+        # Validar permisos antes de elevar privilegios para la transición.
         is_manager = self.env.su or self.env.user.has_group(
             'expense_budget_control.group_expense_budget_manager')
         is_approver = self.env.user.has_group(
             'expense_budget_control.group_expense_budget_approver')
         if not (is_manager or is_approver):
             raise AccessError(_('Solo el aprobador o el administrador pueden aprobar presupuestos.'))
-        self.check_access('read')  # Incluye las reglas multiempresa de Odoo 18.
+        self.check_access('read')
         for rec in self:
             if rec.state != 'to_approve':
                 raise UserError(_('Solo puede aprobar presupuestos enviados a aprobación.'))
             if not rec.category_id:
                 raise UserError(_('El presupuesto debe tener un rubro antes de aprobarlo.'))
-            if not rec.line_ids:
-                raise UserError(_('Debe cargar al menos una línea presupuestaria.'))
+            if not rec.line_ids.filtered(lambda line: line.approval_state == 'to_approve'):
+                raise UserError(_('No hay líneas pendientes de aprobación en este presupuesto.'))
             if not is_manager and rec.create_uid == self.env.user:
                 raise AccessError(_('No puede aprobar un presupuesto registrado por usted mismo.'))
-        # El aprobador no tiene permisos genéricos de escritura: únicamente
-        # esta acción controlada eleva permisos para modificar el estado.
-        self.sudo().write({'state': 'approved'})
+        # Aprobar únicamente las líneas del lote enviado. Las aprobadas en rondas
+        # anteriores conservan su estado y nunca se reescriben.
+        for rec in self.sudo():
+            rec.line_ids.filtered(
+                lambda line: line.approval_state == 'to_approve'
+            ).with_context(allow_budget_line_approval_state=True).write({
+                'approval_state': 'approved',
+            })
+            rec.write({'state': 'approved'})
+        return True
 
     def action_reject(self):
-        """Rechazo controlado por Aprobador o Administrador, sin devolver a borrador."""
+        # Rechazar solo el lote enviado y mantener intacto el historial aprobado.
         is_manager = self.env.su or self.env.user.has_group(
             'expense_budget_control.group_expense_budget_manager')
         is_approver = self.env.user.has_group(
@@ -528,9 +633,22 @@ class ExpenseBudget(models.Model):
         for rec in self:
             if rec.state != 'to_approve':
                 raise UserError(_('Solo se pueden rechazar presupuestos pendientes de aprobación.'))
+            if not rec.line_ids.filtered(lambda line: line.approval_state == 'to_approve'):
+                raise UserError(_('No hay líneas pendientes de aprobación para rechazar.'))
             if not is_manager and rec.create_uid == self.env.user:
                 raise AccessError(_('No puede rechazar un presupuesto creado por usted mismo.'))
-        self.sudo().write({'state': 'rejected'})
+        for rec in self.sudo():
+            had_approved_lines = any(
+                line.approval_state == 'approved' for line in rec.line_ids
+            )
+            rec.line_ids.filtered(
+                lambda line: line.approval_state == 'to_approve'
+            ).with_context(allow_budget_line_approval_state=True).write({
+                'approval_state': 'rejected',
+            })
+            # Si se rechazó una ampliación, la cabecera vuelve a aprobado y las
+            # líneas del lote quedan editables para corregirlas y reenviarlas.
+            rec.write({'state': 'approved' if had_approved_lines else 'rejected'})
         return True
 
     def action_reopen(self):
@@ -737,6 +855,12 @@ class ExpenseBudgetLine(models.Model):
              'por el mes completo y el año del presupuesto.',
     )
     month = fields.Selection(MONTHS, string='Mes', required=True, index=True)
+    approval_state = fields.Selection([
+        ('draft', 'Pendiente de envío'),
+        ('to_approve', 'Pendiente de aprobación'),
+        ('approved', 'Aprobado'),
+        ('rejected', 'Rechazado'),
+    ], string='Estado de aprobación', default='draft', required=True, index=True, copy=False)
     consultation_date_label = fields.Char(
         string='Fecha interpretada', compute='_compute_consultation_date_label',
         help='Texto informativo del mes y año usado para sumar gastos del ERP.',
@@ -953,9 +1077,27 @@ class ExpenseBudgetLine(models.Model):
                 vals['month'] = str(fields.Date.to_date(vals['consumption_date']).month)
             if 'subcenter_code' in vals:
                 vals['subcenter_code'] = (vals['subcenter_code'] or '').strip().upper() or False
-            budget = budgets.browse(vals.get('budget_id'))
-            if budget.exists() and budget.state != 'draft':
-                raise UserError(_('Solo puede modificar proyecciones en presupuestos borrador.'))
+            budget = budgets.browse(vals.get('budget_id')).exists()
+            if budget and budget.state not in ('draft', 'approved'):
+                raise UserError(_(
+                    'Solo puede agregar proyecciones cuando el presupuesto está en borrador '
+                    'o aprobado y no tiene una ronda de aprobación abierta.'
+                ))
+            if budget and budget.state == 'approved' and not (
+                    self.env.su or
+                    self.env.user.has_group('expense_budget_control.group_expense_budget_registrar') or
+                    self.env.user.has_group('expense_budget_control.group_expense_budget_manager')):
+                raise AccessError(_('Solo Registro de presupuestos puede agregar nuevos meses a un presupuesto aprobado.'))
+            if (budget and vals.get('month') and
+                    budget.line_ids.filtered(lambda line: line.approval_state == 'approved')):
+                approved_through = budget.approved_through_month
+                if approved_through and int(vals['month']) <= int(approved_through):
+                    raise UserError(_(
+                        'Solo puede agregar proyecciones posteriores al último mes aprobado (%s). '
+                        'Las líneas de períodos anteriores no se pueden ampliar ni modificar.'
+                    ) % MONTH_NAMES[approved_through])
+            # Las líneas nuevas siempre empiezan pendientes; no se acepta un estado de aprobación aportado por RPC.
+            vals['approval_state'] = 'draft'
         records = super().create(vals_list)
         records._assign_unmatched_expenses()
         if not self.env.context.get('skip_expense_budget_consumption_on_save'):
@@ -963,6 +1105,10 @@ class ExpenseBudgetLine(models.Model):
         return records
 
     def write(self, vals):
+        # El estado solo se cambia desde los botones del flujo, que escriben
+        # con sudo() después de validar el grupo del usuario.
+        if 'approval_state' in vals and not self.env.su:
+            raise AccessError(_('El estado de aprobación de una línea solo puede cambiarse mediante el flujo de aprobación.'))
         # Cambiar el mes en una línea creada cuando existía el calendario
         # elimina el viejo filtro de día y fuerza una consulta mensual nueva.
         if 'month' in vals:
@@ -975,9 +1121,31 @@ class ExpenseBudgetLine(models.Model):
                          'subcenter_id', 'budget_id', 'month', 'consumption_date'}
         if period_fields.intersection(vals):
             vals = dict(vals, erp_checked_at=False)
-        protected = {'account_id', 'cost_center_id', 'subcenter_code', 'budget_id', 'month', 'consumption_date', 'planned_amount'}
-        if protected.intersection(vals) and any(rec.budget_id.state != 'draft' for rec in self):
-            raise UserError(_('No puede cambiar proyecciones de presupuestos pendientes de aprobación o aprobados.'))
+        protected = {
+            'account_id', 'category_id', 'cost_center_id', 'subcenter_code',
+            'subcenter_id', 'budget_id', 'month', 'consumption_date',
+            'planned_amount',
+        }
+        if protected.intersection(vals):
+            for rec in self:
+                editable_line = (
+                    rec.approval_state in ('draft', 'rejected')
+                    and rec.budget_id.state in ('draft', 'approved')
+                )
+                if not editable_line:
+                    raise UserError(_(
+                        'No puede modificar una línea aprobada o enviada a aprobación. '
+                        'Las líneas nuevas de meses futuros se pueden editar antes de enviarlas.'
+                    ))
+                has_approved_history = any(
+                    line.approval_state == 'approved' for line in rec.budget_id.line_ids
+                )
+                if has_approved_history and vals.get('month'):
+                    approved_through = rec.budget_id.approved_through_month
+                    if approved_through and int(vals['month']) <= int(approved_through):
+                        raise UserError(_(
+                            'El mes de una línea pendiente debe ser posterior al último mes aprobado (%s).'
+                        ) % MONTH_NAMES[approved_through])
         # Cambiar solo la fecha de una proyección existente es seguro: la
         # reconciliación reasigna o desvincula movimientos de otros días.
         # Los cambios de cuenta/centro/subcentro siguen protegidos.
@@ -998,8 +1166,11 @@ class ExpenseBudgetLine(models.Model):
         return result
 
     def unlink(self):
-        if any(rec.budget_id.state != 'draft' for rec in self):
-            raise UserError(_('Solo puede eliminar líneas de presupuestos borrador.'))
+        for rec in self:
+            if rec.approval_state in ('approved', 'to_approve'):
+                raise UserError(_('No puede eliminar líneas aprobadas o pendientes de aprobación.'))
+            if rec.budget_id.state not in ('draft', 'approved'):
+                raise UserError(_('Solo puede eliminar líneas en borrador o nuevas líneas aún no aprobadas.'))
         return super().unlink()
 
     def _assign_unmatched_expenses(self):
