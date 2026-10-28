@@ -1,0 +1,93 @@
+/* Una sola fila de captura en la ficha, fuera de las dos columnas de <group>. */
+.o_ebc_quick_budget_capture {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    margin: 12px 0 16px;
+    padding: 12px 14px 10px;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 6px;
+    container-type: inline-size;
+}
+.o_ebc_quick_budget_title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--body-color, #344054);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color, #dee2e6);
+}
+.o_ebc_quick_budget_row {
+    display: grid;
+    grid-template-columns: minmax(155px, 1.35fr) minmax(145px, 1.2fr)
+                           minmax(220px, 1.8fr) minmax(145px, 1.05fr) 112px;
+    column-gap: 14px;
+    row-gap: 12px;
+    align-items: end;
+    width: 100%;
+    min-width: 0;
+}
+.o_ebc_quick_budget_item { min-width: 0; }
+.o_ebc_quick_budget_item > label {
+    display: block;
+    width: auto;
+    margin: 0 0 6px;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1.35;
+    white-space: normal;
+}
+.o_ebc_quick_budget_item > .o_field_widget {
+    width: 100% !important;
+    min-width: 0;
+    max-width: 100%;
+    display: block;
+}
+.o_ebc_quick_budget_item .o_input,
+.o_ebc_quick_budget_item input {
+    min-width: 0;
+    max-width: 100%;
+}
+.o_ebc_quick_budget_months .o_field_many2many_tags {
+    min-height: 32px;
+}
+.o_ebc_quick_budget_add {
+    width: 100%;
+    min-height: 34px;
+    white-space: nowrap;
+}
+.o_ebc_quick_budget_help {
+    margin-top: 10px;
+    line-height: 1.4;
+}
+/* El contenedor se adapta incluso cuando Odoo tiene menú lateral abierto. */
+@container (max-width: 930px) {
+    .o_ebc_quick_budget_row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .o_ebc_quick_budget_months { grid-column: 1 / -1; }
+    .o_ebc_quick_budget_action { grid-column: 1 / -1; }
+    .o_ebc_quick_budget_add { max-width: 220px; }
+}
+@container (max-width: 480px) {
+    .o_ebc_quick_budget_row { grid-template-columns: minmax(0, 1fr); }
+    .o_ebc_quick_budget_months,
+    .o_ebc_quick_budget_action { grid-column: 1; }
+    .o_ebc_quick_budget_add { max-width: none; }
+}
+/* Alternativa para navegadores sin consultas de contenedor. */
+@supports not (container-type: inline-size) {
+    @media (max-width: 1000px) {
+        .o_ebc_quick_budget_row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .o_ebc_quick_budget_months,
+        .o_ebc_quick_budget_action { grid-column: 1 / -1; }
+        .o_ebc_quick_budget_add { max-width: 220px; }
+    }
+    @media (max-width: 600px) {
+        .o_ebc_quick_budget_row { grid-template-columns: minmax(0, 1fr); }
+        .o_ebc_quick_budget_months,
+        .o_ebc_quick_budget_action { grid-column: 1; }
+        .o_ebc_quick_budget_add { max-width: none; }
+    }
+}

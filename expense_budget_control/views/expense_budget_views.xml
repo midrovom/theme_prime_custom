@@ -29,11 +29,8 @@
                         <!-- Selector múltiple de cuentas existentes. category_id NO
                              filtra: también permite elegir cuentas de otro rubro
                              siempre que no tengan histórico presupuestario. -->
-                        <field name="account_selection_ids" widget="many2many_tags"
-                               domain="[('company_id', '=', company_id)]"
-                               options="{'no_create': True, 'no_create_edit': True}"/>
-                        <field name="cost_center_ids" widget="many2many_tags" readonly="1"
-                               string="Centros detectados en consumos"/>
+                        <field name="account_selection_ids" widget="many2many_tags" domain="[('company_id', '=', company_id)]" options="{'no_create': True, 'no_create_edit': True}"/>
+                        <field name="cost_center_ids" widget="many2many_tags" readonly="1" string="Centros detectados en consumos"/>
                         <div class="text-muted">Una cuenta puede tener consumos en varios centros; seleccione el centro en la proyección.</div>
                         
                     </group>
@@ -109,8 +106,7 @@
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_reject" string="Rechazar" type="object" class="btn-secondary" invisible="state != 'to_approve'" groups="expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                     <button name="action_sync_api" string="Actualizar costos" type="object" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"/>
-                    <button name="action_print_annual_pdf" string="Imprimir PDF" type="object" icon="fa-print"
-                            groups="expense_budget_control.group_expense_budget_read"/>
+                    <button name="action_print_annual_pdf" string="Imprimir PDF" type="object" icon="fa-print" groups="expense_budget_control.group_expense_budget_read"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,to_approve,approved,rejected"/>
                 </header>
                 <sheet>
@@ -118,12 +114,9 @@
                         <group>
                             <field name="company_id" readonly="state != 'draft'"/>
                             <field name="name" string="Presupuesto" readonly="state != 'draft'"/>
-                            <field name="year" readonly="state != 'draft'"/>
-                            <field name="category_id" string="Rubro" required="state == 'draft'"
-                                   readonly="state != 'draft'"
-                                   domain="[('company_id', '=', company_id)]"
-                                   context="{'default_company_id': company_id, 'form_view_ref': 'expense_budget_control.view_expense_budget_category_form'}"
-                                   options="{'no_quick_create': True, 'no_create_edit': False}"/>
+                            <field name="year_selector" string="Año" readonly="state != 'draft'"/>
+                            <field name="year" invisible="1"/>
+                            <field name="category_id" string="Rubro" required="state == 'draft'" readonly="state != 'draft'" domain="[('company_id', '=', company_id)]" context="{'default_company_id': company_id, 'form_view_ref': 'expense_budget_control.view_expense_budget_category_form'}" options="{'no_quick_create': True, 'no_create_edit': False}"/>
                         </group>
                         <group>
                             <field name="currency_id" invisible="1"/>
@@ -140,70 +133,48 @@
                     </group>
                     <!-- Fila única de captura. annual_target_ids sigue existiendo
                          internamente para histórico y el prorrateo protegido. -->
-                    <group string="Agregar proyecciones por meses"
-                           groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager"
-                           invisible="state not in ['draft', 'approved']">
-                        <field name="quick_available_month_ids" invisible="1"/>
-                        <div class="row g-2 align-items-end o_ebc_quick_budget_row">
-                            <div class="col-12 col-md-6 col-xl-3">
-                                <label for="quick_account_id" string="Cuenta controlada"/>
-                                <field name="quick_account_id" nolabel="1"
-                                       domain="[('company_id', '=', company_id), ('category_id', '=', category_id)]"
-                                       options="{'no_create': True, 'no_open': True}"/>
-                            </div>
-                            <div class="col-12 col-md-6 col-xl-2">
-                                <label for="quick_cost_center_id" string="Centro de costo"/>
-                                <field name="quick_cost_center_id" nolabel="1"
-                                       domain="[('company_id', '=', company_id)]"
-                                       options="{'no_create': True, 'no_open': True}"/>
-                            </div>
-                            <div class="col-12 col-md-6 col-xl-3">
-                                <label for="quick_month_ids" string="Meses"/>
-                                <field name="quick_month_ids" nolabel="1"
-                                       widget="many2many_tags"
-                                       domain="[('id', 'in', quick_available_month_ids)]"
-                                       options="{'no_create': True, 'no_open': True}"
-                                       placeholder="Enero, Febrero, Marzo..."/>
-                            </div>
-                            <div class="col-12 col-md-4 col-xl-2">
-                                <label for="quick_annual_amount" string="Presupuesto anual"/>
-                                <field name="quick_annual_amount" nolabel="1"/>
-                            </div>
-                            <div class="col-12 col-md-2 col-xl-2">
-                                <button name="action_add_quick_monthly_lines" string="Agregar"
-                                        type="object" icon="fa-plus" class="btn-primary w-100"
-                                        title="Crear las líneas mensuales y limpiar esta fila"/>
-                            </div>
-                        </div>
-                        <div class="text-muted small">Seleccione una cuenta, un centro, los meses por nombre y el valor total. Al pulsar Agregar se crean las proyecciones debajo y se limpia la fila.</div>
-                    </group>
-                    <notebook>
+                    <div class="o_ebc_quick_budget_capture" groups="expense_budget_control.group_expense_budget_registrar,expense_budget_control.group_expense_budget_manager" invisible="state not in ['draft', 'approved']">
+    <div class="o_ebc_quick_budget_title">AGREGAR PROYECCIONES POR MESES</div>
+    <field name="quick_available_month_ids" invisible="1"/>
+    <div class="o_ebc_quick_budget_row">
+        <div class="o_ebc_quick_budget_item">
+            <label for="quick_account_id" string="Cuenta controlada"/>
+            <field name="quick_account_id" nolabel="1" domain="[('company_id', '=', company_id), ('category_id', '=', category_id)]" options="{'no_create': True, 'no_open': True}"/>
+        </div>
+        <div class="o_ebc_quick_budget_item">
+            <label for="quick_cost_center_id" string="Centro de costo"/>
+            <field name="quick_cost_center_id" nolabel="1" domain="[('company_id', '=', company_id)]" options="{'no_create': True, 'no_open': True}"/>
+        </div>
+        <div class="o_ebc_quick_budget_item o_ebc_quick_budget_months">
+            <label for="quick_month_ids" string="Meses"/>
+            <field name="quick_month_ids" nolabel="1" widget="many2many_tags" domain="[('id', 'in', quick_available_month_ids)]" options="{'no_create': True, 'no_open': True}" placeholder="Vacío = los 12 meses"/>
+        </div>
+        <div class="o_ebc_quick_budget_item">
+            <label for="quick_annual_amount" string="Presupuesto anual"/>
+            <field name="quick_annual_amount" nolabel="1"/>
+        </div>
+        <div class="o_ebc_quick_budget_item o_ebc_quick_budget_action">
+            <button name="action_add_quick_monthly_lines" string="Agregar" type="object" icon="fa-plus" class="btn-primary o_ebc_quick_budget_add" title="Crear las líneas mensuales y limpiar esta fila"/>
+        </div>
+    </div>
+    <div class="o_ebc_quick_budget_help text-muted small">Deje Meses vacío para generar enero a diciembre (12 líneas), o seleccione solo los meses que desea presupuestar. El importe se distribuye entre los meses elegidos. Después de Agregar, la fila se limpia.</div>
+</div><notebook>
                         <page string="Proyecciones mensuales">
                             <field name="line_ids" class="o_ebc_lines" readonly="state not in ['draft', 'approved']">
                                 <list create="false" editable="bottom" decoration-success="approval_state == 'approved'" decoration-warning="approval_state in ['draft', 'to_approve']" decoration-danger="approval_state == 'rejected'">
                                     <field name="approval_state" string="Estado de aprobación" widget="badge" readonly="True"/>
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="currency_id" column_invisible="True"/>
-                                    <field name="account_id" readonly="approval_state in ['approved', 'to_approve']"
-                                           domain="[('company_id', '=', parent.company_id), ('category_id', '=', parent.category_id)]"/>
+                                    <field name="account_id" readonly="approval_state in ['approved', 'to_approve']" domain="[('company_id', '=', parent.company_id), ('category_id', '=', parent.category_id)]"/>
                                     <field name="erp_account_code" string="Código" readonly="True"/>
-                                    <field name="cost_center_id" string="Centro de costo"
-                                           readonly="approval_state in ['approved', 'to_approve']"
-                                           domain="[('company_id', '=', parent.company_id)]"
-                                           options="{'no_create': True}"/>
+                                    <field name="cost_center_id" string="Centro de costo" readonly="approval_state in ['approved', 'to_approve']" domain="[('company_id', '=', parent.company_id)]" options="{'no_create': True}"/>
                                     <field name="available_month_option_ids" column_invisible="True"/>
                                     <field name="annual_amount_readonly" column_invisible="True"/>
                                     <field name="annual_amount" column_invisible="True"/>
                                     <field name="allocation_month_count" column_invisible="True"/>
                                     <field name="month" column_invisible="True"/>
-                                    <field name="month_option_id" string="Mes" required="1"
-                                           domain="[('id', 'in', available_month_option_ids)]"
-                                           readonly="approval_state in ['approved', 'to_approve']"
-                                           options="{'no_create': True, 'no_open': True}"
-                                           help="Filtra por cuenta controlada y centro de costo: una combinación puede tener una sola proyección por mes. Si Agua/Quito está aprobado hasta mayo, muestra desde junio; Agua de otro centro puede comenzar en enero si aún no tiene proyección."/>
-                                    <field name="planned_amount"
-                                           readonly="approval_state in ['approved', 'to_approve'] or annual_amount > 0"
-                                           sum="Proyectado"/>
+                                    <field name="month_option_id" string="Mes" required="1" domain="[('id', 'in', available_month_option_ids)]" readonly="approval_state in ['approved', 'to_approve']" options="{'no_create': True, 'no_open': True}" help="Filtra por cuenta controlada y centro de costo: una combinación puede tener una sola proyección por mes. Si Agua/Quito está aprobado hasta mayo, muestra desde junio; Agua de otro centro puede comenzar en enero si aún no tiene proyección."/>
+                                    <field name="planned_amount" readonly="approval_state in ['approved', 'to_approve'] or annual_amount &gt; 0" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="variance_amount" readonly="True" sum="Disponible"/>
                                     <field name="execution_percentage" readonly="True"/>
@@ -261,9 +232,7 @@
         <field name="arch" type="xml">
             <list string="Proyectado vs. consumido" create="false" edit="false" delete="false" decoration-danger="variance_amount &lt; 0">
                 <header>
-                    <button name="%(expense_budget_control.action_expense_budget_comparison_report_wizard)d"
-                            type="action" string="Imprimir PDF" icon="fa-print" display="always"
-                            groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
+                    <button name="%(expense_budget_control.action_expense_budget_comparison_report_wizard)d" type="action" string="Imprimir PDF" icon="fa-print" display="always" groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                 </header>
                 <field name="budget_id"/><field name="company_id"/>
                 <field name="account_id"/><field name="category_id"/><field name="cost_center_id"/>

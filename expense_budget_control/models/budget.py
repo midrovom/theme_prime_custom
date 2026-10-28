@@ -189,6 +189,38 @@ class ExpenseBudget(models.Model):
     )
     year = fields.Integer(string='Año', required=True,
                           default=lambda self: fields.Date.context_today(self).year, index=True)
+
+    # Selector de la ficha. No sustituye el Integer histórico: informes, APIs,
+    # reglas de unicidad y líneas siguen usando exactamente el campo "year".
+    # El modelo ya limita el año al intervalo 2000-2100.
+    @api.model
+    def _budget_year_choices(self):
+        return [(str(year), str(year)) for year in range(2000, 2101)]
+
+    year_selector = fields.Selection(
+        selection='_budget_year_choices', string='Año',
+        compute='_compute_year_selector', inverse='_inverse_year_selector',
+        help='Seleccione el año del presupuesto. Al crear, se propone el año actual.',
+    )
+
+    @api.depends('year')
+    def _compute_year_selector(self):
+        for budget in self:
+            budget.year_selector = str(budget.year) if budget.year else False
+
+    def _inverse_year_selector(self):
+        for budget in self:
+            if budget.year_selector:
+                budget.year = int(budget.year_selector)
+
+    @api.onchange('year_selector')
+    def _onchange_year_selector(self):
+        # Sincronizar inmediatamente el Integer antes del guardado, de forma
+        # que los dominios y validaciones de rubro/empresa usen el año elegido.
+        for budget in self:
+            if budget.year_selector and budget.year != int(budget.year_selector):
+                budget.year = int(budget.year_selector)
+
     company_id = fields.Many2one('res.company', string='Empresa', required=True,
                                  default=lambda self: self.env.company, index=True)
     currency_id = fields.Many2one('res.currency', related='company_id.currency_id', store=True)
@@ -288,8 +320,18 @@ class ExpenseBudget(models.Model):
             raise UserError(_('Seleccione una cuenta controlada.'))
         if not self.quick_cost_center_id:
             raise UserError(_('Seleccione un centro de costo.'))
-        if not self.quick_month_ids:
-            raise UserError(_('Seleccione al menos un mes.'))
+        # Ningún mes seleccionado = distribuir entre los 12 meses del año.
+        # No se modifica la selección guardada hasta que la operación termina.
+        months_to_add = self.quick_month_ids
+        if not months_to_add:
+            months_to_add = self.env['expense.budget.comparison.month'].sudo().search([
+                ('number', '>=', 1), ('number', '<=', 12),
+            ], order='number')
+            if set(months_to_add.mapped('number')) != set(range(1, 13)):
+                raise UserError(_(
+                    'No están configurados los 12 meses del año. '
+                    'Revise el catálogo de meses antes de agregar las proyecciones.'
+                ))
         if self.quick_annual_amount <= 0:
             raise UserError(_('El presupuesto anual debe ser mayor que cero.'))
         if (self.quick_account_id.company_id != self.company_id
@@ -303,7 +345,7 @@ class ExpenseBudget(models.Model):
             'budget_id': self.id,
             'account_id': self.quick_account_id.id,
             'cost_center_id': self.quick_cost_center_id.id,
-            'month_ids': [(6, 0, self.quick_month_ids.ids)],
+            'month_ids': [(6, 0, months_to_add.ids)],
             'annual_amount': self.quick_annual_amount,
         })
         action = wizard.action_add_lines()

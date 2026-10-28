@@ -31,3 +31,5 @@ from . import test_regression_1479
 
 from . import test_regression_1480
 from . import test_incremental_approval
+
+from . import test_regression_1489
