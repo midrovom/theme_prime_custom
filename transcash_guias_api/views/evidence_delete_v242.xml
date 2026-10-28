@@ -29,7 +29,7 @@
     </xpath>
   </template>
   <template id="tc_pwa_evidence_delete_styles_v242" inherit_id="logistica_transcash.mobile_head" name="PWA: estilo de borrado de evidencia" priority="266">
-    <xpath expr="//head" position="inside">
+    <xpath expr="//link[@rel='manifest']" position="after">
       <link rel="stylesheet" href="/transcash_guias_api/static/src/css/evidence_delete_v242.css?v=242"/>
     </xpath>
   </template>
