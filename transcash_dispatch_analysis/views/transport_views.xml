@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="vehicle_type_list" model="ir.ui.view">
+    <field name="name">dispatch.vehicle.type.list</field><field name="model">dispatch.vehicle.type</field>
+    <field name="arch" type="xml"><list editable="bottom"><field name="name"/><field name="capacity_tons"/><field name="utilization_pct"/><field name="useful_tons"/><field name="company_id" groups="base.group_multi_company"/><field name="active"/><field name="code" optional="hide"/></list></field>
+  </record>
+  <record id="vehicle_type_form" model="ir.ui.view">
+    <field name="name">dispatch.vehicle.type.form</field><field name="model">dispatch.vehicle.type</field>
+    <field name="arch" type="xml"><form><sheet><div class="alert alert-info">Las capacidades iniciales son referencias editables. Indique la capacidad real de carga y la utilización prevista; no es el peso bruto del vehículo. La planificación se calcula por peso y no comprueba volumen, acceso o restricciones viales.</div><group><field name="name"/><field name="capacity_tons"/><field name="utilization_pct"/><field name="useful_tons"/><field name="code"/><field name="active"/><field name="company_id" groups="base.group_multi_company"/></group><field name="notes"/></sheet></form></field>
+  </record>
+  <record id="action_vehicle_types" model="ir.actions.act_window"><field name="name">Tipos de vehículos y capacidades</field><field name="res_model">dispatch.vehicle.type</field><field name="view_mode">list,form</field></record>
+  <record id="transport_settings_list" model="ir.ui.view">
+    <field name="name">dispatch.transport.settings.list</field><field name="model">dispatch.transport.settings</field>
+    <field name="arch" type="xml"><list><field name="company_id"/><field name="target_days"/><field name="available_vehicles"/><field name="trips_per_day"/></list></field>
+  </record>
+  <record id="transport_settings_form" model="ir.ui.view">
+    <field name="name">dispatch.transport.settings.form</field><field name="model">dispatch.transport.settings</field>
+    <field name="arch" type="xml"><form><sheet><h2>Escenario para despachar los pendientes</h2><div class="alert alert-info">Estos valores se usan en destinos sin una configuración específica. Se estiman días operativos de trabajo, desde que la carga está disponible; no son los plazos SLA. Los vehículos se asignan de forma independiente a cada ruta de origen y destino, trabajando en paralelo.</div><group><field name="company_id"/><field name="target_days"/><field name="available_vehicles"/><field name="trips_per_day"/></group><div class="alert alert-info">El viaje debe incluir carga, trayecto, entrega y regreso. Ejemplos: 1 = un viaje por día; 0,5 = un viaje cada dos días. Con 0 vehículos se muestra la necesidad total de contratación, sin estimar días con flota actual. Los cambios se ven al actualizar el tablero.</div></sheet></form></field>
+  </record>
+  <record id="action_transport_settings" model="ir.actions.act_window"><field name="name">Plan de despacho</field><field name="res_model">dispatch.transport.settings</field><field name="view_mode">list,form</field></record>
+  <record id="transport_route_list" model="ir.ui.view">
+    <field name="name">dispatch.transport.route.list</field><field name="model">dispatch.transport.route</field>
+    <field name="arch" type="xml"><list><field name="city"/><field name="warehouse_code"/><field name="vehicle_id"/><field name="target_days"/><field name="available_vehicles"/><field name="trips_per_day"/><field name="company_id" groups="base.group_multi_company"/><field name="active"/></list></field>
+  </record>
+  <record id="transport_route_form" model="ir.ui.view">
+    <field name="name">dispatch.transport.route.form</field><field name="model">dispatch.transport.route</field>
+    <field name="arch" type="xml"><form><sheet><div class="alert alert-info">Defina el ciclo de viaje y la flota para esta ciudad. Si limita el código de bodega, esta regla tiene prioridad sobre la regla general de ciudad. Las bodegas y fuentes se planifican separadamente. Puede fijar un vehículo compatible con el acceso al destino.</div><group><group><field name="company_id"/><field name="city"/><field name="warehouse_code"/><field name="vehicle_id"/><field name="active"/></group><group><field name="target_days"/><field name="available_vehicles"/><field name="trips_per_day"/></group></group><field name="notes"/></sheet></form></field>
+  </record>
+  <record id="action_transport_routes" model="ir.actions.act_window"><field name="name">Capacidad por destino</field><field name="res_model">dispatch.transport.route</field><field name="view_mode">list,form</field></record>
+</odoo>

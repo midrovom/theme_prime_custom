@@ -12,4 +12,7 @@
   <menuitem id="menu_sla" name="Plazos por ciudad" parent="menu_config" action="action_sla" sequence="1"/>
   <menuitem id="menu_holidays" name="Feriados" parent="menu_config" action="action_holidays" sequence="2"/>
   <menuitem id="menu_sources" name="Fuentes y API" parent="menu_config" action="action_sources" sequence="3"/>
+  <menuitem id="menu_transport_settings" name="Plan de despacho" parent="menu_config" action="action_transport_settings" sequence="10"/>
+  <menuitem id="menu_vehicle_types" name="Tipos de vehículos" parent="menu_config" action="action_vehicle_types" sequence="11"/>
+  <menuitem id="menu_transport_routes" name="Capacidad por destino" parent="menu_config" action="action_transport_routes" sequence="12"/>
 </odoo>

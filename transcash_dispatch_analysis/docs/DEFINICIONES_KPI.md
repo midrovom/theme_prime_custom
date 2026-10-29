@@ -22,9 +22,12 @@ El estado de cada factura es el registrado en el corte. El atraso se evalúa a l
 | Cumplimiento de despachadas | Despachadas evaluables a tiempo / despachadas evaluables × 100. |
 | Cumplimiento exigible | Despachadas evaluables a tiempo / (despachadas evaluables + pendientes vencidas evaluables) × 100. |
 | Peso/cajas/pallets pendientes | Suma de esos campos sobre líneas con pendiente positivo. |
+| Toneladas pendientes | Peso pendiente en kg / 1.000, dentro de los mismos filtros. |
 | Antigüedad | Corte menos fecha de factura, en días calendario, para las pendientes. |
 
 Cuando el denominador es cero, el porcentaje aparece **Sin medición**, no 0%. El porcentaje global se calcula desde su numerador y denominador; no es un promedio de porcentajes de ciudades o meses.
+
+El **Cumplimiento del período** es el cumplimiento exigible dentro de las fechas de factura Desde/Hasta aplicadas. El estado sigue siendo el de la fecha de corte. Para días de trabajo y vehículos por destino, consultar `PLANIFICACION_V1_4.md`; son escenarios de capacidad y no métricas SLA históricas.
 
 Ejemplo: 80 despachadas a tiempo, 20 despachadas tarde y 10 pendientes vencidas producen 80% de cumplimiento de despachadas y 72,73% de cumplimiento exigible. Las pendientes que aún están en plazo no afectan esos denominadores.
 

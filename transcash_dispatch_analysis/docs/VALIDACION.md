@@ -1,22 +1,21 @@
-# Validación de la entrega 18.0.1.3.0
+# Validación de la entrega 18.0.1.4.0
 
-La versión 1.3 añade 11 pruebas de ciudades y valores iniciales a las 50 existentes (61 en total). Incluyen conservación de cambios, reglas archivadas, vigencias, modalidades, compañías, actualización de datos anteriores y captura de plazos antes del cálculo de Excel/API. Se ejecutaron 4 verificaciones JavaScript del recálculo y se mantienen 9 del progreso y el recorrido completo del Excel con los métodos reales del modelo y un ORM en memoria. Se mantienen los límites de validación nativa indicados abajo. Ver `CIUDADES_AUTOMATICAS_V1_3.md`.
+## Ejecutado en esta versión
 
-## Ejecutado
+- 90 pruebas Python sin Odoo: motor SLA, ciudades automáticas, control de importación, fórmulas de capacidad y métodos reales del servicio del tablero con un ORM de lectura en memoria.
+- 12 verificaciones JavaScript de los métodos reales del componente: período aplicado, KPI de cumplimiento y toneladas, precisión decimal, subtotales parciales, destinos, envío de alcance y protección contra respuestas antiguas.
+- 4 verificaciones JavaScript del recálculo interactivo, conservadas de la versión anterior.
+- Lectura del XLSX vigente y cálculo completo con el lector, agregador, evaluador SLA y planificador del módulo: 54.392 registros, 44.989 facturas, 383 pendientes; Entrega Transcash: 1.727 facturas y 100 pendientes.
+- Conciliación de toneladas: 1.030,61176 t en todas las modalidades y 767,22977 t en Entrega Transcash. Identificación de 14 líneas pendientes sin peso positivo en esa modalidad.
+- Comprobación de capacidad suficiente para el peso conocido en cada alternativa de vehículo; ciclos enteros por horizonte, redondeos, rangos de fecha y separación de bodegas/fuentes/compañías.
+- Sintaxis Python, JavaScript y XML, referencias de campos de vistas, archivos del manifiesto, 14 modelos y 24 filas de permisos declarados.
 
-- Lectura completa del XLSX actualizado: 54.392 registros, 44.989 facturas, 383 pendientes.
-- Creación de 73 ciudades con el Excel actualizado: Guayaquil, 3 días; las demás, 9; sin duplicados.
-- Conciliación independiente de claves, fechas y cantidades del origen.
-- 39 pruebas unitarias del motor: plazos, feriados, parciales, devoluciones, saldos negativos, fechas, denominadores, granularidad por bodega y producto.
-- JavaScript de la vista previa ejecutado con el conjunto completo mediante Node y un DOM mínimo: filtros, indicadores, configuración, creación de visuales y persistencia local.
-- Comparación factura a factura de fecha límite, estado y días de atraso entre Python y la vista previa para 1.727 facturas Transcash (2 días hábiles, feriado 09/10/2026).
-- Sintaxis Python y XML, campos de vistas, entradas del manifiesto, ACL declaradas y sintaxis JavaScript.
+## Pendiente en el entorno Odoo
 
-## Pendiente en el entorno de destino
+- Actualizar/instalar el módulo y ejecutar las pruebas de integración incluidas con Odoo 18 y PostgreSQL; no están ejecutadas en este entorno.
+- Comprobar permisos reales, aislamiento de compañías y persistencia de valores personalizados, así como el recálculo del nuevo campo almacenado de toneladas.
+- Montaje de las plantillas OWL y revisión visual en escritorio/móvil. No hay servidor Odoo ni ejecutable de Chromium local; las verificaciones de métodos JavaScript y XML no sustituyen esas pruebas.
+- Validar capacidades reales, ciclos por destino y disponibilidad de flota antes de convertir un escenario en contratación.
+- Conectar y verificar la API del sistema de origen cuando se reciba su contrato.
 
-- Instalación del módulo y ejecución de las pruebas de integración incluidas en una base Odoo 18 con PostgreSQL.
-- Pruebas de lectura/importación con usuarios reales y aislamiento entre compañías.
-- Montaje de las plantillas OWL y revisión visual en escritorio/móvil. El entorno de generación no tiene servidor Odoo ni navegador Chromium local; las pruebas JavaScript no sustituyen esas verificaciones.
-- Conexión con la API origen, semántica de fechas, paginación, frecuencia y retención de cortes.
-
-Usar primero una base de prueba. Las instrucciones y comandos están en README.md. El Excel se carga como corte completo y la pantalla procesa los bloques con avance visible; el cron puede continuar cuando la pantalla está cerrada.
+Para actualizar y usar los datos ya importados, ver PLANIFICACION_V1_4.md. El Excel se mantiene como corte completo y la pantalla conserva el procesamiento por bloques con progreso.

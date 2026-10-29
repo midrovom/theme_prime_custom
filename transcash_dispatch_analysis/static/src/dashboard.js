@@ -4,7 +4,7 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
 const COLORS = ["#365eea", "#16a589", "#e6a23b", "#8759d4", "#e86b78", "#40a9c9", "#7d8da8", "#b29b72", "#3b7c6e", "#c17ab6", "#bbc4d8"];
-const METRICS = [["total", "Facturas"], ["pending", "Pendientes"], ["overdue", "Vencidas"], ["mature_compliance", "Cumplimiento exigible (%)"], ["completed_compliance", "Despachadas a tiempo (%)"], ["lead_avg", "Tiempo promedio (días)"], ["lead_median", "Mediana de despacho (días)"], ["lead_p90", "P90 de despacho (días)"], ["pending_weight", "Peso pendiente (kg)"]];
+const METRICS = [["total", "Facturas"], ["pending", "Pendientes"], ["overdue", "Vencidas"], ["mature_compliance", "Cumplimiento exigible (%)"], ["completed_compliance", "Despachadas a tiempo (%)"], ["lead_avg", "Tiempo promedio (días)"], ["lead_median", "Mediana de despacho (días)"], ["lead_p90", "P90 de despacho (días)"], ["pending_weight", "Peso pendiente (kg)"], ["pending_tons", "Toneladas pendientes"]];
 const DIMENSIONS = [["city", "Ciudad"], ["delivery", "Modalidad"], ["warehouse", "Bodega"], ["seller", "Vendedor"], ["month", "Mes de factura"]];
 
 export class DispatchDashboard extends Component {
@@ -16,9 +16,9 @@ export class DispatchDashboard extends Component {
         this.requestNumber = 0;
         this.metrics = METRICS;
         this.dimensions = DIMENSIONS;
-        this.state = useState({data: null, loading: true, error: "", builder: false,
+        this.state = useState({data: null, loading: true, error: "", builder: false, allLanes: false,
             boardId: this.props.action?.params?.board_id || false,
-            filters: {source_id: "", snapshot_id: "", date_from: "", date_to: "", city: "", delivery: ""},
+            filters: {source_id: "", snapshot_id: "", date_from: "", date_to: "", city: "", delivery: "", planning_scope: "transcash"},
             draft: {name: "Nuevo indicador", metric: "pending", dimension: "city", chart_type: "bar", top_n: 10}});
         onWillStart(() => this.load());
     }
@@ -35,10 +35,27 @@ export class DispatchDashboard extends Component {
             {label: "Facturas analizadas", value: this.format(s.total), note: "Una vez por factura", category: "all", tone: "blue"},
             {label: "Pendientes de despacho", value: this.format(s.pending), note: `${this.format(s.partial)} con despacho parcial`, category: "pending", tone: "amber"},
             {label: "Pendientes vencidas", value: s.overdue_available ? this.format(s.overdue) : "Sin medición", note: `${this.format(s.pending_unassessed)} pendientes sin evaluar · ${this.format(s.due_today)} vencen al corte`, category: "overdue", tone: "red"},
-            {label: "Cumplimiento exigible", value: s.mature_compliance === null ? "Sin medición" : `${this.format(s.mature_compliance, 1)}%`, note: `${this.format(s.on_time)} a tiempo / ${this.format(s.mature_count)} exigibles`, category: "mature", tone: "green"},
+            {label: "Cumplimiento del período", value: s.mature_compliance === null ? "Sin medición" : `${this.format(s.mature_compliance, 1)}%`, note: `${this.format(s.on_time)} a tiempo / ${this.format(s.mature_count)} exigibles`, category: "mature", tone: "green"},
+            {label: "Toneladas pendientes", value: `${this.format(s.pending_tons, 2)} t`, note: `${this.format(s.pending_weight, 2)} kg · 1 t = 1.000 kg`, category: "pending", tone: "amber"},
             {label: "Tiempo promedio", value: s.lead_avg === null ? "Sin medición" : `${this.format(s.lead_avg, 1)} días`, note: `${this.format(s.lead_count)} despachos medibles · días calendario`, category: "lead", tone: "blue"},
             {label: "P90 de despacho", value: s.lead_p90 === null ? "Sin medición" : `${this.format(s.lead_p90, 1)} días`, note: "90% de despachos medibles dentro de este tiempo", category: "lead", tone: "purple"},
         ];
+    }
+    get periodLabel() {
+        const period = this.state.data.period;
+        return period.date_from && period.date_to ? `${this.date(period.date_from)} al ${this.date(period.date_to)}` : "Sin fechas disponibles";
+    }
+    get transportLanes() {
+        const lanes = this.state.data.transport.lanes;
+        return this.state.allLanes ? lanes : lanes.slice(0, 10);
+    }
+    planNumber(value, suffix = "") {
+        return value === null || value === undefined ? "Sin estimación" : `${this.format(value)}${suffix}`;
+    }
+    planTotal(key, suffix = "") {
+        const plan = this.state.data.transport;
+        const value = plan[key] ?? plan[`known_${key}`];
+        return this.planNumber(value, suffix);
     }
     async load() {
         const request = ++this.requestNumber;
@@ -106,7 +123,7 @@ export class DispatchDashboard extends Component {
     }
     metricFormat(widget, value) {
         if (value === null) return "Sin medición";
-        return this.format(value, widget.metric.includes("compliance") || widget.metric.startsWith("lead") ? 1 : 0) + (widget.metric.includes("compliance") ? "%" : "");
+        return this.format(value, widget.metric === "pending_tons" ? 2 : widget.metric.includes("compliance") || widget.metric.startsWith("lead") ? 1 : 0) + (widget.metric.includes("compliance") ? "%" : widget.metric === "pending_tons" ? " t" : "");
     }
     color(index) { return COLORS[index % COLORS.length]; }
     donutStyle(widget) {

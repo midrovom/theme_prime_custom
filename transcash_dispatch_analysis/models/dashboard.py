@@ -2,8 +2,9 @@ from collections import Counter
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 from ..services.engine import as_date, grouped, summarize, METRICS, GROUPS
+from ..services.planning import build_transport_plan
 
-READ_FIELDS = ["name", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
+READ_FIELDS = ["name", "source_id", "company_id", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
     "state", "pending", "pending_lines", "pending_weight", "pending_boxes", "pending_pallets", "has_adjustment", "physically_completed", "source_warnings", "source_grain",
     "completion_date", "quality_flags", "quality_issue", "cutoff_date", "age_days", "lead_days", "lead_available", "sla_configured",
     "deadline", "sla_status", "late_days", "eligible", "mature", "on_time"]
@@ -49,6 +50,7 @@ class DispatchDashboard(models.AbstractModel):
 
     @api.model
     def get_data(self, filters=None, board_id=False):
+        filters = filters or {}
         domain = self._domain(filters)
         invoices = self.env["dispatch.invoice"]
         if invoices.search_count(domain) > 200_000:
@@ -60,6 +62,21 @@ class DispatchDashboard(models.AbstractModel):
             for field in ("invoice_date", "completion_date", "cutoff_date", "deadline"):
                 row[field] = str(row[field]) if row[field] else False
         stats = summarize(rows)
+        scope = filters.get("planning_scope", "transcash")
+        if scope not in ("transcash", "filtered"):
+            raise ValidationError(_("Alcance de planificación no permitido."))
+        pending_ids = [r["id"] for r in rows if r["pending"]]
+        transport_lines = []
+        for offset in range(0, len(pending_ids), 5000):
+            transport_lines += self.env["dispatch.invoice.line"].search_read(
+                [("invoice_id", "in", pending_ids[offset:offset + 5000]), ("pending_qty", ">", 0.000001)],
+                ["invoice_id", "warehouse", "warehouse_code", "pending_qty", "pending_weight", "pending_pallets"])
+        companies = self.env["res.company"].browse(sorted({r["company_id"][0] for r in rows}))
+        packs = self.env["dispatch.transport.settings"]._planning_packs(companies)
+        transport = build_transport_plan(rows, transport_lines, packs, scope)
+        dates = sorted(r["invoice_date"] for r in rows if r["invoice_date"])
+        period = {"date_from": filters.get("date_from") or (dates[0] if dates else False),
+                  "date_to": filters.get("date_to") or (dates[-1] if dates else False), "basis": "invoice_date"}
         cities = grouped(rows, "city")
         cities.sort(key=lambda r: (-r["overdue"], -r["pending"], r["label"]))
         aging = [0] * 6
@@ -111,7 +128,8 @@ class DispatchDashboard(models.AbstractModel):
         stale = [s for s in current if s.cutoff_date < today]
         if stale:
             alerts.insert(0, {"kind": "warning", "title": "Existen cortes anteriores a hoy", "body": "Los pendientes y atrasos se calculan a la fecha del corte, con el estado registrado entonces. Importe un corte nuevo para actualizar la operación."})
-        return {"stats": stats, "cities": cities, "aging": [{"label": label, "value": value} for label, value in zip(["0–2 días", "3–5 días", "6–10 días", "11–30 días", "31–60 días", "Más de 60"], aging)],
+        return {"stats": stats, "cities": cities, "period": period, "transport": transport,
+                "aging": [{"label": label, "value": value} for label, value in zip(["0–2 días", "3–5 días", "6–10 días", "11–30 días", "31–60 días", "Más de 60"], aging)],
                 "priority": pending[:25], "alerts": alerts, "widgets": widgets,
                 "boards": [{"id": b.id, "name": b.name} for b in boards], "board_id": board.id if board else False,
                 "board_editable": bool(board and (board.owner_id == self.env.user or self.env.user.has_group("transcash_dispatch_analysis.group_dispatch_manager"))),

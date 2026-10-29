@@ -1,6 +1,10 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Primera versión del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.4.0 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Cumplimiento, toneladas y vehículos 1.4
+
+El tablero muestra el cumplimiento del rango de fechas aplicado y las toneladas pendientes. El plan por ciudad y bodega de origen estima viajes, días de trabajo, tipos de vehículo, flota requerida y contratación adicional. Se pueden editar las capacidades, utilización, plazo objetivo, vehículos asignados y viajes completos por día, tanto en general como por destino. El plan comienza en Entrega Transcash y señala datos sin peso válido. Ver `docs/PLANIFICACION_V1_4.md` para fórmulas, actualización y supuestos. Las capacidades iniciales son ejemplos editables; no representan la flota real.
 
 ## Corrección de importación 1.2
 
@@ -15,6 +19,7 @@ Al importar por Excel o API se crean los plazos de las ciudades detectadas: **9 
 - Tablero de facturas únicas: pendientes, parciales, vencidas, cumplimiento exigible, cumplimiento de despachadas, promedio, mediana y P90.
 - Ciudades creadas al importar, con plazos iniciales editables: 9 días calendario; Guayaquil, 3. Plazos por ciudad y condición de entrega, en días calendario o hábiles. Vigencia por fecha de factura y feriados configurables por compañía.
 - Antigüedad de pendientes, peso, cajas y pallets pendientes. Priorización de vencidas y detalle por factura/bodega, con SKU si lo proporciona la fuente.
+- Toneladas pendientes como KPI y medida de análisis; planificación por destino con capacidades y ciclos configurables.
 - Constructor de visuales de barras, líneas, distribución circular y tablas. Tableros personales o compartidos con la compañía y orden configurable.
 - Tabla dinámica, gráficos, filtros favoritos y exportación estándar de Odoo.
 - Importación XLSX por bloques con progreso en pantalla, respaldo por cron, cortes históricos y activación del nuevo corte solo al terminar todos sus bloques.

@@ -1,5 +1,5 @@
 from odoo.tests import TransactionCase, tagged
-from odoo.exceptions import ValidationError, AccessError
+from odoo.exceptions import ValidationError, AccessError, UserError
 from unittest.mock import patch
 import base64
 from ..models import snapshot as snapshot_module
@@ -157,3 +157,66 @@ class TestDispatchIntegration(TransactionCase):
         self.assertEqual(result["count"], 1)
         self.assertEqual(result["action"]["tag"], "transcash_dispatch_import_progress")
         self.assertNotEqual(result["action"]["params"]["snapshot_id"], snapshot.id)
+
+    def test_transport_defaults_keep_custom_values_on_update(self):
+        settings = self.env["dispatch.transport.settings"]
+        settings._initialize_transport_defaults()
+        record = settings.search([("company_id", "=", self.env.company.id)])
+        record.target_days = 7
+        vehicle = self.env["dispatch.vehicle.type"].search([("company_id", "=", self.env.company.id), ("code", "=", "REF_5")], limit=1)
+        vehicle.write({"capacity_tons": 4.5, "active": False})
+        settings._initialize_transport_defaults()
+        self.assertEqual(record.target_days, 7)
+        self.assertEqual(vehicle.capacity_tons, 4.5)
+        self.assertFalse(vehicle.active)
+        self.assertEqual(len(self.env["dispatch.vehicle.type"].with_context(active_test=False).search(
+            [("company_id", "=", self.env.company.id), ("code", "=", "REF_5")])), 1)
+
+    def test_dashboard_range_tonnes_and_plan_share_same_population(self):
+        self.env["dispatch.transport.settings"]._initialize_transport_defaults()
+        self.row.update({"Cond_Entrega":"Entrega Transcash", "PesoPendiente":1250, "Bodega":"Bodega X"})
+        snapshot = self._snapshot("period-plan")
+        snapshot._prepare(); snapshot._load_next()
+        service = self.env["dispatch.dashboard"]
+        result = service.get_data({"source_id":self.source.id, "date_from":"2026-01-01", "date_to":"2026-01-01"})
+        self.assertEqual(result["stats"]["pending_tons"], 1.25)
+        self.assertEqual(snapshot.invoice_ids.pending_tons, 1.25)
+        self.assertEqual(result["transport"]["pending_tons"], 1.25)
+        self.assertEqual(result["period"]["date_from"], "2026-01-01")
+        self.assertEqual(result["stats"]["mature_compliance"], 0)
+        empty = service.get_data({"source_id":self.source.id, "date_from":"2026-01-02", "date_to":"2026-01-03"})
+        self.assertEqual(empty["stats"]["pending_tons"], 0)
+        self.assertIsNone(empty["stats"]["mature_compliance"])
+        self.assertEqual(empty["transport"]["required_vehicles"], 0)
+
+    def test_transport_scopes_and_multiorigin_are_independent(self):
+        self.env["dispatch.transport.settings"]._initialize_transport_defaults()
+        self.row.update({"Cond_Entrega":"Cliente Retira en Almacén", "PesoPendiente":9000, "Bodega":"Bodega X"})
+        snapshot = self._snapshot("pickup-plan")
+        snapshot._prepare(); snapshot._load_next()
+        service = self.env["dispatch.dashboard"]
+        self.assertEqual(service.get_data({"source_id":self.source.id})["transport"]["pending_invoices"], 0)
+        result = service.get_data({"source_id":self.source.id,"planning_scope":"filtered"})
+        self.assertEqual(result["transport"]["pending_invoices"], 1)
+        self.assertEqual(result["transport"]["pending_tons"], 9)
+
+    def test_transport_settings_validate_and_reader_cannot_change(self):
+        self.env["dispatch.transport.settings"]._initialize_transport_defaults()
+        record = self.env["dispatch.transport.settings"].search([("company_id", "=", self.env.company.id)])
+        with self.assertRaises(ValidationError), self.cr.savepoint():
+            record.trips_per_day = 0
+        user = self.env["res.users"].create({"name":"Transport reader","login":"dispatch_transport_reader",
+            "company_id":self.env.company.id,"company_ids":[(6,0,[self.env.company.id])],
+            "groups_id":[(6,0,[self.env.ref("transcash_dispatch_analysis.group_dispatch_user").id])]})
+        self.assertTrue(record.with_user(user).read(["target_days"]))
+        with self.assertRaises(AccessError):
+            record.with_user(user).write({"target_days":12})
+
+    def test_duplicate_route_and_cross_company_vehicle_are_rejected(self):
+        route = self.env["dispatch.transport.route"].create({"city":"Guayaquil","warehouse_code":"X"})
+        with self.assertRaises(ValidationError), self.cr.savepoint():
+            self.env["dispatch.transport.route"].create({"city":" GUAYAQUIL ","warehouse_code":"x"})
+        other = self.env["res.company"].create({"name":"Foreign fleet"})
+        vehicle = self.env["dispatch.vehicle.type"].create({"name":"Other truck","capacity_tons":10,"company_id":other.id})
+        with self.assertRaises(UserError), self.cr.savepoint():
+            route.vehicle_id = vehicle

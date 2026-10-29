@@ -17,3 +17,9 @@ access_snapshot_manager,snapshot.manager,model_dispatch_snapshot,group_dispatch_
 access_chunk_manager,chunk.manager,model_dispatch_chunk,group_dispatch_manager,1,1,1,1
 access_invoice_manager,invoice.manager,model_dispatch_invoice,group_dispatch_manager,1,1,1,1
 access_line_manager,line.manager,model_dispatch_invoice_line,group_dispatch_manager,1,1,1,1
+access_vehicle_type_user,vehicle.type.user,model_dispatch_vehicle_type,group_dispatch_user,1,0,0,0
+access_transport_settings_user,transport.settings.user,model_dispatch_transport_settings,group_dispatch_user,1,0,0,0
+access_transport_route_user,transport.route.user,model_dispatch_transport_route,group_dispatch_user,1,0,0,0
+access_vehicle_type_manager,vehicle.type.manager,model_dispatch_vehicle_type,group_dispatch_manager,1,1,1,1
+access_transport_settings_manager,transport.settings.manager,model_dispatch_transport_settings,group_dispatch_manager,1,1,1,1
+access_transport_route_manager,transport.route.manager,model_dispatch_transport_route,group_dispatch_manager,1,1,1,1

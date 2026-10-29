@@ -15,7 +15,7 @@ import unicodedata
 
 EPS = 0.000001
 GROUPS = {"city", "delivery", "warehouse", "seller", "month"}
-METRICS = {"total", "pending", "overdue", "mature_compliance", "completed_compliance", "lead_avg", "lead_median", "lead_p90", "pending_weight"}
+METRICS = {"total", "pending", "overdue", "mature_compliance", "completed_compliance", "lead_avg", "lead_median", "lead_p90", "pending_weight", "pending_tons"}
 
 
 def normalize(value):
@@ -365,6 +365,7 @@ def summarize(rows):
         "lead_p90": percentile(lead, .9),
         "lead_count": len(lead),
         "pending_weight": sum(r.get("pending_weight", 0) for r in rows if r.get("pending")),
+        "pending_tons": sum(r.get("pending_weight", 0) for r in rows if r.get("pending")) / 1000,
         "pending_boxes": sum(r.get("pending_boxes", 0) for r in rows if r.get("pending")),
         "pending_pallets": sum(r.get("pending_pallets", 0) for r in rows if r.get("pending")),
         "no_rule": sum(not r.get("sla_configured") for r in rows),

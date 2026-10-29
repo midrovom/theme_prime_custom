@@ -37,6 +37,7 @@ class DispatchInvoice(models.Model):
     line_count = fields.Integer(string="Líneas")
     source_grain = fields.Selection([("warehouse", "Consolidado por bodega"), ("product", "Producto y bodega"), ("mixed", "Mixto: revisar")], string="Detalle del origen", index=True)
     pending_weight = fields.Float(string="Peso pendiente (kg)", digits=(16, 3))
+    pending_tons = fields.Float(string="Toneladas pendientes", compute="_compute_pending_tons", store=True, digits=(16, 3))
     pending_boxes = fields.Float(string="Cajas pendientes", digits=(16, 3))
     pending_pallets = fields.Float(string="Pallets pendientes", digits=(16, 3))
     has_adjustment = fields.Boolean(string="Con ajustes/devoluciones", index=True)
@@ -65,6 +66,11 @@ class DispatchInvoice(models.Model):
     on_time = fields.Boolean(string="Despachada a tiempo", index=True)
     line_ids = fields.One2many("dispatch.invoice.line", "invoice_id", string="Registros de origen")
     _sql_constraints = [("snapshot_invoice", "unique(snapshot_id,invoice_key)", "La factura ya existe en este corte.")]
+
+    @api.depends("pending_weight")
+    def _compute_pending_tons(self):
+        for invoice in self:
+            invoice.pending_tons = invoice.pending_weight / 1000
 
     @api.depends("quality_flags", "source_warnings", "rule_snapshot")
     def _compute_audit_details(self):

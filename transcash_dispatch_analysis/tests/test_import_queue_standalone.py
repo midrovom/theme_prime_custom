@@ -36,7 +36,7 @@ def load_model(model_name="snapshot"):
     odoo.api = SimpleNamespace(model=lambda f: f, model_create_multi=lambda f: f,
         depends=lambda *a: lambda f: f, constrains=lambda *a: lambda f: f, onchange=lambda *a: lambda f: f)
     odoo.fields = SimpleNamespace(**{n: Field() for n in ("Char", "Many2one", "One2many", "Date", "Datetime", "Selection", "Binary", "Json", "Text", "Integer", "Float", "Boolean", "Command")})
-    odoo.models = SimpleNamespace(Model=object)
+    odoo.models = SimpleNamespace(Model=object, AbstractModel=object)
     odoo._ = lambda s: s
     errors = ModuleType("odoo.exceptions")
     errors.AccessError = FakeAccessError

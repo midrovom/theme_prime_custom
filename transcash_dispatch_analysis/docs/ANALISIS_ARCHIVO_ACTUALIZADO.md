@@ -1,5 +1,7 @@
 # Análisis de despachos actualizado
 
+> Informe original del archivo, elaborado antes de aplicar los plazos automáticos. Las referencias a cumplimiento sin medición describen ese escenario inicial. Para las funciones y reglas de la versión 1.4, consultar PLANIFICACION_V1_4.md.
+
 > Actualización 1.3: este informe conserva el análisis inicial, realizado antes de definir los plazos. El módulo ahora crea las ciudades con 9 días calendario y Guayaquil con 3, según la instrucción posterior del negocio. El cumplimiento se calcula al importar o reaplicar esos parámetros.
 
 **Fuente:** Analisis Despachos Trasncash(1).xlsx. Se usa exclusivamente el último archivo recibido.
