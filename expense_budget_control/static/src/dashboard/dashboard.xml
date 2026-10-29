@@ -91,45 +91,36 @@
                             </label>
                         </div>
                         <t t-if="state.chartType === 'bar'">
-                            <t t-if="this.chartByCenter || state.selectedMonth &lt; 0">
-                                <div class="o_ebd_bar_chart" role="group" t-att-aria-label="this.chartTitle">
-                                    <t t-foreach="this.bars" t-as="bar" t-key="bar.id">
-                                        <button type="button"
-                                                t-att-class="bar.active ? 'o_ebd_bar_item is-selected' : 'o_ebd_bar_item'"
-                                                t-att-title="bar.name + ': ' + this.formatMoney(bar.amount)"
-                                                t-att-aria-label="bar.name + ': ' + this.formatMoney(bar.amount)"
-                                                t-on-click="() => this.selectChartGroup(bar.id)">
-                                            <span class="o_ebd_bar_space"><span class="o_ebd_bar" t-att-style="'height:' + bar.height"/></span>
-                                            <span class="o_ebd_bar_month" t-esc="bar.short"/>
-                                        </button>
-                                    </t>
-                                </div>
-                            </t>
-                            <t t-else="">
-                                <div t-if="this.accountBars.length" class="o_ebd_account_chart" role="group"
-                                     t-att-aria-label="'Gasto por cuenta controlada en ' + this.periodName">
-                                    <div class="o_ebd_account_chart_head">
-                                        <span>Cuenta controlada</span>
-                                        <span t-esc="'Consumo en ' + this.periodName"/>
-                                    </div>
-                                    <t t-foreach="this.accountBars" t-as="bar" t-key="bar.id">
-                                        <button type="button" class="o_ebd_account_bar_row"
-                                                t-att-title="bar.name + ': ' + this.formatMoney(bar.amount)"
-                                                t-att-aria-label="bar.name + ': ' + this.formatMoney(bar.amount)"
-                                                t-on-click="() => this.toggleAccount(bar.id)">
-                                            <span class="o_ebd_account_bar_name" t-esc="bar.name"/>
-                                            <div class="o_ebd_account_bar_track">
-                                                <span t-att-class="bar.isNegative ? 'o_ebd_account_bar_fill is-negative' : 'o_ebd_account_bar_fill'"
-                                                      t-att-style="'width:' + bar.width"/>
+                            <div class="o_ebd_grouped_scroll" role="group" aria-label="Gastos de enero a diciembre, agrupados por centro de costo">
+                                <div class="o_ebd_grouped_chart">
+                                    <t t-foreach="this.monthlyCenterGroups" t-as="month" t-key="month.index">
+                                        <div t-att-class="month.muted ? 'o_ebd_month_group is-dimmed' : (month.active ? 'o_ebd_month_group is-selected' : 'o_ebd_month_group')">
+                                            <div class="o_ebd_month_center_bars">
+                                                <t t-foreach="month.centers" t-as="center" t-key="center.id">
+                                                    <button type="button"
+                                                            t-att-class="center.selected ? 'o_ebd_center_bar_item is-selected' : 'o_ebd_center_bar_item'"
+                                                            t-att-title="month.name + ' · ' + center.name + ': ' + this.formatMoney(center.amount)"
+                                                            t-att-aria-label="month.name + ', centro ' + center.name + ', consumido ' + this.formatMoney(center.amount)"
+                                                            t-on-click="() => this.selectMonthCenter(month.index, center.id)">
+                                                        <span class="o_ebd_center_bar_name" t-esc="center.name"/>
+                                                        <span class="o_ebd_bar_space">
+                                                            <span t-att-class="center.negative ? 'o_ebd_bar is-negative' : 'o_ebd_bar'" t-att-style="'height:' + center.height"/>
+                                                        </span>
+                                                    </button>
+                                                </t>
                                             </div>
-                                            <strong class="o_ebd_account_bar_amount" t-esc="this.formatMoney(bar.amount)"/>
-                                        </button>
+                                            <button type="button" class="o_ebd_group_month_label" t-on-click="() => this.selectMonth(month.index)"
+                                                    t-att-title="'Ver consumos de ' + month.name" t-esc="month.short"/>
+                                        </div>
                                     </t>
-                                    <p class="o_ebd_axis_label" t-esc="'Gasto del mes de ' + this.periodName + ' (' + (state.data.currency || 'moneda') + ')'"/>
                                 </div>
-                                <p t-else="" class="o_ebd_empty">No existen cuentas presupuestadas para los filtros elegidos.</p>
-                            </t>
-                            <p t-if="!this.totalSpent" class="o_ebd_empty">No hay consumo registrado para el período y los filtros elegidos.</p>
+                            </div>
+                            <p t-if="!this.monthlyCenterGroups.some(month => month.centers.length)" class="o_ebd_empty">
+                                No hay centros con proyecciones para los filtros seleccionados.
+                            </p>
+                            <p t-elif="!this.monthlyAmounts.some(amount => amount !== 0)" class="o_ebd_empty">
+                                No hay consumo registrado para el período y los filtros elegidos.
+                            </p>
                         </t>
                         <t t-else="">
                             <t t-if="this.pieSlices.length">

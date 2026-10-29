@@ -7,8 +7,8 @@ const root = path.join(__dirname, '../..');
 const js = fs.readFileSync(path.join(root, 'static/src/dashboard/dashboard.js'), 'utf8');
 const xml = fs.readFileSync(path.join(root, 'static/src/dashboard/dashboard.xml'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'static/src/dashboard/dashboard.scss'), 'utf8');
-assert(xml.includes('this.bars') && xml.includes('this.pieSlices'), 'Conservar dibujos originales de barra y pastel');
-assert(xml.includes('this.accountBars'), 'Conservar barras horizontales al filtrar mes dentro de un centro');
+assert(xml.includes('this.monthlyCenterGroups') && xml.includes('this.pieSlices'), 'Conservar barras y pastel con desglose mensual');
+assert(xml.includes('o_ebd_center_bar_name'), 'Etiquetar cada barra por centro de costo');
 assert(!xml.includes('chartGroup') && !xml.includes('distributionRows'), 'No añadir nuevos controles de agrupación');
 assert(css.includes('.o_ebd_bar_chart') && css.includes('.o_ebd_pie_layout'), 'Mantener estilos originales');
 const source = js.replace(/^import .*;\s*$/gm, '')
@@ -57,8 +57,9 @@ const percentTotal=()=>dash.pieSlices.reduce((sum,slice)=>sum+slice.percentage,0
     await dash.load(1,2026,false,false);
     // Captura: Rubro Servicio Basico, Todos los centros, Todos los meses.
     dash.onCategoryChange({target:{value:'100'}});
-    assert.equal(dash.chartTitle,'Gastos por centro de costo');
-    assert.equal(dash.bars.length,2);
+    assert.equal(dash.chartTitle,'Gastos por mes y centro de costo');
+    assert.equal(dash.monthlyCenterGroups.length,12);
+    assert.equal(dash.monthlyCenterGroups[0].centers.length,2);
     assert.equal(dash.pieSlices.length,2);
     close(dash.totalSpent,4122.74);
     close(centerTotal(),4122.74);
@@ -66,7 +67,7 @@ const percentTotal=()=>dash.pieSlices.reduce((sum,slice)=>sum+slice.percentage,0
     close(dash.chartGroups.find(r=>r.id==='10').amount,2200);
     close(dash.chartGroups.find(r=>r.id==='20').amount,1922.74);
     close(percentTotal(),100);
-    assert.equal(dash.bars.find(r=>r.id==='10').short,'Administración');
+    assert.equal(dash.monthlyCenterGroups[0].centers.find(r=>r.id==='10').name,'Administración');
     assert.equal(dash.pieSlices.find(r=>r.id==='20').name,'Operaciones');
     // Con cuenta seleccionada, el gráfico sigue distribuyendo la cuenta entre centros.
     dash.onAccountChange({target:{value:'101'}});
@@ -80,7 +81,8 @@ const percentTotal=()=>dash.pieSlices.reduce((sum,slice)=>sum+slice.percentage,0
     close(dash.totalSpent,2630);
     close(dash.chartGroups.find(r=>r.id==='10').amount,1700);
     close(dash.chartGroups.find(r=>r.id==='20').amount,930);
-    assert.equal(dash.bars.length,2);
+    assert.equal(dash.monthlyCenterGroups.length,12);
+    assert.equal(dash.monthlyCenterGroups[0].centers.length,2);
     close(percentTotal(),100);
     // Entrar a un centro desde una barra o pastel conserva rubro y mes;
     // presenta cuentas controladas y mantiene dibujo original.
@@ -88,7 +90,7 @@ const percentTotal=()=>dash.pieSlices.reduce((sum,slice)=>sum+slice.percentage,0
     assert.equal(dash.state.costCenterId,'10');
     assert.equal(dash.state.categoryId,'100');
     assert.equal(dash.state.selectedMonth,0);
-    assert.equal(dash.chartTitle,'Gastos por cuenta controlada');
+    assert.equal(dash.chartTitle,'Gastos por mes y centro de costo');
     assert.equal(dash.accountBars.length,2);
     assert.equal(dash.pieSlices.length,2);
     close(dash.totalSpent,1700);
@@ -102,7 +104,8 @@ const percentTotal=()=>dash.pieSlices.reduce((sum,slice)=>sum+slice.percentage,0
     // Centro específico sin mes: barras verticales por cuenta, pastel por cuenta.
     await dash.load(1,2026,20);
     dash.onMonthChange({target:{value:'-1'}});
-    assert.equal(dash.bars.length,3);
+    assert.equal(dash.monthlyCenterGroups.length,12);
+    assert.equal(dash.monthlyCenterGroups[0].centers.length,1);
     close(dash.totalSpent,1922.74);
     close(centerTotal(),1922.74);
     close(percentTotal(),100);
@@ -130,5 +133,5 @@ const percentTotal=()=>dash.pieSlices.reduce((sum,slice)=>sum+slice.percentage,0
     resolveSlow(makePayload(10));
     await slow;
     assert.equal(dash.state.costCenterId,'20');
-    console.log('OK: barras y pastel originales, agrupación centros/cuentas, filtros, totales y porcentajes.');
+    console.log('OK: barras por 12 meses/centros, pastel por centros/cuentas, filtros, totales y porcentajes.');
 })().catch(err=>{console.error(err);process.exitCode=1;});

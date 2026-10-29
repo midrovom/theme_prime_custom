@@ -163,17 +163,58 @@ export class ExpenseBudgetDashboard extends Component {
             a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     }
 
-    get bars() {
-        // Se conserva el diseño original de columnas verticales; solamente
-        // cambian las etiquetas y alturas con los grupos filtrados.
-        const groups = this.chartGroups;
-        const max = Math.max(1, ...groups.map((group) => Math.max(0, group.amount)));
-        return groups.map((group) => ({
-            ...group,
-            short: group.name.length > 24 ? group.name.slice(0, 23) + "…" : group.name,
-            height: `${group.amount > 0 ? Math.max(2, (group.amount / max) * 100) : 0}%`,
-            active: !this.chartByCenter && this.state.accountId === group.id,
+
+    get monthlyCenterGroups() {
+        // Doce grupos fijos (enero a diciembre), y dentro de cada mes una
+        // columna por centro de costo incluido en la combinación de filtros.
+        // El pastel conserva chartGroups: total anual/mensual por centro o cuenta.
+        const groups = new Map();
+        for (const row of this.filteredBreakdown) {
+            const id = String(row.center_id);
+            if (!groups.has(id)) {
+                groups.set(id, {
+                    id,
+                    name: row.center_name || "Sin centro de costo",
+                    months: Array(12).fill(0),
+                });
+            }
+            const center = groups.get(id);
+            for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+                center.months[monthIndex] += Number(row.months[monthIndex] || 0);
+            }
+        }
+        const centers = [...groups.values()].sort((a, b) =>
+            a.name.localeCompare(b.name, "es") || a.id.localeCompare(b.id));
+        // La misma escala para los 12 meses, para comparar importes reales.
+        const maximum = Math.max(1, ...centers.flatMap(center =>
+            center.months.map(amount => Math.abs(amount))));
+        return Array.from({length: 12}, (_, index) => ({
+            index,
+            name: this.state.data.month_names[index] || "",
+            short: (this.state.data.month_names[index] || "").slice(0, 3),
+            active: this.state.selectedMonth === index,
+            muted: this.state.selectedMonth >= 0 && this.state.selectedMonth !== index,
+            centers: centers.map(center => {
+                const amount = center.months[index];
+                return {
+                    id: center.id,
+                    name: center.name,
+                    amount,
+                    // Nombres completos en pantalla, sin códigos abreviados.
+                    height: `${amount ? Math.max(2, Math.abs(amount) / maximum * 100) : 0}%`,
+                    negative: amount < 0,
+                    selected: this.state.costCenterId === center.id,
+                };
+            }),
         }));
+    }
+
+    async selectMonthCenter(monthIndex, centerId) {
+        // Un clic selecciona centro + mes sin borrar rubro ni cuenta controlada.
+        this.state.selectedMonth = monthIndex;
+        if (this.state.costCenterId !== String(centerId)) {
+            await this.load(this.state.companyId, this.state.year, String(centerId));
+        }
     }
 
     async selectChartGroup(groupId) {
@@ -212,11 +253,15 @@ export class ExpenseBudgetDashboard extends Component {
     }
 
     get chartTitle() {
-        return this.chartByCenter ? "Gastos por centro de costo" : "Gastos por cuenta controlada";
+        return this.state.chartType === "bar"
+            ? "Gastos por mes y centro de costo"
+            : (this.chartByCenter ? "Gastos por centro de costo" : "Gastos por cuenta controlada");
     }
 
     get chartHint() {
-        return `Consumos de ${this.periodName.toLowerCase()} · ${this.state.year} · según los filtros seleccionados`;
+        return this.state.chartType === "bar"
+            ? "En cada mes se muestra una barra por centro según los filtros seleccionados."
+            : `Consumos de ${this.periodName.toLowerCase()} · ${this.state.year} · según los filtros seleccionados`;
     }
 
     get totalSpent() {

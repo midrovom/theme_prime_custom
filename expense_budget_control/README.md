@@ -1,3 +1,10 @@
+## 18.0.1.4.100 — Barras mensuales agrupadas por centro de costo
+
+- Barras: se conservan los 12 meses, mostrando una barra por cada centro de costo presente en el filtro de cada mes; el nombre del centro aparece sobre la barra (nombre completo en tooltip) y se habilita desplazamiento horizontal cuando hay muchos centros.
+- Pastel: mantiene la distribución porcentual por centros cuando se selecciona «Todos los centros», y por cuentas al seleccionar un centro específico.
+- Empresa, año, mes, centro, rubro y cuenta se combinan como antes; al seleccionar un mes, siguen visibles los 12 meses y se resalta el elegido. El total y pastel respetan el mes elegido.
+- No se agregan filtros ni nuevos paneles; sin cambios en sincronización ERP, presupuestos o PDF.
+
 # Control de Presupuesto de Gastos — Odoo 18
 
 Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.99`.
