@@ -1,0 +1,30 @@
+{
+    "name": "Transcash · Análisis de despachos",
+    "summary": "Pendientes, plazos por ciudad, cumplimiento y tableros configurables",
+    "version": "18.0.1.1.0",
+    "category": "Inventory/Reporting",
+    "author": "Transcash",
+    "license": "LGPL-3",
+    "depends": ["base", "web"],
+    "data": [
+        "security/security.xml",
+        "security/ir.model.access.csv",
+        "data/defaults.xml",
+        "data/cron.xml",
+        "views/configuration_views.xml",
+        "views/invoice_views.xml",
+        "views/snapshot_views.xml",
+        "views/board_views.xml",
+        "wizard/import_views.xml",
+        "views/menu.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "transcash_dispatch_analysis/static/src/dashboard.js",
+            "transcash_dispatch_analysis/static/src/dashboard.xml",
+            "transcash_dispatch_analysis/static/src/dashboard.scss",
+        ],
+    },
+    "application": True,
+    "installable": True,
+}

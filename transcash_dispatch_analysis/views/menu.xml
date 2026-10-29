@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="action_dashboard" model="ir.actions.client"><field name="name">Análisis de despachos</field><field name="tag">transcash_dispatch_dashboard</field></record>
+  <menuitem id="menu_dispatch_root" name="Análisis de despachos" sequence="35" groups="transcash_dispatch_analysis.group_dispatch_user"/>
+  <menuitem id="menu_dashboard" name="Tablero" parent="menu_dispatch_root" action="action_dashboard" sequence="1"/>
+  <menuitem id="menu_invoices" name="Facturas y detalle" parent="menu_dispatch_root" action="action_invoices" sequence="10"/>
+  <menuitem id="menu_dynamic" name="Análisis dinámico" parent="menu_dispatch_root" action="action_dynamic_analysis" sequence="20"/>
+  <menuitem id="menu_boards" name="Mis tableros" parent="menu_dispatch_root" action="action_boards" sequence="30"/>
+  <menuitem id="menu_import" name="Importar Excel" parent="menu_dispatch_root" action="action_import" sequence="40" groups="transcash_dispatch_analysis.group_dispatch_operator"/>
+  <menuitem id="menu_snapshots" name="Importaciones e histórico" parent="menu_dispatch_root" action="action_snapshots" sequence="45"/>
+  <menuitem id="menu_config" name="Configuración" parent="menu_dispatch_root" sequence="90" groups="transcash_dispatch_analysis.group_dispatch_manager"/>
+  <menuitem id="menu_sla" name="Plazos por ciudad" parent="menu_config" action="action_sla" sequence="1"/>
+  <menuitem id="menu_holidays" name="Feriados" parent="menu_config" action="action_holidays" sequence="2"/>
+  <menuitem id="menu_sources" name="Fuentes y API" parent="menu_config" action="action_sources" sequence="3"/>
+</odoo>
