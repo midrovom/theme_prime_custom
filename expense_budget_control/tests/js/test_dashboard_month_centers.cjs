@@ -17,7 +17,7 @@ const source = js.replace(/^import .*;\s*$/gm,'')
   .replace('export class ExpenseBudgetDashboard','class ExpenseBudgetDashboard')
   + '\nglobalThis.DashboardUnderTest = ExpenseBudgetDashboard;';
 const ctx = {
-  Component: class {}, useState: v => v, onWillStart: () => {},
+  Component: class {}, useState: v => v, onWillStart: () => {}, onMounted: () => {},
   useService: () => ({}), registry: {category: () => ({add: () => {}})},
   Intl, Math, Map, Number, Array, Object, String,
 };

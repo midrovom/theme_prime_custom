@@ -146,7 +146,7 @@
         display: flex;
         flex-direction: column;
         gap: 5px;
-        padding: 0 8px;
+        padding: 0 4px;
         border-right: 1px solid #e6edf1;
         transition: opacity .15s ease;
     }
@@ -157,11 +157,11 @@
     .o_ebd_month_center_bars {
         display: flex;
         align-items: stretch;
-        gap: 5px;
+        gap: 3px;
         height: 250px;
     }
     .o_ebd_center_bar_item {
-        flex: 0 0 82px;
+        flex: 0 0 48px;
         min-width: 0;
         border: 0;
         background: none;
@@ -176,7 +176,7 @@
     .o_ebd_group_month_label:focus-visible { outline: 2px solid #1b7998; outline-offset: 2px; border-radius: 3px; }
     .o_ebd_center_bar_name {
         flex: 0 0 50px;
-        max-width: 82px;
+        max-width: 48px;
         display: -webkit-box;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 3;
@@ -207,10 +207,10 @@
     }
     .o_ebd_month_group.is-selected .o_ebd_group_month_label { color: #167a92; }
     @media (max-width: 600px) {
-        .o_ebd_center_bar_item { flex-basis: 72px; }
+        .o_ebd_center_bar_item { flex-basis: 42px; }
         .o_ebd_center_bar_item .o_ebd_bar { width: 22px; }
-        .o_ebd_center_bar_name { max-width: 72px; font-size: 9px; }
+        .o_ebd_center_bar_name { max-width: 42px; font-size: 9px; }
         .o_ebd_month_center_bars { height: 220px; }
-        .o_ebd_month_group { padding: 0 6px; }
+        .o_ebd_month_group { padding: 0 3px; }
     }
 }

@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onWillStart, onMounted, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
@@ -16,10 +16,12 @@ export class ExpenseBudgetDashboard extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this._loadSerial = 0;
+        this._startupRetried = false;
         this.state = useState({
             loading: true,
+            ready: false,
             error: "",
-            data: { companies: [], years: [], accounts: [], categories: [], month_names: [] },
+            data: { companies: [], years: [], accounts: [], categories: [], cost_centers: [], breakdown: [], month_names: [], company_id: false },
             companyId: "",
             year: "",
             categoryId: "",
@@ -28,7 +30,19 @@ export class ExpenseBudgetDashboard extends Component {
             selectedMonth: -1,
             chartType: "bar",
         });
-        onWillStart(() => this.load());
+        // Arrancar siempre con el contexto actual del servidor: en una nueva
+        // pestaña/recarga aún no existen opciones de empresa/año/centro.
+        // Esperar los datos antes de pintar los selectores evita valores visibles
+        // que no coinciden con los filtros aplicados realmente.
+        onWillStart(async () => { await this.load(false, false, false, false); });
+        // Si la primera petición falló por una interrupción transitoria,
+        // reintentar una sola vez una vez montada la pantalla.
+        onMounted(() => {
+            if (!this._startupRetried && !this.state.data.company_id) {
+                this._startupRetried = true;
+                void this.load(false, false, false, false);
+            }
+        });
     }
 
     async load(companyId = this.state.companyId, year = this.state.year,
@@ -48,6 +62,9 @@ export class ExpenseBudgetDashboard extends Component {
             // Si el usuario cambia varios filtros rápidamente, solo la última
             // respuesta puede reemplazar los datos en pantalla.
             if (serial !== this._loadSerial) { return; }
+            if (!data || !Array.isArray(data.companies) || !Array.isArray(data.breakdown)) {
+                throw new Error("La respuesta del dashboard no contiene los filtros y consumos esperados.");
+            }
             this.state.data = data;
             this.state.companyId = String(data.company_id || "");
             this.state.year = String(data.year || "");
@@ -64,7 +81,10 @@ export class ExpenseBudgetDashboard extends Component {
                 this.state.error = error.message || "No fue posible consultar los gastos.";
             }
         } finally {
-            if (serial === this._loadSerial) { this.state.loading = false; }
+            if (serial === this._loadSerial) {
+                this.state.loading = false;
+                this.state.ready = true;
+            }
         }
     }
 
@@ -185,6 +205,9 @@ export class ExpenseBudgetDashboard extends Component {
         }
         const centers = [...groups.values()].sort((a, b) =>
             a.name.localeCompare(b.name, "es") || a.id.localeCompare(b.id));
+        // Si solo se visualiza un centro, el nombre aparece una sola vez en
+        // la descripción de la gráfica y no encima de los doce meses.
+        const showCenterNames = !this.state.costCenterId && centers.length > 1;
         // La misma escala para los 12 meses, para comparar importes reales.
         const maximum = Math.max(1, ...centers.flatMap(center =>
             center.months.map(amount => Math.abs(amount))));
@@ -194,6 +217,7 @@ export class ExpenseBudgetDashboard extends Component {
             short: (this.state.data.month_names[index] || "").slice(0, 3),
             active: this.state.selectedMonth === index,
             muted: this.state.selectedMonth >= 0 && this.state.selectedMonth !== index,
+            showCenterNames,
             centers: centers.map(center => {
                 const amount = center.months[index];
                 return {
@@ -259,9 +283,15 @@ export class ExpenseBudgetDashboard extends Component {
     }
 
     get chartHint() {
-        return this.state.chartType === "bar"
-            ? "En cada mes se muestra una barra por centro según los filtros seleccionados."
-            : `Consumos de ${this.periodName.toLowerCase()} · ${this.state.year} · según los filtros seleccionados`;
+        if (this.state.chartType === "bar") {
+            // El nombre se muestra aquí una sola vez si hay un único centro.
+            const firstMonth = this.monthlyCenterGroups[0];
+            if (firstMonth?.centers.length === 1) {
+                return `Centro: ${firstMonth.centers[0].name} · Consumo por mes según los filtros seleccionados.`;
+            }
+            return "En cada mes se muestra una barra por centro según los filtros seleccionados.";
+        }
+        return `Consumos de ${this.periodName.toLowerCase()} · ${this.state.year} · según los filtros seleccionados`;
     }
 
     get totalSpent() {

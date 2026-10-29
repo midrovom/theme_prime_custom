@@ -106,6 +106,11 @@ class ExpenseBudgetDashboard(models.AbstractModel):
 
         chosen_id = int(company_id) if company_id else self.env.company.id
         company = companies.filtered(lambda c: c.id == chosen_id)[:1]
+        if not company and not company_id:
+            # Apertura inicial sin filtro explícito: el contexto de compañía
+            # puede diferir del conjunto permitido de compañías. Elegir una
+            # accesible en lugar de dejar el dashboard sin datos ni filtros.
+            company = companies[:1]
         if not company:
             raise AccessError(_('La empresa seleccionada no está disponible.'))
 

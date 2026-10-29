@@ -280,3 +280,11 @@ filtrado). Al seleccionar un centro, muestran la distribución entre sus
 cuentas controladas. Los filtros de empresa, año, mes, rubro y cuenta se
 combinan sin reiniciar los demás; la suma de los centros coincide con el
 consumido filtrado. No se añaden otros controles ni se alteran importes ERP.
+
+
+### v18.0.1.4.102: barras compactas y carga inicial fiable
+- Compactar los centros dentro de cada mes sin modificar el ancho de las barras.
+- Si solo se visualiza un centro, mostrar su nombre una sola vez en la descripción.
+- Cargar los filtros del dashboard antes de mostrarlos y sincronizar las opciones elegidas al recargar.
+- Reintentar una vez ante fallo transitorio de la consulta inicial; seleccionar una empresa accesible si el contexto predeterminado no lo está.
+- Sin cambios en presupuestos, consumos, PDFs ni sincronización ERP.
