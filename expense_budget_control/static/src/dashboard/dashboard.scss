@@ -188,7 +188,8 @@
         font-weight: 600;
     }
     .o_ebd_center_bar_item .o_ebd_bar_space { min-height: 0; flex: 1; }
-    .o_ebd_center_bar_item .o_ebd_bar { width: 100%; }
+    // Barras más delgadas, conservando el espacio completo para el nombre del centro.
+    .o_ebd_center_bar_item .o_ebd_bar { width: 28px; max-width: 100%; margin-inline: auto; }
     .o_ebd_center_bar_item .o_ebd_bar.is-negative { background: #d38e6e; }
     .o_ebd_center_bar_item:hover .o_ebd_bar,
     .o_ebd_center_bar_item.is-selected .o_ebd_bar { background: #e7a25a; }
@@ -207,6 +208,7 @@
     .o_ebd_month_group.is-selected .o_ebd_group_month_label { color: #167a92; }
     @media (max-width: 600px) {
         .o_ebd_center_bar_item { flex-basis: 72px; }
+        .o_ebd_center_bar_item .o_ebd_bar { width: 22px; }
         .o_ebd_center_bar_name { max-width: 72px; font-size: 9px; }
         .o_ebd_month_center_bars { height: 220px; }
         .o_ebd_month_group { padding: 0 6px; }

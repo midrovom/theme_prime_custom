@@ -11,6 +11,8 @@ assert(xml.includes('this.monthlyCenterGroups') && xml.includes('this.pieSlices'
 assert(xml.includes('o_ebd_center_bar_name') && xml.includes('month.centers'));
 assert(!xml.includes('chartGroup') && !xml.includes('distributionRows'), 'Sin nuevos selectores');
 assert(css.includes('.o_ebd_grouped_scroll') && css.includes('.o_ebd_bar'));
+assert(css.includes('width: 28px; max-width: 100%; margin-inline: auto;'), 'Barras delgadas centradas');
+assert(css.includes('.o_ebd_center_bar_item .o_ebd_bar { width: 22px; }'), 'Barras delgadas en móvil');
 const source = js.replace(/^import .*;\s*$/gm,'')
   .replace('export class ExpenseBudgetDashboard','class ExpenseBudgetDashboard')
   + '\nglobalThis.DashboardUnderTest = ExpenseBudgetDashboard;';

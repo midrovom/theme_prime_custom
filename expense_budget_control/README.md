@@ -1,3 +1,8 @@
+## 18.0.1.4.101 — Barras más delgadas
+
+- Las barras por centro se muestran más estrechas (28 px en escritorio, 22 px en móvil), centradas dentro de su espacio.
+- Se mantienen los nombres de centros de costo, los 12 meses, los filtros, el pastel y los cálculos sin modificaciones.
+
 ## 18.0.1.4.100 — Barras mensuales agrupadas por centro de costo
 
 - Barras: se conservan los 12 meses, mostrando una barra por cada centro de costo presente en el filtro de cada mes; el nombre del centro aparece sobre la barra (nombre completo en tooltip) y se habilita desplazamiento horizontal cuando hay muchos centros.
