@@ -8,12 +8,6 @@ const COLORS = [
     "#167a92", "#ee9a4b", "#7b69b0", "#479b80", "#bc6684",
     "#ba9a35", "#5b85c4", "#df7474", "#4aadb2", "#9a88ce",
 ];
-const GROUP_LABELS = {
-    center: "centro de costo",
-    category: "rubro",
-    account: "cuenta controlada",
-    month: "mes",
-};
 
 export class ExpenseBudgetDashboard extends Component {
     static template = "expense_budget_control.Dashboard";
@@ -25,7 +19,7 @@ export class ExpenseBudgetDashboard extends Component {
         this.state = useState({
             loading: true,
             error: "",
-            data: { companies: [], years: [], accounts: [], categories: [], cost_centers: [], breakdown: [], month_names: [] },
+            data: { companies: [], years: [], accounts: [], categories: [], month_names: [] },
             companyId: "",
             year: "",
             categoryId: "",
@@ -33,16 +27,17 @@ export class ExpenseBudgetDashboard extends Component {
             costCenterId: "",
             selectedMonth: -1,
             chartType: "bar",
-            chartGroup: "center",
         });
         onWillStart(() => this.load());
     }
 
     async load(companyId = this.state.companyId, year = this.state.year,
                costCenterId = this.state.costCenterId, preserveFilters = true) {
+        // El centro se filtra en el servidor. Al refrescar el dashboard NO se
+        // deben perder los filtros combinados (rubro, cuenta y mes).
         const serial = ++this._loadSerial;
-        const previousCategory = preserveFilters ? this.state.categoryId : "";
-        const previousAccount = preserveFilters ? this.state.accountId : "";
+        const categoryId = preserveFilters ? this.state.categoryId : "";
+        const accountId = preserveFilters ? this.state.accountId : "";
         this.state.loading = true;
         this.state.error = "";
         try {
@@ -50,17 +45,19 @@ export class ExpenseBudgetDashboard extends Component {
                 "expense.budget.dashboard", "get_dashboard_data",
                 [companyId || false, year || false, costCenterId || false]
             );
+            // Si el usuario cambia varios filtros rápidamente, solo la última
+            // respuesta puede reemplazar los datos en pantalla.
             if (serial !== this._loadSerial) { return; }
             this.state.data = data;
             this.state.companyId = String(data.company_id || "");
             this.state.year = String(data.year || "");
             this.state.costCenterId = String(data.cost_center_id || "");
-            this.state.categoryId = (data.categories || []).some((category) => String(category.id) === previousCategory)
-                ? previousCategory : "";
-            this.state.accountId = (data.accounts || []).some((account) =>
-                String(account.id) === previousAccount &&
-                (!this.state.categoryId || String(account.category_id) === this.state.categoryId))
-                ? previousAccount : "";
+            this.state.categoryId = (data.categories || []).some((row) => String(row.id) === categoryId)
+                ? categoryId : "";
+            this.state.accountId = (data.accounts || []).some((row) =>
+                String(row.id) === accountId &&
+                (!this.state.categoryId || String(row.category_id) === this.state.categoryId))
+                ? accountId : "";
             if (!preserveFilters) { this.state.selectedMonth = -1; }
         } catch (error) {
             if (serial === this._loadSerial) {
@@ -76,20 +73,15 @@ export class ExpenseBudgetDashboard extends Component {
     }
 
     onCompanyChange(event) {
-        this.state.chartGroup = "center";
-        this.load(event.target.value, false, false, false);
+        return this.load(event.target.value, false, false, false);
     }
 
     onYearChange(event) {
-        this.load(this.state.companyId, event.target.value);
+        return this.load(this.state.companyId, event.target.value);
     }
 
     onCostCenterChange(event) {
-        const centerId = event.target.value;
-        // Con Todos los centros, mostrar cuál consume más; al elegir uno,
-        // mostrar primero la distribución de sus cuentas dentro del centro.
-        this.state.chartGroup = centerId ? "account" : "center";
-        this.load(this.state.companyId, this.state.year, centerId);
+        return this.load(this.state.companyId, this.state.year, event.target.value);
     }
 
     onCategoryChange(event) {
@@ -110,11 +102,6 @@ export class ExpenseBudgetDashboard extends Component {
         this.state.chartType = event.target.value === "pie" ? "pie" : "bar";
     }
 
-    onChartGroupChange(event) {
-        this.state.chartGroup = Object.hasOwn(GROUP_LABELS, event.target.value)
-            ? event.target.value : "center";
-    }
-
     toggleAccount(accountId) {
         const next = String(accountId);
         this.state.accountId = this.state.accountId === next ? "" : next;
@@ -124,24 +111,8 @@ export class ExpenseBudgetDashboard extends Component {
         this.state.selectedMonth = this.state.selectedMonth === monthIndex ? -1 : monthIndex;
     }
 
-    onDistributionSelect(item) {
-        if (this.state.chartGroup === "month") {
-            this.selectMonth(Number(item.id));
-        } else if (this.state.chartGroup === "center") {
-            const id = String(item.id);
-            this.state.chartGroup = this.state.costCenterId === id ? "center" : "account";
-            this.load(this.state.companyId, this.state.year, this.state.costCenterId === id ? false : id);
-        } else if (this.state.chartGroup === "category") {
-            const id = String(item.id);
-            this.state.categoryId = this.state.categoryId === id ? "" : id;
-            this.state.accountId = "";
-        } else {
-            this.toggleAccount(item.id);
-        }
-    }
-
     get categoryAccounts() {
-        return (this.state.data.accounts || []).filter((account) =>
+        return this.state.data.accounts.filter((account) =>
             !this.state.categoryId || String(account.category_id) === this.state.categoryId
         );
     }
@@ -152,127 +123,133 @@ export class ExpenseBudgetDashboard extends Component {
         );
     }
 
-    get selectedBreakdown() {
-        // get_dashboard_data() ya ha filtrado por empresa/año/centro y ACL.
-        // Aplicamos rubro y cuenta a LAS MISMAS filas que usan las dos gráficas.
-        return (this.state.data.breakdown || []).filter((item) =>
-            (!this.state.categoryId || String(item.category_id) === this.state.categoryId) &&
-            (!this.state.accountId || String(item.account_id) === this.state.accountId)
-        );
-    }
-
     get monthlyAmounts() {
         const months = Array(12).fill(0);
-        for (const row of this.selectedBreakdown) {
-            row.months.forEach((amount, index) => { months[index] += Number(amount || 0); });
+        for (const account of this.selectedAccounts) {
+            account.months.forEach((amount, index) => { months[index] += amount; });
         }
         return months;
     }
 
-    get distributionRows() {
-        const month = this.state.selectedMonth;
-        const group = this.state.chartGroup;
-        const amounts = new Map();
-        for (const row of this.selectedBreakdown) {
-            if (group === "month") {
-                row.months.forEach((value, index) => {
-                    if (month >= 0 && index !== month) { return; }
-                    const key = String(index);
-                    if (!amounts.has(key)) {
-                        amounts.set(key, { id: index, name: this.state.data.month_names[index] || "", amount: 0 });
-                    }
-                    amounts.get(key).amount += Number(value || 0);
-                });
-                continue;
-            }
-            const id = row[`${group}_id`];
-            const name = row[`${group}_name`];
-            const key = String(id);
-            if (!amounts.has(key)) { amounts.set(key, { id, name, amount: 0 }); }
-            amounts.get(key).amount += month < 0
-                ? row.months.reduce((sum, value) => sum + Number(value || 0), 0)
-                : Number(row.months[month] || 0);
-        }
-        // Una opción de centro seleccionada sin líneas debe seguir siendo
-        // visible como cero; nunca mezclarla con Todos los centros.
-        if (group === "center" && this.state.costCenterId && !amounts.size) {
-            const center = (this.state.data.cost_centers || []).find((c) =>
-                String(c.id) === this.state.costCenterId);
-            if (center) { amounts.set(String(center.id), { ...center, amount: 0 }); }
-        }
-        const rows = [...amounts.values()].sort((a, b) =>
-            b.amount - a.amount || a.name.localeCompare(b.name));
-        const positiveTotal = rows.reduce((sum, row) => sum + Math.max(0, row.amount), 0);
-        const maxAbsolute = Math.max(0, ...rows.map((row) => Math.abs(row.amount)));
-        return rows.map((row) => ({
-            ...row,
-            percentage: positiveTotal && row.amount > 0 ? (100 * row.amount / positiveTotal) : 0,
-            width: maxAbsolute ? `${Math.abs(row.amount) / maxAbsolute * 100}%` : "0%",
-            isNegative: row.amount < 0,
+    get bars() {
+        const monthly = this.monthlyAmounts;
+        const max = Math.max(1, ...monthly);
+        return monthly.map((amount, index) => ({
+            index,
+            label: this.state.data.month_names[index] || "",
+            short: (this.state.data.month_names[index] || "").slice(0, 3),
+            amount,
+            height: `${amount > 0 ? Math.max(2, (amount / max) * 100) : 0}%`,
+            active: this.state.selectedMonth === index,
+            muted: this.state.selectedMonth >= 0 && this.state.selectedMonth !== index,
         }));
     }
 
-    get pieSlices() {
-        // Un gráfico circular solo admite valores positivos: los créditos o
-        // devoluciones negativos se conservan en las barras y en el detalle.
-        const rows = this.distributionRows.filter((row) => row.amount > 0);
-        const total = rows.reduce((sum, row) => sum + row.amount, 0);
-        if (!total) { return []; }
-        let angle = -Math.PI / 2;
-        return rows.map((item, index) => {
-            const share = item.amount / total;
-            const start = angle;
-            const end = angle + share * Math.PI * 2;
-            angle = end;
-            const polar = (rad) => [50 + 45 * Math.cos(rad), 50 + 45 * Math.sin(rad)];
-            const [sx, sy] = polar(start);
-            const [ex, ey] = polar(end);
-            return {
-                ...item,
-                percentage: Math.round(share * 10000) / 100,
-                color: COLORS[index % COLORS.length],
-                path: `M 50 50 L ${sx} ${sy} A 45 45 0 ${share > .5 ? 1 : 0} 1 ${ex} ${ey} Z`,
-                full: rows.length === 1,
-                active: (this.state.chartGroup === "center" && this.state.costCenterId === String(item.id)) ||
-                    (this.state.chartGroup === "category" && this.state.categoryId === String(item.id)) ||
-                    (this.state.chartGroup === "account" && this.state.accountId === String(item.id)) ||
-                    (this.state.chartGroup === "month" && this.state.selectedMonth === item.id),
-            };
-        });
+    get accountBars() {
+        // Con un mes elegido la barra representa una cuenta, nunca los otros 11 meses.
+        if (this.state.selectedMonth < 0) { return []; }
+        const monthIndex = this.state.selectedMonth;
+        const accounts = this.selectedAccounts.map((account) => ({
+            id: account.id,
+            name: account.name,
+            amount: Number(account.months[monthIndex] || 0),
+        })).sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
+        const maximum = Math.max(1, ...accounts.map((account) => Math.abs(account.amount)));
+        return accounts.map((account) => ({
+            ...account,
+            width: `${Math.abs(account.amount) / maximum * 100}%`,
+            isNegative: account.amount < 0,
+        }));
+    }
+
+    get accountDetail() {
+        // Fuente única de valores para gráfico mensual y tabla: mes/rubro/cuenta.
+        const monthIndex = this.state.selectedMonth;
+        return this.selectedAccounts.map((account) => ({
+            id: account.id,
+            name: account.name,
+            amount: monthIndex < 0
+                ? account.months.reduce((sum, value) => sum + value, 0)
+                : account.months[monthIndex],
+        })).sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
     }
 
     get chartTitle() {
-        return `Consumo por ${GROUP_LABELS[this.state.chartGroup]} · ${this.periodName}`;
+        return this.state.selectedMonth < 0
+            ? "Gastos por mes"
+            : `Gastos por cuenta controlada · ${this.periodName}`;
     }
 
     get chartHint() {
-        const center = this.selectedCenterName;
-        return `Empresa y año seleccionados · ${center} · Porcentajes sobre los consumos positivos del filtro`;
-    }
-
-    get groupHeading() {
-        return GROUP_LABELS[this.state.chartGroup];
+        return this.state.selectedMonth < 0
+            ? "Selecciona una barra para consultar las cuentas de ese mes."
+            : `Solo consumos de ${this.periodName.toLowerCase()} · ${this.state.year}`;
     }
 
     get totalSpent() {
+        const monthly = this.monthlyAmounts;
         return this.state.selectedMonth < 0
-            ? this.monthlyAmounts.reduce((sum, value) => sum + value, 0)
-            : this.monthlyAmounts[this.state.selectedMonth];
+            ? monthly.reduce((sum, value) => sum + value, 0)
+            : monthly[this.state.selectedMonth];
     }
 
     get peak() {
-        const amounts = this.monthlyAmounts;
-        const maximum = Math.max(0, ...amounts);
+        const monthly = this.monthlyAmounts;
+        const maximum = Math.max(0, ...monthly);
+        const index = monthly.indexOf(maximum);
         return {
-            name: maximum > 0 ? this.state.data.month_names[amounts.indexOf(maximum)] : "—",
+            name: maximum > 0 ? this.state.data.month_names[index] : "—",
             amount: maximum,
         };
     }
 
-    get selectedCenterName() {
-        if (!this.state.costCenterId) { return "Todos los centros"; }
-        return (this.state.data.cost_centers || []).find((center) =>
-            String(center.id) === this.state.costCenterId)?.name || "Centro de costo";
+    get pieAccounts() {
+        // Las proporciones comparan las cuentas del rubro en el mes filtrado.
+        // En "Todos los meses" muestran el acumulado anual. Pulsar una porción
+        // selecciona esa cuenta sin cambiar los valores de las otras porciones.
+        const selectedMonth = this.state.selectedMonth;
+        return this.selectedAccounts.map((account) => ({
+            ...account,
+            amount: selectedMonth < 0
+                ? account.months.reduce((sum, value) => sum + value, 0)
+                : account.months[selectedMonth],
+        })).filter((account) => account.amount > 0).sort((a, b) => b.amount - a.amount);
+    }
+
+    get pieSlices() {
+        const accounts = this.pieAccounts;
+        const total = accounts.reduce((sum, account) => sum + account.amount, 0);
+        if (!total) { return []; }
+        // Color fijo por identidad de cuenta: al filtrar o pulsar una porción,
+        // no se vuelve al primer color de la paleta para la única cuenta visible.
+        // El servidor entrega las cuentas ordenadas por nombre e ID; así el
+        // color también se conserva al cambiar de mes o de rubro.
+        const accountColors = new Map(
+            this.state.data.accounts.map((account, index) => [
+                String(account.id), COLORS[index % COLORS.length],
+            ])
+        );
+        let angle = -Math.PI / 2;
+        return accounts.map((account) => {
+            const share = account.amount / total;
+            const start = angle;
+            const end = angle + share * Math.PI * 2;
+            angle = end;
+            const polar = (radians) => [50 + 45 * Math.cos(radians), 50 + 45 * Math.sin(radians)];
+            const [sx, sy] = polar(start);
+            const [ex, ey] = polar(end);
+            const largeArc = share > 0.5 ? 1 : 0;
+            return {
+                id: account.id,
+                name: account.name,
+                amount: account.amount,
+                percentage: Math.round(share * 1000) / 10,
+                color: accountColors.get(String(account.id)) || COLORS[0],
+                path: `M 50 50 L ${sx} ${sy} A 45 45 0 ${largeArc} 1 ${ex} ${ey} Z`,
+                full: accounts.length === 1,
+                active: this.state.accountId === String(account.id),
+            };
+        });
     }
 
     get periodName() {
@@ -290,15 +267,9 @@ export class ExpenseBudgetDashboard extends Component {
             return this.selectedAccounts[0]?.name || "Cuenta controlada";
         }
         if (this.state.categoryId) {
-            return (this.state.data.categories || []).find((c) =>
-                String(c.id) === this.state.categoryId)?.name || "Rubro";
+            return this.state.data.categories.find((c) => String(c.id) === this.state.categoryId)?.name || "Rubro";
         }
-        return this.selectedCenterName;
-    }
-
-    formatPercent(value) {
-        return new Intl.NumberFormat("es-EC", { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-            .format(value || 0) + "%";
+        return "Gasto global";
     }
 
     formatMoney(value) {

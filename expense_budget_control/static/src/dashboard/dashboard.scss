@@ -116,22 +116,3 @@
     .o_ebd_root .o_ebd_header_actions { width: 100%; }
     .o_ebd_root .o_ebd_header_actions > button { flex: 1 1 auto; }
 }
-
-/* Desglose consistente de centro/rubro/cuenta entre barras, pastel y tabla. */
-.o_ebd_root {
-    .o_ebd_chart_controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-    .o_ebd_chart_controls .o_ebd_chart_mode select { min-width: 140px; }
-    .o_ebd_account_bar_row { grid-template-columns: minmax(115px, 190px) minmax(85px, 1fr) minmax(130px, 190px); }
-    .o_ebd_bar_stat { display: flex; flex-direction: column; text-align: right; min-width: 0; font-variant-numeric: tabular-nums; }
-    .o_ebd_bar_stat strong { font-size: 12px; overflow-wrap: anywhere; }
-    .o_ebd_bar_stat small { color: #637c8f; font-size: 11px; }
-    .o_ebd_legend_name { min-width: 0; display: flex; flex-direction: column; overflow-wrap: anywhere; }
-    .o_ebd_legend_name small { color: #708496; font-size: 11px; }
-    @media (max-width: 575.98px) {
-        .o_ebd_chart_controls { width: 100%; }
-        .o_ebd_chart_controls .o_ebd_chart_mode { flex: 1 1 140px; min-width: 0; flex-direction: column; align-items: stretch; }
-        .o_ebd_chart_controls .o_ebd_chart_mode select { width: 100%; min-width: 0; }
-        .o_ebd_account_bar_row { grid-template-columns: minmax(86px, 1fr) minmax(85px, 1fr); }
-        .o_ebd_bar_stat { grid-column: 2; }
-    }
-}
