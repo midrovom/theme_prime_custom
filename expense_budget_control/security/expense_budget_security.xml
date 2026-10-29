@@ -59,6 +59,11 @@
         <field name="model_id" ref="model_expense_budget"/>
         <field name="domain_force">[(1, '=', 1)] if user.has_group('expense_budget_control.group_expense_budget_manager') else [('company_id', 'in', company_ids)]</field>
     </record>
+    <record id="annual_target_company_rule" model="ir.rule">
+        <field name="name">Presupuesto anual por cuenta: empresas autorizadas</field>
+        <field name="model_id" ref="model_expense_budget_annual_target"/>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('expense_budget_control.group_expense_budget_manager') else [('company_id', 'in', company_ids)]</field>
+    </record>
     <record id="line_company_rule" model="ir.rule">
         <field name="name">Líneas: empresas autorizadas</field>
         <field name="model_id" ref="model_expense_budget_line"/>
@@ -71,6 +76,16 @@
         <field name="model_id" ref="model_expense_budget"/>
         <field name="groups" eval="[(4, ref('group_expense_budget_approver'))]"/>
         <field name="domain_force">[('state', 'in', ('to_approve', 'approved', 'rejected'))]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="annual_target_approver_visible_states_rule" model="ir.rule">
+        <field name="name">Presupuesto anual por cuenta: visibilidad para aprobador</field>
+        <field name="model_id" ref="model_expense_budget_annual_target"/>
+        <field name="groups" eval="[(4, ref('group_expense_budget_approver'))]"/>
+        <field name="domain_force">[('budget_id.state', 'in', ('to_approve', 'approved', 'rejected'))]</field>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
         <field name="perm_create" eval="False"/>
@@ -91,6 +106,16 @@
     <record id="budget_manager_full_read_rule" model="ir.rule">
         <field name="name">Presupuestos: administrador lectura completa</field>
         <field name="model_id" ref="model_expense_budget"/>
+        <field name="groups" eval="[(4, ref('group_expense_budget_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="annual_target_manager_full_read_rule" model="ir.rule">
+        <field name="name">Presupuesto anual por cuenta: administrador lectura completa</field>
+        <field name="model_id" ref="model_expense_budget_annual_target"/>
         <field name="groups" eval="[(4, ref('group_expense_budget_manager'))]"/>
         <field name="domain_force">[(1, '=', 1)]</field>
         <field name="perm_read" eval="True"/>

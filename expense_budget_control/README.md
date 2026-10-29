@@ -1,6 +1,24 @@
+## 18.0.1.4.103 — Ejecución y saldo neto visibles
+
+- Restaurado el indicador «Ejecución (%)» en la cabecera del presupuesto, listado de presupuestos, proyecciones mensuales y listado de Proyectado vs. real. La fórmula existente sigue siendo Consumido / Proyectado × 100, con dos decimales.
+- El saldo de la **cabecera** y del **listado de presupuestos** se denomina «Disponible neto»: Total proyectado menos Total consumido. Las líneas mensuales conservan «Disponible» y no se modifica la precisión ni el cálculo.
+- No se muestran de nuevo los excesos ni se alteran los gráficos del dashboard, reportes PDF o sincronización ERP.
+
+## 18.0.1.4.101 — Barras más delgadas
+
+- Las barras por centro se muestran más estrechas (28 px en escritorio, 22 px en móvil), centradas dentro de su espacio.
+- Se mantienen los nombres de centros de costo, los 12 meses, los filtros, el pastel y los cálculos sin modificaciones.
+
+## 18.0.1.4.100 — Barras mensuales agrupadas por centro de costo
+
+- Barras: se conservan los 12 meses, mostrando una barra por cada centro de costo presente en el filtro de cada mes; el nombre del centro aparece sobre la barra (nombre completo en tooltip) y se habilita desplazamiento horizontal cuando hay muchos centros.
+- Pastel: mantiene la distribución porcentual por centros cuando se selecciona «Todos los centros», y por cuentas al seleccionar un centro específico.
+- Empresa, año, mes, centro, rubro y cuenta se combinan como antes; al seleccionar un mes, siguen visibles los 12 meses y se resalta el elegido. El total y pastel respetan el mes elegido.
+- No se agregan filtros ni nuevos paneles; sin cambios en sincronización ERP, presupuestos o PDF.
+
 # Control de Presupuesto de Gastos — Odoo 18
 
-Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.79`.
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.103`.
 
 ## Funciones
 
@@ -10,6 +28,7 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.79`.
 - Comparación de presupuesto frente al real: consumido, disponible y porcentaje de ejecución.
 - Vistas tipo lista, gráfica de barras y tabla dinámica, con filtros por rubro, cuenta, mes y presupuesto.
 - **PDF anual imprimible** desde cada presupuesto, agrupado por rubro y cuenta, con columnas mensuales de presupuesto, gasto y ejecución %.
+- **Agregar líneas por meses**: desde un presupuesto, seleccione cuenta controlada, centro de costo, uno o varios meses y un valor anual. El asistente distribuye el importe entre los meses elegidos y los meses pendientes ya existentes; el prorrateo queda bloqueado cuando hay meses aprobados.
 - Registro de sincronizaciones, idempotencia por clave externa y reconciliación de gastos sin línea presupuestaria.
 - Roles de consulta, registro, aprobación y administrador; reglas de acceso multiempresa.
 
@@ -29,7 +48,7 @@ Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.79`.
 
 1. Vaya a **Control de Gastos → Importar Excel/CSV**, elija **Cuentas y rubros**, seleccione la empresa e importe la hoja **Cuentas** del libro de ejemplo.
 2. Vaya a **Presupuestos** y cree, por ejemplo, `Servicios básicos 2026`, seleccionando **empresa, año y rubro**. Para otro rubro puede crear otro presupuesto del mismo año, aunque el primero siga en borrador.
-3. En **Importar Excel/CSV**, seleccione **Proyecciones mensuales**, el presupuesto y la hoja **Proyecciones**. También puede editar las doce proyecciones por cuenta en el propio formulario.
+3. En el presupuesto, use **Agregar líneas** para seleccionar una cuenta, centro de costo, meses y el valor a distribuir; el asistente crea una línea por cada mes seleccionado. También puede seguir usando **Importar Excel/CSV → Proyecciones mensuales**.
 4. Registre gastos reales a mano o importe la hoja **Gastos** con tipo **Gastos reales**.
 5. En **Proyectado vs. real** vea las desviaciones por rubro, cuenta y mes. Un saldo negativo identifica exceso presupuestario.
 6. Envíe cada presupuesto a aprobación cuando esté listo. Puede registrar en paralelo presupuestos de otros rubros para la misma empresa y año, pero nunca un segundo presupuesto del mismo rubro (incluso si el primero está aprobado o rechazado).
@@ -232,3 +251,46 @@ El formulario marca los tres campos como obligatorios y el servidor valida los v
 se imprimen los 12 meses; si no se seleccionan cuentas, se consideran todas las cuentas del rubro
 con líneas presupuestarias para ese centro de costo.
 Las operaciones de cron, conexión ERP y cálculos del reporte no se modifican con este cambio.
+
+## Presupuesto anual por cuenta y centro de costo (18.0.1.4.84)
+
+En las líneas de proyección se incorpora el campo **Presupuesto anual**. Al ingresar un monto mayor que cero, el sistema calcula **Proyectado = Presupuesto anual / 12**, redondeado a la moneda de la empresa. Por ejemplo, un presupuesto anual de USD 1.200 genera una proyección mensual de USD 100.
+
+El monto anual se comparte entre los meses pendientes de la misma cuenta controlada, centro de costo, empresa y año. Al añadir un nuevo mes para esa combinación, el módulo reutiliza el monto anual guardado y calcula el proyectado mensual. Otra cuenta o centro de costo mantiene su propio presupuesto anual.
+
+Los importes anuales y mensuales de líneas ya aprobadas no se modifican. Una vez que la combinación cuenta/centro tiene un objetivo anual aprobado, ese objetivo queda bloqueado para las nuevas líneas; los nuevos meses conservan la distribución mensual calculada. Para líneas históricas aprobadas antes de incorporar este campo, el monto anual permanece vacío/cero hasta que se defina para los meses futuros; no se infiere automáticamente para evitar alterar la planificación histórica.
+
+
+## Presupuesto anual definido en cabecera (18.0.1.4.85)
+
+La ficha del presupuesto incluye ahora una tabla **Presupuesto anual por cuenta y centro de costo**. En esa tabla se registra una sola vez el importe anual de cada combinación, por ejemplo Agua/Quito = 1.200 y Luz/Quito = 1.300. El sistema calcula el proyectado mensual dividiendo el valor anual para 12 y lo copia a las líneas mensuales pendientes o nuevas que correspondan a esa cuenta y centro.
+
+Los importes de las líneas aprobadas o enviadas a aprobación no se recalculan ni se sobrescriben. Si ya existe una línea aprobada, el objetivo anual de esa combinación queda bloqueado después de definirlo. Los datos anuales que antes se guardaban en líneas mensuales se migran a la nueva tabla cuando existe un presupuesto compatible; no se cambian los proyectados históricos aprobados.
+
+## v18.0.1.4.97 — Dashboard por centro de costo
+- Gráficos de barras y pastel agrupables por centro de costo, rubro, cuenta o mes.
+- Los porcentajes se calculan sobre los consumos positivos del filtro actual; los
+  ajustes negativos permanecen en barras y total neto, no se inventan porciones negativas.
+- El backend conserva el detalle empresa/año/centro/rubro/cuenta/mes y las ACL existentes.
+- Con «Todos los centros» se muestran los centros con movimientos presupuestados;
+  con un centro seleccionado se muestra inicialmente el desglose de cuentas.
+- El filtro «Sin centro de costo» permite inspeccionar proyecciones históricas sin centro.
+- Al cambiar de centro se conservan rubro, cuenta y mes cuando siguen disponibles.
+
+
+## Dashboard — 18.0.1.4.99
+
+Se conservan los gráficos originales de barras y pastel. Con «Todos los centros»
+ambos representan el consumo por centro de costo (porcentaje del total
+filtrado). Al seleccionar un centro, muestran la distribución entre sus
+cuentas controladas. Los filtros de empresa, año, mes, rubro y cuenta se
+combinan sin reiniciar los demás; la suma de los centros coincide con el
+consumido filtrado. No se añaden otros controles ni se alteran importes ERP.
+
+
+### v18.0.1.4.102: barras compactas y carga inicial fiable
+- Compactar los centros dentro de cada mes sin modificar el ancho de las barras.
+- Si solo se visualiza un centro, mostrar su nombre una sola vez en la descripción.
+- Cargar los filtros del dashboard antes de mostrarlos y sincronizar las opciones elegidas al recargar.
+- Reintentar una vez ante fallo transitorio de la consulta inicial; seleccionar una empresa accesible si el contexto predeterminado no lo está.
+- Sin cambios en presupuestos, consumos, PDFs ni sincronización ERP.

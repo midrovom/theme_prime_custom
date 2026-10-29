@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="expense_budget_amount_precision" model="decimal.precision">
+            <field name="name">Presupuesto de Gastos</field>
+            <field name="digits">2</field>
+        </record>
+    </data>
+</odoo>

@@ -40,22 +40,22 @@
             </t>
             <t t-else="">
                 <t t-if="page_data['opening']">
-                    <td class="amount opening" t-esc="'{:,.2f}'.format(row_data['monthly_report']['openings'][page_data['first_month']])"/>
+                    <td class="amount opening" t-esc="data['format_real'](row_data['monthly_report']['openings'][page_data['first_month']], data['decimal_digits'])"/>
                 </t>
                 <t t-foreach="page_data['months']" t-as="month_item">
                     <t t-set="cell" t-value="row_data['monthly_report']['cells'][month_item['number']]"/>
-                    <td class="amount" t-esc="'{:,.2f}'.format(cell['planned'])"/>
-                    <td class="amount" t-esc="'{:,.2f}'.format(cell['actual'])"/>
-                    <td class="amount" t-esc="'{:,.2f}'.format(cell['available'])"/>
+                    <td class="amount" t-esc="data['format_real'](cell['planned'], data['decimal_digits'])"/>
+                    <td class="amount" t-esc="data['format_real'](cell['actual'], data['decimal_digits'])"/>
+                    <td class="amount" t-esc="data['format_real'](cell['available'], data['decimal_digits'])"/>
                 </t>
                 <!-- Consumo corte conserva el cálculo anterior (saldo_actual).
                      Consumo actual suma el consumo inicial y el consumo del corte.
                      Saldo disponible conserva exactamente su fórmula actual. -->
                 <t t-set="closing_balance" t-value="row_data['monthly_report']['period_closings'][page_data['first_month']]"/>
-                <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['saldo_actual'])"/>
-                <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['consumo_actual'] + closing_balance['saldo_disponible'])"/>
-                <td class="amount" t-esc="'{:,.2f}'.format(closing_balance['consumo_actual'])"/>
-                <td class="amount balance" t-esc="'{:,.2f}'.format(closing_balance['saldo_disponible'])"/>
+                <td class="amount" t-esc="data['format_real'](closing_balance['saldo_actual'], data['decimal_digits'])"/>
+                <td class="amount" t-esc="data['format_real'](data['exact_sum']((closing_balance['consumo_actual'], closing_balance['saldo_disponible'])), data['decimal_digits'])"/>
+                <td class="amount" t-esc="data['format_real'](closing_balance['consumo_actual'], data['decimal_digits'])"/>
+                <td class="amount balance" t-esc="data['format_real'](closing_balance['saldo_disponible'], data['decimal_digits'])"/>
             </t>
         </tr>
     </template>
@@ -115,11 +115,11 @@
                                  y con 12 se reserva más espacio para cada importe mensual. -->
                             <t t-set="month_count" t-value="len(page_data['months'])"/>
                             <!-- Anchos por columna: las nuevas columnas no comprimen los meses. -->
-                            <t t-set="min_table_width" t-value="240 + (110 if page_data['opening'] else 0) + 3 * month_count * 82 + 4 * 110"/>
+                            <t t-set="min_table_width" t-value="240 + (110 if page_data['opening'] else 0) + 3 * month_count * 90 + 4 * 110"/>
                             <t t-set="name_width" t-value="24000.0 / min_table_width"/>
                             <t t-set="opening_width" t-value="11000.0 / min_table_width if page_data['opening'] else 0.0"/>
                             <t t-set="balance_width" t-value="11000.0 / min_table_width"/>
-                            <t t-set="month_cell_width" t-value="8200.0 / min_table_width"/>
+                            <t t-set="month_cell_width" t-value="9000.0 / min_table_width"/>
                             <t t-set="table_width" t-value="100.0"/>
                             <div class="table-scroll">
                                 <table t-att-style="'width: {:.1f}%; min-width: {}px; font-size: {}px;'.format(table_width, min_table_width, 10 if month_count >= 9 else 10.5)">

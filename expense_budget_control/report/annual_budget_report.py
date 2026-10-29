@@ -2,6 +2,7 @@
 """Datos del PDF anual: rubros > cuentas > meses (sin modificar importaciones)."""
 
 from odoo import api, models
+from ..models.amount_utils import exact_sum, exact_difference, exact_display
 
 
 MONTH_NAMES = (
@@ -16,7 +17,7 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
 
     @staticmethod
     def _empty_month():
-        return {'planned': 0.0, 'actual': 0.0, 'available': 0.0, 'execution': 0.0, 'has_line': False}
+        return {'planned': 0.0, 'actual': 0.0, 'available': 0.0, 'excess': 0.0, 'execution': 0.0, 'has_line': False}
 
     @classmethod
     def _empty_year(cls):
@@ -28,9 +29,10 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
 
     @classmethod
     def _add_amounts(cls, target, source):
-        target['planned'] += source['planned']
-        target['actual'] += source['actual']
-        target['available'] += source['available']
+        target['planned'] = exact_sum((target['planned'], source['planned']))
+        target['actual'] = exact_sum((target['actual'], source['actual']))
+        target['available'] = exact_sum((target['available'], source['available']))
+        target['excess'] = exact_sum((target['excess'], source['excess']))
         target['has_line'] = target['has_line'] or source['has_line']
         target['execution'] = cls._percentage(target['planned'], target['actual'])
 
@@ -74,9 +76,13 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
                     'months': self._empty_year(),
                 }
             month = group['accounts_by_id'][key]['months'][line.month]
-            month['planned'] += line.planned_amount
-            month['actual'] += line.actual_amount
-            month['available'] += line.variance_amount
+            month['planned'] = exact_sum((month['planned'], line.planned_amount))
+            month['actual'] = exact_sum((month['actual'], line.actual_amount))
+            # Disponible firmado por cada línea; el total debe cuadrar con
+            # proyectado - consumido, sin compensaciones artificiales.
+            delta = exact_difference(line.planned_amount, line.actual_amount)
+            month['available'] = exact_sum((month['available'], delta))
+            month['excess'] = exact_sum((month['excess'], max(0.0, -delta)))
             month['execution'] = line.execution_percentage
             month['has_line'] = True
 
@@ -113,6 +119,8 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
                 ],
             })
         return {
+            'decimal_digits': self.env['decimal.precision'].precision_get('Presupuesto de Gastos'),
+            'format_real': exact_display,
             'budget': source,
             'budget_name': budget_name,
             'categories': result_categories,

@@ -2,7 +2,7 @@
 {
     'name': 'Control de Presupuesto de Gastos',
     'summary': 'Presupuesto mensual por rubro y cuenta, Excel y sincronización API',
-    'version': '18.0.1.4.80',
+    'version': '18.0.1.4.103',
     'category': 'Accounting/Accounting',
     'author': 'Conedera Desarrollo',
     'license': 'LGPL-3',
@@ -12,8 +12,11 @@
         'security/expense_budget_security.xml',
         'security/ir.model.access.csv',
         'data/comparison_months.xml',
+        'data/expense_budget_decimal_precision.xml',
         'views/expense_budget_comparison_report_wizard_views.xml',
         'views/expense_budget_views.xml',
+        'views/expense_budget_decimal_settings_views.xml',
+        'views/expense_budget_quick_add_wizard_views.xml',
         'views/expense_budget_import_views.xml',
         'views/expense_budget_api_views.xml',
         'views/expense_budget_cost_center_views.xml',
@@ -27,6 +30,7 @@
     ],
     'assets': {
         'web.assets_backend': [
+            'expense_budget_control/static/src/budget/quick_budget_capture.css',
             'expense_budget_control/static/src/dashboard/dashboard.js',
             'expense_budget_control/static/src/dashboard/dashboard.xml',
             'expense_budget_control/static/src/dashboard/dashboard.scss',

@@ -30,3 +30,19 @@ from . import test_regression_1477
 from . import test_regression_1479
 
 from . import test_regression_1480
+from . import test_incremental_approval
+
+from . import test_regression_1489
+
+from . import test_regression_1491
+
+from . import test_regression_1493
+
+from . import test_regression_1494
+
+from . import test_regression_1495
+
+from . import test_regression_1496
+
+from . import test_regression_1497
+from . import test_regression_14103
