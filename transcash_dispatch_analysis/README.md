@@ -1,6 +1,10 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.5.0 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.5.1 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Corrección de estilos 1.5.1
+
+Corrige el fallo de LibSass provocado por `min(420px,80vw)` en el selector de bodegas. Los dos estilos y su combinación se compilaron con LibSass 3.6.6. Reemplazar la carpeta, reiniciar Odoo, actualizar el módulo y recargar con Ctrl+F5. No requiere importar nuevamente los datos. Ver `docs/CORRECCION_ESTILOS_V1_5_1.md`.
 
 ## Registros únicos y bodegas múltiples 1.5
 

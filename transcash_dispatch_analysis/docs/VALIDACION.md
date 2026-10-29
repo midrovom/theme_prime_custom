@@ -1,4 +1,8 @@
-# Validación de la entrega 18.0.1.5.0
+# Validación de la entrega 18.0.1.5.1
+
+## Corrección 1.5.1
+
+Se reprodujo el fallo de compilación del SCSS del paquete 1.5 con LibSass 3.6.6. La versión corregida compila ambos estilos individualmente y concatenados. Se incluyen el detalle y el comprobador en CORRECCION_ESTILOS_V1_5_1.md y tests/check_styles.py. La lógica Python y JavaScript del negocio conserva la versión validada 1.5 que se describe abajo. No se han compilado los demás módulos del servidor del cliente.
 
 ## Ejecutado
 
