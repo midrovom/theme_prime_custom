@@ -101,6 +101,7 @@ class ExpenseBudgetDashboard(models.AbstractModel):
         if not companies:
             return {'companies': [], 'company_id': False, 'years': [],
                     'year': False, 'accounts': [], 'categories': [], 'cost_centers': [],
+                    'breakdown': [], 'cost_center_id': False,
                     'month_names': list(MONTH_LABELS), 'currency': ''}
 
         chosen_id = int(company_id) if company_id else self.env.company.id
@@ -128,29 +129,75 @@ class ExpenseBudgetDashboard(models.AbstractModel):
         centers = self.env['expense.budget.cost.center'].search([
             ('company_id', '=', company.id),
         ], order='name')
+        # Los catálogos de rubros y cuentas deben permanecer disponibles al
+        # cambiar de centro, aunque el nuevo centro aún no registre gastos.
+        all_visible_lines = lines
+        # -1 representa las líneas heredadas sin centro de costo. False/0
+        # significa Todos los centros, no se confunde con "Sin centro".
         chosen_center = int(cost_center_id) if cost_center_id else False
-        if chosen_center and chosen_center not in centers.ids:
+        if chosen_center and chosen_center != -1 and chosen_center not in centers.ids:
             raise AccessError(_('El centro de costo no pertenece a la empresa seleccionada.'))
-        if chosen_center:
+        if chosen_center == -1:
+            lines = lines.filtered(lambda line: not line.cost_center_id)
+        elif chosen_center:
             lines = lines.filtered(lambda line: line.cost_center_id.id == chosen_center)
+
         totals = defaultdict(lambda: [0.0] * 12)
+        # La información por centro NO se debe perder al agregar por cuenta.
+        # Es la fuente común de barras, pastel y porcentajes para todos los
+        # filtros (año, empresa, centro, rubro, cuenta y mes).
+        breakdown_totals = defaultdict(lambda: [0.0] * 12)
         categories = {}
         accounts = {}
-        for line in lines:
+        used_centers = {}
+        for line in all_visible_lines:
             account = line.account_id
-            category = account.category_id or line.category_id
+            category = account.category_id or line.category_id or line.budget_id.category_id
             category_id = category.id or 0
             categories[category_id] = {
                 'id': category_id,
                 'name': category.name if category else _('Sin rubro'),
             }
             accounts[account.id] = {
-                'id': account.id,
-                'name': account.name,
+                'id': account.id, 'name': account.name,
                 'category_id': category_id,
             }
+
+        for line in lines:
+            account = line.account_id
+            category = account.category_id or line.category_id or line.budget_id.category_id
+            category_id = category.id or 0
+            center = line.cost_center_id
+            center_id = center.id if center else -1
+            center_name = center.name if center else _('Sin centro de costo')
+            used_centers[center_id] = center_name
             month_index = int(line.month) - 1
-            totals[account.id][month_index] = exact_sum((totals[account.id][month_index], line.actual_amount))
+            amount = line.actual_amount
+            totals[account.id][month_index] = exact_sum((totals[account.id][month_index], amount))
+            key = (center_id, category_id, account.id)
+            breakdown_totals[key][month_index] = exact_sum((breakdown_totals[key][month_index], amount))
+
+        # Permite filtrar también líneas antiguas que no tienen centro asignado.
+        center_options = [{'id': cc.id, 'name': cc.name} for cc in centers]
+        if chosen_center == -1 or any(not line.cost_center_id for line in all_visible_lines):
+            center_options.append({'id': -1, 'name': _('Sin centro de costo')})
+        breakdown = [
+            {
+                'center_id': center_id,
+                'center_name': used_centers[center_id],
+                'category_id': category_id,
+                'category_name': categories[category_id]['name'],
+                'account_id': account_id,
+                'account_name': accounts[account_id]['name'],
+                'months': amounts,
+            }
+            for (center_id, category_id, account_id), amounts in sorted(
+                breakdown_totals.items(),
+                key=lambda item: (used_centers[item[0][0]].casefold(),
+                                  categories[item[0][1]]['name'].casefold(),
+                                  accounts[item[0][2]]['name'].casefold(), item[0]),
+            )
+        ]
 
         return {
             'companies': companies_data,
@@ -161,8 +208,9 @@ class ExpenseBudgetDashboard(models.AbstractModel):
             'decimal_digits': self.env['decimal.precision'].precision_get('Presupuesto de Gastos'),
             'month_names': list(MONTH_LABELS),
             'categories': sorted(categories.values(), key=lambda c: (c['name'], c['id'])),
-            'cost_centers': [{'id': cc.id, 'name': cc.name} for cc in centers],
+            'cost_centers': center_options,
             'cost_center_id': chosen_center,
             'accounts': [dict(account, months=totals[account['id']])
                          for account in sorted(accounts.values(), key=lambda a: (a['name'], a['id']))],
+            'breakdown': breakdown,
         }
