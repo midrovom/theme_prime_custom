@@ -38,6 +38,8 @@ Los errores de fechas, ciudades, saldos negativos, cantidades que no concilian, 
 
 ## Parámetros
 
+- Las ciudades de Excel y API se crean automáticamente con 9 días calendario, excepto Guayaquil con 3. Se normalizan mayúsculas, tildes y espacios para evitar duplicados. Los valores iniciales cubren facturas desde 01/01/1900 y todas las modalidades.
+- Los plazos se editan en Configuración → Plazos por ciudad. Una ciudad con una regla propia conserva sus días, calendario, vigencias y estado archivado; las importaciones no restablecen valores iniciales. Las reglas por ciudad y modalidad mantienen su prioridad.
 - El día de factura es día cero. Un plazo de cero vence el mismo día.
 - Calendario suma todos los días. Hábiles cuenta lunes a viernes y omite los feriados configurados para esa compañía.
 - La fecha límite vence al final del día. El Excel no contiene hora de despacho; no permite prometer tiempos exactos en horas.

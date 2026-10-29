@@ -1,0 +1,31 @@
+{
+  "standalone_tests": 50,
+  "javascript_progress_checks": {
+    "checks_passed": 9,
+    "checks": [
+      "First lifecycle hook reads status without hiding the screen until import completion",
+      "Automatic progression reaches completion without cron calls",
+      "Completion opens dashboard and history",
+      "Busy lock response waits and resumes without duplicating requests",
+      "A backend parsing error stays visible and stops the loop",
+      "Network failure refreshes persisted state before resuming; finished work is not repeated",
+      "Read-only viewer never starts a write operation",
+      "Leaving the view prevents further browser processing calls",
+      "Double click cannot start concurrent browser loops"
+    ],
+    "method": "Actual progress component methods with mocked Odoo services; visual OWL rendering requires target Odoo."
+  },
+  "full_file_pipeline": {
+    "file": "Analisis Despachos Trasncash(1).xlsx",
+    "invoices": 44989,
+    "source_rows": 54392,
+    "pending": 383,
+    "transcash_pending": 100,
+    "committed_request_boundaries_simulated": 91,
+    "progress_monotonic": true,
+    "repeated_final_call_idempotent": true,
+    "seconds_without_database": 16.76,
+    "method": "Real model pipeline with an in-memory ORM. Does not validate PostgreSQL transactions or target Odoo runtime."
+  },
+  "native_odoo_postgresql_validation": "Pending target service; not executed in this environment"
+}

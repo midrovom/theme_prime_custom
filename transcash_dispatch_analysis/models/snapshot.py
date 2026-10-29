@@ -5,8 +5,9 @@ import logging
 import uuid
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
-from ..services.engine import aggregate_invoice, as_date, evaluate, iter_invoice_groups, number
+from ..services.engine import aggregate_invoice, as_date, evaluate, iter_invoice_groups, normalize, number
 from ..services.xlsx_reader import iter_xlsx_rows
+from ..services.import_progress import ACTIVE_STATES, progress_values
 
 _logger = logging.getLogger(__name__)
 BATCH_SIZE = 500
@@ -36,10 +37,90 @@ class DispatchSnapshot(models.Model):
     loaded_invoices = fields.Integer(string="Facturas importadas", readonly=True)
     started_at = fields.Datetime(readonly=True)
     finished_at = fields.Datetime(readonly=True)
+    last_progress_at = fields.Datetime(string="Último avance", readonly=True)
+    progress_percent = fields.Float(string="Progreso de facturas", compute="_compute_progress", digits=(16, 1))
+    progress_message = fields.Char(string="Avance", compute="_compute_progress")
     error_message = fields.Text(string="Detalle del error", readonly=True)
     chunk_ids = fields.One2many("dispatch.chunk", "snapshot_id")
     invoice_ids = fields.One2many("dispatch.invoice", "snapshot_id")
     _sql_constraints = [("source_batch_key", "unique(source_id,batch_key)", "El identificador del lote ya existe en esta fuente.")]
+
+    @api.depends("state", "total_invoices", "loaded_invoices", "total_rows")
+    def _compute_progress(self):
+        for snapshot in self:
+            values = progress_values(snapshot.state, snapshot.loaded_invoices, snapshot.total_invoices, snapshot.total_rows)
+            snapshot.progress_percent = values["progress_percent"]
+            snapshot.progress_message = values["progress_message"]
+
+    def action_open_progress(self):
+        self.ensure_one()
+        self.check_access_rights("read")
+        self.check_access_rule("read")
+        return {"type": "ir.actions.client", "name": _("Importación de despachos"),
+                "tag": "transcash_dispatch_import_progress", "params": {"snapshot_id": self.id}}
+
+    def get_import_progress(self):
+        self.ensure_one()
+        self.check_access_rights("read")
+        self.check_access_rule("read")
+        return self._progress_payload()
+
+    def _progress_payload(self, busy=False):
+        values = progress_values(self.state, self.loaded_invoices, self.total_invoices, self.total_rows)
+        values.update({"id": self.id, "name": self.name, "state": self.state,
+            "file_name": self.file_name or self.name, "total_rows": self.total_rows,
+            "total_invoices": self.total_invoices, "loaded_invoices": self.loaded_invoices,
+            "error_message": self.error_message or "", "busy": busy,
+            "last_progress_at": str(self.last_progress_at) if self.last_progress_at else False,
+            "can_process": self.env.su or self.env.user.has_group("transcash_dispatch_analysis.group_dispatch_operator")})
+        return values
+
+    def process_import_step(self):
+        """One bounded RPC transaction; explicit access check BEFORE elevation.
+
+        The operator can import an allowed source but has no general permission
+        to create analytical invoices. Elevation is limited to this checked job.
+        """
+        self._operator()
+        worker = self.sudo().with_context(bin_size=False)
+        if not worker._try_import_lock():
+            return self._progress_payload(busy=True)
+        worker.invalidate_recordset()
+        worker._run_import_step()
+        return worker._progress_payload()
+
+    def _try_import_lock(self):
+        self.ensure_one()
+        self.env.cr.execute("SELECT pg_try_advisory_xact_lock(%s, %s)", (180104, self.source_id.id))
+        return bool(self.env.cr.fetchone()[0])
+
+    def _run_import_step(self):
+        self.ensure_one()
+        if self.state not in ACTIVE_STATES:
+            return False
+        try:
+            with self.env.cr.savepoint():
+                if self.state == "queued":
+                    self._prepare()
+                else:
+                    self._load_next()
+                self.last_progress_at = fields.Datetime.now()
+        except Exception as exc:
+            _logger.exception("Dispatch import failed for snapshot %s", self.id)
+            self.write({"state": "error", "error_message": str(exc)[:3000], "last_progress_at": fields.Datetime.now()})
+        return True
+
+    def _schedule_import(self):
+        """Scheduling failure must not roll back an upload or a completed block."""
+        cron = self.env.ref("transcash_dispatch_analysis.cron_dispatch_import", raise_if_not_found=False)
+        if not cron:
+            return
+        try:
+            with self.env.cr.savepoint():
+                if cron.sudo().active:
+                    cron.sudo()._trigger()
+        except Exception:
+            _logger.warning("Could not schedule dispatch import; the interactive runner remains available", exc_info=True)
 
     @api.depends("policy_pack")
     def _compute_policy_description(self):
@@ -102,7 +183,7 @@ class DispatchSnapshot(models.Model):
         if self.state == "receiving":
             # An empty FULL snapshot is allowed, but requires explicit zero controls.
             self.write({"state": "queued", "total_rows": expected_rows})
-            self.env.ref("transcash_dispatch_analysis.cron_dispatch_import")._trigger()
+            self._schedule_import()
         elif self.state not in ("queued", "loading", "ready", "archived"):
             raise ValidationError(_("El lote requiere corregir el error antes de finalizar."))
         return {"id": self.id, "state": self.state, "rows": expected_rows}
@@ -112,8 +193,8 @@ class DispatchSnapshot(models.Model):
         if self.state != "error":
             raise UserError(_("Solo se puede reintentar un lote con error."))
         self.write({"state": "queued", "error_message": False})
-        self.env.ref("transcash_dispatch_analysis.cron_dispatch_import")._trigger()
-        return True
+        self._schedule_import()
+        return self.action_open_progress()
 
     def action_recalculate(self):
         """Build a new immutable snapshot; do not alter existing historical KPIs."""
@@ -130,8 +211,8 @@ class DispatchSnapshot(models.Model):
         if self.input_type == "api":
             for chunk in self.chunk_ids.filtered(lambda c: c.phase == "raw"):
                 chunk.copy({"snapshot_id": clone.id})
-        self.env.ref("transcash_dispatch_analysis.cron_dispatch_import")._trigger()
-        return {"type": "ir.actions.act_window", "res_model": self._name, "res_id": clone.id, "view_mode": "form", "target": "current"}
+        clone._schedule_import()
+        return clone.action_open_progress()
 
     def action_open_invoices(self):
         self.ensure_one()
@@ -143,9 +224,9 @@ class DispatchSnapshot(models.Model):
         if self.input_type == "xlsx":
             if not self.raw_file:
                 raise ValueError("El corte no tiene el Excel original.")
-            yield from iter_xlsx_rows(base64.b64decode(self.raw_file))
+            yield from iter_xlsx_rows(base64.b64decode(self.with_context(bin_size=False).raw_file))
         else:
-            for chunk in self.chunk_ids.filtered(lambda c: c.phase == "raw").sorted("sequence"):
+            for chunk in self.with_context(bin_size=False).chunk_ids.filtered(lambda c: c.phase == "raw").sorted("sequence"):
                 yield from json.loads(base64.b64decode(chunk.payload))
 
     def _prepare(self):
@@ -153,11 +234,12 @@ class DispatchSnapshot(models.Model):
         # A failed attempt is disposable and never became the active source.
         self.invoice_ids.unlink()
         self.chunk_ids.filtered(lambda c: c.phase == "prepared").unlink()
-        self.write({"started_at": fields.Datetime.now(), "loaded_invoices": 0, "error_message": False,
-                    "policy_pack": self.env["dispatch.sla"]._policy_pack(self.company_id)})
+        self.write({"started_at": fields.Datetime.now(), "loaded_invoices": 0, "error_message": False})
         batch, seq, row_count, invoice_count = [], 0, 0, 0
+        cities = set()
         for key, rows in iter_invoice_groups(self._rows()):
             summary = aggregate_invoice(key, rows, self.cutoff_date)
+            cities.update(normalize(row.get("Ciudad")) for row in rows)
             batch.append({"summary": summary, "lines": rows})
             row_count += len(rows)
             invoice_count += 1
@@ -171,7 +253,11 @@ class DispatchSnapshot(models.Model):
             raise ValueError("Las líneas leídas no coinciden con las líneas finalizadas por API.")
         if self.input_type == "xlsx" and not row_count:
             raise ValueError("El Excel no contiene registros. No se reemplazó el corte vigente.")
-        self.write({"state": "loading", "total_rows": row_count, "total_invoices": invoice_count})
+        # Capture the pack only after every detected city has its initial rule.
+        # This is shared by Excel, API and parameter reapplication.
+        self.env["dispatch.sla"]._ensure_city_defaults(self.company_id, cities)
+        self.write({"state": "loading", "total_rows": row_count, "total_invoices": invoice_count,
+                    "policy_pack": self.env["dispatch.sla"]._policy_pack(self.company_id)})
         if not invoice_count:
             self._activate()
 
@@ -205,10 +291,16 @@ class DispatchSnapshot(models.Model):
     def _load_next(self):
         chunk = self.env["dispatch.chunk"].search([("snapshot_id", "=", self.id), ("phase", "=", "prepared"), ("loaded", "=", False)], order="sequence", limit=1)
         if chunk:
-            data = json.loads(base64.b64decode(chunk.payload))
+            data = json.loads(base64.b64decode(chunk.with_context(bin_size=False).payload))
+            if len(data) != chunk.row_count:
+                raise ValueError("El bloque preparado no coincide con su control de facturas. Reintente la importación.")
             self.env["dispatch.invoice"].create([self._invoice_values(item) for item in data])
             self.loaded_invoices += len(data)
             chunk.loaded = True
+        elif self.loaded_invoices != self.total_invoices:
+            raise ValueError("Faltan bloques preparados: se importaron %s de %s facturas. Use Reintentar para reconstruir el corte desde el archivo guardado." % (self.loaded_invoices, self.total_invoices))
+        if self.loaded_invoices > self.total_invoices:
+            raise ValueError("El total importado supera el control de facturas del archivo.")
         if self.loaded_invoices == self.total_invoices:
             self._activate()
 
@@ -227,27 +319,24 @@ class DispatchSnapshot(models.Model):
 
     @api.model
     def _cron_process(self):
-        snapshot = self.search([("state", "in", ["queued", "loading"])], order="id", limit=1)
-        if not snapshot:
-            return
-        # Lock is held until this cron transaction commits. Source-level lock
-        # also serializes activation if another worker handles a different job.
-        self.env.cr.execute("SELECT pg_try_advisory_xact_lock(%s, %s)", (180104, snapshot.source_id.id))
-        if not self.env.cr.fetchone()[0]:
-            return
+        processed = 0
+        for snapshot in self.search([("state", "in", list(ACTIVE_STATES))], order="id", limit=20):
+            if not snapshot._try_import_lock():
+                continue
+            snapshot.invalidate_recordset()
+            processed += int(snapshot._run_import_step())
+            if processed:
+                break
+        remaining = self.search_count([("state", "in", list(ACTIVE_STATES))])
+        # Notification is optional bookkeeping. A failure here used to escape
+        # the import's savepoint and could undo a successful preparation/batch.
         try:
             with self.env.cr.savepoint():
-                if snapshot.state == "queued":
-                    snapshot._prepare()
-                elif snapshot.state == "loading":
-                    snapshot._load_next()
-        except Exception as exc:
-            _logger.exception("Dispatch import failed for snapshot %s", snapshot.id)
-            snapshot.write({"state": "error", "error_message": str(exc)[:3000]})
-        remaining = self.search_count([("state", "in", ["queued", "loading"])])
-        if remaining:
-            remaining += self.env["dispatch.chunk"].search_count([("snapshot_id", "=", snapshot.id), ("phase", "=", "prepared"), ("loaded", "=", False)])
-        self.env["ir.cron"]._notify_progress(done=1, remaining=remaining)
+                notify = getattr(self.env["ir.cron"], "_notify_progress", None)
+                if notify:
+                    notify(done=processed, remaining=remaining)
+        except Exception:
+            _logger.warning("Could not notify dispatch cron progress; imported data is preserved", exc_info=True)
 
 
 class DispatchChunk(models.Model):

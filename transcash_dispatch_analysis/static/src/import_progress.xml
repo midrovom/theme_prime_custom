@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+  <t t-name="transcash_dispatch_analysis.ImportProgress">
+    <div class="td-import-progress">
+      <section class="td-import-card">
+        <div class="td-import-eyebrow">ANÁLISIS DE DESPACHOS</div>
+        <h1>Importación del archivo</h1>
+        <p class="td-import-subtitle">El archivo queda guardado en Odoo. Esta pantalla procesa los registros y muestra el avance.</p>
+        <div t-if="state.error" class="td-import-error" role="alert"><strong>No se pudo completar la solicitud</strong><p t-esc="state.error"/><p>Consulta el estado y continúa desde el último bloque confirmado. No necesitas subir otra copia del Excel.</p></div>
+        <t t-if="state.progress">
+          <div class="td-import-file" t-esc="state.progress.file_name"/>
+          <div class="td-import-title">
+            <h2 t-if="state.progress.done">Importación terminada</h2>
+            <h2 t-elif="state.progress.failed">La importación se detuvo</h2>
+            <h2 t-elif="state.progress.busy">Otro proceso está atendiendo esta carga</h2>
+            <h2 t-elif="state.progress.state === 'queued' and state.running">Leyendo y validando el Excel…</h2>
+            <h2 t-elif="state.running">Importando facturas…</h2>
+            <h2 t-else="">Archivo recibido</h2>
+            <strong t-esc="state.progress.progress_percent + '%'"/>
+          </div>
+          <div class="td-import-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" t-att-aria-valuenow="state.progress.progress_percent"><div t-att-class="state.progress.failed ? 'failed' : state.progress.done ? 'done' : ''" t-att-style="'width:' + state.progress.progress_percent + '%'"/></div>
+          <p class="td-import-message" t-esc="state.progress.progress_message"/>
+          <div class="td-import-counts"><div><span>Facturas importadas</span><strong t-esc="format(state.progress.loaded_invoices)"/></div><div><span>Total de facturas</span><strong t-esc="state.progress.total_invoices || state.progress.done ? format(state.progress.total_invoices) : 'Por confirmar'"/></div><div><span>Registros del archivo</span><strong t-esc="state.progress.total_rows || state.progress.done ? format(state.progress.total_rows) : 'Por confirmar'"/></div></div>
+          <div t-if="state.progress.failed" class="td-import-error" role="alert"><strong>Detalle del error</strong><p t-esc="state.progress.error_message"/></div>
+          <p t-if="state.progress.busy" class="td-import-note">Se está esperando al proceso que tiene esta carga. El estado se volverá a consultar automáticamente.</p>
+          <p t-elif="state.progress.state === 'queued' and state.running" class="td-import-note">Primero se valida el archivo completo y se preparan los bloques. El porcentaje comenzará a avanzar cuando se importen las facturas.</p>
+          <p t-elif="state.running" class="td-import-note">Mantén abierta esta pantalla para continuar automáticamente. Cada bloque confirmado queda guardado.</p>
+          <p t-if="state.progress.done" class="td-import-success">La carga está disponible. <t t-if="state.progress.state === 'archived'">Se guardó como histórico porque existe un corte más reciente.</t></p>
+          <div class="td-import-actions">
+            <button t-if="state.progress.can_process and state.progress.can_continue and !state.running" class="btn btn-primary" t-on-click="start">Continuar importación</button>
+            <button t-if="state.progress.can_process and state.progress.failed" class="btn btn-primary" t-on-click="retry">Reintentar desde el archivo guardado</button>
+            <button t-if="state.progress.done" class="btn btn-primary" t-on-click="openDashboard">Abrir tablero</button>
+            <button t-if="state.progress.done" class="btn btn-secondary" t-on-click="openInvoices">Ver facturas importadas</button>
+            <button t-if="!state.running" class="btn btn-secondary" t-on-click="refresh">Consultar estado</button>
+            <button class="btn btn-light" t-on-click="openHistory">Importaciones e histórico</button>
+          </div>
+        </t>
+        <button t-elif="state.error" class="btn btn-primary" t-on-click="refresh">Consultar estado</button>
+        <p class="td-import-footer">Si sales, puedes retomar esta misma carga desde Importaciones e histórico → Procesar / ver progreso. El programador de tareas también puede continuarla cuando esté habilitado.</p>
+      </section>
+    </div>
+  </t>
+</templates>

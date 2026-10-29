@@ -1,5 +1,7 @@
 # Análisis de despachos actualizado
 
+> Actualización 1.3: este informe conserva el análisis inicial, realizado antes de definir los plazos. El módulo ahora crea las ciudades con 9 días calendario y Guayaquil con 3, según la instrucción posterior del negocio. El cumplimiento se calcula al importar o reaplicar esos parámetros.
+
 **Fuente:** Analisis Despachos Trasncash(1).xlsx. Se usa exclusivamente el último archivo recibido.
 
 **Corte utilizado:** 29/10/2026, coincidente con la fecha más reciente de factura y despacho. Confirmar que es también la fecha de extracción del exportador al cargarlo en Odoo.
@@ -80,7 +82,7 @@ La última fecha por bodega permite medir el cierre consolidado, pero no el prim
 
 ## Módulo entregado
 
-Versión técnica **18.0.1.1.0**, carpeta `transcash_dispatch_analysis`. Incluye tablero, parámetros por ciudad/modalidad, calendarios y feriados, constructor de visuales, análisis dinámico, detalle por bodega o producto, importaciones en segundo plano, cortes históricos, perfiles y API de recepción por bloques. El conector específico a la API origen queda pendiente de su documentación.
+Versión técnica **18.0.1.2.0**, carpeta `transcash_dispatch_analysis`. Incluye tablero, parámetros por ciudad/modalidad, calendarios y feriados, constructor de visuales, análisis dinámico, detalle por bodega o producto, importaciones por bloques con progreso en pantalla, cortes históricos, perfiles y API de recepción por bloques. El conector específico a la API origen queda pendiente de su documentación.
 
 El cumplimiento comienza como **Sin medición** hasta configurar y aplicar plazos. Las vencidas no se presentan como cero cuando no hay pendientes evaluables. La vista previa permite simular y guardar opciones en el navegador; el módulo guarda las configuraciones en Odoo.
 

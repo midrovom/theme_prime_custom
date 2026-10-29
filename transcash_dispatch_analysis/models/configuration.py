@@ -5,6 +5,10 @@ from odoo.exceptions import AccessError, ValidationError
 from ..services.engine import normalize
 
 
+def initial_city_days(city):
+    return 3 if normalize(city) == "GUAYAQUIL" else 9
+
+
 class DispatchSource(models.Model):
     _name = "dispatch.source"
     _description = "Fuente de análisis de despachos"
@@ -17,6 +21,13 @@ class DispatchSource(models.Model):
     active_snapshot_id = fields.Many2one("dispatch.snapshot", readonly=True, check_company=True, ondelete="set null")
     notes = fields.Text()
     _sql_constraints = [("source_company_code", "unique(company_id,code)", "El código de fuente ya existe en esta compañía.")]
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        sources = super().create(vals_list)
+        for company in sources.mapped("company_id"):
+            self.env["dispatch.sla"]._ensure_city_defaults(company, [])
+        return sources
 
     def _check_operator(self):
         if not self.env.su and not self.env.user.has_group("transcash_dispatch_analysis.group_dispatch_operator"):
@@ -57,15 +68,66 @@ class DispatchSla(models.Model):
     name = fields.Char(compute="_compute_name", store=True)
     company_id = fields.Many2one("res.company", required=True, default=lambda s: s.env.company, index=True)
     active = fields.Boolean(default=True)
-    city = fields.Char(help="Vacío: regla general para ciudades sin otra regla específica.")
+    city = fields.Char(string="Ciudad", help="Las ciudades del Excel o API se crean automáticamente. Vacío: regla general para ciudades sin otra regla específica.")
     city_key = fields.Char(compute="_compute_keys", store=True, index=True)
     delivery = fields.Char(string="Condición de entrega", help="Vacío: todas. Escriba el texto de Cond_Entrega para una modalidad específica.")
     delivery_key = fields.Char(compute="_compute_keys", store=True)
-    max_days = fields.Integer(string="Días máximos", required=True, default=2)
-    day_type = fields.Selection([("calendar", "Calendario"), ("business", "Hábiles (lunes a viernes)")], default="calendar", required=True)
+    max_days = fields.Integer(string="Días máximos", required=True, default=9)
+    day_type = fields.Selection([("calendar", "Calendario"), ("business", "Hábiles (lunes a viernes)")], string="Tipo de días", default="calendar", required=True)
     valid_from = fields.Date(string="Facturas desde", required=True, default=lambda s: date(1900, 1, 1))
     valid_to = fields.Date(string="Facturas hasta")
     notes = fields.Text()
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        values = [dict(vals) for vals in vals_list]
+        for vals in values:
+            if "max_days" not in vals:
+                vals["max_days"] = initial_city_days(vals.get("city"))
+        return super().create(values)
+
+    @api.onchange("city")
+    def _onchange_city_default_days(self):
+        if not self._origin:
+            self.max_days = initial_city_days(self.city)
+
+    @api.model
+    def _ensure_city_defaults(self, company, cities):
+        """Create missing city-wide rules, never rewrite a user's policy.
+
+        Callers are trusted import/setup paths. The company lock also covers
+        simultaneous imports from different sources in the same company.
+        Archived and date-limited city-wide rules count as deliberate settings;
+        modality-specific rules can coexist with a new city-wide default.
+        """
+        company.ensure_one()
+        rules = self.sudo().with_context(active_test=False)
+        self.env.cr.execute("SELECT pg_advisory_xact_lock(%s, %s)", (180105, company.id))
+        existing = rules.search([("company_id", "=", company.id), ("delivery_key", "=", False)])
+        configured = {normalize(rule.city) for rule in existing}
+        detected = {normalize(city) for city in cities} | {"GUAYAQUIL"}
+        missing = sorted(detected - configured - {"", "SIN CIUDAD"})
+        if not missing:
+            return rules.browse()
+        return rules.create([{
+            "company_id": company.id, "city": city, "max_days": initial_city_days(city),
+            "day_type": "calendar", "valid_from": date(1900, 1, 1),
+            "notes": "Plazo inicial creado automáticamente. Puede editar los días, tipo de días y vigencia en esta configuración.",
+        } for city in missing])
+
+    @api.model
+    def _initialize_city_defaults(self):
+        """Idempotent install/update backfill, including already imported data."""
+        companies = self.env["res.company"].sudo().search([])
+        grouped = self.env["dispatch.invoice"].sudo().read_group(
+            [("company_id", "in", companies.ids)], ["company_id", "city"],
+            ["company_id", "city"], lazy=False)
+        by_company = {}
+        for group in grouped:
+            if group.get("company_id"):
+                by_company.setdefault(group["company_id"][0], []).append(group.get("city"))
+        for company in companies:
+            self._ensure_city_defaults(company, by_company.get(company.id, []))
 
     @api.depends("city", "delivery")
     def _compute_keys(self):

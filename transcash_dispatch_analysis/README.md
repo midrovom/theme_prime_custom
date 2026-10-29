@@ -2,14 +2,22 @@
 
 Primera versión del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
 
+## Corrección de importación 1.2
+
+Esta versión abre una pantalla que procesa los bloques y muestra su avance, sin depender del cron mientras esté abierta. Para continuar un Excel ya cargado, ir a Importaciones e histórico → Procesar / ver progreso. Ver `docs/CORRECCION_IMPORTACION_V1_2.md` para la actualización y recuperación de cargas en cola.
+
+## Ciudades y plazos automáticos 1.3
+
+Al importar por Excel o API se crean los plazos de las ciudades detectadas: **9 días calendario para todas y 3 para Guayaquil**. Los valores iniciales se aplican desde esa misma importación. Se pueden editar en **Configuración → Plazos por ciudad**; nuevas importaciones y actualizaciones del módulo conservan los cambios. Al actualizar también se completan las ciudades de las facturas ya importadas. Para recalcular un corte terminado, usar **Aplicar parámetros** y mantener abierta la pantalla de progreso. Ver `docs/CIUDADES_AUTOMATICAS_V1_3.md`.
+
 ## Funcionalidad
 
 - Tablero de facturas únicas: pendientes, parciales, vencidas, cumplimiento exigible, cumplimiento de despachadas, promedio, mediana y P90.
-- Plazos por ciudad y condición de entrega, en días calendario o hábiles. Vigencia por fecha de factura y feriados configurables por compañía.
+- Ciudades creadas al importar, con plazos iniciales editables: 9 días calendario; Guayaquil, 3. Plazos por ciudad y condición de entrega, en días calendario o hábiles. Vigencia por fecha de factura y feriados configurables por compañía.
 - Antigüedad de pendientes, peso, cajas y pallets pendientes. Priorización de vencidas y detalle por factura/bodega, con SKU si lo proporciona la fuente.
 - Constructor de visuales de barras, líneas, distribución circular y tablas. Tableros personales o compartidos con la compañía y orden configurable.
 - Tabla dinámica, gráficos, filtros favoritos y exportación estándar de Odoo.
-- Importación XLSX en segundo plano, cortes históricos y activación del nuevo corte solo al terminar todos sus bloques.
+- Importación XLSX por bloques con progreso en pantalla, respaldo por cron, cortes históricos y activación del nuevo corte solo al terminar todos sus bloques.
 - API por bloques con identificadores de lote y reintentos idempotentes.
 - Perfiles Consulta, Operador y Responsable; reglas de acceso por compañía y tableros privados.
 
@@ -21,7 +29,7 @@ Se usa exclusivamente `Analisis Despachos Trasncash(1).xlsx`: 54.392 registros p
 
 Este archivo corrige las fechas: existen 17.743 registros con último despacho en un día distinto de la factura. El tiempo promedio observado es 1,65 días calendario para todas las modalidades y 9,28 días para Entrega Transcash. Estos promedios excluyen ajustes/devoluciones y observaciones de calidad. Ver el informe incluido para población, denominadores y límites.
 
-No se han inventado plazos ni fechas. Inicialmente el cumplimiento aparece como **Sin medición** hasta configurar plazos.
+Los plazos iniciales siguen la instrucción de negocio: 9 días calendario y 3 para Guayaquil. El cumplimiento se calcula con esos plazos, salvo donde existan reglas personalizadas, datos no evaluables o vigencias que no cubran la factura.
 
 ## Instalación
 
@@ -29,9 +37,9 @@ No se han inventado plazos ni fechas. Inicialmente el cumplimiento aparece como 
 2. Reiniciar Odoo, actualizar la lista de aplicaciones e instalar **Transcash · Análisis de despachos**.
 3. Asignar el perfil del módulo a los usuarios. El administrador de Odoo recibe Responsable al instalar.
 4. Revisar Configuración → Fuentes y API. La fuente inicial `TRANSCASH` pertenece a la compañía principal; crear otra fuente para otra compañía cuando corresponda.
-5. Configurar Plazos por ciudad y Feriados. Una ciudad vacía representa la regla general; modalidad vacía representa todas las modalidades.
+5. Revisar Plazos por ciudad: Guayaquil inicia con 3 días y las otras ciudades se crearán con 9 al importar. Se pueden modificar días, calendario y vigencias. Una ciudad vacía representa la regla general; modalidad vacía representa todas las modalidades. Los feriados se configuran si se opta por días hábiles.
 6. Importar el Excel completo e indicar la fecha de extracción del exportador. Para el archivo recibido, el corte analizado es **29/10/2026**.
-7. Consultar Importaciones e histórico hasta que el corte quede vigente. Los procesos cron de Odoo deben estar habilitados.
+7. Mantener abierta la pantalla de progreso hasta que termine. Para retomar una carga anterior, usar Importaciones e histórico → Procesar / ver progreso. El cron es un respaldo; la pantalla procesa los bloques aunque el cron no esté habilitado.
 8. Si se cambian plazos después de importar, pulsar **Aplicar parámetros**. Se prepara otro corte con las reglas actuales y se mantiene el anterior como histórico.
 
 Ejemplo desde una instalación con `odoo-bin`:
@@ -39,6 +47,8 @@ Ejemplo desde una instalación con `odoo-bin`:
 ```bash
 ./odoo-bin -d base_prueba --addons-path=/ruta/odoo/addons,/ruta/custom_addons -i transcash_dispatch_analysis --stop-after-init
 ```
+
+Después de reemplazar una versión ya instalada, reiniciar Odoo, actualizar el módulo desde Aplicaciones y recargar el navegador con Ctrl+F5.
 
 No requiere paquetes Python adicionales. El lector XLSX usa la biblioteca estándar. Admite una hoja visible, archivos de hasta 40 MiB, contenido expandido de hasta 300 MiB y 500.000 líneas. El archivo recibido tiene 8,16 MiB y 54.392 registros. El proxy HTTP debe permitir una carga de al menos 64 MiB para cubrir la representación base64 del tamaño máximo admitido.
 

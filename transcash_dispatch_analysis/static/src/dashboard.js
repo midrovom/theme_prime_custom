@@ -71,8 +71,11 @@ export class DispatchDashboard extends Component {
     }
     async recalculate() {
         try {
-            const count = await this.orm.call("dispatch.dashboard", "request_recalculation", [this.state.filters]);
-            this.notification.add(`${count} cortes en cola con los parámetros actuales. El tablero cambiará cuando termine la importación.`, {type: "info"});
+            const result = await this.orm.call("dispatch.dashboard", "request_recalculation", [this.state.filters]);
+            if (result.action) {
+                return this.action.doAction(result.action);
+            }
+            this.notification.add("No hay un corte vigente al que aplicar los parámetros.", {type: "info"});
         } catch (error) {
             this.notification.add(error.data?.message || error.message, {type: "danger"});
         }

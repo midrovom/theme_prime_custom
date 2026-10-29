@@ -24,5 +24,5 @@ class DispatchImportWizard(models.TransientModel):
             "source_id": self.source_id.id, "company_id": self.source_id.company_id.id,
             "cutoff_date": self.cutoff_date, "input_type": "xlsx", "file_name": self.file_name,
             "raw_file": self.file, "state": "queued"})
-        self.env.ref("transcash_dispatch_analysis.cron_dispatch_import")._trigger()
-        return {"type": "ir.actions.act_window", "res_model": "dispatch.snapshot", "res_id": snapshot.id, "view_mode": "form"}
+        snapshot._schedule_import()
+        return snapshot.action_open_progress()

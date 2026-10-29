@@ -1,0 +1,63 @@
+{
+  "module_version": "18.0.1.3.0",
+  "standalone_python_tests": {
+    "passed": 61,
+    "engine": 39,
+    "queue": 11,
+    "city_defaults": 11
+  },
+  "import_progress_javascript": {
+    "checks_passed": 9,
+    "checks": [
+      "First lifecycle hook reads status without hiding the screen until import completion",
+      "Automatic progression reaches completion without cron calls",
+      "Completion opens dashboard and history",
+      "Busy lock response waits and resumes without duplicating requests",
+      "A backend parsing error stays visible and stops the loop",
+      "Network failure refreshes persisted state before resuming; finished work is not repeated",
+      "Read-only viewer never starts a write operation",
+      "Leaving the view prevents further browser processing calls",
+      "Double click cannot start concurrent browser loops"
+    ],
+    "method": "Actual progress component methods with mocked Odoo services; visual OWL rendering requires target Odoo."
+  },
+  "recalculation_javascript": {
+    "checks_passed": 4,
+    "checks": [
+      "Single source opens interactive processing",
+      "Multiple sources open the new import list",
+      "No active source shows an informative message",
+      "Connection failure is visible"
+    ],
+    "method": "Actual dashboard component methods with mocked Odoo services; native OWL mount is not validated."
+  },
+  "full_updated_excel_pipeline": {
+    "file": "Analisis Despachos Trasncash(1).xlsx",
+    "invoices": 44989,
+    "source_rows": 54392,
+    "pending": 383,
+    "transcash_pending": 100,
+    "cities_created": 73,
+    "guayaquil_initial_days": 3,
+    "other_city_initial_days": 9,
+    "city_duplicate_count": 0,
+    "committed_request_boundaries_simulated": 91,
+    "progress_monotonic": true,
+    "repeated_final_call_idempotent": true,
+    "seconds_without_database": 17.07,
+    "method": "Real model pipeline with an in-memory ORM. Does not validate PostgreSQL transactions or target Odoo runtime."
+  },
+  "static_module": {
+    "python_files": 19,
+    "xml_files": 12,
+    "models": 11,
+    "access_rows": 18,
+    "manifest": "OK",
+    "view_field_references": "OK",
+    "python_syntax": "OK",
+    "xml_syntax": "OK",
+    "obsolete_modifiers": "none"
+  },
+  "native_odoo_integration_tests_included": 14,
+  "native_odoo_and_postgresql": "NOT RUN: no target Odoo service available"
+}

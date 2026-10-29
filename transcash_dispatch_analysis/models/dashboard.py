@@ -141,8 +141,12 @@ class DispatchDashboard(models.AbstractModel):
             raise AccessError(_("Solo un responsable puede reaplicar parámetros."))
         filters = filters or {}
         sources = self.env["dispatch.source"].search([("id", "=", int(filters["source_id"]))] if filters.get("source_id") else [])
-        count = 0
+        actions = []
         for snapshot in sources.mapped("active_snapshot_id"):
-            snapshot.action_recalculate()
-            count += 1
-        return count
+            actions.append(snapshot.action_recalculate())
+        action = actions[0] if len(actions) == 1 else False
+        if len(actions) > 1:
+            action = {"type": "ir.actions.act_window", "name": _("Cortes con nuevos parámetros"),
+                "res_model": "dispatch.snapshot", "view_mode": "list,form",
+                "domain": [("id", "in", [a["params"]["snapshot_id"] for a in actions])]}
+        return {"count": len(actions), "action": action}
