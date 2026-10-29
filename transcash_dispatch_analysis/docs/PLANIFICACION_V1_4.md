@@ -1,5 +1,7 @@
 # Cumplimiento, toneladas y capacidad por destino · 18.0.1.4.0
 
+> Esta documentación describe la base de planificación 1.4. La versión 1.5 añade llave única, pesos facturados/despachados, bodegas múltiples y Favoritos: consultar UNICOS_BODEGAS_V1_5.md.
+
 ## Qué cambia
 
 - El encabezado muestra **Cumplimiento del período**, sus fechas y el numerador/denominador. Las fechas Desde/Hasta seleccionan facturas por fecha de emisión; el estado sigue siendo el registrado a la fecha de corte. No se reconstruye un estado histórico a la fecha Hasta a partir de un corte posterior.

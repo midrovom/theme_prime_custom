@@ -23,3 +23,5 @@ access_transport_route_user,transport.route.user,model_dispatch_transport_route,
 access_vehicle_type_manager,vehicle.type.manager,model_dispatch_vehicle_type,group_dispatch_manager,1,1,1,1
 access_transport_settings_manager,transport.settings.manager,model_dispatch_transport_settings,group_dispatch_manager,1,1,1,1
 access_transport_route_manager,transport.route.manager,model_dispatch_transport_route,group_dispatch_manager,1,1,1,1
+access_warehouse_user,warehouse.user,model_dispatch_warehouse,group_dispatch_user,1,0,0,0
+access_warehouse_manager,warehouse.manager,model_dispatch_warehouse,group_dispatch_manager,1,1,1,1

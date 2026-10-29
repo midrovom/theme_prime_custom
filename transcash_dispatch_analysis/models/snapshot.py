@@ -5,7 +5,7 @@ import logging
 import uuid
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
-from ..services.engine import aggregate_invoice, as_date, evaluate, iter_invoice_groups, normalize, number
+from ..services.engine import aggregate_invoice, as_date, evaluate, invoice_key, iter_invoice_groups, normalize, number, unique_invoice_lines, weight_metrics
 from ..services.xlsx_reader import iter_xlsx_rows
 from ..services.import_progress import ACTIVE_STATES, progress_values
 
@@ -35,6 +35,8 @@ class DispatchSnapshot(models.Model):
     total_rows = fields.Integer(string="Líneas recibidas", readonly=True)
     total_invoices = fields.Integer(string="Facturas detectadas", readonly=True)
     loaded_invoices = fields.Integer(string="Facturas importadas", readonly=True)
+    duplicate_rows = fields.Integer(string="Registros repetidos consolidados", readonly=True)
+    duplicate_updates = fields.Integer(string="Repeticiones con datos actualizados", readonly=True)
     started_at = fields.Datetime(readonly=True)
     finished_at = fields.Datetime(readonly=True)
     last_progress_at = fields.Datetime(string="Último avance", readonly=True)
@@ -235,12 +237,15 @@ class DispatchSnapshot(models.Model):
         self.invoice_ids.unlink()
         self.chunk_ids.filtered(lambda c: c.phase == "prepared").unlink()
         self.write({"started_at": fields.Datetime.now(), "loaded_invoices": 0, "error_message": False})
-        batch, seq, row_count, invoice_count = [], 0, 0, 0
+        batch, seq, row_count, invoice_count, duplicates, updates = [], 0, 0, 0, 0, 0
         cities = set()
         for key, rows in iter_invoice_groups(self._rows()):
-            summary = aggregate_invoice(key, rows, self.cutoff_date)
+            unique, removed, changed = unique_invoice_lines(rows)
+            summary = aggregate_invoice(key, unique, self.cutoff_date)
+            duplicates += removed
+            updates += changed
             cities.update(normalize(row.get("Ciudad")) for row in rows)
-            batch.append({"summary": summary, "lines": rows})
+            batch.append({"summary": summary, "lines": unique})
             row_count += len(rows)
             invoice_count += 1
             if len(batch) >= BATCH_SIZE:
@@ -257,6 +262,7 @@ class DispatchSnapshot(models.Model):
         # This is shared by Excel, API and parameter reapplication.
         self.env["dispatch.sla"]._ensure_city_defaults(self.company_id, cities)
         self.write({"state": "loading", "total_rows": row_count, "total_invoices": invoice_count,
+                    "duplicate_rows": duplicates,"duplicate_updates":updates,
                     "policy_pack": self.env["dispatch.sla"]._policy_pack(self.company_id)})
         if not invoice_count:
             self._activate()
@@ -266,8 +272,14 @@ class DispatchSnapshot(models.Model):
         self.env["dispatch.chunk"].create({"snapshot_id": self.id, "phase": "prepared", "sequence": sequence,
             "payload": base64.b64encode(payload), "checksum": hashlib.sha256(payload).hexdigest(), "row_count": len(data)})
 
-    def _invoice_values(self, item):
-        calculated = evaluate(item["summary"], self.policy_pack or {})
+    def _invoice_values(self, item, warehouse_map=None):
+        summary=item["summary"]
+        canonical_key=invoice_key({"TipoFactura":summary["invoice_type"],"NumeroFactura":summary["internal_number"]})
+        if summary.get("invoice_key")!=canonical_key or "invoiced_weight" not in summary:
+            unique,_,_=unique_invoice_lines(item["lines"])
+            summary=aggregate_invoice(canonical_key,unique,self.cutoff_date)
+            item={"summary":summary,"lines":unique}
+        calculated = evaluate(summary, self.policy_pack or {})
         values = {k: v for k, v in calculated.items() if k in self.env["dispatch.invoice"]._fields and k != "cutoff_date"}
         values.update({"snapshot_id": self.id, "lead_available": calculated["lead_days"] is not None,
                        "lead_days": calculated["lead_days"] or 0.0, "sla_elapsed_days": calculated["sla_elapsed_days"] or 0.0})
@@ -284,6 +296,9 @@ class DispatchSnapshot(models.Model):
                 "address": str(row.get("Direccion") or ""), "comment": str(row.get("Comentario") or ""),
                 "blocks": str(row.get("Bloques") or ""), "locations": str(row.get("Ubicaciones") or ""), "raw_data": row,
             }
+            metrics = weight_metrics(row)
+            values_line.update({key:metrics[key] for key in ("dispatched_weight","invoiced_weight","dispatched_weight_available","invoiced_weight_available")})
+            values_line["warehouse_id"] = (warehouse_map or {}).get(normalize(row.get("CodBodega") or row.get("Bodega"))) or False
             commands.append(fields.Command.create(values_line))
         values["line_ids"] = commands
         return values
@@ -294,7 +309,8 @@ class DispatchSnapshot(models.Model):
             data = json.loads(base64.b64decode(chunk.with_context(bin_size=False).payload))
             if len(data) != chunk.row_count:
                 raise ValueError("El bloque preparado no coincide con su control de facturas. Reintente la importación.")
-            self.env["dispatch.invoice"].create([self._invoice_values(item) for item in data])
+            warehouse_map = self.env["dispatch.warehouse"]._ensure_records(self.company_id,[row for item in data for row in item["lines"]])
+            self.env["dispatch.invoice"]._upsert_snapshot_values(self,[self._invoice_values(item,warehouse_map) for item in data])
             self.loaded_invoices += len(data)
             chunk.loaded = True
         elif self.loaded_invoices != self.total_invoices:
@@ -314,6 +330,7 @@ class DispatchSnapshot(models.Model):
             if previous and previous != self:
                 previous.state = "archived"
             self.source_id.active_snapshot_id = self
+        self.env["dispatch.invoice"]._refresh_current_records(self.company_id.id)
         # Temporary transform blocks are reproducible from raw_file/raw chunks.
         self.chunk_ids.filtered(lambda c: c.phase == "prepared").unlink()
 

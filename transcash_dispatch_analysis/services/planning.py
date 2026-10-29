@@ -94,7 +94,7 @@ def build_transport_plan(invoices, lines, packs, scope="transcash"):
         if key not in lanes:
             source_ref = invoice.get("source_id")
             source_name = source_ref[1] if isinstance(source_ref, (list, tuple)) else str(source or "")
-            lanes[key] = {"key": "|".join(str(x) for x in key), "company_id": company,
+            lanes[key] = {"key": "|".join(str(x) for x in key), "company_id": company, "source_id":source,
                 "source": source_name, "city": city, "warehouse_code": normalize(warehouse_code),
                 "warehouse": warehouse or warehouse_code or "SIN BODEGA",
                 "weight_kg": 0.0, "pending_pallets": 0.0, "invoices": set(), "review_ids": set(),
@@ -151,9 +151,41 @@ def build_transport_plan(invoices, lines, packs, scope="transcash"):
     days_available = all(r["estimate"] and r["estimate"]["days_current_fleet"] is not None for r in results)
     known_plan_possible = bool(estimates) and all(e["required_vehicles"] is not None for e in estimates)
     known_days_available = bool(estimates) and all(e["days_current_fleet"] is not None for e in estimates)
+    destinations = {}
+    for lane in results:
+        key = (lane["company_id"],lane["source_id"],lane["city"])
+        group=destinations.setdefault(key,{"key":"|".join(str(x) for x in key),"city":lane["city"],
+            "source":lane["source"],"company_name":lane["company_name"],"pending_tons":0,"trips":0,
+            "required_vehicles":0,"additional_vehicles":0,"days_current_fleet":0,"vehicle_types":{},
+            "complete":True,"route_count":0,"invoice_count":sum(1 for r in selected.values()
+                if relation_id(r.get("company_id"))==key[0] and relation_id(r.get("source_id"))==key[1]
+                and (normalize(r.get("city")) or "SIN CIUDAD")==key[2])})
+        group["pending_tons"]+=lane["pending_tons"]
+        group["route_count"]+=1
+        group["complete"] &= lane["complete"]
+        estimate=lane["estimate"]
+        if not estimate:
+            group["complete"]=False
+            continue
+        group["trips"]+=estimate["trips"]
+        group["required_vehicles"]+=estimate["required_vehicles"] or 0
+        group["additional_vehicles"]+=estimate["additional_vehicles"] or 0
+        if estimate["days_current_fleet"] is None:
+            group["days_current_fleet"]=None
+        elif group["days_current_fleet"] is not None:
+            group["days_current_fleet"]=max(group["days_current_fleet"],estimate["days_current_fleet"])
+        if estimate["required_vehicles"] is not None:
+            name=estimate["vehicle_name"]
+            group["vehicle_types"][name]=group["vehicle_types"].get(name,0)+estimate["required_vehicles"]
+        else:group["complete"]=False
+    for group in destinations.values():
+        group["vehicle_types"]=[{"name":name,"count":count} for name,count in group["vehicle_types"].items()]
+        if not group["vehicle_types"]:
+            group["required_vehicles"]=group["additional_vehicles"]=group["days_current_fleet"]=None
     return {
         "scope": scope, "scope_label": "Entrega Transcash" if scope == "transcash" else "Todas las modalidades filtradas",
         "lanes": results, "pending_invoices": len(selected), "excluded_invoices": len(invoices) - len(selected),
+        "destinations":sorted(destinations.values(),key=lambda g:(-g["pending_tons"],g["city"])),
         "weight_kg": sum(r["weight_kg"] for r in results), "pending_tons": sum(r["pending_tons"] for r in results),
         "trips": sum(e["trips"] for e in estimates),
         "required_vehicles": sum(e["required_vehicles"] for e in estimates) if plan_possible else None,

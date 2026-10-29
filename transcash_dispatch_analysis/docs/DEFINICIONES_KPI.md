@@ -2,7 +2,7 @@
 
 ## Unidad de análisis y población
 
-Se cuenta una factura por la combinación `TipoFactura`, `NumeroFactura` y `Establecimiento`, dentro de una compañía, fuente y corte. El archivo actualizado tiene una fila por factura/bodega y no incluye SKU. La importación también admite producto/bodega. Las filas de detalle no son facturas nuevas. Los filtros por fecha se aplican a la **fecha de factura**. Los gráficos mensuales son cohortes de facturación, no meses del movimiento de despacho.
+La identidad de la factura es `TipoFactura + NumeroFactura` dentro de la compañía. Establecimiento y fuente no crean otra identidad comercial. Se cuenta una sola versión vigente, conservando los cortes anteriores como histórico separado. El archivo actualizado tiene una fila por factura/bodega y no incluye SKU. La importación también admite producto/bodega. Las filas de detalle no son facturas nuevas. Los filtros por fecha se aplican a la **fecha de factura**. Los gráficos mensuales son cohortes de facturación, no meses del movimiento de despacho.
 
 El estado de cada factura es el registrado en el corte. El atraso se evalúa a la fecha de extracción. Un archivo histórico no se presenta como el pendiente actual ni se extrapola a hoy. Al seleccionar un corte histórico se usa su estado y sus reglas capturadas.
 
@@ -23,6 +23,8 @@ El estado de cada factura es el registrado en el corte. El atraso se evalúa a l
 | Cumplimiento exigible | Despachadas evaluables a tiempo / (despachadas evaluables + pendientes vencidas evaluables) × 100. |
 | Peso/cajas/pallets pendientes | Suma de esos campos sobre líneas con pendiente positivo. |
 | Toneladas pendientes | Peso pendiente en kg / 1.000, dentro de los mismos filtros. |
+| Toneladas despachadas | PesoDespacho informado / 1.000; se señalan registros sin peso medible. |
+| Toneladas facturadas conocidas | PesoFacturado / 1.000 cuando existe. Si no hay ajustes y los pesos son medibles, se concilia físico + pendiente. Si falta el peso de ajustes o hay datos no medibles, se marca parcial. |
 | Antigüedad | Corte menos fecha de factura, en días calendario, para las pendientes. |
 
 Cuando el denominador es cero, el porcentaje aparece **Sin medición**, no 0%. El porcentaje global se calcula desde su numerador y denominador; no es un promedio de porcentajes de ciudades o meses.

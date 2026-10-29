@@ -62,3 +62,17 @@
   @media(max-width:1000px) { .td-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media(max-width:650px) { .td-plan-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .td-period-result { text-align:left; } .td-period-summary { padding:18px; } }
 }
+
+.td-dashboard {
+  .td-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .td-favorite-controls { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px; margin:14px 0; }
+  .td-favorite-controls label { display:flex; flex-direction:column; gap:6px; font-size:11px; color:var(--td-muted); }
+  .td-favorite-controls input,.td-favorite-controls select { min-width:200px; padding:8px; border:1px solid var(--td-line); border-radius:6px; background:white; color:var(--td-ink); }
+  .td-warehouse-picker { position:relative; min-width:210px; font-size:12px; }
+  .td-warehouse-picker summary { cursor:pointer; padding:10px 12px; background:white; border:1px solid var(--td-line); border-radius:6px; }
+  .td-warehouse-picker > div { position:absolute; z-index:20; background:white; border:1px solid var(--td-line); box-shadow:0 5px 20px #24365c20; max-height:350px; overflow:auto; width:min(420px,80vw); padding:14px; border-radius:8px; }
+  .td-warehouse-picker label { display:flex; flex-direction:row; align-items:center; gap:8px; margin:12px 0; font-size:11px; }
+  .td-warehouse-picker input { width:16px; height:16px; min-width:16px; }
+  .td-scope-note { font-size:11px; padding:12px; border-left:3px solid #365eea; color:#5b6f92; background:#f0f4fd; }
+  @media(max-width:850px) { .td-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+}

@@ -1,6 +1,10 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.4.0 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.5.0 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Registros únicos y bodegas múltiples 1.5
+
+La llave comercial es **TipoFactura + NumeroFactura** por compañía. Una sola versión vigente entra en los totales, incluso con dos cargas del mismo Excel o fuentes superpuestas. Se conservan las versiones históricas separadas. El selector admite varias bodegas y recalcula sus toneladas y pendientes; la contratación usa únicamente el saldo pendiente. Se añaden toneladas despachadas y facturadas conocidas, resumen de vehículos por destino y un análisis nativo de bodegas con Favoritos de Odoo. La actualización completa los datos existentes; no requiere subir el archivo otra vez. Consultar `docs/UNICOS_BODEGAS_V1_5.md` y ejecutar **Validar / consolidar duplicados** para revisar la base instalada.
 
 ## Cumplimiento, toneladas y vehículos 1.4
 
@@ -61,7 +65,7 @@ No requiere paquetes Python adicionales. El lector XLSX usa la biblioteca están
 
 El filtro inicial incluye todas las condiciones de entrega. Seleccionar **Entrega Transcash** para analizar exclusivamente esa modalidad. Los retiros de clientes siguen visibles y se pueden analizar por separado.
 
-Una factura pendiente tiene al menos una línea con `Pendiente > 0,000001`. Una línea con saldo negativo no compensa el pendiente de otra línea. Se agrupa por `TipoFactura + NumeroFactura + Establecimiento` dentro de cada fuente/corte/compañía. Se conserva también la columna `Factura`; ambos identificadores se muestran para resolver su significado comercial con el sistema de origen.
+Una factura pendiente tiene al menos una línea con `Pendiente > 0,000001`. Una línea con saldo negativo no compensa el pendiente de otra línea. Se identifica por `TipoFactura + NumeroFactura` dentro de la compañía, conservando todas sus bodegas y productos distintos como detalle. Establecimiento y la columna Factura son descriptivos. Las fuentes y cortes conservan versiones; solo la observación vigente más reciente de esa llave entra en la operación.
 
 Las facturas con registros de más de una bodega se agrupan en **VARIAS BODEGAS** para no duplicarlas. Las bodegas originales se conservan en el detalle de origen. No se suman cantidades heterogéneas de productos para fabricar un porcentaje de despacho.
 

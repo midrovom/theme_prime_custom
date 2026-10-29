@@ -1,13 +1,16 @@
 from collections import Counter
+from collections import defaultdict
+import json
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
-from ..services.engine import as_date, grouped, summarize, METRICS, GROUPS
+from odoo.tools.safe_eval import safe_eval
+from ..services.engine import aggregate_invoice, as_date, evaluate, grouped, summarize, METRICS, GROUPS
 from ..services.planning import build_transport_plan
 
-READ_FIELDS = ["name", "source_id", "company_id", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
+READ_FIELDS = ["name", "invoice_key", "snapshot_id", "source_id", "company_id", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
     "state", "pending", "pending_lines", "pending_weight", "pending_boxes", "pending_pallets", "has_adjustment", "physically_completed", "source_warnings", "source_grain",
     "completion_date", "quality_flags", "quality_issue", "cutoff_date", "age_days", "lead_days", "lead_available", "sla_configured",
-    "deadline", "sla_status", "late_days", "eligible", "mature", "on_time"]
+    "deadline", "sla_status", "late_days", "eligible", "mature", "on_time", "invoiced_weight", "dispatched_weight", "invoiced_weight_missing_rows", "dispatched_weight_missing_rows"]
 
 
 class DispatchDashboard(models.AbstractModel):
@@ -35,7 +38,7 @@ class DispatchDashboard(models.AbstractModel):
                 raise ValidationError(_("El corte todavía no está disponible."))
             domain += [("snapshot_id", "=", snapshot.id)]
         else:
-            domain += [("snapshot_state", "=", "ready")]
+            domain += [("is_current", "=", True)]
         if filters.get("source_id"):
             domain += [("source_id", "=", int(filters["source_id"]))]
         for key, operator in (("date_from", ">="), ("date_to", "<=")):
@@ -46,10 +49,15 @@ class DispatchDashboard(models.AbstractModel):
         for key in ("city", "delivery"):
             if filters.get(key):
                 domain.append((key, "=", str(filters[key])[:300]))
+        warehouses = filters.get("warehouse_ids") or []
+        if not isinstance(warehouses,list) or len(warehouses)>1000 or any(type(i) is not int or i<=0 for i in warehouses):
+            raise ValidationError(_("Seleccione bodegas válidas."))
+        if warehouses:
+            domain.append(("warehouse_ids","in",warehouses))
         return domain
 
     @api.model
-    def get_data(self, filters=None, board_id=False):
+    def get_data(self, filters=None, board_id=False, include_ids=False):
         filters = filters or {}
         domain = self._domain(filters)
         invoices = self.env["dispatch.invoice"]
@@ -61,16 +69,31 @@ class DispatchDashboard(models.AbstractModel):
                 row["lead_days"] = None
             for field in ("invoice_date", "completion_date", "cutoff_date", "deadline"):
                 row[field] = str(row[field]) if row[field] else False
-        stats = summarize(rows)
         scope = filters.get("planning_scope", "transcash")
         if scope not in ("transcash", "filtered"):
             raise ValidationError(_("Alcance de planificación no permitido."))
-        pending_ids = [r["id"] for r in rows if r["pending"]]
+        warehouse_ids = filters.get("warehouse_ids") or []
+        pending_ids = [r["id"] for r in rows if warehouse_ids or r["pending"]]
         transport_lines = []
         for offset in range(0, len(pending_ids), 5000):
-            transport_lines += self.env["dispatch.invoice.line"].search_read(
-                [("invoice_id", "in", pending_ids[offset:offset + 5000]), ("pending_qty", ">", 0.000001)],
-                ["invoice_id", "warehouse", "warehouse_code", "pending_qty", "pending_weight", "pending_pallets"])
+            line_domain = [("invoice_id", "in", pending_ids[offset:offset + 5000])]
+            line_domain += [("warehouse_id","in",warehouse_ids)] if warehouse_ids else [("pending_qty", ">", 0.000001)]
+            line_fields = ["invoice_id", "warehouse", "warehouse_code", "pending_qty", "pending_weight", "pending_pallets"]
+            if warehouse_ids: line_fields += ["raw_data"]
+            transport_lines += self.env["dispatch.invoice.line"].search_read(line_domain,line_fields)
+        if warehouse_ids:
+            line_groups = defaultdict(list)
+            for line in transport_lines:
+                if line.get("raw_data"): line_groups[line["invoice_id"][0]].append(line["raw_data"])
+            snapshots_for_scope = self.env["dispatch.snapshot"].browse(sorted({r["snapshot_id"][0] for r in rows}))
+            packs_for_scope = {snapshot.id:snapshot.policy_pack or {} for snapshot in snapshots_for_scope}
+            scoped = []
+            for row in rows:
+                if row["id"] not in line_groups: continue
+                summary = aggregate_invoice(row["invoice_key"],line_groups[row["id"]],row["cutoff_date"])
+                scoped.append({**row,**evaluate(summary,packs_for_scope.get(row["snapshot_id"][0],{}))})
+            rows = scoped
+        stats = summarize(rows)
         companies = self.env["res.company"].browse(sorted({r["company_id"][0] for r in rows}))
         packs = self.env["dispatch.transport.settings"]._planning_packs(companies)
         transport = build_transport_plan(rows, transport_lines, packs, scope)
@@ -128,7 +151,17 @@ class DispatchDashboard(models.AbstractModel):
         stale = [s for s in current if s.cutoff_date < today]
         if stale:
             alerts.insert(0, {"kind": "warning", "title": "Existen cortes anteriores a hoy", "body": "Los pendientes y atrasos se calculan a la fecha del corte, con el estado registrado entonces. Importe un corte nuevo para actualizar la operación."})
-        return {"stats": stats, "cities": cities, "period": period, "transport": transport,
+        detail_ids = False
+        if include_ids:
+            detail_ids={"all":[r["id"] for r in rows],"pending":[r["id"] for r in rows if r["pending"]],
+                "overdue":[r["id"] for r in rows if r["sla_status"]=="overdue"],
+                "quality":[r["id"] for r in rows if r["quality_issue"]],
+                "lead":[r["id"] for r in rows if r["lead_days"] is not None],
+                "mature":[r["id"] for r in rows if r["mature"]],
+                "no_rule":[r["id"] for r in rows if not r["sla_configured"]]}
+        return {"stats": stats, "cities": cities, "period": period, "transport": transport,"detail_ids":detail_ids,
+                "warehouse_options":self.env["dispatch.warehouse"].search_read([], ["name","code","company_id"],order="name,code"),
+                "warehouse_scope":bool(warehouse_ids),
                 "aging": [{"label": label, "value": value} for label, value in zip(["0–2 días", "3–5 días", "6–10 días", "11–30 días", "31–60 días", "Más de 60"], aging)],
                 "priority": pending[:25], "alerts": alerts, "widgets": widgets,
                 "boards": [{"id": b.id, "name": b.name} for b in boards], "board_id": board.id if board else False,
@@ -136,10 +169,63 @@ class DispatchDashboard(models.AbstractModel):
                 "sources": [{"id": s.id, "name": s.name} for s in sources],
                 "snapshots": [{"id": s.id, "name": s.name, "cutoff_date": str(s.cutoff_date)} for s in snapshots],
                 "cutoffs": sorted({r["cutoff_date"] for r in rows}),
-                "city_options": [r["city"] for r in invoices.read_group([("snapshot_state", "=", "ready")], ["city"], ["city"], lazy=False) if r["city"]],
-                "delivery_options": [r["delivery"] for r in invoices.read_group([("snapshot_state", "=", "ready")], ["delivery"], ["delivery"], lazy=False) if r["delivery"]],
+                "city_options": [r["city"] for r in invoices.read_group([("is_current", "=", True)], ["city"], ["city"], lazy=False) if r["city"]],
+                "delivery_options": [r["delivery"] for r in invoices.read_group([("is_current", "=", True)], ["delivery"], ["delivery"], lazy=False) if r["delivery"]],
                 "can_import": self.env.user.has_group("transcash_dispatch_analysis.group_dispatch_operator"),
                 "can_configure": self.env.user.has_group("transcash_dispatch_analysis.group_dispatch_manager")}
+
+    @api.model
+    def validate_current_records(self):
+        self._access()
+        if not self.env.su and not self.env.user.has_group("transcash_dispatch_analysis.group_dispatch_manager"):
+            raise AccessError(_("Solo un responsable puede validar y consolidar datos."))
+        invoices = self.env["dispatch.invoice"].sudo()
+        consolidated = invoices._initialize_unique_records(self.env.companies)
+        company_domain=[("company_id","in",self.env.companies.ids)]
+        current=invoices.search_count(company_domain+[("is_current","=",True)])
+        historical=invoices.search_count(company_domain+[("snapshot_state","=","archived")])
+        self.env.cr.execute("""SELECT count(*) FROM (SELECT company_id,invoice_type,internal_number
+            FROM dispatch_invoice WHERE company_id=ANY(%s) AND is_current
+            GROUP BY company_id,invoice_type,internal_number HAVING count(*)>1) duplicates""",(self.env.companies.ids,))
+        return {"current":current,"historical_versions":historical,"current_duplicate_keys":self.env.cr.fetchone()[0],
+                "consolidated_records":consolidated}
+
+    @api.model
+    def get_saved_filters(self):
+        self._access()
+        action=self.env.ref("transcash_dispatch_analysis.action_warehouse_analysis")
+        filters=self.env["ir.filters"].search_read([("model_id","=","dispatch.invoice.line"),("action_id","=",action.id),
+            "|",("user_id","=",False),("user_id","=",self.env.uid)], ["name","context"])
+        result=[]
+        for item in filters:
+            try:context=safe_eval(item["context"] or "{}",{})
+            except (ValueError,TypeError,NameError,SyntaxError):continue
+            if isinstance(context,dict) and isinstance(context.get("dispatch_dashboard_filters"),dict):
+                result.append({"id":item["id"],"name":item["name"],"filters":context["dispatch_dashboard_filters"],
+                    "board_id":context.get("dispatch_board_id") or False})
+        return result
+
+    @api.model
+    def save_dashboard_filter(self, name, filters=None, board_id=False):
+        self._access()
+        if not isinstance(name,str) or not name.strip() or len(name.strip())>120:
+            raise ValidationError(_("Indique un nombre para el favorito (hasta 120 caracteres)."))
+        filters=filters or {}
+        domain=self._domain(filters)
+        line_domain=[("invoice_id."+field,operator,value) for field,operator,value in domain if field!="warehouse_ids"]
+        if filters.get("warehouse_ids"):line_domain.append(("warehouse_id","in",filters["warehouse_ids"]))
+        allowed={key:filters[key] for key in ("source_id","snapshot_id","date_from","date_to","city","delivery","planning_scope","warehouse_ids") if key in filters}
+        if board_id:
+            board=self.env["dispatch.board"].browse(int(board_id))
+            board.check_access_rights("read");board.check_access_rule("read")
+        action=self.env.ref("transcash_dispatch_analysis.action_warehouse_analysis")
+        values={"name":name.strip(),"model_id":"dispatch.invoice.line","action_id":action.id,"user_id":self.env.uid,
+            "domain":repr(line_domain),"context":repr({"dispatch_dashboard_filters":allowed,"dispatch_board_id":board_id or False})}
+        model=self.env["ir.filters"]
+        existing=model.search([("name","=",values["name"]),("user_id","=",self.env.uid),("model_id","=",values["model_id"]),("action_id","=",action.id)],limit=1)
+        if existing:existing.write(values)
+        else:existing=model.create(values)
+        return {"id":existing.id,"name":existing.name}
 
     @api.model
     def get_detail_action(self, filters=None, category="all"):
@@ -149,6 +235,9 @@ class DispatchDashboard(models.AbstractModel):
                      "mature": [("mature", "=", True)], "no_rule": [("sla_configured", "=", False)]}
         if category not in additions:
             raise ValidationError(_("Categoría no permitida."))
+        if filters and filters.get("warehouse_ids"):
+            ids=self.get_data(filters,False,True)["detail_ids"][category]
+            additions[category]=[("id","in",ids)]
         return {"type": "ir.actions.act_window", "name": _("Análisis de despachos"), "res_model": "dispatch.invoice",
                 "view_mode": "list,form,pivot,graph", "domain": domain + additions[category]}
 

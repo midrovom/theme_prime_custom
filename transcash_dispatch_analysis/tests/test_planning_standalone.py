@@ -79,6 +79,7 @@ class PlanningTests(unittest.TestCase):
         plan = planning.build_transport_plan([invoice()], [line()],
             pack(settings={"target_days": 3, "available_vehicles": 0, "trips_per_day": 1}))
         self.assertIsNone(plan["days_current_fleet"])
+        self.assertIsNone(plan["destinations"][0]["days_current_fleet"])
         self.assertEqual(plan["required_vehicles"], 2)
         self.assertEqual(plan["additional_vehicles"], 2)
 
@@ -108,6 +109,8 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(result["pending_invoices"], 1)
         self.assertEqual(result["trips"], 2)
         self.assertEqual(result["required_vehicles"], 2)
+        self.assertEqual(result["destinations"][0]["invoice_count"],1)
+        self.assertEqual(result["destinations"][0]["required_vehicles"],2)
 
     def test_multiple_products_in_one_lane_count_invoice_once(self):
         result = planning.build_transport_plan([invoice()], [line(pending_weight=1000), line(pending_weight=1000)], pack())

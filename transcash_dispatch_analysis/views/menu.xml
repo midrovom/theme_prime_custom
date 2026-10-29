@@ -5,6 +5,7 @@
   <menuitem id="menu_dashboard" name="Tablero" parent="menu_dispatch_root" action="action_dashboard" sequence="1"/>
   <menuitem id="menu_invoices" name="Facturas y detalle" parent="menu_dispatch_root" action="action_invoices" sequence="10"/>
   <menuitem id="menu_dynamic" name="Análisis dinámico" parent="menu_dispatch_root" action="action_dynamic_analysis" sequence="20"/>
+  <menuitem id="menu_warehouse_analysis" name="Toneladas por bodegas y destinos" parent="menu_dispatch_root" action="action_warehouse_analysis" sequence="21"/>
   <menuitem id="menu_boards" name="Mis tableros" parent="menu_dispatch_root" action="action_boards" sequence="30"/>
   <menuitem id="menu_import" name="Importar Excel" parent="menu_dispatch_root" action="action_import" sequence="40" groups="transcash_dispatch_analysis.group_dispatch_operator"/>
   <menuitem id="menu_snapshots" name="Importaciones e histórico" parent="menu_dispatch_root" action="action_snapshots" sequence="45"/>
@@ -15,4 +16,5 @@
   <menuitem id="menu_transport_settings" name="Plan de despacho" parent="menu_config" action="action_transport_settings" sequence="10"/>
   <menuitem id="menu_vehicle_types" name="Tipos de vehículos" parent="menu_config" action="action_vehicle_types" sequence="11"/>
   <menuitem id="menu_transport_routes" name="Capacidad por destino" parent="menu_config" action="action_transport_routes" sequence="12"/>
+  <menuitem id="menu_warehouses" name="Bodegas del origen" parent="menu_config" action="action_warehouses" sequence="13"/>
 </odoo>

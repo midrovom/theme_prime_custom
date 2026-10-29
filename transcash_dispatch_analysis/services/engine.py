@@ -15,7 +15,7 @@ import unicodedata
 
 EPS = 0.000001
 GROUPS = {"city", "delivery", "warehouse", "seller", "month"}
-METRICS = {"total", "pending", "overdue", "mature_compliance", "completed_compliance", "lead_avg", "lead_median", "lead_p90", "pending_weight", "pending_tons"}
+METRICS = {"total", "pending", "overdue", "mature_compliance", "completed_compliance", "lead_avg", "lead_median", "lead_p90", "pending_weight", "pending_tons", "invoiced_tons", "dispatched_tons"}
 
 
 def normalize(value):
@@ -54,10 +54,57 @@ def as_date(value):
 
 
 def invoice_key(row):
-    required = (str(row.get("TipoFactura") or "").strip(), str(row.get("NumeroFactura") or "").strip())
+    required = (normalize(row.get("TipoFactura")), str(row.get("NumeroFactura") or "").strip())
     if not all(required):
         raise ValueError("Cada línea debe incluir TipoFactura y NumeroFactura.")
-    return json.dumps([*required, str(row.get("Establecimiento") or "").strip()], ensure_ascii=False, separators=(",", ":"))
+    return json.dumps(list(required), ensure_ascii=False, separators=(",", ":"))
+
+
+def unique_invoice_lines(rows):
+    """Last observation per warehouse/product wins; distinct details survive."""
+    unique, removed, changed = {}, 0, 0
+    for row in rows:
+        key = (normalize(row.get("CodBodega")), str(row.get("CodProducto") or "").strip())
+        if key in unique:
+            removed += 1
+            changed += int(row != unique[key])
+        unique[key] = row
+    return list(unique.values()), removed, changed
+
+
+def weight_metrics(row):
+    """Known kg only; no unit-weight inference on mixed-product exports."""
+    physical, pending, adjustment = (number(row.get(k)) for k in ("DespachoFisico", "Pendiente", "AjusteDevolucion"))
+    reported = row.get("PesoDespacho")
+    dispatched = number(reported, "PesoDespacho") if reported not in (None, "") else (0 if abs(physical) <= EPS else None)
+    if dispatched is not None and dispatched < 0: dispatched = None
+    pending_weight = number(row.get("PesoPendiente"), "PesoPendiente") if row.get("PesoPendiente") not in (None, "") else None
+    pending_known = pending <= EPS or (pending_weight is not None and pending_weight > EPS)
+    outstanding = max(0, pending_weight or 0) if pending > EPS else 0
+    billed = row.get("PesoFacturado")
+    if billed not in (None, ""):
+        billed = number(billed, "PesoFacturado")
+        if billed < 0: billed = None
+    elif dispatched is not None and pending_known and pending >= -EPS:
+        if abs(adjustment) <= EPS:
+            billed = dispatched + outstanding
+        elif row.get("PesoAjusteDevolucion") not in (None, ""):
+            billed = dispatched + outstanding + number(row["PesoAjusteDevolucion"], "PesoAjusteDevolucion")
+        else: billed = None
+    else: billed = None
+    return {"dispatched_weight": dispatched or 0, "dispatched_weight_available": dispatched is not None,
+            "invoiced_weight": billed or 0, "invoiced_weight_available": billed is not None,
+            "invoiced_weight_missing_rows": int(billed is None), "dispatched_weight_missing_rows": int(dispatched is None)}
+
+
+def latest_invoice_versions(rows):
+    """One published observation per company, type and invoice number."""
+    latest = {}
+    for row in rows:
+        key = (row["company_id"],normalize(row["invoice_type"]),str(row["internal_number"]).strip())
+        rank = (as_date(row["cutoff_date"]),row["snapshot_id"],row["id"])
+        if key not in latest or rank > latest[key][0]: latest[key]=(rank,row["id"])
+    return [value[1] for value in latest.values()]
 
 
 def iter_invoice_groups(rows):
@@ -124,6 +171,7 @@ def aggregate_invoice(key, rows, cutoff):
     completion_dates = []
     last_dates = []
     pending_weight = boxes = pallets = 0.0
+    weights = [weight_metrics(row) for row in rows]
     for r in rows:
         for required in ("Facturado", "DespachoFisico", "Pendiente"):
             if r.get(required) in (None, ""):
@@ -182,8 +230,8 @@ def aggregate_invoice(key, rows, cutoff):
         "invoice_key": key,
         "name": "%s %s" % (first.get("TipoFactura", ""), first.get("NumeroFactura", "")),
         "external_number": str(first.get("Factura") or ""),
-        "invoice_type": str(first.get("TipoFactura") or ""),
-        "internal_number": str(first.get("NumeroFactura") or ""),
+        "invoice_type": normalize(first.get("TipoFactura")),
+        "internal_number": str(first.get("NumeroFactura") or "").strip(),
         "establishment": str(first.get("Establecimiento") or ""),
         "invoice_date": invoice_date.isoformat() if invoice_date else False,
         "invoice_time": str(first.get("HoraFactura") or ""),
@@ -200,6 +248,10 @@ def aggregate_invoice(key, rows, cutoff):
         "line_count": len(rows),
         "source_grain": source_grain,
         "pending_weight": pending_weight,
+        "invoiced_weight": sum(w["invoiced_weight"] for w in weights),
+        "dispatched_weight": sum(w["dispatched_weight"] for w in weights),
+        "invoiced_weight_missing_rows": sum(w["invoiced_weight_missing_rows"] for w in weights),
+        "dispatched_weight_missing_rows": sum(w["dispatched_weight_missing_rows"] for w in weights),
         "pending_boxes": boxes,
         "pending_pallets": pallets,
         "has_adjustment": bool(adjusted),
@@ -366,6 +418,10 @@ def summarize(rows):
         "lead_count": len(lead),
         "pending_weight": sum(r.get("pending_weight", 0) for r in rows if r.get("pending")),
         "pending_tons": sum(r.get("pending_weight", 0) for r in rows if r.get("pending")) / 1000,
+        "invoiced_tons": sum(r.get("invoiced_weight", 0) for r in rows) / 1000,
+        "dispatched_tons": sum(r.get("dispatched_weight", 0) for r in rows) / 1000,
+        "invoiced_weight_missing_rows": sum(r.get("invoiced_weight_missing_rows", 0) for r in rows),
+        "dispatched_weight_missing_rows": sum(r.get("dispatched_weight_missing_rows", 0) for r in rows),
         "pending_boxes": sum(r.get("pending_boxes", 0) for r in rows if r.get("pending")),
         "pending_pallets": sum(r.get("pending_pallets", 0) for r in rows if r.get("pending")),
         "no_rule": sum(not r.get("sla_configured") for r in rows),

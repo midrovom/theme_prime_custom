@@ -31,11 +31,11 @@ class FakeAccessError(Exception): pass
 
 
 def load_model(model_name="snapshot"):
-    saved = {name: sys.modules.get(name) for name in ("odoo", "odoo.exceptions")}
+    saved = {name: sys.modules.get(name) for name in ("odoo", "odoo.exceptions", "odoo.tools", "odoo.tools.safe_eval")}
     odoo = ModuleType("odoo")
     odoo.api = SimpleNamespace(model=lambda f: f, model_create_multi=lambda f: f,
         depends=lambda *a: lambda f: f, constrains=lambda *a: lambda f: f, onchange=lambda *a: lambda f: f)
-    odoo.fields = SimpleNamespace(**{n: Field() for n in ("Char", "Many2one", "One2many", "Date", "Datetime", "Selection", "Binary", "Json", "Text", "Integer", "Float", "Boolean", "Command")})
+    odoo.fields = SimpleNamespace(**{n: Field() for n in ("Char", "Many2one", "Many2many", "One2many", "Date", "Datetime", "Selection", "Binary", "Json", "Text", "Integer", "Float", "Boolean", "Command")})
     odoo.models = SimpleNamespace(Model=object, AbstractModel=object)
     odoo._ = lambda s: s
     errors = ModuleType("odoo.exceptions")
@@ -43,6 +43,8 @@ def load_model(model_name="snapshot"):
     errors.UserError = type("UserError", (Exception,), {})
     errors.ValidationError = type("ValidationError", (Exception,), {})
     sys.modules["odoo"] = odoo; sys.modules["odoo.exceptions"] = errors
+    safe_module=ModuleType("odoo.tools.safe_eval");safe_module.safe_eval=lambda value,env=None:ast.literal_eval(value)
+    sys.modules["odoo.tools"]=ModuleType("odoo.tools");sys.modules["odoo.tools.safe_eval"]=safe_module
     for name, path in (("dispatch_queue_test", ROOT), ("dispatch_queue_test.models", ROOT/"models"), ("dispatch_queue_test.services", ROOT/"services")):
         pkg = ModuleType(name); pkg.__path__ = [str(path)]; sys.modules[name] = pkg
     try:
@@ -136,6 +138,8 @@ class Invoices:
         tree = ast.parse((ROOT/"models/invoice.py").read_text())
         self._fields = {n.targets[0].id:None for c in tree.body if isinstance(c,ast.ClassDef) and c.name=="DispatchInvoice" for n in c.body if isinstance(n,ast.Assign) and isinstance(n.targets[0],ast.Name)}
     def unlink(self): pass
+    def _upsert_snapshot_values(self, snapshot, values): self.create(values)
+    def _refresh_current_records(self, company_id): self.published_company=company_id
     def create(self, values):
         self.created_values.extend({k:v for k,v in value.items() if k != "line_ids"} for value in values)
         self.count += len(values)
@@ -157,7 +161,8 @@ class Environment:
         self.user = SimpleNamespace(has_group=lambda name:True)
         self.invoices = Invoices(); self.chunks = Chunks(self)
         self.models = {"dispatch.invoice":self.invoices,"dispatch.chunk":self.chunks,
-                       "dispatch.sla":Sla(self), "dispatch.holiday":SimpleNamespace(search=lambda domain:[])}
+                       "dispatch.sla":Sla(self), "dispatch.holiday":SimpleNamespace(search=lambda domain:[]),
+                       "dispatch.warehouse":SimpleNamespace(_ensure_records=lambda company,rows:{})}
     def __getitem__(self,name): return self.models[name]
 
 
@@ -250,8 +255,8 @@ class QueueTests(unittest.TestCase):
 
     def test_last_block_activates_only_after_creation(self):
         job=Job();job.state="loading";job.total_invoices=1;job.total_rows=1
-        job._invoice_values=lambda item:{"line_ids":[(0,0,{})]}
-        chunk=job.env.chunks.create({"snapshot_id":7,"phase":"prepared","sequence":0,"row_count":1,"payload":base64.b64encode(b'[{}]')})
+        job._invoice_values=lambda item,warehouse_map=None:{"line_ids":[(0,0,{})]}
+        chunk=job.env.chunks.create({"snapshot_id":7,"phase":"prepared","sequence":0,"row_count":1,"payload":base64.b64encode(b'[{"lines":[]}]')})
         result=job.process_import_step()
         self.assertTrue(result["done"]);self.assertEqual(job.env.invoices.count,1)
         self.assertEqual(job.source_id.active_snapshot_id,job)

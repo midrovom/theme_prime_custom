@@ -12,7 +12,7 @@ El conector de origen obtiene un exportador completo y estable, lo normaliza a l
 | --- | --- | --- |
 | `TipoFactura` | texto, obligatorio | Parte de la clave. |
 | `NumeroFactura` | texto, obligatorio | Identificador de documento en el exportador, sin pérdida de ceros. |
-| `Establecimiento` | texto | Parte de la clave; enviar estable en todas las líneas de la factura. |
+| `Establecimiento` | texto | Descriptivo; no forma parte de la llave TipoFactura + NumeroFactura. |
 | `Factura` | texto | Segundo identificador de la factura para visualizar. |
 | `FechaFactura` | `YYYY-MM-DD` | Inicio del plazo. No inventar fecha si falta. |
 | `HoraFactura` | texto | Trazabilidad; no se usa para precisión horaria sin hora de despacho. |
@@ -29,11 +29,14 @@ El conector de origen obtiene un exportador completo y estable, lo normaliza a l
 | `Pendiente` | número, obligatorio | Saldo reportado. Debe conciliar con facturado menos físico y ajustes. |
 | `UltimoDespacho` | `YYYY-MM-DD` o `null` | Fecha real del último movimiento físico de esa línea. Validar su significado en origen. |
 | `PesoPendiente`, `CajasPendientes`, `PalletsPendientes` | número | Carga pendiente en unidades homogéneas. |
+| `PesoDespacho` | número, kg | Peso despachado acumulado; indicador de toneladas despachadas. |
+| `PesoFacturado` | número, kg, recomendado | Peso facturado por renglón único. Necesario para completar el indicador cuando hay ajustes o pesos faltantes. |
+| `PesoAjusteDevolucion` | número, kg, opcional | Peso separado del ajuste; permite conciliar facturado = físico + pendiente + ajuste cuando faltara PesoFacturado. |
 | `Direccion`, `Comentario`, `Bloques`, `Ubicaciones`, `EstadoDespacho`, `DiasSinMovimiento`, `TienePendiente`, `PesoDespacho` | datos de origen | Trazabilidad. El estado y la antigüedad del indicador se calculan a partir de cantidades y fechas. |
 
 No enviar números con separadores de miles. Para la API se recomiendan valores numéricos JSON y fechas ISO. Convertir timestamps a fecha local de operación (America/Guayaquil, si aplica) antes de reducirlos a fecha. No cortar la parte de fecha de un timestamp UTC sin convertir su zona.
 
-Las filas que repiten su clave de detalle dentro de una factura se marcan como duplicadas: bodega en el consolidado o producto/bodega en el detalle por SKU. No mezclar ambos niveles en una misma factura. Si tu API admite varias líneas legítimas con esa combinación, se debe incorporar un ID estable de línea y adaptar la clave antes de usarla.
+La llave comercial es TipoFactura + NumeroFactura por compañía. Las filas que repiten su clave de detalle dentro de una extracción se consolidan sin sumar: la última aparición actualiza la anterior, por bodega en el consolidado o producto/bodega en el detalle por SKU. Se registran repeticiones y cambios. No mezclar ambos niveles en una misma factura. Si tu API admite varias líneas legítimas con esa combinación, se debe incorporar un ID estable de línea y adaptar la clave antes de usarla. Las extracciones posteriores publican una versión vigente única y conservan las anteriores como histórico fuera de los totales.
 
 ## Secuencia
 

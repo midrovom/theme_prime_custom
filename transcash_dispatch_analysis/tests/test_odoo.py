@@ -220,3 +220,75 @@ class TestDispatchIntegration(TransactionCase):
         vehicle = self.env["dispatch.vehicle.type"].create({"name":"Other truck","capacity_tons":10,"company_id":other.id})
         with self.assertRaises(UserError), self.cr.savepoint():
             route.vehicle_id = vehicle
+
+    def test_double_import_keeps_one_current_business_key(self):
+        first=self._snapshot("double-first");first._prepare();first._load_next()
+        second=self._snapshot("double-second");second._prepare();second._load_next()
+        model=self.env["dispatch.invoice"]
+        versions=model.search([("source_id","=",self.source.id)])
+        current=versions.filtered("is_current")
+        self.assertEqual(len(versions),2)
+        self.assertEqual(len(current),1)
+        self.assertEqual(current.snapshot_id,second)
+        self.assertEqual(current.invoice_key,'["FA","1"]')
+        self.assertEqual(first.state,"archived")
+        self.assertEqual(self.env["dispatch.dashboard"].get_data({"source_id":self.source.id})["stats"]["pending"],1)
+
+    def test_repeated_detail_updates_instead_of_adding_weight(self):
+        ident=self.source.api_start_batch("duplicate-details","2026-01-10")["id"]
+        snapshot=self.env["dispatch.snapshot"].browse(ident)
+        old={**self.row,"PesoPendiente":9000,"Bodega":"X"}
+        newer={**old,"PesoPendiente":4500,"Facturado":1,"DespachoFisico":.5,"Pendiente":.5,"UltimoDespacho":"2026-01-02"}
+        snapshot.api_append_chunk(0,[old,newer]);snapshot.api_finalize(1,2)
+        snapshot._prepare();snapshot._load_next()
+        self.assertEqual(snapshot.total_rows,2)
+        self.assertEqual(snapshot.total_invoices,1)
+        self.assertEqual(snapshot.duplicate_rows,1)
+        self.assertEqual(snapshot.duplicate_updates,1)
+        self.assertEqual(len(snapshot.invoice_ids.line_ids),1)
+        self.assertEqual(snapshot.invoice_ids.pending_weight,4500)
+
+    def test_warehouse_scope_and_native_favorite(self):
+        ident=self.source.api_start_batch("warehouse-scope","2026-01-10")["id"]
+        snapshot=self.env["dispatch.snapshot"].browse(ident)
+        first={**self.row,"CodBodega":"B1","Bodega":"Warehouse One","PesoPendiente":9000,"PesoDespacho":0,"Cond_Entrega":"Entrega Transcash"}
+        second={**first,"CodBodega":"B2","Bodega":"Warehouse Two","PesoPendiente":18000}
+        snapshot.api_append_chunk(0,[first,second]);snapshot.api_finalize(1,2)
+        snapshot._prepare();snapshot._load_next()
+        warehouses=snapshot.invoice_ids.warehouse_ids
+        self.assertEqual(len(warehouses),2)
+        selected=warehouses.filtered(lambda r:r.code=="B1")
+        service=self.env["dispatch.dashboard"]
+        filters={"source_id":self.source.id,"warehouse_ids":selected.ids}
+        result=service.get_data(filters)
+        self.assertEqual(result["stats"]["pending_tons"],9)
+        self.assertEqual(result["stats"]["invoiced_tons"],9)
+        self.assertEqual(result["transport"]["pending_tons"],9)
+        self.assertEqual(result["transport"]["destinations"][0]["invoice_count"],1)
+        favorite=service.save_dashboard_filter("Warehouse fixture",filters)
+        stored=self.env["ir.filters"].browse(favorite["id"])
+        self.assertEqual(stored.user_id,self.env.user)
+        self.assertEqual(stored.model_id,"dispatch.invoice.line")
+        self.assertIn(favorite["id"],[row["id"] for row in service.get_saved_filters()])
+
+    def test_existing_import_backfill_and_database_audit(self):
+        snapshot=self._snapshot("legacy-backfill");snapshot._prepare();snapshot._load_next()
+        invoice=snapshot.invoice_ids
+        invoice.write({"is_current":False,"invoice_key":'["FA","1","Old establishment"]'})
+        self.env["dispatch.invoice"]._initialize_unique_records(self.env.company)
+        self.assertTrue(invoice.is_current)
+        self.assertEqual(invoice.invoice_key,'["FA","1"]')
+        self.assertTrue(invoice.warehouse_ids)
+        audit=self.env["dispatch.dashboard"].validate_current_records()
+        self.assertEqual(audit["current_duplicate_keys"],0)
+
+    def test_overlapping_sources_publish_only_newest_observation(self):
+        first=self._snapshot("overlap-first");first._prepare();first._load_next()
+        other=self.env["dispatch.source"].create({"name":"Overlapping fixture","code":"OVERLAP-FIXTURE"})
+        ident=other.api_start_batch("overlap-new","2026-01-10")["id"]
+        second=self.env["dispatch.snapshot"].browse(ident)
+        second.api_append_chunk(0,[{**self.row,"PesoPendiente":8000}]);second.api_finalize(1,1)
+        second._prepare();second._load_next()
+        versions=first.invoice_ids|second.invoice_ids
+        self.assertEqual(len(versions.filtered("is_current")),1)
+        self.assertEqual(versions.filtered("is_current").source_id,other)
