@@ -1,3 +1,9 @@
+## 18.0.1.4.103 — Ejecución y saldo neto visibles
+
+- Restaurado el indicador «Ejecución (%)» en la cabecera del presupuesto, listado de presupuestos, proyecciones mensuales y listado de Proyectado vs. real. La fórmula existente sigue siendo Consumido / Proyectado × 100, con dos decimales.
+- El saldo de la **cabecera** y del **listado de presupuestos** se denomina «Disponible neto»: Total proyectado menos Total consumido. Las líneas mensuales conservan «Disponible» y no se modifica la precisión ni el cálculo.
+- No se muestran de nuevo los excesos ni se alteran los gráficos del dashboard, reportes PDF o sincronización ERP.
+
 ## 18.0.1.4.101 — Barras más delgadas
 
 - Las barras por centro se muestran más estrechas (28 px en escritorio, 22 px en móvil), centradas dentro de su espacio.
@@ -12,7 +18,7 @@
 
 # Control de Presupuesto de Gastos — Odoo 18
 
-Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.99`.
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.103`.
 
 ## Funciones
 

@@ -88,7 +88,8 @@
                 <field name="currency_id" column_invisible="True"/>
                 <field name="planned_amount" sum="Total proyectado"/>
                 <field name="actual_amount" sum="Total consumido"/>
-                <field name="available_to_spend" sum="Disponible"/>
+                <field name="available_to_spend" string="Disponible neto" sum="Total disponible neto"/>
+                <field name="execution_percentage" string="Ejecución (%)"/>
                 <field name="approved_through_month" string="Aprobado hasta"/>
                 <field name="state" widget="badge"/>
             </list>
@@ -119,7 +120,8 @@
                             <field name="currency_id" invisible="1"/>
                             <field name="planned_amount" readonly="True"/>
                             <field name="actual_amount" readonly="True"/>
-                            <field name="available_to_spend" readonly="True"/>
+                            <field name="available_to_spend" string="Disponible neto" readonly="True"/>
+                            <field name="execution_percentage" string="Ejecución (%)" readonly="True"/>
                         </group>
                         <group string="Seguimiento de aprobación">
                             <field name="approved_through_month" readonly="True"/>
@@ -176,6 +178,7 @@
                                     <field name="planned_amount" readonly="approval_state in ['approved', 'to_approve'] or annual_amount &gt; 0" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="available_to_spend" readonly="True" sum="Disponible"/>
+                                    <field name="execution_percentage" string="Ejecución (%)" readonly="True"/>
                                 </list>
                             </field>
                         </page>
@@ -226,6 +229,7 @@
                 <field name="planned_amount" sum="Proyectado"/>
                 <field name="actual_amount" sum="Consumido"/>
                 <field name="available_to_spend" sum="Disponible"/>
+                <field name="execution_percentage" string="Ejecución (%)"/>
             </list>
         </field>
     </record>

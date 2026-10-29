@@ -473,7 +473,7 @@ class ExpenseBudget(models.Model):
     # Exceso permanece calculado y almacenado para compatibilidad histórica,
     # pero deja de exponerse en las vistas y PDFs.
     available_to_spend = fields.Float(
-        min_display_digits=BUDGET_DECIMAL_PRECISION, string='Disponible',
+        min_display_digits=BUDGET_DECIMAL_PRECISION, string='Disponible neto',
         compute='_compute_totals', store=True,
     )
     excess_amount = fields.Float(
