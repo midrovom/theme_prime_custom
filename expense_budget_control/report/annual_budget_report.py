@@ -78,10 +78,10 @@ class ReportAnnualExpenseBudget(models.AbstractModel):
             month = group['accounts_by_id'][key]['months'][line.month]
             month['planned'] = exact_sum((month['planned'], line.planned_amount))
             month['actual'] = exact_sum((month['actual'], line.actual_amount))
-            # No compensar excesos de otras líneas al agrupar por cuenta/mes.
-            # Sumar disponible positivo y exceso positivo por separado.
+            # Disponible firmado por cada línea; el total debe cuadrar con
+            # proyectado - consumido, sin compensaciones artificiales.
             delta = exact_difference(line.planned_amount, line.actual_amount)
-            month['available'] = exact_sum((month['available'], max(0.0, delta)))
+            month['available'] = exact_sum((month['available'], delta))
             month['excess'] = exact_sum((month['excess'], max(0.0, -delta)))
             month['execution'] = line.execution_percentage
             month['has_line'] = True

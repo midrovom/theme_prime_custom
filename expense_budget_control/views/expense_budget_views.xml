@@ -89,8 +89,6 @@
                 <field name="planned_amount" sum="Total proyectado"/>
                 <field name="actual_amount" sum="Total consumido"/>
                 <field name="available_to_spend" sum="Disponible"/>
-                <field name="excess_amount" sum="Exceso"/>
-                <field name="execution_percentage"/>
                 <field name="approved_through_month" string="Aprobado hasta"/>
                 <field name="state" widget="badge"/>
             </list>
@@ -122,8 +120,6 @@
                             <field name="planned_amount" readonly="True"/>
                             <field name="actual_amount" readonly="True"/>
                             <field name="available_to_spend" readonly="True"/>
-                            <field name="excess_amount" readonly="True"/>
-                            <field name="execution_percentage" readonly="True"/>
                         </group>
                         <group string="Seguimiento de aprobación">
                             <field name="approved_through_month" readonly="True"/>
@@ -180,8 +176,6 @@
                                     <field name="planned_amount" readonly="approval_state in ['approved', 'to_approve'] or annual_amount &gt; 0" sum="Proyectado"/>
                                     <field name="actual_amount" readonly="True" sum="Consumido"/>
                                     <field name="available_to_spend" readonly="True" sum="Disponible"/>
-                                    <field name="excess_amount" readonly="True" sum="Exceso"/>
-                                    <field name="execution_percentage" readonly="True"/>
                                 </list>
                             </field>
                         </page>
@@ -220,7 +214,7 @@
     <record id="view_expense_budget_line_list" model="ir.ui.view">
         <field name="name">expense.budget.line.list</field><field name="model">expense.budget.line</field>
         <field name="arch" type="xml">
-            <list string="Proyectado vs. consumido" create="false" edit="false" delete="false" default_order="budget_id,month_number,account_id,cost_center_id,id" decoration-danger="excess_amount &gt; 0">
+            <list string="Proyectado vs. consumido" create="false" edit="false" delete="false" default_order="budget_id,month_number,account_id,cost_center_id,id" decoration-danger="available_to_spend &lt; 0">
                 <header>
                     <button name="%(expense_budget_control.action_expense_budget_comparison_report_wizard)d" type="action" string="Imprimir PDF" icon="fa-print" display="always" groups="expense_budget_control.group_expense_budget_user,expense_budget_control.group_expense_budget_approver,expense_budget_control.group_expense_budget_manager"/>
                 </header>
@@ -232,8 +226,6 @@
                 <field name="planned_amount" sum="Proyectado"/>
                 <field name="actual_amount" sum="Consumido"/>
                 <field name="available_to_spend" sum="Disponible"/>
-                <field name="excess_amount" sum="Exceso"/>
-                <field name="execution_percentage"/>
             </list>
         </field>
     </record>
@@ -248,7 +240,6 @@
                 <field name="planned_amount" type="measure"/>
                 <field name="actual_amount" type="measure"/>
                 <field name="available_to_spend" type="measure"/>
-                <field name="excess_amount" type="measure"/>
             </pivot>
         </field>
     </record>
@@ -260,7 +251,6 @@
                 <field name="planned_amount" type="measure"/>
                 <field name="actual_amount" type="measure"/>
                 <field name="available_to_spend" type="measure"/>
-                <field name="excess_amount" type="measure"/>
             </graph>
         </field>
     </record>
@@ -270,7 +260,7 @@
             <search>
                 <field name="budget_id"/><field name="account_id"/><field name="category_id"/>
                 <field name="month"/><field name="cost_center_id"/>
-                <filter string="Sobregirados" name="over_budget" domain="[('excess_amount', '&gt;', 0)]"/>
+                <filter string="Sobregirados" name="over_budget" domain="[('available_to_spend', '&lt;', 0)]"/>
                 <group expand="0" string="Agrupar por">
                     <filter string="Rubro" name="group_category" context="{'group_by': 'category_id'}"/>
                     <filter string="Centro de costo" name="group_cost_center" context="{'group_by': 'cost_center_id'}"/>

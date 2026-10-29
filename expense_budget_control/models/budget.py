@@ -463,14 +463,15 @@ class ExpenseBudget(models.Model):
             'target': 'current',
         }
 
-    planned_amount = fields.Float(digits=BUDGET_DECIMAL_PRECISION, string='Total proyectado', compute='_compute_totals',
+    planned_amount = fields.Float(min_display_digits=BUDGET_DECIMAL_PRECISION, string='Total proyectado', compute='_compute_totals',
                                      store=True)
     actual_amount = fields.Float(min_display_digits=BUDGET_DECIMAL_PRECISION, string='Total consumido', compute='_compute_totals',
                                     store=True)
     variance_amount = fields.Float(min_display_digits=BUDGET_DECIMAL_PRECISION, string='Saldo disponible', compute='_compute_totals',
                                       store=True)
-    # Disponible/Exceso para presentación: la variación firmada se mantiene
-    # en variance_amount para los saldos acumulativos y fórmulas históricas.
+    # Disponible es el saldo NETO (proyectado menos consumido), con signo.
+    # Exceso permanece calculado y almacenado para compatibilidad histórica,
+    # pero deja de exponerse en las vistas y PDFs.
     available_to_spend = fields.Float(
         min_display_digits=BUDGET_DECIMAL_PRECISION, string='Disponible',
         compute='_compute_totals', store=True,
@@ -569,7 +570,9 @@ class ExpenseBudget(models.Model):
             rec.planned_amount = exact_sum(rec.line_ids.mapped('planned_amount'))
             rec.actual_amount = exact_sum(rec.line_ids.mapped('actual_amount'))
             rec.variance_amount = exact_difference(rec.planned_amount, rec.actual_amount)
-            rec.available_to_spend = exact_sum(rec.line_ids.mapped('available_to_spend'))
+            # Calcular el saldo total sobre los importes agregados, sin
+            # truncar negativos ni perder decimales de las líneas.
+            rec.available_to_spend = exact_difference(rec.planned_amount, rec.actual_amount)
             rec.excess_amount = exact_sum(rec.line_ids.mapped('excess_amount'))
             rec.execution_percentage = (rec.actual_amount / rec.planned_amount * 100.0
                                         if rec.planned_amount else 0.0)
@@ -1896,9 +1899,8 @@ class ExpenseBudgetLine(models.Model):
                                     store=True)
     variance_amount = fields.Float(min_display_digits=BUDGET_DECIMAL_PRECISION, string='Disponible', compute='_compute_variance_execution',
                                       store=True)
-    # Indicadores no negativos para lista, tabla dinámica, resumen y PDF.
-    # No sustituyen variance_amount: el saldo NETO con signo sigue disponible
-    # internamente para no romper el arrastre entre meses.
+    # Disponible visible y saldo interno tienen exactamente el mismo signo.
+    # Exceso se conserva solo para compatibilidad, oculto en la interfaz.
     available_to_spend = fields.Float(
         min_display_digits=BUDGET_DECIMAL_PRECISION, string='Disponible',
         compute='_compute_variance_execution', store=True,
@@ -2007,7 +2009,7 @@ class ExpenseBudgetLine(models.Model):
         """
         for rec in self:
             rec.variance_amount = exact_difference(rec.planned_amount, rec.actual_amount)
-            rec.available_to_spend = max(0.0, rec.variance_amount)
+            rec.available_to_spend = rec.variance_amount
             rec.excess_amount = max(0.0, -rec.variance_amount)
             rec.execution_percentage = (rec.actual_amount / rec.planned_amount * 100.0
                                         if rec.planned_amount else 0.0)

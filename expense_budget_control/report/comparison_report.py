@@ -60,7 +60,7 @@ class ReportExpenseBudgetComparison(models.AbstractModel):
             number: {
                 'planned': row['monthly'][number]['planned'],
                 'actual': row['monthly'][number]['actual'],
-                'available': row['monthly'][number]['spendable'],
+                'available': row['monthly'][number]['available'],
                 'excess': row['monthly'][number]['excess'],
             }
             for number in selected_months

@@ -32,7 +32,6 @@
                     <td class="amount"/>
                     <td class="amount"/>
                     <td class="amount"/>
-                    <td class="amount"/>
                 </t>
                 <td class="amount"/>
                 <td class="amount"/>
@@ -45,10 +44,9 @@
                 </t>
                 <t t-foreach="page_data['months']" t-as="month_item">
                     <t t-set="cell" t-value="row_data['monthly_report']['cells'][month_item['number']]"/>
-                    <td class="amount" t-esc="'{:,.{}f}'.format(cell['planned'], data['decimal_digits'])"/>
+                    <td class="amount" t-esc="data['format_real'](cell['planned'], data['decimal_digits'])"/>
                     <td class="amount" t-esc="data['format_real'](cell['actual'], data['decimal_digits'])"/>
                     <td class="amount" t-esc="data['format_real'](cell['available'], data['decimal_digits'])"/>
-                    <td t-att-class="'amount excess' if cell['excess'] else 'amount'" t-esc="data['format_real'](cell['excess'], data['decimal_digits'])"/>
                 </t>
                 <!-- Consumo corte conserva el cálculo anterior (saldo_actual).
                      Consumo actual suma el consumo inicial y el consumo del corte.
@@ -57,7 +55,7 @@
                 <td class="amount" t-esc="data['format_real'](closing_balance['saldo_actual'], data['decimal_digits'])"/>
                 <td class="amount" t-esc="data['format_real'](data['exact_sum']((closing_balance['consumo_actual'], closing_balance['saldo_disponible'])), data['decimal_digits'])"/>
                 <td class="amount" t-esc="data['format_real'](closing_balance['consumo_actual'], data['decimal_digits'])"/>
-                <td class="amount balance" t-esc="data['format_real'](max(0.0, closing_balance['saldo_disponible']), data['decimal_digits'])"/>
+                <td class="amount balance" t-esc="data['format_real'](closing_balance['saldo_disponible'], data['decimal_digits'])"/>
             </t>
         </tr>
     </template>
@@ -81,7 +79,6 @@
                                 .expense-comparison-monthly .amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
                                 .expense-comparison-monthly .opening { background: #f4f0df; }
                                 .expense-comparison-monthly .balance { background: #edf5f0; }
-                                .expense-comparison-monthly .excess { color: #9f2828; font-weight: bold; }
                                 .expense-comparison-monthly .category-row td { background: #dbe9f2; font-weight: bold; }
                                 .expense-comparison-monthly .account-row td { background: #edf4f8; font-weight: bold; }
                                 .expense-comparison-monthly .budget-row td { background: #f4f8fb; }
@@ -118,11 +115,11 @@
                                  y con 12 se reserva más espacio para cada importe mensual. -->
                             <t t-set="month_count" t-value="len(page_data['months'])"/>
                             <!-- Anchos por columna: las nuevas columnas no comprimen los meses. -->
-                            <t t-set="min_table_width" t-value="240 + (110 if page_data['opening'] else 0) + 4 * month_count * 78 + 4 * 110"/>
+                            <t t-set="min_table_width" t-value="240 + (110 if page_data['opening'] else 0) + 3 * month_count * 90 + 4 * 110"/>
                             <t t-set="name_width" t-value="24000.0 / min_table_width"/>
                             <t t-set="opening_width" t-value="11000.0 / min_table_width if page_data['opening'] else 0.0"/>
                             <t t-set="balance_width" t-value="11000.0 / min_table_width"/>
-                            <t t-set="month_cell_width" t-value="7800.0 / min_table_width"/>
+                            <t t-set="month_cell_width" t-value="9000.0 / min_table_width"/>
                             <t t-set="table_width" t-value="100.0"/>
                             <div class="table-scroll">
                                 <table t-att-style="'width: {:.1f}%; min-width: {}px; font-size: {}px;'.format(table_width, min_table_width, 10 if month_count >= 9 else 10.5)">
@@ -132,7 +129,7 @@
                                             <col t-att-style="'width: {:.4f}%;'.format(opening_width)"/>
                                         </t>
                                         <t t-foreach="page_data['months']" t-as="month_item">
-                                            <t t-foreach="range(4)" t-as="cell_idx">
+                                            <t t-foreach="range(3)" t-as="cell_idx">
                                                 <col t-att-style="'width: {:.4f}%;'.format(month_cell_width)"/>
                                             </t>
                                         </t>
@@ -148,7 +145,7 @@
                                                 <th rowspan="2">Saldo inicial<br/>(disponible de <span t-esc="page_data['previous_month_name']"/>)</th>
                                             </t>
                                             <t t-foreach="page_data['months']" t-as="month_item">
-                                                <th class="month-head" colspan="4" t-esc="month_item['name']"/>
+                                                <th class="month-head" colspan="3" t-esc="month_item['name']"/>
                                             </t>
                                             <th rowspan="2">Consumo corte</th>
                                             <th rowspan="2">Total proyectado</th>
@@ -160,13 +157,12 @@
                                                 <th>Proyectado</th>
                                                 <th>Consumido</th>
                                                 <th>Disponible</th>
-                                                <th>Exceso</th>
                                             </t>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <t t-if="not data['categories']">
-                                            <tr><td t-att-colspan="1 + (1 if page_data['opening'] else 0) + 4 * len(page_data['months']) + 4">No existen proyecciones para los filtros seleccionados.</td></tr>
+                                            <tr><td t-att-colspan="1 + (1 if page_data['opening'] else 0) + 3 * len(page_data['months']) + 4">No existen proyecciones para los filtros seleccionados.</td></tr>
                                         </t>
                                         <t t-foreach="data['categories']" t-as="group">
                                             <t t-call="expense_budget_control.report_comparison_monthly_row">

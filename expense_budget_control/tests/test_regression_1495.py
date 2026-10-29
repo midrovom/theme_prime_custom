@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""El disponible visible nunca es negativo; exceso separado, sin ocultar el saldo neto."""
+"""Regresión: disponible neto con signo, conservando exceso interno."""
 from odoo.tests.common import TransactionCase, tagged
 from ..models.amount_utils import exact_sum
 
@@ -7,7 +7,7 @@ from ..models.amount_utils import exact_sum
 @tagged('post_install', '-at_install')
 class TestExceso1495(TransactionCase):
 
-    def test_disponible_y_exceso_se_suman_sin_compensarse(self):
+    def test_disponible_neto_y_exceso_interno(self):
         company = self.env.company
         category = self.env['expense.budget.category'].create({
             'name': 'Rubro test exceso', 'code': 'TEST-1495', 'company_id': company.id,
@@ -37,16 +37,16 @@ class TestExceso1495(TransactionCase):
         })
         february.invalidate_recordset(['variance_amount','available_to_spend','excess_amount'])
         self.assertAlmostEqual(february.variance_amount, -41.07, places=6)
-        self.assertAlmostEqual(february.available_to_spend, 0, places=6)
+        self.assertAlmostEqual(february.available_to_spend, -41.07, places=6)
         self.assertAlmostEqual(february.excess_amount, 41.07, places=6)
         march.invalidate_recordset(['variance_amount','available_to_spend','excess_amount'])
         self.assertAlmostEqual(march.available_to_spend, 100.0, places=6)
         self.assertAlmostEqual(march.excess_amount, 0.0, places=6)
         budget.invalidate_recordset(['variance_amount','available_to_spend','excess_amount'])
-        self.assertAlmostEqual(budget.available_to_spend, 100.0, places=6)
+        self.assertAlmostEqual(budget.available_to_spend, 58.93, places=6)
         self.assertAlmostEqual(budget.excess_amount, 41.07, places=6)
         self.assertAlmostEqual(budget.variance_amount, 58.93, places=6)
         self.assertAlmostEqual(
-            exact_sum((budget.available_to_spend, -budget.excess_amount)),
-            budget.variance_amount, places=6,
+            exact_sum((budget.planned_amount, -budget.actual_amount)),
+            budget.available_to_spend, places=6,
         )

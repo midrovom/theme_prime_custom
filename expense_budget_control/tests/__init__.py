@@ -41,3 +41,5 @@ from . import test_regression_1493
 from . import test_regression_1494
 
 from . import test_regression_1495
+
+from . import test_regression_1496
