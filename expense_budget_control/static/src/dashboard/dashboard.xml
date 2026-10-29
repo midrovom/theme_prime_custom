@@ -5,7 +5,7 @@
             <header class="o_ebd_header">
                 <div>
                     <h1>Dashboard de gastos</h1>
-                    <p>Compara el consumo mensual global y por cuenta controlada.</p>
+                    <p>Compara los consumos por centro de costo y cuenta controlada.</p>
                 </div>
                 <div class="o_ebd_header_actions">
                     <button type="button" class="btn btn-outline-secondary d-lg-none" t-on-click="() => this.openMobileHome()">
@@ -91,14 +91,14 @@
                             </label>
                         </div>
                         <t t-if="state.chartType === 'bar'">
-                            <t t-if="state.selectedMonth &lt; 0">
-                                <div class="o_ebd_bar_chart" role="group" aria-label="Gastos por mes del año elegido">
-                                    <t t-foreach="this.bars" t-as="bar" t-key="bar.index">
+                            <t t-if="this.chartByCenter || state.selectedMonth &lt; 0">
+                                <div class="o_ebd_bar_chart" role="group" t-att-aria-label="this.chartTitle">
+                                    <t t-foreach="this.bars" t-as="bar" t-key="bar.id">
                                         <button type="button"
                                                 t-att-class="bar.active ? 'o_ebd_bar_item is-selected' : 'o_ebd_bar_item'"
-                                                t-att-title="bar.label + ': ' + this.formatMoney(bar.amount)"
-                                                t-att-aria-label="bar.label + ': ' + this.formatMoney(bar.amount)"
-                                                t-on-click="() => this.selectMonth(bar.index)">
+                                                t-att-title="bar.name + ': ' + this.formatMoney(bar.amount)"
+                                                t-att-aria-label="bar.name + ': ' + this.formatMoney(bar.amount)"
+                                                t-on-click="() => this.selectChartGroup(bar.id)">
                                             <span class="o_ebd_bar_space"><span class="o_ebd_bar" t-att-style="'height:' + bar.height"/></span>
                                             <span class="o_ebd_bar_month" t-esc="bar.short"/>
                                         </button>
@@ -139,13 +139,13 @@
                                         <t t-foreach="this.pieSlices" t-as="slice" t-key="slice.id">
                                             <t t-if="slice.full">
                                                 <circle cx="50" cy="50" r="45" t-att-fill="slice.color"
-                                                        t-on-click="() => this.toggleAccount(slice.id)">
+                                                        t-on-click="() => this.selectChartGroup(slice.id)">
                                                     <title t-esc="slice.name + ': ' + this.formatMoney(slice.amount)"/>
                                                 </circle>
                                             </t>
                                             <t t-else="">
                                                 <path t-att-d="slice.path" t-att-fill="slice.color"
-                                                      t-on-click="() => this.toggleAccount(slice.id)">
+                                                      t-on-click="() => this.selectChartGroup(slice.id)">
                                                     <title t-esc="slice.name + ': ' + this.formatMoney(slice.amount)"/>
                                                 </path>
                                             </t>
@@ -155,7 +155,7 @@
                                         <t t-foreach="this.pieSlices" t-as="slice" t-key="slice.id">
                                             <button type="button"
                                                     t-att-class="slice.active ? 'o_ebd_legend_item is-selected' : 'o_ebd_legend_item'"
-                                                    t-on-click="() => this.toggleAccount(slice.id)">
+                                                    t-on-click="() => this.selectChartGroup(slice.id)">
                                                 <span class="o_ebd_dot" t-att-style="'background-color:' + slice.color"/>
                                                 <span t-esc="slice.name"/>
                                                 <strong t-esc="slice.percentage + '%'"/>
@@ -164,7 +164,7 @@
                                     </div>
                                 </div>
                             </t>
-                            <p t-else="" class="o_ebd_empty">No hay gastos para distribuir en el mes, rubro y cuenta elegidos.</p>
+                            <p t-else="" class="o_ebd_empty"><t t-esc="this.pieEmptyMessage"/></p>
                         </t>
                     </div>
                 </section>

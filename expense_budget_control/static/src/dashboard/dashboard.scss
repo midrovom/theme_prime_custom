@@ -116,3 +116,8 @@
     .o_ebd_root .o_ebd_header_actions { width: 100%; }
     .o_ebd_root .o_ebd_header_actions > button { flex: 1 1 auto; }
 }
+
+/* Etiquetas de centros/cuentas: misma gráfica original, nombres legibles. */
+.o_ebd_root .o_ebd_bar_chart { overflow-x: auto; }
+.o_ebd_root .o_ebd_bar_item { flex: 1 0 62px; }
+.o_ebd_root .o_ebd_bar_month { overflow-wrap: anywhere; line-height: 1.15; min-height: 30px; }

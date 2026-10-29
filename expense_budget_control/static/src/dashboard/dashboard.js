@@ -123,37 +123,70 @@ export class ExpenseBudgetDashboard extends Component {
         );
     }
 
+    get filteredBreakdown() {
+        // El servidor entrega filas por centro/rubro/cuenta/mes. Esta es la
+        // misma fuente para el total, las barras, el pastel y el detalle.
+        return (this.state.data.breakdown || []).filter((row) =>
+            (!this.state.categoryId || String(row.category_id) === this.state.categoryId) &&
+            (!this.state.accountId || String(row.account_id) === this.state.accountId)
+        );
+    }
+
     get monthlyAmounts() {
         const months = Array(12).fill(0);
-        for (const account of this.selectedAccounts) {
-            account.months.forEach((amount, index) => { months[index] += amount; });
+        for (const row of this.filteredBreakdown) {
+            row.months.forEach((amount, index) => { months[index] += Number(amount || 0); });
         }
         return months;
     }
 
+    get chartByCenter() {
+        // Con Todos los centros se muestra la distribución por centro;
+        // al elegir un centro, el desglose pasa a sus cuentas controladas.
+        return !this.state.costCenterId;
+    }
+
+    get chartGroups() {
+        const groups = new Map();
+        const byCenter = this.chartByCenter;
+        const month = this.state.selectedMonth;
+        for (const row of this.filteredBreakdown) {
+            const id = String(byCenter ? row.center_id : row.account_id);
+            const name = byCenter ? row.center_name : row.account_name;
+            const amount = month < 0
+                ? row.months.reduce((total, item) => total + Number(item || 0), 0)
+                : Number(row.months[month] || 0);
+            if (!groups.has(id)) { groups.set(id, {id, name, amount: 0}); }
+            groups.get(id).amount += amount;
+        }
+        return [...groups.values()].sort((a, b) => b.amount - a.amount ||
+            a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    }
+
     get bars() {
-        const monthly = this.monthlyAmounts;
-        const max = Math.max(1, ...monthly);
-        return monthly.map((amount, index) => ({
-            index,
-            label: this.state.data.month_names[index] || "",
-            short: (this.state.data.month_names[index] || "").slice(0, 3),
-            amount,
-            height: `${amount > 0 ? Math.max(2, (amount / max) * 100) : 0}%`,
-            active: this.state.selectedMonth === index,
-            muted: this.state.selectedMonth >= 0 && this.state.selectedMonth !== index,
+        // Se conserva el diseño original de columnas verticales; solamente
+        // cambian las etiquetas y alturas con los grupos filtrados.
+        const groups = this.chartGroups;
+        const max = Math.max(1, ...groups.map((group) => Math.max(0, group.amount)));
+        return groups.map((group) => ({
+            ...group,
+            short: group.name.length > 24 ? group.name.slice(0, 23) + "…" : group.name,
+            height: `${group.amount > 0 ? Math.max(2, (group.amount / max) * 100) : 0}%`,
+            active: !this.chartByCenter && this.state.accountId === group.id,
         }));
     }
 
+    async selectChartGroup(groupId) {
+        if (this.chartByCenter) {
+            // Entrar al centro mediante su barra/porción sin perder rubro o mes.
+            return this.load(this.state.companyId, this.state.year, groupId);
+        }
+        this.toggleAccount(groupId);
+    }
+
     get accountBars() {
-        // Con un mes elegido la barra representa una cuenta, nunca los otros 11 meses.
-        if (this.state.selectedMonth < 0) { return []; }
-        const monthIndex = this.state.selectedMonth;
-        const accounts = this.selectedAccounts.map((account) => ({
-            id: account.id,
-            name: account.name,
-            amount: Number(account.months[monthIndex] || 0),
-        })).sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
+        if (this.state.selectedMonth < 0 || this.chartByCenter) { return []; }
+        const accounts = this.accountDetail;
         const maximum = Math.max(1, ...accounts.map((account) => Math.abs(account.amount)));
         return accounts.map((account) => ({
             ...account,
@@ -163,27 +196,27 @@ export class ExpenseBudgetDashboard extends Component {
     }
 
     get accountDetail() {
-        // Fuente única de valores para gráfico mensual y tabla: mes/rubro/cuenta.
-        const monthIndex = this.state.selectedMonth;
-        return this.selectedAccounts.map((account) => ({
-            id: account.id,
-            name: account.name,
-            amount: monthIndex < 0
-                ? account.months.reduce((sum, value) => sum + value, 0)
-                : account.months[monthIndex],
-        })).sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
+        // Las cuentas del detalle y el total usan exactamente las mismas filas
+        // que el gráfico, incluso cuando la cuenta existe en varios centros.
+        const groups = new Map();
+        const month = this.state.selectedMonth;
+        for (const row of this.filteredBreakdown) {
+            const id = String(row.account_id);
+            const amount = month < 0
+                ? row.months.reduce((total, item) => total + Number(item || 0), 0)
+                : Number(row.months[month] || 0);
+            if (!groups.has(id)) { groups.set(id, {id, name: row.account_name, amount: 0}); }
+            groups.get(id).amount += amount;
+        }
+        return [...groups.values()].sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
     }
 
     get chartTitle() {
-        return this.state.selectedMonth < 0
-            ? "Gastos por mes"
-            : `Gastos por cuenta controlada · ${this.periodName}`;
+        return this.chartByCenter ? "Gastos por centro de costo" : "Gastos por cuenta controlada";
     }
 
     get chartHint() {
-        return this.state.selectedMonth < 0
-            ? "Selecciona una barra para consultar las cuentas de ese mes."
-            : `Solo consumos de ${this.periodName.toLowerCase()} · ${this.state.year}`;
+        return `Consumos de ${this.periodName.toLowerCase()} · ${this.state.year} · según los filtros seleccionados`;
     }
 
     get totalSpent() {
@@ -203,35 +236,25 @@ export class ExpenseBudgetDashboard extends Component {
         };
     }
 
-    get pieAccounts() {
-        // Las proporciones comparan las cuentas del rubro en el mes filtrado.
-        // En "Todos los meses" muestran el acumulado anual. Pulsar una porción
-        // selecciona esa cuenta sin cambiar los valores de las otras porciones.
-        const selectedMonth = this.state.selectedMonth;
-        return this.selectedAccounts.map((account) => ({
-            ...account,
-            amount: selectedMonth < 0
-                ? account.months.reduce((sum, value) => sum + value, 0)
-                : account.months[selectedMonth],
-        })).filter((account) => account.amount > 0).sort((a, b) => b.amount - a.amount);
-    }
-
     get pieSlices() {
-        const accounts = this.pieAccounts;
-        const total = accounts.reduce((sum, account) => sum + account.amount, 0);
-        if (!total) { return []; }
-        // Color fijo por identidad de cuenta: al filtrar o pulsar una porción,
-        // no se vuelve al primer color de la paleta para la única cuenta visible.
-        // El servidor entrega las cuentas ordenadas por nombre e ID; así el
-        // color también se conserva al cambiar de mes o de rubro.
-        const accountColors = new Map(
-            this.state.data.accounts.map((account, index) => [
-                String(account.id), COLORS[index % COLORS.length],
-            ])
-        );
+        const groups = this.chartGroups;
+        // Un pastel no puede representar una participación negativa de forma
+        // correcta. No ocultar reversiones para fabricar un 100% incorrecto.
+        if (groups.some((group) => group.amount < 0)) { return []; }
+        const total = groups.reduce((sum, group) => sum + group.amount, 0);
+        if (total <= 0) { return []; }
+        const positive = groups.filter((group) => group.amount > 0);
+        // Las etiquetas muestran décimas porcentuales y deben sumar 100,0%.
+        // Se distribuye el residuo de redondeo, no se modifica ningún importe.
+        const raw = positive.map((group) => group.amount / total * 1000);
+        const units = raw.map((value) => Math.floor(value));
+        let remaining = 1000 - units.reduce((sum, value) => sum + value, 0);
+        const order = raw.map((value, index) => ({index, remainder: value - units[index]}))
+            .sort((a, b) => b.remainder - a.remainder || a.index - b.index);
+        for (let i = 0; i < remaining; i++) { units[order[i % order.length].index] += 1; }
         let angle = -Math.PI / 2;
-        return accounts.map((account) => {
-            const share = account.amount / total;
+        return positive.map((group, index) => {
+            const share = group.amount / total;
             const start = angle;
             const end = angle + share * Math.PI * 2;
             angle = end;
@@ -240,16 +263,25 @@ export class ExpenseBudgetDashboard extends Component {
             const [ex, ey] = polar(end);
             const largeArc = share > 0.5 ? 1 : 0;
             return {
-                id: account.id,
-                name: account.name,
-                amount: account.amount,
-                percentage: Math.round(share * 1000) / 10,
-                color: accountColors.get(String(account.id)) || COLORS[0],
+                id: group.id,
+                name: group.name,
+                amount: group.amount,
+                percentage: units[index] / 10,
+                color: COLORS[(this.chartByCenter
+                    ? (this.state.data.cost_centers || []).findIndex((c) => String(c.id) === group.id)
+                    : (this.state.data.accounts || []).findIndex((a) => String(a.id) === group.id)
+                ) % COLORS.length] || COLORS[0],
                 path: `M 50 50 L ${sx} ${sy} A 45 45 0 ${largeArc} 1 ${ex} ${ey} Z`,
-                full: accounts.length === 1,
-                active: this.state.accountId === String(account.id),
+                full: positive.length === 1,
+                active: !this.chartByCenter && this.state.accountId === group.id,
             };
         });
+    }
+
+    get pieEmptyMessage() {
+        return this.chartGroups.some((group) => group.amount < 0)
+            ? "Hay consumos negativos; no es posible mostrar porcentajes fiables en un pastel."
+            : "No hay gastos para distribuir con los filtros elegidos.";
     }
 
     get periodName() {

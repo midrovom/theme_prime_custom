@@ -1,6 +1,6 @@
 # Control de Presupuesto de Gastos — Odoo 18
 
-Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.86`.
+Módulo técnico: **`expense_budget_control`**. Versión: `18.0.1.4.99`.
 
 ## Funciones
 
@@ -258,3 +258,13 @@ Los importes de las líneas aprobadas o enviadas a aprobación no se recalculan 
   con un centro seleccionado se muestra inicialmente el desglose de cuentas.
 - El filtro «Sin centro de costo» permite inspeccionar proyecciones históricas sin centro.
 - Al cambiar de centro se conservan rubro, cuenta y mes cuando siguen disponibles.
+
+
+## Dashboard — 18.0.1.4.99
+
+Se conservan los gráficos originales de barras y pastel. Con «Todos los centros»
+ambos representan el consumo por centro de costo (porcentaje del total
+filtrado). Al seleccionar un centro, muestran la distribución entre sus
+cuentas controladas. Los filtros de empresa, año, mes, rubro y cuenta se
+combinan sin reiniciar los demás; la suma de los centros coincide con el
+consumido filtrado. No se añaden otros controles ni se alteran importes ERP.
