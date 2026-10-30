@@ -136,6 +136,11 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(broader["dispatch_progress"]["tons"]["total"],30)
         action=self.service.get_detail_action({"warehouse_ids":[10]},"agreement","calendar:3")
         self.assertIn(("id","in",[2]),action["domain"])
+        self.assertTrue(result["agreements"]["reconciled"])
+        self.assertEqual(result["agreements"]["totals"]["pending_tons"], result["stats"]["pending_tons"])
+        self.assertEqual(broader["agreements"]["totals"]["pending_tons"], broader["stats"]["pending_tons"])
+        self.assertEqual(result["transport"]["reconciliation"]["total_tons"], 9)
+        self.assertTrue(result["transport"]["reconciliation"]["detail_matches"])
 
     def test_invalid_warehouse_ids_are_rejected(self):
         for value in ([-1],[True],["10"],"10"):

@@ -1,10 +1,22 @@
 """Operational overview on the same unique, scoped invoices as the dashboard."""
 import math
+from decimal import Decimal, ROUND_HALF_UP
 
-from .engine import EPS, as_date
+from .engine import EPS, as_date, normalize, summarize
 
 
-def pending_by_agreement(rows, include_ids=False):
+def _display_rounding(total, parts):
+    """Reconcile displayed hundredths explicitly; never alter group weights."""
+    cent = Decimal("0.01")
+    rounded = lambda value: Decimal(str(value or 0)).quantize(cent, rounding=ROUND_HALF_UP)
+    delta = rounded(total) - sum((rounded(value) for value in parts), Decimal(0))
+    return float(delta) if delta else 0.0
+
+
+def pending_by_agreement(rows, include_ids=False, stats=None):
+    if stats is None:
+        rows = list(rows)
+        stats = summarize(rows)
     groups = {}
     due = {key: 0 for key in ("overdue", "due_today", "next_3_days", "later", "review")}
     for row in rows:
@@ -17,9 +29,13 @@ def pending_by_agreement(rows, include_ids=False):
         label = (f"{days} días " + ("hábiles" if day_type == "business" else "calendario")) if configured else "Sin plazo"
         group = groups.setdefault(key, {"key": key, "label": label, "days": days, "day_type": day_type,
             "configured": configured, "pending": 0, "pending_tons": 0.0, "within": 0, "overdue": 0, "review": 0,
+            "pending_pallets": 0.0, "pending_pallets_missing_rows": 0, "pending_lines": 0,
             "cities": set(), "deliveries": set(), "invoice_ids": []})
         group["pending"] += 1
         group["pending_tons"] += max(0, row.get("pending_weight") or 0) / 1000
+        group["pending_pallets"] += max(0, row.get("pending_pallets") or 0)
+        group["pending_pallets_missing_rows"] += row.get("pending_pallets_missing_rows") or 0
+        group["pending_lines"] += row.get("pending_lines") or 0
         group["cities"].add(row.get("city") or "Sin ciudad")
         group["deliveries"].add(row.get("delivery") or "Sin modalidad")
         if include_ids:
@@ -42,7 +58,33 @@ def pending_by_agreement(rows, include_ids=False):
         group["deliveries"] = sorted(group["deliveries"])
         if not include_ids:
             group.pop("invoice_ids")
-    return {"groups": results, "due": due, "pending": sum(g["pending"] for g in results)}
+    totals = {"pending": stats["pending"], "pending_tons": stats["pending_tons"], "pending_pallets": stats["pending_pallets"],
+              "pending_pallets_missing_rows": stats["pending_pallets_missing_rows"], "pending_lines": stats["pending_lines"],
+              **{key: sum(g[key] for g in results) for key in ("within", "overdue", "review")}}
+    rounding = {"tons": _display_rounding(totals["pending_tons"], [g["pending_tons"] for g in results]),
+                "pallets": _display_rounding(totals["pending_pallets"], [g["pending_pallets"] for g in results])}
+    reconciled = (sum(g["pending"] for g in results) == totals["pending"]
+        and math.isclose(sum(g["pending_tons"] for g in results), totals["pending_tons"], rel_tol=0, abs_tol=EPS)
+        and math.isclose(sum(g["pending_pallets"] for g in results), totals["pending_pallets"], rel_tol=0, abs_tol=EPS))
+    return {"groups": results, "due": due, "pending": sum(g["pending"] for g in results),
+            "totals": totals, "rounding": rounding, "reconciled": reconciled}
+
+
+def pending_plan_reconciliation(rows, transport, stats=None):
+    """Separate delivery scope differences from missing/inconsistent line detail."""
+    rows = list(rows)
+    stats = stats if stats is not None else summarize(rows)
+    excluded = [row for row in rows if row.get("pending") and transport["scope"] == "transcash"
+                and normalize(row.get("delivery")) != "ENTREGA TRANSCASH"]
+    outside_tons = sum(row.get("pending_weight") or 0 for row in excluded) / 1000
+    planned_tons = transport["pending_tons"]
+    unallocated = stats["pending_tons"] - outside_tons - planned_tons
+    if abs(unallocated) <= EPS:
+        unallocated = 0.0
+    return {"total_tons": stats["pending_tons"], "planned_tons": planned_tons, "outside_plan_tons": outside_tons,
+            "outside_plan_invoices": len(excluded), "unallocated_tons": unallocated,
+            "detail_matches": unallocated == 0, "same_scope": not excluded,
+            "rounding_tons": _display_rounding(stats["pending_tons"], [planned_tons, outside_tons, unallocated])}
 
 
 def dispatch_progress(rows, pending_lines=()):

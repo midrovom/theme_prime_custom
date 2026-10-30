@@ -1,7 +1,10 @@
 import json
+import logging
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError
 from ..services.engine import aggregate_invoice, evaluate, invoice_key, latest_invoice_versions, normalize, unique_invoice_lines, weight_metrics, pallet_metrics
+
+_logger = logging.getLogger(__name__)
 
 STATE_OPTIONS = [("pending", "Sin despacho"), ("partial", "Parcial"), ("done", "Despachada completa"), ("adjusted", "Con ajustes/devoluciones"), ("excess", "Saldo excedido"), ("review", "Revisar")]
 SLA_OPTIONS = [("no_rule", "Sin plazo"), ("invalid", "Datos por revisar"), ("adjusted", "Con ajustes"), ("on_time", "Despachada a tiempo"), ("late", "Despachada tarde"), ("overdue", "Pendiente vencida"), ("due_today", "Vence al corte"), ("open", "Pendiente en plazo")]
@@ -133,10 +136,11 @@ class DispatchInvoice(models.Model):
 
     @api.model
     def _initialize_unique_records(self, companies=None):
-        """Upgrade existing imports without uploading them again.
+        """One-time legacy upgrade or explicit manager-requested consolidation.
 
         Historical snapshots are versions, never an additive operational
         universe. Only redundant details within a snapshot are consolidated.
+        Never call this unconditionally from a normal module update.
         """
         records = self.sudo()
         records.flush_model()
@@ -144,6 +148,7 @@ class DispatchInvoice(models.Model):
         companies = companies if companies is not None else self.env["res.company"].sudo().search([])
         removed = 0
         for company in companies:
+            _logger.info("Despachos: inicia consolidación de datos de la compañía %s", company.id)
             self.env.cr.execute("SELECT pg_advisory_xact_lock(%s,%s)", (180107,company.id))
             self.env.cr.execute("UPDATE dispatch_invoice SET is_current=false WHERE company_id=%s", (company.id,))
             self.env.cr.execute("""SELECT array_agg(id ORDER BY id) FROM dispatch_invoice
@@ -184,6 +189,7 @@ class DispatchInvoice(models.Model):
                 WHERE company_id=%s""", (company.id,))
             lines = self.env["dispatch.invoice.line"].sudo()
             last_id = 0
+            processed_lines = 0
             while True:
                 batch = lines.search_read([("company_id","=",company.id),("id",">",last_id)],
                     ["raw_data","warehouse_code","warehouse","pending_qty","pending_weight"],order="id",limit=2000)
@@ -214,6 +220,7 @@ class DispatchInvoice(models.Model):
                     invoiced_pallets,invoiced_pallets_available,pending_pallets,pending_pallets_available) WHERE l.id=v.id::int""",
                     [value for row in values for value in row])
                 last_id=batch[-1]["id"]
+                processed_lines += len(batch)
             self.env.cr.execute("""UPDATE dispatch_invoice i SET
                 invoiced_weight=w.invoiced_weight,dispatched_weight=w.dispatched_weight,
                 invoiced_tons=w.invoiced_weight/1000,dispatched_tons=w.dispatched_weight/1000,
@@ -236,6 +243,7 @@ class DispatchInvoice(models.Model):
             lines.invalidate_model()
             records.invalidate_model()
             records._refresh_current_records(company.id)
+            _logger.info("Despachos: termina consolidación de la compañía %s; %s detalles revisados", company.id, processed_lines)
         return removed
 
     @api.depends("quality_flags", "source_warnings", "rule_snapshot")

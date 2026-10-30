@@ -1,4 +1,19 @@
-# Validación de la entrega 18.0.1.7.0
+# Validación de la entrega 18.0.1.7.2
+
+## Tarjetas y conciliación 1.7.2
+
+- 156 pruebas Python. Se añaden totales de toneladas/pallets por acuerdo, inclusión de Sin plazo, disponibilidad parcial de pallets, redondeo positivo/negativo, separación de modalidades y diferencias de detalle del plan. Se comprueba el mismo total al seleccionar varias bodegas. Se conservan las pruebas de actualización rápida.
+- 38 comprobaciones con el componente real montado en OWL/jsdom: ocho tarjetas superiores, valores iguales al total de plazos, clic en pendientes, preservación de fechas y cambio explícito del alcance del plan.
+- 13 verificaciones en Chromium real con RPC simulado: tarjetas, totales visibles, presentación en 1440×900, 1366×768 y 390×844, opciones del plan, apertura de facturas y redondeo de los grupos reales del Excel. Se revisaron capturas del panorama y la fila de redondeo. El tema y servidor de Odoo del cliente no se cargaron.
+- Lectura completa del archivo: 1.030,61176 t y 830,78 pallets pendientes concilian con sus grupos. Se reproduce la diferencia de redondeo de 0,01 t al sumar las dos filas redondeadas del archivo completo y se muestra su ajuste. Para 30/09–29/10, 871,63914 t del resumen = 620,42012 t Entrega Transcash + 251,21902 t de otras modalidades. Con el alcance Todas las modalidades filtradas, el plan coincide con el total del resumen. También se valida la selección exclusiva de Entrega Transcash.
+- Sintaxis Python/XML, referencias y manifiesto validados; ambos SCSS se compilan con LibSass 3.6.6. No hay cambios en el esquema, la importación o el mecanismo que evita reconstrucciones históricas al actualizar. Sin acceso a la base remota del cliente.
+
+## Rendimiento de actualización 1.7.1
+
+- 148 pruebas Python, incluidas ocho nuevas comprobaciones de la actualización: se ejecuta el archivo real de migración con servicios simulados. Desde 1.6/1.6.1/1.7 y posteriores no se instancia un entorno de conversión ni se leen facturas. Desde 1.3–1.5 se conserva la conversión de datos única; desde versiones anteriores se completan primero las ciudades.
+- Se comprueba que las llamadas XML de inicialización masiva están bajo noupdate=1 y que la ruta del post-script coincide con la versión del manifiesto. Las versiones históricas desconocidas conservan una ruta prudente de conversión; las instalaciones nuevas usan su inicialización XML sin histórico.
+- Sintaxis, datos XML, manifiesto, permisos y referencias de vistas validados. La interfaz y estilos conservan los archivos de la versión 1.7 ya probada; solo cambian inicialización, selección de migraciones, trazas y documentación.
+- No se ha accedido al servidor del cliente ni se ha medido su actualización real. La ejecución del cargador de migraciones y del SQL sobre PostgreSQL debe verificarse al actualizar su base. No se promete una duración fija: Odoo puede seguir necesitando tiempo para sus vistas, registro, recursos y bloqueos existentes.
 
 ## Panorama y acuerdos 1.7
 

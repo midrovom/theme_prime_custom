@@ -50,6 +50,10 @@ export class DispatchDashboard extends Component {
         Object.assign(this.state.filters, {date_from: "", date_to: ""});
         await this.load();
     }
+    async planAllFiltered() {
+        this.state.filters.planning_scope = "filtered";
+        await this.load();
+    }
     format(value, digits = 0) {
         return value === null || value === undefined ? "Sin medición" : new Intl.NumberFormat("es-EC", {maximumFractionDigits: digits, minimumFractionDigits: digits}).format(value);
     }
@@ -62,6 +66,8 @@ export class DispatchDashboard extends Component {
         return [
             {label: "Facturas analizadas", value: this.format(s.total), note: "Una vez por factura", category: "all", tone: "blue"},
             {label: "Pendientes de despacho", value: this.format(s.pending), note: `${this.format(s.partial)} con despacho parcial`, category: "pending", tone: "amber"},
+            {label: "Toneladas por despachar", value: `${this.format(s.pending_tons, 2)} t`, note: "Mismo total del desglose por plazos", category: "pending", tone: "amber"},
+            {label: "Pallets por despachar", value: this.amount(s.pending_pallets, s.pending_pallets_missing_rows, s.pending_lines), note: s.pending_pallets_missing_rows ? "Hay registros sin pallets informados" : "Pallets pendientes de los mismos filtros", category: "pending", tone: "amber"},
             {label: "Pendientes vencidas", value: s.overdue_available ? this.format(s.overdue) : "Sin medición", note: `${this.format(s.pending_unassessed)} pendientes sin evaluar · ${this.format(s.due_today)} vencen al corte`, category: "overdue", tone: "red"},
             {label: "Cumplimiento del período", value: s.mature_compliance === null ? "Sin medición" : `${this.format(s.mature_compliance, 1)}%`, note: `${this.format(s.on_time)} a tiempo / ${this.format(s.mature_count)} exigibles`, category: "mature", tone: "green"},
             {label: "Tiempo promedio", value: s.lead_avg === null ? "Sin medición" : `${this.format(s.lead_avg, 1)} días`, note: `${this.format(s.lead_count)} despachos medibles · días calendario`, category: "lead", tone: "blue"},

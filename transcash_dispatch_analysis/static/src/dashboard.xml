@@ -39,15 +39,26 @@
               <div class="td-progress-legend"><t t-foreach="progressChart.series" t-as="part" t-key="part.label"><div><span><i t-att-style="'background:' + part.color"/><t t-esc="part.label"/></span><strong t-esc="part.pct === null ? 'Sin dato' : format(part.pct, 1) + '%'"/><small t-esc="format(part.value, state.progressBasis === 'tons' ? 2 : 0) + (state.progressBasis === 'tons' ? ' t' : ' facturas')"/></div></t></div>
             </div>
             <p t-if="state.progressBasis === 'invoices'" class="td-progress-note">100% = facturas del período. Las parcialmente despachadas cuentan «Con pendiente».</p>
-            <p t-else="" class="td-progress-note"><b t-if="progressChart.partial">Base parcial. </b><t t-esc="format(progressChart.measured_invoices)"/> de <t t-esc="format(state.data.stats.total)"/> facturas tienen pesos comparables, sin ajustes. Las demás siguen en los indicadores.</p>
+            <p t-else="" class="td-progress-note"><b t-if="progressChart.partial">Base parcial. </b><t t-esc="format(progressChart.measured_invoices)"/> de <t t-esc="format(state.data.stats.total)"/> facturas con pesos comparables. <span t-if="progressChart.partial">El pendiente total de los filtros es <b t-esc="format(state.data.stats.pending_tons, 2) + ' t'"/> en las tarjetas y los plazos.</span></p>
           </section>
         </div>
         <section class="td-panel td-wide td-agreements">
-          <div class="td-section-header"><div><h3>Pendientes por plazo de entrega</h3><p class="td-muted">Acuerdos contados desde la fecha de factura; estado a la fecha del corte.</p></div><div class="td-due-chips"><span>Vencen hoy: <b t-esc="format(state.data.agreements.due.due_today)"/></span><span>Próximos 3 días: <b t-esc="format(state.data.agreements.due.next_3_days)"/></span></div></div>
-          <div class="td-table-scroll"><table class="td-table td-agreement-table"><thead><tr><th>Plazo acordado</th><th>Facturas pendientes</th><th>Pendiente (t)</th><th>En plazo</th><th>Vencidas</th><th>Por revisar</th></tr></thead><tbody>
-            <t t-foreach="state.data.agreements.groups" t-as="agreement" t-key="agreement.key"><tr><td><strong t-esc="agreement.label"/><details><summary>Ciudades y modalidades</summary><small t-esc="agreement.cities.join(', ')"/><small t-esc="agreement.deliveries.join(', ')"/></details></td><td><button class="td-link" t-on-click="() => this.detail('agreement', agreement.key)" t-esc="format(agreement.pending)"/></td><td t-esc="format(agreement.pending_tons, 2)"/><td t-esc="format(agreement.within)"/><td><span t-att-class="agreement.overdue ? 'td-badge overdue' : ''" t-esc="format(agreement.overdue)"/></td><td t-esc="format(agreement.review)"/></tr></t>
-            <tr t-if="!state.data.agreements.groups.length"><td colspan="6">No hay facturas pendientes con los filtros seleccionados.</td></tr>
-          </tbody></table></div>
+          <div class="td-section-header"><div><h3>Pendientes por plazo de entrega</h3><p class="td-muted">Mismos filtros de las tarjetas. Acuerdos desde la factura; estado al corte.</p></div><div class="td-due-chips"><span>Vencen hoy: <b t-esc="format(state.data.agreements.due.due_today)"/> facturas</span><span>Próximos 3 días: <b t-esc="format(state.data.agreements.due.next_3_days)"/> facturas</span></div></div>
+          <div t-if="!state.data.agreements.reconciled" class="td-alert warning">El detalle por plazo presenta una diferencia respecto del total. Revisa los datos del corte.</div>
+          <div class="td-table-scroll"><table class="td-table td-agreement-table">
+            <thead><tr><th>Plazo acordado</th><th>Facturas pendientes</th><th>Por despachar (t)</th><th>Pallets por despachar</th><th>En plazo</th><th>Vencidas</th><th>Por revisar</th></tr></thead>
+            <tbody><t t-foreach="state.data.agreements.groups" t-as="agreement" t-key="agreement.key"><tr>
+              <td><strong t-esc="agreement.label"/><details><summary>Ciudades y modalidades</summary><small t-esc="agreement.cities.join(', ')"/><small t-esc="agreement.deliveries.join(', ')"/></details></td>
+              <td><button class="td-link" t-on-click="() => this.detail('agreement', agreement.key)" t-esc="format(agreement.pending)"/></td>
+              <td t-esc="format(agreement.pending_tons, 2)"/>
+              <td t-esc="amount(agreement.pending_pallets, agreement.pending_pallets_missing_rows, agreement.pending_lines)"/>
+              <td t-esc="format(agreement.within)"/><td><span t-att-class="agreement.overdue ? 'td-badge overdue' : ''" t-esc="format(agreement.overdue)"/></td><td t-esc="format(agreement.review)"/>
+            </tr></t><tr t-if="!state.data.agreements.groups.length"><td colspan="7">No hay facturas pendientes con los filtros seleccionados.</td></tr></tbody>
+            <tfoot>
+              <tr t-if="state.data.agreements.rounding.tons || state.data.agreements.rounding.pallets" class="td-rounding-row"><td>Redondeo de las filas</td><td>—</td><td t-esc="state.data.agreements.rounding.tons ? format(state.data.agreements.rounding.tons, 2) : '—'"/><td t-esc="state.data.agreements.rounding.pallets ? format(state.data.agreements.rounding.pallets, 2) : '—'"/><td colspan="3">Ajuste al mostrar dos decimales; los pesos originales se conservan.</td></tr>
+              <tr class="td-pending-total"><td><strong>Total por despachar</strong></td><td><button class="td-link" t-on-click="() => this.detail('pending')" t-esc="format(state.data.agreements.totals.pending)"/></td><td class="td-total-tons"><strong t-esc="format(state.data.agreements.totals.pending_tons, 2)"/></td><td class="td-total-pallets"><strong t-esc="amount(state.data.agreements.totals.pending_pallets, state.data.agreements.totals.pending_pallets_missing_rows, state.data.agreements.totals.pending_lines)"/></td><td t-esc="format(state.data.agreements.totals.within)"/><td t-esc="format(state.data.agreements.totals.overdue)"/><td t-esc="format(state.data.agreements.totals.review)"/></tr>
+            </tfoot>
+          </table></div>
         </section>
         <div t-if="!state.data.stats.total" class="td-empty"><h2>Sin facturas para estos filtros</h2><p>Cambia las fechas o las bodegas para consultar otro período.</p><button class="td-button" t-on-click="allDates">Consultar todas las fechas</button><button t-if="state.data.can_import" class="td-button" t-on-click="() => this.openAction('action_import')">Importar Excel</button></div>
         <section class="td-panel td-wide td-cargo">
@@ -59,6 +70,16 @@
           <div class="td-section-header">
             <div><div class="td-eyebrow">DESPACHAR LOS PENDIENTES</div><h2>Vehículos que necesitas por destino</h2><p>El cálculo usa únicamente la carga pendiente del período seleccionado.</p></div>
             <label class="td-plan-scope">¿Qué entregas vas a transportar?<select t-model="state.filters.planning_scope" t-on-change="load"><option value="transcash">Solo Entrega Transcash</option><option value="filtered">Todas las modalidades filtradas</option></select></label>
+          </div>
+          <div class="td-plan-reconciliation">
+            <span>Resumen y plazos: <b t-esc="format(state.data.transport.reconciliation.total_tons, 2) + ' t'"/></span>
+            <span>En este plan: <b t-esc="format(state.data.transport.reconciliation.planned_tons, 2) + ' t'"/></span>
+            <span t-if="!state.data.transport.reconciliation.same_scope">Otras modalidades: <b t-esc="format(state.data.transport.reconciliation.outside_plan_tons, 2) + ' t'"/></span>
+            <span t-if="!state.data.transport.reconciliation.detail_matches" class="td-plan-issue">Diferencia de detalle: <b t-esc="format(state.data.transport.reconciliation.unallocated_tons, 2) + ' t'"/></span>
+            <span t-if="state.data.transport.reconciliation.rounding_tons">Redondeo: <b t-esc="format(state.data.transport.reconciliation.rounding_tons, 2) + ' t'"/></span>
+            <p t-if="!state.data.transport.reconciliation.same_scope">El plan está limitado a Entrega Transcash. Las tarjetas y los plazos incluyen también las otras modalidades seleccionadas. <button class="td-link" t-on-click="planAllFiltered">Planificar todas las modalidades del resumen</button></p>
+            <p t-elif="state.data.transport.reconciliation.detail_matches">Este plan usa el mismo total de toneladas pendientes que las tarjetas y el desglose por plazos.</p>
+            <p t-if="!state.data.transport.reconciliation.detail_matches">Hay peso pendiente de cabecera que no coincide con el detalle asignado al plan. Revisa las líneas antes de contratar.</p>
           </div>
           <div class="td-plan-controls">
             <label>¿Puedes juntar la carga de varias bodegas?<select t-model="state.filters.planning_grouping" t-on-change="load"><option value="warehouse">No: una salida por cada bodega</option><option value="destination">Sí: agrupar para el mismo destino</option></select></label>

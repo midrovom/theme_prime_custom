@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo>
-  <!-- Run on install AND update. The method only fills missing city rules. -->
+<odoo noupdate="1">
+  <!-- Initial installation only. Older data is handled by the upgrade script. -->
   <function model="dispatch.sla" name="_initialize_city_defaults"/>
 </odoo>

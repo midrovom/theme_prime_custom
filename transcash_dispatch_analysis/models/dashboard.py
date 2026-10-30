@@ -7,7 +7,7 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval
 from ..services.engine import aggregate_invoice, as_date, evaluate, grouped, summarize, METRICS, GROUPS
 from ..services.planning import build_transport_plan
-from ..services.overview import pending_by_agreement, dispatch_progress
+from ..services.overview import pending_by_agreement, dispatch_progress, pending_plan_reconciliation
 
 READ_FIELDS = ["name", "invoice_key", "snapshot_id", "source_id", "company_id", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
     "state", "pending", "pending_lines", "pending_weight", "pending_boxes", "pending_pallets", "has_adjustment", "physically_completed", "source_warnings", "source_grain",
@@ -108,11 +108,12 @@ class DispatchDashboard(models.AbstractModel):
                 scoped.append({**row,**evaluate(summary,packs_for_scope.get(row["snapshot_id"][0],{}))})
             rows = scoped
         stats = summarize(rows)
-        agreements = pending_by_agreement(rows, include_ids)
+        agreements = pending_by_agreement(rows, include_ids, stats)
         progress = dispatch_progress(rows, transport_lines)
         companies = self.env["res.company"].browse(sorted({r["company_id"][0] for r in rows}))
         packs = self.env["dispatch.transport.settings"]._planning_packs(companies)
         transport = build_transport_plan(rows, transport_lines, packs, scope, grouping)
+        transport["reconciliation"] = pending_plan_reconciliation(rows, transport, stats)
         dates = sorted(r["invoice_date"] for r in rows if r["invoice_date"])
         period = {"date_from": filters.get("date_from") or (dates[0] if dates else False),
                   "date_to": filters.get("date_to") or (dates[-1] if dates else False), "basis": "invoice_date"}

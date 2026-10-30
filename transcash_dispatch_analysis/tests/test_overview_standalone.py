@@ -98,6 +98,61 @@ class OverviewTests(unittest.TestCase):
         chart = overview.dispatch_progress([row(pending=False, dispatched_weight=10000)])["tons"]
         self.assertEqual([p["pct"] for p in chart["series"]], [100, 0])
 
+    def test_agreement_totals_reconcile_tons_and_pallets_with_all_pending_rows(self):
+        rows = [row(pending_pallets=2.5, pending_lines=1), row(2, sla_days=9, pending_pallets=3, pending_lines=1),
+                row(3, sla_configured=False, eligible=False, pending_pallets=1.25, pending_lines=1)]
+        result = overview.pending_by_agreement(rows)
+        self.assertTrue(result["reconciled"])
+        self.assertEqual(result["totals"]["pending"], 3)
+        self.assertEqual(result["totals"]["pending_tons"], 6)
+        self.assertEqual(result["totals"]["pending_pallets"], 6.75)
+
+    def test_real_source_rounding_difference_is_explicit_without_changing_weights(self):
+        result = overview.pending_by_agreement([row(pending_weight=141146.05), row(2, sla_days=9, pending_weight=889465.71)])
+        self.assertAlmostEqual(result["totals"]["pending_tons"], 1030.61176)
+        self.assertAlmostEqual(result["groups"][0]["pending_tons"], 141.14605)
+        self.assertEqual(result["rounding"]["tons"], -.01)
+        self.assertTrue(result["reconciled"])
+
+    def test_positive_rounding_difference_and_fractional_pallets(self):
+        result = overview.pending_by_agreement([row(pending_weight=14, pending_pallets=1.005),
+            row(2, sla_days=9, pending_weight=14, pending_pallets=1.005)])
+        self.assertEqual(result["rounding"], {"tons": .01, "pallets": -.01})
+        self.assertEqual(result["totals"]["pending_pallets"], 2.01)
+
+    def test_partial_pallet_availability_survives_grouping(self):
+        result = overview.pending_by_agreement([row(pending_pallets=2.5, pending_lines=1),
+            row(2, pending_pallets=0, pending_pallets_missing_rows=1, pending_lines=1)])
+        self.assertEqual(result["totals"]["pending_pallets"], 2.5)
+        self.assertEqual(result["totals"]["pending_pallets_missing_rows"], 1)
+        self.assertEqual(result["totals"]["pending_lines"], 2)
+
+    def test_plan_scope_difference_is_explained_as_other_modalities(self):
+        rows = [row(), row(2, delivery="Cliente Retira", pending_weight=3000)]
+        result = overview.pending_plan_reconciliation(rows, {"scope": "transcash", "pending_tons": 2})
+        self.assertEqual((result["total_tons"], result["planned_tons"], result["outside_plan_tons"]), (5, 2, 3))
+        self.assertEqual(result["outside_plan_invoices"], 1)
+        self.assertFalse(result["same_scope"])
+        self.assertTrue(result["detail_matches"])
+
+    def test_all_filtered_plan_and_invoice_total_agree(self):
+        rows = [row(), row(2, delivery="Cliente Retira", pending_weight=3000)]
+        result = overview.pending_plan_reconciliation(rows, {"scope": "filtered", "pending_tons": 5})
+        self.assertTrue(result["same_scope"])
+        self.assertTrue(result["detail_matches"])
+        self.assertEqual(result["total_tons"], result["planned_tons"])
+
+    def test_missing_plan_detail_is_not_mislabeled_as_excluded_delivery(self):
+        result = overview.pending_plan_reconciliation([row()], {"scope": "transcash", "pending_tons": 0})
+        self.assertFalse(result["detail_matches"])
+        self.assertEqual(result["unallocated_tons"], 2)
+        self.assertEqual(result["outside_plan_tons"], 0)
+
+    def test_agreement_mismatch_is_detected_instead_of_silently_claiming_balance(self):
+        stats = overview.summarize([row()])
+        stats["pending_tons"] = 99
+        self.assertFalse(overview.pending_by_agreement([row()], stats=stats)["reconciled"])
+
 
 class OverviewDashboardTests(unittest.TestCase):
     setUp = dashboard_tests.DashboardTests.setUp

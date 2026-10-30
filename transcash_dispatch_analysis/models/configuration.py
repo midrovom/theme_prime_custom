@@ -118,7 +118,7 @@ class DispatchSla(models.Model):
 
     @api.model
     def _initialize_city_defaults(self):
-        """Idempotent install/update backfill, including already imported data."""
+        """Initial setup or one-time legacy upgrade, not ordinary UI updates."""
         companies = self.env["res.company"].sudo().search([])
         grouped = self.env["dispatch.invoice"].sudo().read_group(
             [("company_id", "in", companies.ids)], ["company_id", "city"],

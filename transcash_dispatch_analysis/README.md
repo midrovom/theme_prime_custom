@@ -1,6 +1,16 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.7.0 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.7.2 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Toneladas, pallets y totales por despachar 1.7.2
+
+Se añaden **Toneladas por despachar** y **Pallets por despachar** a las tarjetas superiores. El resumen por plazo muestra las dos medidas y un Total por despachar que toma los mismos valores y filtros que esas tarjetas. Si redondear cada fila a dos decimales produce una diferencia, se presenta una línea de redondeo sin alterar los pesos originales.
+
+El plan de vehículos identifica el total del resumen, lo incluido en el plan y lo excluido por modalidad. **Planificar todas las modalidades del resumen** permite igualar ambos alcances explícitamente. Se conservan el alcance inicial Solo Entrega Transcash y la actualización rápida de 1.7.1. Ver `docs/TARJETAS_TOTALES_V1_7_2.md`.
+
+## Actualización sin reconstrucción repetida 1.7.1
+
+Se corrige un proceso pesado que se ejecutaba en cada actualización del módulo: recorrer facturas y detalles históricos para normalizar llaves, pesos, pallets, bodegas y registros vigentes. En bases que ya completaron una versión 1.6 o posterior, las actualizaciones ordinarias omiten esa conversión. Las versiones anteriores conservan la conversión necesaria una sola vez mediante el mecanismo de migración por versión de Odoo. La validación/consolidación manual sigue disponible a petición del Responsable. Ver `docs/ACTUALIZACION_RAPIDA_V1_7_1.md`.
 
 ## Panorama inicial, plazos y pastel 1.7
 
