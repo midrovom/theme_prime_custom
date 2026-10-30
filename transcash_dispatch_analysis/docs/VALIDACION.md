@@ -1,4 +1,12 @@
-# Validación de la entrega 18.0.1.8.5
+# Validación de la entrega 18.0.1.8.6
+
+## Continuación del programador 1.8.6
+
+- 251 pruebas Python autónomas aprobadas: 239 anteriores y doce nuevas de varios pasos por llamada, límites de tiempo/pasos, preparación separada, cursor y reanudación, bloqueo de fuente, ausencia de trabajos/avance, error de datos, otra fuente pendiente y fallos del notificador/trigger. Se mantienen las comprobaciones de permisos, fechas, métricas y actualización rápida.
+- Se inspeccionó el código oficial Odoo 18 en el commit 54c0991d2949bf4090231c8c167b4a1038769085: diez llamadas por ronda, sondeo de trabajadores de alrededor de un minuto sin otra notificación y `_trigger()` inmediato con aviso posterior al commit. El bloqueo de cron `FOR NO KEY UPDATE` permite la referencia del trigger sin bloquear su clave foránea. Es evidencia del código de referencia, no una lectura de la versión/configuración instalada del cliente.
+- Archivo completo convertido en filas ERP: 54.392 líneas y 44.989 facturas; 91 llamadas del cron en 1.8.5 frente a 6 en 1.8.6, con cinco solicitudes de continuación. Igual huella de todos los cálculos, 383 pendientes, 1.030,61176 t y 830,78 pallets. Con el origen duplicado (108.784 filas) se conservan 44.989 facturas y 54.392 detalles, detectando 54.392 repeticiones. Se usa el modelo real con ORM simulado; las rondas a diez llamadas son un modelo del programador inspeccionado, no una medición de esperas en producción.
+- Tres nuevas pruebas nativas incluidas para preparación/continuación, límites de pasos con reanudación y rollback de la transacción completa. No se ejecutaron porque no se dispone de un servicio Odoo/PostgreSQL de prueba operativo. Se incluye un diagnóstico de solo lectura para revisar el código realmente cargado, trabajadores, cron y tiempos en el servidor del cliente.
+- No cambian los métodos de carga de facturas, cursores por bloque, parser de fechas, SQL de publicación/uniquidad, recursos de interfaz, permisos, esquema, cron XML ni guardas de migración. El registro y la confirmación de las transacciones siguen siendo responsabilidad de Odoo; no se agregan commits manuales.
 
 ## Rendimiento de importación API 1.8.5
 

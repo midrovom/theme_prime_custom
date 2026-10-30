@@ -10,7 +10,7 @@ from ..services.engine import aggregate_invoice, as_date, evaluate, invoice_key,
 from ..services.xlsx_reader import iter_xlsx_rows
 from ..services.import_progress import ACTIVE_STATES, progress_values
 from ..services.import_optimization import (BACKGROUND_BATCH_SIZE, background_limits,
-    next_background_size, iter_presorted_invoice_groups)
+    next_background_size, iter_presorted_invoice_groups, CRON_BUDGET_SECONDS, CRON_MAX_STEPS)
 
 _logger = logging.getLogger(__name__)
 BATCH_SIZE = 500
@@ -391,13 +391,30 @@ class DispatchSnapshot(models.Model):
 
     @api.model
     def _cron_process(self):
+        """Use a short worker slice, then actively wake the continuation.
+
+        Odoo 18 runs at most ten callbacks per scheduler pass. Without another
+        trigger/notification, ready work can wait for the next worker poll.
+        Keep HTTP small, and let the scheduler commit THIS bounded callback.
+        """
         processed = 0
+        started = perf_counter()
         for snapshot in self.search([("state", "in", list(ACTIVE_STATES))], order="id", limit=20):
             if not snapshot._try_import_lock():
                 continue
             snapshot = snapshot.with_context(bin_size=False, dispatch_background=True)
             snapshot.invalidate_recordset()
-            processed += int(snapshot._run_import_step())
+            for _step in range(CRON_MAX_STEPS):
+                phase, before = snapshot.state, snapshot.loaded_invoices
+                if not snapshot._run_import_step():
+                    break
+                processed += 1
+                # Preparation is a separate, potentially large pass. Return to
+                # Odoo immediately so its result can commit and become visible.
+                if phase == "queued" or snapshot.state not in ACTIVE_STATES:
+                    break
+                if snapshot.loaded_invoices <= before or perf_counter() - started >= CRON_BUDGET_SECONDS:
+                    break
             if processed:
                 break
         remaining = self.search_count([("state", "in", list(ACTIVE_STATES))])
@@ -410,6 +427,12 @@ class DispatchSnapshot(models.Model):
                     notify(done=processed, remaining=remaining)
         except Exception:
             _logger.warning("Could not notify dispatch cron progress; imported data is preserved", exc_info=True)
+        if processed and remaining:
+            # _trigger() schedules NOW and Odoo notifies workers AFTER commit.
+            # Do not wake in an all-locked/no-progress pass: avoid a busy loop.
+            snapshot._schedule_import()
+        _logger.info("Dispatch cron steps=%s remaining_snapshots=%s seconds=%.3f",
+            processed, remaining, perf_counter() - started)
 
 
 class DispatchChunk(models.Model):

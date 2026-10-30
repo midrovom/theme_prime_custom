@@ -1,6 +1,16 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.8.5 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.8.6 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Continuación del cron sin esperas entre rondas 1.8.6
+
+La mejora anterior medía el trabajo del importador, sin incluir las esperas del programador de Odoo. El importador devolvía el control después de un solo bloque. Odoo 18 ejecuta como máximo diez llamadas por ronda; el trabajo pendiente podía esperar el siguiente sondeo del trabajador si no llegaba otra notificación.
+
+Ahora una llamada al cron procesa varios bloques, con un presupuesto orientativo de seis segundos entre bloques y un máximo de veinte pasos. La preparación sigue devolviendo el control inmediatamente para guardar su resultado. Si queda trabajo y hubo avance, se solicita una ejecución inmediata con el mecanismo nativo de Odoo, que despierta al trabajador después del commit. No se cambian los tiempos globales ni la prioridad configurada de los cron.
+
+En la prueba local del archivo completo, las llamadas del cron bajaron de 91 a 6, con exactamente las mismas 44.989 facturas y todos sus cálculos; también se comprobó el origen duplicado. Esta comparación usa ORM simulado: no mide la descarga ni la escritura PostgreSQL del servidor. Se aprobaron 251 pruebas Python. Ver `docs/CONTINUACION_CRON_V1_8_6.md` y el diagnóstico de rendimiento de solo lectura incluido.
+
+Reemplazar la carpeta, reiniciar todos los trabajadores Odoo y actualizar el módulo a **18.0.1.8.6**. Mantener activo **Despachos: procesar importaciones por bloques** y retomar la misma carga desde **Importaciones e histórico → Procesar / ver progreso**. Esta revisión no añade campos ni reconstruye facturas históricas.
 
 ## Importación API optimizada 1.8.5
 

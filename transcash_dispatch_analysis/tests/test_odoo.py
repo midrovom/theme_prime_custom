@@ -58,6 +58,61 @@ class TestDispatchIntegration(TransactionCase):
         self.assertTrue(result["background_processing"])
         self.assertEqual(result["state"],"queued")
 
+    def test_cron_preparation_returns_and_requests_continuation(self):
+        snapshot = self._snapshot("cron-prepare-wake")
+        with patch.object(snapshot_module.DispatchSnapshot, "_schedule_import", autospec=True) as wake:
+            self.env["dispatch.snapshot"]._cron_process()
+        snapshot.invalidate_recordset()
+        self.assertEqual(snapshot.state, "loading")
+        self.assertEqual(snapshot.loaded_invoices, 0)
+        self.assertFalse(snapshot.invoice_ids)
+        wake.assert_called_once()
+
+    def test_cron_slice_retains_cursor_and_resumes_without_duplicates(self):
+        ident = self.source.api_start_batch("cron-slice-resume", "2026-01-10")["id"]
+        snapshot = self.env["dispatch.snapshot"].browse(ident)
+        rows = [dict(self.row, NumeroFactura="SLICE-%04d" % i) for i in range(1500)]
+        snapshot.api_append_chunk(0, rows); snapshot.api_finalize(1, len(rows)); snapshot._prepare()
+        with patch.object(snapshot_module, "CRON_MAX_STEPS", 2), \
+             patch.object(snapshot_module, "CRON_BUDGET_SECONDS", 60), \
+             patch.object(snapshot_module, "next_background_size", return_value=500), \
+             patch.object(snapshot_module.DispatchSnapshot, "_schedule_import", autospec=True) as wake:
+            self.env["dispatch.snapshot"]._cron_process()
+        snapshot.invalidate_recordset()
+        self.assertEqual(snapshot.loaded_invoices, 1000)
+        self.assertEqual(len(snapshot.invoice_ids), 1000)
+        self.assertFalse(self.source.active_snapshot_id)
+        wake.assert_called_once()
+        with patch.object(snapshot_module, "CRON_BUDGET_SECONDS", 60):
+            self.env["dispatch.snapshot"]._cron_process()
+        self.assertEqual(snapshot.state, "ready")
+        self.assertEqual(len(snapshot.invoice_ids), 1500)
+        self.assertEqual(len(set(snapshot.invoice_ids.mapped("invoice_key"))), 1500)
+
+    def test_cron_slice_rolls_back_all_its_steps_if_callback_does_not_commit(self):
+        snapshot = self._snapshot("cron-slice-rollback")
+        snapshot._prepare(); snapshot._load_next()
+        ident = self.source.api_start_batch("cron-slice-rollback-many", "2026-01-10")["id"]
+        many = self.env["dispatch.snapshot"].browse(ident)
+        rows = [dict(self.row, NumeroFactura="ROLL-%04d" % i) for i in range(1500)]
+        many.api_append_chunk(0, rows); many.api_finalize(1, len(rows)); many._prepare()
+        with patch.object(snapshot_module, "CRON_MAX_STEPS", 2), \
+             patch.object(snapshot_module, "CRON_BUDGET_SECONDS", 60), \
+             patch.object(snapshot_module, "next_background_size", return_value=500), \
+             patch.object(snapshot_module.DispatchSnapshot, "_schedule_import", autospec=True):
+            try:
+                with self.env.cr.savepoint():
+                    self.env["dispatch.snapshot"]._cron_process()
+                    self.assertEqual(many.loaded_invoices, 1000)
+                    raise RuntimeError("Callback transaction interrupted")
+            except RuntimeError:
+                pass
+        many.invalidate_recordset(); self.source.invalidate_recordset()
+        self.assertEqual(many.loaded_invoices, 0)
+        self.assertFalse(many.invoice_ids)
+        self.assertTrue(all(chunk.processed_count == 0 for chunk in many.chunk_ids.filtered(lambda c: c.phase == "prepared")))
+        self.assertEqual(self.source.active_snapshot_id, snapshot)
+
     def test_background_resumes_old_cursor_and_rolls_back_publication_together(self):
         first = self._snapshot("background-previous")
         first._prepare(); first._load_next()
