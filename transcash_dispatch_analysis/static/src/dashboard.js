@@ -17,6 +17,7 @@ export class DispatchDashboard extends Component {
         this.metrics = METRICS;
         this.dimensions = DIMENSIONS;
         this.state = useState({data: null, loading: true, error: "", builder: false, allLanes: false, appliedFilters: null, defaultsLoaded: false,
+            moreFilters: false, progressBasis: "invoices",
             savedFilters: [], selectedFavorite: "", favoriteName: "", audit: null, auditBusy: false,
             boardId: this.props.action?.params?.board_id || false,
             filters: {source_id: "", snapshot_id: "", date_from: "", date_to: "", city: "", delivery: "", planning_scope: "transcash", planning_grouping: "warehouse", warehouse_ids: []},
@@ -88,6 +89,31 @@ export class DispatchDashboard extends Component {
     get periodLabel() {
         const period = this.state.data.period;
         return period.date_from && period.date_to ? `${this.date(period.date_from)} al ${this.date(period.date_to)}` : "Sin fechas disponibles";
+    }
+    get extraFilterCount() {
+        return ["source_id", "snapshot_id", "city", "delivery"].filter(key => Boolean(this.state.filters[key])).length;
+    }
+    get appliedScopeLabel() {
+        const f = this.state.appliedFilters || this.state.filters;
+        const labels = [];
+        if (f.source_id) labels.push(this.state.data.sources.find(s => s.id === Number(f.source_id))?.name || "Fuente seleccionada");
+        if (f.snapshot_id) labels.push("Corte histórico");
+        labels.push(f.city || "Todas las ciudades", f.delivery || "Todas las modalidades");
+        if (f.warehouse_ids?.length) labels.push(`${f.warehouse_ids.length} bodegas`);
+        return labels.join(" · ");
+    }
+    get progressChart() {
+        return this.state.data.dispatch_progress[this.state.progressBasis];
+    }
+    progressStyle() {
+        const chart = this.progressChart;
+        if (!chart.available) return "background:#e8edf5";
+        let position = 0;
+        return "background:conic-gradient(" + chart.series.map(part => {
+            const from = position;
+            position += part.pct || 0;
+            return `${part.color} ${from}% ${position}%`;
+        }).join(",") + ")";
     }
     get transportLanes() {
         const lanes = this.state.data.transport.lanes;
@@ -176,9 +202,11 @@ export class DispatchDashboard extends Component {
             if (request === this.requestNumber) this.state.loading = false;
         }
     }
-    async detail(category) {
+    async detail(category, agreementKey = false) {
         try {
-            const action = await this.orm.call("dispatch.dashboard", "get_detail_action", [this.state.appliedFilters || this.state.filters, category]);
+            const args = [this.state.appliedFilters || this.state.filters, category];
+            if (category === "agreement") args.push(agreementKey);
+            const action = await this.orm.call("dispatch.dashboard", "get_detail_action", args);
             return await this.action.doAction(action);
         } catch (error) {
             this.notification.add(error.data?.message || error.message || "No se pudo abrir el detalle.", {type: "danger"});

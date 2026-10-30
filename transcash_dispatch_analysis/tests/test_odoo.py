@@ -316,3 +316,17 @@ class TestDispatchIntegration(TransactionCase):
         warehouse_action = service.get_warehouse_action(filters)
         self.assertTrue(warehouse_action["views"])
         self.assertIn(("invoice_id.invoice_date", ">=", "2026-01-01"), warehouse_action["domain"])
+
+    def test_overview_agreement_and_weight_pie_share_import_and_domain(self):
+        self.row.update({"PesoPendiente": 2000, "PesoDespacho": 8000, "Facturado": 10,
+            "DespachoFisico": 8, "Pendiente": 2, "UltimoDespacho": "2026-01-02"})
+        snapshot = self._snapshot("overview-pie")
+        snapshot._prepare(); snapshot._load_next()
+        service = self.env["dispatch.dashboard"]
+        filters = {"source_id": self.source.id, "date_from": "2026-01-01", "date_to": "2026-01-01"}
+        result = service.get_data(filters)
+        self.assertEqual(result["agreements"]["groups"][0]["key"], "calendar:2")
+        self.assertEqual(result["agreements"]["groups"][0]["pending_tons"], 2)
+        self.assertEqual([p["pct"] for p in result["dispatch_progress"]["tons"]["series"]], [80, 20])
+        action = service.get_detail_action(filters, "agreement", "calendar:2")
+        self.assertIn(("id", "in", snapshot.invoice_ids.ids), action["domain"])

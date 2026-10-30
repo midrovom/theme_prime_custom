@@ -1,6 +1,14 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.6.1 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.7.0 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Panorama inicial, plazos y pastel 1.7
+
+Los filtros principales ocupan una barra compacta: Desde, Hasta, bodegas, favorito y Aplicar. Fuente, corte, ciudad y modalidad quedan en Más filtros; guardar vistas y los atajos de fechas están en Opciones. Los indicadores generales, el pastel y los pendientes por acuerdo aparecen antes del detalle de vehículos. Se mantiene la conservación de fechas al cambiar de vista.
+
+**Pendientes por plazo de entrega** agrupa por los días y calendario SLA realmente aplicados a las facturas: 3, 9 o cualquier plazo configurado, con facturas pendientes, toneladas, en plazo, vencidas y por revisar. Permite abrir el grupo exacto. Muestra también lo que vence hoy y en los próximos tres días calendario desde cada corte.
+
+El pastel usa el total facturado como referencia del 100%. En Facturas separa Con pendiente y Sin pendiente; en Toneladas separa Despachado y Pendiente sobre una base de pesos comparables, indicando la cobertura parcial cuando existe. No suma Facturado y Pendiente como dos partes independientes. Ver `docs/PANORAMA_PLAZOS_V1_7.md`.
 
 ## Conservar fechas al cambiar de vista 1.6.1
 

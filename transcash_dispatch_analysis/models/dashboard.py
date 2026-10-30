@@ -7,12 +7,13 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval
 from ..services.engine import aggregate_invoice, as_date, evaluate, grouped, summarize, METRICS, GROUPS
 from ..services.planning import build_transport_plan
+from ..services.overview import pending_by_agreement, dispatch_progress
 
 READ_FIELDS = ["name", "invoice_key", "snapshot_id", "source_id", "company_id", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
     "state", "pending", "pending_lines", "pending_weight", "pending_boxes", "pending_pallets", "has_adjustment", "physically_completed", "source_warnings", "source_grain",
     "completion_date", "quality_flags", "quality_issue", "cutoff_date", "age_days", "lead_days", "lead_available", "sla_configured",
     "deadline", "sla_status", "late_days", "eligible", "mature", "on_time", "invoiced_weight", "dispatched_weight", "invoiced_weight_missing_rows", "dispatched_weight_missing_rows",
-    "line_count", "invoiced_pallets", "invoiced_pallets_missing_rows", "pending_pallets_missing_rows"]
+    "line_count", "invoiced_pallets", "invoiced_pallets_missing_rows", "pending_pallets_missing_rows", "sla_days", "sla_day_type"]
 
 
 class DispatchDashboard(models.AbstractModel):
@@ -107,6 +108,8 @@ class DispatchDashboard(models.AbstractModel):
                 scoped.append({**row,**evaluate(summary,packs_for_scope.get(row["snapshot_id"][0],{}))})
             rows = scoped
         stats = summarize(rows)
+        agreements = pending_by_agreement(rows, include_ids)
+        progress = dispatch_progress(rows, transport_lines)
         companies = self.env["res.company"].browse(sorted({r["company_id"][0] for r in rows}))
         packs = self.env["dispatch.transport.settings"]._planning_packs(companies)
         transport = build_transport_plan(rows, transport_lines, packs, scope, grouping)
@@ -181,8 +184,12 @@ class DispatchDashboard(models.AbstractModel):
                 "quality":[r["id"] for r in rows if r["quality_issue"]],
                 "lead":[r["id"] for r in rows if r["lead_days"] is not None],
                 "mature":[r["id"] for r in rows if r["mature"]],
-                "no_rule":[r["id"] for r in rows if not r["sla_configured"]]}
+                "no_rule":[r["id"] for r in rows if not r["sla_configured"]],
+                "agreements": {group["key"]: group["invoice_ids"] for group in agreements["groups"]}}
+            for group in agreements["groups"]:
+                group.pop("invoice_ids")
         return {"stats": stats, "cities": cities, "period": period, "transport": transport,"detail_ids":detail_ids,
+                "agreements": agreements, "dispatch_progress": progress,
                 "warehouse_options":self.env["dispatch.warehouse"].search_read([], ["name","code","company_id"],order="name,code"),
                 "warehouse_scope":bool(warehouse_ids),
                 "aging": [{"label": label, "value": value} for label, value in zip(["0–2 días", "3–5 días", "6–10 días", "11–30 días", "31–60 días", "Más de 60"], aging)],
@@ -253,14 +260,21 @@ class DispatchDashboard(models.AbstractModel):
         return {"id":existing.id,"name":existing.name}
 
     @api.model
-    def get_detail_action(self, filters=None, category="all"):
+    def get_detail_action(self, filters=None, category="all", agreement_key=False):
         domain = self._domain(filters)
         additions = {"all": [], "pending": [("pending", "=", True)], "overdue": [("sla_status", "=", "overdue")],
                      "quality": [("quality_issue", "=", True)], "lead": [("lead_available", "=", True)],
                      "mature": [("mature", "=", True)], "no_rule": [("sla_configured", "=", False)]}
-        if category not in additions:
+        if category == "agreement":
+            if not isinstance(agreement_key, str) or len(agreement_key) > 50:
+                raise ValidationError(_("Plazo de entrega no permitido."))
+            groups = self.get_data(filters, False, True)["detail_ids"]["agreements"]
+            if agreement_key not in groups:
+                raise ValidationError(_("El plazo no tiene pendientes con los filtros seleccionados."))
+            additions[category] = [("id", "in", groups[agreement_key])]
+        elif category not in additions:
             raise ValidationError(_("Categoría no permitida."))
-        if filters and filters.get("warehouse_ids"):
+        if category != "agreement" and filters and filters.get("warehouse_ids"):
             ids=self.get_data(filters,False,True)["detail_ids"][category]
             additions[category]=[("id","in",ids)]
         return {"type": "ir.actions.act_window", "name": _("Análisis de despachos"), "res_model": "dispatch.invoice",

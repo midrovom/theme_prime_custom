@@ -1,4 +1,13 @@
-# Validación de la entrega 18.0.1.6.1
+# Validación de la entrega 18.0.1.7.0
+
+## Panorama y acuerdos 1.7
+
+- 140 pruebas Python sin Odoo, incluyendo nuevos casos de grupos de acuerdos, calendarios diferentes, cero días, ajustes, próximos vencimientos por fecha de corte, porcentajes sin solapamiento, pesos incompletos/no conciliados y acciones de detalle con la misma población. Se comprueban también el desglose por bodegas y las toneladas comparables de la selección múltiple.
+- 34 comprobaciones con el XML y componente reales montados en OWL 2.8.1 y jsdom: filtros adicionales plegados, cambio de pastel, cobertura parcial, grupos de 3/9 días, botón de grupo, preservación de fechas/favoritos y regresiones del tablero.
+- Navegador Chromium 153.0.8010.0 real con el componente OWL y SCSS compilado, datos ilustrativos y RPC simulado: filtros superiores de 54 px en resoluciones 1440×900 y 1366×768; indicadores, pastel y tabla de acuerdos visibles en la primera pantalla de esas pruebas. Inspección de capturas de escritorio y 390×844, sin desbordamiento horizontal del documento. Se prueban los eventos de Más filtros, pastel por toneladas y detalle por acuerdo. La prueba usa una cabecera ilustrativa; no sustituye la instalación con el tema y cliente completo de Odoo.
+- LibSass 3.6.6 compila ambos estilos del módulo y su concatenación.
+- Auditoría del XLSX original con las reglas iniciales de referencia: 44.989 facturas, 383 pendientes y 1.030,61176 t conocidas. Acuerdo de 3 días: 115 pendientes; acuerdo de 9 días: 268. En 30/09/2026–29/10/2026: 5.222 facturas, 281 pendientes, repartidas en 50 de 3 días y 231 de 9 días. Los grupos, toneladas pendientes y pastel por facturas concilian con sus KPI. La base comparable de peso cubre 4.687 de esas 5.222 facturas y se marca parcial. Estas cifras son del archivo recibido y no de una consulta a la base remota.
+- Sintaxis, manifiesto, referencias de vistas y permisos. La instalación, las pruebas nativas añadidas y el tema de Odoo del cliente siguen pendientes de validación en su servidor.
 
 ## Corrección de fechas 1.6.1
 
@@ -34,7 +43,7 @@ Se reprodujo el fallo de compilación del SCSS del paquete 1.5 con LibSass 3.6.6
 - No se ha consultado ni modificado la base remota del cliente. La sospecha de duplicación por sus dos cargas debe comprobarse con el botón Validar / consolidar duplicados después de actualizar.
 - Instalación/actualización y ejecución de las pruebas de integración nativas incluidas con Odoo 18 y PostgreSQL. Incluyen dos cargas, fuentes superpuestas, favoritos, bodegas y conversión de datos anteriores.
 - Ejecución real del índice parcial único, SQL de actualización de datos previos, transacciones, concurrencia y permisos ir.filters con usuarios reales.
-- Sesión completa del cliente web Odoo y revisión visual en escritorio/móvil. El montaje en DOM de OWL 1.6 se ha probado; no hay servidor Odoo ni ejecutable Chromium local.
+- Sesión completa del cliente web Odoo con el tema del cliente. En 1.7 se probó el componente en Chromium local y se revisaron capturas de escritorio/móvil con datos ilustrativos; no se ha cargado el servidor Odoo remoto.
 - Capacidades reales de carga, ciclos de ruta, volumen, acceso y disponibilidad de flota antes de contratar.
 
 Los cortes históricos se conservan como versiones explícitas fuera de los totales operativos. La entrega no afirma una limpieza ya ejecutada en el servidor del cliente. Ver UNICOS_BODEGAS_V1_5.md para actualizar y verificar esa base sin subir el Excel otra vez.
