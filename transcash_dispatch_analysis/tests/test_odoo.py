@@ -58,6 +58,38 @@ class TestDispatchIntegration(TransactionCase):
         self.assertTrue(result["background_processing"])
         self.assertEqual(result["state"],"queued")
 
+    def test_background_resumes_old_cursor_and_rolls_back_publication_together(self):
+        first = self._snapshot("background-previous")
+        first._prepare(); first._load_next()
+        ident = self.source.api_start_batch("background-existing-cursor", "2026-01-10")["id"]
+        snapshot = self.env["dispatch.snapshot"].browse(ident)
+        rows = [dict(self.row, NumeroFactura="BG-%04d" % i) for i in range(600)]
+        snapshot.api_append_chunk(0, rows); snapshot.api_finalize(1, len(rows)); snapshot._prepare()
+        snapshot._load_next()
+        self.assertEqual(snapshot.loaded_invoices, 100)
+        background = snapshot.with_context(dispatch_background=True, bin_size=False)
+        background._run_import_step()
+        snapshot.invalidate_recordset()
+        self.assertEqual(snapshot.loaded_invoices, 500)
+        self.assertEqual(self.source.active_snapshot_id, first)
+        snapshot.background_batch_size = 500
+        try:
+            with self.env.cr.savepoint():
+                background._run_import_step()
+                self.assertEqual(snapshot.state, "ready")
+                raise RuntimeError("Simulated rollback before cron commit")
+        except RuntimeError:
+            pass
+        snapshot.invalidate_recordset(); self.source.invalidate_recordset()
+        self.assertEqual(snapshot.state, "loading")
+        self.assertEqual(snapshot.loaded_invoices, 500)
+        self.assertEqual(len(snapshot.invoice_ids), 500)
+        self.assertEqual(self.source.active_snapshot_id, first)
+        background._run_import_step()
+        self.assertEqual(snapshot.state, "ready")
+        self.assertEqual(len(snapshot.invoice_ids), 600)
+        self.assertEqual(len(snapshot.invoice_ids.filtered("is_current")), 600)
+
     def test_atomic_snapshot_activation(self):
         first = self._snapshot("first")
         first._prepare()

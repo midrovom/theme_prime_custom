@@ -3,11 +3,14 @@ import hashlib
 import json
 import logging
 import uuid
+from time import perf_counter
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 from ..services.engine import aggregate_invoice, as_date, evaluate, invoice_key, iter_invoice_groups, normalize, number, unique_invoice_lines, weight_metrics, pallet_metrics
 from ..services.xlsx_reader import iter_xlsx_rows
 from ..services.import_progress import ACTIVE_STATES, progress_values
+from ..services.import_optimization import (BACKGROUND_BATCH_SIZE, background_limits,
+    next_background_size, iter_presorted_invoice_groups)
 
 _logger = logging.getLogger(__name__)
 BATCH_SIZE = 500
@@ -29,6 +32,8 @@ class DispatchSnapshot(models.Model):
     batch_key = fields.Char(required=True, index=True, default=lambda s: str(uuid.uuid4()))
     cutoff_date = fields.Date(required=True, string="Corte de datos")
     input_type = fields.Selection([("xlsx", "Excel"), ("api", "API")], required=True)
+    api_grouped_rows = fields.Boolean(default=False, readonly=True,
+        help="La nueva consulta ERP guarda las líneas ordenadas de forma estable por factura. Los lotes anteriores usan la ruta general.")
     state = fields.Selection(STATES, required=True, default="queued", index=True)
     file_name = fields.Char()
     raw_file = fields.Binary(attachment=True, string="Excel original", copy=False)
@@ -42,6 +47,8 @@ class DispatchSnapshot(models.Model):
     started_at = fields.Datetime(readonly=True)
     finished_at = fields.Datetime(readonly=True)
     last_progress_at = fields.Datetime(string="Último avance", readonly=True)
+    background_batch_size = fields.Integer(default=BACKGROUND_BATCH_SIZE, readonly=True, copy=False)
+    last_step_seconds = fields.Float(string="Segundos del último paso", readonly=True, copy=False)
     progress_percent = fields.Float(string="Progreso de facturas", compute="_compute_progress", digits=(16, 1))
     progress_message = fields.Char(string="Avance", compute="_compute_progress")
     error_message = fields.Text(string="Detalle del error", readonly=True)
@@ -115,6 +122,7 @@ class DispatchSnapshot(models.Model):
         self.ensure_one()
         if self.state not in ACTIVE_STATES:
             return False
+        started, phase, before = perf_counter(), self.state, self.loaded_invoices
         try:
             with self.env.cr.savepoint():
                 if self.state == "queued":
@@ -125,6 +133,15 @@ class DispatchSnapshot(models.Model):
         except Exception as exc:
             _logger.exception("Dispatch import failed for snapshot %s", self.id)
             self.write({"state": "error", "error_message": str(exc)[:3000], "last_progress_at": fields.Datetime.now()})
+        else:
+            elapsed = perf_counter() - started
+            processed = self.loaded_invoices - before
+            timing = {"last_step_seconds": elapsed}
+            if phase == "loading" and self.env.context.get("dispatch_background"):
+                timing["background_batch_size"] = next_background_size(self.background_batch_size, processed, elapsed)
+            self.write(timing)
+            _logger.info("Dispatch import snapshot=%s phase=%s invoices=%s/%s step_invoices=%s seconds=%.3f",
+                self.id, phase, self.loaded_invoices, self.total_invoices, processed, elapsed)
         return True
 
     def _schedule_import(self):
@@ -224,7 +241,8 @@ class DispatchSnapshot(models.Model):
             raise UserError(_("Seleccione un corte terminado."))
         clone = self.create({"name": "%s · nuevos parámetros" % self.name, "source_id": self.source_id.id,
             "company_id": self.company_id.id, "cutoff_date": self.cutoff_date, "input_type": self.input_type,
-            "raw_file": self.raw_file, "file_name": self.file_name, "state": "queued", "total_rows": self.total_rows})
+            "raw_file": self.raw_file, "file_name": self.file_name, "state": "queued", "total_rows": self.total_rows,
+            "api_grouped_rows": self.api_grouped_rows})
         if self.input_type == "api":
             for chunk in self.chunk_ids.filtered(lambda c: c.phase == "raw"):
                 chunk.copy({"snapshot_id": clone.id})
@@ -255,7 +273,10 @@ class DispatchSnapshot(models.Model):
         self.write({"started_at": fields.Datetime.now(), "loaded_invoices": 0, "error_message": False})
         batch, seq, row_count, invoice_count, duplicates, updates = [], 0, 0, 0, 0, 0
         cities = set()
-        for key, rows in iter_invoice_groups(self._rows()):
+        # New ERP pulls are already stably grouped. Older API pushes and Excel
+        # retain the disk-backed path, including existing resumable snapshots.
+        grouping = iter_presorted_invoice_groups if self.input_type == "api" and self.api_grouped_rows else iter_invoice_groups
+        for key, rows in grouping(self._rows()):
             unique, removed, changed = unique_invoice_lines(rows)
             summary = aggregate_invoice(key, unique, self.cutoff_date)
             duplicates += removed
@@ -330,10 +351,12 @@ class DispatchSnapshot(models.Model):
             start = int(chunk.processed_count or 0)
             if start < 0 or start >= len(data):
                 raise ValueError("El avance guardado del bloque no es válido. Revise la importación.")
+            invoice_limit, line_limit = (background_limits(self.background_batch_size)
+                if self.env.context.get("dispatch_background") else (LOAD_BATCH_SIZE, LOAD_LINE_LIMIT))
             stop, lines = start, 0
-            while stop < len(data) and stop - start < LOAD_BATCH_SIZE:
+            while stop < len(data) and stop - start < invoice_limit:
                 count = len(data[stop]["lines"])
-                if stop > start and lines + count > LOAD_LINE_LIMIT:
+                if stop > start and lines + count > line_limit:
                     break
                 lines += count
                 stop += 1
@@ -372,6 +395,7 @@ class DispatchSnapshot(models.Model):
         for snapshot in self.search([("state", "in", list(ACTIVE_STATES))], order="id", limit=20):
             if not snapshot._try_import_lock():
                 continue
+            snapshot = snapshot.with_context(bin_size=False, dispatch_background=True)
             snapshot.invalidate_recordset()
             processed += int(snapshot._run_import_step())
             if processed:

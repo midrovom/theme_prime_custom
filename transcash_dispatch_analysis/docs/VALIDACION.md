@@ -1,4 +1,12 @@
-# Validación de la entrega 18.0.1.8.4
+# Validación de la entrega 18.0.1.8.5
+
+## Rendimiento de importación API 1.8.5
+
+- 239 pruebas Python autónomas aprobadas: 222 anteriores y 17 nuevas. Se comprueban igualdad de agrupación frente al motor general, actualización repetida que cruza bloques recibidos, orden estable, rechazo de una marca de ordenamiento incorrecta, compatibilidad de cargas antiguas, caché de columnas, límites adaptativos, factura excepcional completa, cursor antiguo y contexto de cron.
+- El archivo de referencia completo se convierte a filas ERP y recorre los métodos reales del módulo con un ORM simulado: 54.392 líneas, 44.989 facturas, 383 pendientes, 1.030,61176 toneladas y 830,78 pallets pendientes. Coincide la huella de todos los valores calculados de factura antes/después. Los bloques de carga bajan de 450 a 90 cuando el trabajo medido permite lotes de 500. Ver `RENDIMIENTO_API_V1_8_5.json` para las mediciones y su alcance.
+- Se repite la carga con 108.784 líneas (origen completo duplicado). Se conservan las mismas 44.989 facturas y 54.392 detalles, se detectan 54.392 repeticiones y coinciden las toneladas, pallets y huella de cálculos. No se está auditando la base instalada del cliente.
+- Tres nuevas pruebas nativas Odoo incluidas para agrupación sin SQLite y reaplicación, rollback de preparación inválida y recuperación/publicación atómica con lotes de segundo plano. No se ejecutaron: el entorno local no tiene servicio Odoo/PostgreSQL. Las duraciones locales excluyen descarga ERP, escritura PostgreSQL, commits y competencia entre trabajos del servidor.
+- Interfaz, estilos, cálculos comerciales, parser de fechas, publicación única, credenciales, cron XML y guardas de actualización rápida conservados. Se valida la sintaxis y referencias del paquete. No se reinstala ni se altera la programación configurada por el administrador.
 
 ## Reconexión y procesamiento acotado 1.8.4
 

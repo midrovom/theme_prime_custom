@@ -186,10 +186,15 @@ def convert_dispatch_payload(raw, today, timezone="America/Guayaquil"):
     if date.fromisoformat(cutoff) > as_date(today):
         raise DispatchAPIError("El corte recibido de la API es posterior a hoy.")
     rows, winners = [], {}
+    # Column names repeat for every row. Normalize each distinct name once per
+    # response instead of applying Unicode/regex work millions of times.
+    canonical_names = {}
     for index, item in enumerate(received, 1):
         row = {}
         for name, value in item.items():
-            canonical = ALIASES.get(_key(name), name)
+            if name not in canonical_names:
+                canonical_names[name] = ALIASES.get(_key(name), name)
+            canonical = canonical_names[name]
             if canonical in row and row[canonical] != value:
                 raise DispatchAPIError("La línea %s contiene columnas equivalentes con valores distintos." % index)
             row[canonical] = value
@@ -231,8 +236,12 @@ def convert_dispatch_payload(raw, today, timezone="America/Guayaquil"):
             "unique_lines": len(winners), "duplicate_rows": len(rows) - len(winners)}
 
 
-def iter_api_chunks(rows):
+def iter_api_chunks(rows, group_invoices=False):
     """Respect the existing authenticated intake's row and byte limits."""
+    if group_invoices:
+        # Stable sort preserves the last-observation-wins order of repeated
+        # details. Only the server's new pull path marks this intake as sorted.
+        rows = sorted(rows, key=invoice_key)
     chunk, size = [], 2
     for row in rows:
         length = len(json.dumps(row, ensure_ascii=False, sort_keys=True, allow_nan=False,

@@ -8,7 +8,7 @@ La API y Excel convergen en el mismo procesamiento de cortes: ciudades, parámet
 
 ## Configuración inicial
 
-1. Actualizar `transcash_dispatch_analysis` a 18.0.1.8.4, con `api_administrator` disponible en addons. Reiniciar Odoo y actualizar el módulo; no desinstalar ni volver a importar el Excel. Esta actualización agrega el cursor de avance de los bloques; requiere actualizar la base, además de copiar los archivos.
+1. Actualizar `transcash_dispatch_analysis` a 18.0.1.8.5, con `api_administrator` disponible en addons. Reiniciar Odoo y actualizar el módulo; no desinstalar ni volver a importar el Excel. Esta actualización conserva el cursor de avance y agrega el control de agrupación y tamaño adaptativo; requiere actualizar la base, además de copiar los archivos.
 2. Seleccionar la empresa correspondiente. En API Administrator, configurar **exactamente un registro GET activo**:
 
    | Campo | Valor |
@@ -75,7 +75,7 @@ La paginación declarada (`has_more`, `next_page`, `next`, `links.next`, `total_
 
 1. Un bloqueo por fuente evita descargar y cargar al mismo tiempo desde cron, botón y Excel. Si ya hay una importación recibiendo/en cola/importando, se devuelve su progreso y no se hace otra descarga.
 2. Se normalizan y validan los registros. Una huella de su contenido efectivo permite conservar el corte vigente si no hubo cambios en el mismo día/corte. El orden de las filas no genera versiones nuevas; repetir el feed completo tampoco.
-3. Si cambian las facturas, se recibe un corte nuevo por bloques de hasta 5.000 filas/20 MiB. Desde 1.8.4, la pantalla prioriza el cron de importación existente y consulta su avance. Si ese cron está desactivado, conserva el procesamiento interactivo en operaciones acotadas; un cursor guardado permite continuar un mismo bloque grande tras una respuesta perdida.
+3. Si cambian las facturas, se recibe un corte nuevo por bloques de hasta 5.000 filas/20 MiB. Desde 1.8.5, las nuevas consultas guardan las filas agrupadas de forma estable por factura y evitan el segundo ordenamiento en disco. El cron de importación carga inicialmente hasta 500 facturas/2.500 líneas por transacción y adapta su tamaño al tiempo observado; no divide una factura individual. La pantalla consulta su avance. Si ese cron está desactivado, conserva las operaciones interactivas de 100 facturas/500 líneas; el cursor permite continuar tras una respuesta perdida. Las cargas anteriores permanecen compatibles.
 4. Las ciudades se crean antes de capturar los parámetros: **Guayaquil 3 días calendario, demás ciudades 9**. Las reglas existentes, editadas o archivadas se respetan; no se reinician cada dos horas.
 5. El corte anterior permanece visible hasta completar todos los bloques. Al terminar se publica una sola versión vigente por compañía/tipo/número. Los históricos se conservan fuera de los indicadores. Las anulaciones/exclusiones del universo se reflejan al sustituir el corte completo.
 6. Una factura totalmente despachada sigue en la respuesta con Pendiente=0 y sus acumulados reales. Así deja de sumar carga pendiente y permanece en el denominador de facturación/cumplimiento.

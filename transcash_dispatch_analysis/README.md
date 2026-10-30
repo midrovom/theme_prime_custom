@@ -1,6 +1,16 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.8.4 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.8.5 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Importación API optimizada 1.8.5
+
+Las consultas ERP nuevas agrupan las líneas por factura una sola vez, respetando el orden de las actualizaciones repetidas. La preparación las recorre directamente y evita su segundo ordenamiento mediante SQLite. Los nombres de columnas se normalizan una vez por respuesta, en lugar de repetir ese trabajo por cada línea.
+
+El cron carga inicialmente hasta **500 facturas / 2.500 líneas** por transacción y ajusta los siguientes lotes entre 50 y 500 facturas según el tiempo observado, con un objetivo orientativo de tres segundos. Una factura individual se conserva completa. Los cursores y la publicación al terminar se mantienen; el procesamiento interactivo conserva su límite de 100 facturas / 500 líneas. Las cargas anteriores se pueden retomar y aprovechan los lotes mayores del cron; sus datos recibidos mantienen la preparación general cuando todavía no estaban ordenados.
+
+La comparación local con las 54.392 líneas del archivo de referencia mantiene las mismas 44.989 facturas y todos los resultados calculados; el número de bloques de carga baja de 450 a 90. También se probó el origen duplicado completo sin duplicar las facturas ni sus toneladas/pallets. Se registran duraciones de descarga, normalización y procesamiento para distinguir demoras del ERP y de Odoo. Ver `docs/OPTIMIZACION_API_V1_8_5.md` y su medición local adjunta. Estas mediciones no incluyen la API ni la base remota.
+
+Reemplazar la carpeta, reiniciar Odoo y **actualizar el módulo a 18.0.1.8.5**; la actualización agrega tres campos de control, sin reconstrucción histórica automática. Con el cron de importación activo, abrir la misma carga desde **Importaciones e histórico → Procesar / ver progreso**. No volver a descargar ni subir el origen si ya está recibido.
 
 ## Recuperación de conexión y trabajo en segundo plano 1.8.4
 

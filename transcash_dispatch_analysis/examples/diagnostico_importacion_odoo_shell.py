@@ -14,5 +14,5 @@ if cron:
 
 print("Últimas cargas sin terminar:")
 snapshots = env["dispatch.snapshot"].sudo().search([("state", "in", ["receiving", "queued", "loading", "error"])], order="id desc", limit=10)
-pprint(snapshots.read(["name", "company_id", "source_id", "input_type", "state", "total_rows", "total_invoices", "loaded_invoices", "last_progress_at", "error_message"]))
+pprint(snapshots.read([name for name in ("name", "company_id", "source_id", "input_type", "state", "total_rows", "total_invoices", "loaded_invoices", "last_progress_at", "api_grouped_rows", "background_batch_size", "last_step_seconds", "error_message") if name in snapshots._fields]))
 print("Este diagnóstico no modifica registros ni inicia importaciones.")

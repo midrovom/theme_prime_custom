@@ -1,6 +1,7 @@
 """Pull an ERP snapshot on demand or every two hours; publish with the existing queue."""
 from datetime import datetime
 import logging
+from time import perf_counter
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
@@ -75,7 +76,14 @@ class DispatchSourceAPI(models.Model):
                 # Cron and interactive sync agree on the exporter's local day.
                 timezone = self.company_id.partner_id.tz or "America/Guayaquil"
                 today = fields.Date.context_today(self.with_context(tz=timezone))
-                dataset = convert_dispatch_payload(fetch_dispatch_api(self.env), today, timezone)
+                started = perf_counter()
+                raw = fetch_dispatch_api(self.env)
+                received_at = perf_counter()
+                dataset = convert_dispatch_payload(raw, today, timezone)
+                normalized_at = perf_counter()
+                del raw
+                _logger.info("Dispatch API source=%s company=%s rows=%s download_seconds=%.3f normalize_seconds=%.3f",
+                    self.id, self.company_id.id, len(dataset["rows"]), received_at - started, normalized_at - received_at)
                 current = self.active_snapshot_id
                 if current and dataset["cutoff_date"] < str(current.cutoff_date):
                     raise DispatchAPIError(_("El corte de la API es anterior al vigente. Revise fecha_corte en el ERP; no se reemplazaron los datos actuales."))
@@ -91,12 +99,15 @@ class DispatchSourceAPI(models.Model):
                         "source_id": self.id, "company_id": self.company_id.id,
                         "cutoff_date": dataset["cutoff_date"], "input_type": "api", "state": "receiving",
                         "file_name": ENDPOINT, "api_payload_checksum": dataset["checksum"],
+                        "api_grouped_rows": True,
                     })
                     count = 0
-                    for index, chunk in enumerate(iter_api_chunks(dataset["rows"])):
+                    for index, chunk in enumerate(iter_api_chunks(dataset["rows"], group_invoices=True)):
                         snapshot.api_append_chunk(index, chunk)
                         count += 1
                     snapshot.api_finalize(count, len(dataset["rows"]))
+                    _logger.info("Dispatch API source=%s snapshot=%s raw_chunks=%s stage_seconds=%.3f",
+                        self.id, snapshot.id, count, perf_counter() - normalized_at)
                     result = "queued"
                     message = _("Se recibieron %s líneas. El procesamiento por bloques actualiza las facturas por TipoFactura + NumeroFactura; el corte anterior sigue visible hasta terminar.") % len(dataset["rows"])
                 self.write({"api_last_result": result, "api_last_message": message,

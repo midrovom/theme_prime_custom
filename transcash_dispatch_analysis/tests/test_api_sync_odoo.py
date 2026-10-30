@@ -77,6 +77,38 @@ class TestDispatchAPISync(TransactionCase):
         self.assertEqual(snapshot.invoice_ids.pending_weight, 14000)
         self.assertEqual(snapshot.duplicate_rows, 1)
 
+    def test_sorted_pull_uses_streaming_prepare_and_preserves_last_update(self):
+        rows = [dict(self.row, NumeroFactura="0002"), self.row,
+                dict(self.row, Pendiente=4, PesoPendiente=4000)]
+        result, _ = self.pull(rows)
+        snapshot = self.env["dispatch.snapshot"].browse(result["snapshot_id"])
+        self.assertTrue(snapshot.api_grouped_rows)
+        with patch.object(snapshot_model, "iter_invoice_groups", side_effect=AssertionError("Grouped pull must not use SQLite")):
+            self.finish(result)
+        self.assertEqual(len(snapshot.invoice_ids), 2)
+        self.assertEqual(self.current().pending_weight, 4000)
+        self.assertEqual(snapshot.duplicate_rows, 1)
+        action = snapshot.action_recalculate()
+        clone = self.env["dispatch.snapshot"].browse(action["params"]["snapshot_id"])
+        self.assertTrue(clone.api_grouped_rows)
+
+    def test_invalid_grouping_rolls_back_prepare_and_keeps_current_snapshot(self):
+        first = self.finish(self.pull([self.row])[0])
+        ident = self.source.api_start_batch("bad-grouping", "2026-01-10")["id"]
+        snapshot = self.env["dispatch.snapshot"].browse(ident)
+        snapshot.api_grouped_rows = True
+        # Fail after at least one 500-invoice prepared chunk was written, so
+        # this checks rollback of partial preparation rather than early input.
+        rows = [dict(self.row, NumeroFactura="%04d" % i) for i in range(501)]
+        rows.append(dict(self.row, NumeroFactura="0000"))
+        snapshot.api_append_chunk(0, rows)
+        snapshot.api_finalize(1, len(rows))
+        result = snapshot.process_import_step()
+        self.assertTrue(result["failed"])
+        self.assertEqual(self.source.active_snapshot_id, first)
+        self.assertFalse(snapshot.invoice_ids)
+        self.assertFalse(snapshot.chunk_ids.filtered(lambda c: c.phase == "prepared"))
+
     def test_api_city_defaults_preserve_edited_rules(self):
         first = self.finish(self.pull([self.row])[0])
         self.assertEqual(first.invoice_ids.sla_days, 9)

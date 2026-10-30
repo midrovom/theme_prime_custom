@@ -158,6 +158,7 @@ class Invoices:
 class Environment:
     def __init__(self):
         self.cr = Cursor(); self.su = False
+        self.context = {}
         self.user = SimpleNamespace(has_group=lambda name:True)
         self.invoices = Invoices(); self.chunks = Chunks(self)
         self.models = {"dispatch.invoice":self.invoices,"dispatch.chunk":self.chunks,
@@ -186,6 +187,7 @@ class Job:
         self.env = Environment(); self.id = 7; self.state = "queued"
         self.name = "Test import"; self.file_name = "test.xlsx"; self.input_type = "xlsx"
         self.raw_file = False; self.error_message = ""; self.last_progress_at = False
+        self.api_grouped_rows = False; self.background_batch_size = 500; self.last_step_seconds = 0
         self.total_invoices = self.loaded_invoices = self.total_rows = 0
         self.policy_pack = {}; self.cutoff_date = date(2026,10,29)
         self.company_id = Company(1)
@@ -198,7 +200,7 @@ class Job:
     def _operator(self):
         if not self.authorized: raise FakeAccessError("Not authorized")
     def sudo(self): self.sudo_calls += 1; return self
-    def with_context(self, **kwargs): self.context.update(kwargs); return self
+    def with_context(self, **kwargs): self.context.update(kwargs); self.env.context.update(kwargs); return self
     def write(self, values): self.__dict__.update(values)
     @property
     def invoice_ids(self): return self.env.invoices
