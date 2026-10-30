@@ -36,6 +36,13 @@ ALIASES = {_key(name): name for name in FIELD_NAMES}
 ALIASES.update({"TIPO": "TipoFactura", "NUMERO": "NumeroFactura",
                 "PESODESPACHADO": "PesoDespacho", "FECHAULTIMODESPACHO": "UltimoDespacho"})
 
+# Ecuador's exporter uses day/month/year. Never guess month/day/year from
+# ambiguous values such as 05/01/2026.
+LOCAL_DATE = re.compile(
+    r"^(?P<day>\d{1,2})(?P<separator>[/\-])(?P<month>\d{1,2})(?P=separator)(?P<year>\d{4})"
+    r"(?:[ T](?P<hour>\d{1,2}):(?P<minute>\d{2})(?::(?P<second>\d{2})(?:[.,](?P<fraction>\d{1,7}))?)?)?$"
+)
+
 
 def _check_pagination(meta):
     pagination = meta.get("PAGINATION") or {}
@@ -58,18 +65,56 @@ def _date(value, label, timezone="America/Guayaquil"):
     if value in (None, "", False):
         return None
     try:
+        source_zone = None
+        # PHP/SQL drivers can JSON-encode DateTime as an object rather than a
+        # string. Only its explicit date/timezone fields are used.
+        if isinstance(value, dict):
+            structured = {_key(k): v for k, v in value.items()}
+            if "DATE" not in structured:
+                raise ValueError()
+            value = structured["DATE"]
+            if structured.get("TIMEZONE"):
+                declared_zone = str(structured["TIMEZONE"])
+                if re.fullmatch(r"[+-]\d{2}:\d{2}", declared_zone):
+                    source_zone = datetime.fromisoformat("2000-01-01T00:00:00" + declared_zone).tzinfo
+                else:
+                    source_zone = ZoneInfo(declared_zone)
+            if value in (None, "", False):
+                return None
+
+        def local_day(parsed):
+            if parsed.tzinfo is None and source_zone is not None:
+                parsed = parsed.replace(tzinfo=source_zone)
+            if parsed.tzinfo is not None:
+                parsed = parsed.astimezone(ZoneInfo(timezone))
+            return parsed.date().isoformat()
+
         if isinstance(value, datetime):
-            return (value.astimezone(ZoneInfo(timezone)) if value.tzinfo else value).date().isoformat()
+            return local_day(value)
         if isinstance(value, date):
             return as_date(value).isoformat()
+        if isinstance(value, (dict, list, bool)):
+            raise ValueError()
         text = str(value).strip()
-        # SQL Server commonly serializes date columns as ISO timestamps.
+        if not text:
+            return None
+        regional = LOCAL_DATE.fullmatch(text)
+        if regional:
+            parts = regional.groupdict()
+            day = date(int(parts["year"]), int(parts["month"]), int(parts["day"]))
+            if parts["hour"] is None:
+                return day.isoformat()
+            parsed = datetime(day.year, day.month, day.day, int(parts["hour"]),
+                int(parts["minute"]), int(parts["second"] or 0),
+                int((parts["fraction"] or "0")[:6].ljust(6, "0")))
+            return local_day(parsed)
+        # SQL Server commonly serializes dates as ISO timestamps with fractions.
         if len(text) > 10 and text[10] in ("T", " "):
             parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
-            return (parsed.astimezone(ZoneInfo(timezone)) if parsed.tzinfo else parsed).date().isoformat()
+            return local_day(parsed)
         return as_date(text).isoformat()
-    except (ValueError, TypeError, OverflowError):
-        raise DispatchAPIError("%s: %s debe ser una fecha ISO YYYY-MM-DD válida." % (ENDPOINT, label)) from None
+    except (ValueError, TypeError, OverflowError, KeyError):
+        raise DispatchAPIError("%s: %s tiene una fecha inválida. Use YYYY-MM-DD o DD/MM/YYYY, con hora opcional; también se admite un objeto PHP con date y timezone." % (ENDPOINT, label)) from None
 
 
 def _unwrap(raw, timezone="America/Guayaquil"):
@@ -153,7 +198,7 @@ def convert_dispatch_payload(raw, today, timezone="America/Guayaquil"):
                     raise ValueError()
             for name in ("FechaFactura", "UltimoDespacho"):
                 if name in row:
-                    row[name] = _date(row[name], name, timezone)
+                    row[name] = _date(row[name], "%s (línea %s)" % (name, index), timezone)
             # Missing warehouse codes must not collapse different named origins.
             if row.get("CodBodega") in (None, "") and row.get("Bodega"):
                 row["CodBodega"] = normalize(row["Bodega"])

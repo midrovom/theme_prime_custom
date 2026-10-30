@@ -82,7 +82,68 @@ class ContractTests(unittest.TestCase):
     def test_required_quantities_and_date_format(self):
         raw = line(); del raw["DespachoFisico"]
         with self.assertRaises(adapter.DispatchAPIError): self.convert([raw])
-        with self.assertRaises(adapter.DispatchAPIError): self.convert([line(FechaFactura="29/10/2026")])
+        with self.assertRaises(adapter.DispatchAPIError): self.convert([line(FechaFactura="31/02/2026")])
+
+    def test_regional_dates_with_optional_time_are_day_first(self):
+        for value in ("05/01/2026", "5/1/2026", "05/01/2026 0:00:00", "05/01/2026 09:13:24",
+                      "05/01/2026 09:13", "05/01/2026 09:13:24.1234567", "05-01-2026 0:00:00"):
+            with self.subTest(value=value):
+                self.assertEqual(self.convert([line(FechaFactura=value)])["rows"][0]["FechaFactura"], "2026-01-05")
+
+    def test_last_dispatch_accepts_regional_and_blank_values(self):
+        for value, expected in (("29/10/2026 0:00:00", "2026-10-29"), (None, None), ("  ", None), (False, None)):
+            with self.subTest(value=value):
+                self.assertEqual(self.convert([line(UltimoDespacho=value)])["rows"][0]["UltimoDespacho"], expected)
+
+    def test_php_datetime_object_is_normalized_and_respects_timezone(self):
+        value = {"date":"2026-01-05 00:00:00.000000", "timezone_type":3, "timezone":"America/Guayaquil"}
+        self.assertEqual(self.convert([line(FechaFactura=value)])["rows"][0]["FechaFactura"], "2026-01-05")
+        value = {"date":"2026-01-05 02:00:00.000000", "timezone_type":3, "timezone":"UTC"}
+        self.assertEqual(self.convert([line(FechaFactura=value)])["rows"][0]["FechaFactura"], "2026-01-04")
+        value = {"date":"2026-01-05 00:00:00.000000", "timezone_type":1, "timezone":"-05:00"}
+        self.assertEqual(self.convert([line(FechaFactura=value)])["rows"][0]["FechaFactura"], "2026-01-05")
+
+    def test_sql_timestamps_and_date_objects_keep_existing_behavior(self):
+        for value in ("2026-01-05", "2026-01-05 00:00:00.0000000", date(2026,1,5), datetime(2026,1,5)):
+            with self.subTest(value=value):
+                self.assertEqual(self.convert([line(FechaFactura=value)])["rows"][0]["FechaFactura"], "2026-01-05")
+
+    def test_invalid_regional_dates_do_not_roll_over_or_switch_to_us_order(self):
+        for value in ("31/02/2026", "01/13/2026", "02/29/2026", "05/01/2026 24:00:00", "05/01/2026 09:61:00"):
+            with self.subTest(value=value), self.assertRaises(adapter.DispatchAPIError) as caught:
+                self.convert([line(),line(FechaFactura=value)])
+            self.assertIn("FechaFactura (línea 2)", str(caught.exception))
+
+    def test_php_objects_require_valid_date_and_timezone(self):
+        for value in ({"date":"31/02/2026"}, {"year":2026}, {"date":[]},
+                      {"date":"2026-01-05 00:00:00", "timezone":"INVALID/TZ"}):
+            with self.subTest(value=value), self.assertRaises(adapter.DispatchAPIError):
+                self.convert([line(FechaFactura=value)])
+
+    def test_regional_cutoff_and_future_guard(self):
+        self.assertEqual(self.convert({"fecha_corte":"29/10/2026 0:00:00", "data":[line()]})["cutoff_date"], "2026-10-29")
+        with self.assertRaises(adapter.DispatchAPIError):
+            self.convert({"fecha_corte":"30/10/2026", "data":[line()]})
+
+    def test_date_representation_does_not_change_data_checksum(self):
+        canonical = self.convert([line(FechaFactura="2026-01-05",UltimoDespacho="2026-10-29")])
+        regional = self.convert([line(FechaFactura="05/01/2026 0:00:00",UltimoDespacho="29/10/2026 09:13:24")])
+        structured = self.convert([line(FechaFactura={"date":"2026-01-05 00:00:00.000000"},UltimoDespacho="29/10/2026")])
+        self.assertEqual(canonical["checksum"], regional["checksum"])
+        self.assertEqual(canonical["checksum"], structured["checksum"])
+
+    def test_lowercase_response_from_sql_exporter(self):
+        raw = {"tipofactura":"FA", "numerofactura":"297908", "factura":"3617",
+               "fechafactura":"05/01/2026 0:00:00", "horafactura":"09:13:24",
+               "codbodega":"MAN", "bodega":"MANTA", "facturado":0.72,
+               "despachofisico":0.72, "ajustedevolucion":0, "despachado":0.72, "pendiente":0,
+               "ultimodespacho":"05/01/2026 0:00:00", "pesodespacho":14.5, "pesopendiente":0,
+               "cajaspendientes":0, "palletspendientes":0, "ciudad":"Manta"}
+        result = self.convert({"success":True,"data":[raw]})
+        self.assertEqual(result["rows"][0]["FechaFactura"], "2026-01-05")
+        self.assertEqual(result["rows"][0]["UltimoDespacho"], "2026-01-05")
+        key, group = next(iter_invoice_groups(result["rows"]))
+        self.assertFalse(aggregate_invoice(key,group,TODAY)["pending"])
 
     def test_equivalent_columns_cannot_disagree(self):
         with self.assertRaises(adapter.DispatchAPIError): self.convert([dict(line(), peso_pendiente=7)])

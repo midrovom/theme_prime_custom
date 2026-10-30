@@ -39,6 +39,8 @@ El conector de origen obtiene un exportador completo y estable, lo normaliza a l
 
 No enviar números con separadores de miles. Para la API se recomiendan valores numéricos JSON y fechas ISO. Convertir timestamps a fecha local de operación (America/Guayaquil, si aplica) antes de reducirlos a fecha. No cortar la parte de fecha de un timestamp UTC sin convertir su zona.
 
+El conector GET getdatosdespachos acepta desde 1.8.1 fechas día/mes/año con hora opcional y objetos PHP DateTime, normalizándolos a ISO. Esta compatibilidad pertenece al adaptador GET: la recepción XML-RPC por bloques conserva el contrato ISO de esta tabla. Ver `FECHAS_API_V1_8_1.md`.
+
 La llave comercial es TipoFactura + NumeroFactura por compañía. Las filas que repiten su clave de detalle dentro de una extracción se consolidan sin sumar: la última aparición actualiza la anterior, por bodega en el consolidado o producto/bodega en el detalle por SKU. Se registran repeticiones y cambios. No mezclar ambos niveles en una misma factura. Si tu API admite varias líneas legítimas con esa combinación, se debe incorporar un ID estable de línea y adaptar la clave antes de usarla. Las extracciones posteriores publican una versión vigente única y conservan las anteriores como histórico fuera de los totales.
 
 ## Secuencia

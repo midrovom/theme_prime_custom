@@ -1,4 +1,11 @@
-# Validación de la entrega 18.0.1.8.0
+# Validación de la entrega 18.0.1.8.1
+
+## Fechas SQL/PHP 1.8.1
+
+- 203 pruebas Python autónomas ejecutadas; se conservan las 194 anteriores y se añaden nueve casos de regresión con subcasos de fecha regional, hora 0:00:00, fracciones SQL Server, objetos PHP, fecha nula/blanca, zonas horarias, formatos inválidos, error con número de línea, fecha de corte, campos en minúsculas y estabilidad de la huella entre representaciones equivalentes.
+- Se reprodujo el error exacto de 1.8 con `05/01/2026 0:00:00` y con un objeto PHP de fecha. Ambos se normalizan ahora al mismo valor ISO; el orden regional se fija en día/mes/año. Las fechas imposibles se siguen rechazando y no se sustituyen por hoy.
+- Se añade una prueba nativa a tests/test_api_sync_odoo.py para comprobar fechas normalizadas en factura/detalle y su fecha límite SLA. Las once pruebas nativas API incluidas siguen pendientes de ejecución en Odoo/PostgreSQL; las pruebas locales usan servicios simulados. No se ha conectado al servidor ni a la API real del cliente.
+- Sin cambios de campos, esquema, cron, ciudades, llaves comerciales, publicación ni archivos de interfaz/estilos respecto a 1.8. Solo cambia el adaptador de fechas, manifiesto, pruebas y documentación. Se conservan los guardas de actualización rápida.
 
 ## Conector GET y programación 1.8
 

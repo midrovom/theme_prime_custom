@@ -41,6 +41,15 @@ class TestDispatchAPISync(TransactionCase):
         self.assertEqual(len(self.current()), 1)
         self.assertEqual(self.env["dispatch.snapshot"].search_count([("source_id","=",self.source.id)]), 1)
 
+    def test_regional_and_php_dates_store_canonical_dates_in_invoice_and_detail(self):
+        row = dict(self.row, FechaFactura="05/01/2026 0:00:00", UltimoDespacho={
+            "date":"2026-01-08 09:13:24.000000", "timezone_type":3,"timezone":"America/Guayaquil"})
+        result, _ = self.pull([row])
+        snapshot = self.finish(result)
+        self.assertEqual(str(snapshot.invoice_ids.invoice_date), "2026-01-05")
+        self.assertEqual(str(snapshot.invoice_ids.line_ids.last_dispatch_date), "2026-01-08")
+        self.assertEqual(str(snapshot.invoice_ids.deadline), "2026-01-14")
+
     def test_changed_pending_replaces_current_and_keeps_detail_history(self):
         first = self.finish(self.pull([self.row])[0])
         changed = dict(self.row, DespachoFisico=6, Pendiente=4, PesoPendiente=4000, PesoDespacho=6000, UltimoDespacho="2026-01-08")
