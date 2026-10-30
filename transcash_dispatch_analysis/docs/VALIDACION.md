@@ -1,4 +1,12 @@
-# Validación de la entrega 18.0.1.8.6
+# Validación de la entrega 18.0.1.8.7
+
+## Pastel de puntualidad y mayores retrasos 1.8.7
+
+- **269 pruebas Python autónomas aprobadas**: las 251 anteriores y 18 nuevas de pastel de completadas, fecha límite inclusiva, promedios solo de demoradas, pendientes al corte, días calendario desde un límite hábil con feriados, datos sin medición, orden/top diez, fechas/compañía/vigencia, detalle repetido único, acciones exactas y estado por múltiples bodegas. Los modelos reales se ejercitan con ORM simulado; no equivalen a una prueba PostgreSQL.
+- **13 verificaciones de navegador aprobadas**, con OWL 2.8.1 y Chromium reales, RPC controlado y datos sintéticos: pastel y etiquetas accesibles, pendientes separados, promedio de todas las demoradas, top cinco/diez, cambio local de cohorte, apertura de formulario/listas, rango aplicado frente al editado, independencia del pastel de pesos, favorito con varias bodegas sin cambiar fechas, ausencia de base, exclusiones y presentación a 1440/1024/768/390/320 píxeles. No hubo errores de página ni de preprocesamiento de acciones. Se revisaron capturas internas de escritorio/móvil; en móvil, fechas bajo la factura y atraso visible sin desplazamiento horizontal.
+- LibSass **3.6.6** compila ambos estilos y su combinación. Validador estático: 46 archivos Python, 18 XML, 17 modelos y 27 reglas ACL; sintaxis, rutas de manifiesto y referencias de vistas correctas.
+- Dos pruebas nativas adicionales incluidas para importación repetida + mediciones/acciones y completado por bodega. **No ejecutadas**: no hay servicio Odoo/PostgreSQL de pruebas operativo. No se accedió a la base del usuario ni a su API; no se desplegó esta entrega en su servidor.
+- **34 archivos protegidos idénticos a 1.8.6**: importación, API, cron, parseo de fechas, motor comercial, transporte, unicidad/publicación, permisos, migraciones e interfaz de sincronización. No se agregan campos, escrituras de datos, commits ni reconstrucciones históricas. La nueva medición solo lee las filas ya filtradas del tablero; no hace consultas ERP adicionales.
 
 ## Continuación del programador 1.8.6
 

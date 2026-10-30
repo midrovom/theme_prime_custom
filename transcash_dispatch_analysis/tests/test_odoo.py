@@ -448,3 +448,43 @@ class TestDispatchIntegration(TransactionCase):
         self.assertEqual([p["pct"] for p in result["dispatch_progress"]["tons"]["series"]], [80, 20])
         action = service.get_detail_action(filters, "agreement", "calendar:2")
         self.assertIn(("id", "in", snapshot.invoice_ids.ids), action["domain"])
+
+    def test_timeliness_pie_and_delay_drilldowns_follow_unique_import(self):
+        ident = self.source.api_start_batch("timeliness-pie", "2026-01-10")["id"]
+        snapshot = self.env["dispatch.snapshot"].browse(ident)
+        on_time = {**self.row, "NumeroFactura": "TIME-1", "DespachoFisico": 1, "Pendiente": 0,
+            "UltimoDespacho": "2026-01-03"}
+        late = {**on_time, "NumeroFactura": "TIME-2", "UltimoDespacho": "2026-01-07"}
+        pending = {**self.row, "NumeroFactura": "TIME-3"}
+        snapshot.api_append_chunk(0, [on_time, on_time, late, pending]); snapshot.api_finalize(1, 4)
+        snapshot._prepare(); snapshot._load_next()
+        self.assertEqual(len(snapshot.invoice_ids), 3)
+        filters = {"source_id": self.source.id, "date_from": "2026-01-01", "date_to": "2026-01-01"}
+        service = self.env["dispatch.dashboard"]
+        result = service.get_data(filters)
+        self.assertEqual([part["pct"] for part in result["timeliness"]["pie"]["series"]], [50, 50])
+        self.assertEqual(result["timeliness"]["pie"]["pending_total"], 1)
+        self.assertEqual(result["timeliness"]["delays"]["completed"]["max_days"], 4)
+        self.assertEqual(result["timeliness"]["delays"]["pending"]["max_days"], 7)
+        for category, number in (("timely_completed", "TIME-1"), ("late_completed", "TIME-2"), ("overdue_pending", "TIME-3")):
+            action = service.get_detail_action(filters, category)
+            self.assertEqual(self.env["dispatch.invoice"].search(action["domain"]).internal_number, number)
+            self.assertEqual(action["views"][0], (False, "list"))
+
+    def test_timeliness_warehouse_scope_can_complete_one_origin_only(self):
+        ident = self.source.api_start_batch("timeliness-warehouses", "2026-01-10")["id"]
+        snapshot = self.env["dispatch.snapshot"].browse(ident)
+        completed = {**self.row, "NumeroFactura": "WARE-TIME", "CodBodega": "TIME-A", "Bodega": "Time A",
+            "DespachoFisico": 1, "Pendiente": 0, "UltimoDespacho": "2026-01-07"}
+        outstanding = {**self.row, "NumeroFactura": "WARE-TIME", "CodBodega": "TIME-B", "Bodega": "Time B"}
+        snapshot.api_append_chunk(0, [completed, outstanding]); snapshot.api_finalize(1, 2)
+        snapshot._prepare(); snapshot._load_next()
+        invoice = snapshot.invoice_ids
+        origin = invoice.line_ids.filtered(lambda item: item.warehouse_code == "TIME-A").warehouse_id
+        filters = {"source_id": self.source.id, "warehouse_ids": origin.ids}
+        service = self.env["dispatch.dashboard"]
+        result = service.get_data(filters)
+        self.assertEqual(result["timeliness"]["pie"]["total"], 1)
+        self.assertEqual(result["timeliness"]["delays"]["completed"]["max_days"], 4)
+        self.assertEqual(service.get_data({"source_id": self.source.id})["timeliness"]["pie"]["total"], 0)
+        self.assertEqual(self.env["dispatch.invoice"].search(service.get_detail_action(filters, "late_completed")["domain"]), invoice)

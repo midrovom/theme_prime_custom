@@ -17,7 +17,7 @@ export class DispatchDashboard extends Component {
         this.metrics = METRICS;
         this.dimensions = DIMENSIONS;
         this.state = useState({data: null, loading: true, error: "", builder: false, allLanes: false, appliedFilters: null, defaultsLoaded: false,
-            moreFilters: false, progressBasis: "invoices",
+            moreFilters: false, progressBasis: "invoices", delayBasis: "completed", allDelays: false,
             savedFilters: [], selectedFavorite: "", favoriteName: "", audit: null, auditBusy: false,
             boardId: this.props.action?.params?.board_id || false,
             filters: {source_id: "", snapshot_id: "", date_from: "", date_to: "", city: "", delivery: "", planning_scope: "transcash", planning_grouping: "warehouse", warehouse_ids: []},
@@ -112,7 +112,9 @@ export class DispatchDashboard extends Component {
         return this.state.data.dispatch_progress[this.state.progressBasis];
     }
     progressStyle() {
-        const chart = this.progressChart;
+        return this.pieStyle(this.progressChart);
+    }
+    pieStyle(chart) {
         if (!chart.available) return "background:#e8edf5";
         let position = 0;
         return "background:conic-gradient(" + chart.series.map(part => {
@@ -120,6 +122,25 @@ export class DispatchDashboard extends Component {
             position += part.pct || 0;
             return `${part.color} ${from}% ${position}%`;
         }).join(",") + ")";
+    }
+    get timelinessChart() {
+        return this.state.data.timeliness.pie;
+    }
+    get delaySummary() {
+        return this.state.data.timeliness.delays[this.state.delayBasis];
+    }
+    get delayRows() {
+        return this.state.allDelays ? this.delaySummary.top : this.delaySummary.top.slice(0, 5);
+    }
+    get delayCategory() {
+        return this.state.delayBasis === "completed" ? "late_completed" : "overdue_pending";
+    }
+    changeDelayBasis(basis) {
+        this.state.delayBasis = basis;
+        this.state.allDelays = false;
+    }
+    delayWidth(days) {
+        return 100 * days / Math.max(1, this.delaySummary.max_days || 0);
     }
     get transportLanes() {
         const lanes = this.state.data.transport.lanes;

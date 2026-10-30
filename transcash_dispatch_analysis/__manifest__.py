@@ -1,7 +1,7 @@
 {
     "name": "Transcash · Análisis de despachos",
     "summary": "Cumplimiento por período, toneladas y planificación de vehículos por destino",
-    "version": "18.0.1.8.6",
+    "version": "18.0.1.8.7",
     "category": "Inventory/Reporting",
     "author": "Transcash",
     "license": "LGPL-3",

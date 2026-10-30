@@ -8,7 +8,7 @@ La API y Excel convergen en el mismo procesamiento de cortes: ciudades, parámet
 
 ## Configuración inicial
 
-1. Actualizar `transcash_dispatch_analysis` a 18.0.1.8.6, con `api_administrator` disponible en addons. Reiniciar todos los trabajadores Odoo y actualizar el módulo; no desinstalar ni volver a importar el Excel. Desde 1.8.5 se conservan los mismos campos de control. Si se parte de una versión anterior, la actualización también agrega los controles de cursor, agrupación y tamaño adaptativo que correspondan.
+1. Actualizar `transcash_dispatch_analysis` a 18.0.1.8.7, con `api_administrator` disponible en addons. Reiniciar todos los trabajadores Odoo y actualizar el módulo; no desinstalar ni volver a importar el Excel. Desde 1.8.5 se conservan los mismos campos de control. Si se parte de una versión anterior, la actualización también agrega los controles de cursor, agrupación y tamaño adaptativo que correspondan.
 2. Seleccionar la empresa correspondiente. En API Administrator, configurar **exactamente un registro GET activo**:
 
    | Campo | Valor |

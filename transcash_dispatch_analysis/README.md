@@ -1,6 +1,16 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.8.6 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.8.7 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Pastel de puntualidad y mayores retrasos 1.8.7
+
+El tablero incorpora **Despachos a tiempo y demorados**: porcentajes y cantidades de facturas físicamente completadas, con plazo y datos evaluables. El denominador es el total de esas facturas completadas; las pendientes y las completadas sin medición se muestran aparte. El despacho hasta la fecha límite, inclusive, cuenta a tiempo. Cada factura se cuenta una vez por su llave TipoFactura + NumeroFactura en la compañía.
+
+**Mayores retrasos** muestra cantidad, promedio y máximo de atraso, junto a las primeras cinco facturas ordenadas de mayor a menor atraso, ampliables hasta diez. Se puede alternar entre **Despachados demorados** y **Pendientes vencidos** sin volver a consultar el servidor ni cambiar las fechas. Las filas muestran destino, fecha límite, fecha de despacho o corte y días de atraso; se puede abrir la factura o el detalle completo del indicador.
+
+El atraso de esta sección se expresa siempre en **días calendario después de la fecha límite**. La fecha límite conserva el acuerdo SLA de días hábiles/calendario y sus feriados. El promedio incluye solo la cohorte demorada seleccionada, no las facturas a tiempo. Los filtros aplicados de fecha de factura, bodegas, ciudad, modalidad, fuente, compañía y corte alcanzan ambas mediciones.
+
+Reemplazar la carpeta completa, reiniciar todos los trabajadores, actualizar a **18.0.1.8.7** y recargar el navegador con **Ctrl+F5**. No hace falta sincronizar ni importar otra vez: se utilizan los datos disponibles. No agrega campos ni reconstruye históricos. Conserva las optimizaciones del importador de 1.8.6. Ver `docs/PUNTUALIDAD_RETRASOS_V1_8_7.md`.
 
 ## Continuación del cron sin esperas entre rondas 1.8.6
 

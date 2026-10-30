@@ -1,0 +1,74 @@
+{
+  "version": "18.0.1.8.7",
+  "python_standalone_passed": 269,
+  "new_standalone_cases": 18,
+  "new_native_odoo_cases_included_not_executed": 2,
+  "native_runtime_available": false,
+  "ui": {
+    "runtime": "OWL 2.8.1 / headless Chromium",
+    "synthetic_data": true,
+    "checks": [
+      "Real OWL 2.8.1 dashboard mounts in Chromium; completed-invoice pie paints 40%/60% with accessible labels",
+      "Three pending invoices are outside the pie; top five are ordered by calendar delay and average covers all nine late completions",
+      "The ranking expands to ten or the actual available count and collapses without a server call",
+      "Overdue tab uses cutoff-based delay, keeps the completed pie and date range, and makes no RPC",
+      "Clicking a ranked invoice opens its native form with explicit views",
+      "Pie and ranking drilldowns send the displayed/applied dates and correct cohort even when unapplied inputs change",
+      "Existing facturado/pendiente chart stays independent from the new SLA pie",
+      "Loading a native favorite keeps the selected dates and sends both warehouse selections",
+      "Empty data shows no fabricated percentages or average delay and disables cohort drilldowns",
+      "Completed invoices excluded from measurement are visible next to the denominator",
+      "Whole dashboard and new panels have no page overflow at 1440, 1024, 768, 390 and 320 px",
+      "A 100% label fits on a 320 px phone without wrapping or overflow",
+      "No JavaScript, OWL or action preprocessing errors"
+    ],
+    "passed": 13,
+    "errors": []
+  },
+  "static": {
+    "python_files": 46,
+    "xml_files": 18,
+    "models": 17,
+    "access_rows": 27,
+    "manifest": "OK",
+    "view_field_references": "OK",
+    "python_syntax": "OK",
+    "xml_syntax": "OK",
+    "obsolete_modifiers": "none"
+  },
+  "sass": {
+    "version": "LibSass 3.6.6",
+    "dashboard": "passed",
+    "import_progress": "passed",
+    "combined": "passed"
+  },
+  "preservation": {
+    "changed_files": [
+      "README.md",
+      "__manifest__.py",
+      "docs/INTEGRACION_API_V1_8.md",
+      "docs/PUNTUALIDAD_RETRASOS_V1_8_7.md",
+      "docs/VALIDACION.md",
+      "docs/VALIDACION_PUNTUALIDAD_V1_8_7.json",
+      "models/dashboard.py",
+      "services/timeliness.py",
+      "static/src/dashboard.js",
+      "static/src/dashboard.scss",
+      "static/src/dashboard.xml",
+      "tests/test_odoo.py",
+      "tests/test_timeliness_standalone.py"
+    ],
+    "protected_files_identical": 34,
+    "importer_api_cron_identity_dates_transport_and_migrations": "byte-identical to 1.8.6",
+    "new_database_fields": 0,
+    "new_orm_mutations": 0
+  },
+  "live_odoo_or_erp_accessed": false,
+  "deployed_on_user_server": false,
+  "metric_basis": {
+    "pie": "completed evaluable unique invoices; on time + late = 100%",
+    "delays": "calendar days after SLA deadline; completed and overdue pending cohorts separate",
+    "range": "invoice date; applied filters and warehouse-scoped aggregation",
+    "no_evaluable_data": "null percentages and delay averages; zero count"
+  }
+}

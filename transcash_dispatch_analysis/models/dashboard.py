@@ -8,6 +8,7 @@ from odoo.tools.safe_eval import safe_eval
 from ..services.engine import aggregate_invoice, as_date, evaluate, grouped, summarize, METRICS, GROUPS
 from ..services.planning import build_transport_plan
 from ..services.overview import pending_by_agreement, dispatch_progress, pending_plan_reconciliation
+from ..services.timeliness import dispatch_timeliness
 
 READ_FIELDS = ["name", "invoice_key", "snapshot_id", "source_id", "company_id", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
     "state", "pending", "pending_lines", "pending_weight", "pending_boxes", "pending_pallets", "has_adjustment", "physically_completed", "source_warnings", "source_grain",
@@ -108,6 +109,8 @@ class DispatchDashboard(models.AbstractModel):
                 scoped.append({**row,**evaluate(summary,packs_for_scope.get(row["snapshot_id"][0],{}))})
             rows = scoped
         stats = summarize(rows)
+        timeliness = dispatch_timeliness(rows, include_ids)
+        timeliness_ids = timeliness.pop("detail_ids", {})
         agreements = pending_by_agreement(rows, include_ids, stats)
         progress = dispatch_progress(rows, transport_lines)
         companies = self.env["res.company"].browse(sorted({r["company_id"][0] for r in rows}))
@@ -186,11 +189,12 @@ class DispatchDashboard(models.AbstractModel):
                 "lead":[r["id"] for r in rows if r["lead_days"] is not None],
                 "mature":[r["id"] for r in rows if r["mature"]],
                 "no_rule":[r["id"] for r in rows if not r["sla_configured"]],
+                **timeliness_ids,
                 "agreements": {group["key"]: group["invoice_ids"] for group in agreements["groups"]}}
             for group in agreements["groups"]:
                 group.pop("invoice_ids")
         return {"stats": stats, "cities": cities, "period": period, "transport": transport,"detail_ids":detail_ids,
-                "agreements": agreements, "dispatch_progress": progress,
+                "agreements": agreements, "dispatch_progress": progress, "timeliness": timeliness,
                 "warehouse_options":self.env["dispatch.warehouse"].search_read([], ["name","code","company_id"],order="name,code"),
                 "warehouse_scope":bool(warehouse_ids),
                 "aging": [{"label": label, "value": value} for label, value in zip(["0–2 días", "3–5 días", "6–10 días", "11–30 días", "31–60 días", "Más de 60"], aging)],
@@ -263,9 +267,11 @@ class DispatchDashboard(models.AbstractModel):
     @api.model
     def get_detail_action(self, filters=None, category="all", agreement_key=False):
         domain = self._domain(filters)
+        timeliness_categories = ("timely_completed", "late_completed", "overdue_pending")
         additions = {"all": [], "pending": [("pending", "=", True)], "overdue": [("sla_status", "=", "overdue")],
                      "quality": [("quality_issue", "=", True)], "lead": [("lead_available", "=", True)],
-                     "mature": [("mature", "=", True)], "no_rule": [("sla_configured", "=", False)]}
+                     "mature": [("mature", "=", True)], "no_rule": [("sla_configured", "=", False)],
+                     **{key: [] for key in timeliness_categories}}
         if category == "agreement":
             if not isinstance(agreement_key, str) or len(agreement_key) > 50:
                 raise ValidationError(_("Plazo de entrega no permitido."))
@@ -275,7 +281,7 @@ class DispatchDashboard(models.AbstractModel):
             additions[category] = [("id", "in", groups[agreement_key])]
         elif category not in additions:
             raise ValidationError(_("Categoría no permitida."))
-        if category != "agreement" and filters and filters.get("warehouse_ids"):
+        if category in timeliness_categories or (category != "agreement" and filters and filters.get("warehouse_ids")):
             ids=self.get_data(filters,False,True)["detail_ids"][category]
             additions[category]=[("id","in",ids)]
         return {"type": "ir.actions.act_window", "name": _("Análisis de despachos"), "res_model": "dispatch.invoice",
