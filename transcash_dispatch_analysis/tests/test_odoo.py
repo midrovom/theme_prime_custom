@@ -27,6 +27,37 @@ class TestDispatchIntegration(TransactionCase):
         self.assertEqual(self.source.api_start_batch("idempotent", "2026-01-10")["id"], snapshot.id)
         with self.assertRaises(ValidationError): snapshot.api_append_chunk(0, [{**self.row, "Pendiente": 0}])
 
+    def test_prepared_chunk_resumes_from_database_cursor(self):
+        ident=self.source.api_start_batch("bounded-cursor","2026-01-10")["id"]
+        snapshot=self.env["dispatch.snapshot"].browse(ident)
+        rows=[dict(self.row,NumeroFactura="LOAD-%s"%i) for i in range(250)]
+        snapshot.api_append_chunk(0,rows);snapshot.api_finalize(1,len(rows));snapshot._prepare()
+        chunk=snapshot.chunk_ids.filtered(lambda c:c.phase=="prepared")
+        snapshot._load_next();snapshot.invalidate_recordset();chunk.invalidate_recordset()
+        self.assertEqual(snapshot.loaded_invoices,100)
+        self.assertEqual(chunk.processed_count,100)
+        self.assertEqual(len(snapshot.invoice_ids),100)
+        try:
+            with self.env.cr.savepoint():
+                snapshot._load_next()
+                raise RuntimeError("Simulated rollback before request commit")
+        except RuntimeError:
+            pass
+        snapshot.invalidate_recordset();chunk.invalidate_recordset()
+        self.assertEqual(snapshot.loaded_invoices,100)
+        self.assertEqual(chunk.processed_count,100)
+        snapshot._load_next();snapshot._load_next()
+        self.assertEqual(snapshot.state,"ready")
+        self.assertEqual(len(snapshot.invoice_ids),250)
+
+    def test_background_request_does_not_run_heavy_preparation(self):
+        snapshot=self._snapshot("background-request")
+        self.env.ref("transcash_dispatch_analysis.cron_dispatch_import").active=True
+        with patch.object(snapshot_module.DispatchSnapshot,"_prepare",side_effect=AssertionError("HTTP must only schedule")):
+            result=snapshot.request_background_processing()
+        self.assertTrue(result["background_processing"])
+        self.assertEqual(result["state"],"queued")
+
     def test_atomic_snapshot_activation(self):
         first = self._snapshot("first")
         first._prepare()

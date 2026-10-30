@@ -33,18 +33,27 @@ class DispatchSourceAPI(models.Model):
                 raise ValidationError(_("Active getdatosdespachos en una sola fuente por empresa para este universo."))
 
     def action_sync_api(self):
-        """Operators may request the fixed feed, not change URL or credentials."""
+        """Open progress immediately; the mounted client requests the ERP data."""
         self.ensure_one()
         self._check_operator()  # Check source/company before scoped elevation.
+        if not self.active:
+            raise UserError(_("Active la fuente antes de sincronizarla."))
+        return {"type": "ir.actions.client", "name": _("Sincronización de despachos"),
+                "tag": "transcash_dispatch_import_progress",
+                "params": {"source_id": self.id, "input_type": "api", "sync_api": True}}
+
+    def sync_api_data(self):
+        """Checked RPC called after the progress screen has been painted."""
+        self.ensure_one()
+        self._check_operator()
         if not self.active:
             raise UserError(_("Active la fuente antes de sincronizarla."))
         worker = self.sudo().with_company(self.company_id)
         result = worker._sync_dispatch_api()
         if result.get("snapshot_id"):
-            return worker.env["dispatch.snapshot"].browse(result["snapshot_id"]).action_open_progress()
-        return {"type": "ir.actions.client", "tag": "display_notification", "params": {
-            "title": _("Sincronización de despachos"), "message": result["message"],
-            "type": "danger" if result.get("error") else "warning", "sticky": True}}
+            snapshot = worker.env["dispatch.snapshot"].browse(result["snapshot_id"])
+            result["progress"] = snapshot._progress_payload()
+        return result
 
     def _sync_dispatch_api(self):
         self.ensure_one()

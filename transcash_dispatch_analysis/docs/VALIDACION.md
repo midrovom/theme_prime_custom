@@ -1,4 +1,19 @@
-# Validación de la entrega 18.0.1.8.2
+# Validación de la entrega 18.0.1.8.4
+
+## Reconexión y procesamiento acotado 1.8.4
+
+- 222 pruebas Python autónomas: las 214 anteriores y ocho regresiones de cursor persistido, división de un bloque preparado de 250 facturas en 100/100/50, límite de líneas, integridad de una misma factura, cursor inválido, solicitud de trabajo en segundo plano, cron desactivado y permisos previos a la elevación. Se incluyen dos nuevas pruebas nativas Odoo para cursor/rollback y solicitud corta de procesamiento; no se ejecutaron porque no hay servicio Odoo/PostgreSQL local.
+- 10 verificaciones nuevas del controlador con ORM y temporizadores simulados: cron activo sin llamadas pesadas del navegador, recuperación de lecturas perdidas, respuesta perdida después de un avance confirmado, límite de reintentos, separación de errores de negocio, respuesta perdida al solicitar el trabajo, solo lectura, salida de pantalla y reintento del mismo corte. Nueve regresiones anteriores también pasan, con recuperación automática después de una respuesta perdida.
+- 14 verificaciones en Chromium real y componente OWL con RPC controlado. Se conservan las 12 de 1.8.3 y se añaden ejecución en segundo plano sin process_import_step desde el navegador y reconexión visual hasta 100%. Sin errores de página; capturas revisadas de aviso de reconexión y escritorio/móvil. El entorno no carga la base ni el servidor reales del cliente.
+- Sintaxis, vistas, referencias y estilos se validan; LibSass 3.6.6 compila los estilos por separado y en conjunto. El nuevo campo processed_count se agrega a dispatch.chunk con valor inicial cero; no se reescriben facturas históricas. El adaptador de fechas, credenciales, llave, parámetros y publicación única se conservan.
+- El mensaje del usuario demuestra una llamada interrumpida, pero no identifica si la causa fue proxy, red, reinicio, memoria o límite de tiempo del trabajador. Sin logs del momento no se afirma haber diagnosticado esa causa en el servidor. Se corrigen la dependencia de una llamada HTTP pesada y la recuperación del estado.
+
+## Progreso inmediato y operación simple 1.8.3
+
+- 214 pruebas Python autónomas aprobadas: se conservan las 208 anteriores y se añaden seis de apertura inmediata sin HTTP, RPC protegido de descarga, devolución de progreso persistido/errores, diálogo sin campos técnicos y textos/origen del ERP al reabrir. Se incluyen dos pruebas nativas adicionales (trece API en total), pendientes de ejecución en Odoo/PostgreSQL.
+- 12 verificaciones con Chromium real y el componente OWL real, controlando las promesas RPC: barra visible mientras la descarga está pendiente, porcentaje solo tras conocer facturas, textos ERP sin Excel/archivo/endpoint, clics repetidos, error y reintento, respuesta sin cambios, reanudación desde histórico y cierre de pantalla. Sin errores de página. Se revisaron capturas de escritorio y móvil; a 390 px no hay desbordamiento horizontal. El servidor/cliente completo de Odoo no se cargó.
+- Nueve regresiones del componente con servicios simulados: procesamiento de Excel, bloqueo ocupado, reintento y recuperación de conexión, solo lectura, doble clic y salida de pantalla. El nuevo estilo se compila con LibSass 3.6.6; sintaxis Python/XML y referencias de manifiesto se validan.
+- Se conservan el adaptador de fechas 1.8.2, cron, SQL de registros vigentes, métricas, ciudades, planificación y guardas de actualización rápida. No se ha accedido al servidor ni a la API real en esta validación. La barra inicial es indeterminada, no un porcentaje estimado de bytes descargados.
 
 ## Formato YYYY.MM.DD 1.8.2
 

@@ -118,6 +118,19 @@ class TestDispatchAPISync(TransactionCase):
             self.source.with_user(user).action_sync_api()
         fetch.assert_not_called()
 
+    def test_progress_action_does_not_wait_for_erp_download(self):
+        with patch.object(api_sync,"fetch_dispatch_api") as fetch:
+            action=self.source.action_sync_api()
+        fetch.assert_not_called()
+        self.assertEqual(action["params"]["source_id"],self.source.id)
+        self.assertTrue(action["params"]["sync_api"])
+
+    def test_sync_rpc_returns_same_origin_when_resuming_snapshot(self):
+        with patch.object(api_sync,"fetch_dispatch_api",return_value={"fecha_corte":"2026-01-10","data":[self.row]}):
+            result=self.source.sync_api_data()
+        self.assertEqual(result["progress"]["input_type"],"api")
+        self.assertEqual(result["progress"]["state"],"queued")
+
     def test_only_one_auto_source_per_company(self):
         # Existing configuration is isolated by this test transaction.
         self.env["dispatch.source"].search([("company_id","=",self.env.company.id)]).write({"api_sync_enabled":False})

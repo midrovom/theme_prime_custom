@@ -1,6 +1,20 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.8.2 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.8.4 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Recuperación de conexión y trabajo en segundo plano 1.8.4
+
+Si el cron de importación está activo, la pantalla solicita el procesamiento y consulta el estado; las operaciones pesadas se ejecutan en el trabajador de Odoo. Si el cron está desactivado, se conserva el procesamiento interactivo con operaciones de hasta 100 facturas y un presupuesto de 500 líneas de detalle, sin dividir una misma factura. Los bloques preparados grandes de versiones anteriores se continúan con un cursor persistido.
+
+Ante una pérdida de conexión, la pantalla vuelve a leer el avance confirmado antes de continuar. Hay reintentos acotados y un mensaje claro de reconexión, sin presentar la URL técnica como explicación al usuario. Las fechas, la llave comercial, el corte vigente y el cron de consulta de dos horas se conservan. Ver `docs/RECUPERACION_CONEXION_V1_8_4.md`.
+
+Para retomar una carga ya recibida: instalar la actualización completa, recargar con Ctrl+F5 y abrir **Importaciones e histórico → Procesar / ver progreso**. No subir otra copia del Excel. Si sigue apareciendo literalmente el texto antiguo «Esta pantalla procesa los registros y muestra el avance», comprobar carpeta cargada, versión instalada y archivos del navegador con el diagnóstico incluido.
+
+## Sincronización sencilla y progreso inmediato 1.8.3
+
+El menú **Sincronizar** abre una pantalla breve con el botón **Sincronizar**. Fuente, método API, parámetros y resultados técnicos permanecen en Configuración; la operación usa la fuente configurada para la empresa activa. Al pulsar el botón se abre primero el avance y después comienza la recepción del ERP.
+
+La pantalla muestra **Sincronización desde el ERP**, una barra animada durante la recepción/validación y el porcentaje real cuando ya se conoce el total de facturas. Usa **Facturas actualizadas** y **Registros del ERP**, también al reabrir una carga desde el histórico. Las importaciones Excel mantienen sus textos de archivo. La consulta por cron, la actualización por llave y los formatos de fecha se conservan. Ver `docs/SINCRONIZACION_SIMPLE_V1_8_3.md`.
 
 ## Formato de fecha del ERP 1.8.2
 
@@ -14,7 +28,7 @@ Se corrige el rechazo de fechas regionales como `05/01/2026 0:00:00` y de objeto
 
 Se usa el mismo esquema del módulo Inventario Inteligente suministrado: URL, ruta, usuario y contraseña centralizados en **API Administrator**, método GET y sus cabeceras habituales. Esta versión depende de `api_administrator` y `requests`; no requiere instalar Inventario Inteligente ni Comisiones.
 
-Configurar una API GET activa llamada **getdatosdespachos** para la empresa, abrir **Configuración → Fuentes y API**, seleccionar la misma fuente usada para el Excel y activar **Sincronizar API cada 2 horas**. El menú **Sincronizar API → Sincronizar ahora** permite consultar bajo demanda a usuarios Operador/Responsable. La pantalla de progreso y el cron de importación continúan el trabajo por bloques. La configuración de origen muestra el último intento, respuesta válida, resultado y estado de importación.
+Configurar una API GET activa llamada **getdatosdespachos** para la empresa, abrir **Configuración → Fuentes y API**, seleccionar la misma fuente usada para el Excel y activar **Sincronizar API cada 2 horas**. El menú **Sincronizar → Sincronizar** permite consultar bajo demanda a usuarios Operador/Responsable. La pantalla de progreso y el cron de importación continúan el trabajo por bloques. La configuración de origen muestra el último intento, respuesta válida, resultado y estado de importación.
 
 Se mantienen las ciudades automáticas (Guayaquil 3 días calendario y las demás 9, conservando reglas editadas), la llave TipoFactura + NumeroFactura por empresa, las bodegas y productos distintos y una sola versión vigente por factura. Una respuesta sin cambios para el mismo corte reutiliza la importación vigente. Una respuesta fallida, vacía, incompleta según sus controles o con paginación declarada no sustituye los datos actuales. Las fechas del tablero no limitan la consulta al ERP.
 

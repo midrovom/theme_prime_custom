@@ -117,7 +117,7 @@ class Chunks:
 
 class Chunk:
     def __init__(self, owner, values):
-        self.owner = owner; self.loaded = False; self.context = {}
+        self.owner = owner; self.loaded = False; self.processed_count = 0; self.context = {}
         self.__dict__.update(values)
     def with_context(self, **kwargs): self.context.update(kwargs); return self
 
@@ -164,10 +164,14 @@ class Environment:
                        "dispatch.sla":Sla(self), "dispatch.holiday":SimpleNamespace(search=lambda domain:[]),
                        "dispatch.warehouse":SimpleNamespace(_ensure_records=lambda company,rows:{})}
     def __getitem__(self,name): return self.models[name]
+    def ref(self,*args,**kwargs): return False
 
 
 class Job:
     _progress_payload = Snapshot._progress_payload
+    _background_enabled = Snapshot._background_enabled
+    request_background_processing = Snapshot.request_background_processing
+    _schedule_import = Snapshot._schedule_import
     process_import_step = Snapshot.process_import_step
     _run_import_step = Snapshot._run_import_step
     _try_import_lock = Snapshot._try_import_lock
@@ -285,6 +289,19 @@ class QueueTests(unittest.TestCase):
         values=module.progress_values("loading",10,10,12)
         self.assertFalse(values["done"]);self.assertLess(values["progress_percent"],100)
         self.assertEqual(module.progress_values("ready",10,10,12)["progress_percent"],100)
+
+    def test_api_progress_uses_erp_labels_in_every_stage(self):
+        for state in ("receiving","queued","loading","ready","archived"):
+            result=module.progress_values(state,1,2,3,"api")
+            self.assertNotIn("archivo",result["progress_message"].lower())
+            self.assertNotIn("excel",result["progress_message"].lower())
+        self.assertIn("ERP",module.progress_values("queued",0,0,3,"api")["progress_message"])
+
+    def test_reopened_snapshot_exposes_actual_origin(self):
+        job=Job();job.input_type="api"
+        payload=job.get_import_progress() if hasattr(job,"get_import_progress") else job._progress_payload()
+        self.assertEqual(payload["input_type"],"api")
+        self.assertIn("ERP",payload["progress_message"])
 
 
 if __name__=="__main__":unittest.main()

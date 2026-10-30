@@ -11,6 +11,8 @@ from ..services.import_progress import ACTIVE_STATES, progress_values
 
 _logger = logging.getLogger(__name__)
 BATCH_SIZE = 500
+LOAD_BATCH_SIZE = 100
+LOAD_LINE_LIMIT = 500
 STATES = [("receiving", "Recibiendo API"), ("queued", "En cola"), ("loading", "Importando"),
           ("ready", "Corte vigente"), ("archived", "Histórico"), ("error", "Error")]
 
@@ -47,10 +49,10 @@ class DispatchSnapshot(models.Model):
     invoice_ids = fields.One2many("dispatch.invoice", "snapshot_id")
     _sql_constraints = [("source_batch_key", "unique(source_id,batch_key)", "El identificador del lote ya existe en esta fuente.")]
 
-    @api.depends("state", "total_invoices", "loaded_invoices", "total_rows")
+    @api.depends("state", "total_invoices", "loaded_invoices", "total_rows", "input_type")
     def _compute_progress(self):
         for snapshot in self:
-            values = progress_values(snapshot.state, snapshot.loaded_invoices, snapshot.total_invoices, snapshot.total_rows)
+            values = progress_values(snapshot.state, snapshot.loaded_invoices, snapshot.total_invoices, snapshot.total_rows, snapshot.input_type)
             snapshot.progress_percent = values["progress_percent"]
             snapshot.progress_message = values["progress_message"]
 
@@ -58,8 +60,8 @@ class DispatchSnapshot(models.Model):
         self.ensure_one()
         self.check_access_rights("read")
         self.check_access_rule("read")
-        return {"type": "ir.actions.client", "name": _("Importación de despachos"),
-                "tag": "transcash_dispatch_import_progress", "params": {"snapshot_id": self.id}}
+        return {"type": "ir.actions.client", "name": _("Sincronización de despachos") if self.input_type == "api" else _("Importación de despachos"),
+                "tag": "transcash_dispatch_import_progress", "params": {"snapshot_id": self.id, "input_type": self.input_type}}
 
     def get_import_progress(self):
         self.ensure_one()
@@ -68,14 +70,27 @@ class DispatchSnapshot(models.Model):
         return self._progress_payload()
 
     def _progress_payload(self, busy=False):
-        values = progress_values(self.state, self.loaded_invoices, self.total_invoices, self.total_rows)
+        values = progress_values(self.state, self.loaded_invoices, self.total_invoices, self.total_rows, self.input_type)
         values.update({"id": self.id, "name": self.name, "state": self.state,
-            "file_name": self.file_name or self.name, "total_rows": self.total_rows,
+            "file_name": self.file_name or self.name, "input_type": self.input_type, "total_rows": self.total_rows,
             "total_invoices": self.total_invoices, "loaded_invoices": self.loaded_invoices,
             "error_message": self.error_message or "", "busy": busy,
             "last_progress_at": str(self.last_progress_at) if self.last_progress_at else False,
+            "background_processing": self._background_enabled(),
             "can_process": self.env.su or self.env.user.has_group("transcash_dispatch_analysis.group_dispatch_operator")})
         return values
+
+    def _background_enabled(self):
+        cron = self.env.ref("transcash_dispatch_analysis.cron_dispatch_import", raise_if_not_found=False)
+        return bool(cron and cron.sudo().active)
+
+    def request_background_processing(self):
+        """Short RPC: wake the existing worker, never run an import in HTTP."""
+        self._operator()
+        worker = self.sudo()
+        if worker.state in ACTIVE_STATES and worker._background_enabled():
+            worker._schedule_import()
+        return worker._progress_payload()
 
     def process_import_step(self):
         """One bounded RPC transaction; explicit access check BEFORE elevation.
@@ -312,10 +327,24 @@ class DispatchSnapshot(models.Model):
             data = json.loads(base64.b64decode(chunk.with_context(bin_size=False).payload))
             if len(data) != chunk.row_count:
                 raise ValueError("El bloque preparado no coincide con su control de facturas. Reintente la importación.")
-            warehouse_map = self.env["dispatch.warehouse"]._ensure_records(self.company_id,[row for item in data for row in item["lines"]])
-            self.env["dispatch.invoice"]._upsert_snapshot_values(self,[self._invoice_values(item,warehouse_map) for item in data])
-            self.loaded_invoices += len(data)
-            chunk.loaded = True
+            start = int(chunk.processed_count or 0)
+            if start < 0 or start >= len(data):
+                raise ValueError("El avance guardado del bloque no es válido. Revise la importación.")
+            stop, lines = start, 0
+            while stop < len(data) and stop - start < LOAD_BATCH_SIZE:
+                count = len(data[stop]["lines"])
+                if stop > start and lines + count > LOAD_LINE_LIMIT:
+                    break
+                lines += count
+                stop += 1
+            portion = data[start:stop]
+            warehouse_map = self.env["dispatch.warehouse"]._ensure_records(self.company_id,[row for item in portion for row in item["lines"]])
+            self.env["dispatch.invoice"]._upsert_snapshot_values(self,[self._invoice_values(item,warehouse_map) for item in portion])
+            # Records, counters and this cursor commit together. A lost response
+            # can resume the SAME prepared chunk without replaying its prefix.
+            self.loaded_invoices += len(portion)
+            chunk.processed_count = stop
+            chunk.loaded = stop == len(data)
         elif self.loaded_invoices != self.total_invoices:
             raise ValueError("Faltan bloques preparados: se importaron %s de %s facturas. Use Reintentar para reconstruir el corte desde el archivo guardado." % (self.loaded_invoices, self.total_invoices))
         if self.loaded_invoices > self.total_invoices:
@@ -373,4 +402,5 @@ class DispatchChunk(models.Model):
     checksum = fields.Char(required=True)
     row_count = fields.Integer()
     loaded = fields.Boolean(default=False)
+    processed_count = fields.Integer(string="Facturas confirmadas del bloque", default=0, readonly=True, copy=False)
     _sql_constraints = [("snapshot_phase_sequence", "unique(snapshot_id,phase,sequence)", "El bloque ya existe.")]

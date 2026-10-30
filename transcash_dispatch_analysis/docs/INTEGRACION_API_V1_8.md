@@ -8,7 +8,7 @@ La API y Excel convergen en el mismo procesamiento de cortes: ciudades, parámet
 
 ## Configuración inicial
 
-1. Actualizar `transcash_dispatch_analysis` a 18.0.1.8.2, con `api_administrator` disponible en addons. Reiniciar Odoo y actualizar el módulo; no desinstalar ni volver a importar el Excel.
+1. Actualizar `transcash_dispatch_analysis` a 18.0.1.8.4, con `api_administrator` disponible en addons. Reiniciar Odoo y actualizar el módulo; no desinstalar ni volver a importar el Excel. Esta actualización agrega el cursor de avance de los bloques; requiere actualizar la base, además de copiar los archivos.
 2. Seleccionar la empresa correspondiente. En API Administrator, configurar **exactamente un registro GET activo**:
 
    | Campo | Valor |
@@ -22,7 +22,7 @@ La API y Excel convergen en el mismo procesamiento de cortes: ciudades, parámet
    | `user_id`, `password` | Credenciales del ERP |
 
 3. En **Análisis de despachos → Configuración → Fuentes y API**, abrir la misma fuente con la que se importó el Excel (normalmente `TRANSCASH`). Activar **Sincronizar API cada 2 horas**. Se permite una sola fuente automática por empresa. En otra empresa, usar su propia fuente y registro API.
-4. Ejecutar **Análisis de despachos → Sincronizar API → Sincronizar ahora** y seguir el progreso. Esta ejecución está disponible para Operador y Responsable y también funciona sin activar la consulta automática.
+4. Ejecutar **Análisis de despachos → Sincronizar → Sincronizar** y seguir el progreso desde la recepción. La pantalla de operación no solicita parámetros técnicos y usa la fuente automática configurada para la empresa (o la primera fuente activa si aún no se habilitó la automática). Esta ejecución está disponible para Operador y Responsable y también funciona sin activar la consulta automática. Los detalles se administran en Fuentes y API.
 5. Verificar el estado final de importación y los totales. La ficha de fuente muestra el último intento, respuesta válida, resultado y enlace a la importación. “Última respuesta válida” indica que la descarga y validación del JSON terminaron; el estado de importación informa si el procesamiento acabó o encontró un error.
 
 Al actualizar se crea un cron activo llamado **Despachos: consultar getdatosdespachos cada 2 horas**. Solo consulta fuentes con la casilla anterior activada. No se hace ninguna petición HTTP durante la actualización del módulo. La programación se puede revisar en Acciones planificadas; se conserva si el administrador la modifica.
@@ -75,7 +75,7 @@ La paginación declarada (`has_more`, `next_page`, `next`, `links.next`, `total_
 
 1. Un bloqueo por fuente evita descargar y cargar al mismo tiempo desde cron, botón y Excel. Si ya hay una importación recibiendo/en cola/importando, se devuelve su progreso y no se hace otra descarga.
 2. Se normalizan y validan los registros. Una huella de su contenido efectivo permite conservar el corte vigente si no hubo cambios en el mismo día/corte. El orden de las filas no genera versiones nuevas; repetir el feed completo tampoco.
-3. Si cambian las facturas, se recibe un corte nuevo por bloques de hasta 5.000 filas/20 MiB. El trabajo pendiente se procesa con el cron de importación existente y, cuando el usuario abre el avance, también con la pantalla interactiva.
+3. Si cambian las facturas, se recibe un corte nuevo por bloques de hasta 5.000 filas/20 MiB. Desde 1.8.4, la pantalla prioriza el cron de importación existente y consulta su avance. Si ese cron está desactivado, conserva el procesamiento interactivo en operaciones acotadas; un cursor guardado permite continuar un mismo bloque grande tras una respuesta perdida.
 4. Las ciudades se crean antes de capturar los parámetros: **Guayaquil 3 días calendario, demás ciudades 9**. Las reglas existentes, editadas o archivadas se respetan; no se reinician cada dos horas.
 5. El corte anterior permanece visible hasta completar todos los bloques. Al terminar se publica una sola versión vigente por compañía/tipo/número. Los históricos se conservan fuera de los indicadores. Las anulaciones/exclusiones del universo se reflejan al sustituir el corte completo.
 6. Una factura totalmente despachada sigue en la respuesta con Pendiente=0 y sus acumulados reales. Así deja de sumar carga pendiente y permanece en el denominador de facturación/cumplimiento.

@@ -316,6 +316,8 @@ class PullSnapshot:
         assert chunks == len(self.chunks) and rows == sum(map(len, self.chunks))
         self.total_rows = rows; self.state = "queued"
     def action_open_progress(self): return {"type":"ir.actions.client", "tag":"transcash_dispatch_import_progress", "params":{"snapshot_id":self.id}}
+    def _progress_payload(self):
+        return {"id":self.id,"state":self.state,"input_type":self.input_type,"total_rows":getattr(self,"total_rows",0)}
 
 
 class Snapshots:
@@ -330,6 +332,7 @@ class Snapshots:
 class Source:
     _sync_dispatch_api = sync.DispatchSourceAPI._sync_dispatch_api
     action_sync_api = sync.DispatchSourceAPI.action_sync_api
+    sync_api_data = sync.DispatchSourceAPI.sync_api_data
     def __init__(self):
         self.id = 3; self.name = "ERP"; self.active = True; self.active_snapshot_id = False
         self.company_id = SimpleNamespace(id=1, partner_id=SimpleNamespace(tz="America/Guayaquil"))
@@ -400,9 +403,44 @@ class SyncTests(unittest.TestCase):
 
     def test_manual_action_returns_complete_progress_contract(self):
         source = Source()
-        with patch.object(sync, "fetch_dispatch_api", return_value=[line()]): action = source.action_sync_api()
+        with patch.object(sync, "fetch_dispatch_api") as fetch:
+            action = source.action_sync_api()
+        fetch.assert_not_called()
         self.assertEqual(action["tag"], "transcash_dispatch_import_progress")
-        self.assertEqual(action["params"]["snapshot_id"], 1)
+        self.assertEqual(action["params"], {"source_id":source.id,"input_type":"api","sync_api":True})
+
+    def test_sync_rpc_returns_persisted_progress_after_opening_the_view(self):
+        source = Source()
+        with patch.object(sync, "fetch_dispatch_api", return_value=[line()]) as fetch:
+            result = source.sync_api_data()
+        self.assertEqual(fetch.call_count,1)
+        self.assertEqual(result["snapshot_id"],1)
+        self.assertEqual(result["progress"]["input_type"],"api")
+        self.assertEqual(result["progress"]["state"],"queued")
+
+    def test_sync_rpc_checks_permissions_before_fetching(self):
+        source = Source()
+        def denied(): raise PermissionError()
+        source._check_operator = denied
+        with patch.object(sync, "fetch_dispatch_api") as fetch, self.assertRaises(PermissionError):
+            source.sync_api_data()
+        fetch.assert_not_called()
+
+    def test_sync_rpc_errors_are_visible_without_a_fake_success(self):
+        source = Source()
+        with patch.object(sync,"fetch_dispatch_api",side_effect=adapter.DispatchAPIError("Servicio no disponible")):
+            result=source.sync_api_data()
+        self.assertTrue(result["error"])
+        self.assertNotIn("snapshot_id",result)
+        self.assertEqual(result["message"],"Servicio no disponible")
+
+    def test_sync_dialog_only_exposes_primary_action_and_no_technical_fields(self):
+        from test_import_queue_standalone import ROOT
+        import xml.etree.ElementTree as ET
+        form=ET.parse(ROOT/"wizard/api_sync_views.xml").find(".//form")
+        self.assertTrue(all(field.get("invisible")=="1" for field in form.findall(".//field")))
+        self.assertEqual(form.find(".//button[@type='object']").get("string"),"Sincronizar")
+        self.assertNotIn("getdatosdespachos","".join(form.itertext()))
 
     def test_api_rows_use_existing_city_policy_and_invoice_pipeline(self):
         dataset = adapter.convert_dispatch_payload([line(), line(CodBodega="B2", Ciudad="Guayaquil"),
