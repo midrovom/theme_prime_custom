@@ -148,6 +148,38 @@ class ContractTests(unittest.TestCase):
     def test_equivalent_columns_cannot_disagree(self):
         with self.assertRaises(adapter.DispatchAPIError): self.convert([dict(line(), peso_pendiente=7)])
 
+    def test_user_dotted_format_in_lowercase_invoice_dispatch_and_cutoff(self):
+        raw = {key.lower():value for key,value in line(FechaFactura="2026.01.05",UltimoDespacho="2026.01.08").items()}
+        result = self.convert({"fecha_corte":"2026.10.29","data":[raw]})
+        self.assertEqual(result["rows"][0]["FechaFactura"], "2026-01-05")
+        self.assertEqual(result["rows"][0]["UltimoDespacho"], "2026-01-08")
+        self.assertEqual(result["cutoff_date"], "2026-10-29")
+        self.assertEqual(self.convert([line(FechaFactura="2026.05.01")])["rows"][0]["FechaFactura"], "2026-05-01")
+
+    def test_dotted_dates_allow_time_fractions_php_and_explicit_timezone(self):
+        for value in ("2026.01.05 0:00:00", "2026.01.05 09:13:24.1234567", "2026.01.05T09:13:24-05:00",
+                      {"date":"2026.01.05 00:00:00.000000","timezone":"America/Guayaquil"}):
+            with self.subTest(value=value):
+                self.assertEqual(self.convert([line(FechaFactura=value)])["rows"][0]["FechaFactura"], "2026-01-05")
+        self.assertEqual(self.convert([line(FechaFactura="2026.01.05T02:00:00Z")])["rows"][0]["FechaFactura"], "2026-01-04")
+
+    def test_invalid_dotted_dates_keep_validation_and_row_information(self):
+        for value in ("2026.02.30", "2026.13.05", "2026.01.00", "05.01.2026", "2026.01.05junk", "2026.01.05 25:00:00"):
+            with self.subTest(value=value), self.assertRaises(adapter.DispatchAPIError) as caught:
+                self.convert([line(),line(FechaFactura=value)])
+            self.assertIn("FechaFactura (línea 2)",str(caught.exception))
+            self.assertIn("YYYY.MM.DD",str(caught.exception))
+
+    def test_dotted_format_has_same_effective_checksum_as_iso(self):
+        canonical = self.convert([line(FechaFactura="2026-01-05",UltimoDespacho="2026-01-08")])
+        dotted = self.convert([line(FechaFactura="2026.01.05",UltimoDespacho="2026.01.08")])
+        self.assertEqual(canonical["checksum"],dotted["checksum"])
+        self.assertEqual(canonical["rows"],dotted["rows"])
+
+    def test_dotted_cutoff_still_rejects_future_dates(self):
+        with self.assertRaises(adapter.DispatchAPIError):
+            self.convert({"fecha_corte":"2026.10.30","data":[line(FechaFactura="2026.01.05")]})
+
     def test_last_duplicate_updates_pending_instead_of_adding(self):
         result = self.convert([line(), line(DespachoFisico=6, Pendiente=4, PesoPendiente=4000, PesoDespacho=6000)])
         key, rows = next(iter_invoice_groups(result["rows"]))

@@ -1,6 +1,10 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.8.1 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.8.2 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Formato de fecha del ERP 1.8.2
+
+El conector GET reconoce **YYYY.MM.DD**, tal como `2026.01.05`, y lo convierte a `2026-01-05` (5 de enero). Se aplica a FechaFactura, UltimoDespacho y fecha_corte; admite hora opcional y conserva la validación de calendario. La representación con puntos produce la misma huella que la fecha ISO equivalente y mantiene la actualización única por tipo y número. Actualizar el módulo y ejecutar Sincronizar ahora; no hace falta cambiar el formato de la API.
 
 ## Fechas de SQL/PHP en la API 1.8.1
 

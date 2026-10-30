@@ -42,6 +42,7 @@ LOCAL_DATE = re.compile(
     r"^(?P<day>\d{1,2})(?P<separator>[/\-])(?P<month>\d{1,2})(?P=separator)(?P<year>\d{4})"
     r"(?:[ T](?P<hour>\d{1,2}):(?P<minute>\d{2})(?::(?P<second>\d{2})(?:[.,](?P<fraction>\d{1,7}))?)?)?$"
 )
+DOTTED_DATE = re.compile(r"^(?P<year>\d{4})\.(?P<month>\d{1,2})\.(?P<day>\d{1,2})(?=$|[ T])")
 
 
 def _check_pagination(meta):
@@ -98,6 +99,15 @@ def _date(value, label, timezone="America/Guayaquil"):
         text = str(value).strip()
         if not text:
             return None
+        # The ERP sends year.month.day. Normalize only this explicit date
+        # prefix; leave decimal seconds and timezone offsets untouched.
+        dotted = DOTTED_DATE.match(text)
+        if dotted:
+            suffix = text[dotted.end():]
+            if re.match(r"^[ T]\d:", suffix):
+                suffix = suffix[:1] + "0" + suffix[1:]
+            text = "%04d-%02d-%02d%s" % (
+                int(dotted["year"]), int(dotted["month"]), int(dotted["day"]), suffix)
         regional = LOCAL_DATE.fullmatch(text)
         if regional:
             parts = regional.groupdict()
@@ -114,7 +124,7 @@ def _date(value, label, timezone="America/Guayaquil"):
             return local_day(parsed)
         return as_date(text).isoformat()
     except (ValueError, TypeError, OverflowError, KeyError):
-        raise DispatchAPIError("%s: %s tiene una fecha inválida. Use YYYY-MM-DD o DD/MM/YYYY, con hora opcional; también se admite un objeto PHP con date y timezone." % (ENDPOINT, label)) from None
+        raise DispatchAPIError("%s: %s tiene una fecha inválida. Use YYYY-MM-DD, YYYY.MM.DD o DD/MM/YYYY, con hora opcional; también se admite un objeto PHP con date y timezone." % (ENDPOINT, label)) from None
 
 
 def _unwrap(raw, timezone="America/Guayaquil"):

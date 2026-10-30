@@ -1,5 +1,7 @@
 # Corrección de fechas getdatosdespachos · versión 1.8.1
 
+**Ampliación 1.8.2:** se acepta `YYYY.MM.DD`, el formato real indicado por el usuario. `2026.01.05` se normaliza a `2026-01-05`. También se admite hora opcional, por ejemplo `2026.01.05 0:00:00`. La misma regla se aplica a FechaFactura, UltimoDespacho y fecha_corte. Se recomienda instalar 1.8.2 y ejecutar nuevamente Sincronizar ahora; no es necesario cambiar la API.
+
 La versión 1.8 solo admitía fechas ISO o valores de fecha ya nativos. Se reprodujo el mensaje `FechaFactura debe ser una fecha ISO YYYY-MM-DD válida` con `05/01/2026 0:00:00` y con un objeto DateTime serializado por PHP. No se ha consultado el endpoint real; la reproducción es local con esos formatos.
 
 ## Formatos admitidos por el conector GET
@@ -7,6 +9,8 @@ La versión 1.8 solo admitía fechas ISO o valores de fecha ya nativos. Se repro
 | Entrada | Resultado en zona America/Guayaquil |
 | --- | --- |
 | `2026-01-05` | `2026-01-05` |
+| `2026.01.05` | `2026-01-05` |
+| `2026.01.05 0:00:00` | `2026-01-05` |
 | `2026-01-05 00:00:00.0000000` | `2026-01-05` |
 | `05/01/2026` | `2026-01-05` |
 | `05/01/2026 0:00:00` | `2026-01-05` |

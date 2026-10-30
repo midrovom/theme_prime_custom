@@ -1,4 +1,10 @@
-# Validación de la entrega 18.0.1.8.1
+# Validación de la entrega 18.0.1.8.2
+
+## Formato YYYY.MM.DD 1.8.2
+
+- 208 pruebas autónomas aprobadas: las 203 anteriores y cinco regresiones nuevas del formato exacto comunicado por el usuario. Se cubren los campos en minúsculas, FechaFactura, UltimoDespacho, fecha_corte, hora opcional, fracciones, objetos PHP y zona explícita.
+- `2026.01.05` se convierte a `2026-01-05`; `2026.05.01` se convierte a `2026-05-01`. Se comprueba igualdad de registros/huellas con ISO, rechazo de calendario inválido, fecha futura y error con número de línea. La normalización solo cambia el prefijo de fecha, conservando los puntos de las fracciones de segundo.
+- El cron, modelos, permisos, esquema, publicación de versiones y archivos de interfaz/estilos se conservan sin cambios respecto a 1.8.1. No se ha accedido al servidor ni al endpoint real; las once pruebas nativas API incluidas siguen pendientes de ejecución en Odoo/PostgreSQL.
 
 ## Fechas SQL/PHP 1.8.1
 

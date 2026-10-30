@@ -8,7 +8,7 @@ La API y Excel convergen en el mismo procesamiento de cortes: ciudades, parámet
 
 ## Configuración inicial
 
-1. Actualizar `transcash_dispatch_analysis` a 18.0.1.8.1, con `api_administrator` disponible en addons. Reiniciar Odoo y actualizar el módulo; no desinstalar ni volver a importar el Excel.
+1. Actualizar `transcash_dispatch_analysis` a 18.0.1.8.2, con `api_administrator` disponible en addons. Reiniciar Odoo y actualizar el módulo; no desinstalar ni volver a importar el Excel.
 2. Seleccionar la empresa correspondiente. En API Administrator, configurar **exactamente un registro GET activo**:
 
    | Campo | Valor |
@@ -65,7 +65,7 @@ Una fila por factura y bodega cuando el origen está consolidado. Si se entrega 
 
 Se admiten lista directa y envoltorios `data`, `result`, `results`, `items`, `rows`, `records`, `response` o `payload`, incluso anidados. Se reconocen variantes de mayúsculas/guiones bajos como `numero_factura`; también `tipo` y `numero`. Para evitar pérdida de ceros iniciales, enviar identificadores como texto. Las cantidades obligatorias son `Facturado`, `DespachoFisico` y `Pendiente`; campos ausentes o inválidos cancelan la carga antes de crear un corte.
 
-`fecha_corte`/`cutoff_date` es opcional, pero recomendado. Sin él se toma el día de la operación (zona de la empresa, con America/Guayaquil como respaldo). No se admiten cortes futuros ni anteriores al vigente en esta consulta. Se recomienda `YYYY-MM-DD`; desde 1.8.1 se admiten también `DD/MM/YYYY`, `DD-MM-YYYY`, con hora opcional, y objetos PHP con `date` y `timezone`. El orden regional es siempre día/mes/año, sin inferir el formato de Estados Unidos. Se normalizan también FechaFactura y UltimoDespacho. Timestamps con zona se convierten a la zona de la operación antes de obtener su fecha, y timestamps sin zona se consideran locales. Detalles en `FECHAS_API_V1_8_1.md`.
+`fecha_corte`/`cutoff_date` es opcional, pero recomendado. Sin él se toma el día de la operación (zona de la empresa, con America/Guayaquil como respaldo). No se admiten cortes futuros ni anteriores al vigente en esta consulta. Se recomienda `YYYY-MM-DD`; desde 1.8.2 se acepta **YYYY.MM.DD**, como `2026.01.05`. Se conservan `DD/MM/YYYY`, `DD-MM-YYYY`, con hora opcional, y objetos PHP con `date` y `timezone`, incorporados en 1.8.1. El formato con puntos es año/mes/día; el regional con barras o guiones es día/mes/año, sin inferir el formato de Estados Unidos. Se normalizan también FechaFactura y UltimoDespacho. Timestamps con zona se convierten a la zona de la operación antes de obtener su fecha, y timestamps sin zona se consideran locales. Detalles en `FECHAS_API_V1_8_1.md`.
 
 La respuesta debe contener el **universo completo de la fuente**, incluidas facturas ya despachadas y todas sus bodegas/productos. No entregar solo pendientes, solo últimas modificaciones ni una página parcial: eso eliminaría del universo vigente las facturas omitidas y alteraría el cumplimiento. Incluir `total_rows` con el número total de filas de `data` y obtener una extracción coherente del ERP. `total_rows`, `total_records`, `total_lineas` y `total` en un envoltorio son controles de filas; deben coincidir. Si el ERP no declara controles ni paginación, Odoo no puede detectar una omisión que parezca una respuesta completa.
 
