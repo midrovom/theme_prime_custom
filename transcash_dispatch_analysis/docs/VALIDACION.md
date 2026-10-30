@@ -1,4 +1,8 @@
-# Validación de la entrega 18.0.1.6.0
+# Validación de la entrega 18.0.1.6.1
+
+## Corrección de fechas 1.6.1
+
+Se comprueba con el componente y XML montados en OWL que cambiar de favorito o tablero conserva el rango actual. Se cubren el rango inicial de 30 días, un rango personalizado, solo Desde, solo Hasta y Todas las fechas; se usan favoritos con fechas diferentes guardadas y sin fechas. Los eventos reales de los selectores conservan los valores de los inputs y el período enviado a la consulta de datos. Los botones explícitos de fechas siguen pudiendo cambiarlo. Las fechas guardadas del favorito original no se modifican. Las pruebas son locales con RPC simulado, sin acceso al servidor del cliente.
 
 ## Ejecutado en 1.6
 

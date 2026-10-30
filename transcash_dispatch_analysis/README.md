@@ -1,6 +1,10 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.6.0 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.6.1 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Conservar fechas al cambiar de vista 1.6.1
+
+Cambiar de tablero o cargar un favorito desde el tablero conserva las fechas seleccionadas, aunque el favorito tenga otras fechas guardadas. También se conservan los rangos abiertos y Todas las fechas. Para cambiar el período, editar Desde/Hasta o pulsar Últimos 30 días o Todas las fechas. Se mantiene el inicio con los últimos 30 días al entrar al tablero.
 
 ## Tablero más claro y correcciones 1.6
 
@@ -75,7 +79,7 @@ No requiere paquetes Python adicionales. El lector XLSX usa la biblioteca están
 
 ## Primera revisión del tablero
 
-El filtro inicial consulta los últimos 30 días e incluye todas las condiciones de entrega. Seleccionar **Entrega Transcash** para analizar exclusivamente esa modalidad. El plan de vehículos comienza solo con Entrega Transcash. Los retiros de clientes siguen visibles y se pueden analizar por separado. **Todas las fechas** permite consultar el historial vigente completo. Cargar un favorito respeta las fechas que guardaste.
+El filtro inicial consulta los últimos 30 días e incluye todas las condiciones de entrega. Seleccionar **Entrega Transcash** para analizar exclusivamente esa modalidad. El plan de vehículos comienza solo con Entrega Transcash. Los retiros de clientes siguen visibles y se pueden analizar por separado. **Todas las fechas** permite consultar el historial vigente completo. Cargar un favorito conserva las fechas que tienes seleccionadas en pantalla.
 
 Una factura pendiente tiene al menos una línea con `Pendiente > 0,000001`. Una línea con saldo negativo no compensa el pendiente de otra línea. Se identifica por `TipoFactura + NumeroFactura` dentro de la compañía, conservando todas sus bodegas y productos distintos como detalle. Establecimiento y la columna Factura son descriptivos. Las fuentes y cortes conservan versiones; solo la observación vigente más reciente de esa llave entra en la operación.
 

@@ -36,7 +36,7 @@ Los vehículos disponibles iniciales son supuestos, no una consulta del inventar
 - Los filtros se obtienen antes de la primera consulta de datos. Todos los cuadros comparten ese rango por fecha de factura; el estado se evalúa al corte importado.
 - **Últimos 30 días** aplica de nuevo ese período; **Todas las fechas** quita ambos límites.
 - Los botones de indicadores y análisis dinámico usan los filtros de los resultados que están en pantalla. Cambios de filtros pendientes de aplicar no cambian el detalle de cifras ya mostradas.
-- Los favoritos nativos conservan sus fechas y la opción de agrupación guardadas. No se sobrescriben sus fechas al abrirlos.
+- Desde 1.6.1, cargar un favorito desde el tablero aplica sus otros filtros y la agrupación guardada, conservando las fechas seleccionadas en pantalla. También conserva Todas las fechas y los rangos con un solo límite. Cambiar de tablero conserva igualmente las fechas. El período cambia cuando editas Desde/Hasta o pulsas los botones de fechas.
 - Las acciones programáticas de facturas, histórico y recálculo múltiple incluyen `views`, además de `view_mode`. Esto corrige la lectura de `map` sobre una lista ausente. Referencia: https://www.odoo.com/documentation/18.0/developer/reference/backend/actions.html#window-actions-ir-actions-act-window
 
 ## Toneladas y pallets

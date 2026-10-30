@@ -137,7 +137,11 @@ export class DispatchDashboard extends Component {
     async loadFavorite() {
         const favorite = this.state.savedFilters.find(f => f.id === Number(this.state.selectedFavorite));
         if (!favorite) return;
-        this.state.filters = {...{source_id:"",snapshot_id:"",date_from:"",date_to:"",city:"",delivery:"",planning_scope:"transcash",planning_grouping:"warehouse",warehouse_ids:[]}, ...JSON.parse(JSON.stringify(favorite.filters))};
+        // Dates belong to the current analysis, including open-ended ranges.
+        // A saved view changes its other filters without replacing the period.
+        const {date_from, date_to} = this.state.filters;
+        this.state.filters = {...{source_id:"",snapshot_id:"",city:"",delivery:"",planning_scope:"transcash",planning_grouping:"warehouse",warehouse_ids:[]},
+            ...JSON.parse(JSON.stringify(favorite.filters)), date_from, date_to};
         this.state.boardId = favorite.board_id || false;
         this.state.favoriteName = favorite.name;
         await this.load();
