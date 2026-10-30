@@ -292,3 +292,27 @@ class TestDispatchIntegration(TransactionCase):
         versions=first.invoice_ids|second.invoice_ids
         self.assertEqual(len(versions.filtered("is_current")),1)
         self.assertEqual(versions.filtered("is_current").source_id,other)
+
+    def test_pallet_fields_backfill_existing_import_without_reupload(self):
+        self.row.update({"PalletsPendientes": 3.5, "PalletsFacturados": 4.25, "PesoPendiente": 9000})
+        snapshot = self._snapshot("pallet-backfill")
+        snapshot._prepare(); snapshot._load_next()
+        invoice = snapshot.invoice_ids
+        self.assertEqual(invoice.invoiced_pallets, 4.25)
+        self.assertEqual(invoice.pending_pallets, 3.5)
+        invoice.line_ids.write({"invoiced_pallets": 0, "invoiced_pallets_available": False, "pending_pallets": 0})
+        self.env["dispatch.invoice"]._initialize_unique_records(self.env.company)
+        self.assertEqual(invoice.invoiced_pallets, 4.25)
+        self.assertEqual(invoice.pending_pallets, 3.5)
+        self.assertEqual(invoice.invoiced_pallets_missing_rows, 0)
+        self.assertTrue(invoice.line_ids.invoiced_pallets_available)
+
+    def test_kpi_and_warehouse_actions_include_views_and_date_scope(self):
+        service = self.env["dispatch.dashboard"]
+        filters = {"date_from": "2026-01-01", "date_to": "2026-01-30"}
+        action = service.get_detail_action(filters)
+        self.assertEqual(action["views"][0], (False, "list"))
+        self.assertIn(("invoice_date", ">=", "2026-01-01"), action["domain"])
+        warehouse_action = service.get_warehouse_action(filters)
+        self.assertTrue(warehouse_action["views"])
+        self.assertIn(("invoice_id.invoice_date", ">=", "2026-01-01"), warehouse_action["domain"])

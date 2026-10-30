@@ -32,6 +32,7 @@ El conector de origen obtiene un exportador completo y estable, lo normaliza a l
 | `PesoDespacho` | número, kg | Peso despachado acumulado; indicador de toneladas despachadas. |
 | `PesoFacturado` | número, kg, recomendado | Peso facturado por renglón único. Necesario para completar el indicador cuando hay ajustes o pesos faltantes. |
 | `PesoAjusteDevolucion` | número, kg, opcional | Peso separado del ajuste; permite conciliar facturado = físico + pendiente + ajuste cuando faltara PesoFacturado. |
+| `PalletsFacturados` | número, opcional | Pallets equivalentes facturados del renglón. Sin este campo el indicador se muestra sin dato o parcial; no se deriva de toneladas ni cantidades de productos mezclados. El cero explícito es un dato válido. |
 | `Direccion`, `Comentario`, `Bloques`, `Ubicaciones`, `EstadoDespacho`, `DiasSinMovimiento`, `TienePendiente`, `PesoDespacho` | datos de origen | Trazabilidad. El estado y la antigüedad del indicador se calculan a partir de cantidades y fechas. |
 
 No enviar números con separadores de miles. Para la API se recomiendan valores numéricos JSON y fechas ISO. Convertir timestamps a fecha local de operación (America/Guayaquil, si aplica) antes de reducirlos a fecha. No cortar la parte de fecha de un timestamp UTC sin convertir su zona.

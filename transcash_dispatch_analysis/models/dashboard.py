@@ -1,5 +1,6 @@
 from collections import Counter
 from collections import defaultdict
+from datetime import timedelta
 import json
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
@@ -10,7 +11,8 @@ from ..services.planning import build_transport_plan
 READ_FIELDS = ["name", "invoice_key", "snapshot_id", "source_id", "company_id", "external_number", "internal_number", "invoice_date", "customer", "city", "delivery", "warehouse", "seller",
     "state", "pending", "pending_lines", "pending_weight", "pending_boxes", "pending_pallets", "has_adjustment", "physically_completed", "source_warnings", "source_grain",
     "completion_date", "quality_flags", "quality_issue", "cutoff_date", "age_days", "lead_days", "lead_available", "sla_configured",
-    "deadline", "sla_status", "late_days", "eligible", "mature", "on_time", "invoiced_weight", "dispatched_weight", "invoiced_weight_missing_rows", "dispatched_weight_missing_rows"]
+    "deadline", "sla_status", "late_days", "eligible", "mature", "on_time", "invoiced_weight", "dispatched_weight", "invoiced_weight_missing_rows", "dispatched_weight_missing_rows",
+    "line_count", "invoiced_pallets", "invoiced_pallets_missing_rows", "pending_pallets_missing_rows"]
 
 
 class DispatchDashboard(models.AbstractModel):
@@ -21,6 +23,14 @@ class DispatchDashboard(models.AbstractModel):
     def _access(self):
         if not self.env.su and not self.env.user.has_group("transcash_dispatch_analysis.group_dispatch_user"):
             raise AccessError(_("No tiene acceso a Análisis de despachos."))
+
+    @api.model
+    def get_default_filters(self):
+        self._access()
+        today = fields.Date.context_today(self)
+        return {"source_id": "", "snapshot_id": "", "city": "", "delivery": "", "warehouse_ids": [],
+                "planning_scope": "transcash", "planning_grouping": "warehouse",
+                "date_from": (today - timedelta(days=29)).isoformat(), "date_to": today.isoformat()}
 
     @api.model
     def _domain(self, filters=None):
@@ -72,13 +82,16 @@ class DispatchDashboard(models.AbstractModel):
         scope = filters.get("planning_scope", "transcash")
         if scope not in ("transcash", "filtered"):
             raise ValidationError(_("Alcance de planificación no permitido."))
+        grouping = filters.get("planning_grouping", "warehouse")
+        if grouping not in ("warehouse", "destination"):
+            raise ValidationError(_("Forma de agrupar la carga no permitida."))
         warehouse_ids = filters.get("warehouse_ids") or []
         pending_ids = [r["id"] for r in rows if warehouse_ids or r["pending"]]
         transport_lines = []
         for offset in range(0, len(pending_ids), 5000):
             line_domain = [("invoice_id", "in", pending_ids[offset:offset + 5000])]
             line_domain += [("warehouse_id","in",warehouse_ids)] if warehouse_ids else [("pending_qty", ">", 0.000001)]
-            line_fields = ["invoice_id", "warehouse", "warehouse_code", "pending_qty", "pending_weight", "pending_pallets"]
+            line_fields = ["invoice_id", "warehouse", "warehouse_code", "pending_qty", "pending_weight", "pending_pallets", "pending_pallets_available"]
             if warehouse_ids: line_fields += ["raw_data"]
             transport_lines += self.env["dispatch.invoice.line"].search_read(line_domain,line_fields)
         if warehouse_ids:
@@ -96,7 +109,7 @@ class DispatchDashboard(models.AbstractModel):
         stats = summarize(rows)
         companies = self.env["res.company"].browse(sorted({r["company_id"][0] for r in rows}))
         packs = self.env["dispatch.transport.settings"]._planning_packs(companies)
-        transport = build_transport_plan(rows, transport_lines, packs, scope)
+        transport = build_transport_plan(rows, transport_lines, packs, scope, grouping)
         dates = sorted(r["invoice_date"] for r in rows if r["invoice_date"])
         period = {"date_from": filters.get("date_from") or (dates[0] if dates else False),
                   "date_to": filters.get("date_to") or (dates[-1] if dates else False), "basis": "invoice_date"}
@@ -139,9 +152,19 @@ class DispatchDashboard(models.AbstractModel):
             else:
                 groups.sort(key=lambda r: (r[widget.metric] is not None, r[widget.metric] or 0), reverse=True)
                 selected = groups[:widget.top_n]
-            series = [{"label": r["label"], "value": None if widget.metric == "overdue" and not r["overdue_available"] else r[widget.metric]} for r in selected]
+            def chart_value(group):
+                if widget.metric == "overdue" and not group["overdue_available"]:
+                    return None
+                if widget.metric == "invoiced_pallets" and group["line_count"] and group["invoiced_pallets_missing_rows"] >= group["line_count"]:
+                    return None
+                if widget.metric == "pending_pallets" and group["pending_lines"] and group["pending_pallets_missing_rows"] >= group["pending_lines"]:
+                    return None
+                return group[widget.metric]
+            series = [{"label": r["label"], "value": chart_value(r)} for r in selected]
             if widget.chart_type == "donut" and len(groups) > len(selected):
-                series.append({"label": "Otros", "value": sum(r[widget.metric] or 0 for r in groups[widget.top_n:])})
+                other_values = [chart_value(r) for r in groups[widget.top_n:]]
+                series.append({"label": "Otros", "value": sum(v for v in other_values if v is not None)
+                    if any(v is not None for v in other_values) else None})
             widgets.append({"id": widget.id, "name": widget.name, "metric": widget.metric, "dimension": widget.dimension,
                             "chart_type": widget.chart_type, "series": series, "group_count": len(groups)})
         sources = self.env["dispatch.source"].search([])
@@ -214,7 +237,9 @@ class DispatchDashboard(models.AbstractModel):
         domain=self._domain(filters)
         line_domain=[("invoice_id."+field,operator,value) for field,operator,value in domain if field!="warehouse_ids"]
         if filters.get("warehouse_ids"):line_domain.append(("warehouse_id","in",filters["warehouse_ids"]))
-        allowed={key:filters[key] for key in ("source_id","snapshot_id","date_from","date_to","city","delivery","planning_scope","warehouse_ids") if key in filters}
+        if filters.get("planning_grouping", "warehouse") not in ("warehouse", "destination"):
+            raise ValidationError(_("Forma de agrupar la carga no permitida."))
+        allowed={key:filters[key] for key in ("source_id","snapshot_id","date_from","date_to","city","delivery","planning_scope","planning_grouping","warehouse_ids") if key in filters}
         if board_id:
             board=self.env["dispatch.board"].browse(int(board_id))
             board.check_access_rights("read");board.check_access_rule("read")
@@ -239,7 +264,18 @@ class DispatchDashboard(models.AbstractModel):
             ids=self.get_data(filters,False,True)["detail_ids"][category]
             additions[category]=[("id","in",ids)]
         return {"type": "ir.actions.act_window", "name": _("Análisis de despachos"), "res_model": "dispatch.invoice",
-                "view_mode": "list,form,pivot,graph", "domain": domain + additions[category]}
+                "view_mode": "list,form,pivot,graph", "views": [(False, mode) for mode in ("list", "form", "pivot", "graph")],
+                "domain": domain + additions[category], "target": "current"}
+
+    @api.model
+    def get_warehouse_action(self, filters=None):
+        filters = filters or {}
+        domain = self._domain(filters)
+        line_domain = [("invoice_id." + field, operator, value) for field, operator, value in domain if field != "warehouse_ids"]
+        if filters.get("warehouse_ids"):
+            line_domain.append(("warehouse_id", "in", filters["warehouse_ids"]))
+        action = self.env["ir.actions.actions"]._for_xml_id("transcash_dispatch_analysis.action_warehouse_analysis")
+        return {**action, "domain": line_domain, "context": {}}
 
     @api.model
     def request_recalculation(self, filters=None):
@@ -255,5 +291,6 @@ class DispatchDashboard(models.AbstractModel):
         if len(actions) > 1:
             action = {"type": "ir.actions.act_window", "name": _("Cortes con nuevos parámetros"),
                 "res_model": "dispatch.snapshot", "view_mode": "list,form",
+                "views": [(False, "list"), (False, "form")],
                 "domain": [("id", "in", [a["params"]["snapshot_id"] for a in actions])]}
         return {"count": len(actions), "action": action}

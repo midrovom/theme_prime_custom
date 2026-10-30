@@ -1,6 +1,14 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.5.1 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.6.0 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Tablero más claro y correcciones 1.6
+
+Al entrar se consultan los últimos 30 días, incluido hoy, según la zona horaria del usuario de Odoo. Los indicadores y sus botones usan el rango aplicado. Se corrige el error de `map` al abrir facturas: las acciones devuelven la lista de vistas requerida por el cliente.
+
+El plan distingue vehículos, viajes, días y contratación. Explica el cálculo por bodega y permite comparar una salida por bodega con la agrupación de carga para el mismo destino. La agrupación es un supuesto que debe incluir las recogidas en el tiempo de viaje; las reglas específicas de origen mantienen salidas separadas. Se conservan los valores de transporte editados por el usuario.
+
+La carga tiene cuadros de toneladas facturadas, despachadas y pendientes, y pallets facturados y pendientes. El Excel actual no incluye PalletsFacturados; se muestra **Sin dato**. El campo opcional se admite en Excel/API. Los datos existentes se completan al actualizar, sin volver a importar. Ver `docs/TABLERO_CLARO_V1_6.md`.
 
 ## Corrección de estilos 1.5.1
 
@@ -67,7 +75,7 @@ No requiere paquetes Python adicionales. El lector XLSX usa la biblioteca están
 
 ## Primera revisión del tablero
 
-El filtro inicial incluye todas las condiciones de entrega. Seleccionar **Entrega Transcash** para analizar exclusivamente esa modalidad. Los retiros de clientes siguen visibles y se pueden analizar por separado.
+El filtro inicial consulta los últimos 30 días e incluye todas las condiciones de entrega. Seleccionar **Entrega Transcash** para analizar exclusivamente esa modalidad. El plan de vehículos comienza solo con Entrega Transcash. Los retiros de clientes siguen visibles y se pueden analizar por separado. **Todas las fechas** permite consultar el historial vigente completo. Cargar un favorito respeta las fechas que guardaste.
 
 Una factura pendiente tiene al menos una línea con `Pendiente > 0,000001`. Una línea con saldo negativo no compensa el pendiente de otra línea. Se identifica por `TipoFactura + NumeroFactura` dentro de la compañía, conservando todas sus bodegas y productos distintos como detalle. Establecimiento y la columna Factura son descriptivos. Las fuentes y cortes conservan versiones; solo la observación vigente más reciente de esa llave entra en la operación.
 

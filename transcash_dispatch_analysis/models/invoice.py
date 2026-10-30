@@ -1,7 +1,7 @@
 import json
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError
-from ..services.engine import aggregate_invoice, evaluate, invoice_key, latest_invoice_versions, normalize, unique_invoice_lines, weight_metrics
+from ..services.engine import aggregate_invoice, evaluate, invoice_key, latest_invoice_versions, normalize, unique_invoice_lines, weight_metrics, pallet_metrics
 
 STATE_OPTIONS = [("pending", "Sin despacho"), ("partial", "Parcial"), ("done", "Despachada completa"), ("adjusted", "Con ajustes/devoluciones"), ("excess", "Saldo excedido"), ("review", "Revisar")]
 SLA_OPTIONS = [("no_rule", "Sin plazo"), ("invalid", "Datos por revisar"), ("adjusted", "Con ajustes"), ("on_time", "Despachada a tiempo"), ("late", "Despachada tarde"), ("overdue", "Pendiente vencida"), ("due_today", "Vence al corte"), ("open", "Pendiente en plazo")]
@@ -51,6 +51,9 @@ class DispatchInvoice(models.Model):
     pending_tons = fields.Float(string="Toneladas pendientes", compute="_compute_pending_tons", store=True, digits=(16, 3))
     pending_boxes = fields.Float(string="Cajas pendientes", digits=(16, 3))
     pending_pallets = fields.Float(string="Pallets pendientes", digits=(16, 3))
+    invoiced_pallets = fields.Float(string="Pallets facturados conocidos", digits=(16, 3))
+    invoiced_pallets_missing_rows = fields.Integer(string="Registros sin pallets facturados")
+    pending_pallets_missing_rows = fields.Integer(string="Registros sin pallets pendientes")
     has_adjustment = fields.Boolean(string="Con ajustes/devoluciones", index=True)
     physically_completed = fields.Boolean(string="Despacho físico completo según origen", index=True)
     completion_date = fields.Date(string="Fecha del despacho completo")
@@ -191,27 +194,38 @@ class DispatchInvoice(models.Model):
                 for line in batch:
                     raw = line["raw_data"] or {}
                     metrics = weight_metrics(raw)
+                    pallets = pallet_metrics(raw)
                     warehouse_id = warehouse_map.get(normalize(line["warehouse_code"] or line["warehouse"]))
                     values.append((line["id"],warehouse_id,metrics["dispatched_weight"],metrics["invoiced_weight"],
                         metrics["dispatched_weight_available"],metrics["invoiced_weight_available"],
                         max(0,line["pending_weight"])/1000 if line["pending_qty"]>0.000001 else 0,
-                        metrics["dispatched_weight"]/1000,metrics["invoiced_weight"]/1000))
-                placeholders = ",".join(["(%s,%s,%s,%s,%s,%s,%s,%s,%s)"]*len(values))
+                        metrics["dispatched_weight"]/1000,metrics["invoiced_weight"]/1000,
+                        pallets["invoiced_pallets"],pallets["invoiced_pallets_available"],
+                        pallets["pending_pallets"],pallets["pending_pallets_available"]))
+                placeholders = ",".join(["(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"]*len(values))
                 self.env.cr.execute("""UPDATE dispatch_invoice_line l SET warehouse_id=v.warehouse_id::int,
                     dispatched_weight=v.dispatched_weight::float8,invoiced_weight=v.invoiced_weight::float8,
                     dispatched_weight_available=v.dispatched_available::boolean,invoiced_weight_available=v.invoiced_available::boolean,
-                    pending_tons=v.pending_tons::float8,dispatched_tons=v.dispatched_tons::float8,invoiced_tons=v.invoiced_tons::float8
+                    pending_tons=v.pending_tons::float8,dispatched_tons=v.dispatched_tons::float8,invoiced_tons=v.invoiced_tons::float8,
+                    invoiced_pallets=v.invoiced_pallets::float8,invoiced_pallets_available=v.invoiced_pallets_available::boolean,
+                    pending_pallets=v.pending_pallets::float8,pending_pallets_available=v.pending_pallets_available::boolean
                     FROM (VALUES """+placeholders+""") AS v(id,warehouse_id,dispatched_weight,invoiced_weight,
-                    dispatched_available,invoiced_available,pending_tons,dispatched_tons,invoiced_tons) WHERE l.id=v.id::int""",
+                    dispatched_available,invoiced_available,pending_tons,dispatched_tons,invoiced_tons,
+                    invoiced_pallets,invoiced_pallets_available,pending_pallets,pending_pallets_available) WHERE l.id=v.id::int""",
                     [value for row in values for value in row])
                 last_id=batch[-1]["id"]
             self.env.cr.execute("""UPDATE dispatch_invoice i SET
                 invoiced_weight=w.invoiced_weight,dispatched_weight=w.dispatched_weight,
                 invoiced_tons=w.invoiced_weight/1000,dispatched_tons=w.dispatched_weight/1000,
-                invoiced_weight_missing_rows=w.invoiced_missing,dispatched_weight_missing_rows=w.dispatched_missing
+                invoiced_weight_missing_rows=w.invoiced_missing,dispatched_weight_missing_rows=w.dispatched_missing,
+                invoiced_pallets=w.invoiced_pallets,pending_pallets=w.pending_pallets,
+                invoiced_pallets_missing_rows=w.invoiced_pallets_missing,pending_pallets_missing_rows=w.pending_pallets_missing
                 FROM (SELECT l.invoice_id,sum(l.invoiced_weight) invoiced_weight,sum(l.dispatched_weight) dispatched_weight,
                     count(*) FILTER (WHERE NOT l.invoiced_weight_available) invoiced_missing,
-                    count(*) FILTER (WHERE NOT l.dispatched_weight_available) dispatched_missing
+                    count(*) FILTER (WHERE NOT l.dispatched_weight_available) dispatched_missing,
+                    sum(l.invoiced_pallets) invoiced_pallets,sum(l.pending_pallets) pending_pallets,
+                    count(*) FILTER (WHERE NOT l.invoiced_pallets_available) invoiced_pallets_missing,
+                    count(*) FILTER (WHERE NOT l.pending_pallets_available) pending_pallets_missing
                     FROM dispatch_invoice_line l WHERE l.company_id=%s GROUP BY l.invoice_id) w WHERE i.id=w.invoice_id""", (company.id,))
             self.env.cr.execute("""INSERT INTO dispatch_invoice_warehouse_rel(invoice_id,warehouse_id)
                 SELECT DISTINCT invoice_id,warehouse_id FROM dispatch_invoice_line WHERE company_id=%s AND warehouse_id IS NOT NULL
@@ -266,6 +280,9 @@ class DispatchInvoiceLine(models.Model):
     invoiced_tons = fields.Float(string="Toneladas facturadas conocidas", compute="_compute_tons", store=True, digits=(16, 3))
     pending_boxes = fields.Float(string="Cajas pendientes")
     pending_pallets = fields.Float(string="Pallets pendientes")
+    invoiced_pallets = fields.Float(string="Pallets facturados conocidos")
+    invoiced_pallets_available = fields.Boolean(string="Pallets facturados disponibles")
+    pending_pallets_available = fields.Boolean(string="Pallets pendientes disponibles")
     source_state = fields.Char(string="Estado en origen")
     address = fields.Char(string="Dirección original")
     comment = fields.Text(string="Comentario original")

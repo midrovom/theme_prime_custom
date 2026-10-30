@@ -15,7 +15,7 @@ import unicodedata
 
 EPS = 0.000001
 GROUPS = {"city", "delivery", "warehouse", "seller", "month"}
-METRICS = {"total", "pending", "overdue", "mature_compliance", "completed_compliance", "lead_avg", "lead_median", "lead_p90", "pending_weight", "pending_tons", "invoiced_tons", "dispatched_tons"}
+METRICS = {"total", "pending", "overdue", "mature_compliance", "completed_compliance", "lead_avg", "lead_median", "lead_p90", "pending_weight", "pending_tons", "invoiced_tons", "dispatched_tons", "invoiced_pallets", "pending_pallets"}
 
 
 def normalize(value):
@@ -107,6 +107,24 @@ def latest_invoice_versions(rows):
     return [value[1] for value in latest.values()]
 
 
+def pallet_metrics(row):
+    """Pallets must be reported: mixed-product quantities are not a conversion."""
+    pending_qty = number(row.get("Pendiente"))
+    billed_qty = number(row.get("Facturado"))
+    values = {}
+    for name, field, needed in (("invoiced", "PalletsFacturados", abs(billed_qty) > EPS),
+                                ("pending", "PalletsPendientes", pending_qty > EPS)):
+        raw = row.get(field)
+        value = number(raw, field) if raw not in (None, "") else None
+        known = value is not None and value >= 0
+        if not needed:
+            value, known = 0.0, True
+        values[name + "_pallets"] = max(0, value or 0) if known else 0.0
+        values[name + "_pallets_available"] = known
+        values[name + "_pallets_missing_rows"] = int(not known)
+    return values
+
+
 def iter_invoice_groups(rows):
     """Use an on-disk spool to group unsorted large exports with bounded RAM."""
     with TemporaryDirectory(prefix="transcash_dispatch_") as directory:
@@ -170,8 +188,9 @@ def aggregate_invoice(key, rows, cutoff):
     adjusted = False
     completion_dates = []
     last_dates = []
-    pending_weight = boxes = pallets = 0.0
+    pending_weight = boxes = 0.0
     weights = [weight_metrics(row) for row in rows]
+    pallet_values = [pallet_metrics(row) for row in rows]
     for r in rows:
         for required in ("Facturado", "DespachoFisico", "Pendiente"):
             if r.get(required) in (None, ""):
@@ -208,7 +227,6 @@ def aggregate_invoice(key, rows, cutoff):
         if pending > EPS:
             pending_weight += max(0, number(r.get("PesoPendiente"), "PesoPendiente"))
             boxes += max(0, number(r.get("CajasPendientes"), "CajasPendientes"))
-            pallets += max(0, number(r.get("PalletsPendientes"), "PalletsPendientes"))
     pending = pending_lines > 0
     physically_completed = bool(not pending and physical_full and not adjusted and completion_dates and "sin_fecha_despacho" not in flags)
     if pending:
@@ -253,7 +271,10 @@ def aggregate_invoice(key, rows, cutoff):
         "invoiced_weight_missing_rows": sum(w["invoiced_weight_missing_rows"] for w in weights),
         "dispatched_weight_missing_rows": sum(w["dispatched_weight_missing_rows"] for w in weights),
         "pending_boxes": boxes,
-        "pending_pallets": pallets,
+        "pending_pallets": sum(p["pending_pallets"] for p in pallet_values),
+        "invoiced_pallets": sum(p["invoiced_pallets"] for p in pallet_values),
+        "invoiced_pallets_missing_rows": sum(p["invoiced_pallets_missing_rows"] for p in pallet_values),
+        "pending_pallets_missing_rows": sum(p["pending_pallets_missing_rows"] for p in pallet_values),
         "has_adjustment": bool(adjusted),
         "physically_completed": physically_completed,
         "completion_date": max(completion_dates).isoformat() if physically_completed else False,
@@ -424,6 +445,11 @@ def summarize(rows):
         "dispatched_weight_missing_rows": sum(r.get("dispatched_weight_missing_rows", 0) for r in rows),
         "pending_boxes": sum(r.get("pending_boxes", 0) for r in rows if r.get("pending")),
         "pending_pallets": sum(r.get("pending_pallets", 0) for r in rows if r.get("pending")),
+        "invoiced_pallets": sum(r.get("invoiced_pallets") or 0 for r in rows),
+        "invoiced_pallets_missing_rows": sum(r.get("invoiced_pallets_missing_rows") or 0 for r in rows),
+        "pending_pallets_missing_rows": sum(r.get("pending_pallets_missing_rows") or 0 for r in pending_rows),
+        "line_count": sum(r.get("line_count") or 0 for r in rows),
+        "pending_lines": sum(r.get("pending_lines") or 0 for r in pending_rows),
         "no_rule": sum(not r.get("sla_configured") for r in rows),
         "invalid": sum(bool(r.get("quality_issue")) or r.get("sla_status") == "invalid" for r in rows),
         "adjusted": sum(bool(r.get("has_adjustment")) for r in rows),
@@ -446,4 +472,8 @@ def metric_value(rows, metric):
     if metric not in METRICS:
         raise ValueError("Indicador no permitido.")
     values = summarize(rows)
+    if metric == "invoiced_pallets" and values["line_count"] and values["invoiced_pallets_missing_rows"] >= values["line_count"]:
+        return None
+    if metric == "pending_pallets" and values["pending_lines"] and values["pending_pallets_missing_rows"] >= values["pending_lines"]:
+        return None
     return None if metric == "overdue" and not values["overdue_available"] else values[metric]

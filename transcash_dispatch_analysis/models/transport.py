@@ -38,9 +38,11 @@ class DispatchTransportSettings(models.Model):
     _rec_name = "company_id"
 
     company_id = fields.Many2one("res.company", required=True, default=lambda s: s.env.company, index=True)
-    target_days = fields.Integer(string="Días operativos objetivo para vaciar pendientes", required=True, default=3)
-    available_vehicles = fields.Integer(string="Vehículos asignados por ruta (escenario)", required=True, default=1)
-    trips_per_day = fields.Float(string="Viajes completos por vehículo y día operativo", required=True, default=1, digits=(16, 3))
+    target_days = fields.Integer(string="¿En cuántos días quieres terminar?", required=True, default=3)
+    available_vehicles = fields.Integer(string="¿Cuántos vehículos tienes disponibles por grupo?", required=True, default=1,
+        help="Un grupo es una bodega y destino. Si agrupas bodegas en el tablero, es un destino. El valor inicial es un supuesto editable, no un inventario real de flota.")
+    trips_per_day = fields.Float(string="¿Cuántos viajes hace cada vehículo por día?", required=True, default=1, digits=(16, 3),
+        help="Incluye carga, entrega y regreso. 1 = un viaje diario; 0,5 = un viaje cada dos días.")
     _sql_constraints = [("transport_company_unique", "unique(company_id)", "Ya existe un escenario para esta compañía.")]
 
     @api.constrains("target_days", "available_vehicles", "trips_per_day")
@@ -97,9 +99,9 @@ class DispatchTransportRoute(models.Model):
     route_key = fields.Char(compute="_compute_route_key", store=True, index=True)
     vehicle_id = fields.Many2one("dispatch.vehicle.type", string="Vehículo preferido", check_company=True,
         domain="[('company_id', '=', company_id)]", help="Vacío: sugerir el tipo con menos vehículos para el plazo objetivo. No calcula costos.")
-    target_days = fields.Integer(string="Días operativos objetivo", required=True, default=3)
-    available_vehicles = fields.Integer(string="Vehículos asignados a cada ruta de origen", required=True, default=1)
-    trips_per_day = fields.Float(string="Viajes completos por vehículo y día operativo", required=True, default=1, digits=(16, 3))
+    target_days = fields.Integer(string="¿En cuántos días quieres terminar?", required=True, default=3)
+    available_vehicles = fields.Integer(string="Vehículos disponibles para este grupo", required=True, default=1)
+    trips_per_day = fields.Float(string="Viajes por vehículo y día", required=True, default=1, digits=(16, 3))
     notes = fields.Text(string="Restricciones y observaciones")
 
     @api.depends("city", "warehouse_code")

@@ -76,3 +76,33 @@
   .td-scope-note { font-size:11px; padding:12px; border-left:3px solid #365eea; color:#5b6f92; background:#f0f4fd; }
   @media(max-width:850px) { .td-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 }
+
+.td-dashboard {
+  .td-kpis { margin-bottom:20px; }
+  .td-table { font-size:12px; }
+  .td-table th { font-size:11px; }
+  .td-cargo-cards { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin:18px 0; }
+  .td-cargo-card { text-align:left; border:1px solid var(--td-line); background:#f8faff; border-radius:9px; padding:17px 14px; cursor:pointer; color:var(--td-ink); }
+  .td-cargo-card:hover { border-color:var(--td-blue); }
+  .td-cargo-card span,.td-cargo-card small { display:block; color:#63718a; font-size:11px; line-height:1.5; }
+  .td-cargo-card strong { display:block; font-size:24px; margin:12px 0; color:#365eea; overflow-wrap:anywhere; }
+  .td-cargo-card:nth-child(3) { background:#fffaf0; }
+  .td-cargo-card:nth-child(3) strong { color:#a76b15; }
+  .td-plan-controls { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; margin:20px 0 12px; }
+  .td-plan-controls label { flex:1; min-width:230px; }
+  .td-plan-explanation { padding:14px 16px; background:#edf4ff; border-radius:8px; font-size:12px; line-height:1.7; color:#40597e; }
+  .td-assumption-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:12px 0; }
+  .td-assumption-grid span { background:white; border:1px solid var(--td-line); padding:12px; border-radius:7px; }
+  .td-destination-table { min-width:1000px; }
+  .td-destination-table td { vertical-align:top; }
+  .td-destination-table small { display:block; font-size:11px; color:#63718a; line-height:1.6; margin-top:6px; max-width:250px; }
+  .td-destination-table .td-plan-issue { color:#9d6518; }
+  .td-calculation { margin-top:12px; min-width:220px; }
+  .td-calculation summary { color:#365eea; cursor:pointer; font-size:11px; }
+  .td-lane-explanation { padding:14px; margin-top:12px; border:1px solid var(--td-line); border-radius:8px; background:#f8faff; max-width:410px; min-width:280px; }
+  .td-lane-explanation p { margin-top:9px; line-height:1.7; }
+  .td-lane-explanation details { margin-top:12px; }
+  @media(max-width:1400px) { .td-cargo-cards { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  @media(max-width:850px) { .td-cargo-cards,.td-assumption-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media(max-width:520px) { .td-assumption-grid { grid-template-columns:1fr; } .td-cargo-card strong { font-size:20px; } }
+}

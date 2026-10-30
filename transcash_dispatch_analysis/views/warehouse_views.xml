@@ -16,19 +16,19 @@
   </record>
   <record id="warehouse_analysis_list" model="ir.ui.view">
     <field name="name">dispatch.invoice.line.warehouse.list</field><field name="model">dispatch.invoice.line</field>
-    <field name="arch" type="xml"><list create="false" edit="false" delete="false"><field name="invoice_id"/><field name="invoice_date"/><field name="warehouse_id"/><field name="city"/><field name="delivery"/><field name="invoiced_tons" sum="Facturadas conocidas (t)"/><field name="dispatched_tons" sum="Despachadas (t)"/><field name="pending_tons" sum="Pendientes (t)"/><field name="invoiced_weight_available" optional="show"/><field name="dispatched_weight_available" optional="hide"/><field name="pending_qty" optional="hide"/><field name="snapshot_id" optional="hide"/></list></field>
+    <field name="arch" type="xml"><list create="false" edit="false" delete="false"><field name="invoice_id"/><field name="invoice_date"/><field name="warehouse_id"/><field name="city"/><field name="delivery"/><field name="invoiced_tons" sum="Facturadas conocidas (t)"/><field name="dispatched_tons" sum="Despachadas (t)"/><field name="pending_tons" sum="Pendientes (t)"/><field name="invoiced_pallets" sum="Pallets facturados conocidos"/><field name="pending_pallets" sum="Pallets pendientes"/><field name="invoiced_pallets_available" optional="show"/><field name="pending_pallets_available" optional="hide"/><field name="invoiced_weight_available" optional="show"/><field name="dispatched_weight_available" optional="hide"/><field name="pending_qty" optional="hide"/><field name="snapshot_id" optional="hide"/></list></field>
   </record>
   <record id="warehouse_analysis_pivot" model="ir.ui.view">
     <field name="name">dispatch.invoice.line.warehouse.pivot</field><field name="model">dispatch.invoice.line</field>
-    <field name="arch" type="xml"><pivot string="Toneladas por bodega y destino"><field name="warehouse_id" type="row"/><field name="city" type="col"/><field name="invoiced_tons" type="measure"/><field name="dispatched_tons" type="measure"/><field name="pending_tons" type="measure"/></pivot></field>
+    <field name="arch" type="xml"><pivot string="Toneladas por bodega y destino"><field name="warehouse_id" type="row"/><field name="city" type="col"/><field name="invoiced_tons" type="measure"/><field name="dispatched_tons" type="measure"/><field name="pending_tons" type="measure"/><field name="invoiced_pallets" type="measure"/><field name="pending_pallets" type="measure"/></pivot></field>
   </record>
   <record id="warehouse_analysis_graph" model="ir.ui.view">
     <field name="name">dispatch.invoice.line.warehouse.graph</field><field name="model">dispatch.invoice.line</field>
-    <field name="arch" type="xml"><graph string="Pendientes por destino" type="bar"><field name="city"/><field name="pending_tons" type="measure"/></graph></field>
+    <field name="arch" type="xml"><graph string="Pendientes por destino" type="bar"><field name="city"/><field name="pending_tons" type="measure"/><field name="invoiced_pallets" type="measure"/><field name="pending_pallets" type="measure"/></graph></field>
   </record>
   <record id="action_warehouse_analysis" model="ir.actions.act_window">
     <field name="name">Toneladas por bodegas y destinos</field><field name="res_model">dispatch.invoice.line</field><field name="view_mode">pivot,graph,list</field>
     <field name="search_view_id" ref="warehouse_analysis_search"/><field name="context">{'search_default_current':1}</field>
-    <field name="help" type="html"><p>Seleccione varias bodegas en el panel lateral. Guarde la búsqueda desde Favoritos de Odoo, con filtros, agrupaciones y medidas. Las filas representan detalles por bodega: el conteo de filas no es el número único de facturas. El peso facturado muestra solo la parte conocida; los ajustes requieren PesoFacturado o PesoAjusteDevolucion.</p></field>
+    <field name="help" type="html"><p>Seleccione varias bodegas en el panel lateral. Guarde la búsqueda desde Favoritos de Odoo, con filtros, agrupaciones y medidas. Las filas representan detalles por bodega: el conteo de filas no es el número único de facturas. Los pallets facturados requieren PalletsFacturados en el origen; revise su disponibilidad antes de interpretar un cero. El peso facturado muestra solo la parte conocida; los ajustes requieren PesoFacturado o PesoAjusteDevolucion.</p></field>
   </record>
 </odoo>

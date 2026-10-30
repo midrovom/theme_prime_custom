@@ -180,7 +180,7 @@ class DispatchHoliday(models.Model):
 
 METRIC_OPTIONS = [("total", "Facturas"), ("pending", "Facturas pendientes"), ("overdue", "Pendientes vencidas"),
                   ("mature_compliance", "Cumplimiento exigible (%)"), ("completed_compliance", "Cumplimiento despachadas (%)"),
-                  ("lead_avg", "Tiempo promedio (días calendario)"), ("lead_median", "Mediana de despacho (días calendario)"), ("lead_p90", "P90 de despacho (días calendario)"), ("pending_weight", "Peso pendiente (kg)"), ("pending_tons", "Toneladas pendientes"), ("invoiced_tons","Toneladas facturadas conocidas"), ("dispatched_tons","Toneladas despachadas")]
+                  ("lead_avg", "Tiempo promedio (días calendario)"), ("lead_median", "Mediana de despacho (días calendario)"), ("lead_p90", "P90 de despacho (días calendario)"), ("pending_weight", "Peso pendiente (kg)"), ("pending_tons", "Toneladas pendientes"), ("invoiced_tons","Toneladas facturadas conocidas"), ("dispatched_tons","Toneladas despachadas"), ("invoiced_pallets","Pallets facturados conocidos"), ("pending_pallets","Pallets pendientes")]
 DIMENSION_OPTIONS = [("city", "Ciudad"), ("delivery", "Condición de entrega"), ("warehouse", "Bodega"), ("seller", "Vendedor"), ("month", "Mes de factura")]
 
 
@@ -235,5 +235,5 @@ class DispatchWidget(models.Model):
                 raise ValidationError(_("El máximo de grupos debe estar entre 1 y 50."))
             if widget.chart_type == "line" and widget.dimension != "month":
                 raise ValidationError(_("El gráfico de línea requiere la dimensión Mes de factura."))
-            if widget.chart_type == "donut" and widget.metric not in ("total", "pending", "overdue", "pending_weight", "pending_tons", "invoiced_tons", "dispatched_tons"):
+            if widget.chart_type == "donut" and widget.metric not in ("total", "pending", "overdue", "pending_weight", "pending_tons", "invoiced_tons", "dispatched_tons", "invoiced_pallets", "pending_pallets"):
                 raise ValidationError(_("La distribución circular necesita una cantidad aditiva."))

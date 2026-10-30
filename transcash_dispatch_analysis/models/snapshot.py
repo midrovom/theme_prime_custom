@@ -5,7 +5,7 @@ import logging
 import uuid
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
-from ..services.engine import aggregate_invoice, as_date, evaluate, invoice_key, iter_invoice_groups, normalize, number, unique_invoice_lines, weight_metrics
+from ..services.engine import aggregate_invoice, as_date, evaluate, invoice_key, iter_invoice_groups, normalize, number, unique_invoice_lines, weight_metrics, pallet_metrics
 from ..services.xlsx_reader import iter_xlsx_rows
 from ..services.import_progress import ACTIVE_STATES, progress_values
 
@@ -220,7 +220,8 @@ class DispatchSnapshot(models.Model):
         self.ensure_one()
         self.check_access_rights("read")
         self.check_access_rule("read")
-        return {"type": "ir.actions.act_window", "name": self.name, "res_model": "dispatch.invoice", "view_mode": "list,form,pivot,graph", "domain": [("snapshot_id", "=", self.id)]}
+        return {"type": "ir.actions.act_window", "name": self.name, "res_model": "dispatch.invoice", "view_mode": "list,form,pivot,graph",
+                "views": [(False, mode) for mode in ("list", "form", "pivot", "graph")], "domain": [("snapshot_id", "=", self.id)]}
 
     def _rows(self):
         if self.input_type == "xlsx":
@@ -275,7 +276,7 @@ class DispatchSnapshot(models.Model):
     def _invoice_values(self, item, warehouse_map=None):
         summary=item["summary"]
         canonical_key=invoice_key({"TipoFactura":summary["invoice_type"],"NumeroFactura":summary["internal_number"]})
-        if summary.get("invoice_key")!=canonical_key or "invoiced_weight" not in summary:
+        if summary.get("invoice_key")!=canonical_key or "invoiced_weight" not in summary or "invoiced_pallets" not in summary:
             unique,_,_=unique_invoice_lines(item["lines"])
             summary=aggregate_invoice(canonical_key,unique,self.cutoff_date)
             item={"summary":summary,"lines":unique}
@@ -298,6 +299,8 @@ class DispatchSnapshot(models.Model):
             }
             metrics = weight_metrics(row)
             values_line.update({key:metrics[key] for key in ("dispatched_weight","invoiced_weight","dispatched_weight_available","invoiced_weight_available")})
+            pallets = pallet_metrics(row)
+            values_line.update({key:pallets[key] for key in ("invoiced_pallets", "pending_pallets", "invoiced_pallets_available", "pending_pallets_available")})
             values_line["warehouse_id"] = (warehouse_map or {}).get(normalize(row.get("CodBodega") or row.get("Bodega"))) or False
             commands.append(fields.Command.create(values_line))
         values["line_ids"] = commands
