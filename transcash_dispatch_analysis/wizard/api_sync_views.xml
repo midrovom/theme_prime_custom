@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_api_sync_wizard" model="ir.ui.view">
+    <field name="name">dispatch.api.sync.wizard.form</field>
+    <field name="model">dispatch.api.sync.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Sincronizar despachos por API">
+        <div class="alert alert-info" role="alert">Consulta getdatosdespachos y actualiza las facturas por tipo y número. Las ciudades nuevas se crean con 3 días para Guayaquil y 9 para las demás, conservando los plazos que ya configuró.</div>
+        <group>
+          <field name="company_id" invisible="1"/>
+          <field name="company_id" groups="base.group_multi_company"/>
+          <field name="source_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True, 'no_open': True}"/>
+          <field name="endpoint"/>
+          <field name="snapshot_state"/>
+          <field name="last_result"/>
+        </group>
+        <div class="text-muted">Use la misma fuente del Excel para sustituir ese universo de datos. La API debe entregar el corte completo; el procesamiento continúa por bloques.</div>
+        <footer>
+          <button name="action_sync" type="object" string="Sincronizar ahora" class="btn-primary"/>
+          <button string="Cerrar" special="cancel" class="btn-secondary"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+  <record id="action_api_sync" model="ir.actions.act_window">
+    <field name="name">Sincronizar API</field><field name="res_model">dispatch.api.sync.wizard</field>
+    <field name="view_mode">form</field><field name="target">new</field>
+  </record>
+</odoo>

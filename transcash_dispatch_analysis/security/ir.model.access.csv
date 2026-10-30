@@ -10,6 +10,7 @@ access_widget_user,widget.user,model_dispatch_widget,group_dispatch_user,1,1,1,1
 access_snapshot_operator,snapshot.operator,model_dispatch_snapshot,group_dispatch_operator,1,1,1,0
 access_chunk_operator,chunk.operator,model_dispatch_chunk,group_dispatch_operator,1,1,1,0
 access_wizard_operator,wizard.operator,model_dispatch_import_wizard,group_dispatch_operator,1,1,1,1
+access_api_sync_wizard_operator,api.sync.wizard.operator,model_dispatch_api_sync_wizard,group_dispatch_operator,1,1,1,1
 access_source_manager,source.manager,model_dispatch_source,group_dispatch_manager,1,1,1,1
 access_sla_manager,sla.manager,model_dispatch_sla,group_dispatch_manager,1,1,1,1
 access_holiday_manager,holiday.manager,model_dispatch_holiday,group_dispatch_manager,1,1,1,1

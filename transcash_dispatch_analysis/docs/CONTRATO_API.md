@@ -1,5 +1,7 @@
 # Contrato de recepción de datos
 
+Desde la versión 1.8 también se puede **consultar directamente el ERP** con getdatosdespachos. Su configuración, cabeceras, contrato JSON y cron de 2 horas están en `INTEGRACION_API_V1_8.md`. Este documento mantiene el mecanismo alternativo de envío por XML-RPC y la tabla de columnas común a Excel y API.
+
 ## Alcance y autenticación
 
 La recepción utiliza la API externa de Odoo 18, XML-RPC sobre HTTPS, con un usuario técnico del perfil **Operador** y acceso a la compañía de destino. Usar una API key en lugar de contraseña. No se crean rutas públicas ni se evita la seguridad del ORM.
@@ -59,4 +61,4 @@ Configurar en el proceso de integración `ODOO_URL`, `ODOO_DB`, `ODOO_LOGIN` y `
 python3 examples/push_api.py exportacion.jsonl --company-id 1 --source-code TRANSCASH --cutoff 2026-10-29 --batch-key export-2026-10-29-01
 ```
 
-Es un ejemplo de recepción listo para adaptar, no un conector ya conectado a tu sistema de origen. Para completar esa parte se necesitan URL/documentación de origen, método de autenticación, ejemplo real de respuesta, identificadores de factura/línea, política de cancelaciones y devoluciones, semántica de fechas, paginación y frecuencia deseada.
+Este ejemplo corresponde a recepción XML-RPC. Para consultar directamente el ERP con el esquema de API Administrator, usar el conector getdatosdespachos y las instrucciones de `INTEGRACION_API_V1_8.md`. En ambos casos, debe comprobarse la respuesta real y el significado de las columnas antes de habilitar la integración en producción.

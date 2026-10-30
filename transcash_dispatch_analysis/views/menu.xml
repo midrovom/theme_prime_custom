@@ -8,6 +8,7 @@
   <menuitem id="menu_warehouse_analysis" name="Toneladas por bodegas y destinos" parent="menu_dispatch_root" action="action_warehouse_analysis" sequence="21"/>
   <menuitem id="menu_boards" name="Mis tableros" parent="menu_dispatch_root" action="action_boards" sequence="30"/>
   <menuitem id="menu_import" name="Importar Excel" parent="menu_dispatch_root" action="action_import" sequence="40" groups="transcash_dispatch_analysis.group_dispatch_operator"/>
+  <menuitem id="menu_api_sync" name="Sincronizar API" parent="menu_dispatch_root" action="action_api_sync" sequence="41" groups="transcash_dispatch_analysis.group_dispatch_operator"/>
   <menuitem id="menu_snapshots" name="Importaciones e histórico" parent="menu_dispatch_root" action="action_snapshots" sequence="45"/>
   <menuitem id="menu_config" name="Configuración" parent="menu_dispatch_root" sequence="90" groups="transcash_dispatch_analysis.group_dispatch_manager"/>
   <menuitem id="menu_sla" name="Plazos por ciudad" parent="menu_config" action="action_sla" sequence="1"/>

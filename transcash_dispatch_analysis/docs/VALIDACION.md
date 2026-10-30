@@ -1,4 +1,12 @@
-# Validación de la entrega 18.0.1.7.2
+# Validación de la entrega 18.0.1.8.0
+
+## Conector GET y programación 1.8
+
+- 194 pruebas Python autónomas ejecutadas: se conservan las 156 anteriores y se añaden 38 de contrato JSON, autenticación/cabeceras, búsqueda exacta por empresa, errores, límites, protección frente a paginación, fechas locales, actualización por llave, cambios/reversiones, ausencia de cambios, bloqueo entre consultas, permisos previos a la elevación y cron de dos horas por empresa.
+- Con el archivo original completo se simula el cuerpo JSON de getdatosdespachos: 54.392 líneas, 44.989 facturas únicas, 383 pendientes, 1.030,61176 toneladas y 830,78 pallets pendientes. Las métricas coinciden con la lectura Excel y concilian por plazo. Reordenar o duplicar el feed completo conserva la huella de datos efectivos. Se usan los parámetros iniciales, no la configuración ni base remota del cliente.
+- Se incluyen diez pruebas nativas nuevas en tests/test_api_sync_odoo.py para ejecutar en Odoo/PostgreSQL: sustitución de pendientes y cierre, históricos, detalle de bodegas, ciudades, carga repetida, error, rollback de bloques, permisos y configuración única. No se han ejecutado esas pruebas nativas porque el entorno local no tiene servidor Odoo/PostgreSQL ni API Administrator instalado. Los 194 casos anteriores usan ORM y HTTP simulados.
+- Dependencia api_administrator confirmada en el manifiesto del módulo de referencia adjunto. Se reutilizan sus campos y cabeceras GET. No se modificó ese módulo ni sus archivos. No se consultó el ERP real ni se validaron sus credenciales/respuesta.
+- Se conserva byte por byte la interfaz/estilos del tablero 1.7.2 y los guardas de actualización rápida 1.7.1. La nueva programación es noupdate=1 y no realiza consultas HTTP durante la actualización. Las nuevas columnas son de configuración/trazabilidad, sin conversión histórica automática.
 
 ## Tarjetas y conciliación 1.7.2
 

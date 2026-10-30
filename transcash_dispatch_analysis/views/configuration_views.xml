@@ -1,7 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <record id="source_list" model="ir.ui.view"><field name="name">dispatch.source.list</field><field name="model">dispatch.source</field><field name="arch" type="xml"><list><field name="name"/><field name="code"/><field name="company_id" groups="base.group_multi_company"/><field name="active_snapshot_id"/></list></field></record>
-  <record id="source_form" model="ir.ui.view"><field name="name">dispatch.source.form</field><field name="model">dispatch.source</field><field name="arch" type="xml"><form><sheet><group><field name="name"/><field name="code"/><field name="company_id" groups="base.group_multi_company"/><field name="active"/><field name="active_snapshot_id"/></group><field name="notes"/><div class="alert alert-info">Una fuente contiene un universo completo. Una importación nueva sustituye su corte vigente al terminar. No combine dos fuentes con las mismas facturas.</div></sheet></form></field></record>
+  <record id="source_list" model="ir.ui.view"><field name="name">dispatch.source.list</field><field name="model">dispatch.source</field><field name="arch" type="xml"><list><field name="name"/><field name="code"/><field name="company_id" groups="base.group_multi_company"/><field name="active_snapshot_id"/><field name="api_sync_enabled"/><field name="api_last_success_at" optional="show"/><field name="api_snapshot_state" optional="show"/></list></field></record>
+  <record id="source_form" model="ir.ui.view">
+    <field name="name">dispatch.source.form</field><field name="model">dispatch.source</field>
+    <field name="arch" type="xml">
+      <form>
+        <header><button name="action_sync_api" type="object" string="Sincronizar API ahora" class="oe_highlight" groups="transcash_dispatch_analysis.group_dispatch_operator"/></header>
+        <sheet>
+          <group><field name="name"/><field name="code"/><field name="company_id" groups="base.group_multi_company"/><field name="active"/><field name="active_snapshot_id"/></group>
+          <group string="Sincronización desde el ERP">
+            <field name="api_sync_enabled"/>
+            <div class="alert alert-info" colspan="2" role="alert">Configure una API GET activa llamada getdatosdespachos en API Administrator para esta empresa. La consulta automática se ejecuta cada 2 horas. Active esta opción en la misma fuente usada para el Excel.</div>
+            <field name="api_last_attempt_at"/><field name="api_last_success_at"/>
+            <field name="api_last_result"/><field name="api_last_snapshot_id"/>
+            <field name="api_snapshot_state"/><field name="api_last_message"/>
+          </group>
+          <field name="notes"/>
+          <div class="alert alert-info">Una fuente contiene un universo completo. Cada carga terminada sustituye su corte vigente; los históricos no se suman a los indicadores. La API debe devolver todas las facturas del universo con su detalle completo de bodegas/productos, incluidas las ya despachadas.</div>
+        </sheet>
+      </form>
+    </field>
+  </record>
   <record id="action_sources" model="ir.actions.act_window"><field name="name">Fuentes y API</field><field name="res_model">dispatch.source</field><field name="view_mode">list,form</field></record>
   <record id="sla_list" model="ir.ui.view"><field name="name">dispatch.sla.list</field><field name="model">dispatch.sla</field><field name="arch" type="xml"><list editable="bottom"><field name="city"/><field name="delivery"/><field name="max_days"/><field name="day_type"/><field name="valid_from"/><field name="valid_to"/><field name="company_id" groups="base.group_multi_company"/><field name="active"/></list></field></record>
   <record id="sla_form" model="ir.ui.view"><field name="name">dispatch.sla.form</field><field name="model">dispatch.sla</field><field name="arch" type="xml"><form><sheet><div class="alert alert-info">Al importar se crean las ciudades faltantes con 9 días calendario; Guayaquil inicia con 3 días. Puede cambiar estos valores aquí. Las importaciones siguientes conservan sus cambios.</div><group><field name="city" placeholder="Ej.: Guayaquil. Vacío = general"/><field name="delivery" placeholder="Vacío = todas las modalidades"/><field name="max_days"/><field name="day_type"/><field name="valid_from"/><field name="valid_to"/><field name="active"/><field name="company_id" groups="base.group_multi_company"/></group><field name="notes"/><div class="alert alert-info">El día de facturación es día cero. El plazo vence al final del día calculado. Las reglas se capturan al importar. Para aplicar cambios al corte vigente, use “Aplicar parámetros” en el tablero. El histórico anterior se conserva.</div></sheet></form></field></record>

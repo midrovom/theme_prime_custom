@@ -1,11 +1,12 @@
 {
     "name": "Transcash · Análisis de despachos",
     "summary": "Cumplimiento por período, toneladas y planificación de vehículos por destino",
-    "version": "18.0.1.7.2",
+    "version": "18.0.1.8.0",
     "category": "Inventory/Reporting",
     "author": "Transcash",
     "license": "LGPL-3",
-    "depends": ["base", "web"],
+    "depends": ["base", "web", "api_administrator"],
+    "external_dependencies": {"python": ["requests"]},
     "data": [
         "security/security.xml",
         "security/ir.model.access.csv",
@@ -14,6 +15,7 @@
         "data/transport_defaults.xml",
         "data/unique_records.xml",
         "data/cron.xml",
+        "data/api_cron.xml",
         "views/configuration_views.xml",
         "views/transport_views.xml",
         "views/warehouse_views.xml",
@@ -21,6 +23,7 @@
         "views/snapshot_views.xml",
         "views/board_views.xml",
         "wizard/import_views.xml",
+        "wizard/api_sync_views.xml",
         "views/menu.xml",
     ],
     "assets": {

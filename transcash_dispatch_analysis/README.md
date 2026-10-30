@@ -1,6 +1,16 @@
 # Transcash · Análisis de despachos para Odoo 18
 
-Versión 18.0.1.7.2 del módulo, con importación del exportador Excel y recepción de datos por la API externa autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+Versión 18.0.1.8.0 del módulo, con importación del exportador Excel, consulta GET de getdatosdespachos mediante API Administrator y recepción por la API autenticada de Odoo. Compatible por diseño con Odoo 18 Community y Enterprise en servidor propio u Odoo.sh. Requiere validación de instalación en la base de destino. Odoo Online no admite este módulo Python.
+
+## Sincronización getdatosdespachos 1.8
+
+Se usa el mismo esquema del módulo Inventario Inteligente suministrado: URL, ruta, usuario y contraseña centralizados en **API Administrator**, método GET y sus cabeceras habituales. Esta versión depende de `api_administrator` y `requests`; no requiere instalar Inventario Inteligente ni Comisiones.
+
+Configurar una API GET activa llamada **getdatosdespachos** para la empresa, abrir **Configuración → Fuentes y API**, seleccionar la misma fuente usada para el Excel y activar **Sincronizar API cada 2 horas**. El menú **Sincronizar API → Sincronizar ahora** permite consultar bajo demanda a usuarios Operador/Responsable. La pantalla de progreso y el cron de importación continúan el trabajo por bloques. La configuración de origen muestra el último intento, respuesta válida, resultado y estado de importación.
+
+Se mantienen las ciudades automáticas (Guayaquil 3 días calendario y las demás 9, conservando reglas editadas), la llave TipoFactura + NumeroFactura por empresa, las bodegas y productos distintos y una sola versión vigente por factura. Una respuesta sin cambios para el mismo corte reutiliza la importación vigente. Una respuesta fallida, vacía, incompleta según sus controles o con paginación declarada no sustituye los datos actuales. Las fechas del tablero no limitan la consulta al ERP.
+
+Contrato y configuración: `docs/INTEGRACION_API_V1_8.md`. Respuesta de ejemplo: `examples/getdatosdespachos_response.json`. El conector está implementado y probado localmente; se debe configurar y comprobar contra el endpoint real en el servidor.
 
 ## Toneladas, pallets y totales por despachar 1.7.2
 
@@ -76,12 +86,12 @@ Los plazos iniciales siguen la instrucción de negocio: 9 días calendario y 3 p
 
 ## Instalación
 
-1. Copiar la carpeta `transcash_dispatch_analysis` a una ruta de addons de Odoo 18. No cambiar el nombre técnico de la carpeta.
+1. Confirmar que `api_administrator` está disponible en el servidor e instalar `requests` en su entorno Python si faltara. Copiar la carpeta `transcash_dispatch_analysis` a una ruta de addons de Odoo 18. No cambiar el nombre técnico de la carpeta.
 2. Reiniciar Odoo, actualizar la lista de aplicaciones e instalar **Transcash · Análisis de despachos**.
 3. Asignar el perfil del módulo a los usuarios. El administrador de Odoo recibe Responsable al instalar.
 4. Revisar Configuración → Fuentes y API. La fuente inicial `TRANSCASH` pertenece a la compañía principal; crear otra fuente para otra compañía cuando corresponda.
 5. Revisar Plazos por ciudad: Guayaquil inicia con 3 días y las otras ciudades se crearán con 9 al importar. Se pueden modificar días, calendario y vigencias. Una ciudad vacía representa la regla general; modalidad vacía representa todas las modalidades. Los feriados se configuran si se opta por días hábiles.
-6. Importar el Excel completo e indicar la fecha de extracción del exportador. Para el archivo recibido, el corte analizado es **29/10/2026**.
+6. Importar el Excel completo o configurar getdatosdespachos siguiendo `docs/INTEGRACION_API_V1_8.md`. No hace falta reimportar Excel al actualizar una instalación existente. Para el archivo recibido, el corte analizado es **29/10/2026**.
 7. Mantener abierta la pantalla de progreso hasta que termine. Para retomar una carga anterior, usar Importaciones e histórico → Procesar / ver progreso. El cron es un respaldo; la pantalla procesa los bloques aunque el cron no esté habilitado.
 8. Si se cambian plazos después de importar, pulsar **Aplicar parámetros**. Se prepara otro corte con las reglas actuales y se mantiene el anterior como histórico.
 
@@ -107,15 +117,17 @@ El archivo actualizado está consolidado por bodega. Los cierres se evalúan al 
 
 ## API
 
-Leer `docs/CONTRATO_API.md`. El archivo `examples/push_api.py` envía un exportador JSON/JSONL mediante XML-RPC autenticado con API key. Las credenciales se leen de variables de entorno.
+La consulta del ERP está implementada mediante **getdatosdespachos**, con cron de 2 horas y ejecución manual. Leer `docs/INTEGRACION_API_V1_8.md` y usar el JSON de ejemplo para implementar el método en origen.
 
-La primera versión recibe **cortes completos**, no eventos incrementales. Una carga parcial de la fuente no se debe finalizar como si fuera un corte completo. El conector que lea tu API origen y su programación se debe adaptar con su documentación, identificadores, ejemplo de respuesta y frecuencia de actualización. No hay un conector específico a tu ERP conectado todavía.
+Se reciben **cortes completos**, no eventos incrementales. La respuesta debe contener todo el universo de esa fuente y el detalle completo de cada factura, incluidas las ya despachadas. No enviar solo pendientes ni solo cambios. Una omisión sin controles no se puede detectar automáticamente; incluya `total_rows` y mantenga estable la extracción.
 
-Cada corte conserva facturas, líneas y archivo original. Los bloques preparados temporales se eliminan tras la activación. Si se requiere actualización de alta frecuencia, definir con el conector la retención y/o la sincronización incremental antes de programar cargas recurrentes.
+Cada corte conserva facturas, líneas y su origen (Excel o bloques JSON). Los históricos no participan en los totales vigentes. Los bloques preparados temporales se eliminan tras la activación; los cortes sin cambios del mismo día no crean otra versión. No hay borrado automático del histórico.
+
+La recepción XML-RPC anterior sigue disponible. Leer `docs/CONTRATO_API.md`; `examples/push_api.py` envía JSON/JSONL autenticado con API key y credenciales desde variables de entorno.
 
 ## Pruebas
 
-Las pruebas de cálculos se pueden ejecutar sin Odoo:
+Las pruebas de cálculos y del conector con ORM/HTTP simulados se pueden ejecutar sin Odoo (con `requests` instalado):
 
 ```bash
 python3 -m unittest discover -s transcash_dispatch_analysis/tests -p '*standalone.py'
