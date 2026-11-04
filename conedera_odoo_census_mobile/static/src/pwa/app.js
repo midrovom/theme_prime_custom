@@ -1,6 +1,5 @@
-const APP_VERSION = "18.0.1.5.2";
+const APP_VERSION = "18.0.1.5.3";
 const DB_NAME = "conedera-field-app";
-const DB_VERSION = 2;
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
 const STORE_PENDING = "pending";
@@ -28,6 +27,8 @@ const state = {
   online: navigator.onLine,
   syncing: false,
   lastError: "",
+  storageError: "",
+  starting: true,
   sessionBlocked: false,
   candidateMatches: [],
   candidateSelected: null,
@@ -107,18 +108,20 @@ function openDb() {
   return new Promise((resolve, reject) => {
     let finished = false;
     let blocked = false;
-    // IndexedDB puede esperar indefinidamente si otra pestaña mantiene una versión antigua abierta.
-    // No borrar ni recrear la base: contiene visitas, catastros y cotizaciones pendientes.
+    // Abrir la version YA EXISTENTE sin forzar una migracion v1 -> v2.
+    // Una pestaña antigua puede impedir la migracion, pero no la lectura normal.
+    // Nunca borrar o recrear la base, pues puede contener operaciones sin sincronizar.
     const timer = setTimeout(() => {
       if (finished) return;
       finished = true;
       reject(new Error(blocked
-        ? "La base local está bloqueada por otra pestaña de Catastro. Cierre las otras pestañas o ventanas de la app y reintente. Los pendientes NO se han borrado."
-        : "No se pudo abrir el almacenamiento local. Compruebe espacio disponible y permisos del navegador. Sus registros guardados NO se han borrado."));
-    }, 9000);
+        ? "Otra pestaña mantiene ocupado el almacenamiento. Cierre las otras ventanas de Catastro para recuperar el modo sin conexión."
+        : "El almacenamiento local no respondió. La aplicación seguirá en línea; cierre otras pestañas de Catastro y recargue para recuperar el modo offline."));
+    }, 2500);
     let req;
     try {
-      req = indexedDB.open(DB_NAME, DB_VERSION);
+      // Sin numero de version: evita bloquear la pantalla al migrar bases antiguas.
+      req = indexedDB.open(DB_NAME);
     } catch (error) {
       clearTimeout(timer);
       finished = true;
@@ -142,7 +145,17 @@ function openDb() {
       if (finished) { req.result.close(); return; }
       finished = true;
       clearTimeout(timer);
-      resolve(req.result);
+      const opened = req.result;
+      opened.onversionchange = () => {
+        // Permite que una nueva pestaña actualice la base sin bloquearse.
+        opened.close();
+        if (db === opened) {
+          db = null;
+          state.storageError = "El almacenamiento se actualizó desde otra pestaña. Recargue esta pestaña para recuperar el modo offline.";
+          render();
+        }
+      };
+      resolve(opened);
     };
     req.onerror = () => {
       if (finished) return;
@@ -154,9 +167,24 @@ function openDb() {
 }
 
 function tx(store, mode = "readonly") {
+  if (!db) throw new Error("El almacenamiento local no está disponible.");
   return db.transaction(store, mode).objectStore(store);
 }
+function quoteLegacyPrefix(store) { return `quote-cache:${store}:`; }
+function isLegacyQuoteStore(store) {
+  return store === STORE_QUOTE_PRODUCTS || store === STORE_QUOTE_DETAILS;
+}
+function legacyQuoteStore(store) {
+  return Boolean(db && isLegacyQuoteStore(store) && !db.objectStoreNames.contains(store));
+}
 function idbGetAll(store) {
+  if (legacyQuoteStore(store)) {
+    // Las instalaciones v1 no tienen estas dos stores. Reutilizar meta evita
+    // una migracion forzosa y conserva la cola offline existente.
+    return idbGetAll(STORE_META).then(rows => rows
+      .filter(row => String(row.key || "").startsWith(quoteLegacyPrefix(store)))
+      .map(row => row.value));
+  }
   return new Promise((resolve, reject) => {
     const req = tx(store).getAll();
     req.onsuccess = () => resolve(req.result || []);
@@ -164,6 +192,9 @@ function idbGetAll(store) {
   });
 }
 function idbGet(store, key) {
+  if (legacyQuoteStore(store)) {
+    return idbGet(STORE_META, quoteLegacyPrefix(store) + key).then(row => row?.value || null);
+  }
   return new Promise((resolve, reject) => {
     const req = tx(store).get(key);
     req.onsuccess = () => resolve(req.result || null);
@@ -171,6 +202,9 @@ function idbGet(store, key) {
   });
 }
 function idbPut(store, value) {
+  if (legacyQuoteStore(store)) {
+    return idbPut(STORE_META, {key:quoteLegacyPrefix(store) + value.key, value}).then(() => value);
+  }
   return new Promise((resolve, reject) => {
     const req = tx(store, "readwrite").put(value);
     req.onsuccess = () => resolve(value);
@@ -178,6 +212,7 @@ function idbPut(store, value) {
   });
 }
 function idbDelete(store, key) {
+  if (legacyQuoteStore(store)) return idbDelete(STORE_META, quoteLegacyPrefix(store) + key);
   return new Promise((resolve, reject) => {
     const req = tx(store, "readwrite").delete(key);
     req.onsuccess = () => resolve();
@@ -185,6 +220,13 @@ function idbDelete(store, key) {
   });
 }
 function idbReplaceAll(store, values) {
+  if (legacyQuoteStore(store)) {
+    return idbGetAll(STORE_META).then(async rows => {
+      for (const row of rows.filter(row => String(row.key || "").startsWith(quoteLegacyPrefix(store))))
+        await idbDelete(STORE_META, row.key);
+      for (const value of values) await idbPut(store, value);
+    });
+  }
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(store, "readwrite");
     const os = transaction.objectStore(store);
@@ -256,30 +298,52 @@ async function persistBootstrap(data) {
   ]);
 }
 
-async function refreshFromServer(showMessage = true) {
+function applyBootstrapInMemory(data) {
+  // Consulta online disponible incluso si IndexedDB falla.
+  state.partners = data.partners || [];
+  state.visits = data.visits || [];
+  state.orders = data.orders || [];
+  state.products = (data.products || []).map((x, idx) => ({ ...x, key:`${x.partner_id}-${x.product_id}-${idx}` }));
+  state.meta = {user:data.user, capabilities:data.capabilities, server_time:data.server_time, saved_at:new Date().toISOString()};
+  state.catalog = {teams:data.teams || [], business_types:data.business_types || [], mobile_brands:data.mobile_brands || []};
+}
+async function refreshFromServer(showMessage = true, prefetchedBootstrap = null) {
   if (!navigator.onLine || state.syncing) return;
   try {
     state.syncing = true;
     render();
-    const data = await rpc("/catastro/app/bootstrap");
+    const data = prefetchedBootstrap || await rpc("/catastro/app/bootstrap");
     if (state.meta?.user && (Number(state.meta.user.id)!==Number(data.user.id) || Number(state.meta.user.company_id)!==Number(data.user.company_id)) && state.pending.some(x=>!["synced","warning","conflict"].includes(x.state))) {
       state.sessionBlocked=true;
       throw new Error("Hay operaciones de otra sesión en este dispositivo. Vuelva al usuario y compañía originales para sincronizar; no se mezclaron datos.");
     }
     state.sessionBlocked=false;
-    await persistBootstrap(data);
-    await hydrateLocalState();
+    if (db) {
+      try {
+        await persistBootstrap(data);
+        await hydrateLocalState();
+      } catch (storageFailure) {
+        state.storageError = "No se pudieron actualizar los datos offline; se mostrará la información en línea. No se borraron los pendientes locales.";
+        console.warn("Almacenamiento sin escritura", storageFailure);
+        applyBootstrapInMemory(data);
+      }
+    } else {
+      applyBootstrapInMemory(data);
+    }
     state.lastError = "";
   } catch (err) {
     state.lastError = err.message || String(err);
     if (showMessage) console.warn(err);
   } finally {
     state.syncing = false;
+    state.starting = false;
     render();
   }
 }
 
 function connectionBanner() {
+  if (state.storageError) return `<div class="connection error"><span><i class="dot"></i>Modo en línea: el almacenamiento del dispositivo no está disponible. Se muestran los datos del servidor, pero no se pueden guardar registros nuevos hasta recuperar el almacenamiento local. ${esc(state.storageError)}</span><button class="btn btn-outline" data-action="retry-storage">Recuperar</button><a class="btn btn-outline" href="/web" target="_blank" rel="noopener">Odoo</a></div>`;
+  if (state.starting) return `<div class="connection"><span><i class="dot"></i>Abriendo catastro…</span></div>`;
   if (state.sessionBlocked) return `<div class="connection error">Operaciones de otra sesión: sincronización bloqueada para proteger los datos.</div>`;
   if (state.syncing) return `<div class="connection"><span><i class="dot"></i>Sincronizando…</span><span>${state.pending.filter(x=>x.state!=="synced").length} pendientes</span></div>`;
   if (!state.online) return `<div class="connection offline"><span><i class="dot"></i>Sin cobertura / offline</span><span>Los datos quedan en este dispositivo</span></div>`;
@@ -480,7 +544,7 @@ async function openQuote(id) {
   }
   try {
     const quote=await rpc("/catastro/app/quote/read",{quote_id:id});
-    await idbPut(STORE_QUOTE_DETAILS,{key,value:quote});
+    if (db) await idbPut(STORE_QUOTE_DETAILS,{key,value:quote}).catch(err => console.warn("Detalle sin cache offline",err));
     state.quoteDetail=quote;state.page="quote-detail";render();
   } catch(err){alert(err.message||String(err));}
 }
@@ -493,8 +557,12 @@ async function searchQuoteProducts(value) {
     const result=await rpc("/catastro/app/quote/products",{term,partner_id:state.quotePartnerId});
     if (!document.querySelector("#quote-search") || document.querySelector("#quote-search").value.trim()!==term) return;
     const user=state.meta?.user||{};
-    for (const p of result) await idbPut(STORE_QUOTE_PRODUCTS,{...p,key:`${user.id}:${user.company_id}:${p.id}`,user_id:user.id,company_id:user.company_id});
-    state.quoteProducts=await idbGetAll(STORE_QUOTE_PRODUCTS);
+    if (db) {
+      for (const p of result) await idbPut(STORE_QUOTE_PRODUCTS,{...p,key:`${user.id}:${user.company_id}:${p.id}`,user_id:user.id,company_id:user.company_id});
+      state.quoteProducts=await idbGetAll(STORE_QUOTE_PRODUCTS);
+    } else {
+      state.quoteProducts=result.map(p=>({...p,key:`${user.id}:${user.company_id}:${p.id}`,user_id:user.id,company_id:user.company_id}));
+    }
     state.quoteResults=result;
   } catch(err){state.quoteResults=availableQuoteProducts(term);state.lastError=err.message||String(err);}
   state.quoteSearching=false;renderQuoteResults();
@@ -511,6 +579,7 @@ async function submitQuote(form) {
   const payload={partner_id:p.id,visit_id:Number(form.querySelector('[name="visit_id"]')?.value||0),lines,
     client_order_ref:form.querySelector('[name="client_order_ref"]')?.value.trim()||""};
   const op=await queueOperation("quote",payload,`${partnerLabel(p)} · cotización de ${lines.length} productos`);
+  if (!op) return;
   state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.quoteVisitId=null;state.quoteClientRef="";
   state.page="pending";render();
   if(navigator.onLine){
@@ -597,6 +666,7 @@ async function submitCatastroUpdate(form) {
   obj.store_count = Number(obj.store_count || 0);
   obj.capa = Number(obj.capa || 0);
   const op = await queueOperation("catastro_update", obj, `${partnerLabel(p)} · actualización`);
+  if (!op) return;
   state.page = "pending"; render();
   if (navigator.onLine) await syncPending(false, [op.uuid]);
 }
@@ -613,7 +683,7 @@ function renderMore() {
   const saved = state.meta?.saved_at ? dateText(state.meta.saved_at) : "Nunca";
   const canInstall = Boolean(installPrompt);
   const body = `<section class="card ${secure?"":"install-card"}"><div class="card-title">${secure?"Modo offline completo":"Modo offline limitado por HTTP"}</div><div class="card-sub" style="${secure?"":"color:rgba(255,255,255,.86)"}">${secure?"La app puede abrirse y capturar datos sin cobertura después de haber sincronizado una vez.":"Puede seguir capturando si pierde señal mientras esta pantalla permanece abierta. Para abrir la app desde cero sin Internet e instalarla como PWA, el servidor debe usar HTTPS."}</div>${canInstall?'<button class="btn" data-action="install">Instalar app</button>':""}</section>
-    <section class="card"><div class="card-title">Datos del dispositivo</div><div class="card-sub">Usuario: ${esc(state.meta?.user?.name||"Sin descargar")}<br>Empresa: ${esc(state.meta?.user?.company_name||"")}<br>Última descarga: ${esc(saved)}<br>Pendientes: ${state.pending.filter(x=>x.state!=="synced").length}</div><div class="action-grid"><button class="btn btn-outline" data-action="refresh">Descargar datos</button><button class="btn btn-danger" data-action="clear-local">Borrar caché local</button></div></section>
+    <section class="card"><div class="card-title">Datos del dispositivo</div><div class="card-sub">Usuario: ${esc(state.meta?.user?.name||"Sin descargar")}<br>Empresa: ${esc(state.meta?.user?.company_name||"")}<br>Última descarga: ${esc(saved)}<br>Pendientes: ${state.pending.filter(x=>x.state!=="synced").length}</div><div class="action-grid"><button class="btn btn-outline" data-action="refresh">Descargar datos</button><button class="btn btn-danger" data-action="clear-local" ${db?"":"disabled"}>Borrar caché local</button></div></section>
     <section class="card"><div class="card-title">Versión de la aplicación: ${esc(APP_VERSION)}</div><div class="card-sub">Si no aparece el botón «Cotizar ahora» o ves una versión anterior, actualiza la interfaz. Esta acción no elimina catastros, visitas ni cotizaciones pendientes de sincronización.</div><button class="btn btn-secondary" style="width:100%;margin-top:12px" type="button" data-action="update-ui">↻ Actualizar interfaz PWA</button></section>
     <section class="card"><div class="card-title">Odoo completo</div><div class="card-sub">La PWA crea borradores rápidos. Para todas las funciones nativas, extensiones y campos personalizados de Ventas, utiliza el formulario completo de Odoo hasta que integremos los módulos que modifican tus proformas.</div><a class="btn btn-primary" style="width:100%;margin-top:12px" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener">Abrir cotizaciones completas</a></section>`;
   $app.innerHTML = shell("Más", body, { nav:"more" });
@@ -676,6 +746,10 @@ function validateForFinalize(obj) {
   return missing;
 }
 async function queueOperation(type, payload, label) {
+  if (!db || state.storageError) {
+    showFormError("El almacenamiento local no está disponible: para evitar pérdida de datos, no se ha guardado este registro. Cierre otras pestañas de Catastro, pulse Recuperar e inténtelo nuevamente. Mientras tanto puede utilizar Odoo.");
+    return null;
+  }
   const op={uuid:uuid(),type,payload,label,state:"pending",message:"",created_at:new Date().toISOString(),
     user_id:state.meta?.user?.id||null,company_id:state.meta?.user?.company_id||null};
   await idbPut(STORE_PENDING,op); await hydrateLocalState();render();return op;
@@ -695,6 +769,7 @@ async function submitCatastro(form, finalize=false) {
     showFormError("Ya existen coincidencias. Revise la búsqueda antes de crear otra ficha.");return;
   }
   const op=await queueOperation("catastro",obj,`${obj.commercial_name||obj.name} · ${obj.vat||"sin identificación"}`);
+  if (!op) return;
   state.page="pending";render();
   if (navigator.onLine) await syncPending(false,[op.uuid]);
 }
@@ -712,12 +787,14 @@ async function submitVisit(form, finalize=true) {
   obj.visit_datetime = nowServerString();
   obj.finalize = finalize;
   const op = await queueOperation("visit", obj, `${partnerLabel(partner)} · ${finalize?"Finalizar":"Borrador"}`);
+  if (!op) return;
   state.page = "pending";
   render();
   if (navigator.onLine) await syncPending(false, [op.uuid]);
 }
 
 async function syncPending(silent=false, onlyUuids=null) {
+  if (!db || state.storageError) return;
   if (!navigator.onLine || state.syncing || state.sessionBlocked) return;
   const candidates = state.pending.filter(x => !["synced","warning","conflict"].includes(x.state) && (!onlyUuids || onlyUuids.includes(x.uuid))).sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
   if (!candidates.length) return;
@@ -775,6 +852,7 @@ function bindPhotoInput() {
 }
 
 async function clearLocal() {
+  if (!db) {alert("El almacenamiento local no está disponible. No se puede borrar desde la aplicación.");return;}
   if (!confirm("Esto borra los datos descargados y pendientes SOLO de este dispositivo. No borra nada del servidor. ¿Continuar?")) return;
   const stores=[STORE_META,STORE_PARTNERS,STORE_PENDING,STORE_VISITS,STORE_ORDERS,STORE_PRODUCTS,STORE_CATALOG,STORE_QUOTE_PRODUCTS,STORE_QUOTE_DETAILS];
   await Promise.all(stores.map(store=>idbReplaceAll(store,[]).catch(async()=>{ const all=await idbGetAll(store); await Promise.all(all.map(x=>idbDelete(store,x.id||x.uuid||x.key))); })));
@@ -814,7 +892,10 @@ async function refreshPartnerStatus() {
   const p=selectedPartner();if(!p)return;
   if(!navigator.onLine){alert("Se necesita conexión para consultar el estado actualizado.");return;}
   try {const status=await rpc("/catastro/app/catastro/status",{partner_id:p.id});
-    const fresh={...p,...status};await idbPut(STORE_PARTNERS,fresh);await hydrateLocalState();render();}
+    const fresh={...p,...status};
+    if (db) {await idbPut(STORE_PARTNERS,fresh);await hydrateLocalState();}
+    else state.partners=state.partners.map(row=>row.id===p.id?fresh:row);
+    render();}
   catch(err){alert(err.message||String(err));}
 }
 
@@ -925,6 +1006,7 @@ $app.addEventListener("click", async (event) => {
     const p=selectedPartner();if(!p)return;
     if(!confirm(`¿Finalizar y proteger el catastro de ${partnerLabel(p)}? Solo se podrá editar con autorización posterior.`))return;
     const op=await queueOperation("catastro_finalize",{partner_id:p.id,base_write_date:p.write_date||""},`${partnerLabel(p)} · proteger`);
+    if (!op) return;
     state.page="pending";render();if(navigator.onLine) await syncPending(false,[op.uuid]);return;
   }
   if (action === "finish-edit") {
@@ -939,6 +1021,7 @@ $app.addEventListener("click", async (event) => {
     try{await rpc("/catastro/app/catastro/finish-edit",{partner_id:p.id});await refreshFromServer(false);}
     catch(err){alert(err.message||String(err));}return;
   }
+  if (action === "retry-storage") {window.location.replace(`/catastro/app?storage_retry=${Date.now()}`); return;}
   if (action === "refresh") { await syncPending(true); await refreshFromServer(true); return; }
   if (action === "new-catastro") { state.page="new"; render(); return; }
   if (action === "edit-partner") {if(!truthy(selectedPartner()?.census_can_edit_master)){alert("El catastro está protegido; solicite habilitación.");return;} state.page="edit"; render(); return; }
@@ -963,19 +1046,37 @@ $app.addEventListener("submit", async (event) => {
 });
 
 async function init() {
-  db = await openDb();
-  await hydrateLocalState();
-  // El primer render debe suceder ANTES de consultar Odoo y de instalar el Service Worker.
-  // De este modo una conexión lenta no bloquea la vista de los catastros locales.
+  // La pantalla se muestra en el primer frame. IndexedDB NO es requisito para abrir.
   render();
   window.catastroBootReady?.();
+  // Solicitar los datos a Odoo en paralelo: no esperar al navegador local para conectarse.
+  const initialServerRequest = navigator.onLine
+    ? rpc("/catastro/app/bootstrap").then(data => ({data}), error => ({error}))
+    : null;
   if (window.isSecureContext && "serviceWorker" in navigator) {
     navigator.serviceWorker.register("/catastro/sw.js", { scope: "/catastro/" })
       .catch((err) => console.warn("Service worker no disponible", err));
   }
-  if (navigator.onLine) {
-    await refreshFromServer(false);
-    await syncPending(true);
+  try {
+    db = await openDb();
+    await hydrateLocalState();
+  } catch (err) {
+    console.warn("No se pudo acceder al cache offline; usando interfaz en linea", err);
+    db = null;
+    state.storageError = err.message || String(err);
+    // No se destruye la base y tampoco se aceptan cambios sin guardado fiable.
+  }
+  state.starting = false;
+  render();
+  if (initialServerRequest) {
+    const firstResult = await initialServerRequest;
+    if (firstResult.error) {
+      state.lastError = firstResult.error.message || String(firstResult.error);
+      render();
+    } else {
+      await refreshFromServer(false, firstResult.data);
+    }
+    if (db && !state.storageError) await syncPending(true);
   }
 }
 
