@@ -120,3 +120,25 @@ button{cursor:pointer}
 @media(min-width:1000px){.quote-layout{grid-template-columns:minmax(0,1.35fr) minmax(290px,.7fr);gap:22px}.quote-side{position:sticky;top:24px}}
 
 .bottom-nav .nav-btn{min-width:0;overflow:hidden}.bottom-nav .nav-btn span{white-space:nowrap;letter-spacing:-.02em}
+
+/* 1.5.1: CTA Cotizar visible, independiente de la barra de navegación */
+.quote-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:19px 20px;margin-bottom:17px;border-radius:22px;background:linear-gradient(125deg,#514082,#7a65b2);color:#fff;box-shadow:0 10px 28px rgba(81,64,130,.17)}
+.quote-hero-copy{min-width:0;max-width:590px}
+.quote-hero-eyebrow{font-size:10px;letter-spacing:.12em;opacity:.86;font-weight:800}
+.quote-hero h2{margin:5px 0 5px;font-size:23px;line-height:1.16;color:#fff}
+.quote-hero p{margin:0;font-size:13px;line-height:1.45;color:rgba(255,255,255,.94)}
+.quote-hero-button{background:#fff;color:#514082;white-space:nowrap;border-radius:15px;min-width:167px;box-shadow:0 4px 14px rgba(37,24,74,.18)}
+.quote-hero-button:focus-visible,.btn:focus-visible,.nav-btn:focus-visible{outline:3px solid #e2c8ff;outline-offset:3px}
+.home-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 11px;font-size:16px;font-weight:800}
+.home-tools .btn{min-height:42px;font-size:13px;padding:9px 12px}
+.quote-mode-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid #ddd4ee;border-radius:17px;background:#f3effa;margin-bottom:12px}
+.quote-mode-banner strong{font-size:14px;color:#514082}
+.quote-mode-banner p{font-size:12px;color:#625975;margin:5px 0 0;line-height:1.5}
+.quote-mode-banner>.btn{min-width:200px;font-size:13px;min-height:44px}
+@media(max-width:650px){.quote-hero{flex-direction:column;align-items:stretch;gap:13px;padding:18px}.quote-hero h2{font-size:22px}.quote-hero-button{width:100%}.quote-mode-banner{flex-direction:column;align-items:stretch}.quote-mode-banner>.btn{width:100%;min-width:0}}
+@media(min-width:1000px){.quote-hero{padding:24px 28px}.quote-hero h2{font-size:27px}}
+
+.quote-hero-actions{display:flex;flex-direction:column;gap:9px;align-items:stretch;text-align:center;flex-shrink:0}
+.quote-hero-native{color:#fff;font-size:12px;font-weight:750;text-decoration:underline;text-underline-offset:3px;min-height:27px;display:grid;place-content:center}
+.quote-hero-native:focus-visible{outline:3px solid #fff;outline-offset:3px;border-radius:5px}
+@media(max-width:650px){.quote-hero-actions{width:100%}}

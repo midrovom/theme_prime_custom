@@ -1,3 +1,4 @@
+const APP_VERSION = "18.0.1.5.1";
 const DB_NAME = "conedera-field-app";
 const DB_VERSION = 2;
 const STORE_META = "meta";
@@ -42,6 +43,8 @@ const state = {
   quoteDetails: [],
   currentQuoteId: null,
   quoteDetail: null,
+  quoteVisitId: null,
+  quoteClientRef: "",
 };
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -271,7 +274,14 @@ function partnerCard(p) {
 function renderHome() {
   const q = state.search.trim().toLowerCase();
   const partners = state.partners.filter(p => !q || [p.name,p.commercial_name,p.vat,p.city,p.phone,p.mobile].some(v => String(v||"").toLowerCase().includes(q)));
-  const body = `<input id="partner-search" class="search" placeholder="Buscar por RUC, nombre, ciudad…" value="${esc(state.search)}"/>
+  const protectedCount=state.partners.filter(p=>truthy(p.census_locked)).length;
+  const quoteShortcut=`<section class="quote-hero" aria-label="Acceso directo a cotizaciones">
+      <div class="quote-hero-copy"><span class="quote-hero-eyebrow">VENTAS · COTIZACIONES</span><h2>Crea una cotización</h2>
+      <p>Accede al cotizador desde aquí, sin buscar el botón entre los catastros. ${protectedCount?`${protectedCount} catastro(s) protegido(s) disponible(s).`:"Primero finaliza y protege un catastro para crear el borrador."}</p></div>
+      <div class="quote-hero-actions"><button type="button" class="btn quote-hero-button" data-action="open-quote"><span aria-hidden="true">▤</span> Cotizar ahora</button><a class="quote-hero-native" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener">Cotización completa (Odoo)</a></div>
+    </section>`;
+  const body = `${quoteShortcut}<div class="home-tools"><span>Mis clientes</span><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div>
+    <input id="partner-search" class="search" placeholder="Buscar por RUC, nombre, ciudad…" value="${esc(state.search)}"/>
     <div class="cards">${partners.map(partnerCard).join("") || `<div class="empty"><b>No hay catastros en el dispositivo</b>${state.online?"Pulse actualizar o cree uno nuevo.":"Conéctese una vez para descargar sus catastros."}</div>`}</div>`;
   $app.innerHTML = shell("Mis catastros", body, { fab:true, nav:"home" });
 }
@@ -338,7 +348,7 @@ function renderDetail() {
       <div class="metric-grid"><div class="metric"><strong>${visitsFor(p.id).length}</strong><span>Visitas registradas</span></div><div class="metric"><strong>${ordersFor(p.id).length}</strong><span>Proformas</span></div></div>
     </section>
     ${detailWorkflow(p)}
-    <div class="section-title">Operación comercial</div><div class="action-grid"><button class="btn btn-primary" data-action="visit-partner" data-id="${p.id}" ${locked?"":"disabled"}>＋ Nueva visita</button><button class="btn btn-secondary" data-action="quote-partner" data-id="${p.id}" ${locked?"":"disabled"}>▤ Nueva cotización</button><a class="btn btn-outline" href="/web#id=${p.id}&model=res.partner&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div>
+    <div class="section-title">Operación comercial</div><div class="action-grid"><button class="btn btn-primary" data-action="visit-partner" data-id="${p.id}" ${locked?"":"disabled"}>＋ Nueva visita</button><button class="btn btn-secondary" data-action="quote-partner" data-id="${p.id}">▤ Cotizar ${locked?"ahora":"(requiere cierre)"}</button><a class="btn btn-outline" href="/web#id=${p.id}&model=res.partner&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div>
     <div class="section-title">Bitácora reciente</div><section class="card">${timeline(p.id)}</section></div>
     <div class="detail-secondary"><div class="section-title">Contacto</div><section class="card"><div class="card-sub">${esc(p.phone||p.mobile||"Sin teléfono")}<br>${esc(p.email||"Sin email")}<br>${esc(partnerAddress(p)||"Sin dirección")}</div><div class="section-title">Horario de atención</div>${hoursSummary(p)}</section>
     <div class="section-title">Productos proformados</div><section class="card">${prod.length?prod.map(x=>`<div class="product-row"><div><strong>${esc(x.product_name)}</strong><br><span>${x.lines} líneas · promedio ${money(x.avg_price)}</span></div><div style="text-align:right"><strong>${money(x.qty)}</strong><br><span>${money(x.subtotal)}</span></div></div>`).join(""):`<div class="empty">Sin productos almacenados todavía.</div>`}</section></div></div>`;
@@ -349,6 +359,10 @@ function quoteCanCreate() {
   return Boolean(state.meta?.capabilities?.quote_create);
 }
 function quotePartner() { return state.partners.find(p=>p.id===Number(state.quotePartnerId))||null; }
+function nativeQuotationsUrl() {
+  const action=Number(state.meta?.capabilities?.sales_action_id||0);
+  return action>0?`/web#action=${action}&model=sale.order&view_type=list`:'/web';
+}
 function availableQuoteProducts(term) {
   const user=state.meta?.user;
   if (!user) return [];
@@ -377,15 +391,18 @@ function renderQuote() {
   const clients=state.partners.filter(p=>truthy(p.census_locked) && (!p.census_company_id || relationId(p.census_company_id)===Number(state.meta?.user?.company_id)));
   const related=partner?ordersFor(partner.id).slice(0,10):[];
   const linkedVisits=partner?visitsFor(partner.id).filter(v=>v.state==="done"):[];
-  const body=`<div class="quote-layout"><form id="quote-form">
+  const availabilityNote=clients.length?"":`<div class="status-banner warn">No hay catastros protegidos de la compañía actual para cotizar. Abre un catastro, completa los datos obligatorios y pulsa «Finalizar y proteger» antes de crear una cotización.</div>`;
+  const permissionNote=cap.quote_create===false?`<div class="status-banner warn">Tu usuario no tiene permiso para crear cotizaciones en Odoo. Solicita al administrador los permisos correspondientes de Ventas. El acceso a esta pantalla sigue visible para que puedas identificar la causa.</div>`:"";
+  const body=`${availabilityNote}${permissionNote}<div class="quote-layout"><form id="quote-form">
     <section class="form-card"><div class="row space"><h2>1. Cliente</h2><span class="chip">Empresa: ${esc(state.meta?.user?.company_name||"")}</span></div>
       <div class="field"><label>Catastro protegido *</label><select name="partner_id" required><option value="">Seleccione un cliente…</option>${clients.map(p=>`<option value="${p.id}" ${partner?.id===p.id?"selected":""}>${esc(partnerLabel(p))} · ${esc(p.vat||"")}</option>`).join("")}</select></div>
-      <div class="field"><label>Vincular con visita (opcional)</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}">${esc(v.name||"Visita #"+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join("")}</select></div>
+      <div class="field"><label>Vincular con visita (opcional)</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}" ${Number(state.quoteVisitId)===v.id?"selected":""}>${esc(v.name||"Visita #"+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join("")}</select></div>
     </section>
+    <section class="quote-mode-banner"><div><strong>Cotización rápida desde la PWA</strong><p>Este formulario genera borradores. Para utilizar condiciones comerciales, campos especiales y todas las personalizaciones, abre la pantalla nativa de cotizaciones.</p></div><a class="btn btn-outline" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener" aria-label="Abrir cotizaciones completas en Odoo">Cotización completa en Odoo</a></section>
     <section class="form-card"><h2>2. Productos y cantidades</h2><div class="field"><label>Buscar por nombre o código</label><input id="quote-search" value="${esc(state.quoteSearch)}" placeholder="Ej. producto, código SKU" autocomplete="off" ${partner?"":"disabled"}/></div>
       <div id="quote-search-results" class="quote-results" aria-live="polite"></div><div class="quote-lines-head"><strong>Productos agregados (${state.quoteLines.length})</strong></div><div id="quote-lines">${quoteLinesMarkup()}</div>
       <div class="small">Los precios, descuentos automáticos e impuestos se calcularán en Odoo al guardar. No se fijan importes desde la PWA.</div>
-    </section><section class="form-card"><h2>3. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" placeholder="Orden de compra o referencia externa"/></div>
+    </section><section class="form-card"><h2>3. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Orden de compra o referencia externa"/></div>
       <div class="status-banner warn">La cotización se guardará como <b>borrador</b>. Revise los importes definitivos antes de enviarla o confirmarla.</div></section>
       <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-nav="home">Volver</button><button class="btn btn-primary" type="submit" ${!cap.quote_create?"disabled":""}>▤ Guardar cotización${state.online?"":" offline"}</button></div>
     </form><aside class="quote-side"><section class="card"><div class="card-title">Cotizaciones del cliente</div><div class="card-sub">Historial visible según permisos de Odoo</div>
@@ -447,7 +464,7 @@ async function submitQuote(form) {
   const payload={partner_id:p.id,visit_id:Number(form.querySelector('[name="visit_id"]')?.value||0),lines,
     client_order_ref:form.querySelector('[name="client_order_ref"]')?.value.trim()||""};
   const op=await queueOperation("quote",payload,`${partnerLabel(p)} · cotización de ${lines.length} productos`);
-  state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];
+  state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.quoteVisitId=null;state.quoteClientRef="";
   state.page="pending";render();
   if(navigator.onLine){
     await syncPending(false,[op.uuid]);
@@ -550,7 +567,8 @@ function renderMore() {
   const canInstall = Boolean(installPrompt);
   const body = `<section class="card ${secure?"":"install-card"}"><div class="card-title">${secure?"Modo offline completo":"Modo offline limitado por HTTP"}</div><div class="card-sub" style="${secure?"":"color:rgba(255,255,255,.86)"}">${secure?"La app puede abrirse y capturar datos sin cobertura después de haber sincronizado una vez.":"Puede seguir capturando si pierde señal mientras esta pantalla permanece abierta. Para abrir la app desde cero sin Internet e instalarla como PWA, el servidor debe usar HTTPS."}</div>${canInstall?'<button class="btn" data-action="install">Instalar app</button>':""}</section>
     <section class="card"><div class="card-title">Datos del dispositivo</div><div class="card-sub">Usuario: ${esc(state.meta?.user?.name||"Sin descargar")}<br>Empresa: ${esc(state.meta?.user?.company_name||"")}<br>Última descarga: ${esc(saved)}<br>Pendientes: ${state.pending.filter(x=>x.state!=="synced").length}</div><div class="action-grid"><button class="btn btn-outline" data-action="refresh">Descargar datos</button><button class="btn btn-danger" data-action="clear-local">Borrar caché local</button></div></section>
-    <section class="card"><div class="card-title">Odoo completo</div><div class="card-sub">La PWA permite crear cotizaciones; use Odoo para aprobarlas, enviarlas, imprimir documentos y administrar opciones avanzadas.</div><a class="btn btn-primary" style="width:100%;margin-top:12px" href="/web">Abrir Odoo</a></section>`;
+    <section class="card"><div class="card-title">Versión de la aplicación: ${esc(APP_VERSION)}</div><div class="card-sub">Si no aparece el botón «Cotizar ahora» o ves una versión anterior, actualiza la interfaz. Esta acción no elimina catastros, visitas ni cotizaciones pendientes de sincronización.</div><button class="btn btn-secondary" style="width:100%;margin-top:12px" type="button" data-action="update-ui">↻ Actualizar interfaz PWA</button></section>
+    <section class="card"><div class="card-title">Odoo completo</div><div class="card-sub">La PWA crea borradores rápidos. Para todas las funciones nativas, extensiones y campos personalizados de Ventas, utiliza el formulario completo de Odoo hasta que integremos los módulos que modifican tus proformas.</div><a class="btn btn-primary" style="width:100%;margin-top:12px" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener">Abrir cotizaciones completas</a></section>`;
   $app.innerHTML = shell("Más", body, { nav:"more" });
 }
 
@@ -766,6 +784,9 @@ $app.addEventListener("input", (event) => {
     const value=event.target.value;state.quoteSearch=value;
     clearTimeout(state.quoteLookupTimer);state.quoteLookupTimer=setTimeout(()=>searchQuoteProducts(value),300);
   }
+  if (event.target?.matches('#quote-form [name="client_order_ref"]')) {
+    state.quoteClientRef=event.target.value;
+  }
   if (event.target?.matches("[data-quote-qty]")) {
     const line=state.quoteLines.find(x=>x.id===Number(event.target.dataset.quoteQty));
     if(line)line.qty=event.target.value;
@@ -776,7 +797,11 @@ $app.addEventListener("input", (event) => {
 $app.addEventListener("change", (event) => {
   if (event.target?.matches('#quote-form [name="partner_id"]')) {
     state.quotePartnerId=Number(event.target.value)||null;
+    state.quoteVisitId=null;
     state.quoteLines=[];state.quoteResults=[];state.quoteSearch="";renderQuote();
+  }
+  if (event.target?.matches('#quote-form [name="visit_id"]')) {
+    state.quoteVisitId=Number(event.target.value)||null;
   }
 });
 
@@ -791,7 +816,18 @@ $app.addEventListener("click", async (event) => {
   const visitEl = event.target.closest("[data-action='visit-partner']");
   if (visitEl) { state.selectedPartnerId=Number(visitEl.dataset.id); if(!truthy(selectedPartner()?.census_locked)){alert("Finalice y proteja primero el catastro.");return;} state.page="visit"; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
-  if (action === "quote-partner") {state.quotePartnerId=Number(event.target.closest("[data-id]")?.dataset.id);state.page="quote";render();return;}
+  if (action === "open-quote") {state.quotePartnerId=null;state.quoteDetail=null;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.page="quote";render();return;}
+  if (action === "quote-partner") {const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);state.quotePartnerId=truthy(partner?.census_locked)?id:null;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
+  if (action === "update-ui") {
+    if (!navigator.onLine) {alert("Conéctese a Internet para descargar la nueva versión. Sus registros locales se conservan.");return;}
+    if ((state.quoteLines.length || ["new","edit","visit"].includes(state.page)) && !confirm("¿Actualizar interfaz ahora? Se conservarán los datos sincronizados y las operaciones pendientes, pero los cambios todavía no guardados en pantalla pueden perderse.")) return;
+    try {
+      const reg=await navigator.serviceWorker?.getRegistration("/catastro/");
+      if (reg) await reg.update();
+      window.location.replace(`/catastro/app?version=${encodeURIComponent(APP_VERSION)}&t=${Date.now()}`);
+    } catch(err) {alert(`No se pudo actualizar la interfaz: ${err.message||err}`);}
+    return;
+  }
   if (action === "quote-add-product") {
     const id=Number(event.target.closest("[data-id]")?.dataset.id);
     const product=state.quoteResults.find(x=>x.id===id);

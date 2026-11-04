@@ -1,7 +1,7 @@
 {
     "name": "Catastro - App de Campo",
     "summary": "Catastro PWA, visitas y cotizaciones comerciales con sincronización offline",
-    "version": "18.0.1.5.0",
+    "version": "18.0.1.5.1",
     "category": "Sales",
     "author": "Conedera",
     "license": "LGPL-3",

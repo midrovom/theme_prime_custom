@@ -1,9 +1,9 @@
-const CACHE = "catastro-field-v6";
+const CACHE = "catastro-field-v7";
 const SHELL = [
   "/catastro/app",
   "/catastro/manifest.webmanifest",
-  "/conedera_odoo_census_mobile/static/src/pwa/app.css",
-  "/conedera_odoo_census_mobile/static/src/pwa/app.js",
+  "/conedera_odoo_census_mobile/static/src/pwa/app.css?v=18.0.1.5.1",
+  "/conedera_odoo_census_mobile/static/src/pwa/app.js?v=18.0.1.5.1",
   "/conedera_odoo_census_mobile/static/description/icon.svg",
 ];
 
@@ -35,11 +35,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (url.pathname.includes("/conedera_odoo_census_mobile/static/") || url.pathname === "/catastro/manifest.webmanifest") {
-    event.respondWith(caches.match(req).then((cached) => cached || fetch(req).then((res) => {
-      const copy = res.clone();
-      caches.open(CACHE).then((cache) => cache.put(req, copy));
+  if (url.pathname.startsWith("/conedera_odoo_census_mobile/static/src/pwa/") || url.pathname === "/catastro/manifest.webmanifest") {
+    event.respondWith(fetch(req).then((res) => {
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((cache) => cache.put(req, copy)); }
       return res;
-    })));
+    }).catch(() => caches.match(req)));
+    return;
+  }
+  if (url.pathname === "/conedera_odoo_census_mobile/static/description/icon.svg") {
+    event.respondWith(caches.match(req).then((cached) => cached || fetch(req)));
   }
 });

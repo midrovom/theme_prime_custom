@@ -332,6 +332,7 @@ class ConederaFieldAppController(http.Controller):
                 "business_type_model": "conedera.census.business.type" in request.env.registry,
                 "mobile_brand_model": "conedera.census.mobile.brand" in request.env.registry,
                 "opening_hour_model": "conedera.partner.opening.hour" in request.env.registry,
+                "sales_action_id": (request.env.ref("sale.action_quotations_with_onboarding", raise_if_not_found=False) or request.env["ir.actions.act_window"]).id or False,
                 "quote_create": request.env["sale.order"].check_access_rights("create", raise_exception=False),
                 "quote_read": request.env["sale.order"].check_access_rights("read", raise_exception=False),
             },
