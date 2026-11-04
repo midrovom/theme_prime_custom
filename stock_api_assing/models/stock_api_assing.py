@@ -1,313 +1,231 @@
 # -*- coding: utf-8 -*-
+"""Sincronización con Radis. Se conserva el modelo y los campos del módulo 16."""
 import logging
+
 import requests
-from datetime import datetime
-from odoo import models, api, fields
+
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 _logger = logging.getLogger(__name__)
+
+
 class StockAPIAssing(models.Model):
     _name = 'stock.api.assing'
     _description = 'Stock API Sync Log'
+    _order = 'date desc, id desc'
 
     name = fields.Char(string='Nombre')
     date = fields.Datetime(string='Fecha', default=fields.Datetime.now)
     description = fields.Text(string='Descripción')
-    company_id = fields.Many2one('res.company', string='Empresa Local', 
-                                 default=lambda self: self.env.user.company_id)
+    company_id = fields.Many2one('res.company', string='Empresa Local', default=lambda self: self.env.company)
+
 
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
     check_manage_sync = fields.Boolean(string='Sincronizado con API', default=False)
 
+
 class StockAPISync(models.Model):
     _name = 'stock.api.sync'
     _description = 'Stock API Sync Logic'
 
     @api.model
-    def sync_all_inventory(self, company_id): 
-        try:
-            # Obtener todas las APIs activas para la empresa que son para actualización de stock
-            api_records = self.env['api.administrator'].sudo().search([
-                ('company_id', '=', company_id),
-                ('type', '=', 'get'),
-                ('status', '=', 'A'),
-                ('is_stock_update', '=', True)
-            ])
+    def sync_configured_companies(self):
+        """Cron de 30 minutos; reemplaza IDs fijos 1/2 sin duplicar ejecuciones."""
+        apis = self.env['api.administrator'].sudo().search([
+            ('type', '=', 'get'), ('status', '=', 'A'), ('is_stock_update', '=', True),
+        ])
+        for company in apis.mapped('company_id'):
+            self.with_company(company).sync_all_inventory(company.id)
 
-            if not api_records:
-                _logger.warning(f"No se encontraron APIs activas para la empresa ID {company_id}")
-                self.env['stock.api.assing'].create({
-                    'name': f"Sync Empresa {company_id}",
-                    'description': "No se encontraron APIs activas para la empresa.",
-                    'company_id': company_id
-                })
-                return
+    @api.model
+    def sync_all_inventory(self, company_id):
+        company = self.env['res.company'].browse(company_id).exists()
+        if not company:
+            raise UserError(_('No existe la empresa seleccionada para sincronización.'))
+        api_records = self.env['api.administrator'].sudo().search([
+            ('company_id', '=', company.id),
+            ('type', '=', 'get'),
+            ('status', '=', 'A'),
+            ('is_stock_update', '=', True),
+        ])
+        if not api_records:
+            self._log_sync(company.id, 'Sin APIs activas', 'No se encontraron APIs activas para la empresa.')
+            return
 
-            for api_data in api_records:
-                try:
-                    # Validar configuración de API
-                    api_url = (api_data.url or '').strip() + (api_data.end_point or '').strip()
-                    user_id = (api_data.user_id or '').strip()
-                    password = (api_data.password or '').strip()
-
-                    if not api_url or not user_id or not password:
-                        _logger.warning(f"Configuración incompleta para API '{api_data.name}', omitiendo.")
-                        self.env['stock.api.assing'].create({
-                            'name': f"Error Sync {api_data.name}",
-                            'description': "Configuración incompleta de la API.",
-                            'company_id': company_id
-                        })
-                        continue
-
-                    headers = {
-                        'Accept': 'application/json',
-                        'version': '1',
-                        'framework': 'PRUEBAS',
-                        'userid': user_id,
-                        'password': password,
-                        'deviceid': '000000000000000',
-                        'sessionid': '0',
-                    }
-
-                    _logger.info(f"Iniciando sincronización con API: {api_data.name}")
-
-                    # Consumir API (solo los dos primeros registros)
-                    response = requests.get(api_url, headers=headers, timeout=120)
+        for api_data in api_records:
+            try:
+                with self.env.cr.savepoint():
+                    url = (api_data.url or '').strip() + (api_data.end_point or '').strip()
+                    if not url or not api_data.user_id or not api_data.password:
+                        raise UserError(_('Configuración incompleta en la API %s') % api_data.name)
+                    if not api_data.warehouse_id:
+                        raise UserError(_('Debe asociar una bodega a la API %s') % api_data.name)
+                    response = requests.get(url, headers={
+                        'Accept': 'application/json', 'version': '1', 'framework': 'PRUEBAS',
+                        'userid': api_data.user_id.strip(),
+                        'password': api_data.password.strip(),
+                        'deviceid': '000000000000000', 'sessionid': '0',
+                    }, timeout=120)
                     response.raise_for_status()
-
-                    #data = response.json().get('data', [])[2:4]  # Limitar a los primeros 2 registros
-                    data = response.json().get('data', [])
-
+                    payload = response.json()
+                    data = payload.get('data', []) if isinstance(payload, dict) else []
+                    if not isinstance(data, list):
+                        raise UserError(_('La API %s no devolvió una lista en data.') % api_data.name)
                     if not data:
-                        self.env['stock.api.assing'].create({
-                            'name': f"Sync {api_data.name}",
-                            'description': "No se encontraron datos para sincronizar.",
-                            'company_id': company_id
-                        })
+                        self._log_sync(company.id, 'Sync %s' % api_data.name,
+                                       'No se encontraron datos para sincronizar; el stock existente se conservó.')
                         continue
-                    #_logger.info(f"__DEBUG: DATA INFO {data}")
+                    inserted, updated = self.with_company(company)._process_inventory_data(data, api_data)
+                    self._log_sync(company.id, 'Sync %s' % api_data.name,
+                                   'Insertados: %s, Actualizados: %s' % (inserted, updated))
+            except Exception as exc:
+                _logger.exception('Error sincronizando Radis API %s empresa %s', api_data.name, company.name)
+                self._log_sync(company.id, 'Error Sync %s' % api_data.name, str(exc))
 
-                    #self.update_published_for_storable_products() #actualiza 
-
-                    insertados, actualizados = self._process_inventory_data(data,api_data)
-
-                    #_logger.info(f"API {api_data.name}: {insertados} insertados, {actualizados} actualizados")
-
-                    # Guardar resultados en la tabla de log
-                    self.env['stock.api.assing'].create({
-                        'name': f"Sync {api_data.name}",
-                        'description': f"Insertados: {insertados}, Actualizados: {actualizados}",
-                        'company_id': company_id
-                    })
-
-                except requests.exceptions.RequestException as e:
-                    error_msg = f"Error de conexión con la API {api_data.name}: {str(e)}"
-                    _logger.error(error_msg)
-
-                    self.env['stock.api.assing'].create({
-                        'name': f"Error Sync {api_data.name}",
-                        'description': error_msg,
-                        'company_id': company_id
-                    })
-
-                except Exception as e:
-                    error_msg = f"Error inesperado en la API {api_data.name}: {str(e)}"
-                    _logger.error(error_msg)
-
-                    self.env['stock.api.assing'].create({
-                        'name': f"Error Sync {api_data.name}",
-                        'description': error_msg,
-                        'company_id': company_id
-                    })
-
-        except Exception as e:
-            error_msg = f"Error crítico en la sincronización de inventario: {str(e)}"
-            _logger.error(error_msg)
-
-            self.env['stock.api.assing'].create({
-                'name': "Error General",
-                'description': error_msg, 
-                'company_id': company_id
-            })
-
+    @api.model
+    def _log_sync(self, company_id, name, description):
+        self.env['stock.api.assing'].sudo().create({
+            'name': name, 'description': description, 'company_id': company_id,
+        })
 
     def _process_inventory_data(self, data, api_data):
-        insertados = 0
-        actualizados = 0
-        #data = data[:2]  # Limitar a los dos primeros registros 
+        """Actualizar productos marcados, precios y cantidad absoluta por bodega.
+
+        Los productos sincronizados ausentes del catálogo se ponen en cero,
+        como hacía el código original. No modifica stock de productos ajenos a
+        la integración y no escribe el campo `quantity` de stock.quant directamente.
+        """
+        Product = self.env['product.template'].sudo()
+        Quant = self.env['stock.quant'].sudo().with_context(inventory_mode=True)
+        company = api_data.company_id
+        inserted = updated = 0
+        # Odoo 16 permitía type='product'; en 18 es type='consu', is_storable=True.
+        warehouses = api_data.warehouse_id
+        changes = {}  # (warehouse_id, variant_id) -> counted quantity
+        pricelist = api_data.price_list_id
+        public_pricelist = not pricelist or pricelist.name == 'Public Pricelist'
+        tax = company.account_sale_tax_id
 
         for item in data:
-            codigo = item.get('codigo', '').strip()
-            name = item.get('Nombre', '').strip()
-            price = float(item.get('Precio', 0))
-            stock = float(item.get('Stock', 0))  # Agregar stock
-            peso = item.get("Peso")
-
-
-            product = self.env['product.template'].search([('default_code', '=', codigo),('check_manage_sync','=', True,), ('active', '=', True)], limit=1)
-
-            # Si el producto existe pero tiene check_manage_sync=False, lo ignoramos
-            if product and not product.check_manage_sync:
-                _logger.info(f"__DEBUG: Producto {codigo} ignorado por check_manage_sync=False")
+            if not isinstance(item, dict):
                 continue
-            # Verificar si la API tiene una lista de precios asignada
-            has_custom_pricelist = api_data.price_list_id and api_data.price_list_id.name != 'Public Pricelist'
+            code = str(item.get('codigo') or '').strip()
+            if not code:
+                continue
+            name = str(item.get('Nombre') or code).strip()
+            try:
+                price = float(item.get('Precio') or 0)
+                stock = float(item.get('Stock') or 0)
+                weight = float(item.get('Peso') or 0)
+            except (TypeError, ValueError) as exc:
+                raise UserError(_('Valores numéricos incorrectos para SKU %s: %s') % (code, exc)) from exc
 
-            _logger.info(f"__DEBUG: API {api_data.name} - Producto {codigo} - Precio {price} - Stock {stock} - Lista de precios: {api_data.price_list_id.name if api_data.price_list_id else 'Ninguna'}")
-
-
-            _logger.info(f"__DEBUG: has_custom_pricelist {has_custom_pricelist} ")
-            
-
-            if product:
-                if not product.is_storable:
-                    product.write({ "is_storable": True })
-
-                if peso and float(peso) > 0:
-                    if not product.peso:
-                        product.write({'peso': float(peso)})
-
-                # actualizar impuesto por defecto si no tiene
-                if not product.taxes_id:
-                    product.write({'taxes_id': [(6, 0, [self.env.company.account_sale_tax_id.id])] })
-
-                # Si el producto existe, actualizamos dependiendo de si la API tiene lista de precios
-                if has_custom_pricelist:
-                    # Actualizar solo la lista de precios asignada
-                    self._assign_price_to_pricelist(product, api_data.price_list_id, price)
-                else:
-                    # Actualizar el list_price directamente
-                    if product.list_price != price:
-                        product.write({'list_price': price})
-                
-                # Actualizar stock si la API tiene una bodega asociada
-                if api_data.warehouse_id:
-                    self._update_stock(product, stock, api_data.warehouse_id)
-                    # product.write({'check_update': True})
-
-                actualizados += 1
-                # product.write({'check_update': True})
-            else:
-                # Crear el producto
-                new_product_data = {
-                    'name': name,
-                    'default_code': codigo,
-                    'list_price': price if not has_custom_pricelist else 0,  # Asignar 0 si se usará lista de precios
-                    'type': 'consu',
-                    "is_storable": True,
+            # Buscar sin duplicar variantes de SKU; conservar el selector check_manage_sync.
+            product = Product.search([('default_code', '=', code)], limit=1)
+            if product and not product.check_manage_sync:
+                _logger.info('Radis: SKU %s existe sin check_manage_sync; se omite.', code)
+                continue
+            if not product:
+                vals = {
+                    'name': name, 'default_code': code,
+                    'list_price': price if public_pricelist else 0,
+                    'type': 'consu', 'is_storable': True,
                     'check_manage_sync': True,
-                    'taxes_id': [(6, 0, [self.env.company.account_sale_tax_id.id])],
-
                 }
+                if tax:
+                    vals['taxes_id'] = [(6, 0, tax.ids)]
+                if weight > 0:
+                    vals['peso'] = weight
+                product = Product.with_company(company).create(vals)
+                inserted += 1
+            else:
+                vals = {}
+                # Odoo 18 distingue productos almacenables mediante is_storable.
+                # Conserva la conversión realizada en la sincronización del usuario.
+                if not product.is_storable:
+                    vals['is_storable'] = True
+                if weight > 0 and not product.peso:
+                    vals['peso'] = weight
+                if tax and not product.taxes_id:
+                    vals['taxes_id'] = [(6, 0, tax.ids)]
+                if public_pricelist and float_compare(product.list_price, price, precision_digits=4):
+                    vals['list_price'] = price
+                if vals:
+                    product.with_company(company).write(vals)
+                updated += 1
 
-                if peso and float(peso) > 0:
-                    new_product_data['peso'] = float(peso)
+            if not public_pricelist:
+                self._assign_price_to_pricelist(product, pricelist, price)
+            variant = product.product_variant_id
+            if not variant:
+                continue
+            for warehouse in warehouses:
+                if warehouse.company_id != company:
+                    _logger.warning('Radis: bodega %s no pertenece a %s; ignorada.', warehouse.name, company.name)
+                    continue
+                changes[warehouse.id, variant.id] = stock
 
-                new_product = self.env['product.template'].create(new_product_data)
+        # Aplica inventario de Odoo para generar los movimientos correctos.
+        # Agrupar por bodega evita que se borre el inventario de otras empresas.
+        for warehouse in warehouses:
+            if warehouse.company_id != company or not warehouse.lot_stock_id:
+                continue
+            location = warehouse.lot_stock_id
+            sync_products = Product.search([('check_manage_sync', '=', True)]).mapped('product_variant_id')
+            existing = Quant.search([
+                ('location_id', '=', location.id), ('product_id', 'in', sync_products.ids),
+                ('lot_id', '=', False), ('package_id', '=', False), ('owner_id', '=', False),
+            ])
+            quantities_by_variant = {}
+            for quant in existing:
+                quantities_by_variant[quant.product_id.id] = quantities_by_variant.get(quant.product_id.id, 0) + quant.quantity
+            # Mantener lógica 'no enviado = cero', solo para artículos gestionados por API.
+            for variant_id, old_qty in quantities_by_variant.items():
+                changes.setdefault((warehouse.id, variant_id), 0.0)
+            for (wh_id, variant_id), new_qty in changes.items():
+                if wh_id != warehouse.id:
+                    continue
+                variant = self.env['product.product'].browse(variant_id)
+                old_qty = quantities_by_variant.get(variant_id, 0.0)
+                if not float_compare(old_qty, new_qty, precision_rounding=variant.uom_id.rounding):
+                    continue
+                quant = Quant.search([
+                    ('product_id', '=', variant_id), ('location_id', '=', location.id),
+                    ('lot_id', '=', False), ('package_id', '=', False), ('owner_id', '=', False),
+                ], limit=1)
+                if not quant:
+                    quant = Quant.with_company(company).create({
+                        'product_id': variant_id, 'location_id': location.id,
+                    })
+                quant.with_company(company).write({'inventory_quantity': new_qty, 'check_update': True})
+                quant.with_company(company).action_apply_inventory()
+                quant.with_company(company).write({'check_update': False})
+        return inserted, updated
 
-                # Si hay lista de precios asignada, actualizarla
-                if has_custom_pricelist:
-                    self._assign_price_to_pricelist(new_product, api_data.price_list_id, price)
-                
-                # Actualizar stock si la API tiene una bodega asociada
-                if api_data.warehouse_id:
-                    self._update_stock(new_product, stock, api_data.warehouse_id)
-
-                insertados += 1
-
-        # products = self.env['product.template'].search([('check_update', '=', False)])
-        stock_quants = self.env['stock.quant'].search([('check_update', '=', False), ('location_id', '=', api_data.warehouse_id.lot_stock_id.id)])
-        if stock_quants:
-            stock_quants.write({'quantity': 0})
-            # self.update_cero_quantity(products, api_data.warehouse_id)
-
-        stock_quants = self.env['stock.quant'].search([('check_update', '=', True), ('location_id', '=', api_data.warehouse_id.lot_stock_id.id)])
-        # products = self.env['product.template'].search([('check_update', '=', True)])
-        if stock_quants:
-            stock_quants.write({'check_update': False})
-
-
-        _logger.info(f"Resumen de sincronización API {api_data.name}: Insertados {insertados}, Actualizados {actualizados}")
-        return insertados, actualizados
-
-
+    @api.model
     def _assign_price_to_pricelist(self, product, price_list, price):
-
-        _logger.info(f"__DEBUG: product para LISTA {product} ")
-        price_rule = self.env['product.pricelist.item'].search([
+        item = self.env['product.pricelist.item'].sudo().search([
             ('pricelist_id', '=', price_list.id),
-            ('product_tmpl_id', '=', product.id)
+            ('product_tmpl_id', '=', product.id),
+            ('applied_on', '=', '1_product'),
         ], limit=1)
-
-        if price_rule:
-            price_rule.write({'fixed_price': price})
+        if item:
+            if float_compare(item.fixed_price, price, precision_digits=4):
+                item.write({'fixed_price': price})
         else:
-            self.env['product.pricelist.item'].create({
-                'pricelist_id': price_list.id,
-                'product_tmpl_id': product.id,
-                'fixed_price': price,
-                'applied_on': '1_product',
+            self.env['product.pricelist.item'].sudo().create({
+                'pricelist_id': price_list.id, 'product_tmpl_id': product.id,
+                'applied_on': '1_product', 'compute_price': 'fixed', 'fixed_price': price,
             })
-
-    def _update_stock(self, product, stock, warehouse):
-        # Obtener la ubicación de stock de la bodega
-        stock_location = warehouse.lot_stock_id
-        if not stock_location:
-            _logger.warning(f"La bodega {warehouse.name} no tiene una ubicación de stock configurada.")
-            return
-
-        # Verificar que el producto tenga una variante
-        product_variant = product.product_variant_id
-        if not product_variant:
-            _logger.warning(f"El producto {product.default_code} no tiene una variante asociada.")
-            return
-
-        # Buscar el registro de stock.quant
-        quant = self.env['stock.quant'].search([
-            ('product_id', '=', product_variant.id),
-            ('location_id', '=', stock_location.id),
-        ], limit=1)
-
-        if quant:
-            # Actualizar el stock existente
-            quant.sudo().write({'quantity': stock, 'check_update': True})
-        else:
-            # Crear un nuevo registro de stock
-            self.env['stock.quant'].sudo().create({
-                'product_id': product_variant.id,
-                'location_id': stock_location.id,
-                'quantity': stock,
-                'check_update': True,
-            })
-        _logger.info(f"Stock actualizado para el producto {product.default_code} en la bodega {warehouse.name}: {stock}")
-
 
     @api.model
     def update_published_for_storable_products(self):
-        # Buscar todos los productos de tipo "Almacenable"
-        storable_products = self.env['product.template'].search([('type', '=', 'consu')])
-        
-        # Actualizar los campos necesarios
-        if storable_products:
-            storable_products.write({
-                'is_published': True,
-                'check_manage_sync': True,
-                'company_id': False
-            })
-
-    # def update_cero_quantity(self, products, warehouse):
-    #     for product in products:
-    #         quants = self.env['stock.quant'].search([
-    #             ('product_id', '=', product.product_variant_id.id),
-    #         ])
-
-    #         if quants:
-    #             count = 0
-    #             for q in quants:
-    #                 if q.quantity == 0 and (q.location_id.location_id.name == "BPC" or q.location_id.location_id.name == "BVD"):
-    #                     _logger.info(f'MOSTRANDO NAME UBICACION >>> { q.location_id.location_id.name }')
-    #                     count += 1
-
-    #             if count == 2:
-    #                 quants.write({'quantity': 0})
+        products = self.env['product.template'].search([('is_storable', '=', True)])
+        if products:
+            products.write({'check_manage_sync': True, 'company_id': False})
+            if 'is_published' in products._fields:
+                products.write({'is_published': True})

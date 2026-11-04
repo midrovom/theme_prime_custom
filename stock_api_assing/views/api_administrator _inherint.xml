@@ -10,7 +10,7 @@
                     string="Ejecutar Sincronización"
                     type="object"
                     class="btn-primary"
-                    modifiers="{'invisible': [('is_stock_update', '=', False)]}"/>
+                    invisible="not is_stock_update"/>
         </xpath>
         </field>
     </record>
