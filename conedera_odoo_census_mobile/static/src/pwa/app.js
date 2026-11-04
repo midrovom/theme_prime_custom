@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.7";
+const APP_VERSION = "18.0.1.5.8";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -54,6 +54,9 @@ const state = {
   quotePriceTimer: null,
   quotePriceRequest: 0,
   quoteImageZoom: 1,
+  quotePaymentOptionId: null,
+  quoteLoyaltyCode: "",
+  quoteRetail: false,
 };
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -347,7 +350,8 @@ function connectionBanner() {
 
 function nav(active, desktop=false) {
   const item = (page, icon, label) => `<button class="nav-btn ${active===page?"active":""}" data-nav="${page}"><b>${icon}</b><span>${label}</span></button>`;
-  return `<nav class="${desktop?"side-nav":"bottom-nav"}" aria-label="Navegación">${item("home","⌂","Catastros")}${item("visit","＋","Visita")}${item("pending","⇅","Pendientes")}${item("more","•••","Más")}${desktop?'<a class="nav-btn" href="/web" target="_blank" rel="noopener"><b>▦</b><span>Abrir Odoo</span></a>':""}</nav>`;
+  const retailOnly=state.meta?.capabilities?.census_role===false;
+  return `<nav class="${desktop?"side-nav":"bottom-nav"}" aria-label="Navegación">${item("home","⌂",retailOnly?"Tienda":"Catastros")}${retailOnly?'':item("visit","＋","Visita")}${item("pending","⇅","Pendientes")}${item("more","•••","Más")}${desktop?'<a class="nav-btn" href="/web" target="_blank" rel="noopener"><b>▦</b><span>Abrir Odoo</span></a>':""}</nav>`;
 }
 function shell(title, body, opts={}) {
   return `<div class="app-shell">
@@ -379,10 +383,14 @@ function partnerCard(p) {
 function renderHome() {
   const q = state.search.trim().toLowerCase();
   const partners = state.partners.filter(p => !q || [p.name,p.commercial_name,p.vat,p.city,p.phone,p.mobile].some(v => String(v||"").toLowerCase().includes(q)));
-  const body = `<div class="home-tools"><span>Mis clientes</span><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div>
+  const retail=state.meta?.capabilities?.quote_retail_partner;
+  const retailButton=state.meta?.capabilities?.quote_retail_enabled
+    ?`<section class="partner-quote-cta"><div><strong>Venta directa · Consumidor Final</strong><p>Crear proforma sin catastro. Precios de lista, promociones Loyalty y recargos por condición de pago.</p></div><button class="btn btn-primary" type="button" data-action="quote-retail">▤ Cotizar consumidor final</button></section>`:"";
+  const isCensus=state.meta?.capabilities?.census_role!==false;
+  const body = `${retailButton}${isCensus?`<div class="home-tools"><span>Mis clientes</span><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div>
     <input id="partner-search" class="search" placeholder="Buscar por RUC, nombre, ciudad…" value="${esc(state.search)}"/>
-    <div class="cards">${partners.map(partnerCard).join("") || `<div class="empty"><b>No hay catastros en el dispositivo</b>${state.online?"Pulse actualizar o cree uno nuevo.":"Conéctese una vez para descargar sus catastros."}</div>`}</div>`;
-  $app.innerHTML = shell("Mis catastros", body, { fab:true, nav:"home" });
+    <div class="cards">${partners.map(partnerCard).join("") || `<div class="empty"><b>No hay catastros en el dispositivo</b>${state.online?"Pulse actualizar o cree uno nuevo.":"Conéctese una vez para descargar sus catastros."}</div>`}</div>`:''}`;
+  $app.innerHTML = shell(state.meta?.capabilities?.census_role===false?"Cotizador de tienda":"Mis catastros", body, { fab:state.meta?.capabilities?.census_role!==false, nav:"home" });
 }
 
 function selectedPartner() { return state.partners.find(p => p.id === state.selectedPartnerId) || null; }
@@ -461,7 +469,8 @@ function renderDetail() {
 function quoteCanCreate() {
   return Boolean(state.meta?.capabilities?.quote_create);
 }
-function quotePartner() { return state.partners.find(p=>p.id===Number(state.quotePartnerId))||null; }
+function quotePartner() { return state.partners.find(p=>p.id===Number(state.quotePartnerId))
+  || (state.quoteRetail&&Number(state.quotePartnerId)===Number(state.meta?.capabilities?.quote_retail_partner?.id)?state.meta.capabilities.quote_retail_partner:null); }
 function nativeQuotationsUrl() {
   const action=Number(state.meta?.capabilities?.sales_action_id||0);
   return action>0?`/web#action=${action}&model=sale.order&view_type=list`:'/web';
@@ -487,13 +496,13 @@ function availableQuoteProducts(term) {
   if (!user) return [];
   if (!state.quoteWarehouseId) return [];
   const q=String(term||"").trim().toLowerCase();
-  return state.quoteProducts.filter(p=>Number(p.stock_qty)>0 && p.stock_kind==='available' &&Number(p.user_id)===Number(user.id) && Number(p.company_id)===Number(user.company_id)
+  return state.quoteProducts.filter(p=>Number(p.stock_qty)>0 && ['available','physical'].includes(p.stock_kind) &&Number(p.user_id)===Number(user.id) && Number(p.company_id)===Number(user.company_id)
     && Number(p.partner_id)===Number(state.quotePartnerId) && Number(p.warehouse_id||0)===Number(state.quoteWarehouseId||0) && Number(p.pricelist_id||0)===Number(state.quotePricelistId||0)
     && [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,35);
 }
 function renderQuoteResults() {
   const box=document.querySelector("#quote-search-results"); if (!box) return;
-  const found=state.quoteResults.filter(p=>Number(p.stock_qty)>0 && p.stock_kind==='available' && Number(p.warehouse_id)===Number(state.quoteWarehouseId));
+  const found=state.quoteResults.filter(p=>Number(p.stock_qty)>0 && ['available','physical'].includes(p.stock_kind) && Number(p.warehouse_id)===Number(state.quoteWarehouseId));
   const rows=found.map(p=>{
     const chosen=state.quoteSelections[p.id];
     return `<article class="quote-search-product">
@@ -509,7 +518,7 @@ function renderQuoteResults() {
   box.innerHTML=`${state.quoteSearching?'<div class="small">Actualizando precio y stock desde Odoo…</div>':''}
     ${!state.quoteWarehouseId?'<div class="small">Seleccione una bodega para buscar productos con stock.</div>':
     !state.quoteSearch.trim()?'<div class="small">Busque por nombre o código. Solo aparecerán productos con stock a mano mayor que cero en esta bodega.</div>':
-    found.length?rows:`<div class="small">No hay productos con stock positivo en la bodega seleccionada ${state.online?'':'(según la última consulta guardada)'}.</div>`}
+    found.length?rows:`<div class="small">No hay productos con stock físico positivo en las ubicaciones internas de esta bodega ${state.online?'':'(según la última consulta guardada)'}. Si Inventario muestra otra cifra, revise la variante y la ubicación raíz del almacén.</div>`}
     ${quoteSelectionCount()?`<div class="quote-batch"><strong>${quoteSelectionCount()} seleccionado(s)</strong><button class="btn btn-primary" type="button" data-action="quote-add-selected">Agregar seleccionados</button></div>`:''}`;
 }
 function quoteLinePriceMarkup(line) {
@@ -520,7 +529,7 @@ function quoteLinesMarkup() {
     <button class="quote-thumb" type="button" data-action="quote-image" data-id="${line.id}" title="Ampliar foto" ${line.has_image?'':'disabled'}>${quoteImage(line)}</button>
     <div class="quote-line-name"><strong>${esc(line.name)}</strong><span>${esc(line.code||line.uom||'')}</span>${quoteLinePriceMarkup(line)}</div>
     <div class="quote-line-controls"><label>Cantidad<input type="number" inputmode="decimal" min="0.001" max="100000" step="any" value="${esc(line.qty)}" data-quote-qty="${line.id}" required/></label>
-    <label>Precio negociado (campo Odoo: negotiable_price) · ${esc(line.currency||'moneda de lista')}<input type="number" data-quote-negotiable="${line.id}" inputmode="decimal" min="0" max="1000000000" step="any" placeholder="Sin negociar" value="${esc(line.negotiable_price??'')}" /></label>
+    ${state.meta?.capabilities?.quote_can_negotiate?`<label>Precio negociado (negotiable_price) · ${esc(line.currency||'moneda de lista')}<input type="number" data-quote-negotiable="${line.id}" inputmode="decimal" min="0" max="1000000000" step="any" placeholder="Sin negociar" value="${esc(line.negotiable_price??'')}" /></label>`:'<span class="small">Precio según lista de Odoo · negociación no autorizada para este perfil</span>'}
     <button type="button" class="icon-btn quote-remove" title="Quitar producto" aria-label="Quitar ${esc(line.name)}" data-action="quote-remove-product" data-id="${line.id}">×</button></div></div>`).join(''):
     `<div class="empty"><b>Sin productos</b>Busque y seleccione varios productos para esta cotización.</div>`;
 }
@@ -547,10 +556,13 @@ function quoteTotalsMarkup(){
   const fmt=n=>t.ready?`${esc(t.currency)} ${money(n)}`:'Pendiente de calcular';
   const warning=!state.online?'Sin conexión: los valores son orientativos y stock/precios se validarán al sincronizar.':
     !t.current?'Actualizando precios según las cantidades seleccionadas…':'Valores referenciales sin impuestos; Odoo calculará el importe final de la proforma.';
+  const option=(state.meta?.capabilities?.quote_payment_options||[]).find(x=>Number(x.id)===Number(state.quotePaymentOptionId));
+  const estimatedFee=t.ready&&option ? Math.max(0,t.negotiated)*Number(option.surcharge_percent||0)/100 : null;
   return `<div class="quote-totals-grid">
     <div class="quote-total-card"><span>Total a precio de lista</span><strong data-total-list>${fmt(t.list)}</strong></div>
     <div class="quote-total-card negotiated"><span>Total a precio negociado</span><strong data-total-negotiated>${fmt(t.negotiated)}</strong></div>
-  </div><div class="small">${warning} En líneas sin precio negociado se utiliza el precio de lista.</div>`;
+  </div>${option?`<div class="status-banner">Recargo estimado por ${esc(option.name)}: ${t.ready?`${esc(t.currency)} ${money(estimatedFee)}`:'Pendiente'} (${esc(option.surcharge_percent)}%). No incluye impuestos ni ajustes Loyalty; Odoo calculará el recargo final sobre el subtotal posterior a promociones.</div>`:''}
+  <div class="small">${warning} En líneas sin precio negociado se utiliza el precio de lista.</div>`;
 }
 function updateQuoteTotals(){
   const el=document.querySelector('#quote-totals');
@@ -605,33 +617,39 @@ function renderQuote() {
   const partner=quotePartner();
   const cap=state.meta?.capabilities||{};
   const clients=state.partners.filter(p=>truthy(p.census_locked) && (!p.census_company_id || relationId(p.census_company_id)===Number(state.meta?.user?.company_id)));
-  const related=partner?ordersFor(partner.id).slice(0,10):[];
+  const related=partner&&!state.quoteRetail?ordersFor(partner.id).slice(0,10):[];
   const linkedVisits=partner?visitsFor(partner.id).filter(v=>v.state==="done"):[];
   if (!state.quoteWarehouseId && (cap.quote_warehouses||[]).length===1)
     state.quoteWarehouseId=Number(cap.quote_warehouses[0].id);
-  const availabilityNote=clients.length?"":`<div class="status-banner warn">No hay catastros protegidos de la compañía actual para cotizar. Abre un catastro, completa los datos obligatorios y pulsa «Finalizar y proteger» antes de crear una cotización.</div>`;
+  const availabilityNote=clients.length||state.quoteRetail?"":`<div class="status-banner warn">No hay catastros protegidos de la compañía actual para cotizar. Abre un catastro, completa los datos obligatorios y pulsa «Finalizar y proteger» antes de crear una cotización.</div>`;
   const permissionNote=cap.quote_create===false?`<div class="status-banner warn">Tu usuario no tiene permiso para crear cotizaciones en Odoo. Solicita al administrador los permisos correspondientes de Ventas. El acceso a esta pantalla sigue visible para que puedas identificar la causa.</div>`:"";
   if (!partner) { state.page="home"; return renderHome(); }
   const body=`${availabilityNote}${permissionNote}<div class="quote-layout"><form id="quote-form">
     <section class="form-card"><div class="row space"><h2>1. Cliente</h2><span class="chip">Empresa: ${esc(state.meta?.user?.company_name||"")}</span></div>
-      <div class="quote-current-customer"><div><span>Catastro seleccionado</span><strong>${esc(partnerLabel(partner))}</strong><small>${esc(partner.vat||"Sin RUC/cédula")}</small></div><button type="button" class="btn btn-outline" data-action="back-to-partner">Volver al catastro</button></div>
-      <div class="field"><label>Vincular con visita (opcional)</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}" ${Number(state.quoteVisitId)===v.id?"selected":""}>${esc(v.name||"Visita #"+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join("")}</select></div>
+      <div class="quote-current-customer"><div><span>${state.quoteRetail?"Venta de tienda":"Catastro seleccionado"}</span><strong>${esc(partnerLabel(partner))}</strong><small>${esc(partner.vat||"Sin RUC/cédula")}</small></div><button type="button" class="btn btn-outline" data-action="back-to-partner">${state.quoteRetail?'Volver a tienda':'Volver al catastro'}</button></div>
+      ${!state.quoteRetail?`<div class="field"><label>Vincular con visita (opcional)</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}" ${Number(state.quoteVisitId)===v.id?"selected":""}>${esc(v.name||"Visita #"+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join("")}</select></div>`:''}
     </section>
-    <section class="quote-mode-banner"><div><strong>Cotización rápida desde la PWA</strong><p>Este formulario genera borradores. Para utilizar condiciones comerciales, campos especiales y todas las personalizaciones, abre la pantalla nativa de cotizaciones.</p></div><a class="btn btn-outline" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener" aria-label="Abrir cotizaciones completas en Odoo">Cotización completa en Odoo</a></section>
+    <section class="quote-mode-banner"><div><strong>Proforma rápida desde PWA</strong><p>Las promociones se calculan con el motor Loyalty de Odoo. Los recargos por condiciones de pago se añaden en una línea independiente, posterior a los descuentos.</p></div><a class="btn btn-outline" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener" aria-label="Abrir cotizaciones completas en Odoo">Cotización completa en Odoo</a></section>
     <section class="form-card"><h2>2. Selección rápida de productos</h2>
-      <div class="field"><label>Lista de precios de Odoo</label><select id="quote-pricelist"><option value="">Lista asignada al cliente (predeterminada)</option>${(cap.quote_pricelists||[]).map(pl=>`<option value="${pl.id}" ${Number(state.quotePricelistId)===pl.id?'selected':''}>${esc(pl.name)}</option>`).join('')}</select></div>
+      ${cap.quote_can_negotiate?`<div class="field"><label>Lista de precios de Odoo</label><select id="quote-pricelist"><option value="">Lista asignada al cliente (predeterminada)</option>${(cap.quote_pricelists||[]).map(pl=>`<option value="${pl.id}" ${Number(state.quotePricelistId)===pl.id?'selected':''}>${esc(pl.name)}</option>`).join('')}</select></div>`:'<div class="small">Se utilizará la lista de precios asignada al cliente por Odoo (sin edición de precios).</div>'}
       <div class="field"><label>Bodega obligatoria · stock y validación por producto ${cap.quote_stock_supported?'':'(inventario no disponible)'}</label>
       <select id="quote-warehouse" required><option value="">Seleccione una bodega</option>${(cap.quote_warehouses||[]).map(w=>`<option value="${w.id}" ${Number(state.quoteWarehouseId)===w.id?'selected':''}>${esc(w.name)}</option>`).join('')}</select></div>
       <div class="field"><label>Buscar por nombre o código (solo stock mayor a 0)</label><input id="quote-search" value="${esc(state.quoteSearch)}" placeholder="Nombre, código SKU" autocomplete="off" ${state.quoteWarehouseId?'':'disabled'}/></div>
       <div id="quote-search-results" class="quote-results" aria-live="polite"></div>
+      <button class="btn btn-outline" type="button" data-action="quote-stock-audit" ${state.quoteSearch.trim().length>=2&&state.online?'':'disabled'}>Comprobar stock de la bodega</button>
+      <div id="quote-stock-audit" class="small" aria-live="polite"></div>
       <div class="quote-lines-head"><strong>Productos agregados (${state.quoteLines.length})</strong></div><div id="quote-lines">${quoteLinesMarkup()}</div>
       <div id="quote-totals" class="quote-totals" aria-live="polite">${quoteTotalsMarkup()}</div>
       <div class="small">El precio de lista es una referencia según la lista asignada al cliente, la cantidad y moneda de Odoo. El precio negociado utiliza el campo existente negotiable_price de la línea en Odoo; su personalización determina el precio final y los descuentos. No se sobrescribe el precio unitario desde la PWA. Solo se muestran productos con stock positivo en la bodega indicada. Al guardar, Odoo comprueba nuevamente producto, bodega y cantidad. La cotización no reserva stock.</div>
       ${!state.online?'<div class="status-banner warn">Sin conexión: fotos y precios pueden no estar actualizados. Odoo recalculará al sincronizar.</div>':''}
     </section>
-    <dialog id="quote-image-dialog" class="quote-image-dialog"><div class="quote-zoom-bar"><strong id="quote-zoom-name">Producto</strong><div class="quote-zoom-buttons"><button class="btn btn-outline" type="button" data-action="quote-zoom-out" aria-label="Reducir fotografía">−</button><span id="quote-zoom-level">100%</span><button class="btn btn-outline" type="button" data-action="quote-zoom-in" aria-label="Ampliar fotografía">＋</button><button class="btn btn-outline" type="button" data-action="quote-close-image">Cerrar ✕</button></div></div><div class="quote-zoom-body"><img id="quote-zoom-picture" alt="Foto del producto ampliada"/></div><small>Puede ampliar la foto con los controles de zoom del navegador o del dispositivo.</small></dialog><section class="form-card"><h2>3. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Orden de compra o referencia externa"/></div>
+    <dialog id="quote-image-dialog" class="quote-image-dialog"><div class="quote-zoom-bar"><strong id="quote-zoom-name">Producto</strong><div class="quote-zoom-buttons"><button class="btn btn-outline" type="button" data-action="quote-zoom-out" aria-label="Reducir fotografía">−</button><span id="quote-zoom-level">100%</span><button class="btn btn-outline" type="button" data-action="quote-zoom-in" aria-label="Ampliar fotografía">＋</button><button class="btn btn-outline" type="button" data-action="quote-close-image">Cerrar ✕</button></div></div><div class="quote-zoom-body"><img id="quote-zoom-picture" alt="Foto del producto ampliada"/></div><small>Puede ampliar la foto con los controles de zoom del navegador o del dispositivo.</small></dialog><section class="form-card"><h2>3. Condiciones de pago y promociones</h2>
+      <div class="field"><label>Condición de pago</label><select id="quote-payment-option"><option value="">Sin condición adicional</option>${(cap.quote_payment_options||[]).map(opt=>`<option value="${opt.id}" ${Number(state.quotePaymentOptionId)===Number(opt.id)?'selected':''}>${esc(opt.name)}${opt.surcharge_percent?` · recargo ${esc(opt.surcharge_percent)}%`:''}</option>`).join('')}</select></div>
+      <div class="field"><label>Código de promoción / cupón Loyalty</label><input id="quote-loyalty-code" value="${esc(state.quoteLoyaltyCode)}" maxlength="100" placeholder="Opcional · código autorizado en Odoo" ${cap.quote_loyalty_supported?'':'disabled'}/></div>
+      ${cap.quote_loyalty_supported?'<div class="small">Después de guardar, la ficha mostrará las recompensas disponibles para aplicar. Odoo valida las reglas, vigencia, cantidades, cliente y acumulación.</div>':'<div class="status-banner warn">Las promociones requieren instalar y activar sale_loyalty en Ventas.</div>'}
+    </section><section class="form-card"><h2>4. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Orden de compra o referencia externa"/></div>
       <div class="status-banner warn">La cotización se guardará como <b>borrador</b>. Revise los importes definitivos antes de enviarla o confirmarla.</div></section>
-      <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-action="back-to-partner">Volver al catastro</button><button class="btn btn-primary" type="submit" ${!cap.quote_create?"disabled":""}>▤ Guardar cotización${state.online?"":" offline"}</button></div>
+      <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-action="back-to-partner">${state.quoteRetail?'Volver a tienda':'Volver al catastro'}</button><button class="btn btn-primary" type="submit" ${!cap.quote_create?"disabled":""}>▤ Guardar cotización${state.online?"":" offline"}</button></div>
     </form><aside class="quote-side"><section class="card"><div class="card-title">Cotizaciones del cliente</div><div class="card-sub">Historial visible según permisos de Odoo</div>
       ${related.length?related.map(o=>`<button class="quote-history" type="button" data-action="view-quote" data-id="${o.id}"><span><strong>${esc(o.name)}</strong><small>${esc(dateText(o.date_order))} · ${esc(o.state||"")}</small></span><b>${esc(relationName(o.currency_id)||"")} ${money(o.amount_total)}</b></button>`).join(""):'<div class="small" style="margin-top:10px">Seleccione un cliente para consultar sus proformas.</div>'}</section></aside></div>`;
   $app.innerHTML=shell("Cotizaciones",body,{nav:"quote"});renderQuoteResults();
@@ -642,7 +660,8 @@ function renderQuoteDetail() {
   const body=`<div class="quote-layout"><section class="form-card"><div class="row space"><div><div class="eyebrow">Cotización</div><h2>${esc(q.name)}</h2><div class="card-sub">${esc(q.partner_name)} · ${esc(q.company_name)} · ${esc(dateText(q.date_order))}</div></div><span class="chip">${esc(q.state)}</span></div>
     <div class="section-title">Detalle de productos</div>${q.lines.map(l=>`<div class="quote-detail-line"><div><strong>${esc(l.product_name||l.name)}</strong><div class="small">${esc(l.qty)} ${esc(l.uom)} × ${esc(q.currency)} ${money(l.price_unit)}${l.discount?` · descuento ${esc(l.discount)}%`:""}${l.negotiable_price!==null&&l.negotiable_price!==undefined?` · negociable: ${esc(q.currency)} ${money(l.negotiable_price)}`:''}</div></div><strong>${esc(q.currency)} ${money(l.subtotal)}</strong></div>`).join("")}
     <div class="quote-total"><div><span>Subtotal</span><strong>${esc(q.currency)} ${money(q.amount_untaxed)}</strong></div><div><span>Impuestos</span><strong>${esc(q.currency)} ${money(q.amount_tax)}</strong></div><div class="grand"><span>Total</span><strong>${esc(q.currency)} ${money(q.amount_total)}</strong></div></div>
-    <div class="status-banner warn">Importes suministrados por Odoo. Antes de enviar, verifique condiciones comerciales y personalizaciones de su instalación.</div>
+    <div class="status-banner">Condición de pago: ${esc(q.payment_option||'Estándar')} ${q.surcharge_percent?`· recargo ${esc(q.surcharge_percent)}% en línea aparte`:''}. Promociones y totales suministrados por Odoo.</div>
+    ${q.state==='draft'&&q.loyalty_enabled?`<div class="loyalty-tools"><h3>Promociones y recompensas Loyalty</h3><div class="field"><label>Código promocional</label><input id="quote-detail-coupon" placeholder="Cupón o código descuento"/></div><div class="row"><button type="button" class="btn btn-outline" data-action="quote-apply-code">Aplicar código</button><button type="button" class="btn btn-outline" data-action="quote-update-rewards">Consultar recompensas</button></div>${(q.loyalty_rewards||[]).length?`<div class="quote-rewards">${q.loyalty_rewards.map(r=>`<div class="quote-reward"><strong>${esc(r.name)}</strong>${r.multi_product?`<select data-loyalty-product="${r.id}">${(r.products||[]).map(pr=>`<option value="${pr.id}">${esc(pr.name)}</option>`).join('')}</select>`:''}<button type="button" class="btn btn-secondary" data-action="quote-apply-reward" data-id="${r.id}">Aplicar recompensa</button></div>`).join('')}</div>`:'<p class="small">No hay recompensas reclamables en este momento; los descuentos automáticos se reflejan en el detalle del pedido.</p>'}</div>`:''}
     <div class="action-grid"><button class="btn btn-secondary" data-action="back-quote">← Cotizaciones</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
     <aside class="quote-side"><section class="card"><div class="card-title">Registro</div><div class="card-sub">Referencia: ${esc(q.client_order_ref||"—")}<br>Visita: ${q.visit_id?"#"+Number(q.visit_id):"No asociada"}<br>Empresa: ${esc(q.company_name)}</div></section></aside></div>`;
   $app.innerHTML=shell(q.name,body,{nav:"quote"});
@@ -696,7 +715,7 @@ async function searchQuoteProducts(value) {
 }
 async function submitQuote(form) {
   const p=quotePartner();
-  if (!p||!truthy(p.census_locked)) {alert("Seleccione un catastro finalizado y protegido.");return;}
+  if (!p||(!state.quoteRetail&&!truthy(p.census_locked))) {alert("Seleccione un catastro finalizado o el consumidor final autorizado.");return;}
   if (!state.quoteLines.length){alert("Agregue al menos un producto.");return;}
   if (!state.quoteWarehouseId){alert("Seleccione una bodega antes de guardar la cotización.");return;}
   const lines=state.quoteLines.map(x=>({product_id:Number(x.id),qty:Number(x.qty),
@@ -716,11 +735,12 @@ async function submitQuote(form) {
   const totals=quoteTotals();
   const note=totals.ready?`Lista: ${totals.currency} ${money(totals.list)} · negociado estimado: ${totals.currency} ${money(totals.negotiated)}. `:'';
   if (!confirm(`¿Guardar cotización para ${partnerLabel(p)} con ${lines.length} producto(s) en la bodega seleccionada? ${note}Odoo volverá a validar stock y recalcular precios.`))return;
-  const payload={partner_id:p.id,visit_id:Number(form.querySelector('[name="visit_id"]')?.value||0),warehouse_id:state.quoteWarehouseId||null,pricelist_id:state.quotePricelistId||null,lines,
+  const payload={partner_id:p.id,payment_option_id:state.quotePaymentOptionId||null,
+    loyalty_code:state.quoteLoyaltyCode||'',visit_id:Number(form.querySelector('[name="visit_id"]')?.value||0),warehouse_id:state.quoteWarehouseId||null,pricelist_id:state.quotePricelistId||null,lines,
     client_order_ref:form.querySelector('[name="client_order_ref"]')?.value.trim()||""};
   const op=await queueOperation("quote",payload,`${partnerLabel(p)} · cotización de ${lines.length} productos`);
   if (!op) return;
-  state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.quoteSelections={};state.quoteVisitId=null;state.quoteClientRef="";
+  state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.quoteSelections={};state.quoteVisitId=null;state.quoteClientRef="";state.quoteLoyaltyCode="";state.quotePaymentOptionId=null;
   state.page="pending";render();
   if(navigator.onLine){
     if (op.state!=="synced" && op.state!=="warning") await syncPending(false,[op.uuid]);
@@ -1100,8 +1120,11 @@ $app.addEventListener("input", (event) => {
     clearTimeout(state.lookupTimer);
     state.lookupTimer=setTimeout(()=>searchCandidates(value),300);
   }
+  if(event.target?.id==='quote-loyalty-code')state.quoteLoyaltyCode=event.target.value;
   if (event.target?.id === "quote-search") {
     const value=event.target.value;state.quoteSearch=value;
+    const auditButton=document.querySelector('[data-action="quote-stock-audit"]');
+    if(auditButton)auditButton.disabled=value.trim().length<2||!state.online;
     clearTimeout(state.quoteLookupTimer);state.quoteLookupTimer=setTimeout(()=>searchQuoteProducts(value),300);
   }
   if (event.target?.matches('#quote-form [name="client_order_ref"]')) {
@@ -1127,6 +1150,9 @@ $app.addEventListener("change", (event) => {
     state.quotePartnerId=Number(event.target.value)||null;
     state.quoteVisitId=null;
     state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quoteSearch="";renderQuote();
+  }
+  if(event.target?.id==='quote-payment-option') {
+    state.quotePaymentOptionId=Number(event.target.value)||null;updateQuoteTotals();
   }
   if (event.target?.matches('#quote-form [name="visit_id"]')) {
     state.quoteVisitId=Number(event.target.value)||null;
@@ -1163,8 +1189,16 @@ $app.addEventListener("click", async (event) => {
   const visitEl = event.target.closest("[data-action='visit-partner']");
   if (visitEl) { state.selectedPartnerId=Number(visitEl.dataset.id); if(!truthy(selectedPartner()?.census_locked)){alert("Finalice y proteja primero el catastro.");return;} state.page="visit"; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
-  if (action === "quote-partner") {const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);if (!truthy(partner?.census_locked)){alert("Primero finalice y proteja el catastro.");return;}state.selectedPartnerId=id;state.quotePartnerId=id;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quoteWarehouseId=null;state.quotePricelistId=null;state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
-  if (action === "back-to-partner") {state.selectedPartnerId=Number(state.quotePartnerId)||state.selectedPartnerId;state.page="detail";render();return;}
+  if (action === "quote-retail") {
+    const retail=state.meta?.capabilities?.quote_retail_partner;
+    if(!retail || !state.meta?.capabilities?.quote_retail_enabled){alert('El administrador debe configurar Consumidor Final y asignar el perfil Tienda.');return;}
+    state.quoteRetail=true;state.quotePartnerId=Number(retail.id);state.selectedPartnerId=null;
+    state.quoteVisitId=null;state.quoteClientRef='';state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};
+    state.quoteWarehouseId=null;state.quotePricelistId=null;state.quotePaymentOptionId=null;state.quoteLoyaltyCode='';
+    state.quoteSearch='';state.quoteDetail=null;state.page='quote';render();return;
+  }
+  if (action === "quote-partner") {state.quoteRetail=false;const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);if (!truthy(partner?.census_locked)){alert("Primero finalice y proteja el catastro.");return;}state.selectedPartnerId=id;state.quotePartnerId=id;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quoteWarehouseId=null;state.quotePricelistId=null;state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
+  if (action === "back-to-partner") {if(state.quoteRetail){state.page="home";render();return;}state.selectedPartnerId=Number(state.quotePartnerId)||state.selectedPartnerId;state.page="detail";render();return;}
   if (action === "update-ui") {
     if (!navigator.onLine) {alert("Conéctese a Internet para descargar la nueva versión. Sus registros locales se conservan.");return;}
     if ((state.quoteLines.length || ["new","edit","visit"].includes(state.page)) && !confirm("¿Actualizar interfaz ahora? Se conservarán los datos sincronizados y las operaciones pendientes, pero los cambios todavía no guardados en pantalla pueden perderse.")) return;
@@ -1174,6 +1208,31 @@ $app.addEventListener("click", async (event) => {
       window.location.replace(`/catastro/app?version=${encodeURIComponent(APP_VERSION)}&t=${Date.now()}`);
     } catch(err) {alert(`No se pudo actualizar la interfaz: ${err.message||err}`);}
     return;
+  }
+  if (action === 'quote-stock-audit') {
+    const box=document.querySelector('#quote-stock-audit');
+    if(!box)return;
+    box.textContent='Comparando stock físico de la bodega con el total de la compañía…';
+    try {
+      const rows=await rpc('/catastro/app/quote/stock-audit',{partner_id:state.quotePartnerId,warehouse_id:state.quoteWarehouseId,term:state.quoteSearch});
+      box.innerHTML=rows.length?rows.map(row=>`<div class="stock-diagnostic"><strong>${esc(row.name)}</strong><span>Bodega: ${money(row.stock_warehouse)} ${esc(row.uom)} · Total compañía: ${money(row.stock_company)} ${esc(row.uom)}</span><small>Ubicación raíz: ${esc(row.root_location)}</small></div>`).join(''):'No hay productos vendibles con esa búsqueda.';
+    }catch(e){box.textContent=e.message||String(e);}return;
+  }
+  if (action === 'quote-update-rewards' && state.quoteDetail?.id) {
+    try {state.quoteDetail=await rpc('/catastro/app/quote/loyalty/rewards',{quote_id:state.quoteDetail.id});renderQuoteDetail();}
+    catch(e){alert(e.message||String(e));}return;
+  }
+  if (action === 'quote-apply-code' && state.quoteDetail?.id) {
+    const code=document.querySelector('#quote-detail-coupon')?.value?.trim();if(!code){alert('Ingrese un código.');return;}
+    try {state.quoteDetail=await rpc('/catastro/app/quote/loyalty/code',{quote_id:state.quoteDetail.id,code});renderQuoteDetail();}
+    catch(e){alert(e.message||String(e));}return;
+  }
+  if (action === 'quote-apply-reward' && state.quoteDetail?.id) {
+    const reward_id=Number(event.target.closest('[data-id]')?.dataset.id);
+    const product_id=Number(document.querySelector(`[data-loyalty-product="${reward_id}"]`)?.value||0);
+    if(!confirm('¿Aplicar esta recompensa usando las reglas de Loyalty de Odoo?'))return;
+    try {state.quoteDetail=await rpc('/catastro/app/quote/loyalty/apply',{quote_id:state.quoteDetail.id,reward_id,product_id});renderQuoteDetail();}
+    catch(e){alert(e.message||String(e));}return;
   }
   if (action === "quote-add-product") {
     const id=Number(event.target.closest("[data-id]")?.dataset.id);

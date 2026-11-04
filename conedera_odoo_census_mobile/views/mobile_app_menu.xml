@@ -10,4 +10,7 @@
               parent="conedera_odoo_census.menu_census_root"
               sequence="12" action="action_conedera_field_app"
               groups="conedera_odoo_census.group_census_user"/>
+    <menuitem id="menu_catastro_retail_pwa" name="Cotizador de tienda" sequence="40"
+              action="action_conedera_field_app"
+              groups="conedera_odoo_census_mobile.group_quote_retail"/>
 </odoo>

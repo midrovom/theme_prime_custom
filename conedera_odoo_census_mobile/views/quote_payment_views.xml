@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+ <record id="view_catastro_payment_option_list" model="ir.ui.view">
+  <field name="name">catastro.quote.payment.option.list</field><field name="model">catastro.quote.payment.option</field>
+  <field name="arch" type="xml"><list><field name="sequence" widget="handle"/><field name="name"/><field name="company_id"/><field name="surcharge_percent"/><field name="payment_term_id"/><field name="surcharge_product_id"/><field name="active"/></list></field>
+ </record>
+ <record id="view_catastro_payment_option_form" model="ir.ui.view">
+  <field name="name">catastro.quote.payment.option.form</field><field name="model">catastro.quote.payment.option</field>
+  <field name="arch" type="xml"><form><sheet><group><field name="name"/><field name="company_id"/><field name="active"/><field name="sequence"/></group><group string="Recargo separado de promociones"><field name="surcharge_percent"/><field name="surcharge_product_id"/><field name="payment_term_id"/></group><div class="text-muted">El recargo se calcula sobre el subtotal sin impuestos, después de promociones Loyalty. Debe usar un producto de servicio diferente de los productos vendidos.</div></sheet></form></field>
+ </record>
+ <record id="action_catastro_payment_options" model="ir.actions.act_window">
+  <field name="name">Condiciones de pago PWA</field><field name="res_model">catastro.quote.payment.option</field><field name="view_mode">list,form</field>
+ </record>
+ <menuitem id="menu_catastro_payment_options" name="Condiciones de pago PWA" parent="conedera_odoo_census.menu_census_configuration" sequence="65" action="action_catastro_payment_options" groups="base.group_system"/>
+ <record id="view_catastro_company_retail_form" model="ir.ui.view">
+  <field name="name">res.company.catastro.retail.form</field><field name="model">res.company</field>
+  <field name="arch" type="xml"><form string="Consumidor final de Catastro PWA"><sheet><group><field name="name" readonly="1"/><field name="catastro_retail_partner_id" options="{'no_create': True}"/></group><div class="text-muted">Este cliente estará disponible para cotizaciones directas del perfil Tienda, sin abrir un catastro. Elija el contacto Consumidor Final que ya utiliza su empresa.</div></sheet></form></field>
+ </record>
+ <record id="action_catastro_company_retail" model="ir.actions.act_window">
+  <field name="name">Consumidor final por empresa</field><field name="res_model">res.company</field><field name="view_mode">list,form</field><field name="view_id" ref="view_catastro_company_retail_form"/>
+ </record>
+ <menuitem id="menu_catastro_retail_partner" name="Consumidor final por empresa" parent="conedera_odoo_census.menu_census_configuration" sequence="66" action="action_catastro_company_retail" groups="base.group_system"/>
+</odoo>

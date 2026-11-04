@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="quote_payment_option_company_rule" model="ir.rule">
+    <field name="name">Condiciones de pago por compañía</field>
+    <field name="model_id" ref="model_catastro_quote_payment_option"/>
+    <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+  </record>
+</odoo>

@@ -216,3 +216,14 @@ button{cursor:pointer}
 .quote-total-card.negotiated{border:1px solid #baaad8}
 .quote-totals>.small{margin-top:10px;line-height:1.45}
 @media(max-width:600px){.quote-totals{padding:10px}.quote-totals-grid{grid-template-columns:1fr;gap:8px}.quote-total-card{padding:12px}.quote-total-card strong{font-size:23px}}
+/* Cotizador 1.5.8: mismo diseño legible en tienda y campo. */
+.loyalty-tools{border:1px solid var(--line,#ded8ed);background:var(--card,#fff);border-radius:18px;padding:18px;margin:14px 0}
+.loyalty-tools h3{margin:0 0 12px;font-size:16px}
+.quote-rewards{display:grid;gap:10px;margin-top:14px}
+.quote-reward{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;border:1px solid #ebe5f3;border-radius:12px;padding:12px}
+.quote-reward strong{flex:1 1 180px}
+.quote-reward select{max-width:240px}
+@media(max-width:600px){.quote-reward{flex-direction:column;align-items:stretch}.quote-reward select{max-width:none}.quote-reward .btn{width:100%}}
+
+.stock-diagnostic{display:grid;gap:3px;padding:10px;margin-top:7px;border-radius:10px;border:1px solid #ddd4ed;background:#fff}
+.stock-diagnostic span{font-size:13px}.stock-diagnostic small{opacity:.75}

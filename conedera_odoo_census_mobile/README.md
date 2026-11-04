@@ -1,8 +1,10 @@
+**Última actualización:** consulte [ACTUALIZACION_18.0.1.5.8.md](ACTUALIZACION_18.0.1.5.8.md) para stock por bodega, Loyalty, permisos de precio negociado, recargos y venta a consumidor final.
+
 **Actualización nueva:** consultar [`ACTUALIZACION_18.0.1.5.0.md`](ACTUALIZACION_18.0.1.5.0.md) para URL `/catastro`, cotizaciones PWA y restricciones por personalizaciones comerciales.
 
 # Catastro - App de Campo · Odoo 18 Community
 
-**Versión del complemento:** `18.0.1.5.0`  
+**Versión del complemento:** `18.0.1.5.8`  
 **Dependencia:** `conedera_odoo_census` `18.0.1.8.7` o posterior (para esta entrega se incluye `18.0.1.8.8`)
 
 Este complemento no modifica el módulo original. La PWA funciona como opción independiente en **Catastro → Abrir Catastro PWA** o en `/conedera/app`; Odoo y el resto de los módulos continúan en `/web`. En escritorio presenta menú lateral y en móvil navegación inferior.

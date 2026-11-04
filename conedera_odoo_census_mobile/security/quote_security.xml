@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="group_quote_negotiator" model="res.groups">
+    <field name="name">Catastro PWA: negociar precios</field>
+    <field name="comment">Permite usar el campo de personalización negotiable_price en cotizaciones PWA.</field>
+  </record>
+  <record id="group_quote_retail" model="res.groups">
+    <field name="name">Catastro PWA: cotizador de tienda</field>
+    <field name="comment">Permite crear proformas a consumidor final configurado; sin permiso de negociación por defecto.</field>
+  </record>
+</odoo>

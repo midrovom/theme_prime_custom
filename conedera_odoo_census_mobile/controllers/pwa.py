@@ -299,17 +299,25 @@ class ConederaFieldAppController(http.Controller):
 
     @http.route(["/catastro/app/bootstrap", "/conedera/app/bootstrap"], type="json", auth="user", methods=["POST"], readonly=True)
     def bootstrap(self):
-        Partner = request.env["res.partner"]
-        partner_fields = self._readable_partner_fields()
-        domain = [("census_active", "=", True)] if "census_active" in Partner._fields else [("customer_rank", ">", 0)]
-        partners = Partner.search_read(domain, partner_fields, order="write_date desc, id desc", limit=1000)
-        partner_ids = [x["id"] for x in partners]
-        hour_map = self._opening_hours_payload(partner_ids)
-        for partner in partners:
-            partner["opening_hours"] = hour_map.get(partner["id"], [])
-        visits = self._visit_payload(partner_ids)
-        orders, products = self._sale_payload(partner_ids)
-        team = self._current_team()
+        census_role = is_census_user(request.env.user)
+        retail_role = request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
+        if not census_role and not retail_role:
+            raise AccessError("Solicite permisos de Catastro o Cotizador de tienda.")
+        # El perfil exclusivo de Tienda no descarga el padrón de catastros,
+        # visitas o ventas comerciales ajenas, aunque Odoo permita leer contactos.
+        partners, visits, orders, products = [], [], [], []
+        team = self._current_team() if census_role else False
+        if census_role:
+            Partner = request.env["res.partner"]
+            partner_fields = self._readable_partner_fields()
+            domain = [("census_active", "=", True)] if "census_active" in Partner._fields else [("customer_rank", ">", 0)]
+            partners = Partner.search_read(domain, partner_fields, order="write_date desc, id desc", limit=1000)
+            partner_ids = [x["id"] for x in partners]
+            hour_map = self._opening_hours_payload(partner_ids)
+            for partner in partners:
+                partner["opening_hours"] = hour_map.get(partner["id"], [])
+            visits = self._visit_payload(partner_ids)
+            orders, products = self._sale_payload(partner_ids)
         return {
             "server_time": fields.Datetime.now(),
             "user": {
@@ -325,9 +333,9 @@ class ConederaFieldAppController(http.Controller):
             "visits": visits,
             "orders": orders,
             "products": products,
-            "teams": self._team_payload(),
-            "business_types": self._catalog_payload("conedera.census.business.type"),
-            "mobile_brands": self._catalog_payload("conedera.census.mobile.brand"),
+            "teams": self._team_payload() if census_role else [],
+            "business_types": self._catalog_payload("conedera.census.business.type") if census_role else [],
+            "mobile_brands": self._catalog_payload("conedera.census.mobile.brand") if census_role else [],
             "capabilities": {
                 "visit_model": "conedera.census.visit" in request.env.registry,
                 "business_type_model": "conedera.census.business.type" in request.env.registry,
@@ -337,22 +345,69 @@ class ConederaFieldAppController(http.Controller):
                 "quote_create": request.env["sale.order"].check_access_rights("create", raise_exception=False),
                 "quote_read": request.env["sale.order"].check_access_rights("read", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
+                "quote_can_negotiate": request.env.user.has_group("conedera_odoo_census_mobile.group_quote_negotiator"),
+                "census_role": census_role,
+                "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
+                    and bool(request.env.company.catastro_retail_partner_id)),
+                "quote_retail_partner": ({"id": request.env.company.catastro_retail_partner_id.commercial_partner_id.id,
+                    "name": request.env.company.catastro_retail_partner_id.display_name,
+                    "census_locked": True} if request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
+                    and request.env.company.catastro_retail_partner_id else None),
+                "quote_payment_options": self._quote_payment_options(),
+                "quote_loyalty_supported": self._quote_loyalty_enabled(),
                 "quote_warehouses": self._quote_warehouses(),
                 "quote_pricelists": self._quote_pricelists(),
                 "quote_stock_supported": "stock.warehouse" in request.env.registry,
             },
         }
 
+    def _quote_is_retail(self, partner_id):
+        retail_partner = request.env.company.catastro_retail_partner_id
+        return bool(retail_partner and int(partner_id or 0) in (retail_partner.id, retail_partner.commercial_partner_id.id)
+                    and request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail"))
+
     def _quote_partner(self, partner_id):
+        if self._quote_is_retail(partner_id):
+            partner = request.env.company.catastro_retail_partner_id.commercial_partner_id
+            if not partner.exists():
+                raise ValidationError("Configure un cliente Consumidor Final válido en la compañía.")
+            return partner
         self._require_census_role()
         partner = self._visible_partner(partner_id).commercial_partner_id
         if not partner.census_locked:
             raise ValidationError("Primero finalice y proteja el catastro para cotizar.")
-        # Use the base-module readiness check, not a front-end approximation.
         partner._ensure_census_ready_for_activity()
         if partner.census_company_id and partner.census_company_id != request.env.company:
             raise AccessError("Cambie a la compañía del catastro antes de crear una cotización.")
         return partner
+
+    def _quote_can_negotiate(self):
+        return request.env.user.has_group("conedera_odoo_census_mobile.group_quote_negotiator")
+
+    def _quote_payment_options(self):
+        Option = request.env["catastro.quote.payment.option"]
+        return [{"id": opt.id, "name": opt.name,
+                 "surcharge_percent": opt.surcharge_percent,
+                 "payment_term": opt.payment_term_id.display_name or ""}
+                for opt in Option.search([("active", "=", True),
+                                          ("company_id", "=", request.env.company.id)], order="sequence,id", limit=60)]
+
+    def _quote_payment_option(self, id_value):
+        if not id_value:
+            return False
+        try:
+            opt_id = int(id_value)
+        except (TypeError, ValueError):
+            raise ValidationError("Condición de pago inválida.")
+        opt = request.env["catastro.quote.payment.option"].search([
+            ("id", "=", opt_id), ("company_id", "=", request.env.company.id),
+            ("active", "=", True)], limit=1)
+        if not opt:
+            raise AccessError("La condición de pago no está disponible en esta empresa.")
+        return opt
+
+    def _quote_loyalty_enabled(self):
+        return "sale.loyalty.reward.wizard" in request.env.registry and hasattr(request.env["sale.order"], "_update_programs_and_rewards")
 
     def _quote_access(self, operation):
         Sale = request.env["sale.order"]
@@ -383,28 +438,85 @@ class ConederaFieldAppController(http.Controller):
             raise AccessError("Almacén no disponible en esta compañía o sin permisos.")
         return request.env["stock.warehouse"].browse(warehouse_id)
 
-    def _quote_stock_on_hand(self, product, warehouse):
-        """Return stock on hand for one *variant* in one warehouse; never sudo.
+    def _quote_stock_map(self, products, warehouse):
+        """Saldo *físico* de stock.quant en ubicaciones internas del almacén.
 
-        Services and untracked quantities are not stock-eligible for the quick
-        quotation. This intentionally uses qty_available (on hand), NOT a sum
-        across warehouses or product templates.
+        Evita el falso cero de qty_available con contexto heredado/alterado por
+        personalizaciones. El almacén y variantes son validados antes; la elevación
+        de stock.quant está acotada EXCLUSIVAMENTE a esos productos, compañía y
+        al subárbol de ubicaciones internas del almacén elegido. No expone quants.
         """
         if not warehouse:
-            raise ValidationError("Seleccione una bodega antes de consultar o validar productos.")
-        if "stock.warehouse" not in request.env.registry or "qty_available" not in product._fields:
-            raise ValidationError("Instale Inventario y habilite existencias antes de usar la proforma rápida.")
-        if product.type == "service":
-            return 0.0
-        scoped = product.with_company(request.env.company).with_context(
-            warehouse=warehouse.id, allowed_company_ids=[request.env.company.id])
-        try:
-            onhand = float(scoped.qty_available)
-        except AccessError:
-            raise AccessError("No tiene permisos para consultar existencias por bodega. Solicite acceso a Inventario.")
-        if not math.isfinite(onhand):
-            raise ValidationError("Odoo devolvió existencias inválidas para %s." % product.display_name)
-        return onhand
+            raise ValidationError("Seleccione una bodega antes de consultar existencias.")
+        if not warehouse.view_location_id:
+            raise ValidationError("La bodega %s no tiene ubicación raíz configurada." % warehouse.display_name)
+        if "stock.quant" not in request.env.registry:
+            raise ValidationError("El módulo Inventario no está instalado en Odoo.")
+        result = {p.id: 0.0 for p in products}
+        if not result:
+            return result
+        Quants = request.env["stock.quant"].sudo().with_company(request.env.company)
+        # El usuario solo puede seleccionar bodegas visibles de la compañía actual.
+        # Para evitar fugas, siempre acotar producto, compañía y ubicaciones internas.
+        domain = [
+            ("product_id", "in", list(result)),
+            ("location_id", "child_of", warehouse.view_location_id.id),
+            ("location_id.usage", "=", "internal"),
+            ("company_id", "in", [False, request.env.company.id]),
+        ]
+        # Agrupación SQL nativa de Odoo 18: una consulta, sin descargar cada quant.
+        for product_rec, quantity in Quants._read_group(domain, ['product_id'], ['quantity:sum']):
+            result[product_rec.id] = float(quantity)
+        for product in products:
+            if product.type == "service":
+                result[product.id] = 0.0
+            if not math.isfinite(result[product.id]):
+                raise ValidationError("Cantidad de stock inválida para %s." % product.display_name)
+        return result
+
+    def _quote_stock_on_hand(self, product, warehouse):
+        return self._quote_stock_map(product, warehouse).get(product.id, 0.0)
+
+    @http.route(["/catastro/app/quote/stock-diagnostic", "/conedera/app/quote/stock-diagnostic"],
+                type="json", auth="user", methods=["POST"], readonly=True)
+    def quote_stock_diagnostic(self, partner_id, product_id, warehouse_id):
+        self._quote_partner(partner_id)
+        self._quote_access("read")
+        warehouse = self._quote_warehouse(warehouse_id)
+        product = self._quote_find_products(product_ids=[int(product_id)])
+        if not product or not warehouse:
+            raise ValidationError("Producto o bodega no disponibles.")
+        quant_stock = self._quote_stock_on_hand(product, warehouse)
+        qty_context = product.with_company(request.env.company).with_context(
+            warehouse=warehouse.id, allowed_company_ids=[request.env.company.id]).qty_available
+        return {"product": product.display_name, "warehouse": warehouse.display_name,
+                "company": request.env.company.name, "location": warehouse.view_location_id.complete_name,
+                "stock_internal": quant_stock, "stock_context": float(qty_context),
+                "note": "Stock físico en ubicaciones internas de esta bodega. No suma otras bodegas ni reserva ventas."}
+
+    @http.route("/catastro/app/quote/stock-audit", type="json", auth="user", methods=["POST"], readonly=True)
+    def quote_stock_audit(self, partner_id, warehouse_id, term=""):
+        """Diagnóstico legible al usuario, nunca nombres de otras bodegas.
+
+        Se compara total de compañía con el subárbol de ubicaciones de la bodega.
+        El stock global se muestra solo para productos ya visibles para ventas.
+        """
+        self._quote_partner(partner_id)
+        self._quote_access("read")
+        term = (term or "").strip()[:90]
+        if len(term) < 2:
+            raise ValidationError("Busque al menos dos caracteres del producto.")
+        wh = self._quote_warehouse(warehouse_id)
+        if not wh:
+            raise ValidationError("Seleccione la bodega para revisar existencias.")
+        products = self._quote_find_products(term=term)[:20]
+        stock = self._quote_stock_map(products, wh)
+        return [{"id": product.id, "name": product.display_name,
+                 "stock_warehouse": stock[product.id],
+                 "stock_company": float(product.with_company(request.env.company).qty_available),
+                 "warehouse": wh.display_name, "root_location": wh.view_location_id.complete_name,
+                 "uom": product.uom_id.name}
+                for product in products]
 
     def _quote_pricelists(self):
         Pricelist = request.env["product.pricelist"]
@@ -420,6 +532,8 @@ class ConederaFieldAppController(http.Controller):
         draft = Sale.new({"company_id": request.env.company.id, "partner_id": partner.id})
         pricelist = draft.pricelist_id or partner.with_company(request.env.company).property_product_pricelist
         if requested_id:
+            if not self._quote_can_negotiate():
+                raise AccessError("La selección de listas de precios requiere el perfil de negociación.")
             allowed = {pl["id"] for pl in self._quote_pricelists()}
             try:
                 requested_id = int(requested_id)
@@ -440,11 +554,12 @@ class ConederaFieldAppController(http.Controller):
             raise ValidationError("Seleccione una bodega para consultar stock real y precios.")
         pricelist = self._quote_pricelist(partner, pricelist_id)
         result = []
+        stock_map = self._quote_stock_map(products, warehouse)
         for product in products:
             qty = float(quantities.get(product.id, 1.0))
             if not math.isfinite(qty) or qty <= 0 or qty > 100000:
                 raise ValidationError("Cantidad inválida para calcular precios.")
-            onhand = self._quote_stock_on_hand(product, warehouse)
+            onhand = stock_map[product.id]
             if only_in_stock and float_compare(onhand, 0, precision_rounding=min(product.uom_id.rounding or 0.000001, 0.000001)) <= 0:
                 continue
             # Motor nativo de listas, considerando cliente y cantidad.
@@ -454,7 +569,7 @@ class ConederaFieldAppController(http.Controller):
                 "uom": product.uom_id.name, "price": float(price),
                 "currency": pricelist.currency_id.symbol or pricelist.currency_id.name,
                 "pricelist": pricelist.display_name, "qty_priced": qty,
-                "stock_qty": onhand, "stock_kind": "available", "stock_label": warehouse.display_name,
+                "stock_qty": onhand, "stock_kind": "physical", "stock_label": warehouse.display_name,
                 "warehouse_id": warehouse.id,
                 "image_url": "/catastro/app/quote/image/%d?partner_id=%d&size=small" % (product.id, partner.id),
                 "zoom_url": "/catastro/app/quote/image/%d?partner_id=%d&size=large" % (product.id, partner.id),
@@ -548,6 +663,10 @@ class ConederaFieldAppController(http.Controller):
             "amount_untaxed": order.amount_untaxed,
             "amount_tax": order.amount_tax,
             "amount_total": order.amount_total,
+            "payment_option": order.catastro_payment_option_id.name if order.catastro_payment_option_id else "",
+            "surcharge_percent": order.catastro_payment_option_id.surcharge_percent if order.catastro_payment_option_id else 0,
+            "loyalty_enabled": self._quote_loyalty_enabled(),
+            "loyalty_rewards": self._quote_available_rewards(order),
             "lines": [{"id": line.id, "name": line.name,
                        "product_name": line.product_id.display_name if line.product_id else "",
                        "qty": line.product_uom_qty,
@@ -555,20 +674,91 @@ class ConederaFieldAppController(http.Controller):
                        "price_unit": line.price_unit, "discount": line.discount,
                        "negotiable_price": (line.negotiable_price if "negotiable_price" in line._fields else None),
                        "subtotal": line.price_subtotal, "total": line.price_total,
+                       "surcharge": bool(line.is_catastro_payment_surcharge),
+                       "loyalty_reward": bool("reward_id" in line._fields and line.reward_id),
                        "taxes": line.tax_id.mapped("name")}
                       for line in order.order_line if not line.display_type],
         }
 
     @http.route(["/catastro/app/quote/read", "/conedera/app/quote/read"], type="json", auth="user", methods=["POST"], readonly=True)
     def quote_read(self, quote_id):
-        self._require_census_role()
         Sale = self._quote_access("read")
         # Search instead of sudo/browse to respect record rules and company isolation.
         order = Sale.search([("id", "=", int(quote_id or 0)),
                              ("company_id", "=", request.env.company.id)], limit=1)
         if not order:
             raise AccessError("Cotización no disponible para su usuario o compañía.")
-        self._visible_partner(order.partner_id.commercial_partner_id.id)
+        if not self._quote_is_retail(order.partner_id.commercial_partner_id.id):
+            self._require_census_role()
+            self._visible_partner(order.partner_id.commercial_partner_id.id)
+        return self._quote_record_payload(order)
+
+    def _quote_available_rewards(self, order):
+        if not self._quote_loyalty_enabled() or order.state != "draft":
+            return []
+        claimable = order._get_claimable_rewards()
+        result = []
+        for coupon, rewards in claimable.items():
+            for reward in rewards:
+                result.append({"id": reward.id, "name": reward.description or reward.display_name,
+                    "type": reward.reward_type,
+                    "multi_product": bool(reward.multi_product),
+                    "products": ([{"id": p.id, "name": p.display_name} for p in reward.reward_product_ids]
+                                 if reward.reward_type == "product" else [])})
+        return result
+
+    def _quote_get_writable(self, quote_id):
+        Sale = self._quote_access("write")
+        order = Sale.search([("id", "=", int(quote_id)), ("state", "=", "draft"),
+                             ("company_id", "=", request.env.company.id)], limit=1)
+        if not order:
+            raise AccessError("No puede modificar esta cotización o ya fue confirmada.")
+        self._quote_partner(order.partner_id.commercial_partner_id.id)
+        return order
+
+    @http.route("/catastro/app/quote/loyalty/rewards", type="json", auth="user", methods=["POST"])
+    def quote_loyalty_rewards(self, quote_id):
+        order = self._quote_get_writable(quote_id)
+        if not self._quote_loyalty_enabled():
+            raise ValidationError("Instale y configure sale_loyalty para aplicar promociones de Ventas.")
+        order._update_programs_and_rewards()
+        return self._quote_record_payload(order)
+
+    @http.route("/catastro/app/quote/loyalty/apply", type="json", auth="user", methods=["POST"])
+    def quote_loyalty_apply(self, quote_id, reward_id, product_id=None):
+        order = self._quote_get_writable(quote_id)
+        if not self._quote_loyalty_enabled():
+            raise ValidationError("El módulo sale_loyalty no está instalado.")
+        order._update_programs_and_rewards()
+        candidates = order._get_claimable_rewards()
+        chosen = request.env["loyalty.reward"].browse(int(reward_id))
+        coupon = next((c for c, rewards in candidates.items() if chosen in rewards), False)
+        if not coupon:
+            raise ValidationError("La recompensa no es aplicable al cliente o a esta cotización.")
+        args = {}
+        if chosen.reward_type == "product" and chosen.multi_product:
+            prod = request.env["product.product"].browse(int(product_id or 0))
+            if prod not in chosen.reward_product_ids:
+                raise ValidationError("Seleccione un producto válido para la recompensa.")
+            args["product"] = prod
+        order._apply_program_reward(chosen, coupon, **args)
+        order._update_programs_and_rewards()
+        order.catastro_recompute_surcharge()
+        return self._quote_record_payload(order)
+
+    @http.route("/catastro/app/quote/loyalty/code", type="json", auth="user", methods=["POST"])
+    def quote_loyalty_code(self, quote_id, code):
+        order = self._quote_get_writable(quote_id)
+        if not self._quote_loyalty_enabled():
+            raise ValidationError("El módulo sale_loyalty no está instalado.")
+        code = (code or "").strip()[:100]
+        if not code:
+            raise ValidationError("Indique un código de promoción.")
+        status = order._try_apply_code(code)
+        if "error" in status:
+            raise ValidationError(status["error"])
+        order._update_programs_and_rewards()
+        order.catastro_recompute_surcharge()
         return self._quote_record_payload(order)
 
     def _sync_quote(self, payload):
@@ -608,6 +798,10 @@ class ConederaFieldAppController(http.Controller):
             else:
                 negotiated = None
             products.append((pid, qty, negotiated))
+        if any(negotiated is not None for _, _, negotiated in products) and not self._quote_can_negotiate():
+            raise AccessError("No pertenece al perfil autorizado para editar negotiable_price.")
+        if payload.get("pricelist_id") and not self._quote_can_negotiate():
+            raise AccessError("Este perfil debe utilizar la lista de precios asignada al cliente.")
         if any(negotiated is not None for _, _, negotiated in products):
             if custom_negotiated_field is None:
                 raise ValidationError(
@@ -643,18 +837,24 @@ class ConederaFieldAppController(http.Controller):
         if "warehouse_id" not in Sale._fields:
             raise ValidationError("Ventas no tiene bodega en las cotizaciones. Revise la integración de Ventas con Inventario (sale_stock).")
         requested_qty = {pid: qty for pid, qty, _ in products}
+        stock_map = self._quote_stock_map(accessible, warehouse)
         for product in accessible:
-            stock = self._quote_stock_on_hand(product, warehouse)
+            stock = stock_map[product.id]
             needed = requested_qty[product.id]
             rounding = min(product.uom_id.rounding or 0.000001, 0.000001)
             if float_compare(stock, 0, precision_rounding=rounding) <= 0:
-                raise ValidationError("%s está sin stock en la bodega %s." %
-                                      (product.display_name, warehouse.display_name))
+                raise ValidationError("%s está sin stock físico en %s (ubicación raíz: %s). "
+                                      "Revise la variante, compañía, ubicaciones internas y quants; "
+                                      "la cifra general de Inventario puede incluir otras bodegas."
+                                      % (product.display_name, warehouse.display_name,
+                                         warehouse.view_location_id.complete_name))
             if float_compare(needed, stock, precision_rounding=rounding) > 0:
                 raise ValidationError("Stock insuficiente de %s en %s: solicitado %s %s, a mano %s %s." %
                                       (product.display_name, warehouse.display_name, needed,
                                        product.uom_id.name, stock, product.uom_id.name))
         visit_id = int(payload.get("visit_id") or 0)
+        if visit_id and self._quote_is_retail(partner.id):
+            raise ValidationError("Una proforma de Consumidor Final no puede vincularse a una visita de catastro.")
         # El campo negociable se escribe con los valores de creación de las
         # líneas para respetar los métodos create() de los módulos instalados.
         order_lines = []
@@ -663,11 +863,19 @@ class ConederaFieldAppController(http.Controller):
             if negotiated is not None:
                 line_vals["negotiable_price"] = negotiated
             order_lines.append((0, 0, line_vals))
+        option = self._quote_payment_option(payload.get("payment_option_id"))
+        if (option and option.surcharge_percent and self._quote_loyalty_enabled()
+                and not hasattr(Sale, "_catastro_loyalty_bridge_active")):
+            raise ValidationError("Instale Catastro PWA - Loyalty y recargos separados antes de combinar promociones con recargos.")
         vals = {"partner_id": partner.id, "company_id": request.env.company.id,
-                "user_id": request.env.user.id, "census_originated": True,
+                "user_id": request.env.user.id, "census_originated": not self._quote_is_retail(partner.id),
                 "order_line": order_lines}
         # La bodega es obligatoria para que validación, pedido y consulta coincidan.
         vals["warehouse_id"] = warehouse.id
+        if option:
+            vals["catastro_payment_option_id"] = option.id
+            if option.payment_term_id:
+                vals["payment_term_id"] = option.payment_term_id.id
         selected_pricelist = payload.get("pricelist_id")
         if selected_pricelist:
             vals["pricelist_id"] = self._quote_pricelist(partner, selected_pricelist).id
@@ -687,6 +895,19 @@ class ConederaFieldAppController(http.Controller):
         order = Sale.with_company(request.env.company).create(vals)
         if order.state != "draft":
             raise ValidationError("La cotización no quedó en estado borrador.")
+        if self._quote_loyalty_enabled():
+            order._update_programs_and_rewards()
+            # Un cupón puede habilitar varias recompensas. No se aplica una
+            # arbitrariamente: se elige desde la ficha de la cotización PWA.
+            coupon_code = (payload.get("loyalty_code") or "").strip()[:100]
+            if coupon_code:
+                status = order._try_apply_code(coupon_code)
+                if "error" in status:
+                    raise ValidationError(status["error"])
+                order._update_programs_and_rewards()
+        elif payload.get("loyalty_code"):
+            raise ValidationError("Para códigos de promoción debe instalarse sale_loyalty.")
+        order.catastro_recompute_surcharge()
         if order.warehouse_id.id != warehouse.id:
             raise ValidationError("La personalización de Ventas cambió la bodega durante la creación; se canceló el guardado para evitar diferencias de inventario.")
         for pid, _qty, negotiated in products:
