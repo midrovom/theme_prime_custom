@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_website_form_credit_login" model="ir.ui.view">
+        <field name="name">website.form.credit.login.home</field>
+        <field name="model">website</field>
+        <field name="inherit_id" ref="website.view_website_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='domain']" position="after">
+                <field name="conedera_credit_login_home"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

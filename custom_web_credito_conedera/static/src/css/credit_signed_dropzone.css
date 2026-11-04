@@ -1,0 +1,19 @@
+/* Zona nativa many2many_binary con carga múltiple y arrastrar/soltar. */
+.o_credit_signed_dropzone {
+    min-height: 92px;
+    border: 2px dashed #aab7c6;
+    padding: 14px;
+    border-radius: 9px;
+    transition: background-color .15s, border-color .15s;
+}
+.o_credit_signed_dropzone:not(.o_readonly_modifier)::before {
+    content: "Arrastre sus PDF firmados aquí o selecciónelos para agregar varios";
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #586b7d;
+}
+.o_credit_signed_dragover {
+    border-color: #234d86;
+    background: #ecf3ff;
+}

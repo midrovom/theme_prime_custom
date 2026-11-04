@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_conedera_credit_verification_zone_list" model="ir.ui.view">
+        <field name="name">conedera.credit.verification.zone.list</field>
+        <field name="model">conedera.credit.verification.zone</field>
+        <field name="arch" type="xml"><list editable="bottom" default_order="sequence,id">
+            <field name="sequence" widget="handle"/>
+            <field name="name"/>
+            <field name="code" string="ID único" readonly="1"/>
+            <field name="active"/>
+        </list></field>
+    </record>
+    <record id="view_conedera_credit_verification_zone_form" model="ir.ui.view">
+        <field name="name">conedera.credit.verification.zone.form</field>
+        <field name="model">conedera.credit.verification.zone</field>
+        <field name="arch" type="xml"><form string="Zona de verificación"><sheet><group>
+            <field name="name"/><field name="code" readonly="1"/>
+            <field name="sequence"/><field name="active"/>
+        </group></sheet></form></field>
+    </record>
+    <record id="action_conedera_credit_verification_zones" model="ir.actions.act_window">
+        <field name="name">Zonas de verificación</field>
+        <field name="res_model">conedera.credit.verification.zone</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem id="menu_conedera_credit_verification_zones" name="Zona de verificación"
+        parent="menu_conedera_credit_configuration" sequence="50"
+        action="action_conedera_credit_verification_zones"
+        groups="custom_web_credito_conedera.group_credit_administrator"/>
+
+    <record id="view_conedera_credit_local_condition_list" model="ir.ui.view">
+        <field name="name">conedera.credit.local.condition.list</field>
+        <field name="model">conedera.credit.local.condition</field>
+        <field name="arch" type="xml"><list editable="bottom" default_order="sequence,id">
+            <field name="sequence" widget="handle"/>
+            <field name="name"/>
+            <field name="code" string="ID único" readonly="1"/>
+            <field name="active"/>
+        </list></field>
+    </record>
+    <record id="view_conedera_credit_local_condition_form" model="ir.ui.view">
+        <field name="name">conedera.credit.local.condition.form</field>
+        <field name="model">conedera.credit.local.condition</field>
+        <field name="arch" type="xml"><form string="Estado del local"><sheet><group>
+            <field name="name"/><field name="code" readonly="1"/>
+            <field name="sequence"/><field name="active"/>
+        </group></sheet></form></field>
+    </record>
+    <record id="action_conedera_credit_local_conditions" model="ir.actions.act_window">
+        <field name="name">Estados del local</field>
+        <field name="res_model">conedera.credit.local.condition</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem id="menu_conedera_credit_local_conditions" name="Estado del local"
+        parent="menu_conedera_credit_configuration" sequence="60"
+        action="action_conedera_credit_local_conditions"
+        groups="custom_web_credito_conedera.group_credit_administrator"/>
+</odoo>

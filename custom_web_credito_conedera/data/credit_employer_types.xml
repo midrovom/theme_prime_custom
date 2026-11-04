@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+    <record id="credit_employer_private" model="conedera.credit.employer.type">
+        <field name="name">Privado</field>
+        <field name="code">private</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="credit_employer_public" model="conedera.credit.employer.type">
+        <field name="name">Público</field>
+        <field name="code">public</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="sequence_credit_employer_type" model="ir.sequence">
+        <field name="name">Tipo de empleador (Crédito)</field>
+        <field name="code">conedera.credit.employer.type</field>
+        <field name="prefix">TE-</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>
