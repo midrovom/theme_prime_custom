@@ -163,3 +163,56 @@ button{cursor:pointer}
 .quote-current-customer strong{display:block;font-size:17px;margin:4px 0;overflow-wrap:anywhere}
 .quote-current-customer .btn{font-size:12px;min-height:41px;white-space:nowrap}
 @media(max-width:650px){.partner-quote-cta{flex-direction:column;align-items:stretch}.partner-quote-button{width:100%;min-width:0}.quote-current-customer{align-items:stretch;flex-direction:column}.quote-current-customer .btn{width:100%}}
+
+/* 18.0.1.5.5 · catálogo PWA de cotizaciones: fotos, multiselección y precios */
+.quote-search-product{display:grid;grid-template-columns:76px minmax(0,1fr) minmax(126px,150px);gap:12px;align-items:center;border-bottom:1px solid var(--line);padding:13px 0}
+.quote-search-product:last-of-type{border-bottom:0}
+.quote-thumb{display:grid;place-items:center;flex:0 0 66px;width:76px;height:76px;border:1px solid #ded8e8;border-radius:14px;overflow:hidden;padding:0;background:#f8f7fb;cursor:zoom-in}
+.quote-thumb img{width:100%;height:100%;object-fit:contain}
+.quote-thumb:disabled{cursor:default;color:#999;opacity:.7}
+.quote-no-photo{font-size:27px;color:#a39ab9}
+.quote-search-main{min-width:0}
+.quote-search-main strong{display:block;font-size:14px;line-height:1.3;overflow-wrap:anywhere}
+.quote-search-main small{display:block;font-size:11px;color:var(--muted);margin:4px 0 8px}
+.quote-product-price,.quote-product-stock{font-size:12px;line-height:1.5}
+.quote-product-price{font-weight:800;color:var(--brand-dark)}
+.quote-product-stock{color:#546155}
+.quote-search-choose{display:flex;flex-direction:column;align-items:stretch;gap:6px;font-size:12px}
+.quote-search-choose label{color:var(--muted);font-size:12px;font-weight:700}
+.quote-checkbox{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.quote-checkbox input{width:18px;height:18px;accent-color:var(--brand)}
+.quote-search-choose input[type="number"]{display:block;width:100%;height:39px;border:1px solid var(--line);border-radius:9px;padding:8px;margin:4px 0 0;font-size:15px}
+.quote-one{font-size:12px;min-height:39px}
+.quote-batch{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#efe8f9;padding:10px 12px;border:1px solid #d9c6ed;border-radius:14px;margin-top:8px;z-index:2}
+.quote-batch strong{font-size:12px}
+.quote-price-info{display:flex;flex-direction:column;gap:4px;margin-top:8px;font-size:12px;color:var(--brand-dark);line-height:1.5}
+.quote-price-info small{color:var(--muted)}
+.quote-line{align-items:center}
+.quote-line>.quote-thumb{width:64px;height:64px;flex-basis:64px}
+.quote-line-controls{flex-wrap:wrap;justify-content:flex-end}
+.quote-line-controls label{min-width:122px}
+.quote-line-controls input{width:128px}
+.quote-image-dialog{position:fixed;inset:0;margin:auto;width:min(90vw,960px);max-width:960px;max-height:90vh;border:0;border-radius:18px;padding:15px;background:#fff;color:#222;box-shadow:0 25px 90px rgba(0,0,0,.4)}
+.quote-image-dialog::backdrop{background:rgba(17,14,28,.76)}
+.quote-zoom-bar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:12px}
+.quote-zoom-bar strong{font-size:15px;overflow-wrap:anywhere}
+.quote-zoom-body{display:flex;align-items:center;justify-content:center;overflow:auto;max-height:70vh;border-radius:12px;background:#f9f9fa}
+.quote-zoom-body img{width:auto;max-width:100%;height:auto;max-height:70vh;object-fit:contain}
+.quote-image-dialog>small{display:block;color:var(--muted);padding:10px 2px 0}
+@media(max-width:760px){.quote-search-product{grid-template-columns:70px minmax(0,1fr);gap:9px}.quote-search-product>.quote-thumb{width:65px;height:65px}.quote-search-choose{grid-column:2;flex-direction:row;flex-wrap:wrap;align-items:flex-end}.quote-search-choose label{flex:1;min-width:96px}.quote-search-choose .quote-checkbox{min-width:100px}.quote-one{flex:1;min-width:110px}.quote-line{flex-direction:row;flex-wrap:wrap;align-items:flex-start}.quote-line>.quote-thumb{width:58px;height:58px;flex:0 0 58px}.quote-line-name{flex:1}.quote-line-controls{width:100%;justify-content:flex-start}.quote-line-controls label{flex:1;min-width:125px}.quote-line-controls input{width:100%}.quote-line-controls .quote-remove{align-self:end}}
+
+.quote-zoom-buttons{display:flex;gap:7px;align-items:center}.quote-zoom-buttons .btn{min-height:38px;padding:7px 11px}.quote-zoom-buttons span{font-size:12px;font-weight:700;white-space:nowrap}
+@media(max-width:550px){.quote-zoom-bar{flex-wrap:wrap}.quote-zoom-buttons{width:100%;justify-content:space-between}.quote-image-dialog{width:96vw;padding:12px}}
+
+.quote-results{max-height:410px}
+@media(max-width:600px){.quote-results{max-height:360px}}
+
+/* 18.0.1.5.7: totales de proforma visibles en móvil y escritorio */
+.quote-totals{margin:16px 0 10px;border:1px solid #d7cee9;border-radius:16px;padding:14px;background:#f7f4fc}
+.quote-totals-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.quote-total-card{display:flex;flex-direction:column;gap:5px;padding:13px;border-radius:12px;background:white;border:1px solid #e6dfed;min-width:0}
+.quote-total-card span{font-size:12px;color:#595368;font-weight:700}
+.quote-total-card strong{font-size:clamp(18px,2.2vw,25px);color:#3b3159;overflow-wrap:anywhere}
+.quote-total-card.negotiated{border:1px solid #baaad8}
+.quote-totals>.small{margin-top:10px;line-height:1.45}
+@media(max-width:600px){.quote-totals{padding:10px}.quote-totals-grid{grid-template-columns:1fr;gap:8px}.quote-total-card{padding:12px}.quote-total-card strong{font-size:23px}}

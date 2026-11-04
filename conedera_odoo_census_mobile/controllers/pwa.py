@@ -1,12 +1,13 @@
 import base64
 import json
+import math
 import re
 from datetime import datetime
 
 from odoo import http, fields
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
-from odoo.tools import file_open
+from odoo.tools import file_open, float_compare
 
 from odoo.addons.conedera_odoo_census.models.census_security_utils import is_census_user, is_census_manager
 
@@ -335,6 +336,10 @@ class ConederaFieldAppController(http.Controller):
                 "sales_action_id": (request.env.ref("sale.action_quotations_with_onboarding", raise_if_not_found=False) or request.env["ir.actions.act_window"]).id or False,
                 "quote_create": request.env["sale.order"].check_access_rights("create", raise_exception=False),
                 "quote_read": request.env["sale.order"].check_access_rights("read", raise_exception=False),
+                "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
+                "quote_warehouses": self._quote_warehouses(),
+                "quote_pricelists": self._quote_pricelists(),
+                "quote_stock_supported": "stock.warehouse" in request.env.registry,
             },
         }
 
@@ -355,21 +360,176 @@ class ConederaFieldAppController(http.Controller):
             raise AccessError("Necesita permisos de Ventas para gestionar cotizaciones.")
         return Sale
 
-    @http.route(["/catastro/app/quote/products", "/conedera/app/quote/products"], type="json", auth="user", methods=["POST"], readonly=True)
-    def quote_products(self, term="", partner_id=None):
-        self._quote_partner(partner_id)
-        self._quote_access("read")
+    def _quote_warehouses(self):
+        """No sudo: solo exponer almacenes visibles al usuario en la compañía activa."""
+        if "stock.warehouse" not in request.env.registry:
+            return []
+        Warehouse = request.env["stock.warehouse"]
+        if not Warehouse.check_access_rights("read", raise_exception=False):
+            return []
+        return [{"id": w.id, "name": w.display_name} for w in Warehouse.search([
+            ("company_id", "=", request.env.company.id)
+        ], order="name", limit=100)]
+
+    def _quote_warehouse(self, warehouse_id):
+        if not warehouse_id:
+            return False
+        allowed = {w["id"] for w in self._quote_warehouses()}
+        try:
+            warehouse_id = int(warehouse_id)
+        except (ValueError, TypeError):
+            raise ValidationError("Identificador de almacén inválido.")
+        if warehouse_id not in allowed:
+            raise AccessError("Almacén no disponible en esta compañía o sin permisos.")
+        return request.env["stock.warehouse"].browse(warehouse_id)
+
+    def _quote_stock_on_hand(self, product, warehouse):
+        """Return stock on hand for one *variant* in one warehouse; never sudo.
+
+        Services and untracked quantities are not stock-eligible for the quick
+        quotation. This intentionally uses qty_available (on hand), NOT a sum
+        across warehouses or product templates.
+        """
+        if not warehouse:
+            raise ValidationError("Seleccione una bodega antes de consultar o validar productos.")
+        if "stock.warehouse" not in request.env.registry or "qty_available" not in product._fields:
+            raise ValidationError("Instale Inventario y habilite existencias antes de usar la proforma rápida.")
+        if product.type == "service":
+            return 0.0
+        scoped = product.with_company(request.env.company).with_context(
+            warehouse=warehouse.id, allowed_company_ids=[request.env.company.id])
+        try:
+            onhand = float(scoped.qty_available)
+        except AccessError:
+            raise AccessError("No tiene permisos para consultar existencias por bodega. Solicite acceso a Inventario.")
+        if not math.isfinite(onhand):
+            raise ValidationError("Odoo devolvió existencias inválidas para %s." % product.display_name)
+        return onhand
+
+    def _quote_pricelists(self):
+        Pricelist = request.env["product.pricelist"]
+        if not Pricelist.check_access_rights("read", raise_exception=False):
+            return []
+        return [{"id": pl.id, "name": pl.display_name} for pl in Pricelist.search([
+            ("active", "=", True), ("company_id", "in", [False, request.env.company.id])
+        ], order="sequence, name", limit=120)]
+
+    def _quote_pricelist(self, partner, requested_id=None):
+        """Misma compañía y defaults que sale.order; solo listas visibles al usuario."""
+        Sale = self._quote_access("read").with_company(request.env.company)
+        draft = Sale.new({"company_id": request.env.company.id, "partner_id": partner.id})
+        pricelist = draft.pricelist_id or partner.with_company(request.env.company).property_product_pricelist
+        if requested_id:
+            allowed = {pl["id"] for pl in self._quote_pricelists()}
+            try:
+                requested_id = int(requested_id)
+            except (ValueError, TypeError):
+                raise ValidationError("Identificador de lista de precios inválido.")
+            if requested_id not in allowed:
+                raise AccessError("La lista de precios seleccionada no está disponible en esta compañía.")
+            pricelist = request.env["product.pricelist"].browse(requested_id)
+        if not pricelist:
+            raise ValidationError("El cliente no tiene una lista de precios de Ventas disponible.")
+        return pricelist
+
+    def _quote_catalog_rows(self, partner, products, quantities=None, warehouse_id=None, pricelist_id=None,
+                            only_in_stock=False):
+        quantities = quantities or {}
+        warehouse = self._quote_warehouse(warehouse_id)
+        if not warehouse:
+            raise ValidationError("Seleccione una bodega para consultar stock real y precios.")
+        pricelist = self._quote_pricelist(partner, pricelist_id)
+        result = []
+        for product in products:
+            qty = float(quantities.get(product.id, 1.0))
+            if not math.isfinite(qty) or qty <= 0 or qty > 100000:
+                raise ValidationError("Cantidad inválida para calcular precios.")
+            onhand = self._quote_stock_on_hand(product, warehouse)
+            if only_in_stock and float_compare(onhand, 0, precision_rounding=min(product.uom_id.rounding or 0.000001, 0.000001)) <= 0:
+                continue
+            # Motor nativo de listas, considerando cliente y cantidad.
+            price = pricelist._get_product_price(product, qty, partner=partner, uom=product.uom_id)
+            result.append({
+                "id": product.id, "name": product.display_name, "code": product.default_code or "",
+                "uom": product.uom_id.name, "price": float(price),
+                "currency": pricelist.currency_id.symbol or pricelist.currency_id.name,
+                "pricelist": pricelist.display_name, "qty_priced": qty,
+                "stock_qty": onhand, "stock_kind": "available", "stock_label": warehouse.display_name,
+                "warehouse_id": warehouse.id,
+                "image_url": "/catastro/app/quote/image/%d?partner_id=%d&size=small" % (product.id, partner.id),
+                "zoom_url": "/catastro/app/quote/image/%d?partner_id=%d&size=large" % (product.id, partner.id),
+                "has_image": bool(product.image_128) if "image_128" in product._fields else False,
+            })
+            if only_in_stock and len(result) >= 60:
+                break
+        return result
+
+    def _quote_find_products(self, product_ids=None, term=""):
         Product = request.env["product.product"]
+        if not Product.check_access_rights("read", raise_exception=False):
+            raise AccessError("No dispone de permisos para consultar productos.")
+        domain = [("sale_ok", "=", True), ("active", "=", True)]
+        if product_ids is not None:
+            domain.append(("id", "in", product_ids))
+        else:
+            domain += ["|", ("name", "ilike", term), ("default_code", "ilike", term)]
+        if "company_id" in Product._fields:
+            domain = ["|", ("company_id", "=", False),
+                      ("company_id", "=", request.env.company.id)] + domain
+        return Product.search(domain, order="name, id", limit=250 if product_ids is None else 60)
+
+    @http.route(["/catastro/app/quote/products", "/conedera/app/quote/products"], type="json", auth="user", methods=["POST"], readonly=True)
+    def quote_products(self, term="", partner_id=None, warehouse_id=None, pricelist_id=None):
+        partner = self._quote_partner(partner_id)
+        self._quote_access("read")
         term = (term or "").strip()[:90]
         if len(term) < 2:
             return []
-        domain = [("sale_ok", "=", True), ("active", "=", True),
-                  "|", ("name", "ilike", term), ("default_code", "ilike", term)]
-        if "company_id" in Product._fields:
-            domain = ["|", ("company_id", "=", False), ("company_id", "=", request.env.company.id)] + domain
-        rows = Product.search(domain, order="name, id", limit=30)
-        return [{"id": p.id, "name": p.display_name,
-                 "code": p.default_code or "", "uom": p.uom_id.name} for p in rows]
+        products = self._quote_find_products(term=term)
+        return self._quote_catalog_rows(partner, products, warehouse_id=warehouse_id, pricelist_id=pricelist_id, only_in_stock=True)
+
+    @http.route(["/catastro/app/quote/prices", "/conedera/app/quote/prices"], type="json", auth="user", methods=["POST"], readonly=True)
+    def quote_prices(self, partner_id, lines=None, warehouse_id=None, pricelist_id=None):
+        """Recalcular la lista para las cantidades seleccionadas; nunca aceptar precios del cliente."""
+        partner = self._quote_partner(partner_id)
+        self._quote_access("read")
+        if not isinstance(lines, list) or len(lines) > 60:
+            raise ValidationError("Seleccione como máximo 60 productos.")
+        qty_by_id = {}
+        for line in lines:
+            if not isinstance(line, dict):
+                raise ValidationError("Línea inválida.")
+            try:
+                pid, qty = int(line["product_id"]), float(line["qty"])
+            except (ValueError, TypeError, KeyError):
+                raise ValidationError("Producto o cantidad inválido.")
+            if pid <= 0 or not math.isfinite(qty) or not 0 < qty <= 100000:
+                raise ValidationError("Cantidad fuera de rango.")
+            qty_by_id[pid] = qty
+        products = self._quote_find_products(product_ids=list(qty_by_id))
+        if set(products.ids) != set(qty_by_id):
+            raise AccessError("Algún producto no está disponible para venta.")
+        return self._quote_catalog_rows(partner, products, quantities=qty_by_id, warehouse_id=warehouse_id, pricelist_id=pricelist_id)
+
+    @http.route("/catastro/app/quote/image/<int:product_id>", type="http", auth="user", methods=["GET"], sitemap=False)
+    def quote_product_image(self, product_id, partner_id=None, size="small", **kwargs):
+        # Las imágenes de productos respetan el acceso de producto y catastro del usuario.
+        self._quote_partner(partner_id)
+        self._quote_access("read")
+        product = self._quote_find_products(product_ids=[product_id])
+        if not product:
+            return request.not_found()
+        field = "image_1920" if size == "large" else "image_128"
+        raw = product[field] if field in product._fields else False
+        if not raw:
+            return request.not_found()
+        content = base64.b64decode(raw)
+        mimetype = ("image/jpeg" if content.startswith(b"\xff\xd8\xff") else
+                    "image/png" if content.startswith(b"\x89PNG") else
+                    "image/webp" if content.startswith(b"RIFF") else "application/octet-stream")
+        return request.make_response(content, headers=[
+            ("Content-Type", mimetype), ("Cache-Control", "private, no-store"),
+            ("X-Content-Type-Options", "nosniff")])
 
     def _quote_record_payload(self, order):
         # The caller already fetched the order under normal user ACLs / record rules.
@@ -393,6 +553,7 @@ class ConederaFieldAppController(http.Controller):
                        "qty": line.product_uom_qty,
                        "uom": line.product_uom.name if line.product_uom else "",
                        "price_unit": line.price_unit, "discount": line.discount,
+                       "negotiable_price": (line.negotiable_price if "negotiable_price" in line._fields else None),
                        "subtotal": line.price_subtotal, "total": line.price_total,
                        "taxes": line.tax_id.mapped("name")}
                       for line in order.order_line if not line.display_type],
@@ -420,6 +581,10 @@ class ConederaFieldAppController(http.Controller):
         if not isinstance(lines, list) or not 1 <= len(lines) <= 60:
             raise ValidationError("La cotización debe contener entre 1 y 60 productos.")
         products = []
+        # No se crea ningún campo nuevo: esta integración utiliza el campo
+        # personalizado existente de sale.order.line, cuando está instalado.
+        Line = request.env["sale.order.line"]
+        custom_negotiated_field = Line._fields.get("negotiable_price")
         for line in lines:
             if not isinstance(line, dict):
                 raise ValidationError("Formato inválido de línea de cotización.")
@@ -427,20 +592,85 @@ class ConederaFieldAppController(http.Controller):
                 pid, qty = int(line.get("product_id")), float(line.get("qty"))
             except (ValueError, TypeError):
                 raise ValidationError("Producto y cantidad deben ser válidos.")
-            if not (0 < qty <= 100000) or qty != qty:
+            if not math.isfinite(qty) or not (0 < qty <= 100000):
                 raise ValidationError("La cantidad debe ser mayor a cero y estar dentro del límite permitido.")
-            products.append((pid, qty))
-        unique_ids = {p for p, _ in products}
+            # Compatibilidad con operaciones offline previas a 18.0.1.5.6:
+            # en la cola antigua se enviaba negotiated_price. Ambos valores se
+            # escriben SOLO en negotiable_price, nunca en price_unit.
+            negotiated = line.get("negotiable_price", line.get("negotiated_price", None))
+            if negotiated not in (None, ""):
+                try:
+                    negotiated = float(negotiated)
+                except (ValueError, TypeError):
+                    raise ValidationError("Precio negociado inválido.")
+                if not math.isfinite(negotiated) or not 0 <= negotiated <= 1000000000:
+                    raise ValidationError("El precio negociado debe ser no negativo y válido.")
+            else:
+                negotiated = None
+            products.append((pid, qty, negotiated))
+        if any(negotiated is not None for _, _, negotiated in products):
+            if custom_negotiated_field is None:
+                raise ValidationError(
+                    "El campo personalizado negotiable_price no está instalado en las líneas "
+                    "de cotización (sale.order.line). Instale o actualice la personalización "
+                    "de Ventas antes de guardar precios negociados.")
+            if custom_negotiated_field.type not in ("float", "monetary", "integer"):
+                raise ValidationError(
+                    "El campo negotiable_price debe ser numérico en sale.order.line. "
+                    "Verifique la personalización de Ventas.")
+            if custom_negotiated_field.compute and not custom_negotiated_field.inverse:
+                raise ValidationError(
+                    "El campo negotiable_price se calcula sin permitir escritura. "
+                    "Revise el módulo personalizado de cotizaciones.")
+        unique_ids = {p for p, _, _ in products}
+        if len(unique_ids) != len(products):
+            raise ValidationError("Un mismo producto debe aparecer en una sola línea; acumule la cantidad.")
         domain = [("id", "in", list(unique_ids)), ("sale_ok", "=", True), ("active", "=", True)]
         if "company_id" in Product._fields:
             domain = ["|", ("company_id", "=", False), ("company_id", "=", request.env.company.id)] + domain
         accessible = Product.search(domain)
         if {p.id for p in accessible} != unique_ids:
             raise ValidationError("Uno o varios productos no están disponibles para venta en esta compañía.")
+        warehouse = self._quote_warehouse(payload.get("warehouse_id"))
+        if not warehouse and not payload.get("warehouse_id"):
+            # Compatibilidad: una cotización offline anterior puede no incluir
+            # bodega; solo elegir por defecto si existe exactamente una válida.
+            candidates = self._quote_warehouses()
+            if len(candidates) == 1:
+                warehouse = self._quote_warehouse(candidates[0]["id"])
+        if not warehouse:
+            raise ValidationError("Debe seleccionar una bodega antes de guardar la proforma. Revise la operación en Pendientes.")
+        if "warehouse_id" not in Sale._fields:
+            raise ValidationError("Ventas no tiene bodega en las cotizaciones. Revise la integración de Ventas con Inventario (sale_stock).")
+        requested_qty = {pid: qty for pid, qty, _ in products}
+        for product in accessible:
+            stock = self._quote_stock_on_hand(product, warehouse)
+            needed = requested_qty[product.id]
+            rounding = min(product.uom_id.rounding or 0.000001, 0.000001)
+            if float_compare(stock, 0, precision_rounding=rounding) <= 0:
+                raise ValidationError("%s está sin stock en la bodega %s." %
+                                      (product.display_name, warehouse.display_name))
+            if float_compare(needed, stock, precision_rounding=rounding) > 0:
+                raise ValidationError("Stock insuficiente de %s en %s: solicitado %s %s, a mano %s %s." %
+                                      (product.display_name, warehouse.display_name, needed,
+                                       product.uom_id.name, stock, product.uom_id.name))
         visit_id = int(payload.get("visit_id") or 0)
+        # El campo negociable se escribe con los valores de creación de las
+        # líneas para respetar los métodos create() de los módulos instalados.
+        order_lines = []
+        for pid, qty, negotiated in products:
+            line_vals = {"product_id": pid, "product_uom_qty": qty}
+            if negotiated is not None:
+                line_vals["negotiable_price"] = negotiated
+            order_lines.append((0, 0, line_vals))
         vals = {"partner_id": partner.id, "company_id": request.env.company.id,
                 "user_id": request.env.user.id, "census_originated": True,
-                "order_line": [(0, 0, {"product_id": pid, "product_uom_qty": qty}) for pid, qty in products]}
+                "order_line": order_lines}
+        # La bodega es obligatoria para que validación, pedido y consulta coincidan.
+        vals["warehouse_id"] = warehouse.id
+        selected_pricelist = payload.get("pricelist_id")
+        if selected_pricelist:
+            vals["pricelist_id"] = self._quote_pricelist(partner, selected_pricelist).id
         if visit_id:
             Visit = request.env["conedera.census.visit"]
             visit = Visit.search([("id", "=", visit_id), ("partner_id", "=", partner.id),
@@ -452,11 +682,26 @@ class ConederaFieldAppController(http.Controller):
         reference = (payload.get("client_order_ref") or "").strip()[:100]
         if reference:
             vals["client_order_ref"] = reference
-        # Standard ORM create recalculates order line taxes, price lists and totals.
-        # We never accept price_unit, taxes, state, company, or discounts from offline clients.
+        # Primero crear usando create() nativo y sus personalizaciones: cálculo de listas,
+        # impuestos, descuentos y condiciones de cliente en el servidor Odoo.
         order = Sale.with_company(request.env.company).create(vals)
-        if order.state not in ("draft", "sent"):
+        if order.state != "draft":
             raise ValidationError("La cotización no quedó en estado borrador.")
+        if order.warehouse_id.id != warehouse.id:
+            raise ValidationError("La personalización de Ventas cambió la bodega durante la creación; se canceló el guardado para evitar diferencias de inventario.")
+        for pid, _qty, negotiated in products:
+            if negotiated is None:
+                continue
+            matches = order.order_line.filtered(lambda l: not l.display_type and l.product_id.id == pid)
+            if len(matches) != 1:
+                raise ValidationError("No se puede verificar negotiable_price: las líneas del producto fueron alteradas por una personalización.")
+            # Nunca se sobrescribe price_unit. El módulo personalizado decide
+            # cómo se aplica negotiable_price a precios, descuentos e impuestos.
+            saved_price = matches.negotiable_price
+            if saved_price is False or order.currency_id.compare_amounts(saved_price, negotiated):
+                raise ValidationError(
+                    "Odoo no conservó negotiable_price para %s. Revise las reglas de su módulo personalizado."
+                    % matches.product_id.display_name)
         return {"state": "synced", "message": "Cotización %s guardada en Odoo. Revise precios e impuestos calculados antes de enviarla." % order.name,
                 "result_model": "sale.order", "result_id": order.id}
 
