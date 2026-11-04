@@ -16,6 +16,7 @@ class ConederaMobileSyncLog(models.Model):
             ("visit", "Visita"),
             ("catastro", "Nuevo catastro"),
             ("catastro_update", "Actualización de catastro"),
+            ("catastro_finalize", "Finalizar y proteger catastro"),
         ],
         required=True,
         index=True,

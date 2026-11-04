@@ -1,6 +1,6 @@
-# Conedera — Catastro Comercial para Odoo 18 Community
+# Catastro para Odoo 18 Community
 
-Versión: **18.0.1.8.3**
+Versión: **18.0.1.8.8**
 
 Módulo de Catastro Comercial móvil integrado con Contactos y Ventas estándar de Odoo.
 
@@ -22,10 +22,10 @@ Funciones principales:
 
 Se administran dentro del propio módulo:
 
-**Catastro Comercial > Configuración > Usuarios y permisos**
+**Catastro > Configuración > Usuarios y permisos**
 
 Los equipos se administran en:
 
-**Catastro Comercial > Configuración > Equipos comerciales**
+**Catastro > Configuración > Equipos comerciales**
 
 Los equipos técnicos `Sitio web` y `Punto de Venta` están excluidos. En 1.8.3 la selección de equipo se hace desde el Catastro/Permisos sin abrir el tablero gráfico estándar, y el bloqueo del Catastro usa una vista aislada para no depender de módulos externos como Ventas en Ruta.
