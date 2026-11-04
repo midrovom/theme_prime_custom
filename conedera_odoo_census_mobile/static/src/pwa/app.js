@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.4";
+const APP_VERSION = "18.0.1.5.6";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -48,6 +48,12 @@ const state = {
   quoteDetail: null,
   quoteVisitId: null,
   quoteClientRef: "",
+  quoteSelections: {},
+  quoteWarehouseId: null,
+  quotePricelistId: null,
+  quotePriceTimer: null,
+  quotePriceRequest: 0,
+  quoteImageZoom: 1,
 };
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -460,27 +466,98 @@ function nativeQuotationsUrl() {
   const action=Number(state.meta?.capabilities?.sales_action_id||0);
   return action>0?`/web#action=${action}&model=sale.order&view_type=list`:'/web';
 }
+function quoteSelectionCount(){return Object.keys(state.quoteSelections).length;}
+function quoteImage(product, large=false) {
+  if (!product?.has_image) return '<span class="quote-no-photo" aria-hidden="true">▧</span>';
+  const url=large?product.zoom_url:product.image_url;
+  return `<img src="${esc(url)}" alt="${esc(product.name)}" loading="lazy" />`;
+}
+function quoteStock(product){
+  if(product.stock_kind==='not_applicable') return 'Stock: no aplica a servicios';
+  if(product.stock_qty === null || product.stock_qty === undefined) return 'Stock a mano: no disponible';
+  const shortage=product.qty && Number(product.stock_qty)<Number(product.qty)?' · ⚠ stock menor a cantidad':'';
+  return `A mano: ${money(product.stock_qty)} ${esc(product.uom||'')} · ${esc(product.stock_label||'')}${shortage}`;
+}
+function quoteListPrice(product){
+  if (product.price === null || product.price === undefined) return 'Precio por consultar en Odoo';
+  return `Precio lista: ${esc(product.currency||'')} ${money(product.price)}`;
+}
 function availableQuoteProducts(term) {
   const user=state.meta?.user;
   if (!user) return [];
   const q=String(term||"").trim().toLowerCase();
   return state.quoteProducts.filter(p=>Number(p.user_id)===Number(user.id) && Number(p.company_id)===Number(user.company_id)
-    && [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,25);
+    && Number(p.partner_id)===Number(state.quotePartnerId) && Number(p.warehouse_id||0)===Number(state.quoteWarehouseId||0) && Number(p.pricelist_id||0)===Number(state.quotePricelistId||0)
+    && [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,35);
 }
 function renderQuoteResults() {
   const box=document.querySelector("#quote-search-results"); if (!box) return;
   const found=state.quoteResults;
-  box.innerHTML=state.quoteSearching?'<div class="small">Buscando en Odoo…</div>':
-    !state.quoteSearch.trim()?'<div class="small">Escriba el nombre o código del producto.</div>':
-    found.length?found.map(p=>`<button class="quote-pick" type="button" data-action="quote-add-product" data-id="${p.id}"><span><strong>${esc(p.name)}</strong><small>${esc(p.code||p.uom||"")}</small></span><b>＋ Agregar</b></button>`).join(""):
-    `<div class="small">No se encontraron productos ${state.online?"disponibles":"guardados para uso offline"}.</div>`;
+  const rows=found.map(p=>{
+    const chosen=state.quoteSelections[p.id];
+    return `<article class="quote-search-product">
+      <button type="button" class="quote-thumb" data-action="quote-image" data-id="${p.id}" title="Ampliar fotografía" ${p.has_image?'':'disabled'}>${quoteImage(p)}</button>
+      <div class="quote-search-main"><strong>${esc(p.name)}</strong><small>${esc(p.code||p.uom||'')}</small>
+        <div class="quote-product-price">${quoteListPrice(p)}</div><div class="quote-product-stock">Lista: ${esc(p.pricelist||'Sin identificar')} · ${quoteStock(p)}</div>
+      </div>
+      <div class="quote-search-choose"><label class="quote-checkbox"><input type="checkbox" data-quote-select="${p.id}" ${chosen?'checked':''}/> Seleccionar</label>
+      <label>Cantidad <input type="number" data-quote-search-qty="${p.id}" step="any" min="0.001" max="100000" inputmode="decimal" value="${esc(chosen?.qty??1)}"/></label>
+      <button type="button" class="btn btn-outline quote-one" data-action="quote-add-product" data-id="${p.id}">＋ Agregar</button></div>
+    </article>`;
+  }).join('');
+  box.innerHTML=`${state.quoteSearching?'<div class="small">Actualizando precio y stock desde Odoo…</div>':''}
+    ${!state.quoteSearch.trim()?'<div class="small">Busque por nombre o código. Puede marcar varios productos y asignar cantidades.</div>':
+    found.length?rows:`<div class="small">No se encontraron productos ${state.online?'disponibles':'guardados en este dispositivo'}.</div>`}
+    ${quoteSelectionCount()?`<div class="quote-batch"><strong>${quoteSelectionCount()} seleccionado(s)</strong><button class="btn btn-primary" type="button" data-action="quote-add-selected">Agregar seleccionados</button></div>`:''}`;
+}
+function quoteLinePriceMarkup(line) {
+  return `<div class="quote-price-info" data-quote-price-info="${line.id}"><span>${quoteListPrice(line)} <small>para ${esc(line.qty)} ${esc(line.uom||'')} · lista ${esc(line.pricelist||'sin confirmar')}</small></span><span>${quoteStock(line)}</span></div>`;
 }
 function quoteLinesMarkup() {
-  return state.quoteLines.length?state.quoteLines.map((line,i)=>`<div class="quote-line" data-quote-line="${line.id}">
-    <div class="quote-line-name"><strong>${esc(line.name)}</strong><span>${esc(line.code||line.uom||"")}</span></div>
+  return state.quoteLines.length?state.quoteLines.map(line=>`<div class="quote-line" data-quote-line="${line.id}">
+    <button class="quote-thumb" type="button" data-action="quote-image" data-id="${line.id}" title="Ampliar foto" ${line.has_image?'':'disabled'}>${quoteImage(line)}</button>
+    <div class="quote-line-name"><strong>${esc(line.name)}</strong><span>${esc(line.code||line.uom||'')}</span>${quoteLinePriceMarkup(line)}</div>
     <div class="quote-line-controls"><label>Cantidad<input type="number" inputmode="decimal" min="0.001" max="100000" step="any" value="${esc(line.qty)}" data-quote-qty="${line.id}" required/></label>
-    <button type="button" class="icon-btn quote-remove" title="Quitar producto" aria-label="Quitar ${esc(line.name)}" data-action="quote-remove-product" data-id="${line.id}">×</button></div></div>`).join(""):
-    `<div class="empty"><b>Sin productos</b>Busca un producto y agrégalo a la cotización.</div>`;
+    <label>Precio negociado (campo Odoo: negotiable_price) · ${esc(line.currency||'moneda de lista')}<input type="number" data-quote-negotiable="${line.id}" inputmode="decimal" min="0" max="1000000000" step="any" placeholder="Sin negociar" value="${esc(line.negotiable_price??'')}" /></label>
+    <button type="button" class="icon-btn quote-remove" title="Quitar producto" aria-label="Quitar ${esc(line.name)}" data-action="quote-remove-product" data-id="${line.id}">×</button></div></div>`).join(''):
+    `<div class="empty"><b>Sin productos</b>Busque y seleccione varios productos para esta cotización.</div>`;
+}
+function refreshQuoteLineMarkup() {
+  const box=document.querySelector('#quote-lines');
+  if (box) box.innerHTML=quoteLinesMarkup();
+}
+function addQuoteProduct(product, quantity=1) {
+  const qty=Number(quantity);
+  if (!Number.isFinite(qty)||qty<=0||qty>100000) {alert('Cantidad inválida para '+product.name);return false;}
+  const existing=state.quoteLines.find(x=>x.id===product.id);
+  if(existing)existing.qty=Number(existing.qty)+qty;
+  else state.quoteLines.push({...product, qty, negotiable_price:null});
+  return true;
+}
+async function refreshQuoteLinePrices() {
+  if (!state.online||!state.quotePartnerId||!state.quoteLines.length) return;
+  const requestId=++state.quotePriceRequest;
+  const partnerId=state.quotePartnerId;
+  const wh=state.quoteWarehouseId, pricelistId=state.quotePricelistId;
+  const payload=state.quoteLines.map(l=>({product_id:l.id,qty:l.qty}));
+  try {
+    const rows=await rpc('/catastro/app/quote/prices',{partner_id:partnerId,warehouse_id:wh,pricelist_id:pricelistId,lines:payload});
+    if(requestId!==state.quotePriceRequest||partnerId!==state.quotePartnerId||wh!==state.quoteWarehouseId||pricelistId!==state.quotePricelistId) return;
+    rows.forEach(row=>{
+      const line=state.quoteLines.find(l=>l.id===row.id && Number(l.qty)===Number(row.qty_priced));
+      if(line) Object.assign(line,{price:row.price,currency:row.currency,pricelist:row.pricelist,stock_qty:row.stock_qty,stock_kind:row.stock_kind,stock_label:row.stock_label});
+    });
+    if(state.page==='quote') {
+      for (const line of state.quoteLines) {
+        const el=document.querySelector(`[data-quote-price-info="${line.id}"]`);
+        if(el) el.outerHTML=quoteLinePriceMarkup(line);
+      }
+    }
+  } catch(err) {console.warn('No se pudo actualizar precio y stock:',err);}
+}
+function scheduleQuotePrices() {
+  clearTimeout(state.quotePriceTimer);
+  state.quotePriceTimer=setTimeout(()=>refreshQuoteLinePrices(),400);
 }
 function renderQuote() {
   const partner=quotePartner();
@@ -497,10 +574,17 @@ function renderQuote() {
       <div class="field"><label>Vincular con visita (opcional)</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}" ${Number(state.quoteVisitId)===v.id?"selected":""}>${esc(v.name||"Visita #"+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join("")}</select></div>
     </section>
     <section class="quote-mode-banner"><div><strong>Cotización rápida desde la PWA</strong><p>Este formulario genera borradores. Para utilizar condiciones comerciales, campos especiales y todas las personalizaciones, abre la pantalla nativa de cotizaciones.</p></div><a class="btn btn-outline" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener" aria-label="Abrir cotizaciones completas en Odoo">Cotización completa en Odoo</a></section>
-    <section class="form-card"><h2>2. Productos y cantidades</h2><div class="field"><label>Buscar por nombre o código</label><input id="quote-search" value="${esc(state.quoteSearch)}" placeholder="Ej. producto, código SKU" autocomplete="off" ${partner?"":"disabled"}/></div>
-      <div id="quote-search-results" class="quote-results" aria-live="polite"></div><div class="quote-lines-head"><strong>Productos agregados (${state.quoteLines.length})</strong></div><div id="quote-lines">${quoteLinesMarkup()}</div>
-      <div class="small">Los precios, descuentos automáticos e impuestos se calcularán en Odoo al guardar. No se fijan importes desde la PWA.</div>
-    </section><section class="form-card"><h2>3. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Orden de compra o referencia externa"/></div>
+    <section class="form-card"><h2>2. Selección rápida de productos</h2>
+      <div class="field"><label>Lista de precios de Odoo</label><select id="quote-pricelist"><option value="">Lista asignada al cliente (predeterminada)</option>${(cap.quote_pricelists||[]).map(pl=>`<option value="${pl.id}" ${Number(state.quotePricelistId)===pl.id?'selected':''}>${esc(pl.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Almacén para consultar existencias ${cap.quote_stock_supported?'':'(inventario no disponible)'}</label>
+      <select id="quote-warehouse"><option value="">Todos los almacenes de la compañía</option>${(cap.quote_warehouses||[]).map(w=>`<option value="${w.id}" ${Number(state.quoteWarehouseId)===w.id?'selected':''}>${esc(w.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Buscar por nombre o código</label><input id="quote-search" value="${esc(state.quoteSearch)}" placeholder="Nombre, código SKU" autocomplete="off" ${partner?"":"disabled"}/></div>
+      <div id="quote-search-results" class="quote-results" aria-live="polite"></div>
+      <div class="quote-lines-head"><strong>Productos agregados (${state.quoteLines.length})</strong></div><div id="quote-lines">${quoteLinesMarkup()}</div>
+      <div class="small">El precio de lista es una referencia según la lista asignada al cliente, la cantidad y moneda de Odoo. El precio negociado utiliza el campo existente negotiable_price de la línea en Odoo; su personalización determina el precio final y los descuentos. No se sobrescribe el precio unitario desde la PWA. El stock es una consulta, no una reserva, y puede cambiar.</div>
+      ${!state.online?'<div class="status-banner warn">Sin conexión: fotos y precios pueden no estar actualizados. Odoo recalculará al sincronizar.</div>':''}
+    </section>
+    <dialog id="quote-image-dialog" class="quote-image-dialog"><div class="quote-zoom-bar"><strong id="quote-zoom-name">Producto</strong><div class="quote-zoom-buttons"><button class="btn btn-outline" type="button" data-action="quote-zoom-out" aria-label="Reducir fotografía">−</button><span id="quote-zoom-level">100%</span><button class="btn btn-outline" type="button" data-action="quote-zoom-in" aria-label="Ampliar fotografía">＋</button><button class="btn btn-outline" type="button" data-action="quote-close-image">Cerrar ✕</button></div></div><div class="quote-zoom-body"><img id="quote-zoom-picture" alt="Foto del producto ampliada"/></div><small>Puede ampliar la foto con los controles de zoom del navegador o del dispositivo.</small></dialog><section class="form-card"><h2>3. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Orden de compra o referencia externa"/></div>
       <div class="status-banner warn">La cotización se guardará como <b>borrador</b>. Revise los importes definitivos antes de enviarla o confirmarla.</div></section>
       <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-action="back-to-partner">Volver al catastro</button><button class="btn btn-primary" type="submit" ${!cap.quote_create?"disabled":""}>▤ Guardar cotización${state.online?"":" offline"}</button></div>
     </form><aside class="quote-side"><section class="card"><div class="card-title">Cotizaciones del cliente</div><div class="card-sub">Historial visible según permisos de Odoo</div>
@@ -511,7 +595,7 @@ function renderQuoteDetail() {
   const q=state.quoteDetail;
   if (!q) {state.page="quote";return renderQuote();}
   const body=`<div class="quote-layout"><section class="form-card"><div class="row space"><div><div class="eyebrow">Cotización</div><h2>${esc(q.name)}</h2><div class="card-sub">${esc(q.partner_name)} · ${esc(q.company_name)} · ${esc(dateText(q.date_order))}</div></div><span class="chip">${esc(q.state)}</span></div>
-    <div class="section-title">Detalle de productos</div>${q.lines.map(l=>`<div class="quote-detail-line"><div><strong>${esc(l.product_name||l.name)}</strong><div class="small">${esc(l.qty)} ${esc(l.uom)} × ${esc(q.currency)} ${money(l.price_unit)}${l.discount?` · descuento ${esc(l.discount)}%`:""}</div></div><strong>${esc(q.currency)} ${money(l.subtotal)}</strong></div>`).join("")}
+    <div class="section-title">Detalle de productos</div>${q.lines.map(l=>`<div class="quote-detail-line"><div><strong>${esc(l.product_name||l.name)}</strong><div class="small">${esc(l.qty)} ${esc(l.uom)} × ${esc(q.currency)} ${money(l.price_unit)}${l.discount?` · descuento ${esc(l.discount)}%`:""}${l.negotiable_price!==null&&l.negotiable_price!==undefined?` · negociable: ${esc(q.currency)} ${money(l.negotiable_price)}`:''}</div></div><strong>${esc(q.currency)} ${money(l.subtotal)}</strong></div>`).join("")}
     <div class="quote-total"><div><span>Subtotal</span><strong>${esc(q.currency)} ${money(q.amount_untaxed)}</strong></div><div><span>Impuestos</span><strong>${esc(q.currency)} ${money(q.amount_tax)}</strong></div><div class="grand"><span>Total</span><strong>${esc(q.currency)} ${money(q.amount_total)}</strong></div></div>
     <div class="status-banner warn">Importes suministrados por Odoo. Antes de enviar, verifique condiciones comerciales y personalizaciones de su instalación.</div>
     <div class="action-grid"><button class="btn btn-secondary" data-action="back-quote">← Cotizaciones</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
@@ -540,17 +624,27 @@ async function searchQuoteProducts(value) {
   if (term.length<2) {state.quoteResults=[];state.quoteSearching=false;renderQuoteResults();return;}
   state.quoteResults=availableQuoteProducts(term);state.quoteSearching=state.online;renderQuoteResults();
   if (!state.online || !state.quotePartnerId){state.quoteSearching=false;renderQuoteResults();return;}
+  const partnerId=state.quotePartnerId, warehouseId=state.quoteWarehouseId, pricelistId=state.quotePricelistId;
   try {
-    const result=await rpc("/catastro/app/quote/products",{term,partner_id:state.quotePartnerId});
-    if (!document.querySelector("#quote-search") || document.querySelector("#quote-search").value.trim()!==term) return;
+    const result=await rpc("/catastro/app/quote/products",{term,partner_id:partnerId,warehouse_id:warehouseId,pricelist_id:pricelistId});
+    if (!document.querySelector("#quote-search") || document.querySelector("#quote-search").value.trim()!==term ||
+        partnerId!==state.quotePartnerId || warehouseId!==state.quoteWarehouseId || pricelistId!==state.quotePricelistId) return;
     const user=state.meta?.user||{};
-    if (db) {
-      for (const p of result) await idbPut(STORE_QUOTE_PRODUCTS,{...p,key:`${user.id}:${user.company_id}:${p.id}`,user_id:user.id,company_id:user.company_id});
-      state.quoteProducts=await idbGetAll(STORE_QUOTE_PRODUCTS);
-    } else {
-      state.quoteProducts=result.map(p=>({...p,key:`${user.id}:${user.company_id}:${p.id}`,user_id:user.id,company_id:user.company_id}));
-    }
+    const tagged=result.map(p=>({...p,key:`${user.id}:${user.company_id}:${partnerId}:${warehouseId||0}:${pricelistId||0}:${p.id}`,
+      user_id:user.id,company_id:user.company_id,partner_id:partnerId,warehouse_id:warehouseId||0,pricelist_id:pricelistId||0}));
+    // Mostrar siempre los resultados del servidor aunque IndexedDB no acepte escrituras.
     state.quoteResults=result;
+    if (db) {
+      try {
+        for (const row of tagged) await idbPut(STORE_QUOTE_PRODUCTS,row);
+        state.quoteProducts=await idbGetAll(STORE_QUOTE_PRODUCTS);
+      } catch(storageErr) {
+        console.warn('Catálogo en línea; caché no disponible:',storageErr);
+        state.quoteProducts=[...state.quoteProducts.filter(p=>!tagged.some(t=>t.key===p.key)),...tagged];
+      }
+    } else {
+      state.quoteProducts=[...state.quoteProducts.filter(p=>!tagged.some(t=>t.key===p.key)),...tagged];
+    }
   } catch(err){state.quoteResults=availableQuoteProducts(term);state.lastError=err.message||String(err);}
   state.quoteSearching=false;renderQuoteResults();
 }
@@ -558,16 +652,18 @@ async function submitQuote(form) {
   const p=quotePartner();
   if (!p||!truthy(p.census_locked)) {alert("Seleccione un catastro finalizado y protegido.");return;}
   if (!state.quoteLines.length){alert("Agregue al menos un producto.");return;}
-  const lines=state.quoteLines.map(x=>({product_id:Number(x.id),qty:Number(x.qty)}));
-  if(lines.some(x=>!Number.isInteger(x.product_id)||!Number.isFinite(x.qty)||x.qty<=0||x.qty>100000)) {alert("Revise las cantidades de los productos.");return;}
+  const lines=state.quoteLines.map(x=>({product_id:Number(x.id),qty:Number(x.qty),
+    negotiable_price:x.negotiable_price==null||String(x.negotiable_price).trim()===''?null:Number(x.negotiable_price)}));
+  if(lines.some(x=>!Number.isInteger(x.product_id)||!Number.isFinite(x.qty)||x.qty<=0||x.qty>100000 ||
+    (x.negotiable_price!==null && (!Number.isFinite(x.negotiable_price)||x.negotiable_price<0||x.negotiable_price>1000000000)))) {alert("Revise las cantidades y los precios negociados.");return;}
   if (!state.meta?.user?.id) {alert("Sin sesión descargada. Conéctese para empezar.");return;}
   if (state.online && !quoteCanCreate()){alert("Su usuario necesita permiso para crear cotizaciones en Ventas.");return;}
   if (!confirm(`¿Guardar una cotización en borrador para ${partnerLabel(p)} con ${lines.length} producto(s)? Los precios se calcularán al sincronizar.`))return;
-  const payload={partner_id:p.id,visit_id:Number(form.querySelector('[name="visit_id"]')?.value||0),lines,
+  const payload={partner_id:p.id,visit_id:Number(form.querySelector('[name="visit_id"]')?.value||0),warehouse_id:state.quoteWarehouseId||null,pricelist_id:state.quotePricelistId||null,lines,
     client_order_ref:form.querySelector('[name="client_order_ref"]')?.value.trim()||""};
   const op=await queueOperation("quote",payload,`${partnerLabel(p)} · cotización de ${lines.length} productos`);
   if (!op) return;
-  state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.quoteVisitId=null;state.quoteClientRef="";
+  state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.quoteSelections={};state.quoteVisitId=null;state.quoteClientRef="";
   state.page="pending";render();
   if(navigator.onLine){
     if (op.state!=="synced" && op.state!=="warning") await syncPending(false,[op.uuid]);
@@ -946,6 +1042,14 @@ $app.addEventListener("input", (event) => {
     const line=state.quoteLines.find(x=>x.id===Number(event.target.dataset.quoteQty));
     if(line)line.qty=event.target.value;
   }
+  if (event.target?.matches('[data-quote-negotiable]')) {
+    const line=state.quoteLines.find(x=>x.id===Number(event.target.dataset.quoteNegotiable));
+    if(line)line.negotiable_price=event.target.value;
+  }
+  if (event.target?.matches('[data-quote-search-qty]')) {
+    const id=Number(event.target.dataset.quoteSearchQty);
+    const chosen=state.quoteSelections[id]; if(chosen)chosen.qty=event.target.value;
+  }
   if (event.target?.id === "partner-search") { state.search = event.target.value; renderHome(); const input=document.querySelector("#partner-search"); if(input){input.focus(); input.setSelectionRange(state.search.length,state.search.length);} }
 });
 
@@ -953,10 +1057,29 @@ $app.addEventListener("change", (event) => {
   if (event.target?.matches('#quote-form [name="partner_id"]')) {
     state.quotePartnerId=Number(event.target.value)||null;
     state.quoteVisitId=null;
-    state.quoteLines=[];state.quoteResults=[];state.quoteSearch="";renderQuote();
+    state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quoteSearch="";renderQuote();
   }
   if (event.target?.matches('#quote-form [name="visit_id"]')) {
     state.quoteVisitId=Number(event.target.value)||null;
+  }
+  if (event.target?.matches('[data-quote-select]')) {
+    const id=Number(event.target.dataset.quoteSelect);
+    if(event.target.checked){
+      const product=state.quoteResults.find(x=>x.id===id);
+      if(product)state.quoteSelections[id]={product,qty:document.querySelector(`[data-quote-search-qty="${id}"]`)?.value||1};
+    } else delete state.quoteSelections[id];
+    renderQuoteResults();
+  }
+  if (event.target?.matches('[data-quote-qty]')) scheduleQuotePrices();
+  if (event.target?.id==='quote-warehouse'||event.target?.id==='quote-pricelist') {
+    if(event.target.id==='quote-warehouse')state.quoteWarehouseId=Number(event.target.value)||null;
+    else state.quotePricelistId=Number(event.target.value)||null;
+    state.quoteResults=[];
+    state.quoteLines.forEach(line=>{line.stock_qty=null;line.price=null;line.stock_label='';});
+    state.quoteSelections={};
+    renderQuote();
+    if(state.quoteSearch.trim().length>=2)void searchQuoteProducts(state.quoteSearch);
+    scheduleQuotePrices();
   }
 });
 
@@ -971,7 +1094,7 @@ $app.addEventListener("click", async (event) => {
   const visitEl = event.target.closest("[data-action='visit-partner']");
   if (visitEl) { state.selectedPartnerId=Number(visitEl.dataset.id); if(!truthy(selectedPartner()?.census_locked)){alert("Finalice y proteja primero el catastro.");return;} state.page="visit"; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
-  if (action === "quote-partner") {const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);if (!truthy(partner?.census_locked)){alert("Primero finalice y proteja el catastro.");return;}state.selectedPartnerId=id;state.quotePartnerId=id;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
+  if (action === "quote-partner") {const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);if (!truthy(partner?.census_locked)){alert("Primero finalice y proteja el catastro.");return;}state.selectedPartnerId=id;state.quotePartnerId=id;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quoteWarehouseId=null;state.quotePricelistId=null;state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
   if (action === "back-to-partner") {state.selectedPartnerId=Number(state.quotePartnerId)||state.selectedPartnerId;state.page="detail";render();return;}
   if (action === "update-ui") {
     if (!navigator.onLine) {alert("Conéctese a Internet para descargar la nueva versión. Sus registros locales se conservan.");return;}
@@ -987,11 +1110,37 @@ $app.addEventListener("click", async (event) => {
     const id=Number(event.target.closest("[data-id]")?.dataset.id);
     const product=state.quoteResults.find(x=>x.id===id);
     if(!product)return;
-    const existing=state.quoteLines.find(x=>x.id===id);
-    if(existing)existing.qty=Number(existing.qty||0)+1;
-    else state.quoteLines.push({id:product.id,name:product.name,code:product.code,uom:product.uom,qty:1});
-    state.quoteSearch="";state.quoteResults=[];renderQuote();return;
+    const qty=document.querySelector(`[data-quote-search-qty="${id}"]`)?.value||1;
+    if(addQuoteProduct(product,qty)) {delete state.quoteSelections[id];renderQuote();scheduleQuotePrices();}
+    return;
   }
+  if (action === "quote-add-selected") {
+    let done=0;
+    for(const selected of Object.values(state.quoteSelections)) if(addQuoteProduct(selected.product,selected.qty)) done++;
+    if(done){state.quoteSelections={};state.quoteSearch='';state.quoteResults=[];renderQuote();scheduleQuotePrices();}
+    return;
+  }
+  if (action === "quote-image") {
+    const id=Number(event.target.closest('[data-id]')?.dataset.id);
+    const product=[...state.quoteResults,...state.quoteLines].find(x=>x.id===id);
+    if(!product?.has_image)return;
+    const dialog=document.querySelector('#quote-image-dialog');
+    const img=document.querySelector('#quote-zoom-picture');
+    const name=document.querySelector('#quote-zoom-name');
+    if(!dialog||!img)return;
+    img.src=product.zoom_url; img.alt=product.name; if(name)name.textContent=product.name;
+    state.quoteImageZoom=1;img.style.width='auto';img.style.maxWidth='100%';img.style.maxHeight='70vh';
+    const level=document.querySelector('#quote-zoom-level');if(level)level.textContent='100%';
+    dialog.showModal();return;
+  }
+  if(action==='quote-zoom-in'||action==='quote-zoom-out'){
+    state.quoteImageZoom=Math.max(1,Math.min(3,state.quoteImageZoom+(action==='quote-zoom-in'?.5:-.5)));
+    const img=document.querySelector('#quote-zoom-picture');
+    if(img){ img.style.maxWidth='none';img.style.maxHeight='none';img.style.width=`${state.quoteImageZoom*100}%`; }
+    const level=document.querySelector('#quote-zoom-level');if(level)level.textContent=`${Math.round(state.quoteImageZoom*100)}%`;
+    return;
+  }
+  if(action==='quote-close-image'){document.querySelector('#quote-image-dialog')?.close();return;}
   if (action === "quote-remove-product") {state.quoteLines=state.quoteLines.filter(x=>x.id!==Number(event.target.closest("[data-id]").dataset.id));renderQuote();return;}
   if (action === "view-quote") {await openQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
   if (action === "back-quote") {state.page="quote";state.quoteDetail=null;render();return;}

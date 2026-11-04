@@ -68,3 +68,8 @@ manifest de instalación. Si se instaló como PWA en la pantalla de inicio,
 el sistema operativo puede necesitar que se cierre y reabra o que se vuelva
 a instalar el acceso directo para refrescar el nombre. No borrar datos
 locales si quedan operaciones pendientes sin sincronizar.
+
+
+## Versión 18.0.1.5.6 — integración de precio negociado existente
+
+Consulte `ACTUALIZACION_18.0.1.5.6.md` para la integración exclusiva con el campo personalizado `sale.order.line.negotiable_price` de Odoo, sin crear campos ni sobrescribir `price_unit`. Las funciones de catálogo visual, listas, fotografías, stock y selección múltiple implementadas en 18.0.1.5.5 se conservan.
