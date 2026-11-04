@@ -1,129 +1,68 @@
-# Conedera Catastro - App de Campo (Odoo 18 Community)
+# Catastro - App de Campo · Odoo 18 Community
 
-Addon complementario para `conedera_odoo_census` que agrega una experiencia móvil tipo web app y captura offline sin reemplazar el módulo principal.
+**Versión del complemento:** `18.0.1.4.1`  
+**Dependencia:** `conedera_odoo_census` `18.0.1.8.7` o posterior (para esta entrega se incluye `18.0.1.8.8`)
 
-## Objetivo
+Este complemento no modifica el módulo original. La PWA funciona como opción independiente en **Catastro → Abrir Catastro PWA** o en `/conedera/app`; Odoo y el resto de los módulos continúan en `/web`. En escritorio presenta menú lateral y en móvil navegación inferior.
 
-- Mantener intacto el motor actual de Catastro, visitas, proformas, permisos, bitácora y multiempresa.
-- Dar al comercial una interfaz táctil y rápida para trabajo de campo.
-- Permitir guardar información localmente cuando no hay cobertura y sincronizar cuando vuelve Internet.
-- Evitar duplicados por reintentos de red mediante UUID idempotente por operación.
+## Cambios incluidos
 
-## Qué funciona offline
+1. **Finalizar y proteger desde el formulario nuevo.** Al pulsar ese botón la PWA valida datos mínimos; en la sincronización Odoo ejecuta `res.partner.action_register_census()`, con todas las verificaciones originales de completitud, compañía, equipo y permisos. También está disponible **Finalizar y proteger** desde un catastro en borrador.
+2. **Guardar borrador** separado del cierre. Si falla el intento de cierre durante la creación, la ficha se conserva como borrador con una advertencia visible y puede completarse después. Nunca se muestra como protegida sin confirmación de Odoo.
+3. **Solicitar edición de catastro protegido** desde su ficha. El responsable envía un motivo utilizando el asistente original `conedera.census.unlock.wizard`, que aplica los permisos y envía la solicitud al supervisor.
+4. **Actualizar estado de solicitud**, con estados pendiente/aprobada/rechazada/vencida y motivo de rechazo. Tras una aprobación, el usuario autorizado puede editar y **Finalizar edición**. Esa acción cierra el permiso temporal mediante el método del módulo original.
+5. **Búsqueda de clientes** por nombre, RUC o cédula usando el buscador global del módulo base. Reutiliza contactos existentes disponibles, sin asumir propiedad de fichas de otro vendedor.
+6. **Horarios** de múltiples días y varias franjas al día con validaciones de solapamiento; usa exactamente `conedera.partner.opening.hour.day_of_week/opening_time/closing_time`.
+7. **Visitas** únicamente cuando el catastro esté protegido; las respuestas de la mini encuesta usan los valores de selección que espera Odoo (`yes/no`) y se finalizan con `action_mark_done`.
+8. **PWA y offline**: conserva catastros y operaciones en IndexedDB, con UUID para reintentos idempotentes. El cierre sin señal queda pendiente; la protección real ocurre al sincronizar con Odoo. Solicitar/aprobar la edición requiere conexión.
+9. **GPS** opcional para local y visitas; fotografía opcional para visitas, con HTTPS para permisos del navegador.
+10. **Acceso aislado:** la PWA no interfiere con `/web`. Service Worker limitado a su página y recursos, sin interceptar otros módulos. Menú existente actualizado como submenú, sin duplicarlo.
+11. **Protección de sesión:** antes de sincronizar se verifica usuario y compañía para impedir enviar operaciones offline con otra sesión.
 
-- Consultar los catastros descargados en la última sincronización.
-- Consultar bitácora reciente descargada (visitas y proformas).
-- Consultar resumen de productos proformados descargado.
-- Crear una visita con mini encuesta, observaciones y fotografía.
-- Crear un borrador de nuevo catastro, con tantas franjas horarias como sean necesarias.
-- Editar datos y horarios de un catastro no protegido, quedando sujeto a validaciones al sincronizar.
-- Ver y administrar la cola local de pendientes.
+## Actualizar
 
-## Qué sigue siendo online
+1. Realice **backup** de base de datos y carpeta de complementos. Ensaye primero en una **copia de pruebas**.
+2. Conserve instalado e intacto `conedera_odoo_census` versión `18.0.1.8.7`.
+3. Reemplace **solo** la carpeta `conedera_odoo_census_mobile` en el directorio del `addons_path` (no mezcle archivos de versiones anteriores).
+4. Reinicie Odoo y actualice la aplicación en la base correspondiente, por ejemplo:
+   `./odoo-bin -d NOMBRE_BD -u conedera_odoo_census_mobile --stop-after-init`
+   (adapte el ejecutable y la configuración del servicio a su instalación).
+5. Vuelva a iniciar Odoo, entre a `/web`, abra **Catastro → Abrir Catastro PWA** o navegue directamente a `/conedera/app`.
+6. Con conexión, recargue la PWA para que se actualicen sus archivos y el Service Worker. Si los recursos antiguos persisten, cierre y vuelva a abrir la PWA instalada; no borre datos del dispositivo mientras haya pendientes sin sincronizar.
 
-- Crear/modificar proformas estándar de Odoo.
-- Solicitudes de edición y reasignación del Catastro protegido.
-- Administración de permisos, equipos y compañías.
-- Cualquier operación que dependa de información transaccional en tiempo real.
+## Casos de aceptación a probar en Odoo real
 
-## Seguridad y consistencia
+- Crear catastro con todos los datos obligatorios → **Finalizar y proteger** → confirmar campo `census_locked=True` y que **Nueva visita** se habilita.
+- Crear catastro incompleto → **Guardar borrador** → editar faltantes → **Finalizar y proteger**; no debe quedar protegido antes de completar los requisitos.
+- Crear borrador sin cobertura con finalización solicitada → mostrar operación pendiente; al recuperar señal, revisar el estado de sincronización, no dar por protegido antes de respuesta exitosa.
+- Catastro protegido propio → **Solicitar habilitación** con motivo → supervisor aprueba/rechaza en Odoo → **Actualizar estado**; rechazo muestra `review_note`, aprobación habilita edición únicamente al usuario y durante el plazo original.
+- Editar durante habilitación → guardar cambios → sincronizar → **Finalizar edición** → volver a bloqueado.
+- Registrar visita finalizada con mini encuesta; en Odoo la visita debe quedar `state=done`.
+- Revisar la búsqueda de clientes existentes, pertenencia a equipo, horarios con más de un turno y que otro módulo de Odoo siga navegable desde `/web`.
+- Probar en iOS/Android y pantalla de escritorio; con otra cuenta de Odoo el dispositivo no debe sincronizar operaciones pertenecientes a una cuenta distinta.
 
-- La cola usa un UUID único. Un reintento no crea dos visitas ni dos catastros.
-- Al crear un catastro, la app muestra coincidencias por nombre o RUC/cédula: de la copia local sin cobertura, y del servidor al estar online.
-- Puede seleccionar un cliente de Odoo que aún no es catastro para completar su ficha **sin duplicarlo**. Los catastros ya registrados se abren en lugar de crearlos otra vez.
-- Un RUC/cédula capturado offline se vuelve a validar globalmente al sincronizar.
-- Las actualizaciones de catastros usan `write_date`; si el servidor cambió después de la última descarga, la app devuelve conflicto y no sobrescribe silenciosamente.
-- Los datos offline se guardan en IndexedDB del navegador del dispositivo.
-- Existe un botón `Borrar caché local`; no borra datos del servidor.
+## Alcance de validación
 
-## HTTPS
+Se ha realizado análisis de código del módulo principal `18.0.1.8.7`, pruebas de sintaxis Python/JavaScript, parseo XML, pruebas de lógica de horarios y validación de completitud, y pruebas automatizadas del DOM de la PWA en anchos móvil y escritorio **con datos simulados**.
 
-Service Worker/PWA requiere contexto seguro HTTPS. En HTTP la app funciona online y puede continuar capturando después de perder cobertura mientras la pestaña siga abierta, pero no puede garantizar apertura desde cero sin Internet.
+**No se ha ejecutado una instalación ni la transición real de estados en su servidor Odoo/PostgreSQL.** Una versión previa `18.0.1.3.0` fue generada en el historial, pero sus bytes no estaban disponibles para una comparación directa en este entorno; esta versión integra las funciones solicitadas tomando el módulo móvil adjunto `18.0.1.0.0` y el módulo original `18.0.1.8.7` como fuentes verificables. Es recomendable probar en staging antes de reemplazar el complemento en producción.
 
-Con HTTPS la app registra automáticamente `/conedera/sw.js`, cachea el shell y puede instalarse en la pantalla de inicio.
+## Marca neutra, sin cambiar los identificadores
 
-## Acceso
+En esta versión, Odoo muestra **Catastro** como nombre de la aplicación principal y
+**Catastro - App de Campo** para el complemento. La barra lateral de escritorio
+muestra **CATASTRO** en vez del nombre de una empresa. La PWA instalada conserva
+el título **Catastro de Campo**.
 
-Después de instalar el addon aparece una aplicación nueva **Catastro Campo**. También puede abrirse directamente en:
+Se conservan la ruta `/conedera/app`, los nombres técnicos de los módulos,
+modelos, XML IDs, tablas, permisos, datos existentes, lógica y flujo offline.
+El nombre de autor en los metadatos sigue reflejando el desarrollo original;
+no es el nombre que se muestra en el menú.
 
-`/conedera/app`
-
-## Instalación
-
-1. Mantener instalado `conedera_odoo_census`.
-2. Copiar esta carpeta al `addons_path`.
-3. Actualizar lista de aplicaciones.
-4. Instalar `Conedera Catastro - App de Campo`.
-5. Abrir `Catastro Campo` una vez con conexión para descargar datos.
-
-Este addon no requiere desinstalar ni reemplazar el módulo principal.
-
-## Cambios en 18.0.1.1.0
-
-- Búsqueda de clientes por nombre, cédula y RUC con sugerencias online y offline.
-- Selección de un cliente ya registrado sin duplicarlo; las reglas y bloqueos del módulo base se verifican nuevamente al sincronizar.
-- Editor de múltiples franjas horarias por día en creación y edición, y visualización legible de días y horas en la ficha móvil.
-- Detección de nombres, tipos y opciones de día del modelo de horario realmente instalado (`conedera_odoo_census`). Si el esquema no es compatible, muestra un error explícito en lugar de omitir la información.
-- Las ediciones que no tocaron horarios no reemplazan los horarios existentes.
-- Pantalla de catastros como inicio, con botón visible **Nuevo catastro** y soporte de cola offline existente.
-
-### Actualización sin pérdida de datos
-
-1. Haga una copia de seguridad de la base de datos y de sus addons.
-2. Reemplace **solo** la carpeta `conedera_odoo_census_mobile`; **no desinstale** el módulo base `conedera_odoo_census`.
-3. Reinicie Odoo y actualice la aplicación `Conedera Catastro - App de Campo` (`-u conedera_odoo_census_mobile` o desde Aplicaciones).
-4. Abra `/conedera/app` con conexión; actualice la pantalla para instalar la nueva versión del Service Worker.
-5. Verifique búsqueda, registro de dos franjas el mismo día, guardado/lectura posterior, edición protegida y sincronización tras perder cobertura.
-
-**Limitación de validación**: este ZIP es solamente el complemento móvil. La correspondencia exacta con las clases del módulo base debe probarse en la instalación real; no se incluyó el addon base ni una base de datos de Odoo en esta entrega.
-
-## Versión 18.0.1.2.0 — PWA integrada con módulo base 18.0.1.8.7
-
-**Compatibilidad objetivo confirmada por inspección de código**: `conedera_odoo_census_18_community_18.0.1.8.7.zip`. Este complemento NO sustituye ni reescribe el addon base.
-
-### Paridad de flujos del módulo original
-
-- La búsqueda global ya utiliza el método **`conedera.census.customer.lookup.wizard.search_global_candidates` del módulo original**. Ofrece coincidencias de nombres, nombres comerciales, cédula y RUC y devuelve el estado de uso, visualización o solicitud sin exponer los datos privados de otros comerciales. La consulta solo funciona online; offline se usan los catastros previamente descargados y cualquier alta se revalida al sincronizar.
-- Si el contacto existe sin catastro y el módulo original permite reutilizarlo, la PWA **activa la ficha existente** en lugar de crear duplicados. Si pertenece a otro comercial, permite solicitar reasignación cuando Odoo lo autoriza.
-- Los horarios usan **`conedera.partner.opening.hour`** (`day_of_week`, `opening_time`, `closing_time`) con varios turnos por día, validación de superposiciones y compatibilidad con cierre a las 24:00. No se modifican cuando se editan otros campos de un catastro.
-- El estado de la solicitud de edición y el motivo de rechazo provienen de los campos calculados del módulo base. La PWA puede crear una solicitud de habilitación de catastro protegido y actualizar sus estados por medio del botón Actualizar.
-- Visitas: banderas de Sí/No convertidas a las selecciones `yes/no` que espera el módulo base, observaciones, próxima visita, fotografía y GPS. La validación de catastro completo y permisos sigue a cargo del módulo original.
-- Clasificación del cliente, negocio, marcas y GPS del local; captura de datos y cola de envío cuando el dispositivo está offline.
-
-### Experiencia de uso
-
-- **Pantalla pequeña**: navegación fija inferior, tarjetas, formularios táctiles y franjas horarias ampliables.
-- **Escritorio**: navegación lateral persistente, espacio de trabajo a todo lo ancho, indicadores de actividad y lista de catastros en columnas. No se limita a una maqueta estrecha de teléfono.
-- Iconos PNG 192/512 y variante maskable, Service Worker revisado, manifiesto instalable en navegadores compatibles bajo **HTTPS**.
-- Verificación de identidad/empresa: si cambian entre la última descarga y la sesión online, **no se sincroniza automáticamente la cola del usuario anterior**. La persona debe volver a su sesión previa o elegir explícitamente borrar la información local (advertencia de pérdida de pendientes).
-
-### Despliegue controlado
-
-1. Respaldar base de datos, código de addons y adjuntos antes de aplicar actualizaciones.
-2. Conservar instalado el addon base versión 18.0.1.8.7; instalar o **actualizar solamente** `conedera_odoo_census_mobile` a 18.0.1.2.0 (`-u conedera_odoo_census_mobile`).
-3. Reiniciar los procesos de Odoo, cargar de nuevo `/conedera/app` con conexión y comprobar el cambio de Service Worker. Servir Odoo con HTTPS válido para instalación y apertura offline tras precarga.
-4. Validar en **base de pruebas** los siguientes casos antes de producción: coincidencia de otro comercial, selección de contacto existente, doble turno de lunes, catastro propio protegido, solicitud rechazada y comentario, visita GPS, operación sin señal y reconexión, cambio de sesión/compañía.
-
-### Alcance y límites
-
-Este ZIP fue sometido a validación estática de XML/Python/JavaScript y pruebas unitarias de lógica JS, **no** a una actualización real contra una base PostgreSQL de Odoo 18. No se garantiza compatibilidad con personalizaciones adicionales ajenas a las dos versiones inspeccionadas. La creación y administración de proformas, aprobación de solicitudes por supervisores y funciones administrativas avanzadas continúan disponibles en las pantallas del módulo base de Odoo; la PWA dispone de enlaces a esas pantallas. El cache offline de IndexedDB guarda información empresarial en el dispositivo: requiere dispositivos de confianza y medidas de protección de sesión y almacenamiento adecuadas.
-
-## Versión 18.0.1.3.0 — Acceso PWA opcional, sin sustituir Odoo
-
-- El menú **Abrir Catastro PWA** está dentro de **Catastro Comercial** en Odoo. Ya no ocupa una aplicación raíz propia ni reemplaza la pantalla estándar de Odoo.
-- Se mantiene el mismo XML ID del menú anterior para que las instalaciones **actualizadas** migren el menú existente, en vez de dejar dos entradas. La acción de URL cambia de `target=self` a `target=new` para abrir una pestaña independiente.
-- Acceso directo opcional: `/conedera/app`. Visitar `/web`, cualquier otro menú o un módulo diferente **no lleva a la PWA**. Los demás módulos mantienen su navegación habitual.
-- Dentro de la PWA existe un enlace visible **↗ Odoo** (móvil y escritorio), y otro en el menú lateral del escritorio.
-- Service Worker limitado al scope `/conedera/app` (antes `/conedera/`) y fallback offline solo en la página exacta de Catastro. Se retira únicamente el registro legado del Service Worker de esta PWA. No se borra IndexedDB ni la cola de datos pendientes.
-- Recursos estáticos versionados para reducir problemas de caché tras actualizar el módulo.
-- No se modifica el módulo base `conedera_odoo_census` ni el resto de acciones de Odoo.
-
-### Actualización desde 18.0.1.2.0
-
-1. Respalde base de datos y directorio de addons. Sustituya solo `conedera_odoo_census_mobile` y reinicie Odoo.
-2. Actualice el módulo (`-u conedera_odoo_census_mobile`) para **migrar el menú y el target**. Copiar los archivos sin actualizar el módulo NO cambia el menú en la base de datos.
-3. Con conexión, abra `/conedera/app` una vez desde la sesión autenticada para actualizar el Service Worker. Recargue la página si continúa sirviendo recursos del caché antiguo.
-4. Verifique que `/web` abra Odoo normalmente, que Catastro Comercial siga mostrando su menú estándar, y que **Abrir Catastro PWA** abra una nueva pestaña.
-5. Compruebe datos offline pendientes antes de limpiar datos de navegación: la actualización no los borra.
-
-**Validación pendiente**: requiere instalación de prueba en Odoo 18/PostgreSQL y revisión en navegador real; los cambios del paquete han sido inspeccionados y validados estáticamente, no desplegados en su servidor.
+Para reflejar los nombres nuevos en Odoo, actualizar **ambos** módulos (`-u
+conedera_odoo_census,conedera_odoo_census_mobile`) en una base de pruebas.
+Recargar la aplicación con conexión para renovar el Service Worker y el
+manifest de instalación. Si se instaló como PWA en la pantalla de inicio,
+el sistema operativo puede necesitar que se cierre y reabra o que se vuelva
+a instalar el acceso directo para refrescar el nombre. No borrar datos
+locales si quedan operaciones pendientes sin sincronizar.

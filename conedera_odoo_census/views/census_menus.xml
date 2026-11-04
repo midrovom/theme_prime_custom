@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_census_root" name="Catastro Comercial" sequence="35" action="action_census_partners"
+    <menuitem id="menu_census_root" name="Catastro" sequence="35" action="action_census_partners"
               groups="conedera_odoo_census.group_census_user"/>
     <menuitem id="menu_census_customers" name="Catastros"
               parent="menu_census_root" action="action_census_partners" sequence="5"/>

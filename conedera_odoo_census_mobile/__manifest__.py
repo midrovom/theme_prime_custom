@@ -1,7 +1,7 @@
 {
-    "name": "Conedera Catastro - App de Campo",
-    "summary": "PWA opcional de Catastro Comercial con acceso independiente y captura offline",
-    "version": "18.0.1.3.0",
+    "name": "Catastro - App de Campo",
+    "summary": "Web app móvil y captura offline para Catastro Comercial",
+    "version": "18.0.1.4.1",
     "category": "Sales",
     "author": "Conedera",
     "license": "LGPL-3",
@@ -17,6 +17,6 @@
         "views/mobile_sync_views.xml",
         "views/mobile_app_menu.xml",
     ],
-    "application": True,
+    "application": False,
     "installable": True,
 }
