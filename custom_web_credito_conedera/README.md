@@ -442,3 +442,15 @@ un croquis fuera de la etapa de revisión habilitada, incluso con el permiso.
 - El campo Solicitante continúa siendo un `Many2one(res.partner)`; los permisos independientes de 18.0.1.8.50 permanecen intactos.
 
 Actualice el módulo (no lo reinstale). Las validaciones de Odoo en el servidor siguen siendo obligatorias.
+
+
+## Versión 18.0.1.8.52 — corrección definitiva de campos del backend
+
+- Corregida la edición de solicitudes nuevas y existentes por el grupo Administrador de crédito.
+- La vista del backend usa campos separados por `groups` y modificadores fijos `readonly=0` / `readonly=1` en vez de `readonly="not credit_is_admin and id"`.
+- El Usuario de crédito conserva permisos de revisión/etapas/verificación pero no puede modificar los datos generales.
+- El campo `applicant_name` sigue siendo relación `Many2one(res.partner)` y se conservan historial, PDF, reglas de empresa y permisos independientes.
+- El administrador puede también corregir el `applicant_name_text` (nombre declarado en la ficha), cuando sea diferente de la razón social del contacto.
+- Campos de secuencia, aceptación registrada, fechas automáticas y estado de documentación siguen protegidos.
+
+Actualizar el módulo desde Aplicaciones después de reiniciar el servicio Odoo. No desinstalar.
