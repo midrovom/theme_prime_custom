@@ -1,46 +1,40 @@
 # Maintenance Report - Bodega de devolución (Odoo 18)
 
-**Versión:** 18.0.1.2.0
+**Versión:** 18.0.1.3.0 (actualización de `maintenance_report_return_assignment`).
 
-Extensión independiente de `maintenance_report` y `maintenance_report_unifor`, sin modificar sus archivos originales.
+## Funcionamiento
 
-## Objetivo
+Solo cuando el wizard se abre desde **Generar Acta de Devolución**, debajo de
+**Encargado de entrega/recepción de equipos** aparece **Bodega de devolución**.
+Este campo utiliza **hr.employee**, igual que el campo **Empleado** de los
+equipos (`maintenance.equipment.employee_id`).
 
-Al generar el **Acta de Devolución de Equipos**, el campo **Bodega de devolución** permite elegir un contacto marcado **Es bodega**, y el campo real `maintenance.equipment.employee_id` se **reasigna al empleado de esa bodega**.
+Ejemplo:
+- Antes: Equipo → **Empleado = Pepito Pérez**.
+- En el wizard: **Bodega de devolución = Bodega Sistema** (empleado existente).
+- Al pulsar **Generar PDF**: Equipo → **Empleado = Bodega Sistema**.
+- El PDF identifica a **Pepito Pérez** como persona que devuelve y a
+  **Bodega Sistema** como destino; mantiene al encargado de recepción.
 
-Por ejemplo: equipo asignado a `Pepito Pérez` → contacto de bodega `Bodega Sistema` → al pulsar **Generar PDF**, `employee_id` pasa a `Bodega Sistema` (registro `hr.employee`). El PDF mantiene a `Pepito Pérez` como la persona que devolvió el equipo.
+No se necesitan contactos ni casillas **Es bodega**, ni se crean empleados
+nuevos. Las actas de entrega y uniformes permanecen sin cambios.
 
-## Configuración
+## Notas
 
-1. En **Empleados**, debe existir el empleado `Bodega Sistema` en la misma empresa que los equipos.
-2. En **Contactos**, crear o abrir el contacto `Bodega Sistema`, activar **Es bodega**.
-3. Opcional (recomendado): seleccionar `Bodega Sistema` en **Empleado asociado a bodega** dentro del contacto. Si no se selecciona, la extensión encuentra automáticamente un empleado cuyo `work_contact_id` sea ese contacto, o uno con nombre exactamente igual en la misma empresa, siempre que sea único.
-4. Generar el Acta de Devolución desde el módulo habitual y seleccionar el contacto de **Bodega de devolución**.
+- El empleado elegido debe existir en **Empleados** y ser visible al usuario.
+- Si se devuelven varios equipos, deben pertenecer a un mismo empleado anterior
+  (el acta original tiene un único nombre y firma de devolución).
+- `empleado_devolucion_anterior_id` conserva el empleado previo para imprimir
+  el acta después de actualizar `employee_id`; no aparece como opción en el wizard.
+- El módulo no modifica el proveedor (`partner_id`) ni los datos de contacto.
+- El registro del empleado anterior refleja la **última devolución**; este
+  módulo no crea un historial independiente de actas.
 
-## Cambios en el equipo
+## Instalación y actualización
 
-- `employee_id` = empleado vinculado al contacto de bodega (NO se vacía).
-- `bodega_devolucion_id` = contacto de bodega seleccionado, a efectos de consulta.
-- `empleado_devolucion_anterior_id` = empleado anterior, conservado para el acta de devolución.
-- `entregado_por_id` = encargado seleccionado en el wizard, como en el módulo base.
-- `partner_id` (proveedor) permanece **sin cambios**, evitando modificaciones de la codificación de equipos.
+Descomprimir `maintenance_report_return_assignment` en los addons de Odoo 18,
+reiniciar Odoo, actualizar la lista de aplicaciones y **Actualizar** el mismo
+módulo si la versión anterior ya está instalada. El script de migración retira
+las vistas antiguas de Contactos y Equipos que mostraban los campos obsoletos.
 
-Las actas de **entrega de equipos** y **uniformes** no cambian.
-
-## Validaciones
-
-- El contacto debe tener **Es bodega** activado.
-- No se mezclan empleados anteriores ni empresas en una misma acta.
-- El empleado de destino debe existir, estar activo y pertenecer a la empresa del equipo.
-- Ante nombres duplicados, se exige elegir **Empleado asociado a bodega** para evitar asignaciones equivocadas.
-- No se crean empleados automáticamente.
-
-## Instalación / actualización
-
-Descomprimir la carpeta `maintenance_report_return_assignment` en la ruta de addons. Actualizar lista de aplicaciones e instalar o actualizar el **mismo módulo** si ya se instaló la versión 18.0.1.1.0.
-
-Dependencias: `contacts`, `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.
-
-## Alcance histórico
-
-`empleado_devolucion_anterior_id` y `bodega_devolucion_id` reflejan la **última devolución** de cada equipo; no se construye una bitácora independiente de devoluciones. Las actas ya archivadas no se modifican.
+Dependencias: `hr_maintenance`, `maintenance_report`, `maintenance_report_unifor`.

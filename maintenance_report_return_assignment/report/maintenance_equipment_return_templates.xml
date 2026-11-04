@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- El reporte original se imprime tras la reasignacion. En la devolucion
-         no se debe mostrar un empleado vacio ni la bodega como si devolviera. -->
+    <!-- The PDF is generated after employee_id is reassigned. Keep the
+         old employee's name/ID on the acta, but show the new employee as
+         the recipient under "Bodega de devolución". -->
     <template id="report_equipment_return_employee_origin"
               inherit_id="maintenance_report.report_equipment_return">
         <xpath expr="//p//span[@t-out='docs[0].employee_id.name']/ancestor::p[1]" position="after">
-            <p style="margin-top:8px; text-align:justify;" t-if="docs[0].bodega_devolucion_id">
+            <p style="margin-top:8px; text-align:justify;">
                 <strong>Bodega de devolución:</strong>
-                <span t-out="docs[0].bodega_devolucion_id.display_name"/>
+                <span t-out="docs[0].employee_id.name or ''"/>
             </p>
         </xpath>
-        <xpath expr="//p//span[@t-out='docs[0].employee_id.name']" position="attributes">
+        <xpath expr="(//p//span[@t-out='docs[0].employee_id.name'])[1]" position="attributes">
             <attribute name="t-out">docs[0].empleado_devolucion_anterior_id.name or docs[0].employee_id.name or ''</attribute>
         </xpath>
         <xpath expr="//strong[contains(normalize-space(.), 'ENTREGUE CONFORME')]/following-sibling::span[@t-out='docs[0].employee_id.name']" position="attributes">
