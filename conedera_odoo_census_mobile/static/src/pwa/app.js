@@ -1,5 +1,5 @@
 const DB_NAME = "conedera-field-app";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
 const STORE_PENDING = "pending";
@@ -7,6 +7,8 @@ const STORE_VISITS = "visits";
 const STORE_ORDERS = "orders";
 const STORE_PRODUCTS = "products";
 const STORE_CATALOG = "catalog";
+const STORE_QUOTE_PRODUCTS = "quote_products";
+const STORE_QUOTE_DETAILS = "quote_details";
 
 const $app = document.querySelector("#app");
 let db;
@@ -30,6 +32,16 @@ const state = {
   candidateSelected: null,
   lookupPending: false,
   lookupTimer: null,
+  quotePartnerId: null,
+  quoteLines: [],
+  quoteSearch: "",
+  quoteResults: [],
+  quoteSearching: false,
+  quoteLookupTimer: null,
+  quoteProducts: [],
+  quoteDetails: [],
+  currentQuoteId: null,
+  quoteDetail: null,
 };
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -100,6 +112,8 @@ function openDb() {
       if (!idb.objectStoreNames.contains(STORE_ORDERS)) idb.createObjectStore(STORE_ORDERS, { keyPath: "id" });
       if (!idb.objectStoreNames.contains(STORE_PRODUCTS)) idb.createObjectStore(STORE_PRODUCTS, { keyPath: "key" });
       if (!idb.objectStoreNames.contains(STORE_CATALOG)) idb.createObjectStore(STORE_CATALOG, { keyPath: "key" });
+      if (!idb.objectStoreNames.contains(STORE_QUOTE_PRODUCTS)) idb.createObjectStore(STORE_QUOTE_PRODUCTS, { keyPath: "key" });
+      if (!idb.objectStoreNames.contains(STORE_QUOTE_DETAILS)) idb.createObjectStore(STORE_QUOTE_DETAILS, { keyPath: "key" });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -165,9 +179,9 @@ async function rpc(url, params = {}) {
 }
 
 async function hydrateLocalState() {
-  const [partners, pending, visits, orders, products, meta, catalog] = await Promise.all([
+  const [partners, pending, visits, orders, products, meta, catalog, quoteProducts, quoteDetails] = await Promise.all([
     idbGetAll(STORE_PARTNERS), idbGetAll(STORE_PENDING), idbGetAll(STORE_VISITS), idbGetAll(STORE_ORDERS), idbGetAll(STORE_PRODUCTS),
-    idbGet(STORE_META, "bootstrap"), idbGet(STORE_CATALOG, "catalog"),
+    idbGet(STORE_META, "bootstrap"), idbGet(STORE_CATALOG, "catalog"), idbGetAll(STORE_QUOTE_PRODUCTS), idbGetAll(STORE_QUOTE_DETAILS),
   ]);
   state.partners = partners;
   state.pending = pending.sort((a,b) => String(b.created_at).localeCompare(String(a.created_at)));
@@ -176,6 +190,8 @@ async function hydrateLocalState() {
   state.products = products;
   state.meta = meta?.value || null;
   state.catalog = catalog?.value || state.catalog;
+  state.quoteProducts = quoteProducts;
+  state.quoteDetails = quoteDetails;
 }
 
 async function persistBootstrap(data) {
@@ -195,7 +211,7 @@ async function refreshFromServer(showMessage = true) {
   try {
     state.syncing = true;
     render();
-    const data = await rpc("/conedera/app/bootstrap");
+    const data = await rpc("/catastro/app/bootstrap");
     if (state.meta?.user && (Number(state.meta.user.id)!==Number(data.user.id) || Number(state.meta.user.company_id)!==Number(data.user.company_id)) && state.pending.some(x=>!["synced","warning","conflict"].includes(x.state))) {
       state.sessionBlocked=true;
       throw new Error("Hay operaciones de otra sesión en este dispositivo. Vuelva al usuario y compañía originales para sincronizar; no se mezclaron datos.");
@@ -223,7 +239,7 @@ function connectionBanner() {
 
 function nav(active, desktop=false) {
   const item = (page, icon, label) => `<button class="nav-btn ${active===page?"active":""}" data-nav="${page}"><b>${icon}</b><span>${label}</span></button>`;
-  return `<nav class="${desktop?"side-nav":"bottom-nav"}" aria-label="Navegación">${item("home","⌂","Catastros")}${item("visit","＋","Visita")}${item("pending","⇅","Pendientes")}${item("more","•••","Más")}${desktop?'<a class="nav-btn" href="/web" target="_blank" rel="noopener"><b>▦</b><span>Abrir Odoo</span></a>':""}</nav>`;
+  return `<nav class="${desktop?"side-nav":"bottom-nav"}" aria-label="Navegación">${item("home","⌂","Catastros")}${item("visit","＋","Visita")}${item("quote","▤","Cotizar")}${item("pending","⇅","Pendientes")}${item("more","•••","Más")}${desktop?'<a class="nav-btn" href="/web" target="_blank" rel="noopener"><b>▦</b><span>Abrir Odoo</span></a>':""}</nav>`;
 }
 function shell(title, body, opts={}) {
   return `<div class="app-shell">
@@ -322,11 +338,122 @@ function renderDetail() {
       <div class="metric-grid"><div class="metric"><strong>${visitsFor(p.id).length}</strong><span>Visitas registradas</span></div><div class="metric"><strong>${ordersFor(p.id).length}</strong><span>Proformas</span></div></div>
     </section>
     ${detailWorkflow(p)}
-    <div class="section-title">Operación comercial</div><div class="action-grid"><button class="btn btn-primary" data-action="visit-partner" data-id="${p.id}" ${locked?"":"disabled"}>＋ Nueva visita</button><a class="btn btn-outline" href="/web#id=${p.id}&model=res.partner&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div>
+    <div class="section-title">Operación comercial</div><div class="action-grid"><button class="btn btn-primary" data-action="visit-partner" data-id="${p.id}" ${locked?"":"disabled"}>＋ Nueva visita</button><button class="btn btn-secondary" data-action="quote-partner" data-id="${p.id}" ${locked?"":"disabled"}>▤ Nueva cotización</button><a class="btn btn-outline" href="/web#id=${p.id}&model=res.partner&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div>
     <div class="section-title">Bitácora reciente</div><section class="card">${timeline(p.id)}</section></div>
     <div class="detail-secondary"><div class="section-title">Contacto</div><section class="card"><div class="card-sub">${esc(p.phone||p.mobile||"Sin teléfono")}<br>${esc(p.email||"Sin email")}<br>${esc(partnerAddress(p)||"Sin dirección")}</div><div class="section-title">Horario de atención</div>${hoursSummary(p)}</section>
     <div class="section-title">Productos proformados</div><section class="card">${prod.length?prod.map(x=>`<div class="product-row"><div><strong>${esc(x.product_name)}</strong><br><span>${x.lines} líneas · promedio ${money(x.avg_price)}</span></div><div style="text-align:right"><strong>${money(x.qty)}</strong><br><span>${money(x.subtotal)}</span></div></div>`).join(""):`<div class="empty">Sin productos almacenados todavía.</div>`}</section></div></div>`;
   $app.innerHTML = shell(partnerLabel(p), body, {nav:"home"});
+}
+
+function quoteCanCreate() {
+  return Boolean(state.meta?.capabilities?.quote_create);
+}
+function quotePartner() { return state.partners.find(p=>p.id===Number(state.quotePartnerId))||null; }
+function availableQuoteProducts(term) {
+  const user=state.meta?.user;
+  if (!user) return [];
+  const q=String(term||"").trim().toLowerCase();
+  return state.quoteProducts.filter(p=>Number(p.user_id)===Number(user.id) && Number(p.company_id)===Number(user.company_id)
+    && [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,25);
+}
+function renderQuoteResults() {
+  const box=document.querySelector("#quote-search-results"); if (!box) return;
+  const found=state.quoteResults;
+  box.innerHTML=state.quoteSearching?'<div class="small">Buscando en Odoo…</div>':
+    !state.quoteSearch.trim()?'<div class="small">Escriba el nombre o código del producto.</div>':
+    found.length?found.map(p=>`<button class="quote-pick" type="button" data-action="quote-add-product" data-id="${p.id}"><span><strong>${esc(p.name)}</strong><small>${esc(p.code||p.uom||"")}</small></span><b>＋ Agregar</b></button>`).join(""):
+    `<div class="small">No se encontraron productos ${state.online?"disponibles":"guardados para uso offline"}.</div>`;
+}
+function quoteLinesMarkup() {
+  return state.quoteLines.length?state.quoteLines.map((line,i)=>`<div class="quote-line" data-quote-line="${line.id}">
+    <div class="quote-line-name"><strong>${esc(line.name)}</strong><span>${esc(line.code||line.uom||"")}</span></div>
+    <div class="quote-line-controls"><label>Cantidad<input type="number" inputmode="decimal" min="0.001" max="100000" step="any" value="${esc(line.qty)}" data-quote-qty="${line.id}" required/></label>
+    <button type="button" class="icon-btn quote-remove" title="Quitar producto" aria-label="Quitar ${esc(line.name)}" data-action="quote-remove-product" data-id="${line.id}">×</button></div></div>`).join(""):
+    `<div class="empty"><b>Sin productos</b>Busca un producto y agrégalo a la cotización.</div>`;
+}
+function renderQuote() {
+  const partner=quotePartner();
+  const cap=state.meta?.capabilities||{};
+  const clients=state.partners.filter(p=>truthy(p.census_locked) && (!p.census_company_id || relationId(p.census_company_id)===Number(state.meta?.user?.company_id)));
+  const related=partner?ordersFor(partner.id).slice(0,10):[];
+  const linkedVisits=partner?visitsFor(partner.id).filter(v=>v.state==="done"):[];
+  const body=`<div class="quote-layout"><form id="quote-form">
+    <section class="form-card"><div class="row space"><h2>1. Cliente</h2><span class="chip">Empresa: ${esc(state.meta?.user?.company_name||"")}</span></div>
+      <div class="field"><label>Catastro protegido *</label><select name="partner_id" required><option value="">Seleccione un cliente…</option>${clients.map(p=>`<option value="${p.id}" ${partner?.id===p.id?"selected":""}>${esc(partnerLabel(p))} · ${esc(p.vat||"")}</option>`).join("")}</select></div>
+      <div class="field"><label>Vincular con visita (opcional)</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}">${esc(v.name||"Visita #"+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join("")}</select></div>
+    </section>
+    <section class="form-card"><h2>2. Productos y cantidades</h2><div class="field"><label>Buscar por nombre o código</label><input id="quote-search" value="${esc(state.quoteSearch)}" placeholder="Ej. producto, código SKU" autocomplete="off" ${partner?"":"disabled"}/></div>
+      <div id="quote-search-results" class="quote-results" aria-live="polite"></div><div class="quote-lines-head"><strong>Productos agregados (${state.quoteLines.length})</strong></div><div id="quote-lines">${quoteLinesMarkup()}</div>
+      <div class="small">Los precios, descuentos automáticos e impuestos se calcularán en Odoo al guardar. No se fijan importes desde la PWA.</div>
+    </section><section class="form-card"><h2>3. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" placeholder="Orden de compra o referencia externa"/></div>
+      <div class="status-banner warn">La cotización se guardará como <b>borrador</b>. Revise los importes definitivos antes de enviarla o confirmarla.</div></section>
+      <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-nav="home">Volver</button><button class="btn btn-primary" type="submit" ${!cap.quote_create?"disabled":""}>▤ Guardar cotización${state.online?"":" offline"}</button></div>
+    </form><aside class="quote-side"><section class="card"><div class="card-title">Cotizaciones del cliente</div><div class="card-sub">Historial visible según permisos de Odoo</div>
+      ${related.length?related.map(o=>`<button class="quote-history" type="button" data-action="view-quote" data-id="${o.id}"><span><strong>${esc(o.name)}</strong><small>${esc(dateText(o.date_order))} · ${esc(o.state||"")}</small></span><b>${esc(relationName(o.currency_id)||"")} ${money(o.amount_total)}</b></button>`).join(""):'<div class="small" style="margin-top:10px">Seleccione un cliente para consultar sus proformas.</div>'}</section></aside></div>`;
+  $app.innerHTML=shell("Cotizaciones",body,{nav:"quote"});renderQuoteResults();
+}
+function renderQuoteDetail() {
+  const q=state.quoteDetail;
+  if (!q) {state.page="quote";return renderQuote();}
+  const body=`<div class="quote-layout"><section class="form-card"><div class="row space"><div><div class="eyebrow">Cotización</div><h2>${esc(q.name)}</h2><div class="card-sub">${esc(q.partner_name)} · ${esc(q.company_name)} · ${esc(dateText(q.date_order))}</div></div><span class="chip">${esc(q.state)}</span></div>
+    <div class="section-title">Detalle de productos</div>${q.lines.map(l=>`<div class="quote-detail-line"><div><strong>${esc(l.product_name||l.name)}</strong><div class="small">${esc(l.qty)} ${esc(l.uom)} × ${esc(q.currency)} ${money(l.price_unit)}${l.discount?` · descuento ${esc(l.discount)}%`:""}</div></div><strong>${esc(q.currency)} ${money(l.subtotal)}</strong></div>`).join("")}
+    <div class="quote-total"><div><span>Subtotal</span><strong>${esc(q.currency)} ${money(q.amount_untaxed)}</strong></div><div><span>Impuestos</span><strong>${esc(q.currency)} ${money(q.amount_tax)}</strong></div><div class="grand"><span>Total</span><strong>${esc(q.currency)} ${money(q.amount_total)}</strong></div></div>
+    <div class="status-banner warn">Importes suministrados por Odoo. Antes de enviar, verifique condiciones comerciales y personalizaciones de su instalación.</div>
+    <div class="action-grid"><button class="btn btn-secondary" data-action="back-quote">← Cotizaciones</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
+    <aside class="quote-side"><section class="card"><div class="card-title">Registro</div><div class="card-sub">Referencia: ${esc(q.client_order_ref||"—")}<br>Visita: ${q.visit_id?"#"+Number(q.visit_id):"No asociada"}<br>Empresa: ${esc(q.company_name)}</div></section></aside></div>`;
+  $app.innerHTML=shell(q.name,body,{nav:"quote"});
+}
+async function openQuote(id) {
+  if (!id) return;
+  const user=state.meta?.user||{};
+  const key=`${user.id}:${user.company_id}:${id}`;
+  const cached=state.quoteDetails.find(x=>x.key===key);
+  state.currentQuoteId=id;
+  if (cached) {state.quoteDetail=cached.value;state.page="quote-detail";render();}
+  if (!navigator.onLine) {
+    if (!cached) alert("Conéctese una vez para descargar el detalle de esta cotización.");
+    return;
+  }
+  try {
+    const quote=await rpc("/catastro/app/quote/read",{quote_id:id});
+    await idbPut(STORE_QUOTE_DETAILS,{key,value:quote});
+    state.quoteDetail=quote;state.page="quote-detail";render();
+  } catch(err){alert(err.message||String(err));}
+}
+async function searchQuoteProducts(value) {
+  const term=String(value||"").trim();state.quoteSearch=value;
+  if (term.length<2) {state.quoteResults=[];state.quoteSearching=false;renderQuoteResults();return;}
+  state.quoteResults=availableQuoteProducts(term);state.quoteSearching=state.online;renderQuoteResults();
+  if (!state.online || !state.quotePartnerId){state.quoteSearching=false;renderQuoteResults();return;}
+  try {
+    const result=await rpc("/catastro/app/quote/products",{term,partner_id:state.quotePartnerId});
+    if (!document.querySelector("#quote-search") || document.querySelector("#quote-search").value.trim()!==term) return;
+    const user=state.meta?.user||{};
+    for (const p of result) await idbPut(STORE_QUOTE_PRODUCTS,{...p,key:`${user.id}:${user.company_id}:${p.id}`,user_id:user.id,company_id:user.company_id});
+    state.quoteProducts=await idbGetAll(STORE_QUOTE_PRODUCTS);
+    state.quoteResults=result;
+  } catch(err){state.quoteResults=availableQuoteProducts(term);state.lastError=err.message||String(err);}
+  state.quoteSearching=false;renderQuoteResults();
+}
+async function submitQuote(form) {
+  const p=quotePartner();
+  if (!p||!truthy(p.census_locked)) {alert("Seleccione un catastro finalizado y protegido.");return;}
+  if (!state.quoteLines.length){alert("Agregue al menos un producto.");return;}
+  const lines=state.quoteLines.map(x=>({product_id:Number(x.id),qty:Number(x.qty)}));
+  if(lines.some(x=>!Number.isInteger(x.product_id)||!Number.isFinite(x.qty)||x.qty<=0||x.qty>100000)) {alert("Revise las cantidades de los productos.");return;}
+  if (!state.meta?.user?.id) {alert("Sin sesión descargada. Conéctese para empezar.");return;}
+  if (state.online && !quoteCanCreate()){alert("Su usuario necesita permiso para crear cotizaciones en Ventas.");return;}
+  if (!confirm(`¿Guardar una cotización en borrador para ${partnerLabel(p)} con ${lines.length} producto(s)? Los precios se calcularán al sincronizar.`))return;
+  const payload={partner_id:p.id,visit_id:Number(form.querySelector('[name="visit_id"]')?.value||0),lines,
+    client_order_ref:form.querySelector('[name="client_order_ref"]')?.value.trim()||""};
+  const op=await queueOperation("quote",payload,`${partnerLabel(p)} · cotización de ${lines.length} productos`);
+  state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];
+  state.page="pending";render();
+  if(navigator.onLine){
+    await syncPending(false,[op.uuid]);
+    const updated=state.pending.find(x=>x.uuid===op.uuid);
+    if(updated?.state==="synced"&&updated.result_model==="sale.order")await openQuote(updated.result_id);
+  }
 }
 
 function toggleHtml(name, label, value=false) {
@@ -377,7 +504,7 @@ function renderNewCatastro() {
 }
 
 function operationLabel(op) {
-  return op.type === "visit" ? "Visita" : op.type === "catastro" ? (op.payload?.finalize?"Nuevo catastro · finalizar":"Nuevo catastro · borrador") : op.type === "catastro_finalize"?"Finalizar y proteger":"Actualización";
+  return op.type === "quote" ? "Cotización / Proforma" : op.type === "visit" ? "Visita" : op.type === "catastro" ? (op.payload?.finalize?"Nuevo catastro · finalizar":"Nuevo catastro · borrador") : op.type === "catastro_finalize"?"Finalizar y proteger":"Actualización";
 }
 
 function renderEditCatastro() {
@@ -413,7 +540,7 @@ async function submitCatastroUpdate(form) {
 function renderPending() {
   const pending = [...state.pending].sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
   const body = `<div class="row" style="margin-bottom:12px"><button class="btn btn-primary" style="width:100%" data-action="sync">⇅ Sincronizar ahora</button></div>
-    <div class="cards">${pending.map(op=>`<section class="card pending-item"><div><div class="card-title">${esc(operationLabel(op))}</div><div class="card-sub">${esc(op.label||"")}</div><div class="chips"><span class="chip ${op.state==="error"?"danger":op.state==="conflict"?"warn":op.state==="synced"?"ok":""}">${esc(op.state||"pendiente")}</span></div>${op.message?`<div class="small ${op.state==="error"?"danger-text":""}" style="margin-top:8px">${esc(op.message)}</div>`:""}${op.result_model==="res.partner" && op.result_id && ["synced","warning"].includes(op.state)?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-result" data-id="${op.result_id}">Ver catastro</button>`:""}<div class="pending-meta">${esc(dateText(op.created_at))}</div></div><div><button class="icon-btn" data-delete-pending="${op.uuid}" title="Eliminar del dispositivo">×</button></div></section>`).join("") || `<div class="empty"><b>Todo sincronizado</b>No hay información pendiente en este dispositivo.</div>`}</div>`;
+    <div class="cards">${pending.map(op=>`<section class="card pending-item"><div><div class="card-title">${esc(operationLabel(op))}</div><div class="card-sub">${esc(op.label||"")}</div><div class="chips"><span class="chip ${op.state==="error"?"danger":op.state==="conflict"?"warn":op.state==="synced"?"ok":""}">${esc(op.state||"pendiente")}</span></div>${op.message?`<div class="small ${op.state==="error"?"danger-text":""}" style="margin-top:8px">${esc(op.message)}</div>`:""}${op.result_model==="res.partner" && op.result_id && ["synced","warning"].includes(op.state)?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-result" data-id="${op.result_id}">Ver catastro</button>`:""}${op.result_model==="sale.order" && op.result_id && op.state==="synced"?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-quote-result" data-id="${op.result_id}">Ver cotización</button>`:""}<div class="pending-meta">${esc(dateText(op.created_at))}</div></div><div><button class="icon-btn" data-delete-pending="${op.uuid}" title="Eliminar del dispositivo">×</button></div></section>`).join("") || `<div class="empty"><b>Todo sincronizado</b>No hay información pendiente en este dispositivo.</div>`}</div>`;
   $app.innerHTML = shell("Pendientes", body, { nav:"pending" });
 }
 
@@ -423,7 +550,7 @@ function renderMore() {
   const canInstall = Boolean(installPrompt);
   const body = `<section class="card ${secure?"":"install-card"}"><div class="card-title">${secure?"Modo offline completo":"Modo offline limitado por HTTP"}</div><div class="card-sub" style="${secure?"":"color:rgba(255,255,255,.86)"}">${secure?"La app puede abrirse y capturar datos sin cobertura después de haber sincronizado una vez.":"Puede seguir capturando si pierde señal mientras esta pantalla permanece abierta. Para abrir la app desde cero sin Internet e instalarla como PWA, el servidor debe usar HTTPS."}</div>${canInstall?'<button class="btn" data-action="install">Instalar app</button>':""}</section>
     <section class="card"><div class="card-title">Datos del dispositivo</div><div class="card-sub">Usuario: ${esc(state.meta?.user?.name||"Sin descargar")}<br>Empresa: ${esc(state.meta?.user?.company_name||"")}<br>Última descarga: ${esc(saved)}<br>Pendientes: ${state.pending.filter(x=>x.state!=="synced").length}</div><div class="action-grid"><button class="btn btn-outline" data-action="refresh">Descargar datos</button><button class="btn btn-danger" data-action="clear-local">Borrar caché local</button></div></section>
-    <section class="card"><div class="card-title">Odoo completo</div><div class="card-sub">Use Odoo para proformas, aprobaciones, reasignaciones, permisos y administración avanzada.</div><a class="btn btn-primary" style="width:100%;margin-top:12px" href="/web">Abrir Odoo</a></section>`;
+    <section class="card"><div class="card-title">Odoo completo</div><div class="card-sub">La PWA permite crear cotizaciones; use Odoo para aprobarlas, enviarlas, imprimir documentos y administrar opciones avanzadas.</div><a class="btn btn-primary" style="width:100%;margin-top:12px" href="/web">Abrir Odoo</a></section>`;
   $app.innerHTML = shell("Más", body, { nav:"more" });
 }
 
@@ -431,6 +558,8 @@ function render() {
   switch (state.page) {
     case "detail": return renderDetail();
     case "visit": return renderVisit();
+    case "quote": return renderQuote();
+    case "quote-detail": return renderQuoteDetail();
     case "new": return renderNewCatastro();
     case "edit": return renderEditCatastro();
     case "pending": return renderPending();
@@ -529,14 +658,14 @@ async function syncPending(silent=false, onlyUuids=null) {
   if (!candidates.length) return;
   try {
     state.syncing = true; render();
-    const session=await rpc("/conedera/app/ping");
+    const session=await rpc("/catastro/app/ping");
     if (state.meta?.user && (Number(state.meta.user.id)!==Number(session.user_id) || Number(state.meta.user.company_id)!==Number(session.company_id))) {
       state.sessionBlocked=true;
       throw new Error("La sesión cambió. Las operaciones offline pertenecen a otro usuario o compañía y no se enviarán.");
     }
     const payload=candidates.filter(op=>!op.user_id || Number(op.user_id)===Number(session.user_id)).map(({uuid,type,payload,user_id,company_id})=>({uuid,type,payload,user_id,company_id}));
     if (payload.length!==candidates.length) throw new Error("Hay operaciones registradas por otro usuario; sincronización bloqueada.");
-    const response = await rpc("/conedera/app/sync", { operations: payload });
+    const response = await rpc("/catastro/app/sync", { operations: payload });
     for (const result of response.results || []) {
       const op = state.pending.find(x=>x.uuid===result.uuid);
       if (!op) continue;
@@ -582,7 +711,7 @@ function bindPhotoInput() {
 
 async function clearLocal() {
   if (!confirm("Esto borra los datos descargados y pendientes SOLO de este dispositivo. No borra nada del servidor. ¿Continuar?")) return;
-  const stores=[STORE_META,STORE_PARTNERS,STORE_PENDING,STORE_VISITS,STORE_ORDERS,STORE_PRODUCTS,STORE_CATALOG];
+  const stores=[STORE_META,STORE_PARTNERS,STORE_PENDING,STORE_VISITS,STORE_ORDERS,STORE_PRODUCTS,STORE_CATALOG,STORE_QUOTE_PRODUCTS,STORE_QUOTE_DETAILS];
   await Promise.all(stores.map(store=>idbReplaceAll(store,[]).catch(async()=>{ const all=await idbGetAll(store); await Promise.all(all.map(x=>idbDelete(store,x.id||x.uuid||x.key))); })));
   await hydrateLocalState(); state.page="home"; render();
 }
@@ -601,7 +730,7 @@ async function searchCandidates(value) {
   state.candidateMatches=local;state.lookupPending=state.online;renderCandidateResults();
   if (!state.online){state.lookupPending=false;renderCandidateResults();return;}
   try {
-    const matches=await rpc("/conedera/app/lookup",{term});
+    const matches=await rpc("/catastro/app/lookup",{term});
     if (document.querySelector("#lookup-field")?.value.trim()!==term) return;
     state.candidateMatches=matches||[];
   } catch(err){state.lastError=err.message;state.candidateMatches=local;}
@@ -612,14 +741,14 @@ async function submitUnlockRequest(form) {
   if (!navigator.onLine){alert("Para solicitar edición debe conectarse a Odoo.");return;}
   const reason=form.querySelector('[name="reason"]')?.value.trim()||"";
   if(reason.length<5){alert("Describa el motivo del cambio (mínimo 5 caracteres).");return;}
-  try {await rpc("/conedera/app/catastro/request-unlock",{partner_id:p.id,reason});
+  try {await rpc("/catastro/app/catastro/request-unlock",{partner_id:p.id,reason});
     await refreshFromServer(false);alert("Solicitud enviada al supervisor. Puede consultar su estado desde esta ficha.");}
   catch(err){alert(err.message||String(err));}
 }
 async function refreshPartnerStatus() {
   const p=selectedPartner();if(!p)return;
   if(!navigator.onLine){alert("Se necesita conexión para consultar el estado actualizado.");return;}
-  try {const status=await rpc("/conedera/app/catastro/status",{partner_id:p.id});
+  try {const status=await rpc("/catastro/app/catastro/status",{partner_id:p.id});
     const fresh={...p,...status};await idbPut(STORE_PARTNERS,fresh);await hydrateLocalState();render();}
   catch(err){alert(err.message||String(err));}
 }
@@ -633,17 +762,48 @@ $app.addEventListener("input", (event) => {
     clearTimeout(state.lookupTimer);
     state.lookupTimer=setTimeout(()=>searchCandidates(value),300);
   }
+  if (event.target?.id === "quote-search") {
+    const value=event.target.value;state.quoteSearch=value;
+    clearTimeout(state.quoteLookupTimer);state.quoteLookupTimer=setTimeout(()=>searchQuoteProducts(value),300);
+  }
+  if (event.target?.matches("[data-quote-qty]")) {
+    const line=state.quoteLines.find(x=>x.id===Number(event.target.dataset.quoteQty));
+    if(line)line.qty=event.target.value;
+  }
   if (event.target?.id === "partner-search") { state.search = event.target.value; renderHome(); const input=document.querySelector("#partner-search"); if(input){input.focus(); input.setSelectionRange(state.search.length,state.search.length);} }
+});
+
+$app.addEventListener("change", (event) => {
+  if (event.target?.matches('#quote-form [name="partner_id"]')) {
+    state.quotePartnerId=Number(event.target.value)||null;
+    state.quoteLines=[];state.quoteResults=[];state.quoteSearch="";renderQuote();
+  }
 });
 
 $app.addEventListener("click", async (event) => {
   const navEl = event.target.closest("[data-nav]");
-  if (navEl) { state.page=navEl.dataset.nav; if(state.page!=="detail") state.selectedPartnerId=state.page==="visit"?state.selectedPartnerId:null; render(); return; }
+  if (navEl) { state.page=navEl.dataset.nav;
+    if (state.page==="quote") { state.quotePartnerId=state.selectedPartnerId||state.quotePartnerId;state.quoteDetail=null; }
+    if(state.page!=="detail") state.selectedPartnerId=["visit","quote"].includes(state.page)?state.selectedPartnerId:null;
+    render(); return; }
   const partnerEl = event.target.closest("[data-open-partner]");
   if (partnerEl) { state.selectedPartnerId=Number(partnerEl.dataset.openPartner); state.page="detail"; render(); return; }
   const visitEl = event.target.closest("[data-action='visit-partner']");
   if (visitEl) { state.selectedPartnerId=Number(visitEl.dataset.id); if(!truthy(selectedPartner()?.census_locked)){alert("Finalice y proteja primero el catastro.");return;} state.page="visit"; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
+  if (action === "quote-partner") {state.quotePartnerId=Number(event.target.closest("[data-id]")?.dataset.id);state.page="quote";render();return;}
+  if (action === "quote-add-product") {
+    const id=Number(event.target.closest("[data-id]")?.dataset.id);
+    const product=state.quoteResults.find(x=>x.id===id);
+    if(!product)return;
+    const existing=state.quoteLines.find(x=>x.id===id);
+    if(existing)existing.qty=Number(existing.qty||0)+1;
+    else state.quoteLines.push({id:product.id,name:product.name,code:product.code,uom:product.uom,qty:1});
+    state.quoteSearch="";state.quoteResults=[];renderQuote();return;
+  }
+  if (action === "quote-remove-product") {state.quoteLines=state.quoteLines.filter(x=>x.id!==Number(event.target.closest("[data-id]").dataset.id));renderQuote();return;}
+  if (action === "view-quote") {await openQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
+  if (action === "back-quote") {state.page="quote";state.quoteDetail=null;render();return;}
   if (action === "capture-gps") {
     const form=event.target.closest("form");
     const preview=form?.querySelector("[data-gps-preview]");
@@ -676,6 +836,7 @@ $app.addEventListener("click", async (event) => {
   if (action === "show-unlock-form") {const form=document.querySelector("#unlock-form");if(form){form.hidden=false;form.querySelector("textarea")?.focus();}return;}
   if (action === "hide-unlock-form") {const form=document.querySelector("#unlock-form");if(form)form.hidden=true;return;}
   if (action === "refresh-status") {await refreshPartnerStatus();return;}
+  if (action === "open-quote-result") {await openQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
   if (action === "open-result") {state.selectedPartnerId=Number(event.target.closest("[data-id]").dataset.id);state.page="detail";if(!selectedPartner()&&navigator.onLine) await refreshFromServer(false);render();return;}
   if (action === "finalize-partner") {
     const p=selectedPartner();if(!p)return;
@@ -692,7 +853,7 @@ $app.addEventListener("click", async (event) => {
       }
     }
     if(!confirm("¿Finalizar edición y volver a proteger el catastro?"))return;
-    try{await rpc("/conedera/app/catastro/finish-edit",{partner_id:p.id});await refreshFromServer(false);}
+    try{await rpc("/catastro/app/catastro/finish-edit",{partner_id:p.id});await refreshFromServer(false);}
     catch(err){alert(err.message||String(err));}return;
   }
   if (action === "refresh") { await syncPending(true); await refreshFromServer(true); return; }
@@ -714,6 +875,7 @@ $app.addEventListener("submit", async (event) => {
   if (event.target.id === "catastro-form") await submitCatastro(event.target,event.submitter?.value==="finalize");
   if (event.target.id === "catastro-edit-form") await submitCatastroUpdate(event.target);
   if (event.target.id === "visit-form") await submitVisit(event.target,true);
+  if (event.target.id === "quote-form") await submitQuote(event.target);
   if (event.target.id === "unlock-form") await submitUnlockRequest(event.target);
 });
 
@@ -722,7 +884,7 @@ async function init() {
   await hydrateLocalState();
   render();
   if (window.isSecureContext && "serviceWorker" in navigator) {
-    try { await navigator.serviceWorker.register("/conedera/sw.js", { scope: "/conedera/" }); } catch (err) { console.warn("Service worker no disponible", err); }
+    try { await navigator.serviceWorker.register("/catastro/sw.js", { scope: "/catastro/" }); } catch (err) { console.warn("Service worker no disponible", err); }
   }
   if (navigator.onLine) {
     await refreshFromServer(false);

@@ -2,7 +2,7 @@
 <odoo>
     <record id="action_conedera_field_app" model="ir.actions.act_url">
         <field name="name">Abrir Catastro PWA</field>
-        <field name="url">/conedera/app</field>
+        <field name="url">/catastro/app</field>
         <field name="target">new</field>
     </record>
     <!-- Reutilizar el ID del menú 1.0, no crear otra aplicación raíz. -->

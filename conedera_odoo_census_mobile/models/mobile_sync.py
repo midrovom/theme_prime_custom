@@ -14,6 +14,7 @@ class ConederaMobileSyncLog(models.Model):
     operation_type = fields.Selection(
         [
             ("visit", "Visita"),
+            ("quote", "Cotización / Proforma"),
             ("catastro", "Nuevo catastro"),
             ("catastro_update", "Actualización de catastro"),
             ("catastro_finalize", "Finalizar y proteger catastro"),

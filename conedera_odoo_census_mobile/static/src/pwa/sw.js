@@ -1,7 +1,7 @@
-const CACHE = "conedera-field-v5";
+const CACHE = "catastro-field-v6";
 const SHELL = [
-  "/conedera/app",
-  "/conedera/manifest.webmanifest",
+  "/catastro/app",
+  "/catastro/manifest.webmanifest",
   "/conedera_odoo_census_mobile/static/src/pwa/app.css",
   "/conedera_odoo_census_mobile/static/src/pwa/app.js",
   "/conedera_odoo_census_mobile/static/description/icon.svg",
@@ -13,7 +13,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith("conedera-field-") && key !== CACHE).map((key) => caches.delete(key))))
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => (key.startsWith("conedera-field-") || key.startsWith("catastro-field-")) && key !== CACHE).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
@@ -24,18 +24,18 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  if (req.mode === "navigate" && url.pathname === "/conedera/app") {
+  if (req.mode === "navigate" && url.pathname === "/catastro/app") {
     event.respondWith(
       fetch(req).then((res) => {
         const copy = res.clone();
-        caches.open(CACHE).then((cache) => cache.put("/conedera/app", copy));
+        caches.open(CACHE).then((cache) => cache.put("/catastro/app", copy));
         return res;
-      }).catch(() => caches.match("/conedera/app"))
+      }).catch(() => caches.match("/catastro/app"))
     );
     return;
   }
 
-  if (url.pathname.includes("/conedera_odoo_census_mobile/static/") || url.pathname === "/conedera/manifest.webmanifest") {
+  if (url.pathname.includes("/conedera_odoo_census_mobile/static/") || url.pathname === "/catastro/manifest.webmanifest") {
     event.respondWith(caches.match(req).then((cached) => cached || fetch(req).then((res) => {
       const copy = res.clone();
       caches.open(CACHE).then((cache) => cache.put(req, copy));
