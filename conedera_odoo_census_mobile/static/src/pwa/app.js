@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.3";
+const APP_VERSION = "18.0.1.5.4";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -28,6 +28,8 @@ const state = {
   syncing: false,
   lastError: "",
   storageError: "",
+  localReady: false,
+  serverSnapshot: null,
   starting: true,
   sessionBlocked: false,
   candidateMatches: [],
@@ -105,64 +107,45 @@ function nowServerString() {
 function truthy(value) { return value === true || value === "true" || value === 1 || value === "1"; }
 
 function openDb() {
+  // No solicitar cambios de esquema al inicio: las bases previas pueden contener
+  // catastros, visitas o cotizaciones sin sincronizar. Esta apertura es asíncrona
+  // y NO tiene un tiempo límite artificial que genere fallos falsos.
   return new Promise((resolve, reject) => {
-    let finished = false;
-    let blocked = false;
-    // Abrir la version YA EXISTENTE sin forzar una migracion v1 -> v2.
-    // Una pestaña antigua puede impedir la migracion, pero no la lectura normal.
-    // Nunca borrar o recrear la base, pues puede contener operaciones sin sincronizar.
-    const timer = setTimeout(() => {
-      if (finished) return;
-      finished = true;
-      reject(new Error(blocked
-        ? "Otra pestaña mantiene ocupado el almacenamiento. Cierre las otras ventanas de Catastro para recuperar el modo sin conexión."
-        : "El almacenamiento local no respondió. La aplicación seguirá en línea; cierre otras pestañas de Catastro y recargue para recuperar el modo offline."));
-    }, 2500);
     let req;
-    try {
-      // Sin numero de version: evita bloquear la pantalla al migrar bases antiguas.
-      req = indexedDB.open(DB_NAME);
-    } catch (error) {
-      clearTimeout(timer);
-      finished = true;
-      reject(new Error(`El navegador no permite abrir el almacenamiento local: ${error.message || error}`));
-      return;
-    }
-    req.onblocked = () => { blocked = true; };
+    try { req = indexedDB.open(DB_NAME); }
+    catch (error) { reject(error); return; }
+    req.onblocked = () => {
+      // Una pestaña anterior puede completar una transacción. Esperamos sin
+      // declarar falsamente que el almacenamiento está averiado.
+      console.info("Catastro: esperando acceso a IndexedDB; la pantalla sigue disponible.");
+    };
     req.onupgradeneeded = () => {
-      const idb = req.result;
-      if (!idb.objectStoreNames.contains(STORE_META)) idb.createObjectStore(STORE_META, { keyPath: "key" });
-      if (!idb.objectStoreNames.contains(STORE_PARTNERS)) idb.createObjectStore(STORE_PARTNERS, { keyPath: "id" });
-      if (!idb.objectStoreNames.contains(STORE_PENDING)) idb.createObjectStore(STORE_PENDING, { keyPath: "uuid" });
-      if (!idb.objectStoreNames.contains(STORE_VISITS)) idb.createObjectStore(STORE_VISITS, { keyPath: "id" });
-      if (!idb.objectStoreNames.contains(STORE_ORDERS)) idb.createObjectStore(STORE_ORDERS, { keyPath: "id" });
-      if (!idb.objectStoreNames.contains(STORE_PRODUCTS)) idb.createObjectStore(STORE_PRODUCTS, { keyPath: "key" });
-      if (!idb.objectStoreNames.contains(STORE_CATALOG)) idb.createObjectStore(STORE_CATALOG, { keyPath: "key" });
-      if (!idb.objectStoreNames.contains(STORE_QUOTE_PRODUCTS)) idb.createObjectStore(STORE_QUOTE_PRODUCTS, { keyPath: "key" });
-      if (!idb.objectStoreNames.contains(STORE_QUOTE_DETAILS)) idb.createObjectStore(STORE_QUOTE_DETAILS, { keyPath: "key" });
+      const local = req.result;
+      const stores = [
+        [STORE_META, "key"], [STORE_PARTNERS, "id"],
+        [STORE_PENDING, "uuid"], [STORE_VISITS, "id"],
+        [STORE_ORDERS, "id"], [STORE_PRODUCTS, "key"],
+        [STORE_CATALOG, "key"],
+        [STORE_QUOTE_PRODUCTS, "key"], [STORE_QUOTE_DETAILS, "key"],
+      ];
+      for (const [name, keyPath] of stores) {
+        if (!local.objectStoreNames.contains(name)) local.createObjectStore(name, { keyPath });
+      }
     };
     req.onsuccess = () => {
-      if (finished) { req.result.close(); return; }
-      finished = true;
-      clearTimeout(timer);
       const opened = req.result;
       opened.onversionchange = () => {
-        // Permite que una nueva pestaña actualice la base sin bloquearse.
+        // Otra versión necesita actualizar el esquema. No bloquearla.
         opened.close();
         if (db === opened) {
           db = null;
-          state.storageError = "El almacenamiento se actualizó desde otra pestaña. Recargue esta pestaña para recuperar el modo offline.";
-          render();
+          state.localReady = false;
+          setTimeout(() => { if (!state.localReady) void restoreLocalStorage(); }, 750);
         }
       };
       resolve(opened);
     };
-    req.onerror = () => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      reject(req.error || new Error("No se pudo abrir la base de datos local."));
-    };
+    req.onerror = () => reject(req.error || new Error("No se pudo abrir la base de datos local."));
   });
 }
 
@@ -318,13 +301,17 @@ async function refreshFromServer(showMessage = true, prefetchedBootstrap = null)
       throw new Error("Hay operaciones de otra sesión en este dispositivo. Vuelva al usuario y compañía originales para sincronizar; no se mezclaron datos.");
     }
     state.sessionBlocked=false;
-    if (db) {
+    state.serverSnapshot = data;
+    if (db && state.localReady) {
       try {
         await persistBootstrap(data);
         await hydrateLocalState();
+        state.storageError = "";
       } catch (storageFailure) {
-        state.storageError = "No se pudieron actualizar los datos offline; se mostrará la información en línea. No se borraron los pendientes locales.";
-        console.warn("Almacenamiento sin escritura", storageFailure);
+        // Un fallo al escribir la copia offline no invalida los datos en Odoo.
+        // Nunca borrar ni recrear IndexedDB, ni detener la interfaz.
+        console.warn("No se pudo actualizar la copia local", storageFailure);
+        state.storageError = storageFailure.message || String(storageFailure);
         applyBootstrapInMemory(data);
       }
     } else {
@@ -342,18 +329,19 @@ async function refreshFromServer(showMessage = true, prefetchedBootstrap = null)
 }
 
 function connectionBanner() {
-  if (state.storageError) return `<div class="connection error"><span><i class="dot"></i>Modo en línea: el almacenamiento del dispositivo no está disponible. Se muestran los datos del servidor, pero no se pueden guardar registros nuevos hasta recuperar el almacenamiento local. ${esc(state.storageError)}</span><button class="btn btn-outline" data-action="retry-storage">Recuperar</button><a class="btn btn-outline" href="/web" target="_blank" rel="noopener">Odoo</a></div>`;
-  if (state.starting) return `<div class="connection"><span><i class="dot"></i>Abriendo catastro…</span></div>`;
+  // El almacenamiento se inicializa en segundo plano. Evitar avisos rojos
+  // persistentes por una apertura lenta; registrar detalles técnicos en «Más».
+  if (state.starting && !state.partners.length) return `<div class="connection"><span><i class="dot"></i>Conectando con Odoo…</span></div>`;
   if (state.sessionBlocked) return `<div class="connection error">Operaciones de otra sesión: sincronización bloqueada para proteger los datos.</div>`;
   if (state.syncing) return `<div class="connection"><span><i class="dot"></i>Sincronizando…</span><span>${state.pending.filter(x=>x.state!=="synced").length} pendientes</span></div>`;
-  if (!state.online) return `<div class="connection offline"><span><i class="dot"></i>Sin cobertura / offline</span><span>Los datos quedan en este dispositivo</span></div>`;
+  if (!state.online) return `<div class="connection offline"><span><i class="dot"></i>Sin cobertura / offline</span><span>${state.localReady?"Los datos quedan en este dispositivo":"Almacenamiento local aún no disponible; evite guardar cambios"}</span></div>`;
   if (state.lastError) return `<div class="connection error"><span><i class="dot"></i>${esc(state.lastError)}</span><button class="btn btn-outline" style="min-height:34px;padding:4px 9px" data-action="refresh">Reintentar</button></div>`;
   return `<div class="connection"><span><i class="dot"></i>En línea</span><span>${state.pending.filter(x=>x.state!=="synced").length} pendientes</span></div>`;
 }
 
 function nav(active, desktop=false) {
   const item = (page, icon, label) => `<button class="nav-btn ${active===page?"active":""}" data-nav="${page}"><b>${icon}</b><span>${label}</span></button>`;
-  return `<nav class="${desktop?"side-nav":"bottom-nav"}" aria-label="Navegación">${item("home","⌂","Catastros")}${item("visit","＋","Visita")}${item("quote","▤","Cotizar")}${item("pending","⇅","Pendientes")}${item("more","•••","Más")}${desktop?'<a class="nav-btn" href="/web" target="_blank" rel="noopener"><b>▦</b><span>Abrir Odoo</span></a>':""}</nav>`;
+  return `<nav class="${desktop?"side-nav":"bottom-nav"}" aria-label="Navegación">${item("home","⌂","Catastros")}${item("visit","＋","Visita")}${item("pending","⇅","Pendientes")}${item("more","•••","Más")}${desktop?'<a class="nav-btn" href="/web" target="_blank" rel="noopener"><b>▦</b><span>Abrir Odoo</span></a>':""}</nav>`;
 }
 function shell(title, body, opts={}) {
   return `<div class="app-shell">
@@ -385,13 +373,7 @@ function partnerCard(p) {
 function renderHome() {
   const q = state.search.trim().toLowerCase();
   const partners = state.partners.filter(p => !q || [p.name,p.commercial_name,p.vat,p.city,p.phone,p.mobile].some(v => String(v||"").toLowerCase().includes(q)));
-  const protectedCount=state.partners.filter(p=>truthy(p.census_locked)).length;
-  const quoteShortcut=`<section class="quote-hero" aria-label="Acceso directo a cotizaciones">
-      <div class="quote-hero-copy"><span class="quote-hero-eyebrow">VENTAS · COTIZACIONES</span><h2>Crea una cotización</h2>
-      <p>Accede al cotizador desde aquí, sin buscar el botón entre los catastros. ${protectedCount?`${protectedCount} catastro(s) protegido(s) disponible(s).`:"Primero finaliza y protege un catastro para crear el borrador."}</p></div>
-      <div class="quote-hero-actions"><button type="button" class="btn quote-hero-button" data-action="open-quote"><span aria-hidden="true">▤</span> Cotizar ahora</button><a class="quote-hero-native" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener">Cotización completa (Odoo)</a></div>
-    </section>`;
-  const body = `${quoteShortcut}<div class="home-tools"><span>Mis clientes</span><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div>
+  const body = `<div class="home-tools"><span>Mis clientes</span><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div>
     <input id="partner-search" class="search" placeholder="Buscar por RUC, nombre, ciudad…" value="${esc(state.search)}"/>
     <div class="cards">${partners.map(partnerCard).join("") || `<div class="empty"><b>No hay catastros en el dispositivo</b>${state.online?"Pulse actualizar o cree uno nuevo.":"Conéctese una vez para descargar sus catastros."}</div>`}</div>`;
   $app.innerHTML = shell("Mis catastros", body, { fab:true, nav:"home" });
@@ -458,8 +440,12 @@ function renderDetail() {
       <div class="chips">${locked?'<span class="chip ok">Protegido</span>':'<span class="chip warn">Borrador</span>'}${p.census_company_id?`<span class="chip">${esc(relationName(p.census_company_id))}</span>`:""}</div>
       <div class="metric-grid"><div class="metric"><strong>${visitsFor(p.id).length}</strong><span>Visitas registradas</span></div><div class="metric"><strong>${ordersFor(p.id).length}</strong><span>Proformas</span></div></div>
     </section>
+    <section class="partner-quote-cta" aria-label="Cotización para este catastro">
+      <div><strong>Proformas y cotizaciones</strong><p>${locked?"Crear una cotización para este cliente y consultar sus proformas.":"Para cotizar primero debe finalizar y proteger este catastro."}</p></div>
+      <button type="button" class="btn btn-primary partner-quote-button" data-action="quote-partner" data-id="${p.id}" ${locked?"":"disabled"}>▤ Crear cotización</button>
+    </section>
     ${detailWorkflow(p)}
-    <div class="section-title">Operación comercial</div><div class="action-grid"><button class="btn btn-primary" data-action="visit-partner" data-id="${p.id}" ${locked?"":"disabled"}>＋ Nueva visita</button><button class="btn btn-secondary" data-action="quote-partner" data-id="${p.id}">▤ Cotizar ${locked?"ahora":"(requiere cierre)"}</button><a class="btn btn-outline" href="/web#id=${p.id}&model=res.partner&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div>
+    <div class="section-title">Operación comercial</div><div class="action-grid"><button class="btn btn-primary" data-action="visit-partner" data-id="${p.id}" ${locked?"":"disabled"}>＋ Nueva visita</button><a class="btn btn-outline" href="/web#id=${p.id}&model=res.partner&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div>
     <div class="section-title">Bitácora reciente</div><section class="card">${timeline(p.id)}</section></div>
     <div class="detail-secondary"><div class="section-title">Contacto</div><section class="card"><div class="card-sub">${esc(p.phone||p.mobile||"Sin teléfono")}<br>${esc(p.email||"Sin email")}<br>${esc(partnerAddress(p)||"Sin dirección")}</div><div class="section-title">Horario de atención</div>${hoursSummary(p)}</section>
     <div class="section-title">Productos proformados</div><section class="card">${prod.length?prod.map(x=>`<div class="product-row"><div><strong>${esc(x.product_name)}</strong><br><span>${x.lines} líneas · promedio ${money(x.avg_price)}</span></div><div style="text-align:right"><strong>${money(x.qty)}</strong><br><span>${money(x.subtotal)}</span></div></div>`).join(""):`<div class="empty">Sin productos almacenados todavía.</div>`}</section></div></div>`;
@@ -504,9 +490,10 @@ function renderQuote() {
   const linkedVisits=partner?visitsFor(partner.id).filter(v=>v.state==="done"):[];
   const availabilityNote=clients.length?"":`<div class="status-banner warn">No hay catastros protegidos de la compañía actual para cotizar. Abre un catastro, completa los datos obligatorios y pulsa «Finalizar y proteger» antes de crear una cotización.</div>`;
   const permissionNote=cap.quote_create===false?`<div class="status-banner warn">Tu usuario no tiene permiso para crear cotizaciones en Odoo. Solicita al administrador los permisos correspondientes de Ventas. El acceso a esta pantalla sigue visible para que puedas identificar la causa.</div>`:"";
+  if (!partner) { state.page="home"; return renderHome(); }
   const body=`${availabilityNote}${permissionNote}<div class="quote-layout"><form id="quote-form">
     <section class="form-card"><div class="row space"><h2>1. Cliente</h2><span class="chip">Empresa: ${esc(state.meta?.user?.company_name||"")}</span></div>
-      <div class="field"><label>Catastro protegido *</label><select name="partner_id" required><option value="">Seleccione un cliente…</option>${clients.map(p=>`<option value="${p.id}" ${partner?.id===p.id?"selected":""}>${esc(partnerLabel(p))} · ${esc(p.vat||"")}</option>`).join("")}</select></div>
+      <div class="quote-current-customer"><div><span>Catastro seleccionado</span><strong>${esc(partnerLabel(partner))}</strong><small>${esc(partner.vat||"Sin RUC/cédula")}</small></div><button type="button" class="btn btn-outline" data-action="back-to-partner">Volver al catastro</button></div>
       <div class="field"><label>Vincular con visita (opcional)</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}" ${Number(state.quoteVisitId)===v.id?"selected":""}>${esc(v.name||"Visita #"+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join("")}</select></div>
     </section>
     <section class="quote-mode-banner"><div><strong>Cotización rápida desde la PWA</strong><p>Este formulario genera borradores. Para utilizar condiciones comerciales, campos especiales y todas las personalizaciones, abre la pantalla nativa de cotizaciones.</p></div><a class="btn btn-outline" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener" aria-label="Abrir cotizaciones completas en Odoo">Cotización completa en Odoo</a></section>
@@ -515,7 +502,7 @@ function renderQuote() {
       <div class="small">Los precios, descuentos automáticos e impuestos se calcularán en Odoo al guardar. No se fijan importes desde la PWA.</div>
     </section><section class="form-card"><h2>3. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Orden de compra o referencia externa"/></div>
       <div class="status-banner warn">La cotización se guardará como <b>borrador</b>. Revise los importes definitivos antes de enviarla o confirmarla.</div></section>
-      <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-nav="home">Volver</button><button class="btn btn-primary" type="submit" ${!cap.quote_create?"disabled":""}>▤ Guardar cotización${state.online?"":" offline"}</button></div>
+      <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-action="back-to-partner">Volver al catastro</button><button class="btn btn-primary" type="submit" ${!cap.quote_create?"disabled":""}>▤ Guardar cotización${state.online?"":" offline"}</button></div>
     </form><aside class="quote-side"><section class="card"><div class="card-title">Cotizaciones del cliente</div><div class="card-sub">Historial visible según permisos de Odoo</div>
       ${related.length?related.map(o=>`<button class="quote-history" type="button" data-action="view-quote" data-id="${o.id}"><span><strong>${esc(o.name)}</strong><small>${esc(dateText(o.date_order))} · ${esc(o.state||"")}</small></span><b>${esc(relationName(o.currency_id)||"")} ${money(o.amount_total)}</b></button>`).join(""):'<div class="small" style="margin-top:10px">Seleccione un cliente para consultar sus proformas.</div>'}</section></aside></div>`;
   $app.innerHTML=shell("Cotizaciones",body,{nav:"quote"});renderQuoteResults();
@@ -583,7 +570,7 @@ async function submitQuote(form) {
   state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.quoteVisitId=null;state.quoteClientRef="";
   state.page="pending";render();
   if(navigator.onLine){
-    await syncPending(false,[op.uuid]);
+    if (op.state!=="synced" && op.state!=="warning") await syncPending(false,[op.uuid]);
     const updated=state.pending.find(x=>x.uuid===op.uuid);
     if(updated?.state==="synced"&&updated.result_model==="sale.order")await openQuote(updated.result_id);
   }
@@ -668,7 +655,7 @@ async function submitCatastroUpdate(form) {
   const op = await queueOperation("catastro_update", obj, `${partnerLabel(p)} · actualización`);
   if (!op) return;
   state.page = "pending"; render();
-  if (navigator.onLine) await syncPending(false, [op.uuid]);
+  if (navigator.onLine && op.state!=="synced" && op.state!=="warning") await syncPending(false, [op.uuid]);
 }
 
 function renderPending() {
@@ -682,9 +669,10 @@ function renderMore() {
   const secure = window.isSecureContext;
   const saved = state.meta?.saved_at ? dateText(state.meta.saved_at) : "Nunca";
   const canInstall = Boolean(installPrompt);
-  const body = `<section class="card ${secure?"":"install-card"}"><div class="card-title">${secure?"Modo offline completo":"Modo offline limitado por HTTP"}</div><div class="card-sub" style="${secure?"":"color:rgba(255,255,255,.86)"}">${secure?"La app puede abrirse y capturar datos sin cobertura después de haber sincronizado una vez.":"Puede seguir capturando si pierde señal mientras esta pantalla permanece abierta. Para abrir la app desde cero sin Internet e instalarla como PWA, el servidor debe usar HTTPS."}</div>${canInstall?'<button class="btn" data-action="install">Instalar app</button>':""}</section>
+  const body = `<section class="card ${secure?"":"install-card"}"><div class="card-title">${secure?"Modo offline completo":"Modo offline limitado por HTTP"}</div><div class="card-sub" style="${secure?"":"color:rgba(255,255,255,.86)"}">${secure?(state.localReady?"La app puede abrirse y capturar datos sin cobertura después de sincronizar.":"La app funciona online mientras se conecta al almacenamiento local. El guardado offline solo estará disponible cuando termine la conexión."):"Puede seguir capturando si pierde señal mientras esta pantalla permanece abierta. Para abrir la app desde cero sin Internet e instalarla como PWA, el servidor debe usar HTTPS."}</div>${canInstall?'<button class="btn" data-action="install">Instalar app</button>':""}</section>
     <section class="card"><div class="card-title">Datos del dispositivo</div><div class="card-sub">Usuario: ${esc(state.meta?.user?.name||"Sin descargar")}<br>Empresa: ${esc(state.meta?.user?.company_name||"")}<br>Última descarga: ${esc(saved)}<br>Pendientes: ${state.pending.filter(x=>x.state!=="synced").length}</div><div class="action-grid"><button class="btn btn-outline" data-action="refresh">Descargar datos</button><button class="btn btn-danger" data-action="clear-local" ${db?"":"disabled"}>Borrar caché local</button></div></section>
-    <section class="card"><div class="card-title">Versión de la aplicación: ${esc(APP_VERSION)}</div><div class="card-sub">Si no aparece el botón «Cotizar ahora» o ves una versión anterior, actualiza la interfaz. Esta acción no elimina catastros, visitas ni cotizaciones pendientes de sincronización.</div><button class="btn btn-secondary" style="width:100%;margin-top:12px" type="button" data-action="update-ui">↻ Actualizar interfaz PWA</button></section>
+    <section class="card"><div class="card-title">Datos sin conexión</div><div class="card-sub">${state.localReady?"Almacenamiento local conectado. Puede preparar registros offline.":state.storageError?"No se pudo acceder al almacenamiento local. Online se guarda directamente en Odoo; para trabajar sin conexión revise los permisos del navegador y cierre otras pestañas de Catastro.":"Preparando almacenamiento local en segundo plano. Puede trabajar online mientras tanto."}</div>${!state.localReady?'<button type="button" class="btn btn-outline" data-action="retry-storage" style="margin-top:10px">Reintentar almacenamiento</button>':""}</section>
+    <section class="card"><div class="card-title">Versión de la aplicación: ${esc(APP_VERSION)}</div><div class="card-sub">Si no aparece «Crear cotización» dentro de la ficha del catastro o ves una versión anterior, actualiza la interfaz. Esta acción no elimina catastros, visitas ni cotizaciones pendientes de sincronización.</div><button class="btn btn-secondary" style="width:100%;margin-top:12px" type="button" data-action="update-ui">↻ Actualizar interfaz PWA</button></section>
     <section class="card"><div class="card-title">Odoo completo</div><div class="card-sub">La PWA crea borradores rápidos. Para todas las funciones nativas, extensiones y campos personalizados de Ventas, utiliza el formulario completo de Odoo hasta que integremos los módulos que modifican tus proformas.</div><a class="btn btn-primary" style="width:100%;margin-top:12px" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener">Abrir cotizaciones completas</a></section>`;
   $app.innerHTML = shell("Más", body, { nav:"more" });
 }
@@ -745,15 +733,52 @@ function validateForFinalize(obj) {
   if (!(obj.opening_hours||[]).length) missing.push("Horario de atención");
   return missing;
 }
-async function queueOperation(type, payload, label) {
-  if (!db || state.storageError) {
-    showFormError("El almacenamiento local no está disponible: para evitar pérdida de datos, no se ha guardado este registro. Cierre otras pestañas de Catastro, pulse Recuperar e inténtelo nuevamente. Mientras tanto puede utilizar Odoo.");
+async function sendOperationOnline(op) {
+  // Fallback real para equipos con IndexedDB temporalmente inaccesible.
+  // Odoo registra client_uuid de forma idempotente y aplica permisos y cálculos.
+  if (!navigator.onLine || !state.meta?.user) {
+    showFormError("Sin almacenamiento offline disponible. Conéctese a Odoo para guardar de forma segura.");
     return null;
   }
+  try {
+    const session = await rpc("/catastro/app/ping");
+    if (Number(session.user_id)!==Number(op.user_id) || Number(session.company_id)!==Number(op.company_id)) {
+      throw new Error("La sesión cambió. No se enviaron datos con otro usuario o empresa.");
+    }
+    const response = await rpc("/catastro/app/sync", {operations: [
+      {uuid:op.uuid,type:op.type,payload:op.payload,user_id:op.user_id,company_id:op.company_id},
+    ]});
+    const result = (response.results || []).find(x=>x.uuid===op.uuid);
+    if (!result || !["synced","warning"].includes(result.state)) {
+      throw new Error(result?.message || "Odoo no confirmó el guardado. Revise el formulario.");
+    }
+    Object.assign(op, result, {synced_at:new Date().toISOString()});
+    // Histórico temporal de la sesión: el registro final está guardado en Odoo.
+    state.pending = [op,...state.pending.filter(x=>x.uuid!==op.uuid)];
+    await refreshFromServer(false);
+    return op;
+  } catch (error) {
+    showFormError(error.message || String(error));
+    return null;
+  }
+}
+async function queueOperation(type, payload, label) {
   const op={uuid:uuid(),type,payload,label,state:"pending",message:"",created_at:new Date().toISOString(),
     user_id:state.meta?.user?.id||null,company_id:state.meta?.user?.company_id||null};
-  await idbPut(STORE_PENDING,op); await hydrateLocalState();render();return op;
+  if (db && state.localReady) {
+    try {
+      await idbPut(STORE_PENDING,op);
+      await hydrateLocalState();
+      render();
+      return op;
+    } catch (error) {
+      state.storageError = error.message || String(error);
+      console.warn("No se pudo conservar la operación en IndexedDB", error);
+    }
+  }
+  return sendOperationOnline(op);
 }
+
 async function submitCatastro(form, finalize=false) {
   const obj=formObject(form);
   try {obj.opening_hours=buildHours(form);} catch(err){showFormError(err.message);return;}
@@ -771,7 +796,7 @@ async function submitCatastro(form, finalize=false) {
   const op=await queueOperation("catastro",obj,`${obj.commercial_name||obj.name} · ${obj.vat||"sin identificación"}`);
   if (!op) return;
   state.page="pending";render();
-  if (navigator.onLine) await syncPending(false,[op.uuid]);
+  if (navigator.onLine && op.state!=="synced" && op.state!=="warning") await syncPending(false,[op.uuid]);
 }
 
 async function submitVisit(form, finalize=true) {
@@ -790,11 +815,13 @@ async function submitVisit(form, finalize=true) {
   if (!op) return;
   state.page = "pending";
   render();
-  if (navigator.onLine) await syncPending(false, [op.uuid]);
+  if (navigator.onLine && op.state!=="synced" && op.state!=="warning") await syncPending(false, [op.uuid]);
 }
 
 async function syncPending(silent=false, onlyUuids=null) {
-  if (!db || state.storageError) return;
+  // Una falla al actualizar la caché de lectura no debe bloquear el envío de
+  // operaciones que sí están persistidas en la cola local.
+  if (!db || !state.localReady) return;
   if (!navigator.onLine || state.syncing || state.sessionBlocked) return;
   const candidates = state.pending.filter(x => !["synced","warning","conflict"].includes(x.state) && (!onlyUuids || onlyUuids.includes(x.uuid))).sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
   if (!candidates.length) return;
@@ -944,8 +971,8 @@ $app.addEventListener("click", async (event) => {
   const visitEl = event.target.closest("[data-action='visit-partner']");
   if (visitEl) { state.selectedPartnerId=Number(visitEl.dataset.id); if(!truthy(selectedPartner()?.census_locked)){alert("Finalice y proteja primero el catastro.");return;} state.page="visit"; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
-  if (action === "open-quote") {state.quotePartnerId=null;state.quoteDetail=null;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.page="quote";render();return;}
-  if (action === "quote-partner") {const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);state.quotePartnerId=truthy(partner?.census_locked)?id:null;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
+  if (action === "quote-partner") {const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);if (!truthy(partner?.census_locked)){alert("Primero finalice y proteja el catastro.");return;}state.selectedPartnerId=id;state.quotePartnerId=id;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
+  if (action === "back-to-partner") {state.selectedPartnerId=Number(state.quotePartnerId)||state.selectedPartnerId;state.page="detail";render();return;}
   if (action === "update-ui") {
     if (!navigator.onLine) {alert("Conéctese a Internet para descargar la nueva versión. Sus registros locales se conservan.");return;}
     if ((state.quoteLines.length || ["new","edit","visit"].includes(state.page)) && !confirm("¿Actualizar interfaz ahora? Se conservarán los datos sincronizados y las operaciones pendientes, pero los cambios todavía no guardados en pantalla pueden perderse.")) return;
@@ -1007,7 +1034,7 @@ $app.addEventListener("click", async (event) => {
     if(!confirm(`¿Finalizar y proteger el catastro de ${partnerLabel(p)}? Solo se podrá editar con autorización posterior.`))return;
     const op=await queueOperation("catastro_finalize",{partner_id:p.id,base_write_date:p.write_date||""},`${partnerLabel(p)} · proteger`);
     if (!op) return;
-    state.page="pending";render();if(navigator.onLine) await syncPending(false,[op.uuid]);return;
+    state.page="pending";render();if(navigator.onLine && op.state!=="synced" && op.state!=="warning") await syncPending(false,[op.uuid]);return;
   }
   if (action === "finish-edit") {
     const p=selectedPartner();if(!p||!navigator.onLine){alert("Se necesita conexión para cerrar la edición autorizada.");return;}
@@ -1021,7 +1048,7 @@ $app.addEventListener("click", async (event) => {
     try{await rpc("/catastro/app/catastro/finish-edit",{partner_id:p.id});await refreshFromServer(false);}
     catch(err){alert(err.message||String(err));}return;
   }
-  if (action === "retry-storage") {window.location.replace(`/catastro/app?storage_retry=${Date.now()}`); return;}
+  if (action === "retry-storage") {void restoreLocalStorage();render();return;}
   if (action === "refresh") { await syncPending(true); await refreshFromServer(true); return; }
   if (action === "new-catastro") { state.page="new"; render(); return; }
   if (action === "edit-partner") {if(!truthy(selectedPartner()?.census_can_edit_master)){alert("El catastro está protegido; solicite habilitación.");return;} state.page="edit"; render(); return; }
@@ -1045,39 +1072,68 @@ $app.addEventListener("submit", async (event) => {
   if (event.target.id === "unlock-form") await submitUnlockRequest(event.target);
 });
 
+let storageOpenPromise = null;
+async function restoreLocalStorage() {
+  if (storageOpenPromise || state.localReady) return storageOpenPromise;
+  storageOpenPromise = (async () => {
+    try {
+      const opened = await openDb();
+      db = opened;
+      await hydrateLocalState();
+      state.localReady = true;
+      state.storageError = "";
+      const snapshot = state.serverSnapshot;
+      if (snapshot) {
+        // No sustituir un catastro remoto nuevo por una copia vieja al abrir
+        // tarde el almacenamiento. Verificar pendientes de otra sesión primero.
+        const differentSession=state.meta?.user &&
+          (Number(state.meta.user.id)!==Number(snapshot.user.id) ||
+           Number(state.meta.user.company_id)!==Number(snapshot.user.company_id));
+        const hasUnsynced=state.pending.some(x=>!["synced","warning","conflict"].includes(x.state));
+        if (differentSession && hasUnsynced) {
+          state.sessionBlocked = true;
+          state.lastError = "Hay datos offline de otro usuario o compañía; no se sincronizaron.";
+        } else {
+          try {
+            await persistBootstrap(snapshot);
+            await hydrateLocalState();
+          } catch (error) {
+            // Seguir online aun si la caché no acepta escrituras grandes.
+            state.storageError = error.message || String(error);
+            applyBootstrapInMemory(snapshot);
+          }
+        }
+      }
+      render();
+      if (navigator.onLine && !state.sessionBlocked) void syncPending(true);
+    } catch (error) {
+      console.warn("Catastro: almacenamiento local temporalmente inaccesible", error);
+      db = null;
+      state.localReady = false;
+      state.storageError = error.message || String(error);
+      render();
+    } finally {
+      storageOpenPromise = null;
+    }
+  })();
+  return storageOpenPromise;
+}
 async function init() {
-  // La pantalla se muestra en el primer frame. IndexedDB NO es requisito para abrir.
+  // Render inmediato, sin temporizadores ni migraciones que frenen la PWA.
   render();
   window.catastroBootReady?.();
-  // Solicitar los datos a Odoo en paralelo: no esperar al navegador local para conectarse.
-  const initialServerRequest = navigator.onLine
-    ? rpc("/catastro/app/bootstrap").then(data => ({data}), error => ({error}))
-    : null;
   if (window.isSecureContext && "serviceWorker" in navigator) {
     navigator.serviceWorker.register("/catastro/sw.js", { scope: "/catastro/" })
-      .catch((err) => console.warn("Service worker no disponible", err));
+      .catch(err => console.warn("Service worker no disponible", err));
   }
-  try {
-    db = await openDb();
-    await hydrateLocalState();
-  } catch (err) {
-    console.warn("No se pudo acceder al cache offline; usando interfaz en linea", err);
-    db = null;
-    state.storageError = err.message || String(err);
-    // No se destruye la base y tampoco se aceptan cambios sin guardado fiable.
+  // El acceso al dispositivo es opcional para la navegación online, no para
+  // garantizar operaciones offline. No esperar IndexedDB en el arranque.
+  void restoreLocalStorage();
+  if (navigator.onLine) {
+    await refreshFromServer(false);
   }
   state.starting = false;
   render();
-  if (initialServerRequest) {
-    const firstResult = await initialServerRequest;
-    if (firstResult.error) {
-      state.lastError = firstResult.error.message || String(firstResult.error);
-      render();
-    } else {
-      await refreshFromServer(false, firstResult.data);
-    }
-    if (db && !state.storageError) await syncPending(true);
-  }
 }
 
 init().catch((err) => {
