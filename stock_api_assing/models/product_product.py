@@ -23,10 +23,8 @@ class ProductProduct(models.Model):
     def _compute_location_qty(self):
         warehouse_id = self.env.context.get('warehouse_id')
 
-        _logger.info(f"MOSTRANDO CONTEXT >>>>> { warehouse_id }")
-
-        stock_warehouse = self.env["stock.warehouse"].search([("id", "=", warehouse_id)])
-        location_id = stock_warehouse.lot_stock_id.id
+        stock_warehouse = self.env['stock.warehouse'].browse(warehouse_id).exists() if warehouse_id else False
+        location_id = stock_warehouse.lot_stock_id.id if stock_warehouse else False
         for product in self:
             if not location_id:
                 product.location_qty = "⚠ Seleccione ubicación"
