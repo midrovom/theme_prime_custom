@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_maintenance_report_wizard_form_return_destination" model="ir.ui.view">
+        <field name="name">maintenance.report.wizard.form.bodega.devolucion</field>
+        <field name="model">maintenance.report.wizard</field>
+        <field name="inherit_id" ref="maintenance_report.view_maintenance_report_wizard_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='entregado_por_id']" position="after">
+                <field name="report_type" invisible="1"/>
+                <field name="employee_id"
+                       string="Bodega de devolución"
+                       widget="many2one_avatar_employee"
+                       invisible="report_type != 'return'"
+                       required="report_type == 'return'"
+                       options="{'no_create': True, 'no_create_edit': True}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
