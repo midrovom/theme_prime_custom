@@ -227,3 +227,23 @@ button{cursor:pointer}
 
 .stock-diagnostic{display:grid;gap:3px;padding:10px;margin-top:7px;border-radius:10px;border:1px solid #ddd4ed;background:#fff}
 .stock-diagnostic span{font-size:13px}.stock-diagnostic small{opacity:.75}
+
+/* 18.0.1.5.10: ficha estable para productos con nombres largos,
+   independientemente del ancho de pantalla o del perfil de usuario. */
+.quote-line{display:grid;grid-template-columns:76px minmax(0,1fr);grid-template-rows:auto auto;gap:12px;align-items:start;justify-content:stretch;min-width:0;width:100%;padding:17px 0}
+.quote-line>.quote-thumb{grid-column:1;grid-row:1;flex:none;width:70px;height:70px}
+.quote-line-name{grid-column:2;grid-row:1;min-width:0;width:100%;flex:none;overflow:visible}
+.quote-line-name strong{white-space:normal;overflow-wrap:break-word;word-break:normal;hyphens:auto;font-size:14px;line-height:1.45}
+.quote-line-name>span{display:block;overflow-wrap:anywhere;margin-top:5px}
+.quote-line-controls{grid-column:1/-1;grid-row:2;display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-start;align-items:flex-end;width:100%;min-width:0}
+.quote-line-controls label{min-width:0;flex:1 1 165px;max-width:350px}
+.quote-line-controls input{box-sizing:border-box;width:100%;min-width:0}
+.quote-line-controls>.small{flex:1 1 220px;align-self:center;min-width:0}
+.quote-line-controls .quote-remove{flex:0 0 46px;align-self:end}
+.quote-line-payment{display:flex;flex-wrap:wrap;gap:5px 13px;margin:9px 0 0;padding:9px 10px;border:1px solid #e9e4f1;border-radius:10px;background:#fbf9fe;color:#5b5270;font-size:12px;line-height:1.4}
+.quote-line-payment span,.quote-line-payment strong{font-size:12px;overflow-wrap:break-word;word-break:normal}
+.quote-line-payment strong{color:#433266}
+.quote-payment-note{margin:12px 0 8px;font-size:12px;color:#5c477f;font-weight:750;line-height:1.4}
+.quote-total-card strong{word-break:normal}
+@media(max-width:760px){.quote-line{grid-template-columns:64px minmax(0,1fr);gap:9px}.quote-line>.quote-thumb{width:60px;height:60px}.quote-line-name{flex:none;min-width:0}.quote-line-controls{width:100%;justify-content:flex-start}.quote-line-controls label{flex:1 1 125px}.quote-line-controls input{width:100%}}
+@media(max-width:390px){.quote-line-controls label{flex:1 1 100%;max-width:none}.quote-line-payment{flex-direction:column}}

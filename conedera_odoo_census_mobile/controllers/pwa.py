@@ -673,6 +673,9 @@ class ConederaFieldAppController(http.Controller):
                        "uom": line.product_uom.name if line.product_uom else "",
                        "price_unit": line.price_unit, "discount": line.discount,
                        "negotiable_price": (line.negotiable_price if "negotiable_price" in line._fields else None),
+                       "payment_base_price_unit": line.catastro_payment_base_price_unit if line.catastro_payment_surcharge_applied else line.price_unit,
+                       "payment_surcharge_percent": line.catastro_payment_surcharge_percent,
+                       "payment_surcharge_unit_amount": line.catastro_payment_surcharge_unit_amount,
                        "subtotal": line.price_subtotal, "total": line.price_total,
                        "surcharge": bool(line.is_catastro_payment_surcharge),
                        "loyalty_reward": bool("reward_id" in line._fields and line.reward_id),
@@ -721,7 +724,9 @@ class ConederaFieldAppController(http.Controller):
         order = self._quote_get_writable(quote_id)
         if not self._quote_loyalty_enabled():
             raise ValidationError("Instale y configure sale_loyalty para aplicar promociones de Ventas.")
+        order.catastro_restore_base_prices()
         order._update_programs_and_rewards()
+        order.catastro_recompute_surcharge()
         return self._quote_record_payload(order)
 
     @http.route("/catastro/app/quote/loyalty/apply", type="json", auth="user", methods=["POST"])
@@ -729,6 +734,7 @@ class ConederaFieldAppController(http.Controller):
         order = self._quote_get_writable(quote_id)
         if not self._quote_loyalty_enabled():
             raise ValidationError("El módulo sale_loyalty no está instalado.")
+        order.catastro_restore_base_prices()
         order._update_programs_and_rewards()
         candidates = order._get_claimable_rewards()
         chosen = request.env["loyalty.reward"].browse(int(reward_id))
@@ -754,6 +760,7 @@ class ConederaFieldAppController(http.Controller):
         code = (code or "").strip()[:100]
         if not code:
             raise ValidationError("Indique un código de promoción.")
+        order.catastro_restore_base_prices()
         status = order._try_apply_code(code)
         if "error" in status:
             raise ValidationError(status["error"])
@@ -864,9 +871,9 @@ class ConederaFieldAppController(http.Controller):
                 line_vals["negotiable_price"] = negotiated
             order_lines.append((0, 0, line_vals))
         option = self._quote_payment_option(payload.get("payment_option_id"))
-        if (option and option.surcharge_percent and self._quote_loyalty_enabled()
-                and not hasattr(Sale, "_catastro_loyalty_bridge_active")):
-            raise ValidationError("Instale Catastro PWA - Loyalty y recargos separados antes de combinar promociones con recargos.")
+        # El recargo por línea no requiere una línea de servicio ni instalar
+        # el puente antiguo: la PWA calcula Loyalty antes del recargo y,
+        # cuando se actualizan promociones, restaura y recalcula los precios.
         vals = {"partner_id": partner.id, "company_id": request.env.company.id,
                 "user_id": request.env.user.id, "census_originated": not self._quote_is_retail(partner.id),
                 "order_line": order_lines}
@@ -916,8 +923,9 @@ class ConederaFieldAppController(http.Controller):
             matches = order.order_line.filtered(lambda l: not l.display_type and l.product_id.id == pid)
             if len(matches) != 1:
                 raise ValidationError("No se puede verificar negotiable_price: las líneas del producto fueron alteradas por una personalización.")
-            # Nunca se sobrescribe price_unit. El módulo personalizado decide
-            # cómo se aplica negotiable_price a precios, descuentos e impuestos.
+            # negotiable_price es independiente del recargo por forma de pago;
+            # el módulo personalizado calcula la base, la PWA aplica el recargo
+            # al price_unit resultante y conserva su porcentaje en la línea.
             saved_price = matches.negotiable_price
             if saved_price is False or order.currency_id.compare_amounts(saved_price, negotiated):
                 raise ValidationError(

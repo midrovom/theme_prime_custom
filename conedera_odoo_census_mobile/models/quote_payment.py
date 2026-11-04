@@ -13,15 +13,13 @@ class CatastroQuotePaymentOption(models.Model):
     company_id = fields.Many2one('res.company', required=True, default=lambda self: self.env.company)
     surcharge_percent = fields.Float(string='Recargo (%)', default=0, digits=(12, 4), required=True)
     payment_term_id = fields.Many2one('account.payment.term', string='Plazo de pago nativo')
-    surcharge_product_id = fields.Many2one('product.product', string='Servicio de recargo')
+    surcharge_product_id = fields.Many2one('product.product', string='Servicio de recargo anterior (no se usa en nuevas proformas)', help='Campo conservado para compatibilidad con versiones anteriores. El recargo ahora se incorpora al precio de los productos.')
 
     @api.constrains('surcharge_percent', 'surcharge_product_id', 'company_id', 'payment_term_id')
     def _check_option(self):
         for r in self:
             if r.surcharge_percent < 0 or r.surcharge_percent > 100:
                 raise ValidationError('El recargo debe estar entre 0% y 100%.')
-            if r.surcharge_percent and not r.surcharge_product_id:
-                raise ValidationError('Configure un producto de tipo servicio para el recargo.')
             if r.surcharge_product_id:
                 if r.surcharge_product_id.type != 'service' or not r.surcharge_product_id.sale_ok:
                     raise ValidationError('El producto de recargo debe ser un servicio vendible.')
@@ -106,51 +104,81 @@ class SaleOrder(models.Model):
     catastro_payment_option_id = fields.Many2one('catastro.quote.payment.option',
         string='Condición de pago PWA', copy=False, ondelete='restrict')
 
-    def catastro_recompute_surcharge(self):
-        """Recargo explícito en una línea distinta de productos y descuentos.
+    def catastro_restore_base_prices(self):
+        """Restaurar precios previos al recargo para volver a calcular promociones.
 
-        Base: subtotal antes de impuestos ya afectado por promociones de loyalty.
-        No se usa el campo negotiable_price ni se muta price_unit de productos.
+        Solo en cotizaciones en borrador; evita alimentar al motor Loyalty
+        precios que ya incluyen gastos financieros por forma de pago.
         """
         for order in self:
+            if order.state != 'draft':
+                continue
+            for line in order.order_line.filtered('catastro_payment_surcharge_applied'):
+                # Si una personalización modificó el precio desde entonces, no
+                # sobrescribir su valor. Se tratará como nuevo precio base.
+                expected = line.catastro_payment_base_price_unit + line.catastro_payment_surcharge_unit_amount
+                changed = order.currency_id.compare_amounts(line.price_unit, expected) != 0
+                values = {
+                    'catastro_payment_surcharge_applied': False,
+                    'catastro_payment_surcharge_percent': 0.0,
+                    'catastro_payment_surcharge_unit_amount': 0.0,
+                }
+                if not changed:
+                    values['price_unit'] = line.catastro_payment_base_price_unit
+                line.write(values)
+
+    def catastro_recompute_surcharge(self):
+        """Aplicar el recargo *en cada precio unitario*, de forma idempotente.
+
+        La lista de precios, negotiable_price, impuestos y promociones se
+        calculan primero en Odoo. El recargo no forma parte de la negociación,
+        ni genera un producto adicional: cada línea conserva base, porcentaje
+        y monto unitario para auditoría. Se excluyen las recompensas Loyalty.
+        """
+        for order in self:
+            if order.state != 'draft':
+                continue
             option = order.catastro_payment_option_id
-            if order.state != 'draft' or not option:
-                continue
-            if option.company_id != order.company_id:
+            if option and option.company_id != order.company_id:
                 raise ValidationError('La condición de pago pertenece a otra empresa.')
-            fees = order.order_line.filtered('is_catastro_payment_surcharge')
-            base = sum(line.price_subtotal for line in order.order_line
-                       if not line.display_type and not line.is_catastro_payment_surcharge)
-            # Rewards can be negative, but no negative payment surcharge.
-            amount = order.currency_id.round(max(0.0, base) * option.surcharge_percent / 100.0)
-            if not option.surcharge_percent or not amount:
-                fees.unlink()
-                continue
-            product = option.surcharge_product_id
-            if not product or product.type != 'service' or not product.sale_ok:
-                raise ValidationError('Configure un servicio válido de recargo para %s.' % option.name)
-            taxes = order.fiscal_position_id.map_tax(product.taxes_id.filtered(
-                lambda tax: tax.company_id == order.company_id))
-            vals = {
-                'order_id': order.id,
-                'name': 'Recargo por forma de pago: %s (%s%%)' % (option.name, option.surcharge_percent),
-                'product_id': product.id,
-                'product_uom_qty': 1.0,
-                'product_uom': product.uom_id.id,
-                'price_unit': amount,
-                'discount': 0,
-                'tax_id': [(6, 0, taxes.ids)],
-                'is_catastro_payment_surcharge': True,
-            }
-            if fees:
-                fees[0].write(vals)
-                (fees - fees[0]).unlink()
-            else:
-                self.env['sale.order.line'].create(vals)
+            percent = option.surcharge_percent if option else 0.0
+            # Eliminar exclusivamente las antiguas líneas de recargo creadas
+            # por versiones < 18.0.1.5.10; no tocar productos ni recompensas.
+            old_fees = order.order_line.filtered('is_catastro_payment_surcharge')
+            if old_fees:
+                old_fees.unlink()
+            for line in order.order_line:
+                if line.display_type or not line.product_id:
+                    continue
+                if ('reward_id' in line._fields and line.reward_id) or (
+                    'is_reward_line' in line._fields and line.is_reward_line
+                ):
+                    # Los premios/cupones son descuentos, nunca se recargan.
+                    continue
+                if line.catastro_payment_surcharge_applied:
+                    expected = (line.catastro_payment_base_price_unit +
+                                line.catastro_payment_surcharge_unit_amount)
+                    if order.currency_id.compare_amounts(expected, line.price_unit) == 0:
+                        base = line.catastro_payment_base_price_unit
+                    else:
+                        # El formulario nativo / un módulo externo cambió el
+                        # precio después del recargo: usarlo como nueva base.
+                        base = line.price_unit
+                else:
+                    base = line.price_unit
+                unit_fee = order.currency_id.round(base * percent / 100.0)
+                final = base + unit_fee
+                line.write({
+                    'price_unit': final,
+                    'catastro_payment_base_price_unit': base,
+                    'catastro_payment_surcharge_percent': percent,
+                    'catastro_payment_surcharge_unit_amount': unit_fee,
+                    'catastro_payment_surcharge_applied': bool(percent),
+                })
 
     def action_confirm(self):
-        # El importe queda actualizado frente a modificaciones en el formulario
-        # estándar, sin sustituir los controles de aprobación de Ventas.
+        # Actualizar precios y porcentajes al confirmar desde Ventas.
+        # No hay línea adicional de servicio: el recargo figura en cada línea.
         self.filtered(lambda order: order.state == 'draft' and order.catastro_payment_option_id).catastro_recompute_surcharge()
         return super().action_confirm()
 
@@ -158,5 +186,15 @@ class SaleOrder(models.Model):
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
-    is_catastro_payment_surcharge = fields.Boolean(string='Recargo por condición de pago',
+    # Se conserva el indicador histórico por compatibilidad con borradores ya
+    # existentes. Las nuevas proformas no crean líneas de recargo adicionales.
+    is_catastro_payment_surcharge = fields.Boolean(string='Recargo por condición de pago anterior',
         copy=False, readonly=True, default=False)
+    catastro_payment_base_price_unit = fields.Float(
+        string='Precio unitario antes del recargo', digits='Product Price', readonly=True, copy=False)
+    catastro_payment_surcharge_percent = fields.Float(
+        string='Recargo de pago (%)', digits=(12, 4), readonly=True, copy=False)
+    catastro_payment_surcharge_unit_amount = fields.Float(
+        string='Recargo unitario aplicado', digits='Product Price', readonly=True, copy=False)
+    catastro_payment_surcharge_applied = fields.Boolean(
+        string='Recargo aplicado al precio', readonly=True, copy=False, default=False)

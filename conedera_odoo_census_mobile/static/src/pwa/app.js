@@ -524,10 +524,21 @@ function renderQuoteResults() {
 function quoteLinePriceMarkup(line) {
   return `<div class="quote-price-info" data-quote-price-info="${line.id}"><span>${quoteListPrice(line)} <small>para ${esc(line.qty)} ${esc(line.uom||'')} · lista ${esc(line.pricelist||'sin confirmar')}</small></span><span>${quoteStock(line)}</span></div>`;
 }
+function selectedQuotePaymentOption(){
+  return (state.meta?.capabilities?.quote_payment_options||[]).find(x=>Number(x.id)===Number(state.quotePaymentOptionId))||null;
+}
+function quoteLineSurchargeMarkup(line){
+  const option=selectedQuotePaymentOption();
+  const pct=Number(option?.surcharge_percent||0);
+  const price=line.negotiable_price===null||line.negotiable_price===undefined||String(line.negotiable_price).trim()==='' ? Number(line.price) : Number(line.negotiable_price);
+  if(!Number.isFinite(price)) return '<div class="quote-line-payment">Precio pendiente de Odoo</div>';
+  const unitFee=price*pct/100;
+  return `<div class="quote-line-payment"><span>Base: ${esc(line.currency||'')} ${money(price)}</span><span>Recargo ${esc(pct)}%: +${esc(line.currency||'')} ${money(unitFee)}</span><strong>Precio estimado con pago: ${esc(line.currency||'')} ${money(price+unitFee)}</strong></div>`;
+}
 function quoteLinesMarkup() {
   return state.quoteLines.length?state.quoteLines.map(line=>`<div class="quote-line" data-quote-line="${line.id}">
     <button class="quote-thumb" type="button" data-action="quote-image" data-id="${line.id}" title="Ampliar foto" ${line.has_image?'':'disabled'}>${quoteImage(line)}</button>
-    <div class="quote-line-name"><strong>${esc(line.name)}</strong><span>${esc(line.code||line.uom||'')}</span>${quoteLinePriceMarkup(line)}</div>
+    <div class="quote-line-name"><strong>${esc(line.name)}</strong><span>${esc(line.code||line.uom||'')}</span>${quoteLinePriceMarkup(line)}${quoteLineSurchargeMarkup(line)}</div>
     <div class="quote-line-controls"><label>Cantidad<input type="number" inputmode="decimal" min="0.001" max="100000" step="any" value="${esc(line.qty)}" data-quote-qty="${line.id}" required/></label>
     ${state.meta?.capabilities?.quote_can_negotiate?`<label>Precio negociado (negotiable_price) · ${esc(line.currency||'moneda de lista')}<input type="number" data-quote-negotiable="${line.id}" inputmode="decimal" min="0" max="1000000000" step="any" placeholder="Sin negociar" value="${esc(line.negotiable_price??'')}" /></label>`:'<span class="small">Precio según lista de Odoo · negociación no autorizada para este perfil</span>'}
     <button type="button" class="icon-btn quote-remove" title="Quitar producto" aria-label="Quitar ${esc(line.name)}" data-action="quote-remove-product" data-id="${line.id}">×</button></div></div>`).join(''):
@@ -556,13 +567,16 @@ function quoteTotalsMarkup(){
   const fmt=n=>t.ready?`${esc(t.currency)} ${money(n)}`:'Pendiente de calcular';
   const warning=!state.online?'Sin conexión: los valores son orientativos y stock/precios se validarán al sincronizar.':
     !t.current?'Actualizando precios según las cantidades seleccionadas…':'Valores referenciales sin impuestos; Odoo calculará el importe final de la proforma.';
-  const option=(state.meta?.capabilities?.quote_payment_options||[]).find(x=>Number(x.id)===Number(state.quotePaymentOptionId));
-  const estimatedFee=t.ready&&option ? Math.max(0,t.negotiated)*Number(option.surcharge_percent||0)/100 : null;
+  const option=selectedQuotePaymentOption();
+  const pct=Number(option?.surcharge_percent||0);
+  const estimatedFee=t.ready ? Math.max(0,t.negotiated)*pct/100 : null;
   return `<div class="quote-totals-grid">
     <div class="quote-total-card"><span>Total a precio de lista</span><strong data-total-list>${fmt(t.list)}</strong></div>
     <div class="quote-total-card negotiated"><span>Total a precio negociado</span><strong data-total-negotiated>${fmt(t.negotiated)}</strong></div>
-  </div>${option?`<div class="status-banner">Recargo estimado por ${esc(option.name)}: ${t.ready?`${esc(t.currency)} ${money(estimatedFee)}`:'Pendiente'} (${esc(option.surcharge_percent)}%). No incluye impuestos ni ajustes Loyalty; Odoo calculará el recargo final sobre el subtotal posterior a promociones.</div>`:''}
-  <div class="small">${warning} En líneas sin precio negociado se utiliza el precio de lista.</div>`;
+    <div class="quote-total-card"><span>Recargo estimado (${esc(pct)}%)</span><strong>${fmt(estimatedFee)}</strong></div>
+    <div class="quote-total-card negotiated"><span>Total con forma de pago</span><strong>${fmt(t.negotiated+estimatedFee)}</strong></div>
+  </div>${option?`<div class="quote-payment-note">${esc(option.name)} · ${esc(pct)}% aplicado a cada precio unitario; el porcentaje y la base quedarán registrados en Odoo.</div>`:''}
+  <div class="small">${warning} La estimación no incluye las promociones automáticas ni los impuestos; al guardar, prevalece el total calculado por Odoo.</div>`;
 }
 function updateQuoteTotals(){
   const el=document.querySelector('#quote-totals');
@@ -629,8 +643,15 @@ function renderQuote() {
       <div class="quote-current-customer"><div><span>${state.quoteRetail?"Venta de tienda":"Catastro seleccionado"}</span><strong>${esc(partnerLabel(partner))}</strong><small>${esc(partner.vat||"Sin RUC/cédula")}</small></div><button type="button" class="btn btn-outline" data-action="back-to-partner">${state.quoteRetail?'Volver a tienda':'Volver al catastro'}</button></div>
       ${!state.quoteRetail?`<div class="field"><label>Vincular con visita (opcional)</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}" ${Number(state.quoteVisitId)===v.id?"selected":""}>${esc(v.name||"Visita #"+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join("")}</select></div>`:''}
     </section>
-    <section class="quote-mode-banner"><div><strong>Proforma rápida desde PWA</strong><p>Las promociones se calculan con el motor Loyalty de Odoo. Los recargos por condiciones de pago se añaden en una línea independiente, posterior a los descuentos.</p></div><a class="btn btn-outline" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener" aria-label="Abrir cotizaciones completas en Odoo">Cotización completa en Odoo</a></section>
-    <section class="form-card"><h2>2. Selección rápida de productos</h2>
+    <section class="form-card"><h2>2. Forma de pago y promociones</h2>
+      <div class="field"><label>Condición de pago</label><select id="quote-payment-option"><option value="">Precio sin recargo · elija un método</option>${(cap.quote_payment_options||[]).map(opt=>`<option value="${opt.id}" ${Number(state.quotePaymentOptionId)===Number(opt.id)?'selected':''}>${esc(opt.name)}${opt.surcharge_percent?` · recargo ${esc(opt.surcharge_percent)}%`:''}</option>`).join('')}</select></div>
+      ${(cap.quote_payment_options||[]).length?'':'<div class="status-banner warn">No hay formas de pago configuradas para esta empresa. Un administrador debe crearlas en Catastro → Configuración → Condiciones de pago PWA.</div>'}
+      <div class="small">El recargo se aplicará al precio de cada producto y se guardará el porcentaje en cada línea, separado de los descuentos Loyalty.</div>
+      <div class="field"><label>Código de promoción / cupón Loyalty</label><input id="quote-loyalty-code" value="${esc(state.quoteLoyaltyCode)}" maxlength="100" placeholder="Opcional · código autorizado en Odoo" ${cap.quote_loyalty_supported?'':'disabled'}/></div>
+      ${cap.quote_loyalty_supported?'<div class="small">Después de guardar, la ficha mostrará las recompensas disponibles para aplicar. Odoo valida las reglas, vigencia, cantidades, cliente y acumulación.</div>':'<div class="status-banner warn">Las promociones requieren instalar y activar sale_loyalty en Ventas.</div>'}
+    </section>
+    <section class="quote-mode-banner"><div><strong>Proforma rápida desde PWA</strong><p>Las promociones se calculan con Loyalty de Odoo. El recargo de pago se incorpora al precio de cada producto y se registra por línea.</p></div><a class="btn btn-outline" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener" aria-label="Abrir cotizaciones completas en Odoo">Cotización completa en Odoo</a></section>
+    <section class="form-card"><h2>3. Selección rápida de productos</h2>
       ${cap.quote_can_negotiate?`<div class="field"><label>Lista de precios de Odoo</label><select id="quote-pricelist"><option value="">Lista asignada al cliente (predeterminada)</option>${(cap.quote_pricelists||[]).map(pl=>`<option value="${pl.id}" ${Number(state.quotePricelistId)===pl.id?'selected':''}>${esc(pl.name)}</option>`).join('')}</select></div>`:'<div class="small">Se utilizará la lista de precios asignada al cliente por Odoo (sin edición de precios).</div>'}
       <div class="field"><label>Bodega obligatoria · stock y validación por producto ${cap.quote_stock_supported?'':'(inventario no disponible)'}</label>
       <select id="quote-warehouse" required><option value="">Seleccione una bodega</option>${(cap.quote_warehouses||[]).map(w=>`<option value="${w.id}" ${Number(state.quoteWarehouseId)===w.id?'selected':''}>${esc(w.name)}</option>`).join('')}</select></div>
@@ -640,14 +661,10 @@ function renderQuote() {
       <div id="quote-stock-audit" class="small" aria-live="polite"></div>
       <div class="quote-lines-head"><strong>Productos agregados (${state.quoteLines.length})</strong></div><div id="quote-lines">${quoteLinesMarkup()}</div>
       <div id="quote-totals" class="quote-totals" aria-live="polite">${quoteTotalsMarkup()}</div>
-      <div class="small">El precio de lista es una referencia según la lista asignada al cliente, la cantidad y moneda de Odoo. El precio negociado utiliza el campo existente negotiable_price de la línea en Odoo; su personalización determina el precio final y los descuentos. No se sobrescribe el precio unitario desde la PWA. Solo se muestran productos con stock positivo en la bodega indicada. Al guardar, Odoo comprueba nuevamente producto, bodega y cantidad. La cotización no reserva stock.</div>
+      <div class="small">El precio de lista es una referencia según la lista asignada al cliente, la cantidad y moneda de Odoo. El precio negociado utiliza el campo existente negotiable_price de la línea en Odoo; su personalización determina el precio final y los descuentos. El recargo de pago se aplica en Odoo sobre el precio unitario calculado, conservando la base y el porcentaje en cada línea. Solo se muestran productos con stock positivo en la bodega indicada. Al guardar, Odoo comprueba nuevamente producto, bodega y cantidad. La cotización no reserva stock.</div>
       ${!state.online?'<div class="status-banner warn">Sin conexión: fotos y precios pueden no estar actualizados. Odoo recalculará al sincronizar.</div>':''}
     </section>
-    <dialog id="quote-image-dialog" class="quote-image-dialog"><div class="quote-zoom-bar"><strong id="quote-zoom-name">Producto</strong><div class="quote-zoom-buttons"><button class="btn btn-outline" type="button" data-action="quote-zoom-out" aria-label="Reducir fotografía">−</button><span id="quote-zoom-level">100%</span><button class="btn btn-outline" type="button" data-action="quote-zoom-in" aria-label="Ampliar fotografía">＋</button><button class="btn btn-outline" type="button" data-action="quote-close-image">Cerrar ✕</button></div></div><div class="quote-zoom-body"><img id="quote-zoom-picture" alt="Foto del producto ampliada"/></div><small>Puede ampliar la foto con los controles de zoom del navegador o del dispositivo.</small></dialog><section class="form-card"><h2>3. Condiciones de pago y promociones</h2>
-      <div class="field"><label>Condición de pago</label><select id="quote-payment-option"><option value="">Sin condición adicional</option>${(cap.quote_payment_options||[]).map(opt=>`<option value="${opt.id}" ${Number(state.quotePaymentOptionId)===Number(opt.id)?'selected':''}>${esc(opt.name)}${opt.surcharge_percent?` · recargo ${esc(opt.surcharge_percent)}%`:''}</option>`).join('')}</select></div>
-      <div class="field"><label>Código de promoción / cupón Loyalty</label><input id="quote-loyalty-code" value="${esc(state.quoteLoyaltyCode)}" maxlength="100" placeholder="Opcional · código autorizado en Odoo" ${cap.quote_loyalty_supported?'':'disabled'}/></div>
-      ${cap.quote_loyalty_supported?'<div class="small">Después de guardar, la ficha mostrará las recompensas disponibles para aplicar. Odoo valida las reglas, vigencia, cantidades, cliente y acumulación.</div>':'<div class="status-banner warn">Las promociones requieren instalar y activar sale_loyalty en Ventas.</div>'}
-    </section><section class="form-card"><h2>4. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Orden de compra o referencia externa"/></div>
+    <dialog id="quote-image-dialog" class="quote-image-dialog"><div class="quote-zoom-bar"><strong id="quote-zoom-name">Producto</strong><div class="quote-zoom-buttons"><button class="btn btn-outline" type="button" data-action="quote-zoom-out" aria-label="Reducir fotografía">−</button><span id="quote-zoom-level">100%</span><button class="btn btn-outline" type="button" data-action="quote-zoom-in" aria-label="Ampliar fotografía">＋</button><button class="btn btn-outline" type="button" data-action="quote-close-image">Cerrar ✕</button></div></div><div class="quote-zoom-body"><img id="quote-zoom-picture" alt="Foto del producto ampliada"/></div><small>Puede ampliar la foto con los controles de zoom del navegador o del dispositivo.</small></dialog><section class="form-card"><h2>4. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Orden de compra o referencia externa"/></div>
       <div class="status-banner warn">La cotización se guardará como <b>borrador</b>. Revise los importes definitivos antes de enviarla o confirmarla.</div></section>
       <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-action="back-to-partner">${state.quoteRetail?'Volver a tienda':'Volver al catastro'}</button><button class="btn btn-primary" type="submit" ${!cap.quote_create?"disabled":""}>▤ Guardar cotización${state.online?"":" offline"}</button></div>
     </form><aside class="quote-side"><section class="card"><div class="card-title">Cotizaciones del cliente</div><div class="card-sub">Historial visible según permisos de Odoo</div>
@@ -658,9 +675,9 @@ function renderQuoteDetail() {
   const q=state.quoteDetail;
   if (!q) {state.page="quote";return renderQuote();}
   const body=`<div class="quote-layout"><section class="form-card"><div class="row space"><div><div class="eyebrow">Cotización</div><h2>${esc(q.name)}</h2><div class="card-sub">${esc(q.partner_name)} · ${esc(q.company_name)} · ${esc(dateText(q.date_order))}</div></div><span class="chip">${esc(q.state)}</span></div>
-    <div class="section-title">Detalle de productos</div>${q.lines.map(l=>`<div class="quote-detail-line"><div><strong>${esc(l.product_name||l.name)}</strong><div class="small">${esc(l.qty)} ${esc(l.uom)} × ${esc(q.currency)} ${money(l.price_unit)}${l.discount?` · descuento ${esc(l.discount)}%`:""}${l.negotiable_price!==null&&l.negotiable_price!==undefined?` · negociable: ${esc(q.currency)} ${money(l.negotiable_price)}`:''}</div></div><strong>${esc(q.currency)} ${money(l.subtotal)}</strong></div>`).join("")}
+    <div class="section-title">Detalle de productos</div>${q.lines.map(l=>`<div class="quote-detail-line"><div><strong>${esc(l.product_name||l.name)}</strong><div class="small">${esc(l.qty)} ${esc(l.uom)} × ${esc(q.currency)} ${money(l.price_unit)}${l.discount?` · descuento ${esc(l.discount)}%`:""}${l.negotiable_price!==null&&l.negotiable_price!==undefined?` · negociable: ${esc(q.currency)} ${money(l.negotiable_price)}`:''}</div>${l.payment_surcharge_percent?`<div class="quote-line-payment"><span>Precio base: ${esc(q.currency)} ${money(l.payment_base_price_unit)}</span><span>Recargo de pago ${esc(l.payment_surcharge_percent)}%: +${esc(q.currency)} ${money(l.payment_surcharge_unit_amount)} por unidad</span><strong>Precio unitario con recargo: ${esc(q.currency)} ${money(l.price_unit)}</strong></div>`:''}</div><strong>${esc(q.currency)} ${money(l.subtotal)}</strong></div>`).join("")}
     <div class="quote-total"><div><span>Subtotal</span><strong>${esc(q.currency)} ${money(q.amount_untaxed)}</strong></div><div><span>Impuestos</span><strong>${esc(q.currency)} ${money(q.amount_tax)}</strong></div><div class="grand"><span>Total</span><strong>${esc(q.currency)} ${money(q.amount_total)}</strong></div></div>
-    <div class="status-banner">Condición de pago: ${esc(q.payment_option||'Estándar')} ${q.surcharge_percent?`· recargo ${esc(q.surcharge_percent)}% en línea aparte`:''}. Promociones y totales suministrados por Odoo.</div>
+    <div class="status-banner">Condición de pago: ${esc(q.payment_option||'Estándar')} ${q.surcharge_percent?`· recargo ${esc(q.surcharge_percent)}% incorporado al precio de cada producto`:''}. Promociones y totales suministrados por Odoo.</div>
     ${q.state==='draft'&&q.loyalty_enabled?`<div class="loyalty-tools"><h3>Promociones y recompensas Loyalty</h3><div class="field"><label>Código promocional</label><input id="quote-detail-coupon" placeholder="Cupón o código descuento"/></div><div class="row"><button type="button" class="btn btn-outline" data-action="quote-apply-code">Aplicar código</button><button type="button" class="btn btn-outline" data-action="quote-update-rewards">Consultar recompensas</button></div>${(q.loyalty_rewards||[]).length?`<div class="quote-rewards">${q.loyalty_rewards.map(r=>`<div class="quote-reward"><strong>${esc(r.name)}</strong>${r.multi_product?`<select data-loyalty-product="${r.id}">${(r.products||[]).map(pr=>`<option value="${pr.id}">${esc(pr.name)}</option>`).join('')}</select>`:''}<button type="button" class="btn btn-secondary" data-action="quote-apply-reward" data-id="${r.id}">Aplicar recompensa</button></div>`).join('')}</div>`:'<p class="small">No hay recompensas reclamables en este momento; los descuentos automáticos se reflejan en el detalle del pedido.</p>'}</div>`:''}
     <div class="action-grid"><button class="btn btn-secondary" data-action="back-quote">← Cotizaciones</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
     <aside class="quote-side"><section class="card"><div class="card-title">Registro</div><div class="card-sub">Referencia: ${esc(q.client_order_ref||"—")}<br>Visita: ${q.visit_id?"#"+Number(q.visit_id):"No asociada"}<br>Empresa: ${esc(q.company_name)}</div></section></aside></div>`;
@@ -1152,7 +1169,7 @@ $app.addEventListener("change", (event) => {
     state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quoteSearch="";renderQuote();
   }
   if(event.target?.id==='quote-payment-option') {
-    state.quotePaymentOptionId=Number(event.target.value)||null;updateQuoteTotals();
+    state.quotePaymentOptionId=Number(event.target.value)||null;refreshQuoteLineMarkup();
   }
   if (event.target?.matches('#quote-form [name="visit_id"]')) {
     state.quoteVisitId=Number(event.target.value)||null;
