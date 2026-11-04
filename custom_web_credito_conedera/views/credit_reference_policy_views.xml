@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_conedera_credit_reference_policy_list" model="ir.ui.view">
+        <field name="name">conedera.credit.reference.policy.list</field>
+        <field name="model">conedera.credit.reference.policy</field>
+        <field name="arch" type="xml"><list string="Mínimos de referencias">
+            <field name="company_id"/>
+            <field name="commercial_minimum"/>
+            <field name="personal_minimum"/>
+            <field name="bank_minimum"/>
+        </list></field>
+    </record>
+    <record id="view_conedera_credit_reference_policy_form" model="ir.ui.view">
+        <field name="name">conedera.credit.reference.policy.form</field>
+        <field name="model">conedera.credit.reference.policy</field>
+        <field name="arch" type="xml"><form string="Cantidad mínima de referencias"><sheet>
+            <group><field name="company_id" options="{'no_create': True}"/>
+                <field name="commercial_minimum"/>
+                <field name="personal_minimum"/>
+                <field name="bank_minimum"/>
+            </group><div class="text-muted">El portal utilizará los mínimos de la empresa asociada a su sitio web. Sin una configuración, el mínimo será uno por categoría. Máximo 30.</div>
+        </sheet></form></field>
+    </record>
+    <record id="action_conedera_credit_reference_policy" model="ir.actions.act_window">
+        <field name="name">Mínimos de referencias</field>
+        <field name="res_model">conedera.credit.reference.policy</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem id="menu_conedera_credit_reference_policy" name="Mínimos de referencias"
+        parent="menu_conedera_credit_configuration" sequence="80"
+        action="action_conedera_credit_reference_policy"
+        groups="custom_web_credito_conedera.group_credit_administrator"/>
+</odoo>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_res_partner_conedera_credit_form" model="ir.ui.view">
+        <field name="name">res.partner.form.conedera.credit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_conedera_credit_applications"
+                        type="object" class="oe_stat_button" icon="fa-file-text-o"
+                        groups="custom_web_credito_conedera.group_credit_manager,custom_web_credito_conedera.group_credit_administrator">
+                    <field name="conedera_credit_application_count" widget="statinfo"
+                           string="Solicitudes de crédito"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

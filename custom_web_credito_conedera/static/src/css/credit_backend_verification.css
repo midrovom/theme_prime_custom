@@ -1,0 +1,21 @@
+/* Pantalla interna de verificación de solicitudes de crédito (Odoo 18). */
+.o_credit_verification_page .o_credit_verification_section {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-bottom: 1.25rem;
+}
+.o_credit_verification_page .o_credit_verification_section .o_td_label,
+.o_credit_verification_page .o_credit_verification_section .o_form_label {
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+.o_credit_verification_page .o_credit_verification_section .o_field_widget {
+    max-width: 100%;
+    min-width: 0;
+}
+@media (max-width: 767.98px) {
+    .o_credit_verification_page .o_credit_verification_section .o_td_label {
+        min-width: 0;
+    }
+}

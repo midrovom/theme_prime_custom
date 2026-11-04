@@ -1,0 +1,195 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<odoo>
+  <data noupdate="1">
+<record id="credit_applicant_type_natural" model="conedera.credit.applicant.type">
+<field name="name">Persona natural</field>
+<field name="code">natural</field>
+<field name="active" eval="True"/>
+</record>
+<record id="credit_requirement_natural_application_signed" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_natural"/>
+<field name="name">Solicitud de crédito preparada y firmada por el solicitante</field>
+<field name="sequence">10</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">application_signed</field>
+<field name="active" eval="True"/></record>
+<record id="credit_requirement_natural_ruc_updated" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_natural"/>
+<field name="name">Copia del ruc actualizado.</field>
+<field name="sequence">20</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">ruc_updated</field>
+<field name="active" eval="True"/></record>
+<record id="credit_requirement_natural_id_client" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_natural"/>
+<field name="name">Copia a color de la cédula de ciudadanía del cliente y cónyuge.</field>
+<field name="sequence">30</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">id_client</field>
+<field name="active" eval="True"/></record>
+<record id="credit_requirement_natural_id_spouse" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_natural"/>
+<field name="name">Cédula de ciudadanía a color del cónyuge</field>
+<field name="sequence">40</field>
+<field name="required" eval="False"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="True"/>
+<field name="legacy_field">id_spouse</field>
+<field name="active" eval="False"/></record>
+<record id="credit_requirement_natural_voting_certificate" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_natural"/>
+<field name="name">Copia a color del certificado de votación vigente</field>
+<field name="sequence">40</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">voting_certificate</field>
+<field name="active" eval="True"/></record>
+<record id="credit_requirement_natural_utility_business" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_natural"/>
+<field name="name">Planilla de un servicio básico (luz, agua, teléfono, internet) del local y del lugar de residencia.</field>
+<field name="sequence">50</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">utility_business</field>
+<field name="description"></field><field name="active" eval="True"/></record>
+<record id="credit_requirement_natural_utility_residence" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_natural"/>
+<field name="name">Planilla de servicio básico del lugar de residencia</field>
+<field name="sequence">70</field>
+<field name="required" eval="False"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">utility_residence</field>
+<field name="description">Adjunte una planilla reciente de luz, agua, teléfono o internet.</field><field name="active" eval="False"/></record>
+<record id="credit_requirement_natural_local_photo_inside" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_natural"/>
+<field name="name">Foto del local (parte interna y externa)</field>
+<field name="sequence">60</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">local_photo_inside</field>
+<field name="description"></field><field name="active" eval="True"/></record>
+<record id="credit_requirement_natural_local_photo_outside" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_natural"/>
+<field name="name">Foto externa del local</field>
+<field name="sequence">90</field>
+<field name="required" eval="False"/>
+<field name="image_only" eval="True"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">local_photo_outside</field>
+<field name="description">La imagen debe mostrar la fachada o parte exterior del establecimiento.</field><field name="active" eval="False"/></record>
+<record id="credit_requirement_natural_applicant_signing_photo" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_natural"/>
+<field name="name">Foto del solicitante firmando la solicitud de crédito, que se refleje el rostro con claridad.</field>
+<field name="sequence">70</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="True"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">applicant_signing_photo</field>
+<field name="description"></field><field name="active" eval="True"/></record>
+<record id="credit_applicant_type_juridical" model="conedera.credit.applicant.type">
+<field name="name">Persona jurídica</field>
+<field name="code">juridical</field>
+<field name="active" eval="True"/>
+</record>
+<record id="credit_requirement_juridical_application_signed" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_juridical"/>
+<field name="name">Solicitud de crédito preparada y firmada por el representante legal</field>
+<field name="sequence">10</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">application_signed</field>
+<field name="active" eval="True"/></record>
+<record id="credit_requirement_juridical_ruc_updated" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_juridical"/>
+<field name="name">Copia del ruc actualizado.</field>
+<field name="sequence">20</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">ruc_updated</field>
+<field name="active" eval="True"/></record>
+<record id="credit_requirement_juridical_id_legal_representative" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_juridical"/>
+<field name="name">Copia a color de la cédula de ciudadanía del representante legal.</field>
+<field name="sequence">30</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">id_legal_representative</field>
+<field name="active" eval="True"/></record>
+<record id="credit_requirement_juridical_voting_legal_representative" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_juridical"/>
+<field name="name">Copia a color del certificado de votación vigente del representante legal.</field>
+<field name="sequence">40</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">voting_legal_representative</field>
+<field name="active" eval="True"/></record>
+<record id="credit_requirement_juridical_utility_business" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_juridical"/>
+<field name="name">Planilla de un servicio básico (luz, agua, teléfono, internet) del local y del lugar de residencia.</field>
+<field name="sequence">50</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">utility_business</field>
+<field name="description"></field><field name="active" eval="True"/></record>
+<record id="credit_requirement_juridical_utility_residence" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_juridical"/>
+<field name="name">Planilla de servicio básico del lugar de residencia</field>
+<field name="sequence">60</field>
+<field name="required" eval="False"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">utility_residence</field>
+<field name="description">Adjunte una planilla reciente de luz, agua, teléfono o internet.</field><field name="active" eval="False"/></record>
+<record id="credit_requirement_juridical_legal_appointment" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_juridical"/>
+<field name="name">Nombramiento del representante legal</field>
+<field name="sequence">60</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">legal_appointment</field>
+<field name="active" eval="True"/></record>
+<record id="credit_requirement_juridical_local_photo_inside" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_juridical"/>
+<field name="name">Foto del local (parte interna y externa)</field>
+<field name="sequence">70</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="False"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">local_photo_inside</field>
+<field name="description"></field><field name="active" eval="True"/></record>
+<record id="credit_requirement_juridical_local_photo_outside" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_juridical"/>
+<field name="name">Foto externa del local</field>
+<field name="sequence">90</field>
+<field name="required" eval="False"/>
+<field name="image_only" eval="True"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">local_photo_outside</field>
+<field name="description">La imagen debe mostrar la fachada o parte exterior del establecimiento.</field><field name="active" eval="False"/></record>
+<record id="credit_requirement_juridical_applicant_signing_photo" model="conedera.credit.document.requirement">
+<field name="applicant_type_id" ref="credit_applicant_type_juridical"/>
+<field name="name">Foto del solicitante firmando la solicitud de crédito, que se refleje el rostro con claridad.</field>
+<field name="sequence">80</field>
+<field name="required" eval="True"/>
+<field name="image_only" eval="True"/>
+<field name="only_if_spouse" eval="False"/>
+<field name="legacy_field">applicant_signing_photo</field>
+<field name="description"></field><field name="active" eval="True"/></record>
+</data>
+</odoo>

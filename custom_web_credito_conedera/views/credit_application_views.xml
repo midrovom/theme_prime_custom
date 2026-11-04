@@ -1,0 +1,293 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<odoo>
+    <record id="view_conedera_credit_application_search" model="ir.ui.view">
+        <field name="name">conedera.credit.application.search</field><field name="model">conedera.credit.application</field>
+        <field name="arch" type="xml"><search string="Buscar solicitudes de crédito"><field name="name"/><field name="applicant_name"/><field name="identification"/><field name="business_name"/><field name="business_ruc"/><field name="applicant_type_id"/><field name="company_id"/><field name="stage_id"/><filter string="Documentos habilitados" name="docs_unlocked" domain="['|',('stage_id.is_approved','=',True),('stage_id.is_documents_received','=',True)]"/><group expand="0" string="Agrupar por"><filter string="Empresa" name="group_company" context="{'group_by':'company_id'}"/><filter string="Etapa" name="group_stage" context="{'group_by':'stage_id'}"/><filter string="Tipo de solicitante" name="group_person" context="{'group_by':'applicant_type_id'}"/><filter string="Fecha de solicitud" name="group_date" context="{'group_by':'application_date:month'}"/></group></search></field>
+    </record>
+    <record id="view_conedera_credit_application_list" model="ir.ui.view">
+        <field name="name">conedera.credit.application.list</field><field name="model">conedera.credit.application</field>
+        <field name="arch" type="xml"><list string="Solicitudes de crédito" default_order="create_date desc"><field name="name"/><field name="application_date"/><field name="company_id" optional="show"/><field name="applicant_name"/><field name="identification"/><field name="business_name"/><field name="applicant_type_id"/><field name="stage_id"/><field name="verification_status" optional="show"/><field name="document_access_allowed" optional="show"/><field name="document_complete" optional="show"/><field name="portal_user_id" optional="hide"/></list></field>
+    </record>
+    <record id="view_conedera_credit_application_kanban" model="ir.ui.view">
+        <field name="name">conedera.credit.application.kanban</field><field name="model">conedera.credit.application</field>
+        <field name="arch" type="xml"><kanban default_group_by="stage_id" class="o_kanban_small_column" quick_create="false" records_draggable="true"><field name="name"/><field name="applicant_name"/><field name="business_name"/><field name="applicant_type_id"/><field name="identification_type"/><field name="identification"/><field name="application_date"/><field name="company_id"/><field name="stage_id"/><field name="document_access_allowed"/><field name="document_complete"/><templates><t t-name="card"><div class="oe_kanban_global_click o_kanban_record"><div class="d-flex justify-content-between align-items-start"><strong><field name="name"/></strong><field name="applicant_type_id"/></div><div class="mt-2 fw-bold"><field name="business_name"/></div><div class="text-muted"><field name="applicant_name"/></div><div class="small mt-2">Identificación: <field name="identification"/></div><div class="small">Fecha: <field name="application_date"/></div><div class="mt-2"><field name="document_access_allowed" widget="boolean"/> <span class="text-muted">Carga documental habilitada</span></div><div t-if="record.document_complete.raw_value" class="mt-2"><span class="badge text-bg-success">Documentación completa</span></div><div t-else="" class="mt-2"><span class="badge text-bg-secondary">Documentación pendiente</span></div></div></t></templates></kanban></field>
+    </record>
+    <record id="view_conedera_credit_application_form" model="ir.ui.view">
+        <field name="name">conedera.credit.application.form</field><field name="model">conedera.credit.application</field>
+        <field name="arch" type="xml"><form string="Solicitud de crédito">
+            <header><field name="credit_verification_final_required" invisible="1"/><button name="action_print_credit_application" type="object" string="Descargar PDF" icon="fa-file-pdf-o" class="btn-secondary" groups="custom_web_credito_conedera.group_credit_manager,custom_web_credito_conedera.group_credit_administrator"/><field name="document_complete" invisible="1" readonly="1"/><field name="document_access_allowed" invisible="1" readonly="1"/><field name="credit_access_button_visible" invisible="1" readonly="1"/><button name="action_open_portal_update_wizard" type="object" string="Habilitar permiso del portal" class="btn-primary" groups="custom_web_credito_conedera.group_credit_portal_update_manager,custom_web_credito_conedera.group_credit_administrator" invisible="not credit_access_button_visible"/><field name="stage_id" widget="statusbar" options="{'clickable': 1}"/></header>
+            <sheet>
+                <field name="credit_is_admin" invisible="1"/><div class="oe_button_box" name="button_box"><button name="action_open_portal_update_wizard" type="object" class="oe_stat_button" icon="fa-key" groups="custom_web_credito_conedera.group_credit_portal_update_manager,custom_web_credito_conedera.group_credit_administrator" invisible="not credit_access_button_visible"><div class="o_stat_info"><span class="o_stat_text">Permiso portal</span></div></button></div>
+                <div class="oe_title"><label for="name"/><h1><field name="name" readonly="1"/></h1><div class="text-muted">Expediente de crédito vinculado a Contactos</div></div>
+                <group><group><field name="application_date" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="application_date" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="application_place" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="application_place" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="company_id" readonly="0" options="{'no_create': True}" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="company_id" readonly="1" options="{'no_create': True}" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="website_id" readonly="1" options="{'no_create': True}"/><field name="partner_id" invisible="1"/>
+                    <field name="credit_origin" readonly="1"/>
+                    <field name="portal_user_id" readonly="0" options="{'no_create': True}" groups="custom_web_credito_conedera.group_credit_administrator"/>
+                    <field name="portal_user_id" readonly="1" options="{'no_create': True}" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+                    <field name="portal_update_scope" readonly="1"/><field name="portal_update_allowed_at" readonly="1"/><field name="portal_update_allowed_by" readonly="1"/><field name="portal_history_consumed_at" readonly="1"/><field name="portal_sketch_consumed_at" readonly="1"/><field name="applicant_type_id" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="applicant_type_id" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="identification_type" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="identification_type" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="identification" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="identification" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="declaration_accepted" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="declaration_accepted" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="prior_commercial_relationship_accepted" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="prior_commercial_relationship_accepted" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="electronic_service_accepted" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="electronic_service_accepted" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="credit_bureau_authorized" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="credit_bureau_authorized" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="company_signature_stamp_acknowledged" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="company_signature_stamp_acknowledged" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="additional_financial_documents_accepted" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="additional_financial_documents_accepted" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="declaration_date" readonly="1"/></group><group><field name="applicant_name" string="Solicitante" readonly="0" required="not id" options="{'no_create': True, 'no_create_edit': True}" domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="applicant_name" string="Solicitante" readonly="1" required="not id" options="{'no_create': True, 'no_create_edit': True}" domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="applicant_name_text" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="applicant_name_text" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="applicant_email" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="applicant_email" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="mobile" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="mobile" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="phone_fixed" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="phone_fixed" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="document_access_allowed" readonly="1"/><field name="currency_id" groups="base.group_system" readonly="1"/></group></group>
+                <notebook>
+                    <page string="Propietario o representante">
+                        <group><group><field name="profession" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="profession" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="marital_status_id" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="marital_status_id" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="foreign_residence_time" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="foreign_residence_time" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="foreign_work_visa" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="foreign_work_visa" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="spouse_name" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="spouse_name" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="spouse_identification" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="spouse_identification" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="spouse_profession" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="spouse_profession" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="dependents_count" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="dependents_count" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/></group><group><field name="home_address" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="home_address" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="housing_type_id" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="housing_type_id" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/></group></group>
+                    </page>
+                    <page string="Vehículos del solicitante">
+                        <field name="vehicle_ids" context="{'default_application_id': id}" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator">
+                            <list editable="bottom"><field name="sequence" widget="handle"/><field name="brand"/><field name="model"/><field name="year"/><field name="value"/></list>
+                            <form string="Vehículo"><group><field name="brand"/><field name="model"/><field name="year"/><field name="value"/></group></form>
+                        </field>
+                    <field name="vehicle_ids" context="{'default_application_id': id}" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator">
+                            <list editable="bottom"><field name="sequence" widget="handle"/><field name="brand"/><field name="model"/><field name="year"/><field name="value"/></list>
+                            <form string="Vehículo"><group><field name="brand"/><field name="model"/><field name="year"/><field name="value"/></group></form>
+                        </field>
+                    </page>
+                    <page string="Negocio o empresa">
+                        <group><group><field name="business_name" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="business_name" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="legal_representative" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="legal_representative" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="business_ruc" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="business_ruc" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="province" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="province" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="canton" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="canton" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="city" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="city" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="business_address" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="business_address" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/></group><group><field name="business_phone" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="business_phone" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="representative_email" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="representative_email" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="activity_start_date" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="activity_start_date" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="business_local_type" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="business_local_type" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="business_location_method" readonly="1"/><field name="business_location_captured" readonly="1"/><field name="business_latitude" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="business_latitude" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="business_longitude" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="business_longitude" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="invoice_email" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="invoice_email" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/></group></group>
+                        <group string="Información económica"><group><field name="monthly_sales" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="monthly_sales" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="social_capital" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="social_capital" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="assets_amount" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="assets_amount" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="liabilities_amount" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="liabilities_amount" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/></group><group><field name="monthly_income" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="monthly_income" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="monthly_expenses" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="monthly_expenses" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="authorized_buyer_name" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="authorized_buyer_name" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="authorized_buyer_identification" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="authorized_buyer_identification" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="authorized_buyer_email" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="authorized_buyer_email" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="authorized_pickup_name" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="authorized_pickup_name" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="authorized_pickup_identification" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="authorized_pickup_identification" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/></group></group>
+                    </page>
+                    <page string="Relación de dependencia"><group><group><field name="employment_relationship" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="employment_relationship" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="employment_employer_type_id" readonly="0" invisible="employment_relationship != 'yes'" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="employment_employer_type_id" readonly="1" invisible="employment_relationship != 'yes'" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="employment_company" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="employment_company" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="employment_activity" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="employment_activity" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="employment_address" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="employment_address" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="employment_phone" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="employment_phone" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/></group><group><field name="employment_start_date" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="employment_start_date" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="employment_position" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="employment_position" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/><field name="employment_salary" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/><field name="employment_salary" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/></group></group></page>
+
+                    <page string="Referencias comerciales">
+                        <field name="commercial_reference_ids" context="{'default_application_id': id, 'default_reference_type': 'commercial'}" readonly="0" nolabel="1" groups="custom_web_credito_conedera.group_credit_administrator">
+                            <list editable="bottom" string="Referencias comerciales">
+                                <field name="reference_type" column_invisible="True"/>
+                                <field name="sequence" widget="handle"/>
+                                <field name="provider"/>
+                                <field name="customer_since"/>
+                                <field name="credit_limit"/>
+                                <field name="term"/>
+                                <field name="phone"/>
+                                <field name="contact"/>
+                            </list>
+                            <form string="Referencia comercial">
+                                <sheet>
+                                    <field name="reference_type" invisible="1"/>
+                                    <group>
+                                        <field name="provider"/>
+                                        <field name="customer_since"/>
+                                        <field name="credit_limit"/>
+                                        <field name="term"/>
+                                        <field name="phone"/>
+                                        <field name="contact"/>
+                                    </group>
+                                </sheet>
+                            </form>
+                        </field>
+                    <field name="commercial_reference_ids" context="{'default_application_id': id, 'default_reference_type': 'commercial'}" readonly="1" nolabel="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator">
+                            <list editable="bottom" string="Referencias comerciales">
+                                <field name="reference_type" column_invisible="True"/>
+                                <field name="sequence" widget="handle"/>
+                                <field name="provider"/>
+                                <field name="customer_since"/>
+                                <field name="credit_limit"/>
+                                <field name="term"/>
+                                <field name="phone"/>
+                                <field name="contact"/>
+                            </list>
+                            <form string="Referencia comercial">
+                                <sheet>
+                                    <field name="reference_type" invisible="1"/>
+                                    <group>
+                                        <field name="provider"/>
+                                        <field name="customer_since"/>
+                                        <field name="credit_limit"/>
+                                        <field name="term"/>
+                                        <field name="phone"/>
+                                        <field name="contact"/>
+                                    </group>
+                                </sheet>
+                            </form>
+                        </field>
+                    </page>
+                    <page string="Referencias personales">
+                        <field name="personal_reference_ids" context="{'default_application_id': id, 'default_reference_type': 'personal'}" readonly="0" nolabel="1" groups="custom_web_credito_conedera.group_credit_administrator">
+                            <list editable="bottom" string="Referencias personales">
+                                <field name="reference_type" column_invisible="True"/>
+                                <field name="sequence" widget="handle"/>
+                                <field name="person_name"/>
+                                <field name="address"/>
+                                <field name="home_phone"/>
+                                <field name="relationship"/>
+                            </list>
+                            <form string="Referencia personal">
+                                <sheet>
+                                    <field name="reference_type" invisible="1"/>
+                                    <group>
+                                        <field name="person_name"/>
+                                        <field name="address"/>
+                                        <field name="home_phone"/>
+                                        <field name="relationship"/>
+                                    </group>
+                                </sheet>
+                            </form>
+                        </field>
+                    <field name="personal_reference_ids" context="{'default_application_id': id, 'default_reference_type': 'personal'}" readonly="1" nolabel="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator">
+                            <list editable="bottom" string="Referencias personales">
+                                <field name="reference_type" column_invisible="True"/>
+                                <field name="sequence" widget="handle"/>
+                                <field name="person_name"/>
+                                <field name="address"/>
+                                <field name="home_phone"/>
+                                <field name="relationship"/>
+                            </list>
+                            <form string="Referencia personal">
+                                <sheet>
+                                    <field name="reference_type" invisible="1"/>
+                                    <group>
+                                        <field name="person_name"/>
+                                        <field name="address"/>
+                                        <field name="home_phone"/>
+                                        <field name="relationship"/>
+                                    </group>
+                                </sheet>
+                            </form>
+                        </field>
+                    </page>
+                    <page string="Referencias bancarias">
+                        <field name="bank_reference_ids" context="{'default_application_id': id, 'default_reference_type': 'bank'}" readonly="0" nolabel="1" groups="custom_web_credito_conedera.group_credit_administrator">
+                            <list editable="bottom" string="Referencias bancarias">
+                                <field name="reference_type" column_invisible="True"/>
+                                <field name="sequence" widget="handle"/>
+                                <field name="bank_name"/>
+                                <field name="account_number"/>
+                                <field name="opening_date"/>
+                                <field name="account_type_id"/>
+                            </list>
+                            <form string="Referencia bancaria">
+                                <sheet>
+                                    <field name="reference_type" invisible="1"/>
+                                    <group>
+                                        <field name="bank_name"/>
+                                        <field name="account_number"/>
+                                        <field name="opening_date"/>
+                                        <field name="account_type_id"/>
+                                    </group>
+                                </sheet>
+                            </form>
+                        </field>
+                    <field name="bank_reference_ids" context="{'default_application_id': id, 'default_reference_type': 'bank'}" readonly="1" nolabel="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator">
+                            <list editable="bottom" string="Referencias bancarias">
+                                <field name="reference_type" column_invisible="True"/>
+                                <field name="sequence" widget="handle"/>
+                                <field name="bank_name"/>
+                                <field name="account_number"/>
+                                <field name="opening_date"/>
+                                <field name="account_type_id"/>
+                            </list>
+                            <form string="Referencia bancaria">
+                                <sheet>
+                                    <field name="reference_type" invisible="1"/>
+                                    <group>
+                                        <field name="bank_name"/>
+                                        <field name="account_number"/>
+                                        <field name="opening_date"/>
+                                        <field name="account_type_id"/>
+                                    </group>
+                                </sheet>
+                            </form>
+                        </field>
+                    </page>
+                    <page string="Ingreso de documentos" invisible="not document_access_allowed">
+                        <field name="document_ids" context="{'default_application_id': id}" readonly="1">
+                            <list create="0" delete="0"><field name="required_document_uploaded"/><field name="required_document_total"/><field name="required_document_missing"/><field name="is_complete"/></list>
+                            <form string="Expediente de crédito">
+                                <sheet>
+                                    <group><field name="applicant_type_id"/><field name="required_document_total"/><field name="required_document_uploaded"/><field name="required_document_missing"/><field name="is_complete"/></group>
+                                    <field name="document_line_ids" context="{'default_document_id': id}" readonly="1">
+                                        <list editable="bottom" create="0" edit="0" delete="0">
+                                            <field name="requirement_id" string="Documento solicitado"/>
+                                            <field name="filename" string="Archivo enviado"/><field name="uploaded_at"/><field name="uploaded_at" readonly="1"/>
+                                        </list>
+                                    </field>
+                                </sheet>
+                            </form>
+                        </field>
+                    </page>
+                    <page string="Ubicación y croquis (cliente)" groups="custom_web_credito_conedera.group_credit_manager,custom_web_credito_conedera.group_credit_administrator" class="o_credit_verification_page">
+    <div class="alert alert-info mb-3" role="alert">Estos datos y el croquis los completa el cliente desde el portal. El personal de revisión solo puede consultarlos; el administrador conserva la edición completa.</div>
+    <group string="Identificación del solicitante" col="2" class="o_credit_verification_section">
+        <field name="identification" readonly="1"/>
+        <field name="applicant_name" readonly="1"/>
+    </group>
+
+    <group string="Ubicación proporcionada por el cliente" col="2" class="o_credit_verification_section">
+        <field name="verification_province" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_province" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_city" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_city" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_canton" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_canton" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_parish" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_parish" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_neighborhood" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_neighborhood" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_address" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_address" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_house_number" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_house_number" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_reference" readonly="0" groups="custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_reference" readonly="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_city_canton_parish" readonly="1" invisible="not verification_city_canton_parish"/>
+    </group>
+
+    <group string="Croquis proporcionado por el cliente" col="2" class="o_credit_verification_section">
+        <field name="verification_sketch" readonly="0" filename="verification_sketch_filename" help="El croquis debe incluir dos calles principales" groups="custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_sketch" readonly="1" filename="verification_sketch_filename" help="El croquis debe incluir dos calles principales" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+        <field name="verification_sketch_filename" invisible="1"/>
+    </group>
+
+</page>
+                    <page string="Verificación de ubicación (uso interno)" groups="custom_web_credito_conedera.group_credit_manager,custom_web_credito_conedera.group_credit_administrator" class="o_credit_verification_page">
+    <div class="alert alert-info mb-3" role="alert">
+        La revisión del crédito y la verificación del negocio se realizan en paralelo.
+        Para aprobar o rechazar debe completar todas las respuestas de Resultados y el
+        nombre del verificador. La fecha y el resultado se registran automáticamente
+        cuando la verificación esté completa. La aprobación requiere una inspección
+        favorable y la ubicación proporcionada por el cliente.
+    </div>
+
+    <group string="Verificación del negocio (personal de la empresa)" col="2" class="o_credit_verification_section">
+        <field name="verification_zone_id"/>
+        <field name="verification_local_state_id"/>
+        <field name="interviewed_relationship" colspan="2"/>
+        <field name="interviewed_name" colspan="2"/>
+    </group>
+
+    <group string="Resultados de la verificación (personal de la empresa)" col="2" class="o_credit_verification_section">
+        <field name="inspection_done" required="credit_verification_final_required"/>
+        <field name="address_found" required="credit_verification_final_required"/>
+        <field name="client_lives_there" required="credit_verification_final_required"/>
+        <field name="sketch_needed" required="credit_verification_final_required"/>
+    </group>
+
+    <group string="Responsable y cierre de la verificación" col="2" class="o_credit_verification_section">
+        <field name="verifier_name" required="credit_verification_final_required"/>
+        <field name="verification_completed_at" readonly="1"/>
+    </group>
+</page>
+                    <page string="Documentos firmados" groups="custom_web_credito_conedera.group_credit_manager,custom_web_credito_conedera.group_credit_administrator">
+                        <div class="alert alert-info mb-3" role="alert">
+                            Arrastre varios PDF firmados a cada zona o utilice el selector de archivos.
+                            Los originales se conservan sin modificar sus firmas electrónicas.
+                            Solo el Administrador de crédito puede agregar o retirar archivos.
+                        </div>
+                        <group string="Solicitud de crédito firmada" col="1">
+                            <field name="signed_application_attachment_ids" widget="many2many_binary" class="o_credit_signed_dropzone" options="{'accepted_file_extensions': '.pdf,application/pdf'}" readonly="0" nolabel="1" groups="custom_web_credito_conedera.group_credit_administrator"/>
+                            <field name="signed_application_attachment_ids" widget="many2many_binary" class="o_credit_signed_dropzone" options="{'accepted_file_extensions': '.pdf,application/pdf'}" readonly="1" nolabel="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+                            <field name="signed_application_available" readonly="1"/>
+                        </group>
+                        <group string="Verificación ubicación del negocio firmada" col="1">
+                            <field name="signed_verification_attachment_ids" widget="many2many_binary" class="o_credit_signed_dropzone" options="{'accepted_file_extensions': '.pdf,application/pdf'}" readonly="0" nolabel="1" groups="custom_web_credito_conedera.group_credit_administrator"/>
+                            <field name="signed_verification_attachment_ids" widget="many2many_binary" class="o_credit_signed_dropzone" options="{'accepted_file_extensions': '.pdf,application/pdf'}" readonly="1" nolabel="1" groups="custom_web_credito_conedera.group_credit_manager,!custom_web_credito_conedera.group_credit_administrator"/>
+                            <field name="signed_verification_available" readonly="1"/>
+                        </group>
+                    </page>
+                    <page string="Historial de etapas"><field name="history_ids" readonly="1"><list create="0" edit="0" delete="0"><field name="date" readonly="1"/><field name="stage_id" readonly="1"/><field name="user_id" readonly="1"/><field name="notes" readonly="1"/><field name="visible_to_portal" readonly="1"/></list></field></page>
+                </notebook>
+            </sheet><chatter/>
+        </form></field>
+    </record>
+    <record id="action_conedera_credit_applications" model="ir.actions.act_window"><field name="name">Solicitudes de crédito</field><field name="res_model">conedera.credit.application</field><field name="view_mode">kanban,list,form</field><field name="search_view_id" ref="view_conedera_credit_application_search"/><field name="context">{'search_default_group_stage': 1}</field></record>
+    <menuitem id="menu_conedera_credit_root" web_icon="custom_web_credito_conedera,static/description/icon.png" name="Solicitud de crédito" sequence="45" groups="custom_web_credito_conedera.group_credit_manager,custom_web_credito_conedera.group_credit_administrator"/>
+    <menuitem id="menu_conedera_credit_applications" name="Solicitudes" parent="menu_conedera_credit_root" action="action_conedera_credit_applications" sequence="10" groups="custom_web_credito_conedera.group_credit_manager,custom_web_credito_conedera.group_credit_administrator"/>
+    <!-- Centralización de catálogos: disponible para administradores de crédito. -->
+    <menuitem id="menu_conedera_credit_configuration" name="Configuración" parent="menu_conedera_credit_root" sequence="90" groups="custom_web_credito_conedera.group_credit_administrator"/>
+    <menuitem id="menu_conedera_credit_stages" name="Etapas del solicitante" parent="menu_conedera_credit_configuration" action="action_conedera_credit_stages" sequence="10" groups="custom_web_credito_conedera.group_credit_administrator"/>
+</odoo>

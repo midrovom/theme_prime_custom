@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+    <record id="bank_type_current" model="conedera.credit.bank.account.type">
+        <field name="name">Corriente</field><field name="code">current</field><field name="sequence">10</field>
+    </record>
+    <record id="bank_type_savings" model="conedera.credit.bank.account.type">
+        <field name="name">Ahorros</field><field name="code">savings</field><field name="sequence">20</field>
+    </record>
+    <record id="sequence_bank_type" model="ir.sequence">
+        <field name="name">Tipo de cuenta bancaria (crédito)</field><field name="code">conedera.credit.bank.account.type</field>
+        <field name="prefix">TB-</field><field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>
