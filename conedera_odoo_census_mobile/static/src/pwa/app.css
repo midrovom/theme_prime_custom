@@ -206,3 +206,13 @@ button{cursor:pointer}
 
 .quote-results{max-height:410px}
 @media(max-width:600px){.quote-results{max-height:360px}}
+
+/* 18.0.1.5.7: totales de proforma visibles en móvil y escritorio */
+.quote-totals{margin:16px 0 10px;border:1px solid #d7cee9;border-radius:16px;padding:14px;background:#f7f4fc}
+.quote-totals-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.quote-total-card{display:flex;flex-direction:column;gap:5px;padding:13px;border-radius:12px;background:white;border:1px solid #e6dfed;min-width:0}
+.quote-total-card span{font-size:12px;color:#595368;font-weight:700}
+.quote-total-card strong{font-size:clamp(18px,2.2vw,25px);color:#3b3159;overflow-wrap:anywhere}
+.quote-total-card.negotiated{border:1px solid #baaad8}
+.quote-totals>.small{margin-top:10px;line-height:1.45}
+@media(max-width:600px){.quote-totals{padding:10px}.quote-totals-grid{grid-template-columns:1fr;gap:8px}.quote-total-card{padding:12px}.quote-total-card strong{font-size:23px}}

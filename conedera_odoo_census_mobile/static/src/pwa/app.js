@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.6";
+const APP_VERSION = "18.0.1.5.7";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -485,14 +485,15 @@ function quoteListPrice(product){
 function availableQuoteProducts(term) {
   const user=state.meta?.user;
   if (!user) return [];
+  if (!state.quoteWarehouseId) return [];
   const q=String(term||"").trim().toLowerCase();
-  return state.quoteProducts.filter(p=>Number(p.user_id)===Number(user.id) && Number(p.company_id)===Number(user.company_id)
+  return state.quoteProducts.filter(p=>Number(p.stock_qty)>0 && p.stock_kind==='available' &&Number(p.user_id)===Number(user.id) && Number(p.company_id)===Number(user.company_id)
     && Number(p.partner_id)===Number(state.quotePartnerId) && Number(p.warehouse_id||0)===Number(state.quoteWarehouseId||0) && Number(p.pricelist_id||0)===Number(state.quotePricelistId||0)
     && [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,35);
 }
 function renderQuoteResults() {
   const box=document.querySelector("#quote-search-results"); if (!box) return;
-  const found=state.quoteResults;
+  const found=state.quoteResults.filter(p=>Number(p.stock_qty)>0 && p.stock_kind==='available' && Number(p.warehouse_id)===Number(state.quoteWarehouseId));
   const rows=found.map(p=>{
     const chosen=state.quoteSelections[p.id];
     return `<article class="quote-search-product">
@@ -506,8 +507,9 @@ function renderQuoteResults() {
     </article>`;
   }).join('');
   box.innerHTML=`${state.quoteSearching?'<div class="small">Actualizando precio y stock desde Odoo…</div>':''}
-    ${!state.quoteSearch.trim()?'<div class="small">Busque por nombre o código. Puede marcar varios productos y asignar cantidades.</div>':
-    found.length?rows:`<div class="small">No se encontraron productos ${state.online?'disponibles':'guardados en este dispositivo'}.</div>`}
+    ${!state.quoteWarehouseId?'<div class="small">Seleccione una bodega para buscar productos con stock.</div>':
+    !state.quoteSearch.trim()?'<div class="small">Busque por nombre o código. Solo aparecerán productos con stock a mano mayor que cero en esta bodega.</div>':
+    found.length?rows:`<div class="small">No hay productos con stock positivo en la bodega seleccionada ${state.online?'':'(según la última consulta guardada)'}.</div>`}
     ${quoteSelectionCount()?`<div class="quote-batch"><strong>${quoteSelectionCount()} seleccionado(s)</strong><button class="btn btn-primary" type="button" data-action="quote-add-selected">Agregar seleccionados</button></div>`:''}`;
 }
 function quoteLinePriceMarkup(line) {
@@ -522,20 +524,59 @@ function quoteLinesMarkup() {
     <button type="button" class="icon-btn quote-remove" title="Quitar producto" aria-label="Quitar ${esc(line.name)}" data-action="quote-remove-product" data-id="${line.id}">×</button></div></div>`).join(''):
     `<div class="empty"><b>Sin productos</b>Busque y seleccione varios productos para esta cotización.</div>`;
 }
+function quoteTotals() {
+  const rows=state.quoteLines;
+  const currencies=new Set(rows.map(row=>String(row.currency||'')).filter(Boolean));
+  const currency=currencies.size===1?[...currencies][0]:'';
+  let list=0, negotiated=0, ready=rows.length>0, current=state.online;
+  for(const line of rows){
+    const qty=Number(line.qty), price=Number(line.price);
+    if(line.price===null||line.price===undefined||!Number.isFinite(price)||!Number.isFinite(qty)||qty<=0){ ready=false;break; }
+    const entered=line.negotiable_price===null||line.negotiable_price===undefined||String(line.negotiable_price).trim()===''
+      ?price:Number(line.negotiable_price);
+    if(!Number.isFinite(entered)||entered<0){ready=false;break;}
+    list+=qty*price;
+    negotiated+=qty*entered;
+    if(Number(line.qty_priced)!==qty) current=false;
+  }
+  if(currencies.size>1)ready=false;
+  return {list,negotiated,ready,current,currency};
+}
+function quoteTotalsMarkup(){
+  const t=quoteTotals();
+  const fmt=n=>t.ready?`${esc(t.currency)} ${money(n)}`:'Pendiente de calcular';
+  const warning=!state.online?'Sin conexión: los valores son orientativos y stock/precios se validarán al sincronizar.':
+    !t.current?'Actualizando precios según las cantidades seleccionadas…':'Valores referenciales sin impuestos; Odoo calculará el importe final de la proforma.';
+  return `<div class="quote-totals-grid">
+    <div class="quote-total-card"><span>Total a precio de lista</span><strong data-total-list>${fmt(t.list)}</strong></div>
+    <div class="quote-total-card negotiated"><span>Total a precio negociado</span><strong data-total-negotiated>${fmt(t.negotiated)}</strong></div>
+  </div><div class="small">${warning} En líneas sin precio negociado se utiliza el precio de lista.</div>`;
+}
+function updateQuoteTotals(){
+  const el=document.querySelector('#quote-totals');
+  if(el)el.innerHTML=quoteTotalsMarkup();
+}
 function refreshQuoteLineMarkup() {
   const box=document.querySelector('#quote-lines');
   if (box) box.innerHTML=quoteLinesMarkup();
+  updateQuoteTotals();
 }
 function addQuoteProduct(product, quantity=1) {
   const qty=Number(quantity);
   if (!Number.isFinite(qty)||qty<=0||qty>100000) {alert('Cantidad inválida para '+product.name);return false;}
+  if(!state.quoteWarehouseId){alert('Seleccione una bodega primero.');return false;}
+  if(!Number.isFinite(Number(product.stock_qty))||Number(product.stock_qty)<=0||Number(product.warehouse_id)!==Number(state.quoteWarehouseId)){
+    alert('El producto no tiene stock consultado en esta bodega. Actualice la búsqueda.');return false;
+  }
   const existing=state.quoteLines.find(x=>x.id===product.id);
-  if(existing)existing.qty=Number(existing.qty)+qty;
-  else state.quoteLines.push({...product, qty, negotiable_price:null});
+  const requested=qty+(existing?Number(existing.qty):0);
+  if(requested>Number(product.stock_qty)+1e-8){alert(`Stock insuficiente de ${product.name} en la bodega: ${money(product.stock_qty)} ${product.uom||''}.`);return false;}
+  if(existing){existing.qty=requested;existing.qty_priced=requested===Number(existing.qty_priced)?existing.qty_priced:null;}
+  else state.quoteLines.push({...product, qty, qty_priced:qty===Number(product.qty_priced)?qty:null, negotiable_price:null});
   return true;
 }
 async function refreshQuoteLinePrices() {
-  if (!state.online||!state.quotePartnerId||!state.quoteLines.length) return;
+  if (!state.online||!state.quotePartnerId||!state.quoteWarehouseId||!state.quoteLines.length) return;
   const requestId=++state.quotePriceRequest;
   const partnerId=state.quotePartnerId;
   const wh=state.quoteWarehouseId, pricelistId=state.quotePricelistId;
@@ -545,15 +586,16 @@ async function refreshQuoteLinePrices() {
     if(requestId!==state.quotePriceRequest||partnerId!==state.quotePartnerId||wh!==state.quoteWarehouseId||pricelistId!==state.quotePricelistId) return;
     rows.forEach(row=>{
       const line=state.quoteLines.find(l=>l.id===row.id && Number(l.qty)===Number(row.qty_priced));
-      if(line) Object.assign(line,{price:row.price,currency:row.currency,pricelist:row.pricelist,stock_qty:row.stock_qty,stock_kind:row.stock_kind,stock_label:row.stock_label});
+      if(line) Object.assign(line,{price:row.price,currency:row.currency,pricelist:row.pricelist,qty_priced:row.qty_priced,stock_qty:row.stock_qty,stock_kind:row.stock_kind,stock_label:row.stock_label,warehouse_id:row.warehouse_id});
     });
     if(state.page==='quote') {
       for (const line of state.quoteLines) {
         const el=document.querySelector(`[data-quote-price-info="${line.id}"]`);
         if(el) el.outerHTML=quoteLinePriceMarkup(line);
       }
+      updateQuoteTotals();
     }
-  } catch(err) {console.warn('No se pudo actualizar precio y stock:',err);}
+  } catch(err) {console.warn('No se pudo actualizar precio y stock:',err);state.lastError=err.message||String(err);updateQuoteTotals();}
 }
 function scheduleQuotePrices() {
   clearTimeout(state.quotePriceTimer);
@@ -565,6 +607,8 @@ function renderQuote() {
   const clients=state.partners.filter(p=>truthy(p.census_locked) && (!p.census_company_id || relationId(p.census_company_id)===Number(state.meta?.user?.company_id)));
   const related=partner?ordersFor(partner.id).slice(0,10):[];
   const linkedVisits=partner?visitsFor(partner.id).filter(v=>v.state==="done"):[];
+  if (!state.quoteWarehouseId && (cap.quote_warehouses||[]).length===1)
+    state.quoteWarehouseId=Number(cap.quote_warehouses[0].id);
   const availabilityNote=clients.length?"":`<div class="status-banner warn">No hay catastros protegidos de la compañía actual para cotizar. Abre un catastro, completa los datos obligatorios y pulsa «Finalizar y proteger» antes de crear una cotización.</div>`;
   const permissionNote=cap.quote_create===false?`<div class="status-banner warn">Tu usuario no tiene permiso para crear cotizaciones en Odoo. Solicita al administrador los permisos correspondientes de Ventas. El acceso a esta pantalla sigue visible para que puedas identificar la causa.</div>`:"";
   if (!partner) { state.page="home"; return renderHome(); }
@@ -576,12 +620,13 @@ function renderQuote() {
     <section class="quote-mode-banner"><div><strong>Cotización rápida desde la PWA</strong><p>Este formulario genera borradores. Para utilizar condiciones comerciales, campos especiales y todas las personalizaciones, abre la pantalla nativa de cotizaciones.</p></div><a class="btn btn-outline" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener" aria-label="Abrir cotizaciones completas en Odoo">Cotización completa en Odoo</a></section>
     <section class="form-card"><h2>2. Selección rápida de productos</h2>
       <div class="field"><label>Lista de precios de Odoo</label><select id="quote-pricelist"><option value="">Lista asignada al cliente (predeterminada)</option>${(cap.quote_pricelists||[]).map(pl=>`<option value="${pl.id}" ${Number(state.quotePricelistId)===pl.id?'selected':''}>${esc(pl.name)}</option>`).join('')}</select></div>
-      <div class="field"><label>Almacén para consultar existencias ${cap.quote_stock_supported?'':'(inventario no disponible)'}</label>
-      <select id="quote-warehouse"><option value="">Todos los almacenes de la compañía</option>${(cap.quote_warehouses||[]).map(w=>`<option value="${w.id}" ${Number(state.quoteWarehouseId)===w.id?'selected':''}>${esc(w.name)}</option>`).join('')}</select></div>
-      <div class="field"><label>Buscar por nombre o código</label><input id="quote-search" value="${esc(state.quoteSearch)}" placeholder="Nombre, código SKU" autocomplete="off" ${partner?"":"disabled"}/></div>
+      <div class="field"><label>Bodega obligatoria · stock y validación por producto ${cap.quote_stock_supported?'':'(inventario no disponible)'}</label>
+      <select id="quote-warehouse" required><option value="">Seleccione una bodega</option>${(cap.quote_warehouses||[]).map(w=>`<option value="${w.id}" ${Number(state.quoteWarehouseId)===w.id?'selected':''}>${esc(w.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Buscar por nombre o código (solo stock mayor a 0)</label><input id="quote-search" value="${esc(state.quoteSearch)}" placeholder="Nombre, código SKU" autocomplete="off" ${state.quoteWarehouseId?'':'disabled'}/></div>
       <div id="quote-search-results" class="quote-results" aria-live="polite"></div>
       <div class="quote-lines-head"><strong>Productos agregados (${state.quoteLines.length})</strong></div><div id="quote-lines">${quoteLinesMarkup()}</div>
-      <div class="small">El precio de lista es una referencia según la lista asignada al cliente, la cantidad y moneda de Odoo. El precio negociado utiliza el campo existente negotiable_price de la línea en Odoo; su personalización determina el precio final y los descuentos. No se sobrescribe el precio unitario desde la PWA. El stock es una consulta, no una reserva, y puede cambiar.</div>
+      <div id="quote-totals" class="quote-totals" aria-live="polite">${quoteTotalsMarkup()}</div>
+      <div class="small">El precio de lista es una referencia según la lista asignada al cliente, la cantidad y moneda de Odoo. El precio negociado utiliza el campo existente negotiable_price de la línea en Odoo; su personalización determina el precio final y los descuentos. No se sobrescribe el precio unitario desde la PWA. Solo se muestran productos con stock positivo en la bodega indicada. Al guardar, Odoo comprueba nuevamente producto, bodega y cantidad. La cotización no reserva stock.</div>
       ${!state.online?'<div class="status-banner warn">Sin conexión: fotos y precios pueden no estar actualizados. Odoo recalculará al sincronizar.</div>':''}
     </section>
     <dialog id="quote-image-dialog" class="quote-image-dialog"><div class="quote-zoom-bar"><strong id="quote-zoom-name">Producto</strong><div class="quote-zoom-buttons"><button class="btn btn-outline" type="button" data-action="quote-zoom-out" aria-label="Reducir fotografía">−</button><span id="quote-zoom-level">100%</span><button class="btn btn-outline" type="button" data-action="quote-zoom-in" aria-label="Ampliar fotografía">＋</button><button class="btn btn-outline" type="button" data-action="quote-close-image">Cerrar ✕</button></div></div><div class="quote-zoom-body"><img id="quote-zoom-picture" alt="Foto del producto ampliada"/></div><small>Puede ampliar la foto con los controles de zoom del navegador o del dispositivo.</small></dialog><section class="form-card"><h2>3. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Orden de compra o referencia externa"/></div>
@@ -621,6 +666,7 @@ async function openQuote(id) {
 }
 async function searchQuoteProducts(value) {
   const term=String(value||"").trim();state.quoteSearch=value;
+  if (!state.quoteWarehouseId){state.quoteResults=[];state.quoteSearching=false;renderQuoteResults();return;}
   if (term.length<2) {state.quoteResults=[];state.quoteSearching=false;renderQuoteResults();return;}
   state.quoteResults=availableQuoteProducts(term);state.quoteSearching=state.online;renderQuoteResults();
   if (!state.online || !state.quotePartnerId){state.quoteSearching=false;renderQuoteResults();return;}
@@ -633,7 +679,7 @@ async function searchQuoteProducts(value) {
     const tagged=result.map(p=>({...p,key:`${user.id}:${user.company_id}:${partnerId}:${warehouseId||0}:${pricelistId||0}:${p.id}`,
       user_id:user.id,company_id:user.company_id,partner_id:partnerId,warehouse_id:warehouseId||0,pricelist_id:pricelistId||0}));
     // Mostrar siempre los resultados del servidor aunque IndexedDB no acepte escrituras.
-    state.quoteResults=result;
+    state.quoteResults=result.filter(p=>Number(p.stock_qty)>0 && Number(p.warehouse_id)===Number(warehouseId));
     if (db) {
       try {
         for (const row of tagged) await idbPut(STORE_QUOTE_PRODUCTS,row);
@@ -652,13 +698,24 @@ async function submitQuote(form) {
   const p=quotePartner();
   if (!p||!truthy(p.census_locked)) {alert("Seleccione un catastro finalizado y protegido.");return;}
   if (!state.quoteLines.length){alert("Agregue al menos un producto.");return;}
+  if (!state.quoteWarehouseId){alert("Seleccione una bodega antes de guardar la cotización.");return;}
   const lines=state.quoteLines.map(x=>({product_id:Number(x.id),qty:Number(x.qty),
     negotiable_price:x.negotiable_price==null||String(x.negotiable_price).trim()===''?null:Number(x.negotiable_price)}));
   if(lines.some(x=>!Number.isInteger(x.product_id)||!Number.isFinite(x.qty)||x.qty<=0||x.qty>100000 ||
     (x.negotiable_price!==null && (!Number.isFinite(x.negotiable_price)||x.negotiable_price<0||x.negotiable_price>1000000000)))) {alert("Revise las cantidades y los precios negociados.");return;}
+  for(const line of state.quoteLines){
+    if(Number(line.warehouse_id)!==Number(state.quoteWarehouseId)||!Number.isFinite(Number(line.stock_qty))){
+      alert(`No hay una consulta de stock válida de ${line.name} para esta bodega. Actualice precios y existencias.`);return;
+    }
+    if(Number(line.qty)>Number(line.stock_qty)+1e-8 || Number(line.stock_qty)<=0){
+      alert(`Cantidad sin stock suficiente para ${line.name}: a mano ${money(line.stock_qty)} ${line.uom||''}.`);return;
+    }
+  }
   if (!state.meta?.user?.id) {alert("Sin sesión descargada. Conéctese para empezar.");return;}
   if (state.online && !quoteCanCreate()){alert("Su usuario necesita permiso para crear cotizaciones en Ventas.");return;}
-  if (!confirm(`¿Guardar una cotización en borrador para ${partnerLabel(p)} con ${lines.length} producto(s)? Los precios se calcularán al sincronizar.`))return;
+  const totals=quoteTotals();
+  const note=totals.ready?`Lista: ${totals.currency} ${money(totals.list)} · negociado estimado: ${totals.currency} ${money(totals.negotiated)}. `:'';
+  if (!confirm(`¿Guardar cotización para ${partnerLabel(p)} con ${lines.length} producto(s) en la bodega seleccionada? ${note}Odoo volverá a validar stock y recalcular precios.`))return;
   const payload={partner_id:p.id,visit_id:Number(form.querySelector('[name="visit_id"]')?.value||0),warehouse_id:state.quoteWarehouseId||null,pricelist_id:state.quotePricelistId||null,lines,
     client_order_ref:form.querySelector('[name="client_order_ref"]')?.value.trim()||""};
   const op=await queueOperation("quote",payload,`${partnerLabel(p)} · cotización de ${lines.length} productos`);
@@ -754,10 +811,22 @@ async function submitCatastroUpdate(form) {
   if (navigator.onLine && op.state!=="synced" && op.state!=="warning") await syncPending(false, [op.uuid]);
 }
 
+function pendingQuoteWarehousePicker(op){
+  if(op.type!=='quote'||['synced','warning'].includes(op.state))return '';
+  if((op.user_id && Number(op.user_id)!==Number(state.meta?.user?.id))||
+     (op.company_id && Number(op.company_id)!==Number(state.meta?.user?.company_id)))
+    return '<div class="small">Cotización de otra sesión. Inicie sesión con el usuario y compañía de origen para editarla.</div>';
+  const warehouses=state.meta?.capabilities?.quote_warehouses||[];
+  if(!warehouses.length)return '<div class="small">No hay bodegas disponibles. Consulte con el administrador.</div>';
+  return `<div class="quote-pending-warehouse"><label>Bodega para validar existencias
+    <select data-pending-quote-warehouse="${esc(op.uuid)}"><option value="">Seleccione…</option>${warehouses.map(w=>`<option value="${w.id}" ${Number(op.payload?.warehouse_id)===Number(w.id)?'selected':''}>${esc(w.name)}</option>`).join('')}</select></label>
+    <button type="button" class="btn btn-outline" data-action="fix-quote-warehouse" data-id="${esc(op.uuid)}">Guardar bodega</button>
+    <div class="small">Al sincronizar, Odoo validará los productos y cantidades usando esta bodega. Puede rechazar la operación si el stock cambió.</div></div>`;
+}
 function renderPending() {
   const pending = [...state.pending].sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
   const body = `<div class="row" style="margin-bottom:12px"><button class="btn btn-primary" style="width:100%" data-action="sync">⇅ Sincronizar ahora</button></div>
-    <div class="cards">${pending.map(op=>`<section class="card pending-item"><div><div class="card-title">${esc(operationLabel(op))}</div><div class="card-sub">${esc(op.label||"")}</div><div class="chips"><span class="chip ${op.state==="error"?"danger":op.state==="conflict"?"warn":op.state==="synced"?"ok":""}">${esc(op.state||"pendiente")}</span></div>${op.message?`<div class="small ${op.state==="error"?"danger-text":""}" style="margin-top:8px">${esc(op.message)}</div>`:""}${op.result_model==="res.partner" && op.result_id && ["synced","warning"].includes(op.state)?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-result" data-id="${op.result_id}">Ver catastro</button>`:""}${op.result_model==="sale.order" && op.result_id && op.state==="synced"?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-quote-result" data-id="${op.result_id}">Ver cotización</button>`:""}<div class="pending-meta">${esc(dateText(op.created_at))}</div></div><div><button class="icon-btn" data-delete-pending="${op.uuid}" title="Eliminar del dispositivo">×</button></div></section>`).join("") || `<div class="empty"><b>Todo sincronizado</b>No hay información pendiente en este dispositivo.</div>`}</div>`;
+    <div class="cards">${pending.map(op=>`<section class="card pending-item"><div><div class="card-title">${esc(operationLabel(op))}</div><div class="card-sub">${esc(op.label||"")}</div><div class="chips"><span class="chip ${op.state==="error"?"danger":op.state==="conflict"?"warn":op.state==="synced"?"ok":""}">${esc(op.state||"pendiente")}</span></div>${op.message?`<div class="small ${op.state==="error"?"danger-text":""}" style="margin-top:8px">${esc(op.message)}</div>`:""}${op.result_model==="res.partner" && op.result_id && ["synced","warning"].includes(op.state)?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-result" data-id="${op.result_id}">Ver catastro</button>`:""}${op.result_model==="sale.order" && op.result_id && op.state==="synced"?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-quote-result" data-id="${op.result_id}">Ver cotización</button>`:""}${pendingQuoteWarehousePicker(op)}<div class="pending-meta">${esc(dateText(op.created_at))}</div></div><div><button class="icon-btn" data-delete-pending="${op.uuid}" title="Eliminar del dispositivo">×</button></div></section>`).join("") || `<div class="empty"><b>Todo sincronizado</b>No hay información pendiente en este dispositivo.</div>`}</div>`;
   $app.innerHTML = shell("Pendientes", body, { nav:"pending" });
 }
 
@@ -1040,11 +1109,11 @@ $app.addEventListener("input", (event) => {
   }
   if (event.target?.matches("[data-quote-qty]")) {
     const line=state.quoteLines.find(x=>x.id===Number(event.target.dataset.quoteQty));
-    if(line)line.qty=event.target.value;
+    if(line){line.qty=event.target.value;updateQuoteTotals();}
   }
   if (event.target?.matches('[data-quote-negotiable]')) {
     const line=state.quoteLines.find(x=>x.id===Number(event.target.dataset.quoteNegotiable));
-    if(line)line.negotiable_price=event.target.value;
+    if(line){line.negotiable_price=event.target.value;updateQuoteTotals();}
   }
   if (event.target?.matches('[data-quote-search-qty]')) {
     const id=Number(event.target.dataset.quoteSearchQty);
@@ -1075,7 +1144,7 @@ $app.addEventListener("change", (event) => {
     if(event.target.id==='quote-warehouse')state.quoteWarehouseId=Number(event.target.value)||null;
     else state.quotePricelistId=Number(event.target.value)||null;
     state.quoteResults=[];
-    state.quoteLines.forEach(line=>{line.stock_qty=null;line.price=null;line.stock_label='';});
+    state.quoteLines.forEach(line=>{line.stock_qty=null;line.price=null;line.qty_priced=null;line.stock_label='';line.warehouse_id=null;});
     state.quoteSelections={};
     renderQuote();
     if(state.quoteSearch.trim().length>=2)void searchQuoteProducts(state.quoteSearch);
@@ -1202,6 +1271,21 @@ $app.addEventListener("click", async (event) => {
   if (action === "new-catastro") { state.page="new"; render(); return; }
   if (action === "edit-partner") {if(!truthy(selectedPartner()?.census_can_edit_master)){alert("El catastro está protegido; solicite habilitación.");return;} state.page="edit"; render(); return; }
   if (action === "cancel-edit") { state.page="detail"; render(); return; }
+  if (action === "fix-quote-warehouse") {
+    const uuid=event.target.closest('[data-id]')?.dataset.id;
+    const op=state.pending.find(x=>x.uuid===uuid && x.type==='quote' && !['synced','warning'].includes(x.state));
+    const id=Number(document.querySelector(`[data-pending-quote-warehouse="${uuid}"]`)?.value||0);
+    const wh=(state.meta?.capabilities?.quote_warehouses||[]).find(w=>w.id===id);
+    if(!op||!wh){alert('Seleccione una bodega válida.');return;}
+    if((op.user_id && Number(op.user_id)!==Number(state.meta?.user?.id))||
+       (op.company_id && Number(op.company_id)!==Number(state.meta?.user?.company_id))){
+      alert('Esta operación pertenece a otra sesión y no se puede modificar.');return;
+    }
+    if(!confirm(`¿Asignar la bodega ${wh.name} a esta cotización pendiente? Odoo verificará el stock de cada producto cuando sincronice.`))return;
+    op.payload={...op.payload,warehouse_id:id};op.state='pending';op.message='Bodega seleccionada; pendiente de validar en Odoo.';
+    if(db){await idbPut(STORE_PENDING,op);await hydrateLocalState();}
+    render();return;
+  }
   if (action === "sync") { await syncPending(false); return; }
   if (action === "save-visit-offline") { const form=document.querySelector("#visit-form"); if(form) await submitVisit(form,false); return; }
   if (action === "clear-local") { await clearLocal(); return; }

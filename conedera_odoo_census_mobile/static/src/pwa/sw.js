@@ -1,10 +1,10 @@
-const CACHE = "catastro-field-v12";
+const CACHE = "catastro-field-v13";
 const ASSETS = [
   "/catastro/app",
   "/catastro/manifest.webmanifest",
-  "/conedera_odoo_census_mobile/static/src/pwa/app.css?v=18.0.1.5.6",
-  "/conedera_odoo_census_mobile/static/src/pwa/app.js?v=18.0.1.5.6",
-  "/conedera_odoo_census_mobile/static/src/pwa/boot_guard.js?v=18.0.1.5.6",
+  "/conedera_odoo_census_mobile/static/src/pwa/app.css?v=18.0.1.5.7",
+  "/conedera_odoo_census_mobile/static/src/pwa/app.js?v=18.0.1.5.7",
+  "/conedera_odoo_census_mobile/static/src/pwa/boot_guard.js?v=18.0.1.5.7",
   "/conedera_odoo_census_mobile/static/description/icon.svg",
 ];
 
