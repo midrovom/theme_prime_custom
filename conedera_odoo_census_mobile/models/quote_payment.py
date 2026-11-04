@@ -34,8 +34,70 @@ class CatastroQuotePaymentOption(models.Model):
 class ResCompany(models.Model):
     _inherit = 'res.company'
 
-    catastro_retail_partner_id = fields.Many2one('res.partner', string='Consumidor final para Catastro PWA',
-        help='El perfil Tienda podrá crear cotizaciones únicamente a este cliente sin un catastro previo.')
+    # IMPORTANT: this is deliberately NON-STORED. A new stored column on
+    # res.company can be prefetched by button_install() BEFORE module upgrade
+    # creates the column (UndefinedColumn during ir.module.module upgrade).
+    # The per-company configuration lives in ir.config_parameter instead.
+    catastro_retail_partner_id = fields.Many2one(
+        'res.partner', string='Consumidor final para Catastro PWA',
+        compute='_compute_catastro_retail_partner_id',
+        inverse='_inverse_catastro_retail_partner_id',
+        store=False,
+        help='El perfil Tienda podrá crear cotizaciones únicamente a este cliente sin un catastro previo.',
+    )
+
+    @api.model
+    def _catastro_retail_config_key(self, company_id):
+        return 'conedera_odoo_census_mobile.retail_partner.company_%s' % company_id
+
+    def _compute_catastro_retail_partner_id(self):
+        # Support databases where v18.0.1.5.8 managed to install: read the old
+        # column as a fallback until the first save. Never query it unless
+        # PostgreSQL confirms the column exists.
+        ids = [company.id for company in self if isinstance(company.id, int)]
+        legacy = {}
+        if ids:
+            self.env.cr.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM pg_attribute
+                     WHERE attrelid = 'res_company'::regclass
+                       AND attname = 'catastro_retail_partner_id'
+                       AND NOT attisdropped
+                )
+            """)
+            if self.env.cr.fetchone()[0]:
+                self.env.cr.execute(
+                    'SELECT id, catastro_retail_partner_id FROM res_company WHERE id = ANY(%s)',
+                    [ids],
+                )
+                legacy = dict(self.env.cr.fetchall())
+
+        parameters = self.env['ir.config_parameter'].sudo()
+        Partner = self.env['res.partner'].sudo()
+        for company in self:
+            partner_id = 0
+            if isinstance(company.id, int):
+                value = parameters.get_param(self._catastro_retail_config_key(company.id))
+                # An explicit '0' means the setting was cleared, preventing a
+                # stale old-column value from being resurrected.
+                try:
+                    partner_id = int(value) if value is not False and value is not None else int(legacy.get(company.id) or 0)
+                except (TypeError, ValueError):
+                    partner_id = 0
+            company.catastro_retail_partner_id = Partner.browse(partner_id).exists() if partner_id > 0 else False
+
+    def _inverse_catastro_retail_partner_id(self):
+        from odoo.exceptions import AccessError
+        if not self.env.user.has_group('base.group_system'):
+            raise AccessError('Solo un administrador puede configurar el Consumidor Final por empresa.')
+        parameters = self.env['ir.config_parameter'].sudo()
+        for company in self:
+            if not isinstance(company.id, int):
+                continue
+            partner = company.catastro_retail_partner_id
+            if partner and partner.company_id and partner.company_id != company:
+                raise ValidationError('El cliente Consumidor Final pertenece a otra empresa.')
+            parameters.set_param(self._catastro_retail_config_key(company.id), str(partner.id if partner else 0))
 
 
 class SaleOrder(models.Model):
