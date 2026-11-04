@@ -142,3 +142,12 @@ button{cursor:pointer}
 .quote-hero-native{color:#fff;font-size:12px;font-weight:750;text-decoration:underline;text-underline-offset:3px;min-height:27px;display:grid;place-content:center}
 .quote-hero-native:focus-visible{outline:3px solid #fff;outline-offset:3px;border-radius:5px}
 @media(max-width:650px){.quote-hero-actions{width:100%}}
+
+/* Diagnóstico visible cuando IndexedDB, SW o JS no permiten iniciar. */
+.boot-screen.boot-error { gap: 14px; padding: 32px 20px; text-align: center; }
+.boot-error-text { max-width: 580px; margin: 4px 0; overflow-wrap: anywhere; }
+.boot-error-note { max-width: 580px; color: #764c11; font-size: .9rem; }
+.boot-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; max-width: 630px; }
+.boot-actions .btn { width: auto; min-width: 150px; }
+.boot-odoo-link { margin-top: 12px; font-size: .9rem; }
+@media (max-width: 500px) { .boot-actions { flex-direction: column; width: min(100%, 360px); } .boot-actions .btn { width: 100%; } }

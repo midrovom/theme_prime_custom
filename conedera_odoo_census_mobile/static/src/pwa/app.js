@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.1";
+const APP_VERSION = "18.0.1.5.2";
 const DB_NAME = "conedera-field-app";
 const DB_VERSION = 2;
 const STORE_META = "meta";
@@ -105,7 +105,27 @@ function truthy(value) { return value === true || value === "true" || value === 
 
 function openDb() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    let finished = false;
+    let blocked = false;
+    // IndexedDB puede esperar indefinidamente si otra pestaña mantiene una versión antigua abierta.
+    // No borrar ni recrear la base: contiene visitas, catastros y cotizaciones pendientes.
+    const timer = setTimeout(() => {
+      if (finished) return;
+      finished = true;
+      reject(new Error(blocked
+        ? "La base local está bloqueada por otra pestaña de Catastro. Cierre las otras pestañas o ventanas de la app y reintente. Los pendientes NO se han borrado."
+        : "No se pudo abrir el almacenamiento local. Compruebe espacio disponible y permisos del navegador. Sus registros guardados NO se han borrado."));
+    }, 9000);
+    let req;
+    try {
+      req = indexedDB.open(DB_NAME, DB_VERSION);
+    } catch (error) {
+      clearTimeout(timer);
+      finished = true;
+      reject(new Error(`El navegador no permite abrir el almacenamiento local: ${error.message || error}`));
+      return;
+    }
+    req.onblocked = () => { blocked = true; };
     req.onupgradeneeded = () => {
       const idb = req.result;
       if (!idb.objectStoreNames.contains(STORE_META)) idb.createObjectStore(STORE_META, { keyPath: "key" });
@@ -118,8 +138,18 @@ function openDb() {
       if (!idb.objectStoreNames.contains(STORE_QUOTE_PRODUCTS)) idb.createObjectStore(STORE_QUOTE_PRODUCTS, { keyPath: "key" });
       if (!idb.objectStoreNames.contains(STORE_QUOTE_DETAILS)) idb.createObjectStore(STORE_QUOTE_DETAILS, { keyPath: "key" });
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      if (finished) { req.result.close(); return; }
+      finished = true;
+      clearTimeout(timer);
+      resolve(req.result);
+    };
+    req.onerror = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      reject(req.error || new Error("No se pudo abrir la base de datos local."));
+    };
   });
 }
 
@@ -166,19 +196,36 @@ function idbReplaceAll(store, values) {
 }
 
 async function rpc(url, params = {}) {
-  const res = await fetch(url, {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", method: "call", params, id: Date.now() }),
-  });
-  if (!res.ok) {
-    if (res.status === 401 || res.status === 403) throw new Error("Sesión vencida. Conéctese y vuelva a iniciar sesión en Odoo.");
-    throw new Error(`Servidor no disponible (${res.status}).`);
+  // Una petición colgada no debe dejar la interfaz en "Sincronizando" indefinidamente.
+  // Los cambios se reintentan por UUID en Odoo para evitar duplicados.
+  const timeout = url.endsWith("/sync") ? 90000 : url.endsWith("/bootstrap") ? 50000 : 30000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", method: "call", params, id: Date.now() }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) throw new Error("Sesión vencida. Vuelva a iniciar sesión en Odoo.");
+      throw new Error(`Servidor no disponible (${res.status}).`);
+    }
+    const type = res.headers.get("content-type") || "";
+    if (res.redirected || !type.toLowerCase().includes("json")) {
+      throw new Error("Odoo devolvió una página en lugar de datos. Compruebe que su sesión esté activa e inicie sesión de nuevo.");
+    }
+    const body = await res.json();
+    if (body.error) throw new Error(body.error?.data?.message || body.error?.message || "Error del servidor");
+    return body.result;
+  } catch (err) {
+    if (err?.name === "AbortError") throw new Error("Odoo tardó demasiado en responder. Revise la conexión y vuelva a sincronizar; los registros pendientes siguen guardados.");
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-  const body = await res.json();
-  if (body.error) throw new Error(body.error?.data?.message || body.error?.message || "Error del servidor");
-  return body.result;
 }
 
 async function hydrateLocalState() {
@@ -918,9 +965,13 @@ $app.addEventListener("submit", async (event) => {
 async function init() {
   db = await openDb();
   await hydrateLocalState();
+  // El primer render debe suceder ANTES de consultar Odoo y de instalar el Service Worker.
+  // De este modo una conexión lenta no bloquea la vista de los catastros locales.
   render();
+  window.catastroBootReady?.();
   if (window.isSecureContext && "serviceWorker" in navigator) {
-    try { await navigator.serviceWorker.register("/catastro/sw.js", { scope: "/catastro/" }); } catch (err) { console.warn("Service worker no disponible", err); }
+    navigator.serviceWorker.register("/catastro/sw.js", { scope: "/catastro/" })
+      .catch((err) => console.warn("Service worker no disponible", err));
   }
   if (navigator.onLine) {
     await refreshFromServer(false);
@@ -929,6 +980,7 @@ async function init() {
 }
 
 init().catch((err) => {
-  console.error(err);
-  $app.innerHTML = `<div class="boot-screen"><div class="boot-logo">!</div><strong>No se pudo iniciar la app</strong><span>${esc(err.message||err)}</span><a class="btn btn-primary" href="/web">Volver a Odoo</a></div>`;
+  console.error("Error iniciando Catastro PWA", err);
+  if (window.catastroBootError) window.catastroBootError(err.message || String(err));
+  else $app.innerHTML = `<div class="boot-screen"><div class="boot-logo">!</div><strong>No se pudo iniciar la app</strong><span>${esc(err.message || err)}</span><a class="btn btn-primary" href="/web">Volver a Odoo</a></div>`;
 });
