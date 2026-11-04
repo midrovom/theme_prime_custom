@@ -25,7 +25,12 @@ class ConederaFieldAppController(http.Controller):
             headers.append(("Cache-Control", "no-cache"))
         return request.make_response(data, headers=headers)
 
-    @http.route("/conedera/app", type="http", auth="user", methods=["GET"], sitemap=False)
+    @http.route(["/catastro", "/catastro/", "/conedera/app"], type="http", auth="user", methods=["GET"], sitemap=False)
+    def catastro_redirect(self, **kwargs):
+        # Preserve existing bookmarks; never replace the default Odoo /web route.
+        return request.redirect("/catastro/app", code=302)
+
+    @http.route("/catastro/app", type="http", auth="user", methods=["GET"], sitemap=False)
     def app(self, **kwargs):
         return self._static_response(
             "conedera_odoo_census_mobile/static/src/pwa/index.html",
@@ -33,24 +38,24 @@ class ConederaFieldAppController(http.Controller):
             cache=False,
         )
 
-    @http.route("/conedera/sw.js", type="http", auth="public", methods=["GET"], csrf=False, sitemap=False)
+    @http.route("/catastro/sw.js", type="http", auth="public", methods=["GET"], csrf=False, sitemap=False)
     def service_worker(self, **kwargs):
         response = self._static_response(
             "conedera_odoo_census_mobile/static/src/pwa/sw.js",
             "application/javascript; charset=utf-8",
             cache=False,
         )
-        response.headers["Service-Worker-Allowed"] = "/conedera/"
+        response.headers["Service-Worker-Allowed"] = "/catastro/"
         return response
 
-    @http.route("/conedera/manifest.webmanifest", type="http", auth="public", methods=["GET"], csrf=False, sitemap=False)
+    @http.route("/catastro/manifest.webmanifest", type="http", auth="public", methods=["GET"], csrf=False, sitemap=False)
     def manifest(self, **kwargs):
         payload = {
             "name": "Catastro de Campo",
             "short_name": "Catastro",
             "description": "Catastro comercial y visitas de campo para múltiples empresas",
-            "start_url": "/conedera/app",
-            "scope": "/conedera/",
+            "start_url": "/catastro/app",
+            "scope": "/catastro/",
             "display": "standalone",
             "background_color": "#f7f6fb",
             "theme_color": "#6f5aa7",
@@ -71,7 +76,7 @@ class ConederaFieldAppController(http.Controller):
             ],
         )
 
-    @http.route("/conedera/app/ping", type="json", auth="user", methods=["POST"], readonly=True)
+    @http.route(["/catastro/app/ping", "/conedera/app/ping"], type="json", auth="user", methods=["POST"], readonly=True)
     def ping(self):
         return {"ok": True, "server_time": fields.Datetime.now(), "user_id": request.env.user.id,
                 "company_id": request.env.company.id}
@@ -259,18 +264,18 @@ class ConederaFieldAppController(http.Controller):
             "census_unlock_until": str(partner.census_unlock_until or ""),
         }
 
-    @http.route("/conedera/app/lookup", type="json", auth="user", methods=["POST"], readonly=True)
+    @http.route(["/catastro/app/lookup", "/conedera/app/lookup"], type="json", auth="user", methods=["POST"], readonly=True)
     def lookup(self, term=""):
         self._require_census_role()
         term = (term or "").strip()[:120]
         return request.env["conedera.census.customer.lookup.wizard"].search_global_candidates(term, limit=12)
 
-    @http.route("/conedera/app/catastro/status", type="json", auth="user", methods=["POST"], readonly=True)
+    @http.route(["/catastro/app/catastro/status", "/conedera/app/catastro/status"], type="json", auth="user", methods=["POST"], readonly=True)
     def catastro_status(self, partner_id):
         self._require_census_role()
         return self._partner_status(self._visible_partner(partner_id))
 
-    @http.route("/conedera/app/catastro/request-unlock", type="json", auth="user", methods=["POST"])
+    @http.route(["/catastro/app/catastro/request-unlock", "/conedera/app/catastro/request-unlock"], type="json", auth="user", methods=["POST"])
     def request_unlock(self, partner_id, reason=""):
         self._require_census_role()
         partner = self._visible_partner(partner_id)
@@ -284,14 +289,14 @@ class ConederaFieldAppController(http.Controller):
         wizard.action_submit()  # Comprueba solicitudes pendientes y notifica al supervisor.
         return self._partner_status(partner)
 
-    @http.route("/conedera/app/catastro/finish-edit", type="json", auth="user", methods=["POST"])
+    @http.route(["/catastro/app/catastro/finish-edit", "/conedera/app/catastro/finish-edit"], type="json", auth="user", methods=["POST"])
     def finish_edit(self, partner_id):
         self._require_census_role()
         partner = self._visible_partner(partner_id)
         partner.action_finish_census_edit()
         return self._partner_status(partner)
 
-    @http.route("/conedera/app/bootstrap", type="json", auth="user", methods=["POST"], readonly=True)
+    @http.route(["/catastro/app/bootstrap", "/conedera/app/bootstrap"], type="json", auth="user", methods=["POST"], readonly=True)
     def bootstrap(self):
         Partner = request.env["res.partner"]
         partner_fields = self._readable_partner_fields()
@@ -327,8 +332,133 @@ class ConederaFieldAppController(http.Controller):
                 "business_type_model": "conedera.census.business.type" in request.env.registry,
                 "mobile_brand_model": "conedera.census.mobile.brand" in request.env.registry,
                 "opening_hour_model": "conedera.partner.opening.hour" in request.env.registry,
+                "sales_action_id": (request.env.ref("sale.action_quotations_with_onboarding", raise_if_not_found=False) or request.env["ir.actions.act_window"]).id or False,
+                "quote_create": request.env["sale.order"].check_access_rights("create", raise_exception=False),
+                "quote_read": request.env["sale.order"].check_access_rights("read", raise_exception=False),
             },
         }
+
+    def _quote_partner(self, partner_id):
+        self._require_census_role()
+        partner = self._visible_partner(partner_id).commercial_partner_id
+        if not partner.census_locked:
+            raise ValidationError("Primero finalice y proteja el catastro para cotizar.")
+        # Use the base-module readiness check, not a front-end approximation.
+        partner._ensure_census_ready_for_activity()
+        if partner.census_company_id and partner.census_company_id != request.env.company:
+            raise AccessError("Cambie a la compañía del catastro antes de crear una cotización.")
+        return partner
+
+    def _quote_access(self, operation):
+        Sale = request.env["sale.order"]
+        if not Sale.check_access_rights(operation, raise_exception=False):
+            raise AccessError("Necesita permisos de Ventas para gestionar cotizaciones.")
+        return Sale
+
+    @http.route(["/catastro/app/quote/products", "/conedera/app/quote/products"], type="json", auth="user", methods=["POST"], readonly=True)
+    def quote_products(self, term="", partner_id=None):
+        self._quote_partner(partner_id)
+        self._quote_access("read")
+        Product = request.env["product.product"]
+        term = (term or "").strip()[:90]
+        if len(term) < 2:
+            return []
+        domain = [("sale_ok", "=", True), ("active", "=", True),
+                  "|", ("name", "ilike", term), ("default_code", "ilike", term)]
+        if "company_id" in Product._fields:
+            domain = ["|", ("company_id", "=", False), ("company_id", "=", request.env.company.id)] + domain
+        rows = Product.search(domain, order="name, id", limit=30)
+        return [{"id": p.id, "name": p.display_name,
+                 "code": p.default_code or "", "uom": p.uom_id.name} for p in rows]
+
+    def _quote_record_payload(self, order):
+        # The caller already fetched the order under normal user ACLs / record rules.
+        return {
+            "id": order.id,
+            "name": order.name,
+            "partner_id": order.partner_id.id,
+            "partner_name": order.partner_id.display_name,
+            "company_name": order.company_id.name,
+            "company_id": order.company_id.id,
+            "visit_id": order.census_visit_id.id if order.census_visit_id else False,
+            "state": order.state,
+            "date_order": str(order.date_order or ""),
+            "client_order_ref": order.client_order_ref or "",
+            "currency": order.currency_id.symbol or order.currency_id.name,
+            "amount_untaxed": order.amount_untaxed,
+            "amount_tax": order.amount_tax,
+            "amount_total": order.amount_total,
+            "lines": [{"id": line.id, "name": line.name,
+                       "product_name": line.product_id.display_name if line.product_id else "",
+                       "qty": line.product_uom_qty,
+                       "uom": line.product_uom.name if line.product_uom else "",
+                       "price_unit": line.price_unit, "discount": line.discount,
+                       "subtotal": line.price_subtotal, "total": line.price_total,
+                       "taxes": line.tax_id.mapped("name")}
+                      for line in order.order_line if not line.display_type],
+        }
+
+    @http.route(["/catastro/app/quote/read", "/conedera/app/quote/read"], type="json", auth="user", methods=["POST"], readonly=True)
+    def quote_read(self, quote_id):
+        self._require_census_role()
+        Sale = self._quote_access("read")
+        # Search instead of sudo/browse to respect record rules and company isolation.
+        order = Sale.search([("id", "=", int(quote_id or 0)),
+                             ("company_id", "=", request.env.company.id)], limit=1)
+        if not order:
+            raise AccessError("Cotización no disponible para su usuario o compañía.")
+        self._visible_partner(order.partner_id.commercial_partner_id.id)
+        return self._quote_record_payload(order)
+
+    def _sync_quote(self, payload):
+        partner = self._quote_partner(payload.get("partner_id"))
+        Sale = self._quote_access("create")
+        Product = request.env["product.product"]
+        if not Product.check_access_rights("read", raise_exception=False):
+            raise AccessError("Sin permisos para consultar productos.")
+        lines = payload.get("lines") or []
+        if not isinstance(lines, list) or not 1 <= len(lines) <= 60:
+            raise ValidationError("La cotización debe contener entre 1 y 60 productos.")
+        products = []
+        for line in lines:
+            if not isinstance(line, dict):
+                raise ValidationError("Formato inválido de línea de cotización.")
+            try:
+                pid, qty = int(line.get("product_id")), float(line.get("qty"))
+            except (ValueError, TypeError):
+                raise ValidationError("Producto y cantidad deben ser válidos.")
+            if not (0 < qty <= 100000) or qty != qty:
+                raise ValidationError("La cantidad debe ser mayor a cero y estar dentro del límite permitido.")
+            products.append((pid, qty))
+        unique_ids = {p for p, _ in products}
+        domain = [("id", "in", list(unique_ids)), ("sale_ok", "=", True), ("active", "=", True)]
+        if "company_id" in Product._fields:
+            domain = ["|", ("company_id", "=", False), ("company_id", "=", request.env.company.id)] + domain
+        accessible = Product.search(domain)
+        if {p.id for p in accessible} != unique_ids:
+            raise ValidationError("Uno o varios productos no están disponibles para venta en esta compañía.")
+        visit_id = int(payload.get("visit_id") or 0)
+        vals = {"partner_id": partner.id, "company_id": request.env.company.id,
+                "user_id": request.env.user.id, "census_originated": True,
+                "order_line": [(0, 0, {"product_id": pid, "product_uom_qty": qty}) for pid, qty in products]}
+        if visit_id:
+            Visit = request.env["conedera.census.visit"]
+            visit = Visit.search([("id", "=", visit_id), ("partner_id", "=", partner.id),
+                                  ("company_id", "=", request.env.company.id)], limit=1)
+            if not visit:
+                raise ValidationError("La visita seleccionada no corresponde a este cliente y compañía.")
+            vals["census_visit_id"] = visit.id
+            vals["origin"] = visit.name
+        reference = (payload.get("client_order_ref") or "").strip()[:100]
+        if reference:
+            vals["client_order_ref"] = reference
+        # Standard ORM create recalculates order line taxes, price lists and totals.
+        # We never accept price_unit, taxes, state, company, or discounts from offline clients.
+        order = Sale.with_company(request.env.company).create(vals)
+        if order.state not in ("draft", "sent"):
+            raise ValidationError("La cotización no quedó en estado borrador.")
+        return {"state": "synced", "message": "Cotización %s guardada en Odoo. Revise precios e impuestos calculados antes de enviarla." % order.name,
+                "result_model": "sale.order", "result_id": order.id}
 
     def _normalize_vat(self, vat):
         return VAT_CLEAN_RE.sub("", (vat or "").strip().upper())
@@ -633,6 +763,8 @@ class ConederaFieldAppController(http.Controller):
     def _process_operation(self, operation):
         op_type = operation.get("type")
         payload = operation.get("payload") or {}
+        if op_type == "quote":
+            return self._sync_quote(payload)
         if op_type == "visit":
             return self._sync_visit(payload)
         if op_type == "catastro":
@@ -643,7 +775,7 @@ class ConederaFieldAppController(http.Controller):
             return self._sync_catastro_finalize(payload)
         raise UserError("Tipo de operación móvil no soportado.")
 
-    @http.route("/conedera/app/sync", type="json", auth="user", methods=["POST"])
+    @http.route(["/catastro/app/sync", "/conedera/app/sync"], type="json", auth="user", methods=["POST"])
     def sync(self, operations=None):
         operations = operations or []
         if not isinstance(operations, list):
@@ -653,7 +785,7 @@ class ConederaFieldAppController(http.Controller):
         for operation in operations[:100]:
             client_uuid = (operation.get("uuid") or "").strip()
             op_type = operation.get("type")
-            if not client_uuid or op_type not in {"visit", "catastro", "catastro_update", "catastro_finalize"}:
+            if not client_uuid or op_type not in {"visit", "catastro", "catastro_update", "catastro_finalize", "quote"}:
                 results.append({"uuid": client_uuid, "state": "error", "message": "Operación inválida."})
                 continue
             if operation.get("user_id") and int(operation["user_id"]) != request.env.user.id:

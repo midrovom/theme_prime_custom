@@ -1,5 +1,5 @@
+const APP_VERSION = "18.0.1.5.4";
 const DB_NAME = "conedera-field-app";
-const DB_VERSION = 1;
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
 const STORE_PENDING = "pending";
@@ -7,6 +7,8 @@ const STORE_VISITS = "visits";
 const STORE_ORDERS = "orders";
 const STORE_PRODUCTS = "products";
 const STORE_CATALOG = "catalog";
+const STORE_QUOTE_PRODUCTS = "quote_products";
+const STORE_QUOTE_DETAILS = "quote_details";
 
 const $app = document.querySelector("#app");
 let db;
@@ -25,11 +27,27 @@ const state = {
   online: navigator.onLine,
   syncing: false,
   lastError: "",
+  storageError: "",
+  localReady: false,
+  serverSnapshot: null,
+  starting: true,
   sessionBlocked: false,
   candidateMatches: [],
   candidateSelected: null,
   lookupPending: false,
   lookupTimer: null,
+  quotePartnerId: null,
+  quoteLines: [],
+  quoteSearch: "",
+  quoteResults: [],
+  quoteSearching: false,
+  quoteLookupTimer: null,
+  quoteProducts: [],
+  quoteDetails: [],
+  currentQuoteId: null,
+  quoteDetail: null,
+  quoteVisitId: null,
+  quoteClientRef: "",
 };
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -89,27 +107,67 @@ function nowServerString() {
 function truthy(value) { return value === true || value === "true" || value === 1 || value === "1"; }
 
 function openDb() {
+  // No solicitar cambios de esquema al inicio: las bases previas pueden contener
+  // catastros, visitas o cotizaciones sin sincronizar. Esta apertura es asíncrona
+  // y NO tiene un tiempo límite artificial que genere fallos falsos.
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const idb = req.result;
-      if (!idb.objectStoreNames.contains(STORE_META)) idb.createObjectStore(STORE_META, { keyPath: "key" });
-      if (!idb.objectStoreNames.contains(STORE_PARTNERS)) idb.createObjectStore(STORE_PARTNERS, { keyPath: "id" });
-      if (!idb.objectStoreNames.contains(STORE_PENDING)) idb.createObjectStore(STORE_PENDING, { keyPath: "uuid" });
-      if (!idb.objectStoreNames.contains(STORE_VISITS)) idb.createObjectStore(STORE_VISITS, { keyPath: "id" });
-      if (!idb.objectStoreNames.contains(STORE_ORDERS)) idb.createObjectStore(STORE_ORDERS, { keyPath: "id" });
-      if (!idb.objectStoreNames.contains(STORE_PRODUCTS)) idb.createObjectStore(STORE_PRODUCTS, { keyPath: "key" });
-      if (!idb.objectStoreNames.contains(STORE_CATALOG)) idb.createObjectStore(STORE_CATALOG, { keyPath: "key" });
+    let req;
+    try { req = indexedDB.open(DB_NAME); }
+    catch (error) { reject(error); return; }
+    req.onblocked = () => {
+      // Una pestaña anterior puede completar una transacción. Esperamos sin
+      // declarar falsamente que el almacenamiento está averiado.
+      console.info("Catastro: esperando acceso a IndexedDB; la pantalla sigue disponible.");
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onupgradeneeded = () => {
+      const local = req.result;
+      const stores = [
+        [STORE_META, "key"], [STORE_PARTNERS, "id"],
+        [STORE_PENDING, "uuid"], [STORE_VISITS, "id"],
+        [STORE_ORDERS, "id"], [STORE_PRODUCTS, "key"],
+        [STORE_CATALOG, "key"],
+        [STORE_QUOTE_PRODUCTS, "key"], [STORE_QUOTE_DETAILS, "key"],
+      ];
+      for (const [name, keyPath] of stores) {
+        if (!local.objectStoreNames.contains(name)) local.createObjectStore(name, { keyPath });
+      }
+    };
+    req.onsuccess = () => {
+      const opened = req.result;
+      opened.onversionchange = () => {
+        // Otra versión necesita actualizar el esquema. No bloquearla.
+        opened.close();
+        if (db === opened) {
+          db = null;
+          state.localReady = false;
+          setTimeout(() => { if (!state.localReady) void restoreLocalStorage(); }, 750);
+        }
+      };
+      resolve(opened);
+    };
+    req.onerror = () => reject(req.error || new Error("No se pudo abrir la base de datos local."));
   });
 }
 
 function tx(store, mode = "readonly") {
+  if (!db) throw new Error("El almacenamiento local no está disponible.");
   return db.transaction(store, mode).objectStore(store);
 }
+function quoteLegacyPrefix(store) { return `quote-cache:${store}:`; }
+function isLegacyQuoteStore(store) {
+  return store === STORE_QUOTE_PRODUCTS || store === STORE_QUOTE_DETAILS;
+}
+function legacyQuoteStore(store) {
+  return Boolean(db && isLegacyQuoteStore(store) && !db.objectStoreNames.contains(store));
+}
 function idbGetAll(store) {
+  if (legacyQuoteStore(store)) {
+    // Las instalaciones v1 no tienen estas dos stores. Reutilizar meta evita
+    // una migracion forzosa y conserva la cola offline existente.
+    return idbGetAll(STORE_META).then(rows => rows
+      .filter(row => String(row.key || "").startsWith(quoteLegacyPrefix(store)))
+      .map(row => row.value));
+  }
   return new Promise((resolve, reject) => {
     const req = tx(store).getAll();
     req.onsuccess = () => resolve(req.result || []);
@@ -117,6 +175,9 @@ function idbGetAll(store) {
   });
 }
 function idbGet(store, key) {
+  if (legacyQuoteStore(store)) {
+    return idbGet(STORE_META, quoteLegacyPrefix(store) + key).then(row => row?.value || null);
+  }
   return new Promise((resolve, reject) => {
     const req = tx(store).get(key);
     req.onsuccess = () => resolve(req.result || null);
@@ -124,6 +185,9 @@ function idbGet(store, key) {
   });
 }
 function idbPut(store, value) {
+  if (legacyQuoteStore(store)) {
+    return idbPut(STORE_META, {key:quoteLegacyPrefix(store) + value.key, value}).then(() => value);
+  }
   return new Promise((resolve, reject) => {
     const req = tx(store, "readwrite").put(value);
     req.onsuccess = () => resolve(value);
@@ -131,6 +195,7 @@ function idbPut(store, value) {
   });
 }
 function idbDelete(store, key) {
+  if (legacyQuoteStore(store)) return idbDelete(STORE_META, quoteLegacyPrefix(store) + key);
   return new Promise((resolve, reject) => {
     const req = tx(store, "readwrite").delete(key);
     req.onsuccess = () => resolve();
@@ -138,6 +203,13 @@ function idbDelete(store, key) {
   });
 }
 function idbReplaceAll(store, values) {
+  if (legacyQuoteStore(store)) {
+    return idbGetAll(STORE_META).then(async rows => {
+      for (const row of rows.filter(row => String(row.key || "").startsWith(quoteLegacyPrefix(store))))
+        await idbDelete(STORE_META, row.key);
+      for (const value of values) await idbPut(store, value);
+    });
+  }
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(store, "readwrite");
     const os = transaction.objectStore(store);
@@ -149,25 +221,42 @@ function idbReplaceAll(store, values) {
 }
 
 async function rpc(url, params = {}) {
-  const res = await fetch(url, {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", method: "call", params, id: Date.now() }),
-  });
-  if (!res.ok) {
-    if (res.status === 401 || res.status === 403) throw new Error("Sesión vencida. Conéctese y vuelva a iniciar sesión en Odoo.");
-    throw new Error(`Servidor no disponible (${res.status}).`);
+  // Una petición colgada no debe dejar la interfaz en "Sincronizando" indefinidamente.
+  // Los cambios se reintentan por UUID en Odoo para evitar duplicados.
+  const timeout = url.endsWith("/sync") ? 90000 : url.endsWith("/bootstrap") ? 50000 : 30000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", method: "call", params, id: Date.now() }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) throw new Error("Sesión vencida. Vuelva a iniciar sesión en Odoo.");
+      throw new Error(`Servidor no disponible (${res.status}).`);
+    }
+    const type = res.headers.get("content-type") || "";
+    if (res.redirected || !type.toLowerCase().includes("json")) {
+      throw new Error("Odoo devolvió una página en lugar de datos. Compruebe que su sesión esté activa e inicie sesión de nuevo.");
+    }
+    const body = await res.json();
+    if (body.error) throw new Error(body.error?.data?.message || body.error?.message || "Error del servidor");
+    return body.result;
+  } catch (err) {
+    if (err?.name === "AbortError") throw new Error("Odoo tardó demasiado en responder. Revise la conexión y vuelva a sincronizar; los registros pendientes siguen guardados.");
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-  const body = await res.json();
-  if (body.error) throw new Error(body.error?.data?.message || body.error?.message || "Error del servidor");
-  return body.result;
 }
 
 async function hydrateLocalState() {
-  const [partners, pending, visits, orders, products, meta, catalog] = await Promise.all([
+  const [partners, pending, visits, orders, products, meta, catalog, quoteProducts, quoteDetails] = await Promise.all([
     idbGetAll(STORE_PARTNERS), idbGetAll(STORE_PENDING), idbGetAll(STORE_VISITS), idbGetAll(STORE_ORDERS), idbGetAll(STORE_PRODUCTS),
-    idbGet(STORE_META, "bootstrap"), idbGet(STORE_CATALOG, "catalog"),
+    idbGet(STORE_META, "bootstrap"), idbGet(STORE_CATALOG, "catalog"), idbGetAll(STORE_QUOTE_PRODUCTS), idbGetAll(STORE_QUOTE_DETAILS),
   ]);
   state.partners = partners;
   state.pending = pending.sort((a,b) => String(b.created_at).localeCompare(String(a.created_at)));
@@ -176,6 +265,8 @@ async function hydrateLocalState() {
   state.products = products;
   state.meta = meta?.value || null;
   state.catalog = catalog?.value || state.catalog;
+  state.quoteProducts = quoteProducts;
+  state.quoteDetails = quoteDetails;
 }
 
 async function persistBootstrap(data) {
@@ -190,33 +281,60 @@ async function persistBootstrap(data) {
   ]);
 }
 
-async function refreshFromServer(showMessage = true) {
+function applyBootstrapInMemory(data) {
+  // Consulta online disponible incluso si IndexedDB falla.
+  state.partners = data.partners || [];
+  state.visits = data.visits || [];
+  state.orders = data.orders || [];
+  state.products = (data.products || []).map((x, idx) => ({ ...x, key:`${x.partner_id}-${x.product_id}-${idx}` }));
+  state.meta = {user:data.user, capabilities:data.capabilities, server_time:data.server_time, saved_at:new Date().toISOString()};
+  state.catalog = {teams:data.teams || [], business_types:data.business_types || [], mobile_brands:data.mobile_brands || []};
+}
+async function refreshFromServer(showMessage = true, prefetchedBootstrap = null) {
   if (!navigator.onLine || state.syncing) return;
   try {
     state.syncing = true;
     render();
-    const data = await rpc("/conedera/app/bootstrap");
+    const data = prefetchedBootstrap || await rpc("/catastro/app/bootstrap");
     if (state.meta?.user && (Number(state.meta.user.id)!==Number(data.user.id) || Number(state.meta.user.company_id)!==Number(data.user.company_id)) && state.pending.some(x=>!["synced","warning","conflict"].includes(x.state))) {
       state.sessionBlocked=true;
       throw new Error("Hay operaciones de otra sesión en este dispositivo. Vuelva al usuario y compañía originales para sincronizar; no se mezclaron datos.");
     }
     state.sessionBlocked=false;
-    await persistBootstrap(data);
-    await hydrateLocalState();
+    state.serverSnapshot = data;
+    if (db && state.localReady) {
+      try {
+        await persistBootstrap(data);
+        await hydrateLocalState();
+        state.storageError = "";
+      } catch (storageFailure) {
+        // Un fallo al escribir la copia offline no invalida los datos en Odoo.
+        // Nunca borrar ni recrear IndexedDB, ni detener la interfaz.
+        console.warn("No se pudo actualizar la copia local", storageFailure);
+        state.storageError = storageFailure.message || String(storageFailure);
+        applyBootstrapInMemory(data);
+      }
+    } else {
+      applyBootstrapInMemory(data);
+    }
     state.lastError = "";
   } catch (err) {
     state.lastError = err.message || String(err);
     if (showMessage) console.warn(err);
   } finally {
     state.syncing = false;
+    state.starting = false;
     render();
   }
 }
 
 function connectionBanner() {
+  // El almacenamiento se inicializa en segundo plano. Evitar avisos rojos
+  // persistentes por una apertura lenta; registrar detalles técnicos en «Más».
+  if (state.starting && !state.partners.length) return `<div class="connection"><span><i class="dot"></i>Conectando con Odoo…</span></div>`;
   if (state.sessionBlocked) return `<div class="connection error">Operaciones de otra sesión: sincronización bloqueada para proteger los datos.</div>`;
   if (state.syncing) return `<div class="connection"><span><i class="dot"></i>Sincronizando…</span><span>${state.pending.filter(x=>x.state!=="synced").length} pendientes</span></div>`;
-  if (!state.online) return `<div class="connection offline"><span><i class="dot"></i>Sin cobertura / offline</span><span>Los datos quedan en este dispositivo</span></div>`;
+  if (!state.online) return `<div class="connection offline"><span><i class="dot"></i>Sin cobertura / offline</span><span>${state.localReady?"Los datos quedan en este dispositivo":"Almacenamiento local aún no disponible; evite guardar cambios"}</span></div>`;
   if (state.lastError) return `<div class="connection error"><span><i class="dot"></i>${esc(state.lastError)}</span><button class="btn btn-outline" style="min-height:34px;padding:4px 9px" data-action="refresh">Reintentar</button></div>`;
   return `<div class="connection"><span><i class="dot"></i>En línea</span><span>${state.pending.filter(x=>x.state!=="synced").length} pendientes</span></div>`;
 }
@@ -255,7 +373,8 @@ function partnerCard(p) {
 function renderHome() {
   const q = state.search.trim().toLowerCase();
   const partners = state.partners.filter(p => !q || [p.name,p.commercial_name,p.vat,p.city,p.phone,p.mobile].some(v => String(v||"").toLowerCase().includes(q)));
-  const body = `<input id="partner-search" class="search" placeholder="Buscar por RUC, nombre, ciudad…" value="${esc(state.search)}"/>
+  const body = `<div class="home-tools"><span>Mis clientes</span><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div>
+    <input id="partner-search" class="search" placeholder="Buscar por RUC, nombre, ciudad…" value="${esc(state.search)}"/>
     <div class="cards">${partners.map(partnerCard).join("") || `<div class="empty"><b>No hay catastros en el dispositivo</b>${state.online?"Pulse actualizar o cree uno nuevo.":"Conéctese una vez para descargar sus catastros."}</div>`}</div>`;
   $app.innerHTML = shell("Mis catastros", body, { fab:true, nav:"home" });
 }
@@ -321,12 +440,140 @@ function renderDetail() {
       <div class="chips">${locked?'<span class="chip ok">Protegido</span>':'<span class="chip warn">Borrador</span>'}${p.census_company_id?`<span class="chip">${esc(relationName(p.census_company_id))}</span>`:""}</div>
       <div class="metric-grid"><div class="metric"><strong>${visitsFor(p.id).length}</strong><span>Visitas registradas</span></div><div class="metric"><strong>${ordersFor(p.id).length}</strong><span>Proformas</span></div></div>
     </section>
+    <section class="partner-quote-cta" aria-label="Cotización para este catastro">
+      <div><strong>Proformas y cotizaciones</strong><p>${locked?"Crear una cotización para este cliente y consultar sus proformas.":"Para cotizar primero debe finalizar y proteger este catastro."}</p></div>
+      <button type="button" class="btn btn-primary partner-quote-button" data-action="quote-partner" data-id="${p.id}" ${locked?"":"disabled"}>▤ Crear cotización</button>
+    </section>
     ${detailWorkflow(p)}
     <div class="section-title">Operación comercial</div><div class="action-grid"><button class="btn btn-primary" data-action="visit-partner" data-id="${p.id}" ${locked?"":"disabled"}>＋ Nueva visita</button><a class="btn btn-outline" href="/web#id=${p.id}&model=res.partner&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div>
     <div class="section-title">Bitácora reciente</div><section class="card">${timeline(p.id)}</section></div>
     <div class="detail-secondary"><div class="section-title">Contacto</div><section class="card"><div class="card-sub">${esc(p.phone||p.mobile||"Sin teléfono")}<br>${esc(p.email||"Sin email")}<br>${esc(partnerAddress(p)||"Sin dirección")}</div><div class="section-title">Horario de atención</div>${hoursSummary(p)}</section>
     <div class="section-title">Productos proformados</div><section class="card">${prod.length?prod.map(x=>`<div class="product-row"><div><strong>${esc(x.product_name)}</strong><br><span>${x.lines} líneas · promedio ${money(x.avg_price)}</span></div><div style="text-align:right"><strong>${money(x.qty)}</strong><br><span>${money(x.subtotal)}</span></div></div>`).join(""):`<div class="empty">Sin productos almacenados todavía.</div>`}</section></div></div>`;
   $app.innerHTML = shell(partnerLabel(p), body, {nav:"home"});
+}
+
+function quoteCanCreate() {
+  return Boolean(state.meta?.capabilities?.quote_create);
+}
+function quotePartner() { return state.partners.find(p=>p.id===Number(state.quotePartnerId))||null; }
+function nativeQuotationsUrl() {
+  const action=Number(state.meta?.capabilities?.sales_action_id||0);
+  return action>0?`/web#action=${action}&model=sale.order&view_type=list`:'/web';
+}
+function availableQuoteProducts(term) {
+  const user=state.meta?.user;
+  if (!user) return [];
+  const q=String(term||"").trim().toLowerCase();
+  return state.quoteProducts.filter(p=>Number(p.user_id)===Number(user.id) && Number(p.company_id)===Number(user.company_id)
+    && [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,25);
+}
+function renderQuoteResults() {
+  const box=document.querySelector("#quote-search-results"); if (!box) return;
+  const found=state.quoteResults;
+  box.innerHTML=state.quoteSearching?'<div class="small">Buscando en Odoo…</div>':
+    !state.quoteSearch.trim()?'<div class="small">Escriba el nombre o código del producto.</div>':
+    found.length?found.map(p=>`<button class="quote-pick" type="button" data-action="quote-add-product" data-id="${p.id}"><span><strong>${esc(p.name)}</strong><small>${esc(p.code||p.uom||"")}</small></span><b>＋ Agregar</b></button>`).join(""):
+    `<div class="small">No se encontraron productos ${state.online?"disponibles":"guardados para uso offline"}.</div>`;
+}
+function quoteLinesMarkup() {
+  return state.quoteLines.length?state.quoteLines.map((line,i)=>`<div class="quote-line" data-quote-line="${line.id}">
+    <div class="quote-line-name"><strong>${esc(line.name)}</strong><span>${esc(line.code||line.uom||"")}</span></div>
+    <div class="quote-line-controls"><label>Cantidad<input type="number" inputmode="decimal" min="0.001" max="100000" step="any" value="${esc(line.qty)}" data-quote-qty="${line.id}" required/></label>
+    <button type="button" class="icon-btn quote-remove" title="Quitar producto" aria-label="Quitar ${esc(line.name)}" data-action="quote-remove-product" data-id="${line.id}">×</button></div></div>`).join(""):
+    `<div class="empty"><b>Sin productos</b>Busca un producto y agrégalo a la cotización.</div>`;
+}
+function renderQuote() {
+  const partner=quotePartner();
+  const cap=state.meta?.capabilities||{};
+  const clients=state.partners.filter(p=>truthy(p.census_locked) && (!p.census_company_id || relationId(p.census_company_id)===Number(state.meta?.user?.company_id)));
+  const related=partner?ordersFor(partner.id).slice(0,10):[];
+  const linkedVisits=partner?visitsFor(partner.id).filter(v=>v.state==="done"):[];
+  const availabilityNote=clients.length?"":`<div class="status-banner warn">No hay catastros protegidos de la compañía actual para cotizar. Abre un catastro, completa los datos obligatorios y pulsa «Finalizar y proteger» antes de crear una cotización.</div>`;
+  const permissionNote=cap.quote_create===false?`<div class="status-banner warn">Tu usuario no tiene permiso para crear cotizaciones en Odoo. Solicita al administrador los permisos correspondientes de Ventas. El acceso a esta pantalla sigue visible para que puedas identificar la causa.</div>`:"";
+  if (!partner) { state.page="home"; return renderHome(); }
+  const body=`${availabilityNote}${permissionNote}<div class="quote-layout"><form id="quote-form">
+    <section class="form-card"><div class="row space"><h2>1. Cliente</h2><span class="chip">Empresa: ${esc(state.meta?.user?.company_name||"")}</span></div>
+      <div class="quote-current-customer"><div><span>Catastro seleccionado</span><strong>${esc(partnerLabel(partner))}</strong><small>${esc(partner.vat||"Sin RUC/cédula")}</small></div><button type="button" class="btn btn-outline" data-action="back-to-partner">Volver al catastro</button></div>
+      <div class="field"><label>Vincular con visita (opcional)</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}" ${Number(state.quoteVisitId)===v.id?"selected":""}>${esc(v.name||"Visita #"+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join("")}</select></div>
+    </section>
+    <section class="quote-mode-banner"><div><strong>Cotización rápida desde la PWA</strong><p>Este formulario genera borradores. Para utilizar condiciones comerciales, campos especiales y todas las personalizaciones, abre la pantalla nativa de cotizaciones.</p></div><a class="btn btn-outline" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener" aria-label="Abrir cotizaciones completas en Odoo">Cotización completa en Odoo</a></section>
+    <section class="form-card"><h2>2. Productos y cantidades</h2><div class="field"><label>Buscar por nombre o código</label><input id="quote-search" value="${esc(state.quoteSearch)}" placeholder="Ej. producto, código SKU" autocomplete="off" ${partner?"":"disabled"}/></div>
+      <div id="quote-search-results" class="quote-results" aria-live="polite"></div><div class="quote-lines-head"><strong>Productos agregados (${state.quoteLines.length})</strong></div><div id="quote-lines">${quoteLinesMarkup()}</div>
+      <div class="small">Los precios, descuentos automáticos e impuestos se calcularán en Odoo al guardar. No se fijan importes desde la PWA.</div>
+    </section><section class="form-card"><h2>3. Referencia</h2><div class="field"><label>Referencia del cliente (opcional)</label><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Orden de compra o referencia externa"/></div>
+      <div class="status-banner warn">La cotización se guardará como <b>borrador</b>. Revise los importes definitivos antes de enviarla o confirmarla.</div></section>
+      <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-action="back-to-partner">Volver al catastro</button><button class="btn btn-primary" type="submit" ${!cap.quote_create?"disabled":""}>▤ Guardar cotización${state.online?"":" offline"}</button></div>
+    </form><aside class="quote-side"><section class="card"><div class="card-title">Cotizaciones del cliente</div><div class="card-sub">Historial visible según permisos de Odoo</div>
+      ${related.length?related.map(o=>`<button class="quote-history" type="button" data-action="view-quote" data-id="${o.id}"><span><strong>${esc(o.name)}</strong><small>${esc(dateText(o.date_order))} · ${esc(o.state||"")}</small></span><b>${esc(relationName(o.currency_id)||"")} ${money(o.amount_total)}</b></button>`).join(""):'<div class="small" style="margin-top:10px">Seleccione un cliente para consultar sus proformas.</div>'}</section></aside></div>`;
+  $app.innerHTML=shell("Cotizaciones",body,{nav:"quote"});renderQuoteResults();
+}
+function renderQuoteDetail() {
+  const q=state.quoteDetail;
+  if (!q) {state.page="quote";return renderQuote();}
+  const body=`<div class="quote-layout"><section class="form-card"><div class="row space"><div><div class="eyebrow">Cotización</div><h2>${esc(q.name)}</h2><div class="card-sub">${esc(q.partner_name)} · ${esc(q.company_name)} · ${esc(dateText(q.date_order))}</div></div><span class="chip">${esc(q.state)}</span></div>
+    <div class="section-title">Detalle de productos</div>${q.lines.map(l=>`<div class="quote-detail-line"><div><strong>${esc(l.product_name||l.name)}</strong><div class="small">${esc(l.qty)} ${esc(l.uom)} × ${esc(q.currency)} ${money(l.price_unit)}${l.discount?` · descuento ${esc(l.discount)}%`:""}</div></div><strong>${esc(q.currency)} ${money(l.subtotal)}</strong></div>`).join("")}
+    <div class="quote-total"><div><span>Subtotal</span><strong>${esc(q.currency)} ${money(q.amount_untaxed)}</strong></div><div><span>Impuestos</span><strong>${esc(q.currency)} ${money(q.amount_tax)}</strong></div><div class="grand"><span>Total</span><strong>${esc(q.currency)} ${money(q.amount_total)}</strong></div></div>
+    <div class="status-banner warn">Importes suministrados por Odoo. Antes de enviar, verifique condiciones comerciales y personalizaciones de su instalación.</div>
+    <div class="action-grid"><button class="btn btn-secondary" data-action="back-quote">← Cotizaciones</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
+    <aside class="quote-side"><section class="card"><div class="card-title">Registro</div><div class="card-sub">Referencia: ${esc(q.client_order_ref||"—")}<br>Visita: ${q.visit_id?"#"+Number(q.visit_id):"No asociada"}<br>Empresa: ${esc(q.company_name)}</div></section></aside></div>`;
+  $app.innerHTML=shell(q.name,body,{nav:"quote"});
+}
+async function openQuote(id) {
+  if (!id) return;
+  const user=state.meta?.user||{};
+  const key=`${user.id}:${user.company_id}:${id}`;
+  const cached=state.quoteDetails.find(x=>x.key===key);
+  state.currentQuoteId=id;
+  if (cached) {state.quoteDetail=cached.value;state.page="quote-detail";render();}
+  if (!navigator.onLine) {
+    if (!cached) alert("Conéctese una vez para descargar el detalle de esta cotización.");
+    return;
+  }
+  try {
+    const quote=await rpc("/catastro/app/quote/read",{quote_id:id});
+    if (db) await idbPut(STORE_QUOTE_DETAILS,{key,value:quote}).catch(err => console.warn("Detalle sin cache offline",err));
+    state.quoteDetail=quote;state.page="quote-detail";render();
+  } catch(err){alert(err.message||String(err));}
+}
+async function searchQuoteProducts(value) {
+  const term=String(value||"").trim();state.quoteSearch=value;
+  if (term.length<2) {state.quoteResults=[];state.quoteSearching=false;renderQuoteResults();return;}
+  state.quoteResults=availableQuoteProducts(term);state.quoteSearching=state.online;renderQuoteResults();
+  if (!state.online || !state.quotePartnerId){state.quoteSearching=false;renderQuoteResults();return;}
+  try {
+    const result=await rpc("/catastro/app/quote/products",{term,partner_id:state.quotePartnerId});
+    if (!document.querySelector("#quote-search") || document.querySelector("#quote-search").value.trim()!==term) return;
+    const user=state.meta?.user||{};
+    if (db) {
+      for (const p of result) await idbPut(STORE_QUOTE_PRODUCTS,{...p,key:`${user.id}:${user.company_id}:${p.id}`,user_id:user.id,company_id:user.company_id});
+      state.quoteProducts=await idbGetAll(STORE_QUOTE_PRODUCTS);
+    } else {
+      state.quoteProducts=result.map(p=>({...p,key:`${user.id}:${user.company_id}:${p.id}`,user_id:user.id,company_id:user.company_id}));
+    }
+    state.quoteResults=result;
+  } catch(err){state.quoteResults=availableQuoteProducts(term);state.lastError=err.message||String(err);}
+  state.quoteSearching=false;renderQuoteResults();
+}
+async function submitQuote(form) {
+  const p=quotePartner();
+  if (!p||!truthy(p.census_locked)) {alert("Seleccione un catastro finalizado y protegido.");return;}
+  if (!state.quoteLines.length){alert("Agregue al menos un producto.");return;}
+  const lines=state.quoteLines.map(x=>({product_id:Number(x.id),qty:Number(x.qty)}));
+  if(lines.some(x=>!Number.isInteger(x.product_id)||!Number.isFinite(x.qty)||x.qty<=0||x.qty>100000)) {alert("Revise las cantidades de los productos.");return;}
+  if (!state.meta?.user?.id) {alert("Sin sesión descargada. Conéctese para empezar.");return;}
+  if (state.online && !quoteCanCreate()){alert("Su usuario necesita permiso para crear cotizaciones en Ventas.");return;}
+  if (!confirm(`¿Guardar una cotización en borrador para ${partnerLabel(p)} con ${lines.length} producto(s)? Los precios se calcularán al sincronizar.`))return;
+  const payload={partner_id:p.id,visit_id:Number(form.querySelector('[name="visit_id"]')?.value||0),lines,
+    client_order_ref:form.querySelector('[name="client_order_ref"]')?.value.trim()||""};
+  const op=await queueOperation("quote",payload,`${partnerLabel(p)} · cotización de ${lines.length} productos`);
+  if (!op) return;
+  state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.quoteVisitId=null;state.quoteClientRef="";
+  state.page="pending";render();
+  if(navigator.onLine){
+    if (op.state!=="synced" && op.state!=="warning") await syncPending(false,[op.uuid]);
+    const updated=state.pending.find(x=>x.uuid===op.uuid);
+    if(updated?.state==="synced"&&updated.result_model==="sale.order")await openQuote(updated.result_id);
+  }
 }
 
 function toggleHtml(name, label, value=false) {
@@ -377,7 +624,7 @@ function renderNewCatastro() {
 }
 
 function operationLabel(op) {
-  return op.type === "visit" ? "Visita" : op.type === "catastro" ? (op.payload?.finalize?"Nuevo catastro · finalizar":"Nuevo catastro · borrador") : op.type === "catastro_finalize"?"Finalizar y proteger":"Actualización";
+  return op.type === "quote" ? "Cotización / Proforma" : op.type === "visit" ? "Visita" : op.type === "catastro" ? (op.payload?.finalize?"Nuevo catastro · finalizar":"Nuevo catastro · borrador") : op.type === "catastro_finalize"?"Finalizar y proteger":"Actualización";
 }
 
 function renderEditCatastro() {
@@ -406,14 +653,15 @@ async function submitCatastroUpdate(form) {
   obj.store_count = Number(obj.store_count || 0);
   obj.capa = Number(obj.capa || 0);
   const op = await queueOperation("catastro_update", obj, `${partnerLabel(p)} · actualización`);
+  if (!op) return;
   state.page = "pending"; render();
-  if (navigator.onLine) await syncPending(false, [op.uuid]);
+  if (navigator.onLine && op.state!=="synced" && op.state!=="warning") await syncPending(false, [op.uuid]);
 }
 
 function renderPending() {
   const pending = [...state.pending].sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
   const body = `<div class="row" style="margin-bottom:12px"><button class="btn btn-primary" style="width:100%" data-action="sync">⇅ Sincronizar ahora</button></div>
-    <div class="cards">${pending.map(op=>`<section class="card pending-item"><div><div class="card-title">${esc(operationLabel(op))}</div><div class="card-sub">${esc(op.label||"")}</div><div class="chips"><span class="chip ${op.state==="error"?"danger":op.state==="conflict"?"warn":op.state==="synced"?"ok":""}">${esc(op.state||"pendiente")}</span></div>${op.message?`<div class="small ${op.state==="error"?"danger-text":""}" style="margin-top:8px">${esc(op.message)}</div>`:""}${op.result_model==="res.partner" && op.result_id && ["synced","warning"].includes(op.state)?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-result" data-id="${op.result_id}">Ver catastro</button>`:""}<div class="pending-meta">${esc(dateText(op.created_at))}</div></div><div><button class="icon-btn" data-delete-pending="${op.uuid}" title="Eliminar del dispositivo">×</button></div></section>`).join("") || `<div class="empty"><b>Todo sincronizado</b>No hay información pendiente en este dispositivo.</div>`}</div>`;
+    <div class="cards">${pending.map(op=>`<section class="card pending-item"><div><div class="card-title">${esc(operationLabel(op))}</div><div class="card-sub">${esc(op.label||"")}</div><div class="chips"><span class="chip ${op.state==="error"?"danger":op.state==="conflict"?"warn":op.state==="synced"?"ok":""}">${esc(op.state||"pendiente")}</span></div>${op.message?`<div class="small ${op.state==="error"?"danger-text":""}" style="margin-top:8px">${esc(op.message)}</div>`:""}${op.result_model==="res.partner" && op.result_id && ["synced","warning"].includes(op.state)?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-result" data-id="${op.result_id}">Ver catastro</button>`:""}${op.result_model==="sale.order" && op.result_id && op.state==="synced"?`<button class="btn btn-outline" style="margin-top:10px" data-action="open-quote-result" data-id="${op.result_id}">Ver cotización</button>`:""}<div class="pending-meta">${esc(dateText(op.created_at))}</div></div><div><button class="icon-btn" data-delete-pending="${op.uuid}" title="Eliminar del dispositivo">×</button></div></section>`).join("") || `<div class="empty"><b>Todo sincronizado</b>No hay información pendiente en este dispositivo.</div>`}</div>`;
   $app.innerHTML = shell("Pendientes", body, { nav:"pending" });
 }
 
@@ -421,9 +669,11 @@ function renderMore() {
   const secure = window.isSecureContext;
   const saved = state.meta?.saved_at ? dateText(state.meta.saved_at) : "Nunca";
   const canInstall = Boolean(installPrompt);
-  const body = `<section class="card ${secure?"":"install-card"}"><div class="card-title">${secure?"Modo offline completo":"Modo offline limitado por HTTP"}</div><div class="card-sub" style="${secure?"":"color:rgba(255,255,255,.86)"}">${secure?"La app puede abrirse y capturar datos sin cobertura después de haber sincronizado una vez.":"Puede seguir capturando si pierde señal mientras esta pantalla permanece abierta. Para abrir la app desde cero sin Internet e instalarla como PWA, el servidor debe usar HTTPS."}</div>${canInstall?'<button class="btn" data-action="install">Instalar app</button>':""}</section>
-    <section class="card"><div class="card-title">Datos del dispositivo</div><div class="card-sub">Usuario: ${esc(state.meta?.user?.name||"Sin descargar")}<br>Empresa: ${esc(state.meta?.user?.company_name||"")}<br>Última descarga: ${esc(saved)}<br>Pendientes: ${state.pending.filter(x=>x.state!=="synced").length}</div><div class="action-grid"><button class="btn btn-outline" data-action="refresh">Descargar datos</button><button class="btn btn-danger" data-action="clear-local">Borrar caché local</button></div></section>
-    <section class="card"><div class="card-title">Odoo completo</div><div class="card-sub">Use Odoo para proformas, aprobaciones, reasignaciones, permisos y administración avanzada.</div><a class="btn btn-primary" style="width:100%;margin-top:12px" href="/web">Abrir Odoo</a></section>`;
+  const body = `<section class="card ${secure?"":"install-card"}"><div class="card-title">${secure?"Modo offline completo":"Modo offline limitado por HTTP"}</div><div class="card-sub" style="${secure?"":"color:rgba(255,255,255,.86)"}">${secure?(state.localReady?"La app puede abrirse y capturar datos sin cobertura después de sincronizar.":"La app funciona online mientras se conecta al almacenamiento local. El guardado offline solo estará disponible cuando termine la conexión."):"Puede seguir capturando si pierde señal mientras esta pantalla permanece abierta. Para abrir la app desde cero sin Internet e instalarla como PWA, el servidor debe usar HTTPS."}</div>${canInstall?'<button class="btn" data-action="install">Instalar app</button>':""}</section>
+    <section class="card"><div class="card-title">Datos del dispositivo</div><div class="card-sub">Usuario: ${esc(state.meta?.user?.name||"Sin descargar")}<br>Empresa: ${esc(state.meta?.user?.company_name||"")}<br>Última descarga: ${esc(saved)}<br>Pendientes: ${state.pending.filter(x=>x.state!=="synced").length}</div><div class="action-grid"><button class="btn btn-outline" data-action="refresh">Descargar datos</button><button class="btn btn-danger" data-action="clear-local" ${db?"":"disabled"}>Borrar caché local</button></div></section>
+    <section class="card"><div class="card-title">Datos sin conexión</div><div class="card-sub">${state.localReady?"Almacenamiento local conectado. Puede preparar registros offline.":state.storageError?"No se pudo acceder al almacenamiento local. Online se guarda directamente en Odoo; para trabajar sin conexión revise los permisos del navegador y cierre otras pestañas de Catastro.":"Preparando almacenamiento local en segundo plano. Puede trabajar online mientras tanto."}</div>${!state.localReady?'<button type="button" class="btn btn-outline" data-action="retry-storage" style="margin-top:10px">Reintentar almacenamiento</button>':""}</section>
+    <section class="card"><div class="card-title">Versión de la aplicación: ${esc(APP_VERSION)}</div><div class="card-sub">Si no aparece «Crear cotización» dentro de la ficha del catastro o ves una versión anterior, actualiza la interfaz. Esta acción no elimina catastros, visitas ni cotizaciones pendientes de sincronización.</div><button class="btn btn-secondary" style="width:100%;margin-top:12px" type="button" data-action="update-ui">↻ Actualizar interfaz PWA</button></section>
+    <section class="card"><div class="card-title">Odoo completo</div><div class="card-sub">La PWA crea borradores rápidos. Para todas las funciones nativas, extensiones y campos personalizados de Ventas, utiliza el formulario completo de Odoo hasta que integremos los módulos que modifican tus proformas.</div><a class="btn btn-primary" style="width:100%;margin-top:12px" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener">Abrir cotizaciones completas</a></section>`;
   $app.innerHTML = shell("Más", body, { nav:"more" });
 }
 
@@ -431,6 +681,8 @@ function render() {
   switch (state.page) {
     case "detail": return renderDetail();
     case "visit": return renderVisit();
+    case "quote": return renderQuote();
+    case "quote-detail": return renderQuoteDetail();
     case "new": return renderNewCatastro();
     case "edit": return renderEditCatastro();
     case "pending": return renderPending();
@@ -481,11 +733,52 @@ function validateForFinalize(obj) {
   if (!(obj.opening_hours||[]).length) missing.push("Horario de atención");
   return missing;
 }
+async function sendOperationOnline(op) {
+  // Fallback real para equipos con IndexedDB temporalmente inaccesible.
+  // Odoo registra client_uuid de forma idempotente y aplica permisos y cálculos.
+  if (!navigator.onLine || !state.meta?.user) {
+    showFormError("Sin almacenamiento offline disponible. Conéctese a Odoo para guardar de forma segura.");
+    return null;
+  }
+  try {
+    const session = await rpc("/catastro/app/ping");
+    if (Number(session.user_id)!==Number(op.user_id) || Number(session.company_id)!==Number(op.company_id)) {
+      throw new Error("La sesión cambió. No se enviaron datos con otro usuario o empresa.");
+    }
+    const response = await rpc("/catastro/app/sync", {operations: [
+      {uuid:op.uuid,type:op.type,payload:op.payload,user_id:op.user_id,company_id:op.company_id},
+    ]});
+    const result = (response.results || []).find(x=>x.uuid===op.uuid);
+    if (!result || !["synced","warning"].includes(result.state)) {
+      throw new Error(result?.message || "Odoo no confirmó el guardado. Revise el formulario.");
+    }
+    Object.assign(op, result, {synced_at:new Date().toISOString()});
+    // Histórico temporal de la sesión: el registro final está guardado en Odoo.
+    state.pending = [op,...state.pending.filter(x=>x.uuid!==op.uuid)];
+    await refreshFromServer(false);
+    return op;
+  } catch (error) {
+    showFormError(error.message || String(error));
+    return null;
+  }
+}
 async function queueOperation(type, payload, label) {
   const op={uuid:uuid(),type,payload,label,state:"pending",message:"",created_at:new Date().toISOString(),
     user_id:state.meta?.user?.id||null,company_id:state.meta?.user?.company_id||null};
-  await idbPut(STORE_PENDING,op); await hydrateLocalState();render();return op;
+  if (db && state.localReady) {
+    try {
+      await idbPut(STORE_PENDING,op);
+      await hydrateLocalState();
+      render();
+      return op;
+    } catch (error) {
+      state.storageError = error.message || String(error);
+      console.warn("No se pudo conservar la operación en IndexedDB", error);
+    }
+  }
+  return sendOperationOnline(op);
 }
+
 async function submitCatastro(form, finalize=false) {
   const obj=formObject(form);
   try {obj.opening_hours=buildHours(form);} catch(err){showFormError(err.message);return;}
@@ -501,8 +794,9 @@ async function submitCatastro(form, finalize=false) {
     showFormError("Ya existen coincidencias. Revise la búsqueda antes de crear otra ficha.");return;
   }
   const op=await queueOperation("catastro",obj,`${obj.commercial_name||obj.name} · ${obj.vat||"sin identificación"}`);
+  if (!op) return;
   state.page="pending";render();
-  if (navigator.onLine) await syncPending(false,[op.uuid]);
+  if (navigator.onLine && op.state!=="synced" && op.state!=="warning") await syncPending(false,[op.uuid]);
 }
 
 async function submitVisit(form, finalize=true) {
@@ -518,25 +812,29 @@ async function submitVisit(form, finalize=true) {
   obj.visit_datetime = nowServerString();
   obj.finalize = finalize;
   const op = await queueOperation("visit", obj, `${partnerLabel(partner)} · ${finalize?"Finalizar":"Borrador"}`);
+  if (!op) return;
   state.page = "pending";
   render();
-  if (navigator.onLine) await syncPending(false, [op.uuid]);
+  if (navigator.onLine && op.state!=="synced" && op.state!=="warning") await syncPending(false, [op.uuid]);
 }
 
 async function syncPending(silent=false, onlyUuids=null) {
+  // Una falla al actualizar la caché de lectura no debe bloquear el envío de
+  // operaciones que sí están persistidas en la cola local.
+  if (!db || !state.localReady) return;
   if (!navigator.onLine || state.syncing || state.sessionBlocked) return;
   const candidates = state.pending.filter(x => !["synced","warning","conflict"].includes(x.state) && (!onlyUuids || onlyUuids.includes(x.uuid))).sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
   if (!candidates.length) return;
   try {
     state.syncing = true; render();
-    const session=await rpc("/conedera/app/ping");
+    const session=await rpc("/catastro/app/ping");
     if (state.meta?.user && (Number(state.meta.user.id)!==Number(session.user_id) || Number(state.meta.user.company_id)!==Number(session.company_id))) {
       state.sessionBlocked=true;
       throw new Error("La sesión cambió. Las operaciones offline pertenecen a otro usuario o compañía y no se enviarán.");
     }
     const payload=candidates.filter(op=>!op.user_id || Number(op.user_id)===Number(session.user_id)).map(({uuid,type,payload,user_id,company_id})=>({uuid,type,payload,user_id,company_id}));
     if (payload.length!==candidates.length) throw new Error("Hay operaciones registradas por otro usuario; sincronización bloqueada.");
-    const response = await rpc("/conedera/app/sync", { operations: payload });
+    const response = await rpc("/catastro/app/sync", { operations: payload });
     for (const result of response.results || []) {
       const op = state.pending.find(x=>x.uuid===result.uuid);
       if (!op) continue;
@@ -581,8 +879,9 @@ function bindPhotoInput() {
 }
 
 async function clearLocal() {
+  if (!db) {alert("El almacenamiento local no está disponible. No se puede borrar desde la aplicación.");return;}
   if (!confirm("Esto borra los datos descargados y pendientes SOLO de este dispositivo. No borra nada del servidor. ¿Continuar?")) return;
-  const stores=[STORE_META,STORE_PARTNERS,STORE_PENDING,STORE_VISITS,STORE_ORDERS,STORE_PRODUCTS,STORE_CATALOG];
+  const stores=[STORE_META,STORE_PARTNERS,STORE_PENDING,STORE_VISITS,STORE_ORDERS,STORE_PRODUCTS,STORE_CATALOG,STORE_QUOTE_PRODUCTS,STORE_QUOTE_DETAILS];
   await Promise.all(stores.map(store=>idbReplaceAll(store,[]).catch(async()=>{ const all=await idbGetAll(store); await Promise.all(all.map(x=>idbDelete(store,x.id||x.uuid||x.key))); })));
   await hydrateLocalState(); state.page="home"; render();
 }
@@ -601,7 +900,7 @@ async function searchCandidates(value) {
   state.candidateMatches=local;state.lookupPending=state.online;renderCandidateResults();
   if (!state.online){state.lookupPending=false;renderCandidateResults();return;}
   try {
-    const matches=await rpc("/conedera/app/lookup",{term});
+    const matches=await rpc("/catastro/app/lookup",{term});
     if (document.querySelector("#lookup-field")?.value.trim()!==term) return;
     state.candidateMatches=matches||[];
   } catch(err){state.lastError=err.message;state.candidateMatches=local;}
@@ -612,15 +911,18 @@ async function submitUnlockRequest(form) {
   if (!navigator.onLine){alert("Para solicitar edición debe conectarse a Odoo.");return;}
   const reason=form.querySelector('[name="reason"]')?.value.trim()||"";
   if(reason.length<5){alert("Describa el motivo del cambio (mínimo 5 caracteres).");return;}
-  try {await rpc("/conedera/app/catastro/request-unlock",{partner_id:p.id,reason});
+  try {await rpc("/catastro/app/catastro/request-unlock",{partner_id:p.id,reason});
     await refreshFromServer(false);alert("Solicitud enviada al supervisor. Puede consultar su estado desde esta ficha.");}
   catch(err){alert(err.message||String(err));}
 }
 async function refreshPartnerStatus() {
   const p=selectedPartner();if(!p)return;
   if(!navigator.onLine){alert("Se necesita conexión para consultar el estado actualizado.");return;}
-  try {const status=await rpc("/conedera/app/catastro/status",{partner_id:p.id});
-    const fresh={...p,...status};await idbPut(STORE_PARTNERS,fresh);await hydrateLocalState();render();}
+  try {const status=await rpc("/catastro/app/catastro/status",{partner_id:p.id});
+    const fresh={...p,...status};
+    if (db) {await idbPut(STORE_PARTNERS,fresh);await hydrateLocalState();}
+    else state.partners=state.partners.map(row=>row.id===p.id?fresh:row);
+    render();}
   catch(err){alert(err.message||String(err));}
 }
 
@@ -633,17 +935,66 @@ $app.addEventListener("input", (event) => {
     clearTimeout(state.lookupTimer);
     state.lookupTimer=setTimeout(()=>searchCandidates(value),300);
   }
+  if (event.target?.id === "quote-search") {
+    const value=event.target.value;state.quoteSearch=value;
+    clearTimeout(state.quoteLookupTimer);state.quoteLookupTimer=setTimeout(()=>searchQuoteProducts(value),300);
+  }
+  if (event.target?.matches('#quote-form [name="client_order_ref"]')) {
+    state.quoteClientRef=event.target.value;
+  }
+  if (event.target?.matches("[data-quote-qty]")) {
+    const line=state.quoteLines.find(x=>x.id===Number(event.target.dataset.quoteQty));
+    if(line)line.qty=event.target.value;
+  }
   if (event.target?.id === "partner-search") { state.search = event.target.value; renderHome(); const input=document.querySelector("#partner-search"); if(input){input.focus(); input.setSelectionRange(state.search.length,state.search.length);} }
+});
+
+$app.addEventListener("change", (event) => {
+  if (event.target?.matches('#quote-form [name="partner_id"]')) {
+    state.quotePartnerId=Number(event.target.value)||null;
+    state.quoteVisitId=null;
+    state.quoteLines=[];state.quoteResults=[];state.quoteSearch="";renderQuote();
+  }
+  if (event.target?.matches('#quote-form [name="visit_id"]')) {
+    state.quoteVisitId=Number(event.target.value)||null;
+  }
 });
 
 $app.addEventListener("click", async (event) => {
   const navEl = event.target.closest("[data-nav]");
-  if (navEl) { state.page=navEl.dataset.nav; if(state.page!=="detail") state.selectedPartnerId=state.page==="visit"?state.selectedPartnerId:null; render(); return; }
+  if (navEl) { state.page=navEl.dataset.nav;
+    if (state.page==="quote") { state.quotePartnerId=state.selectedPartnerId||state.quotePartnerId;state.quoteDetail=null; }
+    if(state.page!=="detail") state.selectedPartnerId=["visit","quote"].includes(state.page)?state.selectedPartnerId:null;
+    render(); return; }
   const partnerEl = event.target.closest("[data-open-partner]");
   if (partnerEl) { state.selectedPartnerId=Number(partnerEl.dataset.openPartner); state.page="detail"; render(); return; }
   const visitEl = event.target.closest("[data-action='visit-partner']");
   if (visitEl) { state.selectedPartnerId=Number(visitEl.dataset.id); if(!truthy(selectedPartner()?.census_locked)){alert("Finalice y proteja primero el catastro.");return;} state.page="visit"; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
+  if (action === "quote-partner") {const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);if (!truthy(partner?.census_locked)){alert("Primero finalice y proteja el catastro.");return;}state.selectedPartnerId=id;state.quotePartnerId=id;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
+  if (action === "back-to-partner") {state.selectedPartnerId=Number(state.quotePartnerId)||state.selectedPartnerId;state.page="detail";render();return;}
+  if (action === "update-ui") {
+    if (!navigator.onLine) {alert("Conéctese a Internet para descargar la nueva versión. Sus registros locales se conservan.");return;}
+    if ((state.quoteLines.length || ["new","edit","visit"].includes(state.page)) && !confirm("¿Actualizar interfaz ahora? Se conservarán los datos sincronizados y las operaciones pendientes, pero los cambios todavía no guardados en pantalla pueden perderse.")) return;
+    try {
+      const reg=await navigator.serviceWorker?.getRegistration("/catastro/");
+      if (reg) await reg.update();
+      window.location.replace(`/catastro/app?version=${encodeURIComponent(APP_VERSION)}&t=${Date.now()}`);
+    } catch(err) {alert(`No se pudo actualizar la interfaz: ${err.message||err}`);}
+    return;
+  }
+  if (action === "quote-add-product") {
+    const id=Number(event.target.closest("[data-id]")?.dataset.id);
+    const product=state.quoteResults.find(x=>x.id===id);
+    if(!product)return;
+    const existing=state.quoteLines.find(x=>x.id===id);
+    if(existing)existing.qty=Number(existing.qty||0)+1;
+    else state.quoteLines.push({id:product.id,name:product.name,code:product.code,uom:product.uom,qty:1});
+    state.quoteSearch="";state.quoteResults=[];renderQuote();return;
+  }
+  if (action === "quote-remove-product") {state.quoteLines=state.quoteLines.filter(x=>x.id!==Number(event.target.closest("[data-id]").dataset.id));renderQuote();return;}
+  if (action === "view-quote") {await openQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
+  if (action === "back-quote") {state.page="quote";state.quoteDetail=null;render();return;}
   if (action === "capture-gps") {
     const form=event.target.closest("form");
     const preview=form?.querySelector("[data-gps-preview]");
@@ -676,12 +1027,14 @@ $app.addEventListener("click", async (event) => {
   if (action === "show-unlock-form") {const form=document.querySelector("#unlock-form");if(form){form.hidden=false;form.querySelector("textarea")?.focus();}return;}
   if (action === "hide-unlock-form") {const form=document.querySelector("#unlock-form");if(form)form.hidden=true;return;}
   if (action === "refresh-status") {await refreshPartnerStatus();return;}
+  if (action === "open-quote-result") {await openQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
   if (action === "open-result") {state.selectedPartnerId=Number(event.target.closest("[data-id]").dataset.id);state.page="detail";if(!selectedPartner()&&navigator.onLine) await refreshFromServer(false);render();return;}
   if (action === "finalize-partner") {
     const p=selectedPartner();if(!p)return;
     if(!confirm(`¿Finalizar y proteger el catastro de ${partnerLabel(p)}? Solo se podrá editar con autorización posterior.`))return;
     const op=await queueOperation("catastro_finalize",{partner_id:p.id,base_write_date:p.write_date||""},`${partnerLabel(p)} · proteger`);
-    state.page="pending";render();if(navigator.onLine) await syncPending(false,[op.uuid]);return;
+    if (!op) return;
+    state.page="pending";render();if(navigator.onLine && op.state!=="synced" && op.state!=="warning") await syncPending(false,[op.uuid]);return;
   }
   if (action === "finish-edit") {
     const p=selectedPartner();if(!p||!navigator.onLine){alert("Se necesita conexión para cerrar la edición autorizada.");return;}
@@ -692,9 +1045,10 @@ $app.addEventListener("click", async (event) => {
       }
     }
     if(!confirm("¿Finalizar edición y volver a proteger el catastro?"))return;
-    try{await rpc("/conedera/app/catastro/finish-edit",{partner_id:p.id});await refreshFromServer(false);}
+    try{await rpc("/catastro/app/catastro/finish-edit",{partner_id:p.id});await refreshFromServer(false);}
     catch(err){alert(err.message||String(err));}return;
   }
+  if (action === "retry-storage") {void restoreLocalStorage();render();return;}
   if (action === "refresh") { await syncPending(true); await refreshFromServer(true); return; }
   if (action === "new-catastro") { state.page="new"; render(); return; }
   if (action === "edit-partner") {if(!truthy(selectedPartner()?.census_can_edit_master)){alert("El catastro está protegido; solicite habilitación.");return;} state.page="edit"; render(); return; }
@@ -714,23 +1068,76 @@ $app.addEventListener("submit", async (event) => {
   if (event.target.id === "catastro-form") await submitCatastro(event.target,event.submitter?.value==="finalize");
   if (event.target.id === "catastro-edit-form") await submitCatastroUpdate(event.target);
   if (event.target.id === "visit-form") await submitVisit(event.target,true);
+  if (event.target.id === "quote-form") await submitQuote(event.target);
   if (event.target.id === "unlock-form") await submitUnlockRequest(event.target);
 });
 
+let storageOpenPromise = null;
+async function restoreLocalStorage() {
+  if (storageOpenPromise || state.localReady) return storageOpenPromise;
+  storageOpenPromise = (async () => {
+    try {
+      const opened = await openDb();
+      db = opened;
+      await hydrateLocalState();
+      state.localReady = true;
+      state.storageError = "";
+      const snapshot = state.serverSnapshot;
+      if (snapshot) {
+        // No sustituir un catastro remoto nuevo por una copia vieja al abrir
+        // tarde el almacenamiento. Verificar pendientes de otra sesión primero.
+        const differentSession=state.meta?.user &&
+          (Number(state.meta.user.id)!==Number(snapshot.user.id) ||
+           Number(state.meta.user.company_id)!==Number(snapshot.user.company_id));
+        const hasUnsynced=state.pending.some(x=>!["synced","warning","conflict"].includes(x.state));
+        if (differentSession && hasUnsynced) {
+          state.sessionBlocked = true;
+          state.lastError = "Hay datos offline de otro usuario o compañía; no se sincronizaron.";
+        } else {
+          try {
+            await persistBootstrap(snapshot);
+            await hydrateLocalState();
+          } catch (error) {
+            // Seguir online aun si la caché no acepta escrituras grandes.
+            state.storageError = error.message || String(error);
+            applyBootstrapInMemory(snapshot);
+          }
+        }
+      }
+      render();
+      if (navigator.onLine && !state.sessionBlocked) void syncPending(true);
+    } catch (error) {
+      console.warn("Catastro: almacenamiento local temporalmente inaccesible", error);
+      db = null;
+      state.localReady = false;
+      state.storageError = error.message || String(error);
+      render();
+    } finally {
+      storageOpenPromise = null;
+    }
+  })();
+  return storageOpenPromise;
+}
 async function init() {
-  db = await openDb();
-  await hydrateLocalState();
+  // Render inmediato, sin temporizadores ni migraciones que frenen la PWA.
   render();
+  window.catastroBootReady?.();
   if (window.isSecureContext && "serviceWorker" in navigator) {
-    try { await navigator.serviceWorker.register("/conedera/sw.js", { scope: "/conedera/" }); } catch (err) { console.warn("Service worker no disponible", err); }
+    navigator.serviceWorker.register("/catastro/sw.js", { scope: "/catastro/" })
+      .catch(err => console.warn("Service worker no disponible", err));
   }
+  // El acceso al dispositivo es opcional para la navegación online, no para
+  // garantizar operaciones offline. No esperar IndexedDB en el arranque.
+  void restoreLocalStorage();
   if (navigator.onLine) {
     await refreshFromServer(false);
-    await syncPending(true);
   }
+  state.starting = false;
+  render();
 }
 
 init().catch((err) => {
-  console.error(err);
-  $app.innerHTML = `<div class="boot-screen"><div class="boot-logo">!</div><strong>No se pudo iniciar la app</strong><span>${esc(err.message||err)}</span><a class="btn btn-primary" href="/web">Volver a Odoo</a></div>`;
+  console.error("Error iniciando Catastro PWA", err);
+  if (window.catastroBootError) window.catastroBootError(err.message || String(err));
+  else $app.innerHTML = `<div class="boot-screen"><div class="boot-logo">!</div><strong>No se pudo iniciar la app</strong><span>${esc(err.message || err)}</span><a class="btn btn-primary" href="/web">Volver a Odoo</a></div>`;
 });
