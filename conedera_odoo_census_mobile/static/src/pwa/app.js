@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.19";
+const APP_VERSION = "18.0.1.5.20";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -606,6 +606,31 @@ function availableQuoteProducts(term) {
     && Number(p.partner_id)===Number(state.quotePartnerId) && Number(p.warehouse_id||0)===Number(state.quoteWarehouseId||0) && Number(p.pricelist_id||0)===Number(state.quotePricelistId||0)
     && [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,40);
 }
+// Vista verificada por Odoo del precio unitario, con promoción y tributos.
+// La selección de una oferta ya consultada cambia el precio al instante:
+// cada oferta contiene los importes calculados por Odoo para las formas de pago.
+function quoteLineTaxPreview(line, fallback=null) {
+  const qty=Number(line?.qty ?? fallback?.qty_priced ?? 1);
+  const promoId=Number(line?.promo_reward_id||0);
+  if (promoId) {
+    const offer=(state.quotePromoOffers[line.id]||[]).find(x=>Number(x.id)===promoId);
+    // Si cambió la cantidad o caducó la elegibilidad, NO mostrar el precio
+    // viejo como si la promoción hubiera sido validada.
+    if (!offer || offer.tax_price_source!=='server' || Number(offer.qty_priced)!==qty)
+      return {preview:null,offer:null,pending:true,promoId};
+    return {preview:offer,offer,pending:false,promoId};
+  }
+  const base=line||fallback;
+  const valid=base?.tax_price_source==='server' && Number(base.qty_priced)===qty;
+  return {preview:valid?base:null,offer:null,pending:!valid,promoId:0};
+}
+function quotePaymentTaxValue(preview, optionId=Number(state.quotePaymentOptionId||0)) {
+  if(!preview || preview.tax_price_source!=='server')return null;
+  const value=optionId
+    ?(preview.payment_prices||[]).find(x=>Number(x.id)===Number(optionId))?.tax_included_price
+    :preview.tax_included_base;
+  return value===null||value===undefined||!Number.isFinite(Number(value))?null:Number(value);
+}
 function quoteCartDockMarkup() {
   if (!state.quoteLines.length || state.quoteView === 'review') return '';
   const totals=quoteTotals();
@@ -648,31 +673,39 @@ function renderQuoteResults() {
     // Solo se publican importes devueltos por el motor de impuestos de Odoo.
     // No calcular IVA ni cargos en JS: puede haber impuestos incluidos,
     // posiciones fiscales y listas personalizadas.
-    const preview=(added?.tax_price_source==='server' ? added : p);
-    const methods=Array.isArray(preview.payment_prices) ? preview.payment_prices : [];
+    const {preview,offer,pending}=quoteLineTaxPreview(added,p);
+    const methods=Array.isArray(preview?.payment_prices)?preview.payment_prices:[];
     const chosenId=Number(state.quotePaymentOptionId||0);
     const selected=methods.find(m=>Number(m.id)===chosenId);
-    const hasTaxPrice=preview.tax_price_source==='server';
-    const finalUnit=hasTaxPrice?(selected ? selected.tax_included_price : (!chosenId ? preview.tax_included_base : null)):null;
-    const displayPrice=finalUnit===null||finalUnit===undefined||!Number.isFinite(Number(finalUnit))
-      ?'Consultar en línea':`${esc(p.currency||'')} ${money(finalUnit)}`;
+    const finalUnit=quotePaymentTaxValue(preview,chosenId);
+    const displayPrice=finalUnit===null
+      ?(pending&&added?'Actualizando precio…':'Consultar en línea')
+      :`${esc(p.currency||'')} ${money(finalUnit)}`;
+    const baseline=added?.tax_price_source==='server'&&Number(added.qty_priced)===Number(added.qty)?added:p;
+    const originalUnit=offer?quotePaymentTaxValue(baseline,chosenId):null;
+    const originalMarkup=originalUnit!==null&&finalUnit!==null&&originalUnit>finalUnit
+      ?`<small class="shop-promo-before">Antes: ${esc(p.currency||'')} ${money(originalUnit)}</small>`:'';
     const remaining=methods.filter(m=>Number(m.id)!==chosenId);
     const methodMarkup=(m)=>`<div class="shop-payment-preview"><span>${esc(m.name)}</span><strong>${esc(p.currency||'')} ${money(m.tax_included_price)}</strong></div>`;
-    const alternatives=hasTaxPrice&&remaining.length ? `<div class="shop-payment-comparison" aria-label="Precios por forma de pago">
+    const alternatives=preview&&remaining.length ? `<div class="shop-payment-comparison" aria-label="Precios por forma de pago">
       ${remaining.slice(0,3).map(methodMarkup).join('')}
       ${remaining.length>3?`<details class="shop-more-methods"><summary>Ver ${remaining.length-3} opciones más</summary><div class="shop-payment-comparison-inner">${remaining.slice(3).map(methodMarkup).join('')}</div></details>`:''}
     </div>`:'';
-    const priceFootnote=hasTaxPrice
-      ?(canNegotiateQuote()?'Precios unitarios con impuestos · antes de negociación y promociones':'Precios unitarios con impuestos · promociones al revisar')
-      :'Conéctese para consultar precios con impuestos';
+    const priceFootnote=preview
+      ?(offer?'Precio con promoción e impuestos incluidos':
+        (canNegotiateQuote()?'Precio con impuestos · antes de negociación':'Precio con impuestos incluidos'))
+      :added&&Number(added.promo_reward_id)?'Verificando promoción y precio en Odoo…':'Conéctese para consultar precios con impuestos';
+    const promoPicker=added&&eligibleOffers.length
+      ?`<label class="shop-promo-select"><span>🎁 Promoción</span><select data-quote-promo="${p.id}" aria-label="Promoción de ${esc(p.name)}"><option value="0" ${Number(added.promo_reward_id||0)===0?'selected':''}>Sin promoción</option>${eligibleOffers.map(x=>`<option value="${Number(x.id)}" ${Number(added.promo_reward_id)===Number(x.id)?'selected':''}>${esc(x.name)} · ${money(x.discount)}% descuento</option>`).join('')}</select></label>`:'';
     return `<article class="shop-product ${added?'shop-product-added':''}" data-quote-product="${p.id}">
       <div class="shop-product-top">
         <button type="button" class="quote-thumb shop-photo" data-action="quote-image" data-id="${p.id}" title="Ampliar fotografía" aria-label="Ampliar fotografía de ${esc(p.name)}" ${p.has_image?'':'disabled'}>${quoteImage(p)}</button>
         <div class="shop-product-summary"><div class="shop-product-kickers">${p.category_name?`<span class="shop-category">${esc(p.category_name)}</span>`:''}${p.code?`<span class="shop-sku">${esc(p.code)}</span>`:''}</div>
           <h3>${esc(p.name)}</h3><span class="shop-stock">● Disponible: ${money(p.stock_qty)} ${esc(p.uom||'')}</span>${giftBadge}</div>
       </div>
-      <div class="shop-price"><span>${selected?esc(selected.name):(!chosenId?'Precio de lista':esc((state.meta?.capabilities?.quote_payment_options||[]).find(x=>Number(x.id)===chosenId)?.name||'Forma de pago'))} · impuestos incluidos</span><strong>${displayPrice}</strong></div>
+      <div class="shop-price ${offer?'shop-price-promoted':''}"><span>${selected?esc(selected.name):(!chosenId?'Precio de lista':esc((state.meta?.capabilities?.quote_payment_options||[]).find(x=>Number(x.id)===chosenId)?.name||'Forma de pago'))} · impuestos incluidos</span><strong>${displayPrice}</strong>${originalMarkup}</div>
       ${alternatives}
+      ${promoPicker}
       <p class="shop-price-footnote">${priceFootnote}</p>
       <div class="shop-product-actions">
         <label class="shop-qty">Cantidad<input type="number" data-quote-search-qty="${p.id}" step="any" min="0.001" max="100000" inputmode="decimal" value="${esc(added?.qty??1)}" aria-label="Cantidad de ${esc(p.name)}"/></label>
@@ -697,10 +730,10 @@ function renderQuoteResults() {
 function quoteLinePriceMarkup(line) {
   if (!canNegotiateQuote()) {
     const payment=selectedQuotePaymentOption();
-    const price=payment?(line.payment_prices||[]).find(x=>Number(x.id)===Number(payment.id))?.tax_included_price:line.tax_included_base;
-    const amount=line.tax_price_source==='server' && price!==null && price!==undefined && Number.isFinite(Number(price))
-      ?`${esc(line.currency||'')} ${money(price)}`:'Por consultar';
-    return `<div class="quote-price-info" data-quote-price-info="${line.id}"><span>${payment?esc(payment.name):'Precio de lista'} · impuestos incluidos: <strong>${amount}</strong></span><span>${quoteStock(line)}</span></div>`;
+    const {preview,offer}=quoteLineTaxPreview(line);
+    const price=quotePaymentTaxValue(preview);
+    const amount=price!==null?`${esc(line.currency||'')} ${money(price)}`:'Actualizando precio…';
+    return `<div class="quote-price-info" data-quote-price-info="${line.id}"><span>${payment?esc(payment.name):'Precio de lista'} · impuestos incluidos${offer?' · 🎁 promoción':''}: <strong>${amount}</strong></span><span>${quoteStock(line)}</span></div>`;
   }
   return `<div class="quote-price-info" data-quote-price-info="${line.id}"><span>${quoteListPrice(line)} <small>para ${esc(line.qty)} ${esc(line.uom||'')} · lista ${esc(line.pricelist||'sin confirmar')}</small></span><span>${quoteStock(line)}</span></div>`;
 }
@@ -752,12 +785,12 @@ function quoteTaxIncludedEstimate(){
   let amount=0;
   for(const line of state.quoteLines){
     const qty=Number(line.qty);
-    if(line.tax_price_source!=='server' || !Number.isFinite(qty) || qty<=0 || Number(line.qty_priced)!==qty ||
+    if(!Number.isFinite(qty) || qty<=0 ||
       (line.negotiable_price!==null && line.negotiable_price!==undefined && String(line.negotiable_price).trim()!==''))return null;
-    const item=chosenId ? (line.payment_prices||[]).find(x=>Number(x.id)===chosenId) : null;
-    const value=chosenId ? item?.tax_included_price : line.tax_included_base;
-    if(value===null || value===undefined || !Number.isFinite(Number(value)))return null;
-    amount+=Number(value)*qty;
+    const {preview}=quoteLineTaxPreview(line);
+    const value=quotePaymentTaxValue(preview,chosenId);
+    if(value===null)return null;
+    amount+=value*qty;
   }
   return amount;
 }
@@ -863,8 +896,8 @@ async function refreshQuotePromos(request) {
       else if(Number(selected)!==0 && !choices.some(o=>Number(o.id)===Number(selected))){line.promo_reward_id=0;}
     }
     state.quotePromoMessage='Promociones actualizadas según la selección.';
+    refreshQuoteLineMarkup();
     if(state.quoteView==='catalog')renderQuoteResults();
-    else refreshQuoteLineMarkup();
     const status=document.querySelector('#quote-promo-status');if(status)status.textContent=state.quotePromoMessage;
   }catch(err){
     if(request!==state.quotePromoRequest)return;
@@ -1511,7 +1544,12 @@ $app.addEventListener("change", (event) => {
   }  if(event.target?.id==='quote-sort'){state.quoteSort=event.target.value;renderQuoteResults();}
   if (event.target?.matches('[data-quote-promo]')){
     const line=state.quoteLines.find(x=>Number(x.id)===Number(event.target.dataset.quotePromo));
-    if(line){line.promo_reward_id=Number(event.target.value)||0;renderQuoteResults();}
+    if(line){
+      line.promo_reward_id=Number(event.target.value)||0;
+      // El precio con impuestos ya viene calculado para cada oferta. No
+      // esperar al guardado ni recalcular impuestos en el navegador.
+      refreshQuoteLineMarkup();renderQuoteResults();
+    }
   }
   if (event.target?.matches('[data-quote-qty]')) scheduleQuotePrices();
   if (event.target?.id==='quote-warehouse'||event.target?.id==='quote-pricelist') {

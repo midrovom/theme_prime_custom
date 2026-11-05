@@ -358,7 +358,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.19",
+                "pwa_server_version": "18.0.1.5.20",
                 "census_role": census_role,
                 "quote_retail_role": retail_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
@@ -565,7 +565,7 @@ class ConederaFieldAppController(http.Controller):
             raise ValidationError("El cliente no tiene una lista de precios de Ventas disponible.")
         return pricelist
 
-    def _quote_payment_tax_previews(self, partner, product, pricelist_price, pricelist, fiscal_position, options):
+    def _quote_payment_tax_previews(self, partner, product, pricelist_price, pricelist, fiscal_position, options, discount_percent=0.0):
         """Precios unitarios de consulta, con impuestos por forma de pago.
 
         Utilizar exactamente el motor fiscal de Ventas: adaptar los impuestos
@@ -590,8 +590,13 @@ class ConederaFieldAppController(http.Controller):
             # porcentaje aproximado sobre el precio de etiqueta del navegador.
             fee = currency.round(base_unit * percent / 100.0)
             applied_unit = base_unit + fee
+            # Mismo orden que sale.order.line: precio unitario con la forma
+            # de pago, descuento de la línea y luego impuestos de Odoo.
+            # No descontar IVA manualmente: puede haber impuestos incluidos,
+            # posiciones fiscales y reglas de redondeo por compañía.
+            discounted_unit = applied_unit * (1.0 - discount_percent / 100.0)
             amounts = mapped_taxes.compute_all(
-                applied_unit, currency=currency, quantity=1.0,
+                discounted_unit, currency=currency, quantity=1.0,
                 product=product, partner=partner,
             )
             return currency.round(amounts['total_included'])
@@ -1074,9 +1079,38 @@ class ConederaFieldAppController(http.Controller):
         # frequent live previews. Computed order lines use regular Odoo ORM.
         virtual = Sale.with_company(request.env.company).new(vals)
         choices = virtual.catastro_pwa_product_promotion_choices()
-        return {"supported": True, "items": [
-            {"product_id": pid, "offers": choices.get(pid, [])} for pid, _ in parsed
-        ]}
+        # Cada oferta elegible incluye su propio precio final CON impuestos,
+        # calculado por Odoo para cada forma de pago. La PWA nunca calcula
+        # IVA ni modifica el descuento en el navegador.
+        pricelist = self._quote_pricelist(partner, pricelist_id)
+        fiscal_position = request.env['account.fiscal.position'].with_company(
+            request.env.company)._get_fiscal_position(partner)
+        options = request.env['catastro.quote.payment.option'].search([
+            ('active', '=', True),
+            ('company_id', '=', request.env.company.id),
+        ], order='sequence,id', limit=60)
+        computed_lines = {line.product_id.id: line for line in virtual.order_line
+                          if line.product_id and not line.display_type}
+        items = []
+        for pid, qty in parsed:
+            product = products.filtered(lambda product: product.id == pid)
+            line = computed_lines.get(pid)
+            if not product or not line:
+                continue
+            list_price = pricelist._get_product_price(
+                product, qty, partner=partner, uom=product.uom_id)
+            base_discount = max(0.0, min(100.0, float(line.discount or 0.0)))
+            offers = []
+            for offer in choices.get(pid, []):
+                # Combinar descuentos como hace el puente Loyalty al grabar.
+                combined = 100.0 - ((100.0 - base_discount) *
+                                     (100.0 - offer['discount']) / 100.0)
+                tax_prices = self._quote_payment_tax_previews(
+                    partner, product, list_price, pricelist,
+                    fiscal_position, options, discount_percent=combined)
+                offers.append({**offer, **tax_prices, 'qty_priced': qty})
+            items.append({'product_id': pid, 'offers': offers})
+        return {'supported': True, 'items': items}
 
     @http.route("/catastro/app/quote/loyalty/rewards", type="json", auth="user", methods=["POST"])
     def quote_loyalty_rewards(self, quote_id):

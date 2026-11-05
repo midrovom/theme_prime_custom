@@ -403,3 +403,9 @@ button{cursor:pointer}
 .quote-promo-choice{max-width:100%;margin-top:8px}
 .quote-promo-choice select{display:block;width:100%;min-width:0;max-width:100%;height:42px}
 @media(max-width:480px){.quote-promo-choice select{font-size:14px}}
+
+/* 18.0.1.5.20: la tarjeta refleja la promoción sobre el precio con impuestos. */
+.shop-price-promoted{background:#edf7ec;border:1px solid #b9ddad}
+.shop-promo-before{color:#5e6870;text-decoration:line-through;font-size:12px;font-weight:500}
+.shop-promo-select{display:flex;flex-direction:column;gap:5px;min-width:0;color:#356126;font-size:12px;font-weight:750}
+.shop-promo-select select{box-sizing:border-box;width:100%;min-height:42px;background:white;border:1px solid #bad3b4;border-radius:11px;padding:8px 10px;font-size:14px;color:#202522}
