@@ -325,3 +325,30 @@ button{cursor:pointer}
 .shop-options .shop-options-grid{margin-bottom:5px}
 .shop-options-grid .field select{padding:10px 11px;min-height:45px}
 .shop-quote-form .shop-catalog{margin-top:12px}
+
+/* 18.0.1.5.13: catálogo compacto y revisión independiente */
+.shop-toolbar{display:flex;align-items:center;gap:8px;min-width:0;margin:11px 0 13px}
+.shop-toolbar .shop-categories{flex:1;min-width:0;margin:0;padding:0 0 3px}
+.shop-sort-compact{flex:0 0 auto}
+.shop-sort-compact select{max-width:106px;min-height:40px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--brand-dark);padding:6px 5px;font-size:12px;font-weight:750}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important}
+.shop-product-added{border-color:#8f77bf;box-shadow:0 0 0 1px #d7c8ee}
+.shop-product-actions{grid-template-columns:minmax(0,105px) minmax(0,1fr);gap:10px}
+.shop-product-actions .shop-add{grid-column:auto;width:100%;min-height:44px}
+.shop-product-actions .shop-qty{min-width:0}
+.shop-added-btn{color:#315d45;background:#e7f6ed;border:1px solid #b6ddc9}
+.shop-stock-details{padding:9px 0;margin-top:12px;border-top:1px solid var(--line)}
+.shop-stock-details summary{cursor:pointer;font-size:12px;color:var(--muted);font-weight:650}
+.shop-stock-details .btn{min-height:40px;font-size:12px;margin:10px 0}
+.shop-review-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.shop-review-head h2{margin:4px 0}
+.shop-review-head .btn{min-height:42px;font-size:12px}
+.shop-review .shop-cart-section{margin-top:10px;padding-top:6px;border-top:0}
+.shop-review .quote-total-card{min-width:0}
+.shop-review .quote-totals-grid.shop-total-single{grid-template-columns:minmax(0,1fr)}
+.shop-review .quote-total-card.negotiated{background:#f5f1fb}
+.shop-finalize{margin-top:8px}
+.shop-finalize h2{font-size:15px}
+.shop-quote-form .shop-catalog{min-width:0}
+.shop-quote-form:has(.shop-review){padding-bottom:20px}
+@media(max-width:600px){.shop-product-actions{grid-template-columns:minmax(0,100px) minmax(0,1fr)}.shop-sort-compact select{max-width:82px}.shop-review-head .btn{width:100%}.shop-review-head{align-items:stretch}}
