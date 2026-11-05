@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.9";
+const APP_VERSION = "18.0.1.5.11";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -469,6 +469,9 @@ function renderDetail() {
 function quoteCanCreate() {
   return Boolean(state.meta?.capabilities?.quote_create);
 }
+function canNegotiateQuote() {
+  return !state.quoteRetail && !!state.meta?.capabilities?.quote_can_negotiate;
+}
 function quotePartner() { return state.partners.find(p=>p.id===Number(state.quotePartnerId))
   || (state.quoteRetail&&Number(state.quotePartnerId)===Number(state.meta?.capabilities?.quote_retail_partner?.id)?state.meta.capabilities.quote_retail_partner:null); }
 function nativeQuotationsUrl() {
@@ -540,7 +543,7 @@ function quoteLinesMarkup() {
     <button class="quote-thumb" type="button" data-action="quote-image" data-id="${line.id}" title="Ampliar foto" ${line.has_image?'':'disabled'}>${quoteImage(line)}</button>
     <div class="quote-line-name"><strong>${esc(line.name)}</strong><span>${esc(line.code||line.uom||'')}</span>${quoteLinePriceMarkup(line)}${quoteLineSurchargeMarkup(line)}</div>
     <div class="quote-line-controls"><label>Cantidad<input type="number" inputmode="decimal" min="0.001" max="100000" step="any" value="${esc(line.qty)}" data-quote-qty="${line.id}" required/></label>
-    ${state.meta?.capabilities?.quote_can_negotiate?`<label>Precio negociado (negotiable_price) · ${esc(line.currency||'moneda de lista')}<input type="number" data-quote-negotiable="${line.id}" inputmode="decimal" min="0" max="1000000000" step="any" placeholder="Sin negociar" value="${esc(line.negotiable_price??'')}" /></label>`:'<span class="small">Precio según lista de Odoo · negociación no autorizada para este perfil</span>'}
+    ${canNegotiateQuote()?`<label>Precio negociado (negotiable_price) · ${esc(line.currency||'moneda de lista')}<input type="number" data-quote-negotiable="${line.id}" inputmode="decimal" min="0" max="1000000000" step="any" placeholder="Sin negociar" value="${esc(line.negotiable_price??'')}" /></label>`:'<span class="small">Precio según lista de Odoo · negociación no autorizada para este perfil</span>'}
     <button type="button" class="icon-btn quote-remove" title="Quitar producto" aria-label="Quitar ${esc(line.name)}" data-action="quote-remove-product" data-id="${line.id}">×</button></div></div>`).join(''):
     `<div class="empty"><b>Sin productos</b>Busque y seleccione varios productos para esta cotización.</div>`;
 }
@@ -638,21 +641,23 @@ function renderQuote() {
   const availabilityNote=clients.length||state.quoteRetail?"":`<div class="status-banner warn">No hay catastros protegidos de la compañía actual para cotizar. Abre un catastro, completa los datos obligatorios y pulsa «Finalizar y proteger» antes de crear una cotización.</div>`;
   const permissionNote=cap.quote_create===false?`<div class="status-banner warn">Tu usuario no tiene permiso para crear cotizaciones en Odoo. Solicita al administrador los permisos correspondientes de Ventas. El acceso a esta pantalla sigue visible para que puedas identificar la causa.</div>`:"";
   if (!partner) { state.page="home"; return renderHome(); }
-  const body=`${availabilityNote}${permissionNote}<div class="quote-layout"><form id="quote-form">
+  const versionAlert=cap.pwa_server_version===APP_VERSION?"":`<div class="status-banner warn"><strong>Actualización del servidor pendiente.</strong> La interfaz es ${esc(APP_VERSION)} y el servidor responde ${esc(cap.pwa_server_version||"con una versión antigua")}. Actualice el módulo con Odoo reiniciado antes de guardar cotizaciones; las versiones anteriores todavía podían exigir un producto de servicio.</div>`;
+  const body=`${versionAlert}${availabilityNote}${permissionNote}<div class="quote-layout"><form id="quote-form">
     <section class="form-card"><div class="row space"><h2>1. Cliente</h2><span class="chip">Empresa: ${esc(state.meta?.user?.company_name||"")}</span></div>
       <div class="quote-current-customer"><div><span>${state.quoteRetail?"Venta de tienda":"Catastro seleccionado"}</span><strong>${esc(partnerLabel(partner))}</strong><small>${esc(partner.vat||"Sin RUC/cédula")}</small></div><button type="button" class="btn btn-outline" data-action="back-to-partner">${state.quoteRetail?'Volver a tienda':'Volver al catastro'}</button></div>
       ${!state.quoteRetail?`<div class="field"><label>Vincular con visita (opcional)</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}" ${Number(state.quoteVisitId)===v.id?"selected":""}>${esc(v.name||"Visita #"+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join("")}</select></div>`:''}
     </section>
     <section class="form-card"><h2>2. Forma de pago y promociones</h2>
+      ${!canNegotiateQuote()?'<div class="small">Perfil sin negociación: precios de productos bloqueados. Las promociones Loyalty y el recargo automático por forma de pago permanecen disponibles.</div>':''}
       <div class="field"><label>Condición de pago</label><select id="quote-payment-option"><option value="">Precio sin recargo · elija un método</option>${(cap.quote_payment_options||[]).map(opt=>`<option value="${opt.id}" ${Number(state.quotePaymentOptionId)===Number(opt.id)?'selected':''}>${esc(opt.name)}${opt.surcharge_percent?` · recargo ${esc(opt.surcharge_percent)}%`:''}</option>`).join('')}</select></div>
       ${(cap.quote_payment_options||[]).length?'':'<div class="status-banner warn">No hay formas de pago configuradas para esta empresa. Un administrador debe crearlas en Catastro → Configuración → Condiciones de pago PWA.</div>'}
-      <div class="small">El recargo se aplicará al precio de cada producto y se guardará el porcentaje en cada línea, separado de los descuentos Loyalty.</div>
+      <div class="small"><strong>No requiere producto de servicio.</strong> El porcentaje seleccionado aumenta directamente el precio unitario de cada producto. Odoo guarda el precio base, el porcentaje de recargo y el incremento unitario en cada línea, por separado de los descuentos Loyalty.</div>
       <div class="field"><label>Código de promoción / cupón Loyalty</label><input id="quote-loyalty-code" value="${esc(state.quoteLoyaltyCode)}" maxlength="100" placeholder="Opcional · código autorizado en Odoo" ${cap.quote_loyalty_supported?'':'disabled'}/></div>
-      ${cap.quote_loyalty_supported?'<div class="small">Después de guardar, la ficha mostrará las recompensas disponibles para aplicar. Odoo valida las reglas, vigencia, cantidades, cliente y acumulación.</div>':'<div class="status-banner warn">Las promociones requieren instalar y activar sale_loyalty en Ventas.</div>'}
+      ${cap.quote_loyalty_supported?'<div class="small">Loyalty está habilitado también para el perfil Tienda y para usuarios SIN permisos de negociación. Tras guardar, aplique cupones y recompensas desde la ficha de la proforma; Odoo determina los descuentos permitidos.</div>':'<div class="status-banner warn">Para usar cupones y promociones active «Promociones, programas de fidelidad y tarjetas regalo» en la configuración de Ventas de Odoo (sale_loyalty).</div>'}
     </section>
     <section class="quote-mode-banner"><div><strong>Proforma rápida desde PWA</strong><p>Las promociones se calculan con Loyalty de Odoo. El recargo de pago se incorpora al precio de cada producto y se registra por línea.</p></div><a class="btn btn-outline" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener" aria-label="Abrir cotizaciones completas en Odoo">Cotización completa en Odoo</a></section>
     <section class="form-card"><h2>3. Selección rápida de productos</h2>
-      ${cap.quote_can_negotiate?`<div class="field"><label>Lista de precios de Odoo</label><select id="quote-pricelist"><option value="">Lista asignada al cliente (predeterminada)</option>${(cap.quote_pricelists||[]).map(pl=>`<option value="${pl.id}" ${Number(state.quotePricelistId)===pl.id?'selected':''}>${esc(pl.name)}</option>`).join('')}</select></div>`:'<div class="small">Se utilizará la lista de precios asignada al cliente por Odoo (sin edición de precios).</div>'}
+      ${canNegotiateQuote()?`<div class="field"><label>Lista de precios de Odoo</label><select id="quote-pricelist"><option value="">Lista asignada al cliente (predeterminada)</option>${(cap.quote_pricelists||[]).map(pl=>`<option value="${pl.id}" ${Number(state.quotePricelistId)===pl.id?'selected':''}>${esc(pl.name)}</option>`).join('')}</select></div>`:'<div class="small">Se utilizará la lista de precios asignada al cliente por Odoo (sin edición de precios).</div>'}
       <div class="field"><label>Bodega obligatoria · stock y validación por producto ${cap.quote_stock_supported?'':'(inventario no disponible)'}</label>
       <select id="quote-warehouse" required><option value="">Seleccione una bodega</option>${(cap.quote_warehouses||[]).map(w=>`<option value="${w.id}" ${Number(state.quoteWarehouseId)===w.id?'selected':''}>${esc(w.name)}</option>`).join('')}</select></div>
       <div class="field"><label>Buscar por nombre o código (solo stock mayor a 0)</label><input id="quote-search" value="${esc(state.quoteSearch)}" placeholder="Nombre, código SKU" autocomplete="off" ${state.quoteWarehouseId?'':'disabled'}/></div>

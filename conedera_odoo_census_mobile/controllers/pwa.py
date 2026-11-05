@@ -345,7 +345,8 @@ class ConederaFieldAppController(http.Controller):
                 "quote_create": request.env["sale.order"].check_access_rights("create", raise_exception=False),
                 "quote_read": request.env["sale.order"].check_access_rights("read", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
-                "quote_can_negotiate": request.env.user.has_group("conedera_odoo_census_mobile.group_quote_negotiator"),
+                "quote_can_negotiate": self._quote_can_negotiate(),
+                "pwa_server_version": "18.0.1.5.11",
                 "census_role": census_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
                     and bool(request.env.company.catastro_retail_partner_id)),
@@ -381,8 +382,12 @@ class ConederaFieldAppController(http.Controller):
             raise AccessError("Cambie a la compañía del catastro antes de crear una cotización.")
         return partner
 
-    def _quote_can_negotiate(self):
-        return request.env.user.has_group("conedera_odoo_census_mobile.group_quote_negotiator")
+    def _quote_can_negotiate(self, retail=False):
+        # Un usuario que pertenezca a ambos grupos no debe negociar nunca
+        # sobre una cotización de Consumidor Final. El permiso de negociación
+        # sí puede usarse para los catastros normales.
+        return (not retail and request.env.user.has_group(
+            "conedera_odoo_census_mobile.group_quote_negotiator"))
 
     def _quote_payment_options(self):
         Option = request.env["catastro.quote.payment.option"]
@@ -777,6 +782,7 @@ class ConederaFieldAppController(http.Controller):
         lines = payload.get("lines") or []
         if not isinstance(lines, list) or not 1 <= len(lines) <= 60:
             raise ValidationError("La cotización debe contener entre 1 y 60 productos.")
+        retail_quote = self._quote_is_retail(partner.id)
         products = []
         # No se crea ningún campo nuevo: esta integración utiliza el campo
         # personalizado existente de sale.order.line, cuando está instalado.
@@ -805,10 +811,17 @@ class ConederaFieldAppController(http.Controller):
             else:
                 negotiated = None
             products.append((pid, qty, negotiated))
-        if any(negotiated is not None for _, _, negotiated in products) and not self._quote_can_negotiate():
-            raise AccessError("No pertenece al perfil autorizado para editar negotiable_price.")
-        if payload.get("pricelist_id") and not self._quote_can_negotiate():
+        if any(negotiated is not None for _, _, negotiated in products) and not self._quote_can_negotiate(retail=retail_quote):
+            raise AccessError("Este perfil no puede modificar negotiable_price: las ventas de Tienda usan precios de lista y Loyalty.")
+        if payload.get("pricelist_id") and not self._quote_can_negotiate(retail=retail_quote):
             raise AccessError("Este perfil debe utilizar la lista de precios asignada al cliente.")
+        # price_unit, discount y los campos de auditoría se calculan en Odoo:
+        # no aceptar cambios manuales provenientes de la PWA o de colas antiguas.
+        if any(any(k in line for k in (
+                'price_unit', 'price', 'discount',
+                'catastro_payment_surcharge_percent', 'catastro_payment_base_price_unit',
+                'catastro_payment_surcharge_unit_amount')) for line in lines):
+            raise AccessError("Los precios y recargos los calcula Odoo; no se aceptan importes manuales.")
         if any(negotiated is not None for _, _, negotiated in products):
             if custom_negotiated_field is None:
                 raise ValidationError(

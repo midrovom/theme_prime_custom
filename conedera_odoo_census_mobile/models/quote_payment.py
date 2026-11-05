@@ -13,18 +13,16 @@ class CatastroQuotePaymentOption(models.Model):
     company_id = fields.Many2one('res.company', required=True, default=lambda self: self.env.company)
     surcharge_percent = fields.Float(string='Recargo (%)', default=0, digits=(12, 4), required=True)
     payment_term_id = fields.Many2one('account.payment.term', string='Plazo de pago nativo')
-    surcharge_product_id = fields.Many2one('product.product', string='Servicio de recargo anterior (no se usa en nuevas proformas)', help='Campo conservado para compatibilidad con versiones anteriores. El recargo ahora se incorpora al precio de los productos.')
+    surcharge_product_id = fields.Many2one('product.product', string='Servicio de recargo (campo obsoleto)', help='Dato histórico únicamente. No se requiere servicio para ninguna forma de pago; el porcentaje se aplica directamente a cada precio unitario.')
 
-    @api.constrains('surcharge_percent', 'surcharge_product_id', 'company_id', 'payment_term_id')
+    @api.constrains('surcharge_percent', 'company_id', 'payment_term_id')
     def _check_option(self):
         for r in self:
             if r.surcharge_percent < 0 or r.surcharge_percent > 100:
                 raise ValidationError('El recargo debe estar entre 0% y 100%.')
-            if r.surcharge_product_id:
-                if r.surcharge_product_id.type != 'service' or not r.surcharge_product_id.sale_ok:
-                    raise ValidationError('El producto de recargo debe ser un servicio vendible.')
-                if r.surcharge_product_id.company_id and r.surcharge_product_id.company_id != r.company_id:
-                    raise ValidationError('El servicio de recargo pertenece a otra empresa.')
+            # surcharge_product_id se conserva SOLO para leer registros
+            # heredados de la 1.5.8. Nunca se exige ni se valida: el recargo
+            # se incorpora al precio unitario de cada producto.
             if r.payment_term_id and r.payment_term_id.company_id and r.payment_term_id.company_id != r.company_id:
                 raise ValidationError('El plazo de pago debe pertenecer a esta empresa.')
 
