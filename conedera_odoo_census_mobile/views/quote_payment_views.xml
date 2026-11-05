@@ -2,11 +2,11 @@
 <odoo>
  <record id="view_catastro_payment_option_list" model="ir.ui.view">
   <field name="name">catastro.quote.payment.option.list</field><field name="model">catastro.quote.payment.option</field>
-  <field name="arch" type="xml"><list><field name="sequence" widget="handle"/><field name="name"/><field name="company_id"/><field name="surcharge_percent"/><field name="payment_term_id"/><field name="active"/></list></field>
+  <field name="arch" type="xml"><list><field name="sequence" widget="handle"/><field name="name"/><field name="erp_code"/><field name="company_id"/><field name="surcharge_percent"/><field name="payment_term_id"/><field name="active"/></list></field>
  </record>
  <record id="view_catastro_payment_option_form" model="ir.ui.view">
   <field name="name">catastro.quote.payment.option.form</field><field name="model">catastro.quote.payment.option</field>
-  <field name="arch" type="xml"><form><sheet><group><field name="name"/><field name="company_id"/><field name="active"/><field name="sequence"/></group><group string="Recargo incorporado al precio del producto"><field name="surcharge_percent"/><field name="payment_term_id"/></group><div class="text-muted">El porcentaje se aplica sobre el precio unitario de cada producto. Cada línea conserva el precio base, el porcentaje y el importe de recargo. Loyalty mantiene sus descuentos propios. No es necesario definir un producto de servicio para el recargo.</div></sheet></form></field>
+  <field name="arch" type="xml"><form><sheet><group><field name="name"/><field name="erp_code"/><field name="company_id"/><field name="active"/><field name="sequence"/></group><group string="Recargo incorporado al precio del producto"><field name="surcharge_percent"/><field name="payment_term_id"/></group><div class="text-muted">El porcentaje se aplica sobre el precio unitario de cada producto. Cada línea conserva el precio base, el porcentaje y el importe de recargo. Loyalty mantiene sus descuentos propios. No es necesario definir un producto de servicio para el recargo.</div><div class="text-muted">El código ERP se envía en la cabecera de la proforma a Radis. Es obligatorio para exportar cotizaciones con esta condición; no modifica los precios.</div></sheet></form></field>
  </record>
  <record id="action_catastro_payment_options" model="ir.actions.act_window">
   <field name="name">Condiciones de pago PWA</field><field name="res_model">catastro.quote.payment.option</field><field name="view_mode">list,form</field>

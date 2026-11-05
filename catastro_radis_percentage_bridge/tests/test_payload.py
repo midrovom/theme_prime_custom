@@ -25,9 +25,15 @@ def line(sku, qty, price, warehouse, discount=0, increase=0, applied=False):
 
 
 class Order:
-    def __init__(self, items):
+    def __init__(self, items, payment_code='TC03'):
+        self.payment_code = payment_code
         self.order_line = Lines(items)
         self.warehouse_id = SimpleNamespace(code='MAIN')
+
+    def _catastro_radis_payment_erp_code(self):
+        if self.payment_code == 'MISSING':
+            raise PayloadMismatch('Falta configurar Código ERP de la forma de pago.')
+        return self.payment_code
 
     def _catastro_radis_line_percentages(self, item):
         return {'discount_percent': round(item.discount, 4),
@@ -50,7 +56,24 @@ class PayloadTest(unittest.TestCase):
         self.assertEqual(output[0]['order_lines'][0]['price_unit'], '105.0')
         self.assertEqual(output[0]['order_lines'][1]['discount_percent'], 0)
         self.assertEqual(output[0]['order_lines'][1]['increase_percent'], 0)
+        self.assertEqual(output[0]['order_payment_code'], 'TC03')
+        self.assertNotIn('order_payment_code', self.data[0])
         self.assertNotIn('discount_percent', self.data[0]['order_lines'][0])
+
+    def test_payment_code_preserves_leading_zeroes(self):
+        self.order.payment_code = '001'
+        output = enrich_payload(self.data, lambda name: self.order)
+        self.assertEqual(output[0]['order_payment_code'], '001')
+
+    def test_without_pwa_payment_option_keeps_original_header(self):
+        self.order.payment_code = None
+        output = enrich_payload(self.data, lambda name: self.order)
+        self.assertNotIn('order_payment_code', output[0])
+
+    def test_payment_option_without_erp_code_rejected(self):
+        self.order.payment_code = 'MISSING'
+        with self.assertRaises(PayloadMismatch):
+            enrich_payload(self.data, lambda name: self.order)
 
     def test_rejects_wrong_line_alignment(self):
         self.data[0]['order_lines'][0]['sku'] = 'WRONG'

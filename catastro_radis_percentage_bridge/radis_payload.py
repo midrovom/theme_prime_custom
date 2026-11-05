@@ -2,7 +2,7 @@
 """Serialización pequeña y comprobable, sin importaciones de Odoo.
 
 No modifica el JSON original: copia las órdenes y líneas y añade
-únicamente `discount_percent` e `increase_percent` por producto.
+los porcentajes por producto y el código ERP de la forma de pago en cabecera.
 """
 from math import isclose
 
@@ -48,5 +48,11 @@ def enrich_payload(payload, find_order):
             new_lines.append(enriched)
         enriched_order = dict(order_data)
         enriched_order['order_lines'] = new_lines
+        # Valor de CABECERA, no una propiedad de las líneas.
+        # Mantener intactas las órdenes nativas sin una opción de pago PWA;
+        # para opciones configuradas, el método de Odoo valida el código ERP.
+        erp_payment_code = order._catastro_radis_payment_erp_code()
+        if erp_payment_code is not None:
+            enriched_order['order_payment_code'] = erp_payment_code
         result.append(enriched_order)
     return result

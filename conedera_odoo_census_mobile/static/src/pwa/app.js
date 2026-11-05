@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.25";
+const APP_VERSION = "18.0.1.5.26";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
