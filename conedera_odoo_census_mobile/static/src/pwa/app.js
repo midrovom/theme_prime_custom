@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.14";
+const APP_VERSION = "18.0.1.5.15";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -517,9 +517,13 @@ function quoteCartDockMarkup() {
   const payment=selectedQuotePaymentOption();
   const pct=Number(payment?.surcharge_percent||0);
   const amount=totals.negotiated*(1+pct/100);
+  const taxesIncluded=quoteTaxIncludedEstimate();
+  const informative=taxesIncluded!==null
+    ?`Est. con impuestos: ${esc(totals.currency)} ${money(taxesIncluded)}`
+    :totals.ready?`Subtotal sin impuestos: ${esc(totals.currency)} ${money(amount)}`:'Total por calcular';
   return `<div class="quote-cart-dock" role="region" aria-label="Cotización actual">
     <div class="quote-cart-dock-summary"><strong>🛒 ${state.quoteLines.length} producto(s)</strong>
-    <span>${totals.ready?`${esc(totals.currency)} ${money(amount)}`:'Total por calcular'}</span></div>
+    <span>${informative}</span></div>
     <button type="button" class="btn btn-primary" data-action="quote-go-cart">Revisar y guardar →</button>
   </div>`;
 }
@@ -541,18 +545,35 @@ function renderQuoteResults() {
     return String(a.name||'').localeCompare(String(b.name||''),'es');
   }).map(p=>{
     const added=state.quoteLines.find(l=>Number(l.id)===Number(p.id));
-    const payment=selectedQuotePaymentOption();
-    const percent=Number(payment?.surcharge_percent||0);
-    const listPrice=added?.price!=null ? Number(added.price): Number(p.price);
-    const chosenPrice=added?.negotiable_price!=null && String(added.negotiable_price).trim()!=='' ? Number(added.negotiable_price) : listPrice;
-    const displayPrice=p.price==null||!Number.isFinite(chosenPrice)?'Por consultar':`${esc(p.currency||'')} ${money(chosenPrice*(1+percent/100))}`;
+    // Solo se publican importes devueltos por el motor de impuestos de Odoo.
+    // No calcular IVA ni cargos en JS: puede haber impuestos incluidos,
+    // posiciones fiscales y listas personalizadas.
+    const preview=(added?.tax_price_source==='server' ? added : p);
+    const methods=Array.isArray(preview.payment_prices) ? preview.payment_prices : [];
+    const chosenId=Number(state.quotePaymentOptionId||0);
+    const selected=methods.find(m=>Number(m.id)===chosenId);
+    const hasTaxPrice=preview.tax_price_source==='server';
+    const finalUnit=hasTaxPrice?(selected ? selected.tax_included_price : (!chosenId ? preview.tax_included_base : null)):null;
+    const displayPrice=finalUnit===null||finalUnit===undefined||!Number.isFinite(Number(finalUnit))
+      ?'Consultar en línea':`${esc(p.currency||'')} ${money(finalUnit)}`;
+    const remaining=methods.filter(m=>Number(m.id)!==chosenId);
+    const methodMarkup=(m)=>`<div class="shop-payment-preview"><span>${esc(m.name)}</span><strong>${esc(p.currency||'')} ${money(m.tax_included_price)}</strong></div>`;
+    const alternatives=hasTaxPrice&&remaining.length ? `<div class="shop-payment-comparison" aria-label="Precios por forma de pago">
+      ${remaining.slice(0,3).map(methodMarkup).join('')}
+      ${remaining.length>3?`<details class="shop-more-methods"><summary>Ver ${remaining.length-3} opciones más</summary><div class="shop-payment-comparison-inner">${remaining.slice(3).map(methodMarkup).join('')}</div></details>`:''}
+    </div>`:'';
+    const priceFootnote=hasTaxPrice
+      ?(canNegotiateQuote()?'Precios unitarios con impuestos · antes de negociación y promociones':'Precios unitarios con impuestos · promociones al revisar')
+      :'Conéctese para consultar precios con impuestos';
     return `<article class="shop-product ${added?'shop-product-added':''}" data-quote-product="${p.id}">
       <div class="shop-product-top">
         <button type="button" class="quote-thumb shop-photo" data-action="quote-image" data-id="${p.id}" title="Ampliar fotografía" aria-label="Ampliar fotografía de ${esc(p.name)}" ${p.has_image?'':'disabled'}>${quoteImage(p)}</button>
         <div class="shop-product-summary"><div class="shop-product-kickers">${p.category_name?`<span class="shop-category">${esc(p.category_name)}</span>`:''}${p.code?`<span class="shop-sku">${esc(p.code)}</span>`:''}</div>
           <h3>${esc(p.name)}</h3><span class="shop-stock">● Disponible: ${money(p.stock_qty)} ${esc(p.uom||'')}</span></div>
       </div>
-      <div class="shop-price"><span>${payment?esc(payment.name):'Precio de lista'}</span><strong>${displayPrice}</strong></div>
+      <div class="shop-price"><span>${selected?esc(selected.name):(!chosenId?'Precio de lista':esc((state.meta?.capabilities?.quote_payment_options||[]).find(x=>Number(x.id)===chosenId)?.name||'Forma de pago'))} · impuestos incluidos</span><strong>${displayPrice}</strong></div>
+      ${alternatives}
+      <p class="shop-price-footnote">${priceFootnote}</p>
       <div class="shop-product-actions">
         <label class="shop-qty">Cantidad<input type="number" data-quote-search-qty="${p.id}" step="any" min="0.001" max="100000" inputmode="decimal" value="${esc(added?.qty??1)}" aria-label="Cantidad de ${esc(p.name)}"/></label>
         <button type="button" class="btn ${added?'btn-secondary shop-added-btn':'btn-primary'} shop-add" data-action="quote-toggle-product" data-id="${p.id}" aria-pressed="${!!added}">${added?'✓ Agregado · quitar':'＋ Añadir'}</button>
@@ -576,10 +597,10 @@ function renderQuoteResults() {
 function quoteLinePriceMarkup(line) {
   if (!canNegotiateQuote()) {
     const payment=selectedQuotePaymentOption();
-    const pct=Number(payment?.surcharge_percent||0);
-    const price=Number(line.price);
-    const amount=line.price===null||line.price===undefined||!Number.isFinite(price)?'Por calcular':`${esc(line.currency||'')} ${money(price*(1+pct/100))}`;
-    return `<div class="quote-price-info" data-quote-price-info="${line.id}"><span>${payment?esc(payment.name):'Precio de lista'}: <strong>${amount}</strong></span><span>${quoteStock(line)}</span></div>`;
+    const price=payment?(line.payment_prices||[]).find(x=>Number(x.id)===Number(payment.id))?.tax_included_price:line.tax_included_base;
+    const amount=line.tax_price_source==='server' && price!==null && price!==undefined && Number.isFinite(Number(price))
+      ?`${esc(line.currency||'')} ${money(price)}`:'Por consultar';
+    return `<div class="quote-price-info" data-quote-price-info="${line.id}"><span>${payment?esc(payment.name):'Precio de lista'} · impuestos incluidos: <strong>${amount}</strong></span><span>${quoteStock(line)}</span></div>`;
   }
   return `<div class="quote-price-info" data-quote-price-info="${line.id}"><span>${quoteListPrice(line)} <small>para ${esc(line.qty)} ${esc(line.uom||'')} · lista ${esc(line.pricelist||'sin confirmar')}</small></span><span>${quoteStock(line)}</span></div>`;
 }
@@ -617,19 +638,37 @@ function quoteTotals() {
   if(currencies.size>1)ready=false;
   return {list,negotiated,ready,current,currency};
 }
+// Referencia por unidad con impuestos calculada en el servidor. Las
+// promociones Loyalty pueden alterar el importe final cuando se guarda.
+function quoteTaxIncludedEstimate(){
+  if(!state.quoteLines.length) return null;
+  const chosenId=Number(state.quotePaymentOptionId||0);
+  let amount=0;
+  for(const line of state.quoteLines){
+    const qty=Number(line.qty);
+    if(line.tax_price_source!=='server' || !Number.isFinite(qty) || qty<=0 || Number(line.qty_priced)!==qty ||
+      (line.negotiable_price!==null && line.negotiable_price!==undefined && String(line.negotiable_price).trim()!==''))return null;
+    const item=chosenId ? (line.payment_prices||[]).find(x=>Number(x.id)===chosenId) : null;
+    const value=chosenId ? item?.tax_included_price : line.tax_included_base;
+    if(value===null || value===undefined || !Number.isFinite(Number(value)))return null;
+    amount+=Number(value)*qty;
+  }
+  return amount;
+}
 function quoteTotalsMarkup(){
   const t=quoteTotals();
   const payment=selectedQuotePaymentOption();
   const pct=Number(payment?.surcharge_percent||0);
   const total=t.negotiated*(1+pct/100);
+  const taxTotal=quoteTaxIncludedEstimate();
   const fmt=n=>t.ready?`${esc(t.currency)} ${money(n)}`:'Por calcular';
   if(!canNegotiateQuote()) return `<div class="quote-totals-grid shop-total-single">
-    <div class="quote-total-card negotiated"><span>${payment?`Total · ${esc(payment.name)}`:'Total estimado'}</span><strong>${fmt(total)}</strong></div>
+    <div class="quote-total-card negotiated"><span>${taxTotal!==null?'Total estimado con impuestos':(payment?`Subtotal sin impuestos · ${esc(payment.name)}`:'Subtotal sin impuestos')}</span><strong>${taxTotal!==null?`${esc(t.currency)} ${money(taxTotal)}`:fmt(total)}</strong></div>
   </div>`;
   return `<div class="quote-totals-grid">
     <div class="quote-total-card"><span>Total a precio de lista</span><strong>${fmt(t.list)}</strong></div>
     <div class="quote-total-card"><span>Total negociado</span><strong>${fmt(t.negotiated)}</strong></div>
-    <div class="quote-total-card negotiated"><span>${payment?`Total · ${esc(payment.name)}`:'Total estimado'}</span><strong>${fmt(total)}</strong></div>
+    <div class="quote-total-card negotiated"><span>${payment?`Subtotal sin impuestos · ${esc(payment.name)}`:'Subtotal sin impuestos'}</span><strong>${fmt(total)}</strong></div>
   </div>`;
 }
 function updateQuoteTotals(){
@@ -668,7 +707,8 @@ async function refreshQuoteLinePrices() {
     if(requestId!==state.quotePriceRequest||partnerId!==state.quotePartnerId||wh!==state.quoteWarehouseId||pricelistId!==state.quotePricelistId) return;
     rows.forEach(row=>{
       const line=state.quoteLines.find(l=>l.id===row.id && Number(l.qty)===Number(row.qty_priced));
-      if(line) Object.assign(line,{price:row.price,currency:row.currency,pricelist:row.pricelist,qty_priced:row.qty_priced,stock_qty:row.stock_qty,stock_kind:row.stock_kind,stock_label:row.stock_label,warehouse_id:row.warehouse_id});
+        if(line) Object.assign(line,{price:row.price,currency:row.currency,pricelist:row.pricelist,qty_priced:row.qty_priced,stock_qty:row.stock_qty,stock_kind:row.stock_kind,stock_label:row.stock_label,warehouse_id:row.warehouse_id,
+          tax_price_source:row.tax_price_source,tax_included_base:row.tax_included_base,payment_prices:row.payment_prices});
     });
     if(state.page==='quote') {
       for (const line of state.quoteLines) {
@@ -676,6 +716,7 @@ async function refreshQuoteLinePrices() {
         if(el) el.outerHTML=quoteLinePriceMarkup(line);
       }
       updateQuoteTotals();
+      if (state.quoteView==='catalog') renderQuoteResults();
     }
   } catch(err) {console.warn('No se pudo actualizar precio y stock:',err);state.lastError=err.message||String(err);updateQuoteTotals();}
 }

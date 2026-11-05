@@ -358,7 +358,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.14",
+                "pwa_server_version": "18.0.1.5.15",
                 "census_role": census_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
                     and bool(request.env.company.catastro_retail_partner_id)),
@@ -563,6 +563,47 @@ class ConederaFieldAppController(http.Controller):
             raise ValidationError("El cliente no tiene una lista de precios de Ventas disponible.")
         return pricelist
 
+    def _quote_payment_tax_previews(self, partner, product, pricelist_price, pricelist, fiscal_position, options):
+        """Precios unitarios de consulta, con impuestos por forma de pago.
+
+        Utilizar exactamente el motor fiscal de Ventas: adaptar los impuestos
+        incluidos del producto a la posición fiscal, aplicar el cargo unitario
+        redondeado en la moneda del pedido y ejecutar compute_all. No se
+        modifica ni crea ninguna cotización durante la consulta del catálogo.
+
+        Las recompensas Loyalty y los precios negociados se aplican al guardar
+        el pedido, por lo que esta vista es orientativa (lista vigente).
+        """
+        company = request.env.company
+        product = product.with_company(company)
+        original_taxes = product.taxes_id._filter_taxes_by_company(company)
+        mapped_taxes = fiscal_position.map_tax(original_taxes) if fiscal_position else original_taxes
+        currency = pricelist.currency_id
+        base_unit = product._get_tax_included_unit_price_from_price(
+            pricelist_price, product_taxes=original_taxes,
+            fiscal_position=fiscal_position,
+        )
+        def final_amount(percent):
+            # Mismo redondeo que catastro_recompute_surcharge(), no un
+            # porcentaje aproximado sobre el precio de etiqueta del navegador.
+            fee = currency.round(base_unit * percent / 100.0)
+            applied_unit = base_unit + fee
+            amounts = mapped_taxes.compute_all(
+                applied_unit, currency=currency, quantity=1.0,
+                product=product, partner=partner,
+            )
+            return currency.round(amounts['total_included'])
+
+        return {
+            'tax_included_base': final_amount(0.0),
+            'payment_prices': [
+                {'id': option.id, 'name': option.name,
+                 'tax_included_price': final_amount(option.surcharge_percent)}
+                for option in options
+            ],
+            'tax_price_source': 'server',
+        }
+
     def _quote_catalog_rows(self, partner, products, quantities=None, warehouse_id=None, pricelist_id=None,
                             only_in_stock=False, max_results=60):
         quantities = quantities or {}
@@ -572,6 +613,15 @@ class ConederaFieldAppController(http.Controller):
         pricelist = self._quote_pricelist(partner, pricelist_id)
         result = []
         stock_map = self._quote_stock_map(products, warehouse)
+        # La compañía, la posición fiscal y las formas de pago se consultan
+        # una vez por lote (hasta 60 tarjetas). No se utiliza sudo para
+        # consultar productos, compañías o formas de pago no permitidas.
+        fiscal_position = request.env['account.fiscal.position'].with_company(
+            request.env.company)._get_fiscal_position(partner)
+        options = request.env['catastro.quote.payment.option'].search([
+            ('active', '=', True),
+            ('company_id', '=', request.env.company.id),
+        ], order='sequence,id', limit=60)
         for product in products:
             qty = float(quantities.get(product.id, 1.0))
             if not math.isfinite(qty) or qty <= 0 or qty > 100000:
@@ -581,7 +631,11 @@ class ConederaFieldAppController(http.Controller):
                 continue
             # Motor nativo de listas, considerando cliente y cantidad.
             price = pricelist._get_product_price(product, qty, partner=partner, uom=product.uom_id)
+            tax_preview = self._quote_payment_tax_previews(
+                partner, product, price, pricelist, fiscal_position, options,
+            )
             result.append({
+                **tax_preview,
                 "id": product.id, "name": product.display_name, "code": product.default_code or "",
                 "category_id": product.categ_id.id if product.categ_id else False,
                 "category_name": product.categ_id.name if product.categ_id else "Sin categoría",
