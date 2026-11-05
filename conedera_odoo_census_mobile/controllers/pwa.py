@@ -358,7 +358,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.23",
+                "pwa_server_version": "18.0.1.5.25",
                 "census_role": census_role,
                 "quote_retail_role": retail_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
@@ -899,16 +899,32 @@ class ConederaFieldAppController(http.Controller):
             wh["id"] for wh in self._quote_warehouses()
         })
         export_state = order.export_send or "P"
+        percentage_lines = order.order_line.filtered(
+            lambda l: l.product_id and not l.display_type and (
+                abs(l.discount or 0.0) > 0.000001 or (
+                    'catastro_payment_surcharge_applied' in l._fields
+                    and l.catastro_payment_surcharge_applied
+                    and abs(l.catastro_payment_surcharge_percent or 0.0) > 0.000001
+                )
+            )
+        )
+        supports_percentages = (
+            hasattr(order, '_catastro_radis_bridge_version')
+            and order._catastro_radis_bridge_version() >= 1
+        )
+        percentage_contract_pending = bool(percentage_lines and not supports_percentages)
         return {
             "installed": True,
             "authorized": authorized,
+            "percentage_contract_pending": percentage_contract_pending,
             "status": export_state,
             "label": {"P": "Pendiente de envío", "N": "No enviado", "E": "Enviado a Radis"}.get(
                 export_state, "Estado no disponible"),
             "can_send": bool(
                 authorized and order.state == "draft" and export_state != "E"
                 and request.env["sale.order"].check_access_rights("write", raise_exception=False)
-                and allowed_wh and order.order_line.filtered(
+                and allowed_wh and not percentage_contract_pending
+                and order.order_line.filtered(
                     lambda l: l.product_id and not l.display_type
                 )
             ),
@@ -1021,18 +1037,26 @@ class ConederaFieldAppController(http.Controller):
                 "La proforma contiene recompensas Loyalty como líneas de producto. "
                 "No se enviarán como mercancía a Radis; revise el tratamiento de estas recompensas."
             )
-        # The existing stock_api_assing payload has NO per-line "discount"
-        # field.  Exporting a discounted price_unit as a full price would
-        # overstate the amount in Radis.  Reject instead of silently sending
-        # an economically different quotation.
-        discounted_lines = order.order_line.filtered(lambda l:
-            l.product_id and not l.display_type and abs(l.discount or 0.0) > 0.000001)
-        if discounted_lines:
+        # Compatibilidad en despliegues mixtos: versiones antiguas de Radis
+        # no incluyen el porcentaje de descuento en su JSON. Solo enviar
+        # descuentos cuando el módulo Radis declara el nuevo formato.
+        percentage_lines = order.order_line.filtered(lambda l:
+            l.product_id and not l.display_type and (
+                abs(l.discount or 0.0) > 0.000001 or (
+                    'catastro_payment_surcharge_applied' in l._fields
+                    and l.catastro_payment_surcharge_applied
+                    and abs(l.catastro_payment_surcharge_percent or 0.0) > 0.000001
+                )
+            ))
+        supports_percentages = (
+            hasattr(order, '_catastro_radis_bridge_version')
+            and order._catastro_radis_bridge_version() >= 1
+        )
+        if percentage_lines and not supports_percentages:
             raise ValidationError(
-                "Esta proforma tiene descuentos por producto (Loyalty u otros). "
-                "La API Radis actual no transmite el descuento de cada línea; "
-                "se bloqueó el envío para evitar precios diferentes a los de Odoo. "
-                "Actualice primero el contrato de integración con Radis."
+                "Instale y actualice catastro_radis_percentage_bridge antes de enviar "
+                "proformas con descuentos o incrementos. El módulo stock_api_assing "
+                "original se mantiene sin modificaciones."
             )
         # There is deliberately no direct HTTP call to Radis in the PWA.
         # Stock_api_assing creates the payload, checks the API response and

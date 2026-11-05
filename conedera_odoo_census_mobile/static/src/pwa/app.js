@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.23";
+const APP_VERSION = "18.0.1.5.25";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -996,7 +996,9 @@ function quoteRadisMarkup(q) {
     : '';
   const advice=r.status==='E'
     ? '<p class="small">Radis confirmó esta proforma. Las líneas quedan bloqueadas por el módulo de integración.</p>'
-    : '<p class="small">Solo se envían cotizaciones guardadas, en borrador y con bodega. Esta operación requiere conexión y confirmación del servidor.</p>';
+    : r.percentage_contract_pending
+      ? '<p class="small">Instale el complemento Radis de porcentajes para transmitir descuentos e incrementos sin modificar stock_api_assing.</p>'
+      : '<p class="small">Solo se envían cotizaciones guardadas, en borrador y con bodega. Esta operación requiere conexión y confirmación del servidor.</p>';
   return `<section class="quote-radis card"><div class="row space"><strong>Radis</strong>${status}</div>${advice}${button}</section>`;
 }
 function renderQuoteDetail() {
