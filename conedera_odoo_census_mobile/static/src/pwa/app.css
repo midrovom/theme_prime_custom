@@ -396,3 +396,10 @@ button{cursor:pointer}
 .quote-delivery-actions{display:flex;gap:10px;flex-wrap:wrap}
 .quote-delivery .field{max-width:460px}
 @media(max-width:640px){.retail-quote-row{display:block}.retail-quote-price{justify-content:flex-start;margin-top:12px}.retail-quote-price .btn{flex:1}.retail-entry-actions .btn{flex:1}.quote-delivery-actions .btn{flex:1}}
+
+/* Product promotions are contextual, not a second product line or financial fee. */
+.shop-promo-gift{display:inline-block;background:#f3f9ef;border:1px solid #badb9c;color:#286018;
+  border-radius:10px;padding:5px 9px;font-size:.8rem;font-weight:650;max-width:100%;overflow-wrap:anywhere;margin-top:6px}
+.quote-promo-choice{max-width:100%;margin-top:8px}
+.quote-promo-choice select{display:block;width:100%;min-width:0;max-width:100%;height:42px}
+@media(max-width:480px){.quote-promo-choice select{font-size:14px}}

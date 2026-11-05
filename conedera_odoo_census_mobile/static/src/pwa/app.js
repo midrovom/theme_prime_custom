@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.18";
+const APP_VERSION = "18.0.1.5.19";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -57,6 +57,10 @@ const state = {
   quotePricelistId: null,
   quotePriceTimer: null,
   quotePriceRequest: 0,
+  quotePromoTimer: null,
+  quotePromoRequest: 0,
+  quotePromoOffers: {},
+  quotePromoMessage: "",
   quoteImageZoom: 1,
   quotePaymentOptionId: null,
   quoteLoyaltyCode: "",
@@ -482,7 +486,7 @@ async function shareQuotePdf(id,name){
       throw new Error('Odoo no pudo entregar el PDF. Revise la sesión y los permisos del reporte.');
     const blob=await response.blob();
     const file=new File([blob],`Proforma_${String(name||id).replace(/[^a-zA-Z0-9_-]/g,'_')}.pdf`,{type:'application/pdf'});
-    if(navigator.share&&navigator.canShare?.({files:[file]})){
+    if(window.isSecureContext&&navigator.share&&navigator.canShare?.({files:[file]})){
       await navigator.share({files:[file],title:`Proforma ${name}`,text:`Proforma ${name}`});
     }else{
       const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=file.name;
@@ -636,6 +640,11 @@ function renderQuoteResults() {
     return String(a.name||'').localeCompare(String(b.name||''),'es');
   }).map(p=>{
     const added=state.quoteLines.find(l=>Number(l.id)===Number(p.id));
+    const eligibleOffers=state.quotePromoOffers[p.id]||[];
+    const chosenOffer=added && eligibleOffers.find(offer=>Number(offer.id)===Number(added.promo_reward_id));
+    const giftBadge=added && chosenOffer
+      ?`<span class="shop-promo-gift" aria-label="Promoción aplicada">🎁 ${esc(chosenOffer.name)} · ${money(chosenOffer.discount)}% descuento</span>`
+      :eligibleOffers.length?`<span class="shop-promo-gift" aria-label="Promoción disponible">🎁 Promoción disponible</span>`:'';
     // Solo se publican importes devueltos por el motor de impuestos de Odoo.
     // No calcular IVA ni cargos en JS: puede haber impuestos incluidos,
     // posiciones fiscales y listas personalizadas.
@@ -660,7 +669,7 @@ function renderQuoteResults() {
       <div class="shop-product-top">
         <button type="button" class="quote-thumb shop-photo" data-action="quote-image" data-id="${p.id}" title="Ampliar fotografía" aria-label="Ampliar fotografía de ${esc(p.name)}" ${p.has_image?'':'disabled'}>${quoteImage(p)}</button>
         <div class="shop-product-summary"><div class="shop-product-kickers">${p.category_name?`<span class="shop-category">${esc(p.category_name)}</span>`:''}${p.code?`<span class="shop-sku">${esc(p.code)}</span>`:''}</div>
-          <h3>${esc(p.name)}</h3><span class="shop-stock">● Disponible: ${money(p.stock_qty)} ${esc(p.uom||'')}</span></div>
+          <h3>${esc(p.name)}</h3><span class="shop-stock">● Disponible: ${money(p.stock_qty)} ${esc(p.uom||'')}</span>${giftBadge}</div>
       </div>
       <div class="shop-price"><span>${selected?esc(selected.name):(!chosenId?'Precio de lista':esc((state.meta?.capabilities?.quote_payment_options||[]).find(x=>Number(x.id)===chosenId)?.name||'Forma de pago'))} · impuestos incluidos</span><strong>${displayPrice}</strong></div>
       ${alternatives}
@@ -705,7 +714,13 @@ function quoteLineSurchargeMarkup(line){
 function quoteLinesMarkup() {
   return state.quoteLines.length?state.quoteLines.map(line=>`<div class="quote-line" data-quote-line="${line.id}">
     <button class="quote-thumb" type="button" data-action="quote-image" data-id="${line.id}" title="Ampliar foto" ${line.has_image?'':'disabled'}>${quoteImage(line)}</button>
-    <div class="quote-line-name"><strong>${esc(line.name)}</strong><span>${esc(line.code||line.uom||'')}</span>${quoteLinePriceMarkup(line)}</div>
+    <div class="quote-line-name"><strong>${esc(line.name)}</strong><span>${esc(line.code||line.uom||'')}</span>${quoteLinePriceMarkup(line)}
+    ${state.meta?.capabilities?.quote_product_promotions_supported && state.online ?
+      `<div class="field quote-promo-choice"><label>🎁 Promoción del producto</label>
+      <select data-quote-promo="${line.id}" aria-label="Elegir promoción para ${esc(line.name)}">
+      <option value="0" ${Number(line.promo_reward_id)===0?'selected':''}>Sin promoción</option>
+      ${(state.quotePromoOffers[line.id]||[]).map(offer=>`<option value="${Number(offer.id)}" ${Number(line.promo_reward_id)===Number(offer.id)?'selected':''}>${esc(offer.name)} · ${money(offer.discount)}% descuento</option>`).join('')}
+      </select></div>` : ''}</div>
     <div class="quote-line-controls"><label>Cantidad<input type="number" inputmode="decimal" min="0.001" max="100000" step="any" value="${esc(line.qty)}" data-quote-qty="${line.id}" required/></label>
     ${canNegotiateQuote()?`<label>Precio negociado (negotiable_price) · ${esc(line.currency||'moneda de lista')}<input type="number" data-quote-negotiable="${line.id}" inputmode="decimal" min="0" max="1000000000" step="any" placeholder="Sin negociar" value="${esc(line.negotiable_price??'')}" /></label>`:''}
     <button type="button" class="icon-btn quote-remove" title="Quitar producto" aria-label="Quitar ${esc(line.name)}" data-action="quote-remove-product" data-id="${line.id}">×</button></div></div>`).join(''):
@@ -814,6 +829,49 @@ async function refreshQuoteLinePrices() {
 function scheduleQuotePrices() {
   clearTimeout(state.quotePriceTimer);
   state.quotePriceTimer=setTimeout(()=>refreshQuoteLinePrices(),400);
+  scheduleQuotePromos();
+}
+function scheduleQuotePromos() {
+  clearTimeout(state.quotePromoTimer);
+  state.quotePromoMessage='Comprobando promociones según los productos y cantidades actuales…';
+  // Do not show a stale gift when a product was removed or its qty changed.
+  state.quotePromoOffers={};
+  const request=++state.quotePromoRequest;
+  state.quotePromoTimer=setTimeout(()=>void refreshQuotePromos(request),650);
+}
+async function refreshQuotePromos(request) {
+  if(request!==state.quotePromoRequest || state.page!=='quote')return;
+  if(!state.online || !state.meta?.capabilities?.quote_product_promotions_supported ||
+     !state.quotePartnerId || !state.quoteWarehouseId || !state.quoteLines.length){
+    state.quotePromoOffers={};state.quotePromoMessage='';return;
+  }
+  const snapshot=state.quoteLines.map(line=>({product_id:Number(line.id),qty:Number(line.qty)}));
+  try {
+    const data=await rpc('/catastro/app/quote/promotions/preview',{
+      partner_id:state.quotePartnerId,warehouse_id:state.quoteWarehouseId,
+      pricelist_id:state.quotePricelistId||null,lines:snapshot
+    });
+    if(request!==state.quotePromoRequest || state.page!=='quote')return;
+    const offers={};
+    for(const item of data.items||[])offers[item.product_id]=item.offers||[];
+    state.quotePromoOffers=offers;
+    for(const line of state.quoteLines){
+      const choices=offers[line.id]||[];
+      const selected=line.promo_reward_id;
+      // Undefined/null means "auto-select best offer"; explicit zero opts out.
+      if(selected===undefined || selected===null){line.promo_reward_id=choices.length?choices[0].id:0;}
+      else if(Number(selected)!==0 && !choices.some(o=>Number(o.id)===Number(selected))){line.promo_reward_id=0;}
+    }
+    state.quotePromoMessage='Promociones actualizadas según la selección.';
+    if(state.quoteView==='catalog')renderQuoteResults();
+    else refreshQuoteLineMarkup();
+    const status=document.querySelector('#quote-promo-status');if(status)status.textContent=state.quotePromoMessage;
+  }catch(err){
+    if(request!==state.quotePromoRequest)return;
+    state.quotePromoOffers={};state.quotePromoMessage='No se pudieron verificar promociones. Guarde solo después de validarlas en Odoo.';
+    const status=document.querySelector('#quote-promo-status');if(status)status.textContent=state.quotePromoMessage;
+    console.warn('Promociones no verificadas:',err);
+  }
 }
 function renderQuote() {
   const partner=quotePartner();
@@ -837,7 +895,8 @@ function renderQuote() {
       ${(cap.quote_payment_options||[]).length?'':'<div class="status-banner warn">No hay formas de pago configuradas para esta empresa. Un administrador debe crearlas en Catastro → Configuración → Condiciones de pago PWA.</div>'}
 
       <details class="shop-loyalty-panel"><summary>🎁 Promociones / cupones Loyalty</summary>
-        ${cap.quote_loyalty_supported?`<div class="field"><label>Código promocional (opcional)</label><input id="quote-loyalty-code" value="${esc(state.quoteLoyaltyCode)}" maxlength="100" placeholder="Código de descuento o promoción" ${state.editingQuoteId?'disabled':''}/></div><p class="small">${state.editingQuoteId?'Para cambiar códigos o recompensas, guarde los cambios y use «Promociones» en el detalle del borrador.':'Los descuentos disponibles se aplicarán al guardar la proforma.'}</p>`:'<p class="small">Para usar Loyalty, habilite las promociones nativas de Ventas en Odoo.</p>'}
+        ${cap.quote_product_promotions_supported?'<p class="small">Los descuentos porcentuales compatibles se aplican por artículo según las reglas de Odoo. Las recompensas de dinero o productos gratis requieren tratamiento distinto. Puede elegir una promoción en la revisión.</p>':''}
+        ${cap.quote_loyalty_supported&&!cap.quote_product_promotions_supported?`<div class="field"><label>Código promocional (opcional)</label><input id="quote-loyalty-code" value="${esc(state.quoteLoyaltyCode)}" maxlength="100" placeholder="Código de descuento o promoción" ${state.editingQuoteId?'disabled':''}/></div><p class="small">${state.editingQuoteId?'Para cambiar códigos o recompensas, guarde los cambios y use «Promociones» en el detalle del borrador.':'Los descuentos disponibles se aplicarán al guardar la proforma.'}</p>`:'<p class="small">Para usar Loyalty, habilite las promociones nativas de Ventas en Odoo.</p>'}
       </details>
       <a class="shop-native-link" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener">Abrir formulario completo de Odoo</a>
     </section>
@@ -848,6 +907,7 @@ function renderQuote() {
       ${!state.online?'<div class="status-banner warn">Sin conexión: los datos de productos pueden estar desactualizados.</div>':''}
     </section>`:`<section class="form-card shop-review">
       <div class="shop-review-head"><div><div class="eyebrow">Cotización</div><h2>${state.editingQuoteId?'Revisar cambios del borrador':'Revisar proforma'}</h2><p class="small">${state.quoteLines.length} producto(s)</p></div><button class="btn btn-outline" type="button" data-action="quote-back-catalog">← Seguir agregando</button></div>
+      ${cap.quote_product_promotions_supported?`<p id="quote-promo-status" class="small" aria-live="polite">${esc(state.quotePromoMessage || 'Promociones calculadas según reglas vigentes de Odoo')}</p>`:''}
       <div id="quote-cart" class="shop-cart-section"><div id="quote-lines">${quoteLinesMarkup()}</div></div>
       <div id="quote-totals" class="quote-totals" aria-live="polite">${quoteTotalsMarkup()}</div>
     </section>`}
@@ -869,15 +929,15 @@ function renderQuoteDetail() {
   const q=state.quoteDetail;
   if (!q) {state.page="quote";return renderQuote();}
   const body=`<div class="quote-layout"><section class="form-card"><div class="row space"><div><div class="eyebrow">Cotización</div><h2>${esc(q.name)}</h2><div class="card-sub">${esc(q.partner_name)} · ${esc(q.company_name)} · ${esc(dateText(q.date_order))}</div></div><span class="chip">${esc(q.state)}</span></div>
-    <div class="section-title">Detalle de productos</div>${q.lines.map(l=>`<div class="quote-detail-line"><div><strong>${esc(l.product_name||l.name)}</strong><div class="small">${esc(l.qty)} ${esc(l.uom)} × ${esc(q.currency)} ${money(l.price_unit)}${l.discount?` · descuento ${esc(l.discount)}%`:""}${l.negotiable_price!==null&&l.negotiable_price!==undefined?` · negociable: ${esc(q.currency)} ${money(l.negotiable_price)}`:''}</div></div><strong>${esc(q.currency)} ${money(l.subtotal)}</strong></div>`).join("")}
+    <div class="section-title">Detalle de productos</div>${q.lines.map(l=>`<div class="quote-detail-line"><div><strong>${l.promo_reward_id?'🎁 ':''}${esc(l.product_name||l.name)}</strong>${l.promo_reward_id?`<div class="shop-promo-gift">Descuento de promoción: ${esc(l.promo_name||'Loyalty')}</div>`:''}<div class="small">${esc(l.qty)} ${esc(l.uom)} × ${esc(q.currency)} ${money(l.price_unit)}${l.discount?` · descuento ${esc(l.discount)}%`:""}${l.negotiable_price!==null&&l.negotiable_price!==undefined?` · negociable: ${esc(q.currency)} ${money(l.negotiable_price)}`:''}</div></div><strong>${esc(q.currency)} ${money(l.subtotal)}</strong></div>`).join("")}
     <div class="quote-total"><div><span>Subtotal</span><strong>${esc(q.currency)} ${money(q.amount_untaxed)}</strong></div><div><span>Impuestos</span><strong>${esc(q.currency)} ${money(q.amount_tax)}</strong></div><div class="grand"><span>Total</span><strong>${esc(q.currency)} ${money(q.amount_total)}</strong></div></div>
     <div class="status-banner">Condición de pago: ${esc(q.payment_option||'Estándar')} . Promociones incluidas en el total cuando correspondan.</div>
-    ${q.state==='draft'&&q.loyalty_enabled?`<div class="loyalty-tools"><h3>Promociones y recompensas Loyalty</h3><div class="field"><label>Código promocional</label><input id="quote-detail-coupon" placeholder="Cupón o código descuento"/></div><div class="row"><button type="button" class="btn btn-outline" data-action="quote-apply-code">Aplicar código</button><button type="button" class="btn btn-outline" data-action="quote-update-rewards">Consultar recompensas</button></div>${(q.loyalty_rewards||[]).length?`<div class="quote-rewards">${q.loyalty_rewards.map(r=>`<div class="quote-reward"><strong>${esc(r.name)}</strong>${r.multi_product?`<select data-loyalty-product="${r.id}">${(r.products||[]).map(pr=>`<option value="${pr.id}">${esc(pr.name)}</option>`).join('')}</select>`:''}<button type="button" class="btn btn-secondary" data-action="quote-apply-reward" data-id="${r.id}">Aplicar recompensa</button></div>`).join('')}</div>`:'<p class="small">No hay recompensas reclamables en este momento; los descuentos automáticos se reflejan en el detalle del pedido.</p>'}</div>`:''}
+    ${q.state==='draft'&&q.loyalty_enabled&&!state.meta?.capabilities?.quote_product_promotions_supported?`<div class="loyalty-tools"><h3>Promociones y recompensas Loyalty</h3><div class="field"><label>Código promocional</label><input id="quote-detail-coupon" placeholder="Cupón o código descuento"/></div><div class="row"><button type="button" class="btn btn-outline" data-action="quote-apply-code">Aplicar código</button><button type="button" class="btn btn-outline" data-action="quote-update-rewards">Consultar recompensas</button></div>${(q.loyalty_rewards||[]).length?`<div class="quote-rewards">${q.loyalty_rewards.map(r=>`<div class="quote-reward"><strong>${esc(r.name)}</strong>${r.multi_product?`<select data-loyalty-product="${r.id}">${(r.products||[]).map(pr=>`<option value="${pr.id}">${esc(pr.name)}</option>`).join('')}</select>`:''}<button type="button" class="btn btn-secondary" data-action="quote-apply-reward" data-id="${r.id}">Aplicar recompensa</button></div>`).join('')}</div>`:'<p class="small">No hay recompensas reclamables en este momento; los descuentos automáticos se reflejan en el detalle del pedido.</p>'}</div>`:''}
     <div class="quote-delivery"><h3>PDF y WhatsApp</h3><p class="small">Descargue el documento oficial de Odoo o comparta el PDF desde su teléfono. El número es opcional y no modifica el contacto Consumidor Final.</p>
     <div class="quote-delivery-actions"><a class="btn btn-outline" href="${quotePdfUrl(q.id)}" target="_blank" rel="noopener" download>↓ Descargar PDF</a><button type="button" class="btn btn-primary" data-action="quote-share-pdf" ${state.online?'':'disabled'}>Compartir PDF</button></div>
     <div class="field"><label for="quote-whatsapp-phone">Número de WhatsApp (con código de país)</label><input id="quote-whatsapp-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej.: +593 99 123 4567"/></div>
     <button type="button" class="btn btn-outline" data-action="quote-open-whatsapp">Abrir chat de WhatsApp</button>
-    <p class="small">Abrir el chat no adjunta el PDF automáticamente. Utilice «Compartir PDF» y elija WhatsApp, o descargue el archivo y adjúntelo al chat.</p></div>
+    <p class="small">${!window.isSecureContext?'Este sitio usa HTTP: el navegador no permite compartir archivos directamente. Descargue el PDF, abra WhatsApp y adjúntelo. Configure HTTPS en el servidor para habilitar compartir el PDF desde el dispositivo.':'«Compartir PDF» abre el selector de aplicaciones compatibles. La persona usuaria elige WhatsApp y confirma el envío; abrir un chat solo no adjunta archivos.'}</p></div>
     <div class="action-grid">${q.state==='draft'&&q.can_edit?`<button class="btn btn-primary" type="button" data-action="edit-quote-draft" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>✎ Editar borrador</button>`:''}${state.meta?.capabilities?.quote_retail_role&&q.partner_id===state.meta?.capabilities?.quote_retail_partner?.id?`<button class="btn btn-secondary" type="button" data-action="retail-quote-duplicate" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>Duplicar</button>`:''}<button class="btn btn-secondary" data-action="back-quote">← Volver</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
     <aside class="quote-side"><section class="card"><div class="card-title">Registro</div><div class="card-sub">Referencia: ${esc(q.client_order_ref||"—")}<br>Visita: ${q.visit_id?"#"+Number(q.visit_id):"No asociada"}<br>Empresa: ${esc(q.company_name)}</div></section></aside></div>`;
   $app.innerHTML=shell(q.name,body,{nav:"quote-start"});
@@ -928,8 +988,9 @@ async function editSavedQuote(id){
     state.quoteCategory='all';state.quoteCatalogLoadKey=null;
     state.quoteLines=editable.map(line=>({...products.get(Number(line.product_id)),
       id:line.product_id,qty:line.qty,qty_priced:line.qty,sale_line_id:line.id,
-      negotiable_price:canNegotiateQuote()?line.negotiable_price:null}));
-    state.quoteView='review';state.page='quote';render();window.scrollTo({top:0,behavior:'instant'});
+      negotiable_price:canNegotiateQuote()?line.negotiable_price:null,
+      promo_reward_id:line.promo_reward_id||null}));
+    state.quoteView='review';state.page='quote';render();scheduleQuotePromos();window.scrollTo({top:0,behavior:'instant'});
   }catch(err){alert(err.message||String(err));}
 }
 
@@ -973,7 +1034,8 @@ async function submitQuote(form) {
   if (!state.quoteLines.length){alert("Agregue al menos un producto.");return;}
   if (!state.quoteWarehouseId){alert("Seleccione una bodega antes de guardar la cotización.");return;}
   const lines=state.quoteLines.map(x=>({product_id:Number(x.id),qty:Number(x.qty),
-    negotiable_price:x.negotiable_price==null||String(x.negotiable_price).trim()===''?null:Number(x.negotiable_price)}));
+    negotiable_price:x.negotiable_price==null||String(x.negotiable_price).trim()===''?null:Number(x.negotiable_price),
+    promo_reward_id:x.promo_reward_id??null}));
   if(lines.some(x=>!Number.isInteger(x.product_id)||!Number.isFinite(x.qty)||x.qty<=0||x.qty>100000 ||
     (x.negotiable_price!==null && (!Number.isFinite(x.negotiable_price)||x.negotiable_price<0||x.negotiable_price>1000000000)))) {alert("Revise las cantidades y los precios negociados.");return;}
   for(const line of state.quoteLines){
@@ -1003,7 +1065,8 @@ async function submitQuote(form) {
         client_order_ref:payload.client_order_ref,
         lines:state.quoteLines.map(x=>({sale_line_id:x.sale_line_id||0,
           product_id:Number(x.id),qty:Number(x.qty),
-          negotiable_price:canNegotiateQuote()?x.negotiable_price:null})),
+          negotiable_price:canNegotiateQuote()?x.negotiable_price:null,
+          promo_reward_id:x.promo_reward_id??null})),
       });
       state.editingQuoteId=null;state.editingQuoteRevision=null;state.editingQuoteName='';state.editingQuoteSourceLineIds=[];
       state.quoteDetail=updated;state.currentQuoteId=updated.id;state.page='quote-detail';
@@ -1423,7 +1486,7 @@ $app.addEventListener("change", (event) => {
   if (event.target?.matches('#quote-form [name="partner_id"]')) {
     state.quotePartnerId=Number(event.target.value)||null;
     state.quoteVisitId=null;
-    state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quoteSearch="";renderQuote();
+    state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quotePromoOffers={};state.quoteSearch="";renderQuote();
   }
   if(event.target?.id==='quote-payment-option') {
     state.quotePaymentOptionId=Number(event.target.value)||null;refreshQuoteLineMarkup();renderQuoteResults();
@@ -1446,6 +1509,10 @@ $app.addEventListener("change", (event) => {
       }
     }
   }  if(event.target?.id==='quote-sort'){state.quoteSort=event.target.value;renderQuoteResults();}
+  if (event.target?.matches('[data-quote-promo]')){
+    const line=state.quoteLines.find(x=>Number(x.id)===Number(event.target.dataset.quotePromo));
+    if(line){line.promo_reward_id=Number(event.target.value)||0;renderQuoteResults();}
+  }
   if (event.target?.matches('[data-quote-qty]')) scheduleQuotePrices();
   if (event.target?.id==='quote-warehouse'||event.target?.id==='quote-pricelist') {
     if(event.target.id==='quote-warehouse')state.quoteWarehouseId=Number(event.target.value)||null;
@@ -1596,7 +1663,7 @@ $app.addEventListener("click", async (event) => {
     return;
   }
   if(action==='quote-close-image'){document.querySelector('#quote-image-dialog')?.close();return;}
-  if (action === "quote-remove-product") {state.quoteLines=state.quoteLines.filter(x=>x.id!==Number(event.target.closest("[data-id]").dataset.id));refreshQuoteLineMarkup();return;}
+  if (action === "quote-remove-product") {state.quoteLines=state.quoteLines.filter(x=>x.id!==Number(event.target.closest("[data-id]").dataset.id));refreshQuoteLineMarkup();scheduleQuotePromos();return;}
   if (action === "edit-quote-draft") {await editSavedQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
   if (action === "view-quote") {state.quoteDetailBack=state.page==='retail-quotes'?'retail-quotes':'quote';await openQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
   if (action === "back-quote") {state.page=state.quoteDetailBack==='retail-quotes'?'retail-quotes':'quote';state.quoteDetail=null;render();return;}
