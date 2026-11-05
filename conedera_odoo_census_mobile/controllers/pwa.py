@@ -358,7 +358,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.15",
+                "pwa_server_version": "18.0.1.5.16",
                 "census_role": census_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
                     and bool(request.env.company.catastro_retail_partner_id)),

@@ -3,3 +3,4 @@ access_mobile_sync_user,App de Campo sincronizaciones usuario,model_conedera_mob
 access_mobile_sync_admin,App de Campo sincronizaciones administrador,model_conedera_mobile_sync_log,base.group_system,1,1,1,1
 access_catastro_quote_option_read,Opciones de pago lectura,model_catastro_quote_payment_option,base.group_user,1,0,0,0
 access_catastro_quote_option_admin,Opciones de pago administración,model_catastro_quote_payment_option,base.group_system,1,1,1,1
+access_catastro_retail_settings_admin,Consumidor final PWA configuración administrador,model_catastro_retail_settings_wizard,base.group_system,1,1,1,1
