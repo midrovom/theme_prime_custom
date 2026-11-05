@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.13";
+const APP_VERSION = "18.0.1.5.14";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -45,6 +45,10 @@ const state = {
   quoteProducts: [],
   quoteDetails: [],
   currentQuoteId: null,
+  editingQuoteId: null,
+  editingQuoteRevision: null,
+  editingQuoteName: "",
+  editingQuoteSourceLineIds: [],
   quoteDetail: null,
   quoteVisitId: null,
   quoteClientRef: "",
@@ -451,7 +455,7 @@ function hoursSummary(p) {
 function renderDetail() {
   const p = selectedPartner();
   if (!p) { state.page="home"; return renderHome(); }
-  const prod = productsFor(p.id).slice(0,8);
+  const prod = productsFor(p.id).slice(0,40);
   const locked=truthy(p.census_locked);
   const body = `<div class="detail-layout"><div class="detail-primary"><section class="card">
       <div class="row space"><div><div class="eyebrow">${esc(p.vat||"Sin identificación")}</div><div class="card-title" style="font-size:24px">${esc(partnerLabel(p))}</div><div class="card-sub">${esc(p.name||"")}</div></div></div>
@@ -505,7 +509,7 @@ function availableQuoteProducts(term) {
   const q=String(term||"").trim().toLowerCase();
   return state.quoteProducts.filter(p=>Number(p.stock_qty)>0 && ['available','physical'].includes(p.stock_kind) &&Number(p.user_id)===Number(user.id) && Number(p.company_id)===Number(user.company_id)
     && Number(p.partner_id)===Number(state.quotePartnerId) && Number(p.warehouse_id||0)===Number(state.quoteWarehouseId||0) && Number(p.pricelist_id||0)===Number(state.quotePricelistId||0)
-    && [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,60);
+    && [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,40);
 }
 function quoteCartDockMarkup() {
   if (!state.quoteLines.length || state.quoteView === 'review') return '';
@@ -690,33 +694,33 @@ function renderQuote() {
   const availabilityNote=clients.length||state.quoteRetail?"":`<div class="status-banner warn">No hay catastros protegidos de la compañía actual para cotizar. Abre un catastro, completa los datos obligatorios y pulsa «Finalizar y proteger» antes de crear una cotización.</div>`;
   const permissionNote=cap.quote_create===false?`<div class="status-banner warn">Tu usuario no tiene permiso para crear cotizaciones en Odoo. Solicita al administrador los permisos correspondientes de Ventas. El acceso a esta pantalla sigue visible para que puedas identificar la causa.</div>`:"";
   if (!partner) { state.page="home"; return renderHome(); }
-  const versionAlert=cap.pwa_server_version===APP_VERSION?"":`<div class="status-banner warn"><strong>Actualización del servidor pendiente.</strong> La interfaz es ${esc(APP_VERSION)} y el servidor responde ${esc(cap.pwa_server_version||"con una versión antigua")}. Actualice el módulo con Odoo reiniciado antes de guardar cotizaciones; las versiones anteriores todavía podían exigir un producto de servicio.</div>`;
-  const body=`${versionAlert}${availabilityNote}${permissionNote}<div class="quote-layout"><form id="quote-form" class="shop-quote-form">
+  const versionAlert=cap.pwa_server_version===APP_VERSION?"":`<div class="status-banner warn"><strong>Actualización del servidor pendiente.</strong> La interfaz es ${esc(APP_VERSION)} y el servidor responde ${esc(cap.pwa_server_version||"con una versión antigua")}. Compruebe que el servicio Odoo se haya reiniciado y que el módulo se haya actualizado. No se guardará una edición con versiones diferentes.</div>`;
+  const body=`${versionAlert}${availabilityNote}${permissionNote}${state.editingQuoteId?`<div class="status-banner">Editando borrador <strong>${esc(state.editingQuoteName)}</strong>. Los productos, cantidades y forma de pago se guardarán en la misma cotización. Para cambiar lista de precios o visita use Odoo.</div>`:''}<div class="quote-layout"><form id="quote-form" class="shop-quote-form">
     <section class="shop-customer-context"><div><span class="eyebrow">Cliente · ${state.quoteRetail?'Tienda':'Catastro'}</span><strong>${esc(partnerLabel(partner))}</strong><small>${esc(partner.vat||'Sin RUC/cédula')} · ${esc(state.meta?.user?.company_name||'')}</small></div><button type="button" class="btn btn-outline" data-action="back-to-partner">Volver</button></section>
-    ${!state.quoteRetail?`<details class="shop-optional-context"><summary>Vincular una visita comercial (opcional)</summary><div class="field"><label>Visita</label><select name="visit_id"><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}" ${Number(state.quoteVisitId)===v.id?'selected':''}>${esc(v.name||'Visita #'+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join('')}</select></div></details>`:''}
+    ${!state.quoteRetail?`<details class="shop-optional-context"><summary>Vincular una visita comercial (opcional)</summary><div class="field"><label>Visita</label><select name="visit_id" ${state.editingQuoteId?'disabled':''}><option value="">Sin visita asociada</option>${linkedVisits.map(v=>`<option value="${v.id}" ${Number(state.quoteVisitId)===v.id?'selected':''}>${esc(v.name||'Visita #'+v.id)} · ${esc(dateText(v.visit_datetime||v.visit_date||v.create_date))}</option>`).join('')}</select></div></details>`:''}
     <section class="form-card shop-options"><h2>2. Condiciones de la cotización</h2>
       <div class="shop-options-grid"><div class="field"><label>Forma de pago</label><select id="quote-payment-option"><option value="">Seleccione una forma de pago</option>${(cap.quote_payment_options||[]).map(opt=>`<option value="${opt.id}" ${Number(state.quotePaymentOptionId)===Number(opt.id)?'selected':''}>${esc(opt.name)}</option>`).join('')}</select></div>
       <div class="field"><label>Bodega · stock por producto</label><select id="quote-warehouse" required><option value="">Seleccione una bodega</option>${(cap.quote_warehouses||[]).map(w=>`<option value="${w.id}" ${Number(state.quoteWarehouseId)===w.id?'selected':''}>${esc(w.name)}</option>`).join('')}</select></div>
-      ${canNegotiateQuote()?`<div class="field"><label>Lista de precios Odoo</label><select id="quote-pricelist"><option value="">Lista asignada al cliente</option>${(cap.quote_pricelists||[]).map(pl=>`<option value="${pl.id}" ${Number(state.quotePricelistId)===pl.id?'selected':''}>${esc(pl.name)}</option>`).join('')}</select></div>`:''}</div>
+      ${canNegotiateQuote()?`<div class="field"><label>Lista de precios Odoo</label><select id="quote-pricelist" ${state.editingQuoteId?'disabled':''}><option value="">Lista asignada al cliente</option>${(cap.quote_pricelists||[]).map(pl=>`<option value="${pl.id}" ${Number(state.quotePricelistId)===pl.id?'selected':''}>${esc(pl.name)}</option>`).join('')}</select></div>`:''}</div>
       ${(cap.quote_payment_options||[]).length?'':'<div class="status-banner warn">No hay formas de pago configuradas para esta empresa. Un administrador debe crearlas en Catastro → Configuración → Condiciones de pago PWA.</div>'}
 
       <details class="shop-loyalty-panel"><summary>🎁 Promociones / cupones Loyalty</summary>
-        ${cap.quote_loyalty_supported?`<div class="field"><label>Código promocional (opcional)</label><input id="quote-loyalty-code" value="${esc(state.quoteLoyaltyCode)}" maxlength="100" placeholder="Código de descuento o promoción" /></div><p class="small">Los descuentos disponibles se aplicarán al guardar la proforma.</p>`:'<p class="small">Para usar Loyalty, habilite las promociones nativas de Ventas en Odoo.</p>'}
+        ${cap.quote_loyalty_supported?`<div class="field"><label>Código promocional (opcional)</label><input id="quote-loyalty-code" value="${esc(state.quoteLoyaltyCode)}" maxlength="100" placeholder="Código de descuento o promoción" ${state.editingQuoteId?'disabled':''}/></div><p class="small">${state.editingQuoteId?'Para cambiar códigos o recompensas, guarde los cambios y use «Promociones» en el detalle del borrador.':'Los descuentos disponibles se aplicarán al guardar la proforma.'}</p>`:'<p class="small">Para usar Loyalty, habilite las promociones nativas de Ventas en Odoo.</p>'}
       </details>
       <a class="shop-native-link" href="${nativeQuotationsUrl()}" target="_blank" rel="noopener">Abrir formulario completo de Odoo</a>
     </section>
-    ${state.quoteView!=='review'?`<section class="form-card shop-catalog"><div class="shop-catalog-heading"><div><div class="eyebrow">Catálogo</div><h2>Elija productos para la proforma</h2></div><span class="shop-warehouse-tag">${esc((cap.quote_warehouses||[]).find(w=>Number(w.id)===Number(state.quoteWarehouseId))?.name||'Seleccione bodega')}</span></div>
+    ${state.quoteView!=='review'?`<section class="form-card shop-catalog"><div class="shop-catalog-heading"><div><div class="eyebrow">Catálogo · 40 recientes al entrar</div><h2>Elija productos para la proforma</h2></div><span class="shop-warehouse-tag">${esc((cap.quote_warehouses||[]).find(w=>Number(w.id)===Number(state.quoteWarehouseId))?.name||'Seleccione bodega')}</span></div>
       <div class="shop-search-box"><span aria-hidden="true">⌕</span><input id="quote-search" aria-label="Buscar productos" value="${esc(state.quoteSearch)}" placeholder="Buscar por nombre, SKU o código" autocomplete="off" ${state.quoteWarehouseId?'':'disabled'}/></div>
       <div id="quote-search-results" class="quote-results" aria-live="polite"></div>
       <details class="shop-stock-details"><summary>Comprobar existencias de la bodega</summary><button class="btn btn-outline" type="button" data-action="quote-stock-audit" ${state.quoteSearch.trim().length>=2&&state.online?'':'disabled'}>Consultar stock</button><div id="quote-stock-audit" class="small" aria-live="polite"></div></details>
       ${!state.online?'<div class="status-banner warn">Sin conexión: los datos de productos pueden estar desactualizados.</div>':''}
     </section>`:`<section class="form-card shop-review">
-      <div class="shop-review-head"><div><div class="eyebrow">Cotización</div><h2>Revisar proforma</h2><p class="small">${state.quoteLines.length} producto(s)</p></div><button class="btn btn-outline" type="button" data-action="quote-back-catalog">← Seguir agregando</button></div>
+      <div class="shop-review-head"><div><div class="eyebrow">Cotización</div><h2>${state.editingQuoteId?'Revisar cambios del borrador':'Revisar proforma'}</h2><p class="small">${state.quoteLines.length} producto(s)</p></div><button class="btn btn-outline" type="button" data-action="quote-back-catalog">← Seguir agregando</button></div>
       <div id="quote-cart" class="shop-cart-section"><div id="quote-lines">${quoteLinesMarkup()}</div></div>
       <div id="quote-totals" class="quote-totals" aria-live="polite">${quoteTotalsMarkup()}</div>
     </section>`}
     <dialog id="quote-image-dialog" class="quote-image-dialog"><div class="quote-zoom-bar"><strong id="quote-zoom-name">Producto</strong><div class="quote-zoom-buttons"><button class="btn btn-outline" type="button" data-action="quote-zoom-out" aria-label="Reducir fotografía">−</button><span id="quote-zoom-level">100%</span><button class="btn btn-outline" type="button" data-action="quote-zoom-in" aria-label="Ampliar fotografía">＋</button><button class="btn btn-outline" type="button" data-action="quote-close-image">Cerrar ✕</button></div></div><div class="quote-zoom-body"><img id="quote-zoom-picture" alt="Foto del producto ampliada"/></div><small>Puede ampliar la foto con los controles de zoom del navegador o del dispositivo.</small></dialog>${state.quoteView==='review'?`<section class="form-card shop-finalize"><h2>Referencia (opcional)</h2><div class="field"><input name="client_order_ref" maxlength="100" value="${esc(state.quoteClientRef)}" placeholder="Número de pedido o referencia externa" aria-label="Referencia de la cotización"/></div></section>
-      <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-action="quote-back-catalog">Seguir agregando</button><button class="btn btn-primary" type="submit" ${!cap.quote_create?"disabled":""}>▤ Guardar proforma${state.online?"":" offline"}</button></div>`:''}
+      <div class="sticky-actions quote-submit"><button class="btn btn-outline" type="button" data-action="quote-back-catalog">Seguir agregando</button><button class="btn btn-primary" type="submit" ${(state.editingQuoteId?!cap.quote_update:!cap.quote_create)|| (state.editingQuoteId&&!state.online)?"disabled":""}>${state.editingQuoteId?'✓ Guardar cambios':'▤ Guardar proforma'+(state.online?'':' offline')}</button></div>`:''}
       <div id="quote-cart-dock">${quoteCartDockMarkup()}</div>
     </form><aside class="quote-side"><section class="card"><div class="card-title">Cotizaciones del cliente</div><div class="card-sub">Historial visible según permisos de Odoo</div>
       ${related.length?related.map(o=>`<button class="quote-history" type="button" data-action="view-quote" data-id="${o.id}"><span><strong>${esc(o.name)}</strong><small>${esc(dateText(o.date_order))} · ${esc(o.state||"")}</small></span><b>${esc(relationName(o.currency_id)||"")} ${money(o.amount_total)}</b></button>`).join(""):'<div class="small" style="margin-top:10px">Seleccione un cliente para consultar sus proformas.</div>'}</section></aside></div>`;
@@ -737,7 +741,7 @@ function renderQuoteDetail() {
     <div class="quote-total"><div><span>Subtotal</span><strong>${esc(q.currency)} ${money(q.amount_untaxed)}</strong></div><div><span>Impuestos</span><strong>${esc(q.currency)} ${money(q.amount_tax)}</strong></div><div class="grand"><span>Total</span><strong>${esc(q.currency)} ${money(q.amount_total)}</strong></div></div>
     <div class="status-banner">Condición de pago: ${esc(q.payment_option||'Estándar')} . Promociones incluidas en el total cuando correspondan.</div>
     ${q.state==='draft'&&q.loyalty_enabled?`<div class="loyalty-tools"><h3>Promociones y recompensas Loyalty</h3><div class="field"><label>Código promocional</label><input id="quote-detail-coupon" placeholder="Cupón o código descuento"/></div><div class="row"><button type="button" class="btn btn-outline" data-action="quote-apply-code">Aplicar código</button><button type="button" class="btn btn-outline" data-action="quote-update-rewards">Consultar recompensas</button></div>${(q.loyalty_rewards||[]).length?`<div class="quote-rewards">${q.loyalty_rewards.map(r=>`<div class="quote-reward"><strong>${esc(r.name)}</strong>${r.multi_product?`<select data-loyalty-product="${r.id}">${(r.products||[]).map(pr=>`<option value="${pr.id}">${esc(pr.name)}</option>`).join('')}</select>`:''}<button type="button" class="btn btn-secondary" data-action="quote-apply-reward" data-id="${r.id}">Aplicar recompensa</button></div>`).join('')}</div>`:'<p class="small">No hay recompensas reclamables en este momento; los descuentos automáticos se reflejan en el detalle del pedido.</p>'}</div>`:''}
-    <div class="action-grid"><button class="btn btn-secondary" data-action="back-quote">← Cotizaciones</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
+    <div class="action-grid">${q.state==='draft'&&q.can_edit?`<button class="btn btn-primary" type="button" data-action="edit-quote-draft" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>✎ Editar borrador</button>`:''}<button class="btn btn-secondary" data-action="back-quote">← Cotizaciones</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
     <aside class="quote-side"><section class="card"><div class="card-title">Registro</div><div class="card-sub">Referencia: ${esc(q.client_order_ref||"—")}<br>Visita: ${q.visit_id?"#"+Number(q.visit_id):"No asociada"}<br>Empresa: ${esc(q.company_name)}</div></section></aside></div>`;
   $app.innerHTML=shell(q.name,body,{nav:"quote"});
 }
@@ -758,6 +762,40 @@ async function openQuote(id) {
     state.quoteDetail=quote;state.page="quote-detail";render();
   } catch(err){alert(err.message||String(err));}
 }
+async function editSavedQuote(id){
+  if(!state.online){alert('Conéctese para editar una cotización de Odoo.');return;}
+  if(state.meta?.capabilities?.pwa_server_version!==APP_VERSION){
+    alert('Actualice el módulo Odoo antes de modificar una cotización.');return;
+  }
+  try {
+    const q=await rpc('/catastro/app/quote/read',{quote_id:id});
+    if(q.state!=='draft'||!q.can_edit)throw new Error('Esta cotización no está en borrador o no tiene permisos de edición.');
+    const editable=q.lines.filter(x=>x.editable);
+    if(!editable.length)throw new Error('No hay productos editables. Revise la cotización en Odoo.');
+    if(new Set(editable.map(x=>x.product_id)).size!==editable.length)
+      throw new Error('La cotización contiene productos repetidos. Edítela desde Odoo para conservar sus particularidades.');
+    const retail=Number(q.partner_id)===Number(state.meta?.capabilities?.quote_retail_partner?.id);
+    const rows=await rpc('/catastro/app/quote/prices',{partner_id:q.partner_id,
+      warehouse_id:q.warehouse_id,pricelist_id:retail?null:q.pricelist_id,
+      lines:editable.map(x=>({product_id:x.product_id,qty:x.qty}))});
+    const products=new Map(rows.map(p=>[Number(p.id),p]));
+    if(editable.some(x=>!products.has(Number(x.product_id))))
+      throw new Error('Algunos productos ya no están disponibles en Odoo. Revise el borrador desde Ventas.');
+    state.editingQuoteId=q.id;state.editingQuoteName=q.name;
+    state.editingQuoteRevision=q.write_date;state.editingQuoteSourceLineIds=editable.map(l=>l.id);state.quoteRetail=retail;
+    state.quotePartnerId=q.partner_id;state.quoteWarehouseId=q.warehouse_id;
+    state.quotePricelistId=retail?null:q.pricelist_id;
+    state.quotePaymentOptionId=q.payment_option_id||null;
+    state.quoteClientRef=q.client_order_ref||'';state.quoteVisitId=q.visit_id||null;
+    state.quoteLoyaltyCode='';state.quoteSearch='';state.quoteResults=[];
+    state.quoteCategory='all';state.quoteCatalogLoadKey=null;
+    state.quoteLines=editable.map(line=>({...products.get(Number(line.product_id)),
+      id:line.product_id,qty:line.qty,qty_priced:line.qty,sale_line_id:line.id,
+      negotiable_price:canNegotiateQuote()?line.negotiable_price:null}));
+    state.quoteView='review';state.page='quote';render();window.scrollTo({top:0,behavior:'instant'});
+  }catch(err){alert(err.message||String(err));}
+}
+
 async function searchQuoteProducts(value) {
   const term=String(value||"").trim();state.quoteSearch=value;
   if (!state.quoteWarehouseId){state.quoteResults=[];state.quoteSearching=false;renderQuoteResults();return;}
@@ -790,6 +828,9 @@ async function searchQuoteProducts(value) {
   state.quoteSearching=false;renderQuoteResults();
 }
 async function submitQuote(form) {
+  if(state.meta?.capabilities?.pwa_server_version!==APP_VERSION){
+    alert('La versión de Odoo no coincide con la interfaz. Actualice el módulo y vuelva a cargar antes de guardar.');return;
+  }
   const p=quotePartner();
   if (!p||(!state.quoteRetail&&!truthy(p.census_locked))) {alert("Seleccione un catastro finalizado o el consumidor final autorizado.");return;}
   if (!state.quoteLines.length){alert("Agregue al menos un producto.");return;}
@@ -807,13 +848,33 @@ async function submitQuote(form) {
     }
   }
   if (!state.meta?.user?.id) {alert("Sin sesión descargada. Conéctese para empezar.");return;}
-  if (state.online && !quoteCanCreate()){alert("Su usuario necesita permiso para crear cotizaciones en Ventas.");return;}
+  if (state.online && !state.editingQuoteId && !quoteCanCreate()){alert("Su usuario necesita permiso para crear cotizaciones en Ventas.");return;}
+  if (state.editingQuoteId && !state.meta?.capabilities?.quote_update){alert("Su usuario necesita permisos de edición de Ventas.");return;}
   const totals=quoteTotals();
   const note=totals.ready?`Lista: ${totals.currency} ${money(totals.list)} · negociado estimado: ${totals.currency} ${money(totals.negotiated)}. `:'';
-  if (!confirm(`¿Guardar cotización para ${partnerLabel(p)} con ${lines.length} producto(s) en la bodega seleccionada? ${note}Se comprobarán las existencias y los precios antes de guardar.`))return;
+  if (!confirm(`¿${state.editingQuoteId?'Actualizar el borrador existente':'Guardar cotización nueva'} para ${partnerLabel(p)} con ${lines.length} producto(s)? ${note}Odoo comprobará existencias, precios e impuestos.`))return;
   const payload={partner_id:p.id,payment_option_id:state.quotePaymentOptionId||null,
     loyalty_code:state.quoteLoyaltyCode||'',visit_id:Number(form.querySelector('[name="visit_id"]')?.value||0),warehouse_id:state.quoteWarehouseId||null,pricelist_id:state.quotePricelistId||null,lines,
     client_order_ref:form.querySelector('[name="client_order_ref"]')?.value.trim()||""};
+  if(state.editingQuoteId){
+    if(!state.online){alert('Para editar un borrador guardado en Odoo se necesita conexión.');return;}
+    try {
+      const updated=await rpc('/catastro/app/quote/update', {
+        quote_id:state.editingQuoteId, base_write_date:state.editingQuoteRevision,
+        original_line_ids:state.editingQuoteSourceLineIds,
+        warehouse_id:state.quoteWarehouseId, payment_option_id:state.quotePaymentOptionId,
+        client_order_ref:payload.client_order_ref,
+        lines:state.quoteLines.map(x=>({sale_line_id:x.sale_line_id||0,
+          product_id:Number(x.id),qty:Number(x.qty),
+          negotiable_price:canNegotiateQuote()?x.negotiable_price:null})),
+      });
+      state.editingQuoteId=null;state.editingQuoteRevision=null;state.editingQuoteName='';state.editingQuoteSourceLineIds=[];
+      state.quoteDetail=updated;state.currentQuoteId=updated.id;state.page='quote-detail';
+      await refreshFromServer(false);
+      state.quoteDetail=updated;state.page='quote-detail';render();
+    }catch(error){showFormError(error.message||String(error));}
+    return;
+  }
   const op=await queueOperation("quote",payload,`${partnerLabel(p)} · cotización de ${lines.length} productos`);
   if (!op) return;
   state.quoteLines=[];state.quoteSearch="";state.quoteResults=[];state.quoteSelections={};state.quoteVisitId=null;state.quoteClientRef="";state.quoteLoyaltyCode="";state.quotePaymentOptionId=null;
@@ -1271,6 +1332,9 @@ $app.addEventListener("click", async (event) => {
   const visitEl = event.target.closest("[data-action='visit-partner']");
   if (visitEl) { state.selectedPartnerId=Number(visitEl.dataset.id); if(!truthy(selectedPartner()?.census_locked)){alert("Finalice y proteja primero el catastro.");return;} state.page="visit"; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
+  if (action === "quote-retail" || action === "quote-partner") {
+    state.editingQuoteId=null;state.editingQuoteRevision=null;state.editingQuoteName='';state.editingQuoteSourceLineIds=[];
+  }
   if (action === "quote-retail") {
     const retail=state.meta?.capabilities?.quote_retail_partner;
     if(!retail || !state.meta?.capabilities?.quote_retail_enabled){alert('El administrador debe configurar Consumidor Final y asignar el perfil Tienda.');return;}
@@ -1280,7 +1344,7 @@ $app.addEventListener("click", async (event) => {
     state.quoteSearch='';state.quoteDetail=null;state.page='quote';render();return;
   }
   if (action === "quote-partner") {state.quoteRetail=false;state.quoteView="catalog";const id=Number(event.target.closest("[data-id]")?.dataset.id);const partner=state.partners.find(x=>x.id===id);if (!truthy(partner?.census_locked)){alert("Primero finalice y proteja el catastro.");return;}state.selectedPartnerId=id;state.quotePartnerId=id;state.quoteVisitId=null;state.quoteClientRef="";state.quoteLines=[];state.quoteResults=[];state.quoteSelections={};state.quoteWarehouseId=null;state.quotePricelistId=null;state.quoteSearch="";state.quoteDetail=null;state.page="quote";render();return;}
-  if (action === "back-to-partner") {if(state.quoteRetail){state.page="home";render();return;}state.selectedPartnerId=Number(state.quotePartnerId)||state.selectedPartnerId;state.page="detail";render();return;}
+  if (action === "back-to-partner") {state.editingQuoteId=null;state.editingQuoteRevision=null;state.editingQuoteName='';state.editingQuoteSourceLineIds=[];if(state.quoteRetail){state.page="home";render();return;}state.selectedPartnerId=Number(state.quotePartnerId)||state.selectedPartnerId;state.page="detail";render();return;}
   if (action === "update-ui") {
     if (!navigator.onLine) {alert("Conéctese a Internet para descargar la nueva versión. Sus registros locales se conservan.");return;}
     if ((state.quoteLines.length || ["new","edit","visit"].includes(state.page)) && !confirm("¿Actualizar interfaz ahora? Se conservarán los datos sincronizados y las operaciones pendientes, pero los cambios todavía no guardados en pantalla pueden perderse.")) return;
@@ -1359,6 +1423,7 @@ $app.addEventListener("click", async (event) => {
   }
   if(action==='quote-close-image'){document.querySelector('#quote-image-dialog')?.close();return;}
   if (action === "quote-remove-product") {state.quoteLines=state.quoteLines.filter(x=>x.id!==Number(event.target.closest("[data-id]").dataset.id));refreshQuoteLineMarkup();return;}
+  if (action === "edit-quote-draft") {await editSavedQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
   if (action === "view-quote") {await openQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
   if (action === "back-quote") {state.page="quote";state.quoteDetail=null;render();return;}
   if (action === "capture-gps") {

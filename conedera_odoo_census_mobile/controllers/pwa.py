@@ -187,7 +187,12 @@ class ConederaFieldAppController(http.Controller):
 
         Line = request.env["sale.order.line"]
         line_fields = self._existing_fields(Line, ["order_id", "product_id", "product_uom_qty", "price_subtotal", "price_unit", "discount"])
-        lines = Line.search_read([("order_id", "in", list(order_map))], line_fields, limit=6000)
+        line_domain = [("order_id", "in", list(order_map))]
+        if "reward_id" in Line._fields:
+            line_domain.append(("reward_id", "=", False))
+        if "is_catastro_payment_surcharge" in Line._fields:
+            line_domain.append(("is_catastro_payment_surcharge", "=", False))
+        lines = Line.search_read(line_domain, line_fields, order="id desc", limit=4000)
         agg = {}
         for line in lines:
             order = line.get("order_id")
@@ -216,8 +221,14 @@ class ConederaFieldAppController(http.Controller):
         for rec in agg.values():
             rec["avg_price"] = rec["subtotal"] / rec["qty"] if rec["qty"] else 0.0
             summaries.append(rec)
-        summaries.sort(key=lambda x: (x["partner_id"], -x["qty"], x["product_name"]))
-        return orders, summaries[:2000]
+        # Las líneas se leen de más reciente a más antigua. Conservar los
+        # últimos 40 productos distintos por catastro, no miles de agregados.
+        recent_by_partner = {}
+        for rec in summaries:
+            bucket = recent_by_partner.setdefault(rec["partner_id"], [])
+            if len(bucket) < 40:
+                bucket.append(rec)
+        return orders, [r for bucket in recent_by_partner.values() for r in bucket][:2000]
 
     def _opening_hours_payload(self, partner_ids):
         if not partner_ids or "conedera.partner.opening.hour" not in request.env.registry:
@@ -344,9 +355,10 @@ class ConederaFieldAppController(http.Controller):
                 "sales_action_id": (request.env.ref("sale.action_quotations_with_onboarding", raise_if_not_found=False) or request.env["ir.actions.act_window"]).id or False,
                 "quote_create": request.env["sale.order"].check_access_rights("create", raise_exception=False),
                 "quote_read": request.env["sale.order"].check_access_rights("read", raise_exception=False),
+                "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.12",
+                "pwa_server_version": "18.0.1.5.14",
                 "census_role": census_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
                     and bool(request.env.company.catastro_retail_partner_id)),
@@ -552,7 +564,7 @@ class ConederaFieldAppController(http.Controller):
         return pricelist
 
     def _quote_catalog_rows(self, partner, products, quantities=None, warehouse_id=None, pricelist_id=None,
-                            only_in_stock=False):
+                            only_in_stock=False, max_results=60):
         quantities = quantities or {}
         warehouse = self._quote_warehouse(warehouse_id)
         if not warehouse:
@@ -582,7 +594,7 @@ class ConederaFieldAppController(http.Controller):
                 "zoom_url": "/catastro/app/quote/image/%d?partner_id=%d&size=large" % (product.id, partner.id),
                 "has_image": bool(product.image_128) if "image_128" in product._fields else False,
             })
-            if only_in_stock and len(result) >= 60:
+            if only_in_stock and len(result) >= max_results:
                 break
         return result
 
@@ -598,7 +610,40 @@ class ConederaFieldAppController(http.Controller):
         if "company_id" in Product._fields:
             domain = ["|", ("company_id", "=", False),
                       ("company_id", "=", request.env.company.id)] + domain
-        return Product.search(domain, order="name, id", limit=250 if product_ids is None else 60)
+        return Product.search(domain, order="name, id", limit=250 if product_ids is None else 120)
+
+    def _quote_recent_products(self, partner, warehouse, pricelist_id):
+        """40 productos recientes con existencia en ESTA bodega; búsqueda normal sin límite."""
+        Line = request.env["sale.order.line"]
+        if not Line.check_access_rights("read", raise_exception=False):
+            return []
+        domain = [("order_id.company_id", "=", request.env.company.id),
+                  ("order_id.partner_id.commercial_partner_id", "=", partner.id),
+                  ("order_id.state", "!=", "cancel"),
+                  ("product_id", "!=", False),
+                  ("display_type", "=", False)]
+        if "reward_id" in Line._fields:
+            domain.append(("reward_id", "=", False))
+        try:
+            # IDs recientes, sin generar un JOIN de miles de cotizaciones.
+            past_lines = Line.search(domain, order="id desc", limit=320)
+        except AccessError:
+            return []
+        ids = []
+        for line in past_lines:
+            pid = line.product_id.id
+            if pid and pid not in ids:
+                ids.append(pid)
+            if len(ids) >= 100:
+                break
+        if not ids:
+            return []
+        available = self._quote_find_products(product_ids=ids)
+        by_id = {product.id: product for product in available}
+        ordered = request.env["product.product"].browse([pid for pid in ids if pid in by_id])
+        return self._quote_catalog_rows(partner, ordered, warehouse_id=warehouse.id,
+                                        pricelist_id=pricelist_id, only_in_stock=True,
+                                        max_results=40)
 
     @http.route(["/catastro/app/quote/products", "/conedera/app/quote/products"], type="json", auth="user", methods=["POST"], readonly=True)
     def quote_products(self, term="", partner_id=None, warehouse_id=None, pricelist_id=None):
@@ -607,10 +652,24 @@ class ConederaFieldAppController(http.Controller):
         term = (term or "").strip()[:90]
         if len(term) == 1:
             return []
-        # Búsqueda vacía: catálogo inicial limitado a 60 productos CON STOCK.
-        # Las búsquedas de SKU/nombre mantienen la ruta existente.
+        warehouse = self._quote_warehouse(warehouse_id)
+        if not warehouse:
+            raise ValidationError("Seleccione una bodega para consultar productos.")
+        if not term:
+            recent = self._quote_recent_products(partner, warehouse, pricelist_id)
+            if len(recent) >= 40:
+                return recent[:40]
+            # Completar con productos disponibles en la bodega; evitar duplicar
+            # los recientes. No cargar el catálogo completo al abrir la PWA.
+            used_ids = {row["id"] for row in recent}
+            ordinary = self._quote_find_products(term="")
+            extras = self._quote_catalog_rows(partner, ordinary,
+                warehouse_id=warehouse.id, pricelist_id=pricelist_id,
+                only_in_stock=True, max_results=40)
+            return (recent + [row for row in extras if row["id"] not in used_ids])[:40]
         products = self._quote_find_products(term=term)
-        return self._quote_catalog_rows(partner, products, warehouse_id=warehouse_id, pricelist_id=pricelist_id, only_in_stock=True)
+        return self._quote_catalog_rows(partner, products, warehouse_id=warehouse.id,
+                                        pricelist_id=pricelist_id, only_in_stock=True)
 
     @http.route(["/catastro/app/quote/prices", "/conedera/app/quote/prices"], type="json", auth="user", methods=["POST"], readonly=True)
     def quote_prices(self, partner_id, lines=None, warehouse_id=None, pricelist_id=None):
@@ -655,6 +714,13 @@ class ConederaFieldAppController(http.Controller):
             ("Content-Type", mimetype), ("Cache-Control", "private, no-store"),
             ("X-Content-Type-Options", "nosniff")])
 
+    def _quote_line_editable(self, line):
+        return bool(line.product_id and not line.display_type
+                    and not line.is_catastro_payment_surcharge
+                    and not ("reward_id" in line._fields and line.reward_id)
+                    and not ("is_reward_line" in line._fields and line.is_reward_line)
+                    and not ("is_delivery" in line._fields and line.is_delivery))
+
     def _quote_record_payload(self, order):
         # The caller already fetched the order under normal user ACLs / record rules.
         return {
@@ -664,6 +730,13 @@ class ConederaFieldAppController(http.Controller):
             "partner_name": order.partner_id.display_name,
             "company_name": order.company_id.name,
             "company_id": order.company_id.id,
+            "warehouse_id": order.warehouse_id.id if "warehouse_id" in order._fields else False,
+            "pricelist_id": order.pricelist_id.id,
+            "payment_option_id": order.catastro_payment_option_id.id if order.catastro_payment_option_id else False,
+            "write_date": str(order.write_date or ""),
+            "can_edit": (order.state == "draft"
+                         and request.env["sale.order"].check_access_rights("write", raise_exception=False)
+                         and request.env["sale.order.line"].check_access_rights("write", raise_exception=False)),
             "visit_id": order.census_visit_id.id if order.census_visit_id else False,
             "state": order.state,
             "date_order": str(order.date_order or ""),
@@ -676,7 +749,9 @@ class ConederaFieldAppController(http.Controller):
             "surcharge_percent": order.catastro_payment_option_id.surcharge_percent if order.catastro_payment_option_id else 0,
             "loyalty_enabled": self._quote_loyalty_enabled(),
             "loyalty_rewards": self._quote_available_rewards(order),
-            "lines": [{"id": line.id, "name": line.name,
+            "lines": [{"id": line.id, "product_id": line.product_id.id,
+                       "editable": self._quote_line_editable(line),
+                       "name": line.name,
                        "product_name": line.product_id.display_name if line.product_id else "",
                        "qty": line.product_uom_qty,
                        "uom": line.product_uom.name if line.product_uom else "",
@@ -950,6 +1025,114 @@ class ConederaFieldAppController(http.Controller):
                     % matches.product_id.display_name)
         return {"state": "synced", "message": "Cotización %s guardada en Odoo. Revise precios e impuestos calculados antes de enviarla." % order.name,
                 "result_model": "sale.order", "result_id": order.id}
+
+    @http.route(["/catastro/app/quote/update", "/conedera/app/quote/update"],
+                type="json", auth="user", methods=["POST"])
+    def quote_update(self, quote_id, lines=None, warehouse_id=None,
+                     payment_option_id=None, client_order_ref="", base_write_date="",
+                     original_line_ids=None):
+        """Actualizar un borrador EXISTENTE sin sustituirlo ni borrar Loyalty.
+
+        Solo productos ordinarios; descuentos automáticos, recompensas y demás
+        líneas especiales permanecen bajo control de las extensiones de Odoo.
+        Todo ocurre en la transacción RPC: ante un error, Odoo revierte cambios.
+        """
+        order = self._quote_get_writable(quote_id)
+        if not base_write_date or str(order.write_date or "") != str(base_write_date):
+            raise ValidationError("La cotización cambió en Odoo desde que la abrió. "
+                                  "Vuelva a cargarla para evitar sobrescribir otros cambios.")
+        if not isinstance(lines, list) or not 1 <= len(lines) <= 60:
+            raise ValidationError("Indique entre 1 y 60 productos para editar la proforma.")
+        if "warehouse_id" not in order._fields:
+            raise ValidationError("Instale sale_stock para elegir una bodega en las cotizaciones.")
+        warehouse = self._quote_warehouse(warehouse_id)
+        if not warehouse:
+            raise ValidationError("Seleccione una bodega válida para guardar el borrador.")
+        retail = self._quote_is_retail(order.partner_id.commercial_partner_id.id)
+        can_negotiate = self._quote_can_negotiate(retail=retail)
+        normal_lines = order.order_line.filtered(self._quote_line_editable)
+        normal_by_id = {line.id: line for line in normal_lines}
+        if not isinstance(original_line_ids, list) or sorted(normal_by_id) != sorted(
+                int(v) for v in original_line_ids if isinstance(v, int)):
+            raise ValidationError("Las líneas del borrador cambiaron en Odoo. Vuelva a abrirlo antes de editar.")
+        Line = request.env["sale.order.line"]
+        negotiated_field = Line._fields.get("negotiable_price")
+        parsed, unique_products, used_lines = [], set(), set()
+        for vals in lines:
+            if not isinstance(vals, dict) or any(k in vals for k in (
+                    "price", "price_unit", "discount", "catastro_payment_surcharge_percent",
+                    "catastro_payment_base_price_unit", "catastro_payment_surcharge_unit_amount")):
+                raise AccessError("El navegador no puede modificar precios, descuentos ni recargos internos.")
+            try:
+                pid = int(vals.get("product_id"))
+                qty = float(vals.get("qty"))
+                line_id = int(vals.get("sale_line_id") or 0)
+            except (TypeError, ValueError):
+                raise ValidationError("Producto, cantidad o línea inválidos.")
+            if pid <= 0 or not math.isfinite(qty) or qty <= 0 or qty > 100000:
+                raise ValidationError("Indique cantidades positivas y válidas.")
+            if pid in unique_products or (line_id and line_id in used_lines):
+                raise ValidationError("No duplique productos o líneas en una misma cotización.")
+            unique_products.add(pid)
+            if line_id:
+                used_lines.add(line_id)
+                if line_id not in normal_by_id or normal_by_id[line_id].product_id.id != pid:
+                    raise AccessError("La línea no pertenece a los productos editables de esta cotización.")
+            negotiated = vals.get("negotiable_price")
+            if negotiated not in (None, ""):
+                if not can_negotiate:
+                    raise AccessError("Este perfil no puede modificar negotiable_price.")
+                if not negotiated_field or (negotiated_field.compute and not negotiated_field.inverse):
+                    raise ValidationError("El precio negociado personalizado no permite escritura.")
+                try:
+                    negotiated = float(negotiated)
+                except (TypeError, ValueError):
+                    raise ValidationError("Precio negociado inválido.")
+                if not math.isfinite(negotiated) or not 0 <= negotiated <= 1000000000:
+                    raise ValidationError("Precio negociado fuera de rango.")
+            else:
+                negotiated = None
+            parsed.append((line_id, pid, qty, negotiated))
+        products = self._quote_find_products(product_ids=list(unique_products))
+        if set(products.ids) != unique_products:
+            raise AccessError("Hay productos que no se pueden vender o no pertenecen a la empresa.")
+        stock_map = self._quote_stock_map(products, warehouse)
+        for product in products:
+            qty = next(row[2] for row in parsed if row[1] == product.id)
+            rounding = min(product.uom_id.rounding or 0.000001, 0.000001)
+            if float_compare(qty, stock_map[product.id], precision_rounding=rounding) > 0:
+                raise ValidationError("Stock insuficiente para %s en %s. Solicitado %s, a mano %s."
+                                      % (product.display_name, warehouse.display_name, qty, stock_map[product.id]))
+        option = self._quote_payment_option(payment_option_id)
+        # Primero quitar el recargo antiguo para no duplicarlo en líneas que
+        # cambian de cantidad, y después dejar actuar a las reglas nativas.
+        order.catastro_restore_base_prices()
+        changes = {"warehouse_id": warehouse.id,
+                   "catastro_payment_option_id": option.id if option else False,
+                   "client_order_ref": (client_order_ref or "").strip()[:100]}
+        if option and option.payment_term_id:
+            changes["payment_term_id"] = option.payment_term_id.id
+        order.write(changes)
+        for line_id, pid, qty, negotiated in parsed:
+            values = {"product_uom_qty": qty}
+            if negotiated is not None:
+                values["negotiable_price"] = negotiated
+            if line_id:
+                normal_by_id[line_id].write(values)
+            else:
+                values.update({"order_id": order.id, "product_id": pid})
+                Line.create(values)
+        for line_id, line in normal_by_id.items():
+            if line_id not in used_lines:
+                line.unlink()
+        if self._quote_loyalty_enabled():
+            order._update_programs_and_rewards()
+        order.catastro_recompute_surcharge()
+        if order.warehouse_id.id != warehouse.id:
+            raise ValidationError("Odoo cambió la bodega al guardar. No se aplicaron los cambios.")
+        if order.state != "draft":
+            raise ValidationError("La cotización cambió de estado durante la edición.")
+        return self._quote_record_payload(order)
 
     def _normalize_vat(self, vat):
         return VAT_CLEAN_RE.sub("", (vat or "").strip().upper())
