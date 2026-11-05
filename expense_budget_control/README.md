@@ -1,3 +1,9 @@
+## 18.0.1.4.104 — Ícono para la aplicación
+
+- Nuevo ícono morado de Control de Presupuesto agregado a `static/description/icon.png` para la ficha de Aplicaciones y el menú principal de Odoo 18.
+- Actualizados los íconos existentes de la PWA (`static/pwa/icon-192.png`, `static/pwa/icon-512.png`) para conservar la identidad visual al instalarla.
+- Sin modificaciones en modelos, sincronización ERP, filtros, gráficos, cálculos, permisos o informes.
+
 ## 18.0.1.4.103 — Ejecución y saldo neto visibles
 
 - Restaurado el indicador «Ejecución (%)» en la cabecera del presupuesto, listado de presupuestos, proyecciones mensuales y listado de Proyectado vs. real. La fórmula existente sigue siendo Consumido / Proyectado × 100, con dos decimales.
