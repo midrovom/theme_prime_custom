@@ -346,7 +346,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_read": request.env["sale.order"].check_access_rights("read", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.11",
+                "pwa_server_version": "18.0.1.5.12",
                 "census_role": census_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
                     and bool(request.env.company.catastro_retail_partner_id)),
@@ -571,6 +571,8 @@ class ConederaFieldAppController(http.Controller):
             price = pricelist._get_product_price(product, qty, partner=partner, uom=product.uom_id)
             result.append({
                 "id": product.id, "name": product.display_name, "code": product.default_code or "",
+                "category_id": product.categ_id.id if product.categ_id else False,
+                "category_name": product.categ_id.name if product.categ_id else "Sin categoría",
                 "uom": product.uom_id.name, "price": float(price),
                 "currency": pricelist.currency_id.symbol or pricelist.currency_id.name,
                 "pricelist": pricelist.display_name, "qty_priced": qty,
@@ -603,8 +605,10 @@ class ConederaFieldAppController(http.Controller):
         partner = self._quote_partner(partner_id)
         self._quote_access("read")
         term = (term or "").strip()[:90]
-        if len(term) < 2:
+        if len(term) == 1:
             return []
+        # Búsqueda vacía: catálogo inicial limitado a 60 productos CON STOCK.
+        # Las búsquedas de SKU/nombre mantienen la ruta existente.
         products = self._quote_find_products(term=term)
         return self._quote_catalog_rows(partner, products, warehouse_id=warehouse_id, pricelist_id=pricelist_id, only_in_stock=True)
 
