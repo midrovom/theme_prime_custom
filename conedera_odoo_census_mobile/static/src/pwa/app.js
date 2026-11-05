@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.20";
+const APP_VERSION = "18.0.1.5.21";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -446,7 +446,7 @@ function renderRetailQuotes() {
   const customer=state.meta?.capabilities?.quote_retail_partner;
   const cap=state.meta?.capabilities||{};
   const results=(state.retailQuoteResults||[]).map(q=>`<article class="retail-quote-row">
-    <div class="retail-quote-info"><strong>${esc(q.name)}</strong><span>${esc(dateText(q.date_order))} · ${q.state==='sent'?'Enviada':'Borrador'}</span>${q.client_order_ref?`<small>Referencia: ${esc(q.client_order_ref)}</small>`:''}</div>
+    <div class="retail-quote-info"><strong>${esc(q.name)}</strong><span>${esc(dateText(q.date_order))} · ${q.state==='async'?'Enviada a Radis':q.state==='sent'?'Enviada':'Borrador'}</span>${q.client_order_ref?`<small>Referencia: ${esc(q.client_order_ref)}</small>`:''}</div>
     <div class="retail-quote-price"><b>${esc(q.currency)} ${money(q.amount_total)}</b><button type="button" class="btn btn-outline" data-action="view-quote" data-id="${Number(q.id)}">Ver proforma</button>${q.can_duplicate?`<button type="button" class="btn btn-secondary" data-action="retail-quote-duplicate" data-id="${Number(q.id)}">Duplicar</button>`:''}</div>
   </article>`).join('');
   const body=`<section class="form-card retail-quote-browser"><div class="row space"><div><div class="eyebrow">Consumidor Final</div><h2>Buscar proformas</h2><p class="small">${esc(customer?.name||'')} · Cotizaciones de la empresa actual.</p></div><button class="btn btn-outline" type="button" data-nav="quote-start">Volver</button></div>
@@ -958,6 +958,19 @@ function renderQuote() {
     setTimeout(()=>{if(state.page==='quote' && !state.quoteSearch.trim())void searchQuoteProducts('');},0);
   }
 }
+function quoteRadisMarkup(q) {
+  const r=q.radis;
+  if (!r?.installed) return "";
+  const status=`<span class="chip">${esc(r.label||'Estado de Radis')}</span>`;
+  if (!r.authorized) return `<section class="quote-radis card"><div class="row space"><strong>Radis</strong>${status}</div></section>`;
+  const button=r.can_send
+    ? `<button type="button" class="btn btn-primary" data-action="quote-send-radis" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>Enviar a Radis</button>`
+    : '';
+  const advice=r.status==='E'
+    ? '<p class="small">Radis confirmó esta proforma. Las líneas quedan bloqueadas por el módulo de integración.</p>'
+    : '<p class="small">Solo se envían cotizaciones guardadas, en borrador y con bodega. Esta operación requiere conexión y confirmación del servidor.</p>';
+  return `<section class="quote-radis card"><div class="row space"><strong>Radis</strong>${status}</div>${advice}${button}</section>`;
+}
 function renderQuoteDetail() {
   const q=state.quoteDetail;
   if (!q) {state.page="quote";return renderQuote();}
@@ -966,6 +979,7 @@ function renderQuoteDetail() {
     <div class="quote-total"><div><span>Subtotal</span><strong>${esc(q.currency)} ${money(q.amount_untaxed)}</strong></div><div><span>Impuestos</span><strong>${esc(q.currency)} ${money(q.amount_tax)}</strong></div><div class="grand"><span>Total</span><strong>${esc(q.currency)} ${money(q.amount_total)}</strong></div></div>
     <div class="status-banner">Condición de pago: ${esc(q.payment_option||'Estándar')} . Promociones incluidas en el total cuando correspondan.</div>
     ${q.state==='draft'&&q.loyalty_enabled&&!state.meta?.capabilities?.quote_product_promotions_supported?`<div class="loyalty-tools"><h3>Promociones y recompensas Loyalty</h3><div class="field"><label>Código promocional</label><input id="quote-detail-coupon" placeholder="Cupón o código descuento"/></div><div class="row"><button type="button" class="btn btn-outline" data-action="quote-apply-code">Aplicar código</button><button type="button" class="btn btn-outline" data-action="quote-update-rewards">Consultar recompensas</button></div>${(q.loyalty_rewards||[]).length?`<div class="quote-rewards">${q.loyalty_rewards.map(r=>`<div class="quote-reward"><strong>${esc(r.name)}</strong>${r.multi_product?`<select data-loyalty-product="${r.id}">${(r.products||[]).map(pr=>`<option value="${pr.id}">${esc(pr.name)}</option>`).join('')}</select>`:''}<button type="button" class="btn btn-secondary" data-action="quote-apply-reward" data-id="${r.id}">Aplicar recompensa</button></div>`).join('')}</div>`:'<p class="small">No hay recompensas reclamables en este momento; los descuentos automáticos se reflejan en el detalle del pedido.</p>'}</div>`:''}
+    ${quoteRadisMarkup(q)}
     <div class="quote-delivery"><h3>PDF y WhatsApp</h3><p class="small">Descargue el documento oficial de Odoo o comparta el PDF desde su teléfono. El número es opcional y no modifica el contacto Consumidor Final.</p>
     <div class="quote-delivery-actions"><a class="btn btn-outline" href="${quotePdfUrl(q.id)}" target="_blank" rel="noopener" download>↓ Descargar PDF</a><button type="button" class="btn btn-primary" data-action="quote-share-pdf" ${state.online?'':'disabled'}>Compartir PDF</button></div>
     <div class="field"><label for="quote-whatsapp-phone">Número de WhatsApp (con código de país)</label><input id="quote-whatsapp-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej.: +593 99 123 4567"/></div>
@@ -1601,6 +1615,37 @@ $app.addEventListener("click", async (event) => {
     try{const data=await rpc('/catastro/app/quote/retail/duplicate',{quote_id:id});
       state.quoteDetailBack='retail-quotes';await openQuote(data.id);alert(data.message||'Se creó la copia en borrador.');
     }catch(e){alert(e.message||String(e));if(button)button.disabled=false;}
+    return;
+  }
+  if(action==='quote-send-radis' && state.quoteDetail){
+    const q=state.quoteDetail;
+    if(!state.online){alert('Conéctese a Odoo para enviar la proforma a Radis.');return;}
+    if(state.meta?.capabilities?.pwa_server_version!==APP_VERSION){
+      alert('Actualice primero el servidor Odoo y recargue esta PWA para enviar a Radis.');return;
+    }
+    if(!q.radis?.can_send){alert('Esta proforma no puede enviarse a Radis. Actualice el detalle.');return;}
+    if(!confirm(`¿Enviar la proforma ${q.name} a Radis? Después de la confirmación, sus líneas quedarán bloqueadas.`))return;
+    const button=event.target.closest('button');
+    if(button){button.disabled=true;button.textContent='Enviando a Radis…';}
+    try{
+      const result=await rpc('/catastro/app/quote/radis/send',{
+        quote_id:q.id,base_write_date:q.write_date
+      });
+      state.quoteDetail=result.quote;
+      const user=state.meta?.user||{};
+      const key=`${user.id}:${user.company_id}:${q.id}`;
+      state.quoteDetails=state.quoteDetails.filter(x=>x.key!==key);
+      state.quoteDetails.push({key,value:result.quote});
+      if(db)void idbPut(STORE_QUOTE_DETAILS,{key,value:result.quote}).catch(()=>{});
+      renderQuoteDetail();
+      alert(result.message||'Radis confirmó el envío.');
+    }catch(err){
+      // If the response was lost, the external system may already have
+      // accepted it. Reload Odoo status; NEVER retry automatically.
+      alert((err.message||String(err))+'\nCompruebe el estado en Odoo antes de reintentar.');
+      try{await openQuote(q.id);}catch(_error){}
+      if(button && button.isConnected){button.disabled=false;button.textContent='Enviar a Radis';}
+    }
     return;
   }
   if(action==='quote-share-pdf' && state.quoteDetail){await shareQuotePdf(state.quoteDetail.id,state.quoteDetail.name);return;}

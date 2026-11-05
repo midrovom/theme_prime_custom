@@ -358,7 +358,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.20",
+                "pwa_server_version": "18.0.1.5.21",
                 "census_role": census_role,
                 "quote_retail_role": retail_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
@@ -782,6 +782,32 @@ class ConederaFieldAppController(http.Controller):
                     and not ("is_reward_line" in line._fields and line.is_reward_line)
                     and not ("is_delivery" in line._fields and line.is_delivery))
 
+    def _quote_radis_status(self, order):
+        """Informative view of the original Radis integration; no duplicate API client.
+
+        This is intentionally optional: companies not using stock_api_assing are
+        not forced to install that addon just to use Catastro PWA.
+        """
+        Sale = request.env["sale.order"]
+        if "export_send" not in Sale._fields or not hasattr(Sale, "action_export_to_radis"):
+            return {"installed": False, "can_send": False}
+        authorized = request.env.user.has_group("stock_api_assing.group_quotes_restring")
+        export_state = order.export_send or "P"
+        return {
+            "installed": True,
+            "authorized": authorized,
+            "status": export_state,
+            "label": {"P": "Pendiente de envío", "N": "No enviado", "E": "Enviado a Radis"}.get(
+                export_state, "Estado no disponible"),
+            "can_send": bool(
+                authorized and order.state == "draft" and export_state != "E"
+                and request.env["sale.order"].check_access_rights("write", raise_exception=False)
+                and order.warehouse_id and order.order_line.filtered(
+                    lambda l: l.product_id and not l.display_type
+                )
+            ),
+        }
+
     def _quote_record_payload(self, order):
         # The caller already fetched the order under normal user ACLs / record rules.
         return {
@@ -796,6 +822,7 @@ class ConederaFieldAppController(http.Controller):
             "payment_option_id": order.catastro_payment_option_id.id if order.catastro_payment_option_id else False,
             "write_date": str(order.write_date or ""),
             "can_edit": (order.state == "draft"
+                         and not ("export_send" in order._fields and order.export_send == "E")
                          and request.env["sale.order"].check_access_rights("write", raise_exception=False)
                          and request.env["sale.order.line"].check_access_rights("write", raise_exception=False)),
             "visit_id": order.census_visit_id.id if order.census_visit_id else False,
@@ -803,6 +830,7 @@ class ConederaFieldAppController(http.Controller):
             "date_order": str(order.date_order or ""),
             "client_order_ref": order.client_order_ref or "",
             "currency": order.currency_id.symbol or order.currency_id.name,
+            "radis": self._quote_radis_status(order),
             "amount_untaxed": order.amount_untaxed,
             "amount_tax": order.amount_tax,
             "amount_total": order.amount_total,
@@ -843,6 +871,76 @@ class ConederaFieldAppController(http.Controller):
             self._visible_partner(order.partner_id.commercial_partner_id.id)
         return self._quote_record_payload(order)
 
+
+    @http.route("/catastro/app/quote/radis/send", type="json", auth="user", methods=["POST"])
+    def quote_send_radis(self, quote_id, base_write_date=None):
+        """Send saved quotation through stock_api_assing's original method.
+
+        Never queue Radis submissions offline.  A duplicate external submission
+        cannot be safely undone if the external API confirmed the first one.
+        """
+        Sale = self._quote_access("write")
+        if "export_send" not in Sale._fields or not hasattr(Sale, "action_export_to_radis"):
+            raise UserError("La integración Radis no está instalada en Odoo.")
+        if not request.env.user.has_group("stock_api_assing.group_quotes_restring"):
+            raise AccessError("Su usuario no tiene permiso para enviar cotizaciones a Radis.")
+        try:
+            order_id = int(quote_id)
+        except (TypeError, ValueError):
+            raise ValidationError("Identificador de cotización inválido.")
+        order = Sale.search([
+            ("id", "=", order_id), ("company_id", "=", request.env.company.id)
+        ], limit=1)
+        if not order:
+            raise AccessError("Cotización no disponible para su usuario o empresa.")
+        # Enforce both the user's Odoo write rule and the PWA's customer scope.
+        order.check_access_rule("write")
+        if not self._quote_is_retail(order.partner_id.commercial_partner_id.id):
+            self._require_census_role()
+            self._visible_partner(order.partner_id.commercial_partner_id.id)
+        if order.state != "draft" or order.export_send == "E":
+            raise ValidationError("Solo puede enviar a Radis una cotización en borrador y no enviada.")
+        if not base_write_date or str(order.write_date or "") != str(base_write_date):
+            raise ValidationError("La proforma cambió en Odoo. Recárguela y revise los importes antes de enviarla.")
+        if not order.warehouse_id:
+            raise ValidationError("Seleccione la bodega del pedido antes de enviarlo a Radis.")
+        # The original sender exports every product line.  Loyalty rewards that
+        # use extra product lines cannot be represented as sold merchandise.
+        reward_lines = order.order_line.filtered(lambda l:
+            l.product_id and not l.display_type and (
+                ("reward_id" in l._fields and bool(l.reward_id)) or
+                ("is_reward_line" in l._fields and bool(l.is_reward_line))
+            ))
+        if reward_lines:
+            raise ValidationError(
+                "La proforma contiene recompensas Loyalty como líneas de producto. "
+                "No se enviarán como mercancía a Radis; revise el tratamiento de estas recompensas."
+            )
+        # The existing stock_api_assing payload has NO per-line "discount"
+        # field.  Exporting a discounted price_unit as a full price would
+        # overstate the amount in Radis.  Reject instead of silently sending
+        # an economically different quotation.
+        discounted_lines = order.order_line.filtered(lambda l:
+            l.product_id and not l.display_type and abs(l.discount or 0.0) > 0.000001)
+        if discounted_lines:
+            raise ValidationError(
+                "Esta proforma tiene descuentos por producto (Loyalty u otros). "
+                "La API Radis actual no transmite el descuento de cada línea; "
+                "se bloqueó el envío para evitar precios diferentes a los de Odoo. "
+                "Actualice primero el contrato de integración con Radis."
+            )
+        # There is deliberately no direct HTTP call to Radis in the PWA.
+        # Stock_api_assing creates the payload, checks the API response and
+        # marks the order export_send='E', state='async' after success.
+        order.action_export_to_radis()
+        order.invalidate_recordset(["state", "export_send", "write_date"])
+        if order.export_send != "E" or order.state != "async":
+            raise UserError("Odoo no confirmó el estado enviado a Radis. Compruebe el resultado antes de reintentar.")
+        return {
+            "ok": True,
+            "message": "La proforma %s fue aceptada por Radis." % order.name,
+            "quote": self._quote_record_payload(order),
+        }
 
     def _retail_quote_partner(self):
         """Check the active company and the *retail* group for every endpoint.
@@ -885,7 +983,7 @@ class ConederaFieldAppController(http.Controller):
         domain = [
             ('company_id', '=', request.env.company.id),
             ('partner_id.commercial_partner_id', '=', partner.id),
-            ('state', 'in', ['draft', 'sent']),
+            ('state', 'in', ['draft', 'sent', 'async']),
         ]
         if text:
             domain += ['|', ('name', 'ilike', text), ('client_order_ref', 'ilike', text)]
@@ -896,7 +994,7 @@ class ConederaFieldAppController(http.Controller):
                 'state': so.state, 'amount_total': so.amount_total,
                 'currency': so.currency_id.symbol or so.currency_id.name,
                 'client_order_ref': so.client_order_ref or '',
-                'can_duplicate': Sale.check_access_rights('create', raise_exception=False),
+                'can_duplicate': so.state in ('draft', 'sent') and not ('export_send' in so._fields and so.export_send == 'E') and Sale.check_access_rights('create', raise_exception=False),
             } for so in orders[:20]],
             'has_more': len(orders) > 20, 'offset': offset,
         }
@@ -1029,6 +1127,8 @@ class ConederaFieldAppController(http.Controller):
                              ("company_id", "=", request.env.company.id)], limit=1)
         if not order:
             raise AccessError("No puede modificar esta cotización o ya fue confirmada.")
+        if "export_send" in order._fields and order.export_send == "E":
+            raise AccessError("La cotización ya fue enviada a Radis y no permite editar sus líneas.")
         self._quote_partner(order.partner_id.commercial_partner_id.id)
         return order
 
