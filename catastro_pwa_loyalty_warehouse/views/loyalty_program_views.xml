@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_loyalty_program_form_catastro_warehouses" model="ir.ui.view">
+        <field name="name">loyalty.program.form.catastro.warehouses</field>
+        <field name="model">loyalty.program</field>
+        <field name="inherit_id" ref="loyalty.loyalty_program_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='pricelist_ids']" position="after">
+                <field name="catastro_warehouse_ids"
+                       widget="many2many_tags"
+                       options="{'no_create': True}"
+                       invisible="program_type in ('gift_card', 'ewallet')"
+                       placeholder="Sin selección: todas las bodegas"/>
+                <div class="text-muted" invisible="program_type in ('gift_card', 'ewallet')">
+                    Seleccione las bodegas donde es válida la promoción.
+                    Vacío = todas las bodegas (compatibilidad con promociones actuales).
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
