@@ -24,3 +24,14 @@ class CatastroQuoteWarehouseAccess(models.Model):
         for record in self:
             if record.warehouse_id.company_id not in record.user_id.company_ids:
                 raise ValidationError(_("La bodega debe pertenecer a una compañía permitida para el usuario."))
+
+
+class CatastroQuoteWarehousesUser(models.Model):
+    _inherit = "res.users"
+
+    # Un único formulario por usuario y múltiples líneas de bodegas.
+    # Reutiliza los registros existentes: no hay migración ni pérdida de asignaciones.
+    catastro_quote_warehouse_access_ids = fields.One2many(
+        "catastro.quote.warehouse.access", "user_id",
+        string="Bodegas autorizadas para cotizar",
+    )

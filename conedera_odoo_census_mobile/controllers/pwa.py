@@ -358,7 +358,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.22",
+                "pwa_server_version": "18.0.1.5.23",
                 "census_role": census_role,
                 "quote_retail_role": retail_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
@@ -512,51 +512,81 @@ class ConederaFieldAppController(http.Controller):
                 raise ValidationError("Cantidad de stock inválida para %s." % product.display_name)
         return result
 
-    def _quote_stock_locations_map(self, products):
-        """Ubicaciones físicas con stock para el catálogo, sin revelar datos ajenos.
+    def _quote_stock_visibility_maps(self, products):
+        """Existencias informativas por bodega y ubicación, en una sola agregación.
 
-        Tienda: todas las ubicaciones internas de la compañía ACTIVA, solo
-        lectura. Resto: ubicaciones internas bajo bodegas de cotización
-        autorizadas. No se otorga acceso a bodegas adicionales para cotizar.
-        Ejecuta una agregación para todo el lote, nunca una consulta por tarjeta.
+        Tienda: bodegas de la compañía activa (aunque no pueda cotizar allí).
+        Campo: exclusivamente bodegas asignadas para cotizar.
+        No mezcla compañías ni habilita utilizar otro almacén en la proforma.
         """
         product_ids = products.ids
-        result = {pid: [] for pid in product_ids}
+        location_rows = {pid: [] for pid in product_ids}
+        warehouse_rows = {pid: [] for pid in product_ids}
         if not product_ids or "stock.quant" not in request.env.registry:
-            return result
+            return location_rows, warehouse_rows
         user = request.env.user
+        company = request.env.company
         retail = user.has_group("conedera_odoo_census_mobile.group_quote_retail")
+        authorized = {row["id"] for row in self._quote_warehouses()}
+        warehouse_domain = [("company_id", "=", company.id)]
+        if not retail:
+            if not authorized:
+                return location_rows, warehouse_rows
+            warehouse_domain.append(("id", "in", list(authorized)))
+        # Los datos sudo se limitan a una compañía, los productos del lote y
+        # las raíces de bodegas visibles. Nunca se devuelven quants individuales.
+        warehouses = request.env["stock.warehouse"].sudo().search(
+            warehouse_domain, order="name"
+        ).filtered(lambda w: bool(w.view_location_id))
+        if not warehouses:
+            return location_rows, warehouse_rows
+        roots = [(w, w.view_location_id.parent_path or "%s/" % w.view_location_id.id)
+                 for w in warehouses]
+        root_ids = [w.view_location_id.id for w in warehouses]
+        quantities = {(pid, w.id): 0.0 for pid in product_ids for w in warehouses}
+        Quant = request.env["stock.quant"].sudo().with_company(company)
         domain = [
             ("product_id", "in", product_ids),
+            ("location_id", "child_of", root_ids),
             ("location_id.usage", "=", "internal"),
-            ("location_id.company_id", "in", [False, request.env.company.id]),
-            ("company_id", "in", [False, request.env.company.id]),
+            ("location_id.company_id", "in", [False, company.id]),
+            ("company_id", "in", [False, company.id]),
         ]
-        if not retail:
-            ids = [row["id"] for row in self._quote_warehouses()]
-            if not ids:
-                return result
-            roots = request.env["stock.warehouse"].sudo().browse(ids).mapped("view_location_id").ids
-            if not roots:
-                return result
-            domain.append(("location_id", "child_of", roots))
-        # Las ACL del producto y la selección de empresa ya fueron comprobadas
-        # por _quote_partner y _quote_find_products antes de este método.
-        Quant = request.env["stock.quant"].sudo().with_company(request.env.company)
         for product, location, quantity in Quant._read_group(
             domain, ["product_id", "location_id"], ["quantity:sum"]
         ):
             if not product or not location or not math.isfinite(float(quantity)):
                 continue
-            if float_compare(float(quantity), 0, precision_rounding=product.uom_id.rounding or 0.01) <= 0:
+            path = location.parent_path or "%s/" % location.id
+            # Ante raíces anidadas, atribuir el saldo solo a la raíz más cercana.
+            matches = [(w, root_path) for w, root_path in roots if path.startswith(root_path)]
+            if not matches:
                 continue
-            result[product.id].append({
-                "name": location.complete_name or location.display_name,
-                "quantity": float(quantity),
-            })
-        for lines in result.values():
-            lines.sort(key=lambda item: (-item["quantity"], item["name"]))
-        return result
+            warehouse = max(matches, key=lambda item: len(item[1]))[0]
+            qty = float(quantity)
+            quantities[(product.id, warehouse.id)] += qty
+            if float_compare(qty, 0, precision_rounding=product.uom_id.rounding or 0.01) > 0:
+                location_rows[product.id].append({
+                    "name": location.complete_name or location.display_name,
+                    "quantity": qty,
+                    "warehouse_id": warehouse.id,
+                    "warehouse_name": warehouse.display_name,
+                })
+        for product in products:
+            warehouse_rows[product.id] = [{
+                "id": w.id,
+                "name": w.display_name,
+                "quantity": quantities[(product.id, w.id)],
+                "can_quote": w.id in authorized or user.has_group("base.group_system"),
+            } for w in warehouses]
+            location_rows[product.id].sort(key=lambda item: (
+                item["warehouse_name"], -item["quantity"], item["name"]
+            ))
+        return location_rows, warehouse_rows
+
+    def _quote_stock_locations_map(self, products):
+        # Se conserva el método privado por compatibilidad interna.
+        return self._quote_stock_visibility_maps(products)[0]
 
     def _quote_stock_on_hand(self, product, warehouse):
         return self._quote_stock_map(product, warehouse).get(product.id, 0.0)
@@ -687,7 +717,7 @@ class ConederaFieldAppController(http.Controller):
         pricelist = self._quote_pricelist(partner, pricelist_id)
         result = []
         stock_map = self._quote_stock_map(products, warehouse)
-        stock_locations = self._quote_stock_locations_map(products)
+        stock_locations, stock_warehouses = self._quote_stock_visibility_maps(products)
         # La compañía, la posición fiscal y las formas de pago se consultan
         # una vez por lote (hasta 60 tarjetas). No se utiliza sudo para
         # consultar productos, compañías o formas de pago no permitidas.
@@ -719,6 +749,7 @@ class ConederaFieldAppController(http.Controller):
                 "pricelist": pricelist.display_name, "qty_priced": qty,
                 "stock_qty": onhand, "stock_kind": "physical", "stock_label": warehouse.display_name,
                 "stock_locations": stock_locations.get(product.id, []),
+                "stock_warehouses": stock_warehouses.get(product.id, []),
                 "stock_location_scope": ("company" if request.env.user.has_group(
                     "conedera_odoo_census_mobile.group_quote_retail") else "authorized"),
                 "warehouse_id": warehouse.id,

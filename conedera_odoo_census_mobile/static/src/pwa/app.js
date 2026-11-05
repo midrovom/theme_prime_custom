@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.22";
+const APP_VERSION = "18.0.1.5.23";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -698,13 +698,23 @@ function renderQuoteResults() {
     const promoPicker=added&&eligibleOffers.length
       ?`<label class="shop-promo-select"><span>🎁 Promoción</span><select data-quote-promo="${p.id}" aria-label="Promoción de ${esc(p.name)}"><option value="0" ${Number(added.promo_reward_id||0)===0?'selected':''}>Sin promoción</option>${eligibleOffers.map(x=>`<option value="${Number(x.id)}" ${Number(added.promo_reward_id)===Number(x.id)?'selected':''}>${esc(x.name)} · ${money(x.discount)}% descuento</option>`).join('')}</select></label>`:'';
     const locs=state.online&&Array.isArray(p.stock_locations)?p.stock_locations:[];
+    const warehouseStocks=state.online&&Array.isArray(p.stock_warehouses)?p.stock_warehouses:[];
+    const currentId=Number(state.quoteWarehouseId);
+    // Mostrar la bodega activa primero y el resto agrupado, incluso si tiene 0.
+    const sortedWarehouses=[...warehouseStocks].sort((a,b)=>
+      Number(b.id===currentId)-Number(a.id===currentId) || String(a.name).localeCompare(String(b.name),'es'));
+    const qtyWarehouse=(w)=>`<li class="${Number(w.id)===currentId?'shop-warehouse-current':''}">
+      <span>${esc(w.name)}${!w.can_quote?'<small>Solo consulta</small>':''}${Number(w.id)===currentId?'<small>Seleccionada</small>':''}</span>
+      <b>${money(w.quantity)} ${esc(p.uom||'')}</b></li>`;
+    const otherCount=Math.max(0,sortedWarehouses.length-2);
+    const warehousesMarkup=sortedWarehouses.length?`<div class="shop-location-stock shop-warehouse-stock" aria-label="Stock por bodega">
+      <div class="shop-location-title">🏬 Stock en bodegas · solo consulta</div>
+      <ul>${sortedWarehouses.slice(0,2).map(qtyWarehouse).join('')}</ul>
+      ${otherCount?`<details><summary>Ver ${otherCount} bodegas más</summary><ul>${sortedWarehouses.slice(2).map(qtyWarehouse).join('')}</ul></details>`:''}
+      </div>`:(state.online?'<p class="shop-location-pending">Actualice el catálogo para consultar otras bodegas.</p>':'');
     const qtyLocation=(x)=>`<li><span>${esc(x.name)}</span><b>${money(x.quantity)} ${esc(p.uom||'')}</b></li>`;
-    const locationLabel=p.stock_location_scope==='company'?'Ubicaciones de la empresa':'Bodegas autorizadas';
-    const locationMarkup=locs.length?`<div class="shop-location-stock" aria-label="Existencias por ubicación">
-      <div class="shop-location-title">📍 ${locationLabel} · solo consulta</div>
-      <ul>${locs.slice(0,2).map(qtyLocation).join('')}</ul>
-      ${locs.length>2?`<details><summary>Ver ${locs.length-2} ubicaciones más</summary><ul>${locs.slice(2).map(qtyLocation).join('')}</ul></details>`:''}
-      </div>`:(state.online?'<p class="shop-location-pending">Ubicaciones: actualice el catálogo para consultarlas.</p>':'');
+    const locationMarkup=locs.length?`<details class="shop-internal-locations"><summary>📍 Ver ${locs.length} ubicaciones internas</summary>
+      <ul>${locs.map(qtyLocation).join('')}</ul></details>`:'';
     return `<article class="shop-product ${added?'shop-product-added':''}" data-quote-product="${p.id}">
       <div class="shop-product-top">
         <button type="button" class="quote-thumb shop-photo" data-action="quote-image" data-id="${p.id}" title="Ampliar fotografía" aria-label="Ampliar fotografía de ${esc(p.name)}" ${p.has_image?'':'disabled'}>${quoteImage(p)}</button>
@@ -713,6 +723,7 @@ function renderQuoteResults() {
       </div>
       <div class="shop-price ${offer?'shop-price-promoted':''}"><span>${selected?esc(selected.name):(!chosenId?'Precio de lista':esc((state.meta?.capabilities?.quote_payment_options||[]).find(x=>Number(x.id)===chosenId)?.name||'Forma de pago'))} · impuestos incluidos</span><strong>${displayPrice}</strong>${originalMarkup}</div>
       ${alternatives}
+      ${warehousesMarkup}
       ${locationMarkup}
       ${promoPicker}
       <p class="shop-price-footnote">${priceFootnote}</p>
@@ -1072,7 +1083,7 @@ async function searchQuoteProducts(value) {
     const user=state.meta?.user||{};
     // Las ubicaciones detalladas son información sensible: se muestran en línea,
     // pero NO se guardan en IndexedDB ni en cachés entre sesiones/permisos.
-    const tagged=result.map(p=>({...p,stock_locations:[],key:`${user.id}:${user.company_id}:${partnerId}:${warehouseId||0}:${pricelistId||0}:${p.id}`,
+    const tagged=result.map(p=>({...p,stock_locations:[],stock_warehouses:[],key:`${user.id}:${user.company_id}:${partnerId}:${warehouseId||0}:${pricelistId||0}:${p.id}`,
       user_id:user.id,company_id:user.company_id,partner_id:partnerId,warehouse_id:warehouseId||0,pricelist_id:pricelistId||0}));
     // Mostrar siempre los resultados del servidor aunque IndexedDB no acepte escrituras.
     state.quoteResults=result.filter(p=>Number(p.stock_qty)>0 && Number(p.warehouse_id)===Number(warehouseId));
