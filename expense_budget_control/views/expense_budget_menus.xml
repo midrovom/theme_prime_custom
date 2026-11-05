@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <odoo>
-    <menuitem id="menu_expense_budget_root" name="Control de Gastos" action="action_expense_budget_mobile_home" sequence="45"/>
+    <menuitem id="menu_expense_budget_root" name="Control de Gastos" action="action_expense_budget_mobile_home" sequence="45" web_icon="expense_budget_control,static/description/icon.png"/>
     <!-- El acceso de versiones anteriores queda archivado también al recargar
          datos XML, sin depender de que se ejecute una migración particular.
          En móvil se abre desde la acción del menú raíz. -->
