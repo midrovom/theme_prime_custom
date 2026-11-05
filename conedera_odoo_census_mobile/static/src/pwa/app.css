@@ -379,3 +379,20 @@ button{cursor:pointer}
 .quote-entry-item .btn{flex:none;min-height:42px}
 .home-tools .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 @media(max-width:390px){.home-tools .btn{font-size:12px;padding:10px 12px}.quote-entry-layout .card{padding:14px}.quote-entry-item{padding:10px}.quote-entry-item .btn{padding:8px 13px}}
+
+/* Historial compacto de Consumidor Final y opciones de compartir */
+.retail-entry-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.retail-quote-browser{max-width:980px;margin-inline:auto}
+.retail-quote-browser .shop-search-box{margin:18px 0}
+.retail-quote-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.retail-quote-info{display:flex;flex-direction:column;gap:5px;min-width:0;overflow-wrap:anywhere}
+.retail-quote-info strong{font-size:16px}
+.retail-quote-info span,.retail-quote-info small{color:var(--muted);font-size:13px}
+.retail-quote-price{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.retail-quote-price b{white-space:nowrap;margin-right:6px}
+.retail-quote-more{margin-top:16px;width:100%}
+.quote-delivery{padding:16px 0;border-top:1px solid var(--line);margin-top:20px;display:grid;gap:11px}
+.quote-delivery h3{margin:0}
+.quote-delivery-actions{display:flex;gap:10px;flex-wrap:wrap}
+.quote-delivery .field{max-width:460px}
+@media(max-width:640px){.retail-quote-row{display:block}.retail-quote-price{justify-content:flex-start;margin-top:12px}.retail-quote-price .btn{flex:1}.retail-entry-actions .btn{flex:1}.quote-delivery-actions .btn{flex:1}}

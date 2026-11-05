@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.17";
+const APP_VERSION = "18.0.1.5.18";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -66,6 +66,14 @@ const state = {
   quoteView: "catalog",
   quoteCatalogLoadKey: null,
   quotePartnerSearch: "",
+  retailQuoteSearch: "",
+  retailQuoteResults: [],
+  retailQuoteHasMore: false,
+  retailQuoteLoading: false,
+  retailQuoteError: "",
+  retailQuoteTimer: null,
+  retailQuoteRequestId: 0,
+  quoteDetailBack: "quote",
 };
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -394,7 +402,7 @@ function renderHome() {
   const partners = state.partners.filter(p => !q || [p.name,p.commercial_name,p.vat,p.city,p.phone,p.mobile].some(v => String(v||"").toLowerCase().includes(q)));
   const retail=state.meta?.capabilities?.quote_retail_partner;
   const retailButton=state.meta?.capabilities?.quote_retail_enabled
-    ?`<section class="partner-quote-cta"><div><strong>Venta directa · Consumidor Final</strong><p>Crear proforma sin catastro. Precios de lista, promociones y formas de pago.</p></div><button class="btn btn-primary" type="button" data-action="quote-retail">▤ Cotizar consumidor final</button></section>`:"";
+    ?`<section class="partner-quote-cta"><div><strong>Venta directa · Consumidor Final</strong><p>Crear proforma sin catastro. Precios de lista, promociones y formas de pago.</p></div><div class="retail-entry-actions"><button class="btn btn-primary" type="button" data-action="quote-retail">▤ Cotizar consumidor final</button><button class="btn btn-outline" type="button" data-action="retail-quotes-open">⌕ Buscar proformas</button></div></section>`:"";
   const isCensus=state.meta?.capabilities?.census_role!==false;
   const body = `${retailButton}${isCensus?`<div class="home-tools"><span>Mis clientes</span><div class="row"><button type="button" class="btn btn-primary" data-nav="quote-start">▤ Cotizar</button><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div></div>
     <input id="partner-search" class="search" placeholder="Buscar por RUC, nombre, ciudad…" value="${esc(state.search)}"/>
@@ -416,7 +424,7 @@ function renderQuoteStart() {
   if(!canCreate) sections+='<section class="card"><strong>Faltan permisos de Ventas</strong><p class="card-sub">El administrador debe otorgar permiso para crear cotizaciones en Odoo a este usuario. Los accesos seguirán visibles.</p></section>';
   if(hasRetail) {
     sections+=`<section class="partner-quote-cta quote-entry-card"><div><strong>Venta directa · Consumidor Final</strong><p>${customer?'Cotice para '+esc(customer.name)+' en '+esc(state.meta?.user?.company_name||'la empresa activa')+'.':'Falta asignar el contacto Consumidor Final a la empresa activa. Un administrador debe configurarlo en Catastro → Configuración.'}</p></div>
-      <button type="button" class="btn btn-primary" data-action="quote-retail" ${canCreate&&customer?'':'disabled'}>▤ Crear cotización de tienda</button></section>`;
+      <div class="retail-entry-actions"><button type="button" class="btn btn-primary" data-action="quote-retail" ${canCreate&&customer?'':'disabled'}>▤ Crear cotización de tienda</button><button type="button" class="btn btn-outline" data-action="retail-quotes-open" ${cap.quote_read&&customer?'':'disabled'}>⌕ Buscar proformas</button></div></section>`;
   } else {
     sections+='<section class="card quote-entry-info"><strong>Venta directa · Consumidor Final</strong><p class="card-sub">Esta opción necesita el grupo «Catastro PWA: cotizador de tienda», además de configurar el contacto Consumidor Final de la empresa activa. El administrador puede habilitarlo en Odoo → Ajustes → Usuarios.</p></section>';
   }
@@ -430,6 +438,60 @@ function renderQuoteStart() {
   $app.innerHTML=shell('Cotizar',`<div class="quote-entry-layout"><div class="section-title">Seleccione cómo desea cotizar</div>${sections}</div>`,{nav:'quote-start'});
 }
 
+function renderRetailQuotes() {
+  const customer=state.meta?.capabilities?.quote_retail_partner;
+  const cap=state.meta?.capabilities||{};
+  const results=(state.retailQuoteResults||[]).map(q=>`<article class="retail-quote-row">
+    <div class="retail-quote-info"><strong>${esc(q.name)}</strong><span>${esc(dateText(q.date_order))} · ${q.state==='sent'?'Enviada':'Borrador'}</span>${q.client_order_ref?`<small>Referencia: ${esc(q.client_order_ref)}</small>`:''}</div>
+    <div class="retail-quote-price"><b>${esc(q.currency)} ${money(q.amount_total)}</b><button type="button" class="btn btn-outline" data-action="view-quote" data-id="${Number(q.id)}">Ver proforma</button>${q.can_duplicate?`<button type="button" class="btn btn-secondary" data-action="retail-quote-duplicate" data-id="${Number(q.id)}">Duplicar</button>`:''}</div>
+  </article>`).join('');
+  const body=`<section class="form-card retail-quote-browser"><div class="row space"><div><div class="eyebrow">Consumidor Final</div><h2>Buscar proformas</h2><p class="small">${esc(customer?.name||'')} · Cotizaciones de la empresa actual.</p></div><button class="btn btn-outline" type="button" data-nav="quote-start">Volver</button></div>
+    <div class="shop-search-box"><span aria-hidden="true">⌕</span><input id="retail-quotes-search" placeholder="Número de proforma o referencia" aria-label="Buscar proformas de consumidor final" value="${esc(state.retailQuoteSearch)}" autocomplete="off"/></div>
+    <div id="retail-quotes-live" aria-live="polite">${state.retailQuoteError?`<div class="status-banner warn">${esc(state.retailQuoteError)}</div>`:state.retailQuoteLoading&&!results?'<p class="small">Buscando proformas…</p>':results||'<div class="empty">No hay proformas con esta búsqueda.</div>'}</div>
+    ${state.retailQuoteHasMore?'<button type="button" class="btn btn-outline retail-quote-more" data-action="retail-quotes-more">Mostrar 20 más</button>':''}
+    <p class="small">«Duplicar» crea un borrador nuevo. La proforma original permanece intacta; revise disponibilidad, promociones y precios antes de usar la copia.</p></section>`;
+  $app.innerHTML=shell('Proformas de tienda',body,{nav:'quote-start'});
+}
+async function loadRetailQuotes(more=false) {
+  if(!state.online){state.retailQuoteError='Conéctese a Odoo para buscar proformas.';state.retailQuoteLoading=false;renderRetailQuotes();return;}
+  const term=state.retailQuoteSearch.trim();
+  const offset=more?state.retailQuoteResults.length:0;
+  const requestId=++state.retailQuoteRequestId;
+  state.retailQuoteLoading=true; state.retailQuoteError='';renderRetailQuotes();
+  try {
+    const res=await rpc('/catastro/app/quote/retail/search',{term,offset});
+    if(state.page!=='retail-quotes'||requestId!==state.retailQuoteRequestId) return;
+    state.retailQuoteResults=more?[...state.retailQuoteResults,...(res.items||[])]:res.items||[];
+    state.retailQuoteHasMore=Boolean(res.has_more);
+  }catch(e){if(requestId===state.retailQuoteRequestId)state.retailQuoteError=e.message||String(e);}
+  finally{if(state.page==='retail-quotes'&&requestId===state.retailQuoteRequestId){state.retailQuoteLoading=false;renderRetailQuotes();}}
+}
+function quotePdfUrl(id){return `/catastro/app/quote/pdf/${encodeURIComponent(Number(id))}`;}
+function whatsappPhone(raw){
+  let phone=String(raw||'').replace(/[^\d+]/g,'');
+  if(phone.startsWith('00'))phone=phone.slice(2);
+  if(phone.startsWith('+'))phone=phone.slice(1);
+  if(/^09\d{8}$/.test(phone))phone='593'+phone.slice(1);
+  return /^\d{8,15}$/.test(phone)?phone:null;
+}
+async function shareQuotePdf(id,name){
+  if(!state.online){alert('Conéctese para descargar el PDF actualizado.');return;}
+  try {
+    const response=await fetch(quotePdfUrl(id),{credentials:'same-origin',cache:'no-store'});
+    if(!response.ok||!(response.headers.get('content-type')||'').toLowerCase().includes('application/pdf'))
+      throw new Error('Odoo no pudo entregar el PDF. Revise la sesión y los permisos del reporte.');
+    const blob=await response.blob();
+    const file=new File([blob],`Proforma_${String(name||id).replace(/[^a-zA-Z0-9_-]/g,'_')}.pdf`,{type:'application/pdf'});
+    if(navigator.share&&navigator.canShare?.({files:[file]})){
+      await navigator.share({files:[file],title:`Proforma ${name}`,text:`Proforma ${name}`});
+    }else{
+      const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=file.name;
+      document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+      alert('Se descargó el PDF. Abra el chat de WhatsApp y adjunte este archivo manualmente. Para compartirlo directamente desde el teléfono, use HTTPS y un navegador compatible.');
+    }
+  }catch(err){if(err?.name!=='AbortError') alert(err.message||String(err));}
+}
 function selectedPartner() { return state.partners.find(p => p.id === state.selectedPartnerId) || null; }
 function visitsFor(partnerId) {
   return state.visits.filter(v => relationId(v.partner_id || v.customer_id) === partnerId).sort((a,b)=>String(b.visit_datetime||b.visit_date||b.date||b.create_date||"").localeCompare(String(a.visit_datetime||a.visit_date||a.date||a.create_date||"")));
@@ -811,7 +873,12 @@ function renderQuoteDetail() {
     <div class="quote-total"><div><span>Subtotal</span><strong>${esc(q.currency)} ${money(q.amount_untaxed)}</strong></div><div><span>Impuestos</span><strong>${esc(q.currency)} ${money(q.amount_tax)}</strong></div><div class="grand"><span>Total</span><strong>${esc(q.currency)} ${money(q.amount_total)}</strong></div></div>
     <div class="status-banner">Condición de pago: ${esc(q.payment_option||'Estándar')} . Promociones incluidas en el total cuando correspondan.</div>
     ${q.state==='draft'&&q.loyalty_enabled?`<div class="loyalty-tools"><h3>Promociones y recompensas Loyalty</h3><div class="field"><label>Código promocional</label><input id="quote-detail-coupon" placeholder="Cupón o código descuento"/></div><div class="row"><button type="button" class="btn btn-outline" data-action="quote-apply-code">Aplicar código</button><button type="button" class="btn btn-outline" data-action="quote-update-rewards">Consultar recompensas</button></div>${(q.loyalty_rewards||[]).length?`<div class="quote-rewards">${q.loyalty_rewards.map(r=>`<div class="quote-reward"><strong>${esc(r.name)}</strong>${r.multi_product?`<select data-loyalty-product="${r.id}">${(r.products||[]).map(pr=>`<option value="${pr.id}">${esc(pr.name)}</option>`).join('')}</select>`:''}<button type="button" class="btn btn-secondary" data-action="quote-apply-reward" data-id="${r.id}">Aplicar recompensa</button></div>`).join('')}</div>`:'<p class="small">No hay recompensas reclamables en este momento; los descuentos automáticos se reflejan en el detalle del pedido.</p>'}</div>`:''}
-    <div class="action-grid">${q.state==='draft'&&q.can_edit?`<button class="btn btn-primary" type="button" data-action="edit-quote-draft" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>✎ Editar borrador</button>`:''}<button class="btn btn-secondary" data-action="back-quote">← Cotizaciones</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
+    <div class="quote-delivery"><h3>PDF y WhatsApp</h3><p class="small">Descargue el documento oficial de Odoo o comparta el PDF desde su teléfono. El número es opcional y no modifica el contacto Consumidor Final.</p>
+    <div class="quote-delivery-actions"><a class="btn btn-outline" href="${quotePdfUrl(q.id)}" target="_blank" rel="noopener" download>↓ Descargar PDF</a><button type="button" class="btn btn-primary" data-action="quote-share-pdf" ${state.online?'':'disabled'}>Compartir PDF</button></div>
+    <div class="field"><label for="quote-whatsapp-phone">Número de WhatsApp (con código de país)</label><input id="quote-whatsapp-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej.: +593 99 123 4567"/></div>
+    <button type="button" class="btn btn-outline" data-action="quote-open-whatsapp">Abrir chat de WhatsApp</button>
+    <p class="small">Abrir el chat no adjunta el PDF automáticamente. Utilice «Compartir PDF» y elija WhatsApp, o descargue el archivo y adjúntelo al chat.</p></div>
+    <div class="action-grid">${q.state==='draft'&&q.can_edit?`<button class="btn btn-primary" type="button" data-action="edit-quote-draft" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>✎ Editar borrador</button>`:''}${state.meta?.capabilities?.quote_retail_role&&q.partner_id===state.meta?.capabilities?.quote_retail_partner?.id?`<button class="btn btn-secondary" type="button" data-action="retail-quote-duplicate" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>Duplicar</button>`:''}<button class="btn btn-secondary" data-action="back-quote">← Volver</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
     <aside class="quote-side"><section class="card"><div class="card-title">Registro</div><div class="card-sub">Referencia: ${esc(q.client_order_ref||"—")}<br>Visita: ${q.visit_id?"#"+Number(q.visit_id):"No asociada"}<br>Empresa: ${esc(q.company_name)}</div></section></aside></div>`;
   $app.innerHTML=shell(q.name,body,{nav:"quote-start"});
 }
@@ -1076,6 +1143,7 @@ function render() {
     case "quote-start": return renderQuoteStart();
     case "quote": return renderQuote();
     case "quote-detail": return renderQuoteDetail();
+    case "retail-quotes": return renderRetailQuotes();
     case "new": return renderNewCatastro();
     case "edit": return renderEditCatastro();
     case "pending": return renderPending();
@@ -1391,6 +1459,16 @@ $app.addEventListener("change", (event) => {
   }
 });
 
+$app.addEventListener('input',(event)=>{
+  if(event.target?.id==='retail-quotes-search'){
+    state.retailQuoteSearch=event.target.value;
+    clearTimeout(state.retailQuoteTimer);
+    state.retailQuoteTimer=setTimeout(()=>{
+      if(state.page==='retail-quotes')void loadRetailQuotes();
+    },300);
+  }
+});
+
 $app.addEventListener("click", async (event) => {
   const navEl = event.target.closest("[data-nav]");
   if (navEl) { state.page=navEl.dataset.nav;
@@ -1404,6 +1482,30 @@ $app.addEventListener("click", async (event) => {
   const visitEl = event.target.closest("[data-action='visit-partner']");
   if (visitEl) { state.selectedPartnerId=Number(visitEl.dataset.id); if(!truthy(selectedPartner()?.census_locked)){alert("Finalice y proteja primero el catastro.");return;} state.page="visit"; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
+  if (action === 'retail-quotes-open') {
+    if(!state.meta?.capabilities?.quote_retail_role||!state.meta?.capabilities?.quote_retail_partner){alert('Necesita el perfil Tienda y el contacto Consumidor Final de la empresa.');return;}
+    state.page='retail-quotes';state.retailQuoteSearch='';state.retailQuoteResults=[];
+    state.retailQuoteHasMore=false;state.retailQuoteError='';renderRetailQuotes();void loadRetailQuotes();return;
+  }
+  if(action==='retail-quotes-more') {if(!state.retailQuoteLoading)void loadRetailQuotes(true);return;}
+  if(action==='retail-quote-duplicate') {
+    const id=Number(event.target.closest('[data-id]')?.dataset.id);
+    if(!state.online){alert('Se necesita conexión para duplicar la proforma.');return;}
+    if(!confirm('¿Crear una copia nueva en borrador? La cotización original no se modificará.'))return;
+    const button=event.target.closest('button');if(button)button.disabled=true;
+    try{const data=await rpc('/catastro/app/quote/retail/duplicate',{quote_id:id});
+      state.quoteDetailBack='retail-quotes';await openQuote(data.id);alert(data.message||'Se creó la copia en borrador.');
+    }catch(e){alert(e.message||String(e));if(button)button.disabled=false;}
+    return;
+  }
+  if(action==='quote-share-pdf' && state.quoteDetail){await shareQuotePdf(state.quoteDetail.id,state.quoteDetail.name);return;}
+  if(action==='quote-open-whatsapp' && state.quoteDetail){
+    const phone=whatsappPhone(document.querySelector('#quote-whatsapp-phone')?.value);
+    if(!phone){alert('Ingrese un número válido con código de país; para Ecuador también puede usar 09XXXXXXXX.');return;}
+    const msg=`Buenos días. Le comparto la proforma ${state.quoteDetail.name}. Adjuntaré el documento PDF en este chat.`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
+    return;
+  }
   if (action === "quote-retail" || action === "quote-partner") {
     state.editingQuoteId=null;state.editingQuoteRevision=null;state.editingQuoteName='';state.editingQuoteSourceLineIds=[];
   }
@@ -1496,8 +1598,8 @@ $app.addEventListener("click", async (event) => {
   if(action==='quote-close-image'){document.querySelector('#quote-image-dialog')?.close();return;}
   if (action === "quote-remove-product") {state.quoteLines=state.quoteLines.filter(x=>x.id!==Number(event.target.closest("[data-id]").dataset.id));refreshQuoteLineMarkup();return;}
   if (action === "edit-quote-draft") {await editSavedQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
-  if (action === "view-quote") {await openQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
-  if (action === "back-quote") {state.page="quote";state.quoteDetail=null;render();return;}
+  if (action === "view-quote") {state.quoteDetailBack=state.page==='retail-quotes'?'retail-quotes':'quote';await openQuote(Number(event.target.closest("[data-id]").dataset.id));return;}
+  if (action === "back-quote") {state.page=state.quoteDetailBack==='retail-quotes'?'retail-quotes':'quote';state.quoteDetail=null;render();return;}
   if (action === "capture-gps") {
     const form=event.target.closest("form");
     const preview=form?.querySelector("[data-gps-preview]");

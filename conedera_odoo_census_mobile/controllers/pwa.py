@@ -358,7 +358,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.17",
+                "pwa_server_version": "18.0.1.5.18",
                 "census_role": census_role,
                 "quote_retail_role": retail_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
@@ -834,6 +834,157 @@ class ConederaFieldAppController(http.Controller):
             self._require_census_role()
             self._visible_partner(order.partner_id.commercial_partner_id.id)
         return self._quote_record_payload(order)
+
+
+    def _retail_quote_partner(self):
+        """Check the active company and the *retail* group for every endpoint.
+
+        No sudo; the caller's sale.order ACL and record rules must also apply.
+        """
+        if not request.env.user.has_group('conedera_odoo_census_mobile.group_quote_retail'):
+            raise AccessError('Necesita el perfil Cotizador de tienda.')
+        partner = request.env.company.catastro_retail_partner_id
+        if not partner:
+            raise ValidationError('Configure Consumidor Final para la empresa activa.')
+        return partner.commercial_partner_id
+
+    def _retail_quote_record(self, quote_id, operation='read'):
+        partner = self._retail_quote_partner()
+        Sale = self._quote_access(operation)
+        try:
+            order_id = int(quote_id)
+        except (ValueError, TypeError):
+            raise ValidationError('Cotización inválida.')
+        order = Sale.search([
+            ('id', '=', order_id),
+            ('company_id', '=', request.env.company.id),
+            ('partner_id.commercial_partner_id', '=', partner.id),
+        ], limit=1)
+        if not order:
+            raise AccessError('La proforma no pertenece al Consumidor Final de esta empresa o no tiene acceso.')
+        return order
+
+    @http.route('/catastro/app/quote/retail/search', type='json', auth='user', methods=['POST'], readonly=True)
+    def quote_retail_search(self, term='', offset=0):
+        partner = self._retail_quote_partner()
+        Sale = self._quote_access('read')
+        text = str(term or '').strip()[:100]
+        try:
+            offset = int(offset or 0)
+        except (ValueError, TypeError):
+            offset = 0
+        offset = max(0, min(1000, offset))
+        domain = [
+            ('company_id', '=', request.env.company.id),
+            ('partner_id.commercial_partner_id', '=', partner.id),
+            ('state', 'in', ['draft', 'sent']),
+        ]
+        if text:
+            domain += ['|', ('name', 'ilike', text), ('client_order_ref', 'ilike', text)]
+        orders = Sale.search(domain, order='date_order desc, id desc', limit=21, offset=offset)
+        return {
+            'items': [{
+                'id': so.id, 'name': so.name, 'date_order': str(so.date_order or ''),
+                'state': so.state, 'amount_total': so.amount_total,
+                'currency': so.currency_id.symbol or so.currency_id.name,
+                'client_order_ref': so.client_order_ref or '',
+                'can_duplicate': Sale.check_access_rights('create', raise_exception=False),
+            } for so in orders[:20]],
+            'has_more': len(orders) > 20, 'offset': offset,
+        }
+
+    @http.route('/catastro/app/quote/retail/duplicate', type='json', auth='user', methods=['POST'])
+    def quote_retail_duplicate(self, quote_id):
+        source = self._retail_quote_record(quote_id, 'read')
+        Sale = self._quote_access('create')
+        if source.state not in ('draft', 'sent'):
+            raise ValidationError('Solo puede duplicar proformas en borrador o enviadas.')
+        # Do not let a retail profile reproduce a specially negotiated price.
+        regular = source.order_line.filtered(self._quote_line_editable)
+        if 'negotiable_price' in request.env['sale.order.line']._fields and any(
+                line.negotiable_price for line in regular):
+            raise AccessError('Esta proforma tiene precios negociados. Solicite autorización para duplicarla.')
+        if not regular:
+            raise ValidationError('La proforma original no contiene productos para duplicar.')
+        original_options = source.catastro_payment_option_id
+        if original_options and original_options.company_id != request.env.company:
+            raise ValidationError('La condición de pago no pertenece a esta empresa.')
+        if original_options and not original_options.active:
+            raise ValidationError('La condición de pago de la proforma original ya no está disponible. Cree una nueva cotización y elija otra forma de pago.')
+        # Native copy keeps installed sale.order and sale.order.line extensions.
+        # Keep it as a new draft; never overwrite / cancel the source.
+        duplicated = source.with_company(request.env.company).copy(default={
+            'partner_id': self._retail_quote_partner().id,
+            'company_id': request.env.company.id,
+            'user_id': request.env.user.id,
+            'state': 'draft',
+            'date_order': fields.Datetime.now(),
+            'client_order_ref': False,
+            'origin': source.name,
+            'census_originated': False,
+            'census_visit_id': False,
+            'catastro_payment_option_id': False,
+        })
+        if duplicated.company_id != request.env.company or duplicated.state != 'draft':
+            raise ValidationError('Odoo no pudo crear un nuevo borrador válido.')
+        if not duplicated.order_line.filtered(self._quote_line_editable):
+            raise ValidationError('La copia no conservó productos. Revise la personalización de Ventas.')
+        # The source unit price already includes any old payment fee. The audit
+        # base is copy=False, so restore the original base by matching line
+        # signatures before applying the selected payment option on the copy.
+        before = list(source.order_line.filtered(self._quote_line_editable))
+        after = list(duplicated.order_line.filtered(self._quote_line_editable))
+        if len(before) != len(after) or any(
+                a.product_id != b.product_id or a.product_uom_qty != b.product_uom_qty
+                for a, b in zip(before, after)):
+            raise ValidationError('La duplicación cambió productos u orden de líneas. No se guardó una copia incompleta.')
+        for old, new in zip(before, after):
+            base = (old.catastro_payment_base_price_unit
+                    if old.catastro_payment_surcharge_applied else old.price_unit)
+            if duplicated.currency_id.compare_amounts(new.price_unit, base):
+                new.write({'price_unit': base})
+        if original_options:
+            duplicated.write({'catastro_payment_option_id': original_options.id})
+        if self._quote_loyalty_enabled():
+            # Recompensas de una copia anterior no se deben contar dos veces.
+            reward_lines = duplicated.order_line.filtered(
+                lambda line: ('reward_id' in line._fields and line.reward_id) or
+                             ('is_reward_line' in line._fields and line.is_reward_line))
+            if reward_lines:
+                reward_lines.unlink()
+            duplicated._update_programs_and_rewards()
+        duplicated.catastro_recompute_surcharge()
+        return {'id': duplicated.id, 'name': duplicated.name,
+                'message': 'Copia creada como borrador; revise stock y promociones antes de confirmar.'}
+
+    @http.route('/catastro/app/quote/pdf/<int:quote_id>', type='http', auth='user', methods=['GET'], sitemap=False)
+    def quote_pdf(self, quote_id, **kwargs):
+        # Use the active user's ACLs, record rules and company. Never publish
+        # unprotected report attachments or a link accessible to outsiders.
+        Sale = self._quote_access('read')
+        order = Sale.search([('id', '=', quote_id),
+                             ('company_id', '=', request.env.company.id)], limit=1)
+        if not order:
+            raise AccessError('No tiene permiso para descargar esta proforma.')
+        if self._quote_is_retail(order.partner_id.commercial_partner_id.id):
+            self._retail_quote_record(order.id, 'read')
+        else:
+            self._require_census_role()
+            self._visible_partner(order.partner_id.commercial_partner_id.id)
+        report = request.env.ref('sale.action_report_saleorder', raise_if_not_found=False)
+        if not report or report.model != 'sale.order':
+            raise UserError('No se encontró el reporte de cotización de Ventas de Odoo.')
+        pdf_bytes, _ = request.env['ir.actions.report']._render_qweb_pdf(
+            'sale.action_report_saleorder', [order.id])
+        if not pdf_bytes or not pdf_bytes.startswith(b'%PDF'):
+            raise UserError('Odoo no pudo generar el PDF de esta proforma.')
+        filename = 'Proforma_%s.pdf' % re.sub(r'[^a-zA-Z0-9_-]', '_', order.name or str(order.id))
+        return request.make_response(pdf_bytes, headers=[
+            ('Content-Type', 'application/pdf'),
+            ('Content-Disposition', 'attachment; filename="%s"' % filename),
+            ('Cache-Control', 'no-store, private'),
+            ('X-Content-Type-Options', 'nosniff'),
+        ])
 
     def _quote_available_rewards(self, order):
         if not self._quote_loyalty_enabled() or order.state != "draft":
