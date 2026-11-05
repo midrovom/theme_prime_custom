@@ -37,7 +37,7 @@ button{cursor:pointer}
 .btn{min-height:50px;border:none;border-radius:16px;padding:12px 16px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}.btn-primary{background:var(--brand);color:#fff}.btn-secondary{background:#efecf7;color:var(--brand-dark)}.btn-outline{background:#fff;color:var(--brand);border:1px solid #d9d2ea}.btn-danger{background:#fdebea;color:var(--danger)}.btn:disabled{opacity:.48;cursor:not-allowed}
 .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.action-grid .btn{width:100%}
 .fab{position:fixed;right:max(18px,calc((100vw - 760px)/2 + 18px));bottom:94px;width:62px;height:62px;border:0;border-radius:22px;background:var(--brand);color:white;font-size:32px;box-shadow:0 14px 32px rgba(77,59,128,.35);z-index:20}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(15px);border-top:1px solid var(--line);padding:7px max(8px,calc((100vw - 760px)/2)) calc(7px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(15px);border-top:1px solid var(--line);padding:7px max(8px,calc((100vw - 760px)/2)) calc(7px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
 .nav-btn{border:0;background:transparent;min-height:58px;color:#827d8d;font-size:11px;font-weight:750;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.nav-btn b{font-size:20px;line-height:1}.nav-btn.active{color:var(--brand)}
 .form-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:16px;margin-bottom:12px}.form-card h2{font-size:18px;margin:0 0 14px}.field{margin-bottom:13px}.field label{display:block;font-size:13px;font-weight:750;color:#5e5968;margin-bottom:6px}.field input,.field textarea,.field select{width:100%;border:1px solid #ddd8e6;border-radius:14px;padding:12px 13px;background:#fff;outline:none;font-size:16px}.field textarea{min-height:96px;resize:vertical}.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--brand)}
 .toggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.toggle{min-height:46px;border-radius:13px;border:1px solid var(--line);background:#fff;font-weight:750}.toggle.active{border-color:var(--brand);background:#efeaf9;color:var(--brand-dark)}
@@ -364,3 +364,18 @@ button{cursor:pointer}
 .shop-payment-comparison-inner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
 .shop-price-footnote{font-size:11px;color:var(--muted);margin:-3px 2px 0;line-height:1.4}
 @media(max-width:370px){.shop-payment-comparison,.shop-payment-comparison-inner{grid-template-columns:1fr}}
+
+/* 18.0.1.5.17 — Acceso visible a Cotizaciones y diagnóstico de permisos. */
+.bottom-nav.retail-only{grid-template-columns:repeat(4,minmax(0,1fr))}
+.quote-entry-layout{max-width:980px;margin:0 auto;display:grid;gap:14px}
+.quote-entry-layout .card{padding:18px}
+.quote-entry-layout .partner-quote-cta{margin:0}
+.quote-entry-customers .search{margin-top:12px;margin-bottom:12px;max-width:100%}
+.quote-entry-list{display:grid;gap:9px}
+.quote-entry-item{display:flex;align-items:center;gap:12px;justify-content:space-between;border:1px solid var(--line);border-radius:14px;padding:11px 12px;min-width:0}
+.quote-entry-item>div{flex:1;min-width:0;overflow-wrap:anywhere}
+.quote-entry-item strong{display:block;font-size:14px}
+.quote-entry-item small{display:block;color:#827d8d;margin-top:3px}
+.quote-entry-item .btn{flex:none;min-height:42px}
+.home-tools .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+@media(max-width:390px){.home-tools .btn{font-size:12px;padding:10px 12px}.quote-entry-layout .card{padding:14px}.quote-entry-item{padding:10px}.quote-entry-item .btn{padding:8px 13px}}

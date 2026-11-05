@@ -1,4 +1,4 @@
-const APP_VERSION = "18.0.1.5.16";
+const APP_VERSION = "18.0.1.5.17";
 const DB_NAME = "conedera-field-app";
 const STORE_META = "meta";
 const STORE_PARTNERS = "partners";
@@ -65,6 +65,7 @@ const state = {
   quoteSort: "name",
   quoteView: "catalog",
   quoteCatalogLoadKey: null,
+  quotePartnerSearch: "",
 };
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -359,7 +360,7 @@ function connectionBanner() {
 function nav(active, desktop=false) {
   const item = (page, icon, label) => `<button class="nav-btn ${active===page?"active":""}" data-nav="${page}"><b>${icon}</b><span>${label}</span></button>`;
   const retailOnly=state.meta?.capabilities?.census_role===false;
-  return `<nav class="${desktop?"side-nav":"bottom-nav"}" aria-label="Navegación">${item("home","⌂",retailOnly?"Tienda":"Catastros")}${retailOnly?'':item("visit","＋","Visita")}${item("pending","⇅","Pendientes")}${item("more","•••","Más")}${desktop?'<a class="nav-btn" href="/web" target="_blank" rel="noopener"><b>▦</b><span>Abrir Odoo</span></a>':""}</nav>`;
+  return `<nav class="${desktop?"side-nav":"bottom-nav"} ${retailOnly?'retail-only':''}" aria-label="Navegación">${item("home","⌂",retailOnly?"Tienda":"Catastros")}${item("quote-start","▤","Cotizar")}${retailOnly?'':item("visit","＋","Visita")}${item("pending","⇅","Pendientes")}${item("more","•••","Más")}${desktop?'<a class="nav-btn" href="/web" target="_blank" rel="noopener"><b>▦</b><span>Abrir Odoo</span></a>':""}</nav>`;
 }
 function shell(title, body, opts={}) {
   return `<div class="app-shell">
@@ -395,10 +396,38 @@ function renderHome() {
   const retailButton=state.meta?.capabilities?.quote_retail_enabled
     ?`<section class="partner-quote-cta"><div><strong>Venta directa · Consumidor Final</strong><p>Crear proforma sin catastro. Precios de lista, promociones y formas de pago.</p></div><button class="btn btn-primary" type="button" data-action="quote-retail">▤ Cotizar consumidor final</button></section>`:"";
   const isCensus=state.meta?.capabilities?.census_role!==false;
-  const body = `${retailButton}${isCensus?`<div class="home-tools"><span>Mis clientes</span><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div>
+  const body = `${retailButton}${isCensus?`<div class="home-tools"><span>Mis clientes</span><div class="row"><button type="button" class="btn btn-primary" data-nav="quote-start">▤ Cotizar</button><button type="button" class="btn btn-outline" data-action="new-catastro">＋ Nuevo catastro</button></div></div>
     <input id="partner-search" class="search" placeholder="Buscar por RUC, nombre, ciudad…" value="${esc(state.search)}"/>
     <div class="cards">${partners.map(partnerCard).join("") || `<div class="empty"><b>No hay catastros en el dispositivo</b>${state.online?"Pulse actualizar o cree uno nuevo.":"Conéctese una vez para descargar sus catastros."}</div>`}</div>`:''}`;
   $app.innerHTML = shell(state.meta?.capabilities?.census_role===false?"Cotizador de tienda":"Mis catastros", body, { fab:state.meta?.capabilities?.census_role!==false, nav:"home" });
+}
+
+function renderQuoteStart() {
+  const cap=state.meta?.capabilities||{};
+  const canCreate=cap.quote_create===true;
+  const census=cap.census_role!==false;
+  const hasRetail=Boolean(cap.quote_retail_role);
+  const customer=cap.quote_retail_partner;
+  const q=(state.quotePartnerSearch||'').trim().toLocaleLowerCase();
+  const locked=state.partners.filter(p=>truthy(p.census_locked));
+  const matches=locked.filter(p=>!q||[p.name,p.commercial_name,p.vat,p.city].some(v=>String(v||'').toLocaleLowerCase().includes(q)));
+  const shown=matches.slice(0,20);
+  let sections='';
+  if(!canCreate) sections+='<section class="card"><strong>Faltan permisos de Ventas</strong><p class="card-sub">El administrador debe otorgar permiso para crear cotizaciones en Odoo a este usuario. Los accesos seguirán visibles.</p></section>';
+  if(hasRetail) {
+    sections+=`<section class="partner-quote-cta quote-entry-card"><div><strong>Venta directa · Consumidor Final</strong><p>${customer?'Cotice para '+esc(customer.name)+' en '+esc(state.meta?.user?.company_name||'la empresa activa')+'.':'Falta asignar el contacto Consumidor Final a la empresa activa. Un administrador debe configurarlo en Catastro → Configuración.'}</p></div>
+      <button type="button" class="btn btn-primary" data-action="quote-retail" ${canCreate&&customer?'':'disabled'}>▤ Crear cotización de tienda</button></section>`;
+  } else {
+    sections+='<section class="card quote-entry-info"><strong>Venta directa · Consumidor Final</strong><p class="card-sub">Esta opción necesita el grupo «Catastro PWA: cotizador de tienda», además de configurar el contacto Consumidor Final de la empresa activa. El administrador puede habilitarlo en Odoo → Ajustes → Usuarios.</p></section>';
+  }
+  if(census) {
+    sections+=`<section class="card quote-entry-customers"><div class="row space"><strong>Cotizar a un cliente de Catastro</strong><span class="chip">${locked.length} protegidos</span></div>
+      <p class="card-sub">Seleccione un cliente protegido para comenzar. Los catastros en borrador deben finalizarse y protegerse primero.</p>
+      <input id="quote-partner-search" class="search" placeholder="Buscar cliente por nombre o cédula/RUC" value="${esc(state.quotePartnerSearch||'')}" aria-label="Buscar catastro para cotizar" />
+      <div class="quote-entry-list">${shown.map(p=>`<div class="quote-entry-item"><div><strong>${esc(partnerLabel(p))}</strong><small>${esc(p.vat||'')}</small></div><button type="button" class="btn btn-outline" data-action="quote-partner" data-id="${Number(p.id)}" ${canCreate?'':'disabled'}>Cotizar</button></div>`).join('')||'<div class="small">No hay catastros protegidos que coincidan. Revise el estado del catastro y pulse Actualizar.</div>'}</div>
+      ${matches.length>shown.length?`<p class="small">Mostrando ${shown.length} de ${matches.length}. Use la búsqueda para localizar otro cliente.</p>`:''}</section>`;
+  }
+  $app.innerHTML=shell('Cotizar',`<div class="quote-entry-layout"><div class="section-title">Seleccione cómo desea cotizar</div>${sections}</div>`,{nav:'quote-start'});
 }
 
 function selectedPartner() { return state.partners.find(p => p.id === state.selectedPartnerId) || null; }
@@ -765,7 +794,7 @@ function renderQuote() {
       <div id="quote-cart-dock">${quoteCartDockMarkup()}</div>
     </form><aside class="quote-side"><section class="card"><div class="card-title">Cotizaciones del cliente</div><div class="card-sub">Historial visible según permisos de Odoo</div>
       ${related.length?related.map(o=>`<button class="quote-history" type="button" data-action="view-quote" data-id="${o.id}"><span><strong>${esc(o.name)}</strong><small>${esc(dateText(o.date_order))} · ${esc(o.state||"")}</small></span><b>${esc(relationName(o.currency_id)||"")} ${money(o.amount_total)}</b></button>`).join(""):'<div class="small" style="margin-top:10px">Seleccione un cliente para consultar sus proformas.</div>'}</section></aside></div>`;
-  $app.innerHTML=shell("Cotizaciones",body,{nav:"quote"});renderQuoteResults();
+  $app.innerHTML=shell("Cotizaciones",body,{nav:"quote-start"});renderQuoteResults();
   // Mostrar productos desde la bodega desde el principio: el usuario no debe
   // conocer un SKU para empezar. La respuesta puede llegar después de pintar UI.
   const loadKey=`${state.quotePartnerId}:${state.quoteWarehouseId}:${state.quotePricelistId}`;
@@ -784,7 +813,7 @@ function renderQuoteDetail() {
     ${q.state==='draft'&&q.loyalty_enabled?`<div class="loyalty-tools"><h3>Promociones y recompensas Loyalty</h3><div class="field"><label>Código promocional</label><input id="quote-detail-coupon" placeholder="Cupón o código descuento"/></div><div class="row"><button type="button" class="btn btn-outline" data-action="quote-apply-code">Aplicar código</button><button type="button" class="btn btn-outline" data-action="quote-update-rewards">Consultar recompensas</button></div>${(q.loyalty_rewards||[]).length?`<div class="quote-rewards">${q.loyalty_rewards.map(r=>`<div class="quote-reward"><strong>${esc(r.name)}</strong>${r.multi_product?`<select data-loyalty-product="${r.id}">${(r.products||[]).map(pr=>`<option value="${pr.id}">${esc(pr.name)}</option>`).join('')}</select>`:''}<button type="button" class="btn btn-secondary" data-action="quote-apply-reward" data-id="${r.id}">Aplicar recompensa</button></div>`).join('')}</div>`:'<p class="small">No hay recompensas reclamables en este momento; los descuentos automáticos se reflejan en el detalle del pedido.</p>'}</div>`:''}
     <div class="action-grid">${q.state==='draft'&&q.can_edit?`<button class="btn btn-primary" type="button" data-action="edit-quote-draft" data-id="${Number(q.id)}" ${state.online?'':'disabled'}>✎ Editar borrador</button>`:''}<button class="btn btn-secondary" data-action="back-quote">← Cotizaciones</button><a class="btn btn-primary" href="/web#id=${Number(q.id)}&model=sale.order&view_type=form" target="_blank" rel="noopener">Abrir en Odoo</a></div></section>
     <aside class="quote-side"><section class="card"><div class="card-title">Registro</div><div class="card-sub">Referencia: ${esc(q.client_order_ref||"—")}<br>Visita: ${q.visit_id?"#"+Number(q.visit_id):"No asociada"}<br>Empresa: ${esc(q.company_name)}</div></section></aside></div>`;
-  $app.innerHTML=shell(q.name,body,{nav:"quote"});
+  $app.innerHTML=shell(q.name,body,{nav:"quote-start"});
 }
 async function openQuote(id) {
   if (!id) return;
@@ -1044,6 +1073,7 @@ function render() {
   switch (state.page) {
     case "detail": return renderDetail();
     case "visit": return renderVisit();
+    case "quote-start": return renderQuoteStart();
     case "quote": return renderQuote();
     case "quote-detail": return renderQuoteDetail();
     case "new": return renderNewCatastro();
@@ -1318,6 +1348,7 @@ $app.addEventListener("input", (event) => {
   }
   // Las cantidades del catálogo se confirman al salir del campo para evitar errores mientras se escribe.
   if (event.target?.id === "partner-search") { state.search = event.target.value; renderHome(); const input=document.querySelector("#partner-search"); if(input){input.focus(); input.setSelectionRange(state.search.length,state.search.length);} }
+  if (event.target?.id === "quote-partner-search") { state.quotePartnerSearch=event.target.value; renderQuoteStart(); const input=document.querySelector("#quote-partner-search"); if(input){input.focus(); input.setSelectionRange(state.quotePartnerSearch.length,state.quotePartnerSearch.length);} }
 });
 
 $app.addEventListener("change", (event) => {
