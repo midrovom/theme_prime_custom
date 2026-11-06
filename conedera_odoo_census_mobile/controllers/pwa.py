@@ -358,7 +358,7 @@ class ConederaFieldAppController(http.Controller):
                 "quote_update": request.env["sale.order"].check_access_rights("write", raise_exception=False),
                 "quote_negotiable_price_supported": "negotiable_price" in request.env["sale.order.line"]._fields,
                 "quote_can_negotiate": self._quote_can_negotiate(),
-                "pwa_server_version": "18.0.1.5.26",
+                "pwa_server_version": "18.0.1.5.27",
                 "census_role": census_role,
                 "quote_retail_role": retail_role,
                 "quote_retail_enabled": (request.env.user.has_group("conedera_odoo_census_mobile.group_quote_retail")
@@ -707,6 +707,49 @@ class ConederaFieldAppController(http.Controller):
             ],
             'tax_price_source': 'server',
         }
+
+    def _quote_initial_price_unit(self, partner, product, quantity, pricelist, fiscal_position):
+        """Precio inicial ORM obligatorio para sale.order.line.
+
+        Odoo 18 y módulos de Ventas personalizados no siempre ejecutan el
+        cálculo diferido de price_unit antes del INSERT de un One2many. En
+        PostgreSQL price_unit es NOT NULL. Nunca se toma el precio del cliente
+        web ni de la cola offline: se calcula con la lista nativa de Odoo.
+
+        El campo negociable y las promociones siguen siendo responsabilidad de
+        sus propias personalizaciones, después de crear la cotización.
+        """
+        product = product.with_company(request.env.company)
+        if not product or not pricelist:
+            raise ValidationError("No se pudo determinar producto o lista de precios para guardar la proforma.")
+        price = pricelist._get_product_price(
+            product, quantity, partner=partner, uom=product.uom_id,
+        )
+        if price is None or isinstance(price, bool):
+            raise ValidationError(
+                "La lista de precios no devolvió un importe para %s. "
+                "Revise las reglas de precios en Odoo antes de sincronizar."
+                % product.display_name
+            )
+        try:
+            price = float(price)
+        except (TypeError, ValueError):
+            raise ValidationError("Precio de lista inválido para %s." % product.display_name)
+        if not math.isfinite(price) or price < 0:
+            raise ValidationError("Precio de lista fuera de rango para %s." % product.display_name)
+        taxes = product.taxes_id._filter_taxes_by_company(request.env.company)
+        unit = product._get_tax_included_unit_price_from_price(
+            price, product_taxes=taxes, fiscal_position=fiscal_position,
+        )
+        try:
+            unit = float(unit)
+        except (TypeError, ValueError):
+            raise ValidationError("Odoo no calculó un precio unitario válido para %s." % product.display_name)
+        if not math.isfinite(unit) or unit < 0:
+            raise ValidationError("Precio unitario calculado fuera de rango para %s." % product.display_name)
+        # Un precio cero puede ser legítimo (producto bonificado): NO utilizar
+        # 'or' para reemplazarlo por otro precio.
+        return unit
 
     def _quote_catalog_rows(self, partner, products, quantities=None, warehouse_id=None, pricelist_id=None,
                             only_in_stock=False, max_results=60):
@@ -1513,11 +1556,25 @@ class ConederaFieldAppController(http.Controller):
         visit_id = int(payload.get("visit_id") or 0)
         if visit_id and self._quote_is_retail(partner.id):
             raise ValidationError("Una proforma de Consumidor Final no puede vincularse a una visita de catastro.")
-        # El campo negociable se escribe con los valores de creación de las
-        # líneas para respetar los métodos create() de los módulos instalados.
+        # El cálculo de price_unit en sale.order.line es diferido en Odoo 18.
+        # En algunas personalizaciones no se ejecuta antes del INSERT y acaba
+        # en NULL, incumpliendo la restricción NOT NULL de PostgreSQL.
+        # Sembrar un precio unitario explícito desde el servidor, obtenido con
+        # la misma lista, cliente y fiscalidad que utiliza el catálogo PWA.
+        selected_pricelist = self._quote_pricelist(partner, payload.get("pricelist_id"))
+        fiscal_position = request.env['account.fiscal.position'].with_company(
+            request.env.company)._get_fiscal_position(partner)
+        products_by_id = {product.id: product for product in accessible}
         order_lines = []
         for pid, qty, negotiated in products:
-            line_vals = {"product_id": pid, "product_uom_qty": qty}
+            line_vals = {
+                "product_id": pid,
+                "product_uom_qty": qty,
+                "price_unit": self._quote_initial_price_unit(
+                    partner, products_by_id[pid], qty,
+                    selected_pricelist, fiscal_position,
+                ),
+            }
             if negotiated is not None:
                 line_vals["negotiable_price"] = negotiated
             order_lines.append((0, 0, line_vals))
@@ -1534,9 +1591,10 @@ class ConederaFieldAppController(http.Controller):
             vals["catastro_payment_option_id"] = option.id
             if option.payment_term_id:
                 vals["payment_term_id"] = option.payment_term_id.id
-        selected_pricelist = payload.get("pricelist_id")
-        if selected_pricelist:
-            vals["pricelist_id"] = self._quote_pricelist(partner, selected_pricelist).id
+        # La misma lista se utiliza para calcular y guardar las líneas. Si
+        # otra lista se aplicase por defecto durante create(), los importes
+        # iniciales ya no corresponderían a las condiciones del cliente.
+        vals["pricelist_id"] = selected_pricelist.id
         if visit_id:
             Visit = request.env["conedera.census.visit"]
             visit = Visit.search([("id", "=", visit_id), ("partner_id", "=", partner.id),
@@ -1684,6 +1742,7 @@ class ConederaFieldAppController(http.Controller):
         if option and option.payment_term_id:
             changes["payment_term_id"] = option.payment_term_id.id
         order.write(changes)
+        products_by_id = {product.id: product for product in products}
         for line_id, pid, qty, negotiated in parsed:
             values = {"product_uom_qty": qty}
             if negotiated is not None:
@@ -1691,7 +1750,17 @@ class ConederaFieldAppController(http.Controller):
             if line_id:
                 normal_by_id[line_id].write(values)
             else:
-                values.update({"order_id": order.id, "product_id": pid})
+                # También al AGREGAR un producto a un borrador existente hay
+                # que inicializar price_unit antes del INSERT (no usar el
+                # valor remitido por el navegador).
+                values.update({
+                    "order_id": order.id,
+                    "product_id": pid,
+                    "price_unit": self._quote_initial_price_unit(
+                        order.partner_id, products_by_id[pid], qty,
+                        order.pricelist_id, order.fiscal_position_id,
+                    ),
+                })
                 Line.create(values)
         for line_id, line in normal_by_id.items():
             if line_id not in used_lines:
